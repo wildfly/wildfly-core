@@ -152,6 +152,9 @@ public interface Capability {
      *  </ol>
      *
      * @return the additional package names. Will not return {@code null} but may be empty
+     *
+     * @deprecated Use {@link org.jboss.as.controller.registry.ImmutableManagementResourceRegistration#getAdditionalRuntimePackages()}
      */
+    @Deprecated
     Set<String> getAdditionalRequiredPackages();
 }

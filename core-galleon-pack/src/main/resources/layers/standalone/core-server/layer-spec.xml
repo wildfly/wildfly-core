@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="core-server">
+    <dependencies>
+        <layer name="secure-management" optional="true"/>
+        <layer name="jmx-remoting" optional="true"/> 
+        <layer name="logging" optional="true"/>
+        <layer name="core-management" optional="true"/>
+        <layer name="request-controller" optional="true"/>
+        <layer name="security-manager" optional="true"/>
+    </dependencies>
+    
+</layer-spec>

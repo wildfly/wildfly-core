@@ -24,6 +24,7 @@
     <default-packages>
         <package name="modules.all"/>
         <package name="docs"/>
+        <package name="bin"/>
     </default-packages>
     <package-schemas>
         <group name="org.wildfly.core"/>

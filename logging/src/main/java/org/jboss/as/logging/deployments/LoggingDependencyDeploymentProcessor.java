@@ -22,6 +22,7 @@
 
 package org.jboss.as.logging.deployments;
 
+import static org.jboss.as.logging.LoggingResourceDefinition.DUP_INJECTED_LOGGING_MODULES;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -49,21 +50,13 @@ import org.jboss.modules.ModuleLoader;
  */
 public class LoggingDependencyDeploymentProcessor implements DeploymentUnitProcessor {
 
-    private static final String[] LOGGING_MODULES = new String[] {
-            "org.jboss.logging",
-            "org.apache.commons.logging",
-            "org.apache.log4j",
-            "org.slf4j",
-            "org.jboss.logging.jul-to-slf4j-stub",
-    };
-
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
         // Add the logging modules
-        for (String moduleId : LOGGING_MODULES) {
+        for (String moduleId : DUP_INJECTED_LOGGING_MODULES) {
             try {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding module '%s' to deployment '%s'", moduleId, deploymentUnit.getName());
                 moduleLoader.loadModule(moduleId);

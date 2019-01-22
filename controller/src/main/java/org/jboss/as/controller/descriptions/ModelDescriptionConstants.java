@@ -362,6 +362,7 @@ public class ModelDescriptionConstants {
     public static final String PACKAGES = "packages";
     public static final String PARAMS = "params";
     public static final String PARSE_ROLES_FROM_DN = "parse-group-name-from-dn";
+    public static final String PASSIVE = "passive";
     public static final String PASSWORD = "password";
     public static final String PATH = "path";
     public static final String PATHS = "paths";

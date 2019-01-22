@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature-group-spec name="interfaces" xmlns="urn:jboss:galleon:feature-group:1.0">
-    <feature spec="interface">
-        <param name="interface" value="management"/>
-        <param name="inet-address" value="${jboss.bind.address.management:127.0.0.1}"/>
-    </feature>
-    <feature spec="interface">
-        <param name="interface" value="public"/>
-        <param name="inet-address" value="${jboss.bind.address:127.0.0.1}"/>
-    </feature>
+    <feature-group name="management-interface"/>
+    <feature-group name="public-interface"/>
 </feature-group-spec>

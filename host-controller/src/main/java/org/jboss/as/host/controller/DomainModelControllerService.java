@@ -1392,6 +1392,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         public void registerCapabilities(ManagementResourceRegistration resourceRegistration) {
             //These will be registered later
         }
+
+        @Override
+        public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+            //These will be registered later
+        }
     }
 
     final class InternalExecutor implements HostControllerRegistrationHandler.OperationExecutor, ServerToHostProtocolHandler.OperationExecutor, MasterDomainControllerOperationHandlerService.TransactionalOperationExecutor {

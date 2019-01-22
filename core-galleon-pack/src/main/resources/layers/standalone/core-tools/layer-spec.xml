@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="core-tools">
+    <dependencies>
+        <layer name="management"/> 
+    </dependencies>
+   <packages>
+       <!-- required for CLI and users management -->
+        <package name="org.jboss.as.cli"/>
+        <package name="org.jboss.as.domain-add-user"/>
+        <package name="tools"/>
+    </packages>
+</layer-spec>

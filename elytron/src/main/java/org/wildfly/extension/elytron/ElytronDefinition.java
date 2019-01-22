@@ -70,6 +70,7 @@ import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraint
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
@@ -335,6 +336,11 @@ class ElytronDefinition extends SimpleResourceDefinition {
             protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName,
                     ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {}
         });
+    }
+
+    @Override
+    public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.required("org.wildfly.security.elytron"));
     }
 
     @Deprecated

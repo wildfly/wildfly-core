@@ -418,6 +418,16 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
         return false;
     }
 
+    @Override
+    public void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs) {
+        throw alreadyRegistered();
+    }
+
+    @Override
+    public Set<RuntimePackageDependency> getAdditionalRuntimePackages() {
+        return Collections.emptySet();
+    }
+
     /**
      * Registration meant to represent a child registration on the proxied process.
      * Differs from ProxyControllerRegistration in that it never provides locally

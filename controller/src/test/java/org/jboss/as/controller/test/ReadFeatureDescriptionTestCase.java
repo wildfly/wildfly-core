@@ -64,9 +64,11 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PASSIVE;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -89,6 +91,9 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
     private static final String TEST = "test";
     private static final String MAIN_RESOURCE_CAPABILITY_NAME = "main-resource-capability";
     private static final String MAIN_RESOURCE_PACKAGE_NAME = "main-resource-package";
+    private static final String MAIN_RESOURCE_OPT_PACKAGE_NAME = "optional-main-resource-package";
+    private static final String MAIN_RESOURCE_PASSIVE_PACKAGE_NAME = "passive-main-resource-package";
+    private static final String MAIN_RESOURCE_REQUIRED_PACKAGE_NAME = "required-main-resource-package";
     private static final String ROOT_CAPABILITY_NAME = "root-capability";
     private static final String DYNAMIC_CAPABILITY_NAME = "dynamic-capability";
     private static final String CLIENT_FACTORY_CAPABILITY_NAME = "org.wildfly.management.model-controller-client-factory";
@@ -264,8 +269,33 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         // packages
         ModelNode packages = feature.require(PACKAGES);
-        Assert.assertEquals(1, packages.asList().size());
-        Assert.assertEquals(MAIN_RESOURCE_PACKAGE_NAME, packages.asList().get(0).get(PACKAGE).asString());
+        Assert.assertEquals(4, packages.asList().size());
+        int expected = packages.asList().size();
+        for (ModelNode mn : packages.asList()) {
+            String name = mn.get(PACKAGE).asString();
+            switch (name) {
+                case MAIN_RESOURCE_REQUIRED_PACKAGE_NAME:
+                case MAIN_RESOURCE_PACKAGE_NAME: {
+                    expected -= 1;
+                    Assert.assertFalse(mn.hasDefined(OPTIONAL));
+                    Assert.assertFalse(mn.hasDefined(PASSIVE));
+                    break;
+                }
+                case MAIN_RESOURCE_OPT_PACKAGE_NAME: {
+                    Assert.assertTrue(mn.hasDefined(OPTIONAL));
+                    Assert.assertFalse(mn.hasDefined(PASSIVE));
+                    expected -= 1;
+                    break;
+                }
+                case MAIN_RESOURCE_PASSIVE_PACKAGE_NAME: {
+                    Assert.assertTrue(mn.hasDefined(OPTIONAL));
+                    Assert.assertTrue(mn.hasDefined(PASSIVE));
+                    expected -= 1;
+                    break;
+                }
+            }
+        }
+        Assert.assertEquals(0, expected);
     }
 
     /**
@@ -628,6 +658,13 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
             resourceRegistration.registerReadWriteAttribute(OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadWriteAttribute(COMPLEX_OBJECT_ATTRIBUTE, null, WRITE_HANDLER);
             resourceRegistration.registerReadWriteAttribute(LIST_ATTRIBUTE, null, WRITE_HANDLER);
+        }
+
+        @Override
+        public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
+            resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.optional(MAIN_RESOURCE_OPT_PACKAGE_NAME),
+                    RuntimePackageDependency.passive(MAIN_RESOURCE_PASSIVE_PACKAGE_NAME),
+                    RuntimePackageDependency.required(MAIN_RESOURCE_REQUIRED_PACKAGE_NAME));
         }
     }
 

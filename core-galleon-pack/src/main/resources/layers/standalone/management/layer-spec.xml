@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="management">  
+    <dependencies>
+        <layer name="base-server"/> 
+    </dependencies>
+    <feature-group name="management-interface"/>
+    <feature-group name="management-sockets-group"/>
+    <!-- management layer comes with security -->
+    <feature-group name="access-control"/>
+    
+    <feature-group name="management-unsecure-interfaces"/>
+    
+    <feature-group name="management-audit"/>
+</layer-spec>

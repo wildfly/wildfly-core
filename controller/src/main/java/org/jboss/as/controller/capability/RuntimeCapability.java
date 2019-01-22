@@ -452,6 +452,9 @@ public class RuntimeCapability<T> extends AbstractCapability  {
          *
          * @param packages the package names
          * @return the builder
+         *
+         * @deprecated Use {@link org.jboss.as.controller.ResourceDefinition#registerAdditionalRuntimePackages(
+         * org.jboss.as.controller.registry.ManagementResourceRegistration)}
          */
         public Builder<T> addAdditionalRequiredPackages(String... packages) {
             assert packages != null;

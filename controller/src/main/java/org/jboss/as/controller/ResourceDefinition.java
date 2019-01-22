@@ -90,6 +90,63 @@ public interface ResourceDefinition {
     }
 
     /**
+     * Register "additional" Galleon packages that must be installed in order
+     * for this Resource to function. NB: the packages need to be visible from the feature pack
+     * that contains the ResourceDefinition. It can't be any package from any feature pack.
+     * The purpose of providing this information is to
+     * make it available to the Galleon tooling that produces Galleon feature-specs,
+     * in order to allow the tooling to include the package information in the relevant
+     * spec.
+     * <p>
+     * A package is "additional" if it is not one of the "standard" packages that must be
+     * installed. The names of "standard" packages should not be registered. The "standard"
+     * packages are:
+     *
+     *  <ol>
+     *      <li>
+     *          The root package for the process type; i.e. the package that provides
+     *          the main module whose name is passed to JBoss Modules when the process
+     *          is launched.
+     *      </li>
+     *      <li>
+     *          The package that installs the module that provides the extension in
+     *          which the resource is defined.
+     *      </li>
+     *      <li>
+     *          Any package that is non-optionally directly or transitively required
+     *          by one of the other types of standard packages.
+     *      </li>
+     *  </ol>
+     * Additional packages fall into in the following categories:
+     *  <ol>
+     *      <li>
+     *          Packages that install required modules injected into Deployment Unit can be registered as
+     *          <i>required</i> {@link org.jboss.as.controller.registry.RuntimePackageDependency}.
+     *      </li>
+     *      <li>
+     *          Packages that install optional modules injected into Deployment Unit can be registered as
+     *          <i>optional</i> {@link org.jboss.as.controller.registry.RuntimePackageDependency}.
+     *      </li>
+     *      <li>
+     *          Packages that install modules that are only required if the resource associated to this
+     *          definition is instantiated are to be registered as <i>required</i>
+     *          {@link org.jboss.as.controller.registry.RuntimePackageDependency}.
+     *      </li>
+     *      <li>
+     *          Packages that install modules that are only required by this feature in order to interact with other features
+     *          are to be registered as <i>passive</i>
+     *          {@link org.jboss.as.controller.registry.RuntimePackageDependency}. A passive dependency is provisioned
+     *          only if its own required dependencies are present.
+     *      </li>
+     *  </ol>
+     * @param resourceRegistration a {@link ManagementResourceRegistration}
+     * created from this definition
+     */
+    default void registerAdditionalRuntimePackages(final ManagementResourceRegistration resourceRegistration) {
+        // no op
+    }
+
+    /**
      * Get the definition of any access constraints associated with the resource.
      *
      * @return the access constraints or an empty list; will not return {@code null}.

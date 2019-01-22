@@ -346,4 +346,14 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     Set<CapabilityReferenceRecorder> getRequirements(ListIterator<PathElement> iterator) {
         return target.getRequirements(iterator);
     }
+
+    @Override
+    public void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs) {
+        throw alreadyRegistered();
+    }
+
+    @Override
+    public Set<RuntimePackageDependency> getAdditionalRuntimePackages() {
+        return target.getAdditionalRuntimePackages();
+    }
 }

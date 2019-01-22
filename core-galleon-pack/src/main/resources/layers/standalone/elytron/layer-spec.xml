@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="elytron">   
+    <dependencies>
+        <layer name="base-server"/> 
+    </dependencies>
+    <!-- elytron layer comes with access-control -->
+    <feature-group name="access-control"/>
+    <feature spec="subsystem.elytron">
+        <feature-group name="elytron-common"/>
+        <feature-group name="elytron-app"/>
+    </feature>
+    <feature-group name="standalone-elytron"/>
+    <packages>
+        <!-- required by default configuration-->
+        <package name="org.wildfly.openssl"/>
+    </packages>
+</layer-spec>

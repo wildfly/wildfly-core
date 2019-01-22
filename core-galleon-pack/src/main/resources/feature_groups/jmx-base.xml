@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="jmx-base" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.jmx">
+        <feature spec="subsystem.jmx.expose-model.expression" />
+        <feature spec="subsystem.jmx.expose-model.resolved" />
+    </feature>
+</feature-group-spec>

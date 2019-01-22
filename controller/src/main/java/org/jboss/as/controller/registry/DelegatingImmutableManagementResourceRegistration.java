@@ -216,4 +216,9 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     public Set<CapabilityReferenceRecorder> getRequirements() {
         return delegate.getRequirements();
     }
+
+    @Override
+    public Set<RuntimePackageDependency> getAdditionalRuntimePackages() {
+        return delegate.getAdditionalRuntimePackages();
+    }
 }

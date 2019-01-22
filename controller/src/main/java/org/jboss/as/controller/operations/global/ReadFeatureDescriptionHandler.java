@@ -47,6 +47,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PACKAGES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PARAMS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PASSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROVIDES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_FEATURE_DESCRIPTION_OPERATION;
@@ -95,6 +96,7 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.registry.AliasEntry;
 import org.jboss.as.controller.registry.AliasStepHandler;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -369,7 +371,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             }
         }
         Set<String> capabilities = new TreeSet<>();
-        Set<String> additionalPackages = new TreeSet<>();
         for (RuntimeCapability<?> cap : registration.getCapabilities()) {
             String capabilityName = cap.getName();
             if (cap.isDynamicallyNamed()) {
@@ -382,7 +383,6 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 capabilityName = PROFILE_PREFIX + capabilityName;
             }
             capabilities.add(capabilityName);
-            additionalPackages.addAll(cap.getAdditionalRequiredPackages());
         }
         if (!capabilities.isEmpty()) {
             ModelNode provide = feature.get(PROVIDES);
@@ -394,11 +394,18 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
         addReferences(feature, registration);
         addRequiredCapabilities(feature, registration, requestProperties, capabilityScope, isProfile, capabilities,
                 featureParamMappings);
-        if (additionalPackages.size() > 0) {
+        Set<RuntimePackageDependency> pkgs = registration.getAdditionalRuntimePackages();
+        if (!pkgs.isEmpty()) {
             ModelNode packages = feature.get(PACKAGES);
-            for (String pkg : additionalPackages) {
+            for (RuntimePackageDependency pkg : pkgs) {
                 ModelNode pkgNode = new ModelNode();
-                pkgNode.get(PACKAGE).set(pkg);
+                pkgNode.get(PACKAGE).set(pkg.getName());
+                if (pkg.isOptional()) {
+                    pkgNode.get(OPTIONAL).set(true);
+                }
+                if (pkg.isPassive()) {
+                    pkgNode.get(PASSIVE).set(true);
+                }
                 packages.add(pkgNode);
             }
         }
