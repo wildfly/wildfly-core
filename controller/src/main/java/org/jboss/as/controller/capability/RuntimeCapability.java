@@ -300,6 +300,66 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         return additionalPackages;
     }
 
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @Override
+    public Set<String> getRequirements() {
+        return super.getRequirements();
+    }
+
+    @Override
+    public Set<String> getOptionalRequirements() {
+        return super.getOptionalRequirements();
+    }
+
+    @Override
+    public Set<String> getRuntimeOnlyRequirements() {
+        return super.getRuntimeOnlyRequirements();
+    }
+
+    @Override
+    public Set<String> getDynamicRequirements() {
+        return super.getDynamicRequirements();
+    }
+
+    @Override
+    public Set<String> getDynamicOptionalRequirements() {
+        return super.getDynamicOptionalRequirements();
+    }
+
+    @Override
+    public boolean isDynamicallyNamed() {
+        return super.isDynamicallyNamed();
+    }
+
+    @Override
+    public String getDynamicName(String dynamicNameElement) {
+        return super.getDynamicName(dynamicNameElement);
+    }
+
+    @Override
+    public String getDynamicName(PathAddress address) {
+        return super.getDynamicName(address);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
     /**
      * Builder for a {@link RuntimeCapability}.
      *
