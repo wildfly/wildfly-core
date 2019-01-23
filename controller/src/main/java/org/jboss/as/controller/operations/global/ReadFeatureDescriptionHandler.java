@@ -814,8 +814,7 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                     }
                 }
                 // WFLY-4164 record the fixed requirements of the registration's capabilities
-                Set<RuntimeCapability> regCaps = registration.getCapabilities();
-                for (RuntimeCapability regCap : regCaps) {
+                for (RuntimeCapability<?> regCap : registration.getCapabilities()) {
                     for (String capReq : regCap.getRequirements()) {
                         if (!required.containsKey(capReq)) {
                             ModelNode capability = new ModelNode();

@@ -31,9 +31,9 @@ import org.jboss.as.controller.capability.RuntimeCapability;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class RuntimeCapabilityRegistration extends CapabilityRegistration<RuntimeCapability> {
+public class RuntimeCapabilityRegistration extends CapabilityRegistration<RuntimeCapability<?>> {
 
-    public RuntimeCapabilityRegistration(RuntimeCapability capability, CapabilityScope context, RegistrationPoint registrationPoint) {
+    public RuntimeCapabilityRegistration(RuntimeCapability<?> capability, CapabilityScope context, RegistrationPoint registrationPoint) {
         super(capability, context, registrationPoint);
     }
 
