@@ -56,7 +56,7 @@ public class ShutdownHandler extends BaseOperationCommand {
     private PerNodeOperationAccess hostShutdownPermission;
 
     public ShutdownHandler(CommandContext ctx, final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef) {
-        super(ctx, "shutdown", true);
+        super(ctx, "shutdown", true, false);
 
         this.embeddedServerRef = embeddedServerRef;
 
