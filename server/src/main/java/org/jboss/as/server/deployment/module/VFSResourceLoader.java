@@ -141,8 +141,9 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                 throw new UndeclaredThrowableException(e);
             }
         }
-        // "A multi-release jar file is a jar file that contains a manifest with a main attribute named "Multi-Release", [...]"
-        multiRelease = manifest != null && manifest.getMainAttributes().containsKey(MULTI_RELEASE_NAME);
+        // A multi-release jar file is a jar file that contains a manifest with a main attribute named "Multi-Release"
+        // with value true
+        multiRelease = manifest != null && Boolean.parseBoolean(manifest.getMainAttributes().getValue(MULTI_RELEASE_NAME));
         rootUrl = usePhysicalCodeSource ? VFSUtils.getRootURL(root) : root.asFileURL();
     }
 
