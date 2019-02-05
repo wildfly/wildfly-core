@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2018 Red Hat, Inc. and/or its affiliates
+ * Copyright 2016-2019 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,10 @@
  */
 package org.jboss.as.test.layers;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +31,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.wildfly.core.launcher.StandaloneCommandBuilder;
 
 /**
  *
@@ -38,6 +44,8 @@ public class LayersTest {
 
     private static final String REFERENCE = "test-standalone-reference";
     private static final String ALL_LAYERS = "test-all-layers";
+    private static final String END_LOG_SUCCESS = "WFLYSRV0025";
+    private static final String END_LOG_FAILURE = "WFLYSRV0026";
 
     /**
      * Scan and check an installation.
@@ -59,16 +67,23 @@ public class LayersTest {
         Result reference = null;
         Result allLayers = null;
         Map<String, Result> layers = new TreeMap<>();
-        for (File f : installations) {
-            Path installation = f.toPath();
-            Result res = Scanner.scan(installation, getConf(installation));
-            if (f.getName().equals(REFERENCE)) {
-                reference = res;
-            } else if (f.getName().equals(ALL_LAYERS)) {
-                allLayers = res;
-            } else {
-                layers.put(f.getName(), res);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            for (File f : installations) {
+                Path installation = f.toPath();
+                Result res = Scanner.scan(installation, getConf(installation));
+                if (f.getName().equals(REFERENCE)) {
+                    reference = res;
+                } else if (f.getName().equals(ALL_LAYERS)) {
+                    checkExecution(executor, installation);
+                    allLayers = res;
+                } else {
+                    checkExecution(executor, installation);
+                    layers.put(f.getName(), res);
+                }
             }
+        } finally {
+            executor.shutdownNow();
         }
         // Check that the reference has no more un-referenced modules than the expected ones.
         Set<String> invalidUnref = new HashSet<>();
@@ -116,6 +131,77 @@ public class LayersTest {
             for(File f : installations) {
                 recursiveDelete(f.toPath());
             }
+        }
+    }
+
+    /**
+     * Start and check execution of all installations present in root.
+     * @param root Installations root directory
+     * @throws Exception
+     */
+    public static void testExecution(String root) throws Exception {
+        File[] installations = new File(root).listFiles(File::isDirectory);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            for (File f : installations) {
+                Path installation = f.toPath();
+                if (!f.getName().equals(REFERENCE)) {
+                    checkExecution(executor, installation);
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static void checkExecution(ExecutorService executor,
+            Path installation) throws Exception {
+        StringBuilder str = new StringBuilder();
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(installation);
+                    ProcessBuilder p = new ProcessBuilder(builder.build());
+                    p.redirectErrorStream(true);
+                    Process process = p.start();
+                    try {
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                        String line;
+                        boolean ended = false;
+                        while ((line = reader.readLine()) != null) {
+                            str.append(line).append("\n");
+                            // We are only checking for server view on errors.
+                            // Some other errors could occur (eg: multicast load-balancer on some platforms)
+                            // but these errors are not caused by server configuration.
+                            if (line.contains(END_LOG_FAILURE)) {
+                                throw new Exception("Process for " + installation.getFileName() +
+                                    " started with errors.");
+                            } else {
+                                if (line.contains(END_LOG_SUCCESS)) {
+                                    ended = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!ended) {
+                            throw new Exception("Process for " + installation.getFileName() +
+                                    " not terminated properly.");
+                        }
+                    } finally {
+                        process.destroyForcibly();
+                        process.waitFor();
+                    }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        try {
+            executor.submit(r).get(1, TimeUnit.MINUTES);
+        } catch (Exception ex) {
+            throw new Exception("Exception checking " + installation.getFileName().toString()
+                    + "\n Server log \n" + str.toString(), ex);
         }
     }
 
