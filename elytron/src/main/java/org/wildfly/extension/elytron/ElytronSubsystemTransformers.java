@@ -83,7 +83,10 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from6(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_6_0_0, ELYTRON_5_0_0);
-
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
+            .getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.UNDEFINED, ElytronDescriptionConstants.TYPE)
+            .end();
     }
 
 

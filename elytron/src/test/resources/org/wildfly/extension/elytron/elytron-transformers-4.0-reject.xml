@@ -32,6 +32,11 @@
                 <implementation type="JKS"/>
                 <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
             </key-store>
+            <key-store name="automatic.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
         </key-stores>
         <key-managers>
             <key-manager name="key1" key-store="accounts.keystore">

@@ -43,6 +43,11 @@
                 <implementation type="JKS" />
                 <file path="target/not-existing.keystore" required="false"/>
             </key-store>
+            <key-store name="AutomaticKeystore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation/>
+                <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
+            </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="FireflyKeystore" alias-filter="NONE:+firefly"/>
         </key-stores>
         <key-managers>

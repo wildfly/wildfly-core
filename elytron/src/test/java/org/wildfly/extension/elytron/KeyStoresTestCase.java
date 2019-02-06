@@ -501,6 +501,59 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testAutomaticKeystoreService() throws Exception {
+        ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName("AutomaticKeystore");
+        KeyStore keyStore = (KeyStore) services.getContainer().getService(serviceName).getValue();
+        assertNotNull(keyStore);
+
+        assertTrue(keyStore.containsAlias("firefly"));
+        assertTrue(keyStore.isKeyEntry("firefly"));
+        X509Certificate cert = (X509Certificate) keyStore.getCertificate("firefly");
+        assertEquals("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly", cert.getSubjectDN().getName());
+        assertEquals("firefly", keyStore.getCertificateAlias(cert));
+
+        Certificate[] chain = keyStore.getCertificateChain("firefly");
+        assertEquals("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly", ((X509Certificate) chain[0]).getSubjectDN().getName());
+        assertEquals("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA", ((X509Certificate) chain[1]).getSubjectDN().getName());
+
+        assertTrue(keyStore.containsAlias("ca"));
+        assertTrue(keyStore.isCertificateEntry("ca"));
+        X509Certificate certCa = (X509Certificate) keyStore.getCertificate("ca");
+        assertEquals("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA", certCa.getSubjectDN().getName());
+        assertEquals("ca", keyStore.getCertificateAlias(certCa));
+    }
+
+    @Test
+    public void testAutomaticKeystoreCli() throws Exception {
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron");
+        operation.get(ClientConstants.OP).set("read-resource");
+        System.out.println(services.executeOperation(operation).get(ClientConstants.RESULT).asString());
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.KEY_STORE,"AutomaticKeystore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
+        assertEquals(2, nodes.size());
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.KEY_STORE,"AutomaticKeystore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("firefly");
+        ModelNode firefly = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
+        assertEquals("firefly", firefly.get(ElytronDescriptionConstants.ALIAS).asString());
+        assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), firefly.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+        assertTrue(firefly.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN).isDefined());
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add(ElytronDescriptionConstants.KEY_STORE,"AutomaticKeystore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("ca");
+        ModelNode ca = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
+        assertEquals("ca", ca.get(ElytronDescriptionConstants.ALIAS).asString());
+        assertEquals(KeyStore.TrustedCertificateEntry.class.getSimpleName(), ca.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
+    }
+
+    @Test
     public void testGenerateKeyPair() throws Exception {
         addKeyStore();
 

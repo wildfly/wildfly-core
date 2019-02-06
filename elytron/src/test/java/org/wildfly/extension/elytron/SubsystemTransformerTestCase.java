@@ -115,6 +115,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "KeyMapTokenRealm")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
+                ).addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE, "automatic.keystore")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
                 ));
     }
 
