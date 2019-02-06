@@ -98,7 +98,10 @@
                         <phase>compile</phase>
                         <configuration>
                             <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                             </plugin-options>
                             <feature-packs>
@@ -106,6 +109,11 @@
                                     <groupId>org.wildfly.core</groupId>
                                     <artifactId>wildfly-core-galleon-pack</artifactId>
                                     <version>${project.version}</version>
+                                    <excluded-configs>
+                                        <config>
+                                            <model>standalone</model>
+                                        </config>
+                                    </excluded-configs>
                                     <excluded-packages>
                                         <name>product.conf</name>
                                     </excluded-packages>
