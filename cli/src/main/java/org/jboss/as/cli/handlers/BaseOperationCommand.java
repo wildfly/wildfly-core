@@ -75,9 +75,17 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
     protected AccessRequirement accessRequirement;
 
     public BaseOperationCommand(CommandContext ctx, String command, boolean connectionRequired) {
+        this(ctx, command, connectionRequired, true);
+    }
+
+    public BaseOperationCommand(CommandContext ctx, String command, boolean connectionRequired, boolean needHeaders) {
         super(command, connectionRequired);
         ctx.addEventListener(this);
-        headers = new ArgumentWithValue(this, HeadersCompleter.INSTANCE, HeadersArgumentValueConverter.INSTANCE, "--headers");
+        if (needHeaders) {
+            headers = new ArgumentWithValue(this, HeadersCompleter.INSTANCE, HeadersArgumentValueConverter.INSTANCE, "--headers");
+        } else {
+            headers = null;
+        }
         accessRequirement = setupAccessRequirement(ctx);
     }
 
@@ -272,7 +280,7 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
     protected abstract ModelNode buildRequestWithoutHeaders(CommandContext ctx) throws CommandFormatException;
 
     protected void addHeaders(CommandContext ctx, ModelNode request) throws CommandFormatException {
-        if(!headers.isPresent(ctx.getParsedCommandLine())) {
+        if(headers == null || !headers.isPresent(ctx.getParsedCommandLine())) {
             return;
         }
         final ModelNode headersNode = headers.toModelNode(ctx);

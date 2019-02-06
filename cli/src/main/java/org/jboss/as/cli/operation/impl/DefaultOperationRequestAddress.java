@@ -85,7 +85,7 @@ public class DefaultOperationRequestAddress implements OperationRequestAddress {
             nodes = new ArrayList<NodeImpl>(path.length());
         }
         for(Node n : path) {
-            nodes.add(new NodeImpl(n.getType(), n.getType()));
+            nodes.add(new NodeImpl(n.getType(), n.getName()));
         }
     }
 
