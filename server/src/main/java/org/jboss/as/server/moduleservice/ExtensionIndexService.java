@@ -25,7 +25,6 @@ package org.jboss.as.server.moduleservice;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,7 +36,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.jboss.as.server.deployment.module.ExtensionInfo;
-import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.logging.Logger;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
@@ -123,8 +121,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             sb.setInitialMode(Mode.ON_DEMAND);
                             sb.install();
 
-                            ModuleLoadService.install(context.getChildTarget(), moduleIdentifier, Collections
-                                    .<ModuleDependency> emptyList());
+                            ModuleLoadService.install(context.getChildTarget(), moduleIdentifier);
 
                             extensionJarSet.add(extensionJar);
 

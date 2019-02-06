@@ -280,6 +280,7 @@ public class ModelDescriptionConstants {
     public static final String LDAP = "ldap";
     public static final String LDAP_CONNECTION = "ldap-connection";
     public static final String LIST_SNAPSHOTS_OPERATION = "list-snapshots";
+    public static final String LIST_MODULES = "list-modules";
     public static final String LOCAL = "local";
     public static final String LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING = "local-destination-outbound-socket-binding";
     public static final String LOCAL_HOST_NAME = "local-host-name";
@@ -604,7 +605,8 @@ public class ModelDescriptionConstants {
     public static final String VAULT_EXPRESSION = "vault-expression";
     public static final String VAULT_OPTION = "vault-option";
     public static final String VAULT_OPTIONS = "vault-options";
-      public static final String WARNING = "warning";
+    public static final String VERBOSE = "verbose";
+    public static final String WARNING = "warning";
     public static final String WARNINGS = "warnings";
     public static final String WARNING_LEVEL = "warning-level";
     public static final String WEB_URL = "web-url";

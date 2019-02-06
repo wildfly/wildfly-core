@@ -27,18 +27,18 @@ import java.security.Permission;
 import java.security.Permissions;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PropertyPermission;
 
-import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ModuleDefinition;
 import org.jboss.as.server.moduleservice.ModuleLoadService;
 import org.jboss.as.server.moduleservice.ModuleResolvePhaseService;
@@ -282,14 +282,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         sb.setInitialMode(Mode.ON_DEMAND);
         sb.install();
 
-        final List<ModuleDependency> allDependencies = new ArrayList<ModuleDependency>();
-        allDependencies.addAll(dependencies);
-        allDependencies.addAll(localDependencies);
-        allDependencies.addAll(userDependencies);
-
         ModuleResolvePhaseService.installService(phaseContext.getServiceTarget(), moduleDefinition);
 
-        return ModuleLoadService.install(phaseContext.getServiceTarget(), moduleIdentifier, allDependencies);
+        return ModuleLoadService.install(phaseContext.getServiceTarget(), moduleIdentifier, dependencies, localDependencies, userDependencies);
     }
 
     private void installAliases(final ModuleSpecification moduleSpecification, final ModuleIdentifier moduleIdentifier, final DeploymentUnit deploymentUnit, final DeploymentPhaseContext phaseContext) {
@@ -310,7 +305,8 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
             sb.requires(phaseContext.getPhaseServiceName());
             sb.setInitialMode(Mode.ON_DEMAND);
             sb.install();
-            ModuleLoadService.installService(phaseContext.getServiceTarget(), alias, Collections.singletonList(moduleIdentifier));
+
+            ModuleLoadService.installAliases(phaseContext.getServiceTarget(), alias, Collections.singletonList(moduleIdentifier));
 
             ModuleResolvePhaseService.installService(phaseContext.getServiceTarget(), moduleDefinition);
         }
