@@ -202,7 +202,7 @@
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.4.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.1.1.Final</version.org.wildfly.discovery>
-        <version.org.wildfly.legacy.test>4.0.0.Final</version.org.wildfly.legacy.test>
+        <version.org.wildfly.legacy.test>4.0.1.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>1.0.6.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
         <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>

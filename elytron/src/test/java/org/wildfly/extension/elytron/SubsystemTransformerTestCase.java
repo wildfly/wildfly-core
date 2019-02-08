@@ -17,7 +17,7 @@ limitations under the License.
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
-import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0_TEMP;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -87,7 +87,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testRejectingTransformersEAP720() throws Exception {
-        testRejectingTransformers(EAP_7_2_0_TEMP, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
+        testRejectingTransformers(EAP_7_2_0, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
                 .addFailedAttribute(SUBSYSTEM_ADDRESS, new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDefinition.DEFAULT_SSL_CONTEXT))
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JASPI_CONFIGURATION, "minimal")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
@@ -127,7 +127,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testTransformerEAP720() throws Exception {
-        testTransformation(EAP_7_2_0_TEMP);
+        testTransformation(EAP_7_2_0);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {

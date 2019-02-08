@@ -45,11 +45,12 @@ public enum ModelTestControllerVersion {
     EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", "2.1.0.Final", "7.0.0"),
     EAP_7_1_0 ("7.1.0.GA-redhat-11", true, "11.0.0", "3.0.10.Final", "7.1.0"),
 
-    // TODO https://issues.jboss.org/browse/WFCORE-4089 Get rid of EAP_7_2_0_TEMP and enable EAP_7_2_0, once
-    // 7.2.0.GA-redhat-xx version is known
-    EAP_7_2_0_TEMP("14.0.0.Final", false, "14.0.0", "6.0.1.Final", "wf14"),
+    // TODO remove this to complete https://issues.jboss.org/browse/WFCORE-4089. We need to leave it
+    // for one core release before we can port full over
+    @Deprecated
+    EAP_7_2_0_TEMP("14.0.0.Final", false, "14.0.0", "6.0.1.Final", "7.2.0"),
     // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
-    //EAP_7_2_0("7.2.0.Final-redhat-??", true, "14.0.0", "6.0.1.Final", "7.2.0"),
+    EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.1.Final", "7.2.0"),
     ;
 
     private final String mavenGavVersion;
