@@ -281,6 +281,7 @@ public class Util {
     public static final String SUBSYSTEM = "subsystem";
     public static final String SUCCESS = "success";
     public static final String SUPER_USER_MAPPER = "super-user-mapper";
+    public static final String SUSPEND_TIMEOUT = "suspend-timeout";
     public static final String TAIL_COMMENT_ALLOWED = "tail-comment-allowed";
     public static final String TIMEOUT = "timeout";
     public static final String TRIM_DESCRIPTIONS = "trim-descriptions";

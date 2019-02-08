@@ -19,7 +19,8 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
-import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.renameTimeoutToSuspendTimeout;
 
 import java.util.EnumSet;
 
@@ -55,9 +56,11 @@ public class ServerStopHandler implements OperationStepHandler {
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
+        renameTimeoutToSuspendTimeout(operation);
         final String serverName = context.getCurrentAddressValue();
         final boolean blocking = BLOCKING.resolveModelAttribute(context, operation).asBoolean();
-        final int timeout = TIMEOUT.resolveModelAttribute(context, operation).asInt();
+        final int timeout = SUSPEND_TIMEOUT.resolveModelAttribute(context, operation).asInt();
+
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

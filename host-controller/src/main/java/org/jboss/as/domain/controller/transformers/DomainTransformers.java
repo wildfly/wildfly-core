@@ -29,7 +29,11 @@ import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSI
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_3_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_4_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_4_1;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_4_2;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_5_0;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_6_0;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_7_0;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_8_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.toModelVersions;
 
 import java.util.EnumSet;
@@ -105,9 +109,12 @@ public class DomainTransformers {
         // discard host-exclude
         builder.discardChildResource(HostExcludeResourceDefinition.PATH_ELEMENT);
 
+        DomainServerLifecycleHandlers.registerTimeoutToSuspendTimeoutRename(builder);
+        registerNonChainedTransformers(allOthers, registry, builder, VERSION_8_0, VERSION_7_0, VERSION_6_0, VERSION_5_0, VERSION_4_2, VERSION_4_1);
+
         // 4.0 and earlier do not understand the concept of a suspended startup/reload
         DomainServerLifecycleHandlers.registerSuspendedStartTransformers(builder);
-        registerNonChainedTransformers(allOthers, registry, builder, VERSION_3_0, VERSION_4_0);
+        registerNonChainedTransformers(allOthers, registry, builder, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0);
 
         // 1.8 and earlier do not understand suspend/resume
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder);
@@ -139,7 +146,7 @@ public class DomainTransformers {
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
+        registerChainedTransformer(registry, builder, VERSION_8_0, VERSION_7_0, VERSION_6_0, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry) {

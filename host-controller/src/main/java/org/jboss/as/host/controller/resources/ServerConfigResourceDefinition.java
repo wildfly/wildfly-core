@@ -33,6 +33,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.BLOCKING;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.START_MODE;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.SUSPEND_TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.TIMEOUT;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.getDomainServerLifecycleDefinition;
 
@@ -242,13 +243,13 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
                 getDomainServerLifecycleDefinition(RESTART, ModelType.STRING, deprecatedVersion, BLOCKING, START_MODE),
                 new ServerRestartHandler(serverInventory));
         resourceRegistration.registerOperationHandler(
-                getDomainServerLifecycleDefinition(STOP, ModelType.STRING, deprecatedVersion, BLOCKING, TIMEOUT),
+                getDomainServerLifecycleDefinition(STOP, ModelType.STRING, deprecatedVersion, BLOCKING, TIMEOUT, SUSPEND_TIMEOUT),
                 new ServerStopHandler(serverInventory));
         resourceRegistration.registerOperationHandler(
                 getDomainServerLifecycleDefinition(RELOAD, ModelType.STRING, existingDeprecatedVersion, BLOCKING, START_MODE),
                 new ServerReloadHandler(serverInventory));
         resourceRegistration.registerOperationHandler(
-                getDomainServerLifecycleDefinition(SUSPEND, null, existingDeprecatedVersion, TIMEOUT),
+                getDomainServerLifecycleDefinition(SUSPEND, null, existingDeprecatedVersion, TIMEOUT, SUSPEND_TIMEOUT),
                 new ServerSuspendHandler(serverInventory));
         resourceRegistration.registerOperationHandler(
                 getDomainServerLifecycleDefinition(RESUME, null, existingDeprecatedVersion),

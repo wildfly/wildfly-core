@@ -376,7 +376,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerOperationHandler(StartServersHandler.DEFINITION, ssh);
 
         if (environment.getProcessType() != ProcessType.EMBEDDED_HOST_CONTROLLER) {
-            HostShutdownHandler hsh = new HostShutdownHandler(domainController);
+            HostShutdownHandler hsh = new HostShutdownHandler(domainController, serverInventory);
             hostRegistration.registerOperationHandler(HostShutdownHandler.DEFINITION, hsh);
         }
 
@@ -386,6 +386,8 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
 
 
         DomainServerLifecycleHandlers.initializeServerInventory(serverInventory);
+
+        DomainServerLifecycleHandlers.registerHostHandlers(hostRegistration);
 
         ValidateOperationHandler validateOperationHandler = hostControllerInfo.isMasterDomainController() ? ValidateOperationHandler.INSTANCE : ValidateOperationHandler.SLAVE_HC_INSTANCE;
         hostRegistration.registerOperationHandler(ValidateOperationHandler.DEFINITION_HIDDEN, validateOperationHandler);
