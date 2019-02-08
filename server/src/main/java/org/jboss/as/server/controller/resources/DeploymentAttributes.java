@@ -361,6 +361,15 @@ public class DeploymentAttributes {
     @SuppressWarnings("unchecked")
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
+    public static SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VERBOSE, ModelType.BOOLEAN, true)
+            .setDefaultValue(new ModelNode(false))
+            .build();
+
+    public static final OperationDefinition LIST_MODULES = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.LIST_MODULES, DEPLOYMENT_RESOLVER)
+            .addParameter(VERBOSE)
+            .withFlags(Flag.READ_ONLY)
+            .build();
+
     public static final OperationDefinition DEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.DEPLOY, DEPLOYMENT_RESOLVER).build();
     public static final OperationDefinition UNDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.UNDEPLOY, DEPLOYMENT_RESOLVER).build();
     public static final OperationDefinition REDEPLOY_DEFINITION = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.REDEPLOY, DEPLOYMENT_RESOLVER).build();

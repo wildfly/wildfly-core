@@ -22,6 +22,7 @@
 package org.jboss.as.server.moduleservice;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.jboss.as.server.Services;
@@ -51,12 +52,38 @@ public class ModuleLoadService implements Service<Module> {
 
     private final InjectedValue<ServiceModuleLoader> serviceModuleLoader = new InjectedValue<ServiceModuleLoader>();
     private final InjectedValue<ModuleDefinition> moduleDefinitionInjectedValue = new InjectedValue<ModuleDefinition>();
-    private final List<ModuleDependency> dependencies;
+    private final List<ModuleDependency> allDependencies;
+    private final List<ModuleDependency> systemDependencies;
+    private final List<ModuleDependency> userDependencies;
+    private final List<ModuleDependency> localDependencies;
 
     private volatile Module module;
 
-    private ModuleLoadService(final List<ModuleDependency> dependencies) {
-        this.dependencies = dependencies;
+    private ModuleLoadService(final List<ModuleDependency> systemDependencies, final List<ModuleDependency> localDependencies, final List<ModuleDependency> userDependencies) {
+        this.systemDependencies = systemDependencies;
+        this.userDependencies = userDependencies;
+        this.localDependencies = localDependencies;
+
+        this.allDependencies = new ArrayList<>();
+        this.allDependencies.addAll(systemDependencies);
+        this.allDependencies.addAll(localDependencies);
+        this.allDependencies.addAll(userDependencies);
+    }
+
+    private ModuleLoadService(final List<ModuleDependency> aliasDependencies) {
+        this.systemDependencies = Collections.emptyList();
+        this.userDependencies = Collections.emptyList();
+        this.localDependencies = Collections.emptyList();
+
+        this.allDependencies = new ArrayList<>(aliasDependencies);
+    }
+
+    private ModuleLoadService() {
+        this.systemDependencies = Collections.emptyList();
+        this.userDependencies = Collections.emptyList();
+        this.localDependencies = Collections.emptyList();
+
+        this.allDependencies = Collections.emptyList();
     }
 
     @Override
@@ -65,7 +92,7 @@ public class ModuleLoadService implements Service<Module> {
             final ServiceModuleLoader moduleLoader = serviceModuleLoader.getValue();
             final Module module = moduleLoader.loadModule(moduleDefinitionInjectedValue.getValue().getModuleIdentifier());
             moduleLoader.relinkModule(module);
-            for (ModuleDependency dependency : dependencies) {
+            for (ModuleDependency dependency : allDependencies) {
                 if (dependency.isUserSpecified()) {
                     final ModuleIdentifier id = dependency.getIdentifier();
                     try {
@@ -101,24 +128,36 @@ public class ModuleLoadService implements Service<Module> {
         return module;
     }
 
-    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleDependency> dependencies) {
-        final ModuleLoadService service = new ModuleLoadService(dependencies);
+    private static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, ModuleLoadService service) {
         final ServiceName serviceName = ServiceModuleLoader.moduleServiceName(identifier);
         final ServiceBuilder<Module> builder = target.addService(serviceName, service);
+
         builder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.getServiceModuleLoader());
         builder.addDependency(ServiceModuleLoader.moduleSpecServiceName(identifier), ModuleDefinition.class, service.getModuleDefinitionInjectedValue());
         builder.requires(ServiceModuleLoader.moduleResolvedServiceName(identifier)); //don't attempt to load until all dependent module specs are up, even transitive ones
         builder.setInitialMode(Mode.ON_DEMAND);
+
         builder.install();
         return serviceName;
     }
 
-    public static ServiceName installService(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleIdentifier> identifiers) {
-        final ArrayList<ModuleDependency> dependencies = new ArrayList<ModuleDependency>(identifiers.size());
-        for (final ModuleIdentifier i : identifiers) {
+    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier){
+        final ModuleLoadService service = new ModuleLoadService();
+        return install(target, identifier, service);
+    }
+
+    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleDependency> systemDependencies, final List<ModuleDependency> userDependencies, final List<ModuleDependency> localDependencies) {
+        final ModuleLoadService service = new ModuleLoadService(systemDependencies, userDependencies, localDependencies);
+        return install(target, identifier, service);
+    }
+
+    public static ServiceName installAliases(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleIdentifier> aliases) {
+        final ArrayList<ModuleDependency> dependencies = new ArrayList<ModuleDependency>(aliases.size());
+        for (final ModuleIdentifier i : aliases) {
             dependencies.add(new ModuleDependency(null, i, false, false, false, false));
         }
-        return install(target, identifier, dependencies);
+        final ModuleLoadService service = new ModuleLoadService(dependencies);
+        return install(target, identifier, service);
     }
 
     public InjectedValue<ServiceModuleLoader> getServiceModuleLoader() {
@@ -127,5 +166,17 @@ public class ModuleLoadService implements Service<Module> {
 
     public InjectedValue<ModuleDefinition> getModuleDefinitionInjectedValue() {
         return moduleDefinitionInjectedValue;
+    }
+
+    public List<ModuleDependency> getSystemDependencies() {
+        return new ArrayList<>(systemDependencies);
+    }
+
+    public List<ModuleDependency> getUserDependencies() {
+        return new ArrayList<>(userDependencies);
+    }
+
+    public List<ModuleDependency> getLocalDependencies() {
+        return new ArrayList<>(localDependencies);
     }
 }

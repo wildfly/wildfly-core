@@ -26,6 +26,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry.Flag;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.deployment.DeploymentListModulesHandler;
 import org.jboss.as.server.deployment.ExplodedDeploymentAddContentHandler;
 import org.jboss.as.server.deployment.DeploymentAddHandler;
 import org.jboss.as.server.deployment.DeploymentDeployHandler;
@@ -74,6 +75,7 @@ public class ServerDeploymentResourceDefinition extends DeploymentResourceDefini
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_REMOVE_CONTENT_DEFINITION, new ExplodedDeploymentRemoveContentHandler(contentRepository, serverEnvironment));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_READ_CONTENT_DEFINITION, new ManagedDeploymentReadContentHandler(contentRepository));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_BROWSE_CONTENT_DEFINITION, new ManagedDeploymentBrowseContentHandler(contentRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.LIST_MODULES, new DeploymentListModulesHandler());
     }
 
     @Override
