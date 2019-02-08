@@ -110,7 +110,7 @@
         <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.galleon-plugins>3.0.1.CR3</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
-        <version.org.wildfly.plugin>1.2.0.Final</version.org.wildfly.plugin>
+        <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.2.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.0.0.Beta2</version.org.wildfly.plugins>
