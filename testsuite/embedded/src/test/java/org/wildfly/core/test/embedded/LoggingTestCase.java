@@ -149,7 +149,14 @@ public abstract class LoggingTestCase extends AbstractTestCase {
                 System.out.flush();
                 System.err.flush();
                 Assert.assertEquals(String.format("The following messages were found on the console: %n%s", STDOUT.toString()), 0, STDOUT.size());
-                Assert.assertEquals(String.format("The following messages were found on the error console: %n%s", STDERR.toString()), 0, STDERR.size());
+                // LOGMGR-213 introduced a java.lang.System.LoggerFinder which will activate and attempt to set the
+                // java.util.logging.manager when a System.Logger is accessed. In most cases this is not an issue and
+                // the embedded server does not require org.jboss.logmanager.LogManager. However since some tests here
+                // use it, it's on the class path so an error message may be printed if it's not set as the log manager.
+                // We need to ignore stderr output if that's the case. This will only be activated on Java 9 or higher.
+                if (!supportsSystemLogger()) {
+                    Assert.assertEquals(String.format("The following messages were found on the error console: %n%s", STDERR.toString()), 0, STDERR.size());
+                }
             }
         } finally {
             server.stop();
@@ -158,5 +165,13 @@ public abstract class LoggingTestCase extends AbstractTestCase {
 
     protected static boolean isIbmJdk() {
         return System.getProperty("java.vendor").startsWith("IBM");
+    }
+
+    private static boolean supportsSystemLogger() {
+        try {
+            Class.forName("java.lang.System$Logger", false, LoggingTestCase.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException ignore) {}
+        return false;
     }
 }
