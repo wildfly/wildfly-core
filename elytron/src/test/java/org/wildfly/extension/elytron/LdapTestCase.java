@@ -341,7 +341,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", keystoreName);
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
-        operation.get(ElytronDescriptionConstants.ALIAS).set(alias);
+        operation.get(ElytronDescriptionConstants.NAME).set(alias);
 
         ModelNode aliasNode = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
         Assert.assertNotNull(aliasNode.get(ElytronDescriptionConstants.CREATION_DATE).asString());
@@ -386,7 +386,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
         operation = new ModelNode(); // remove through subsystem operation
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("ldap-key-store", "LdapKeyStoreMaximal");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.REMOVE_ALIAS);
-        operation.get(ElytronDescriptionConstants.ALIAS).set("serenity2");
+        operation.get(ElytronDescriptionConstants.NAME).set("serenity2");
         assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT);
         Assert.assertNull(keyStore.getKey("serenity2", "password2".toCharArray()));
         Assert.assertEquals(1, keyStore.size());

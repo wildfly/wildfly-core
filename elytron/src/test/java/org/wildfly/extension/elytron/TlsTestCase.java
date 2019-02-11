@@ -369,7 +369,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATH).set(resources + INIT_TEST_FILE);
+        operation.get(ElytronDescriptionConstants.PATH).set(INIT_TEST_FILE);
         operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
         Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);

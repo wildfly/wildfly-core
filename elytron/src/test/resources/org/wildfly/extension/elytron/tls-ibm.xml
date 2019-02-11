@@ -36,12 +36,12 @@
             <key-store name="ElytronCaTruststore" >
                 <credential-reference clear-text="Elytron"/>
                 <implementation type="JKS" />
-                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+                <file path="ca.truststore"/>
             </key-store>
             <key-store name="NewKeyStore" >
                 <credential-reference clear-text="Elytron"/>
                 <implementation type="JKS" />
-                <file path="target/not-existing.keystore" required="false"/>
+                <file path="not-existing.keystore" required="false"/>
             </key-store>
             <key-store name="AutomaticKeystore" >
                 <credential-reference clear-text="Elytron"/>
