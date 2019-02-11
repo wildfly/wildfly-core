@@ -111,13 +111,18 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
     static class ReadAliasHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
+        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
                 .setAllowExpression(false)
+                .build();
+
+        static final SimpleAttributeDefinition VERBOSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERBOSE, ModelType.BOOLEAN, false)
+                .setAllowExpression(false)
+                .setDefaultValue(new ModelNode(false))
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             SimpleOperationDefinition READ_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIAS, descriptionResolver)
-                    .setParameters(ALIAS)
+                    .setParameters(NAME,VERBOSE)
                     .setReadOnly()
                     .setRuntimeOnly()
                     .build();
@@ -126,8 +131,9 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-            KeyStore keyStore = getKeyStore(context);
+            final String alias = NAME.resolveModelAttribute(context, operation).asString();
+            final boolean verbose = VERBOSE.resolveModelAttribute(context, operation).asBoolean();
+            final KeyStore keyStore = getKeyStore(context);
 
             try {
                 ModelNode result = context.getResult();
@@ -149,10 +155,10 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 if (chain == null) {
                     Certificate cert = keyStore.getCertificate(alias);
                     if (cert != null) {
-                        writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert);
+                        writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose);
                     }
                 } else {
-                    writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain);
+                    writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose);
                 }
             } catch (KeyStoreException | NoSuchAlgorithmException | CertificateEncodingException e) {
                 throw new OperationFailedException(e);

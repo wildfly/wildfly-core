@@ -29,6 +29,7 @@ import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
+import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
 
@@ -50,6 +51,7 @@ class FileAttributeDefinitions {
         .setMinSize(1)
         .setAttributeGroup(ElytronDescriptionConstants.FILE)
         .setRequires(ElytronDescriptionConstants.PATH)
+        .setDefaultValue(new ModelNode("jboss.server.config.dir"))
         .setRestartAllServices()
         .build();
 

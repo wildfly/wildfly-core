@@ -396,6 +396,7 @@ interface ElytronDescriptionConstants {
     String PROVIDERS = "providers";
     String PUBLIC_KEY = "public-key";
 
+    String RECURSIVE = "recursive";
     String RDN_IDENTIFIER = "rdn-identifier";
     String READ_ALIAS = "read-alias";
     String READ_ALIASES = "read-aliases";
@@ -539,6 +540,7 @@ interface ElytronDescriptionConstants {
     String VALIDATE = "validate";
     String VALIDITY = "validity";
     String VALUE = "value";
+    String VERBOSE = "verbose";
     String VERIFIABLE = "verifiable";
     String VERSION = "version";
     String VERSION_COMPARISON = "version-comparison";
