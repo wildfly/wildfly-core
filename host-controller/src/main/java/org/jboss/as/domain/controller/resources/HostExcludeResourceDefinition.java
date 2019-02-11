@@ -68,7 +68,8 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         WILDFLY11("WildFly11.0", KernelAPIVersion.VERSION_5_0),
         WILDFLY12("WildFly12.0", KernelAPIVersion.VERSION_6_0),
         WILDFLY13("WildFly13.0", KernelAPIVersion.VERSION_7_0),
-        WILDFLY14("WildFly14.0", KernelAPIVersion.VERSION_8_0);
+        WILDFLY14("WildFly14.0", KernelAPIVersion.VERSION_8_0),
+        WILDFLY15("WildFly15.0", KernelAPIVersion.VERSION_9_0);
 
 
         private static final Map<String, KnownRelease> map = new HashMap<>();
