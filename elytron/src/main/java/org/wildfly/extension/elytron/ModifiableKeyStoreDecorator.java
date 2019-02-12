@@ -85,8 +85,19 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
     static class ReadAliasesHandler extends ElytronRuntimeOnlyHandler {
 
+        static final SimpleAttributeDefinition RECURSIVE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RECURSIVE, ModelType.BOOLEAN, false)
+                .setAllowExpression(false)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
+        static final SimpleAttributeDefinition VERBOSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERBOSE, ModelType.BOOLEAN, false)
+                .setAllowExpression(false)
+                .setDefaultValue(new ModelNode(false))
+                .build();
+
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, descriptionResolver)
+                    .setParameters(RECURSIVE,VERBOSE)
                     .setReadOnly()
                     .setRuntimeOnly()
                     .build();
@@ -101,9 +112,17 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 ModelNode result = context.getResult();
                 Enumeration<String> aliases = keyStore.aliases();
                 while (aliases.hasMoreElements()) {
-                    result.add(aliases.nextElement());
+                    final String name = aliases.nextElement();
+                    final boolean recursive = RECURSIVE.resolveModelAttribute(context, operation).asBoolean();
+                    if(recursive) {
+                        final ModelNode aliasNode = result.get(name);
+                        final boolean verbose = VERBOSE.resolveModelAttribute(context, operation).asBoolean();
+                        ReadAliasHandler.readAlias(keyStore, name, verbose, aliasNode);
+                    } else {
+                        result.add(name);
+                    }
                 }
-            } catch (KeyStoreException e) {
+            } catch (KeyStoreException | NoSuchAlgorithmException | CertificateEncodingException e) {
                 throw new OperationFailedException(e);
             }
         }
@@ -137,35 +156,13 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
             try {
                 ModelNode result = context.getResult();
-                if ( ! keyStore.containsAlias(alias)) {
-                    ROOT_LOGGER.tracef("Alias [%s] does not exists in KeyStore");
-                    return;
-                }
-
-                result.get(ElytronDescriptionConstants.ALIAS).set(alias);
-                result.get(ElytronDescriptionConstants.ENTRY_TYPE).set(getEntryType(keyStore, alias));
-
-                Date creationDate = keyStore.getCreationDate(alias);
-                if (creationDate != null) {
-                    SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
-                    result.get(ElytronDescriptionConstants.CREATION_DATE).set(sdf.format(creationDate));
-                }
-
-                Certificate[] chain = keyStore.getCertificateChain(alias);
-                if (chain == null) {
-                    Certificate cert = keyStore.getCertificate(alias);
-                    if (cert != null) {
-                        writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose);
-                    }
-                } else {
-                    writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose);
-                }
+                readAlias(keyStore,alias,verbose,result);
             } catch (KeyStoreException | NoSuchAlgorithmException | CertificateEncodingException e) {
                 throw new OperationFailedException(e);
             }
         }
 
-        private String getEntryType(KeyStore keyStore, String alias) throws KeyStoreException {
+        private static String getEntryType(KeyStore keyStore, String alias) throws KeyStoreException {
             if (keyStore.entryInstanceOf(alias, KeyStore.PrivateKeyEntry.class)) {
                 return KeyStore.PrivateKeyEntry.class.getSimpleName();
             } else if (keyStore.entryInstanceOf(alias, KeyStore.SecretKeyEntry.class)) {
@@ -176,6 +173,32 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 return PasswordEntry.class.getSimpleName();
             } else {
                 return "Other";
+            }
+        }
+
+        static void readAlias(final KeyStore keyStore, final String name, final boolean verbose, final ModelNode result) throws KeyStoreException,  NoSuchAlgorithmException, CertificateEncodingException {
+            if ( ! keyStore.containsAlias(name)) {
+                ROOT_LOGGER.tracef("Alias [%s] does not exists in KeyStore");
+                return;
+            }
+
+            result.get(ElytronDescriptionConstants.ALIAS).set(name);
+            result.get(ElytronDescriptionConstants.ENTRY_TYPE).set(ReadAliasHandler.getEntryType(keyStore, name));
+
+            Date creationDate = keyStore.getCreationDate(name);
+            if (creationDate != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat(ISO_8601_FORMAT);
+                result.get(ElytronDescriptionConstants.CREATION_DATE).set(sdf.format(creationDate));
+            }
+
+            Certificate[] chain = keyStore.getCertificateChain(name);
+            if (chain == null) {
+                Certificate cert = keyStore.getCertificate(name);
+                if (cert != null) {
+                    writeCertificate(result.get(ElytronDescriptionConstants.CERTIFICATE), cert, verbose);
+                }
+            } else {
+                writeCertificates(result.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN), chain, verbose);
             }
         }
     }
