@@ -84,6 +84,44 @@ public class CommandHeadersParsingTestCase {
     }
 
     @Test
+    public void testArgumentValueConverterWithCustomHeader() throws Exception {
+
+        final ModelNode node = converter.fromString(ctx, "{ foo=\"1 2 3\"; rollback-on-runtime-failure=false}");
+
+        final ModelNode expectedHeaders = new ModelNode();
+        final ModelNode foo = expectedHeaders.get("foo");
+        foo.set("1 2 3");
+        final ModelNode rollback = expectedHeaders.get(Util.ROLLBACK_ON_RUNTIME_FAILURE);
+        rollback.set("false");
+
+        assertEquals(expectedHeaders, node);
+    }
+
+    @Test
+    public void testNonRolloutCompletionCustomHeader() throws Exception {
+        parse("read-attribute process-type --headers={rollout main-server-group; rollback-on-runtime-failure=false; allow-resource-service-restart=true;foo=\"1 2 3\"");
+
+        assertFalse(handler.hasAddress());
+        assertTrue(handler.hasOperationName());
+        assertTrue(handler.hasProperties());
+        assertFalse(handler.endsOnAddressOperationNameSeparator());
+        assertFalse(handler.endsOnPropertyListStart());
+        assertFalse(handler.endsOnPropertySeparator());
+        assertFalse(handler.endsOnPropertyValueSeparator());
+        assertFalse(handler.endsOnNodeSeparator());
+        assertFalse(handler.endsOnNodeTypeNameSeparator());
+        assertFalse(handler.isRequestComplete());
+
+        final String headers = handler.getPropertyValue("--headers");
+        assertNotNull(headers);
+        final ModelNode node = converter.fromString(ctx, headers);
+        assertTrue(node.hasDefined(Util.ROLLOUT_PLAN));
+        assertTrue(node.hasDefined(Util.ROLLBACK_ON_RUNTIME_FAILURE));
+        assertTrue(node.hasDefined("foo"));
+        assertEquals("1 2 3", node.get("foo").asString());
+    }
+
+    @Test
     public void testNonRolloutCompletion() throws Exception {
         parse("read-attribute process-type --headers={rollout main-server-group; rollback-on-runtime-failure=false; allow-resource-service-restart=tr");
 

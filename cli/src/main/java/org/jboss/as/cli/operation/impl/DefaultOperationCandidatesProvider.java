@@ -45,7 +45,6 @@ import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.OperationRequestHeader;
 import org.jboss.as.cli.operation.ParsedCommandLine;
-import org.jboss.as.cli.parsing.ParserUtil;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -66,7 +65,9 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
-                parsedOp.parseHeaders(buffer, ctx);
+                // The input buffer can be a full command or headers, parseOperation
+                // can parse both.
+                parsedOp.parseOperation(null, buffer, ctx);
             } catch (CommandFormatException e) {
                 //e.printStackTrace();
                 return -1;
@@ -101,7 +102,9 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         @Override
         public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
             try {
-                ParserUtil.parseHeaders(buffer, parsedOp, ctx);
+                // The input buffer can be a full command or headers, parseOperation
+                // can parse both.
+                parsedOp.parseOperation(null, buffer, ctx);
             } catch (CommandFormatException e) {
                 //e.printStackTrace();
                 return -1;

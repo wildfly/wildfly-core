@@ -32,11 +32,13 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -147,5 +149,15 @@ public class LsTestCase extends AbstractCliTestBase {
         assertThat(assertErrMsg, out, not(containsString("IllegalArgumentException")));
         assertThat(assertErrMsg, out, not(containsString("Composite operation failed and was rolled back.")));
         assertThat(assertErrMsg, out, containsString("* is not supported"));
+    }
+
+    @Test
+    public void testHeaders() throws Exception {
+        cli.sendLine("echo-dmr ls --headers={foo=\"1 2 3\"; allow-resource-service-restart=true}");
+        String out = cli.readOutput();
+        ModelNode mn = ModelNode.fromString(out);
+        ModelNode headers = mn.get(Util.OPERATION_HEADERS);
+        Assert.assertEquals("1 2 3", headers.get("foo").asString());
+        Assert.assertEquals("true", headers.get("allow-resource-service-restart").asString());
     }
 }
