@@ -48,6 +48,7 @@ import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
+import org.xnio.Sequence;
 import org.xnio.SslClientAuthMode;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
@@ -119,7 +120,24 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
             final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
             SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
             if (factory == null && securityRealm != null) {
-                factory = securityRealm.getSaslAuthenticationFactory();
+                String[] mechanismNames = null;
+                if(connectorPropertiesOptionMap.contains(Options.SASL_MECHANISMS)) {
+                    Sequence<String> sequence = connectorPropertiesOptionMap.get(Options.SASL_MECHANISMS);
+                    mechanismNames = sequence.toArray(new String[sequence.size()]);
+                }
+
+                //in case that legacy sasl mechanisms are used, noanonymous default value is true
+                Boolean policyNonanonymous = mechanismNames == null ? null: true;
+                if(connectorPropertiesOptionMap.contains(Options.SASL_POLICY_NOANONYMOUS)) {
+                    policyNonanonymous = connectorPropertiesOptionMap.get(Options.SASL_POLICY_NOANONYMOUS).booleanValue();
+                }
+
+                if(mechanismNames != null || policyNonanonymous != null) {
+                    factory = securityRealm.getSaslAuthenticationFactory(mechanismNames, policyNonanonymous);
+                } else {
+                    factory = securityRealm.getSaslAuthenticationFactory();
+                }
+
                 if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT)) {
                     builder.set(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
                 }
