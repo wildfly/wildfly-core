@@ -32,10 +32,12 @@ import java.nio.file.Files;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import org.aesh.utils.Config;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.Namespace;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -581,6 +583,29 @@ public class CliConfigTestCase  {
             String out = cli.getOutput();
             assertTrue(out.contains("Required argument --name is not specified."));
             assertFalse("Output contains ANSII color codes.", out.contains("\u001B["));
+        } finally {
+            cli.destroyProcess();
+        }
+    }
+
+    @Test
+    public void testOptionResolveParameterValues() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+                .addJavaOption("-Duser.home=" + temporaryUserHome.getRoot().toPath().toString())
+                .addJavaOption("-DfooValue=bar")
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort())
+                .addCliArgument("--connect")
+                .addCliArgument("--resolve-parameter-values");
+        try {
+            cli.executeInteractive();
+            cli.clearOutput();
+            cli.pushLineAndWaitForResults("echo-dmr /system-property=foo:add(value=${fooValue})");
+            String out = cli.getOutput();
+            String dmr = out.substring(out.indexOf(Config.getLineSeparator()), out.lastIndexOf("}") + 1);
+            ModelNode mn = ModelNode.fromString(dmr);
+            assertEquals("bar", mn.get(Util.VALUE).asString());
         } finally {
             cli.destroyProcess();
         }

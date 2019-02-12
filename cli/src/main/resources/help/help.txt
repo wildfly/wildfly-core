@@ -17,6 +17,7 @@ Usage:
                      [--output-json]
                      [--no-color-output]
                      [--no-output-paging]
+                     [--resolve-parameter-values]
 
  --help (-h)     - prints (this) basic description of the command line utility.
 
@@ -108,7 +109,11 @@ Usage:
 
  --no-color-output  - disable CLI output and prompt colors.
 
- --no-output-paging - disable output paging (the possibility to browse and search in output of commands) and print the output of commands at once.
+ --no-output-paging - disable output paging (the possibility to browse 
+                      and search in output of commands) and print the output of commands at once.
+
+ --resolve-parameter-values  - resolve system properties before sending 
+                               the operation requests to the controller.
 
 For a list of available commands, once the CLI is started, execute:
 

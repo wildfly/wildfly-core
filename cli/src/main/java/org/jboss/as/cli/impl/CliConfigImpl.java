@@ -193,7 +193,7 @@ class CliConfigImpl implements CliConfig {
         cliConfig.validateOperationRequests = configuration.isValidateOperationRequests() != null ? configuration.isValidateOperationRequests() : cliConfig.validateOperationRequests;
         cliConfig.outputJSON                = configuration.isOutputJSON()                        ? configuration.isOutputJSON()                : cliConfig.isOutputJSON();
         cliConfig.outputPaging              = !configuration.isOutputPaging()                     ? configuration.isOutputPaging()              : cliConfig.isOutputPaging();
-
+        cliConfig.resolveParameterValues    = configuration.isResolveParameterValues()            ? configuration.isResolveParameterValues()    : cliConfig.resolveParameterValues;
         if (!configuration.isColorOutput()) {
             cliConfig.colorOutput = false;
         } else if (configuration.isColorOutput() && cliConfig.colorConfig == null) {

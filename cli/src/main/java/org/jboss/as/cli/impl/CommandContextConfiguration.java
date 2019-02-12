@@ -45,10 +45,12 @@ public class CommandContextConfiguration {
     private final boolean outputJSON;
     private final boolean colorOutput;
     private final boolean outputPaging;
+    private final boolean resolveParameters;
 
     private CommandContextConfiguration(String controller, String username, char[] password, String clientBindAddress,
             boolean disableLocalAuth, boolean initConsole, int connectionTimeout, InputStream consoleInput, OutputStream consoleOutput,
-            boolean echoCommand, Integer commandTimeout, boolean outputJSON, boolean colorOutput, boolean outputPaging) {
+            boolean echoCommand, Integer commandTimeout, boolean outputJSON, boolean colorOutput,
+            boolean outputPaging, boolean resolveParameters) {
         this.controller = controller;
         this.username = username;
         this.password = password;
@@ -63,6 +65,7 @@ public class CommandContextConfiguration {
         this.outputJSON = outputJSON;
         this.colorOutput = colorOutput;
         this.outputPaging = outputPaging;
+        this.resolveParameters = resolveParameters;
     }
 
     public Integer getCommandTimeout() {
@@ -133,6 +136,10 @@ public class CommandContextConfiguration {
         return colorOutput;
     }
 
+    public boolean isResolveParameterValues() {
+        return resolveParameters;
+    }
+
     public static class Builder {
         private String controller;
         private String username;
@@ -152,6 +159,7 @@ public class CommandContextConfiguration {
         private boolean outputJSON;
         private boolean colorOutput;
         private boolean outputPaging = true;
+        private boolean resolveParameters;
 
         public Builder() {
         }
@@ -162,7 +170,7 @@ public class CommandContextConfiguration {
             }
             final CommandContextConfiguration config = new CommandContextConfiguration(controller, username, password,
                     clientBindAddress, disableLocalAuth, initConsole, connectionTimeout, consoleInput, consoleOutput,
-                    echoCommand, commandTimeout, outputJSON, colorOutput, outputPaging);
+                    echoCommand, commandTimeout, outputJSON, colorOutput, outputPaging, resolveParameters);
             config.silent = silent;
             config.errorOnInteract = errorOnInteract;
             config.validateOperationRequests = validateOperationRequests;
@@ -256,6 +264,11 @@ public class CommandContextConfiguration {
 
         public Builder setOutputPaging(boolean outputPaging) {
             this.outputPaging = outputPaging;
+            return this;
+        }
+
+        public Builder setResolveParameterValues(boolean resolveParameters) {
+            this.resolveParameters = resolveParameters;
             return this;
         }
     }
