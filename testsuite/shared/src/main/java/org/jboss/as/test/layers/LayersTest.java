@@ -42,6 +42,7 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  */
 public class LayersTest {
 
+    private static final String MAVEN_REPO_LOCAL = "maven.repo.local";
     private static final String REFERENCE = "test-standalone-reference";
     private static final String ALL_LAYERS = "test-all-layers";
     private static final String END_LOG_SUCCESS = "WFLYSRV0025";
@@ -162,6 +163,12 @@ public class LayersTest {
             public void run() {
                 try {
                     StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(installation);
+                    String localRepo = System.getProperty(MAVEN_REPO_LOCAL);
+                    if (localRepo != null) {
+                        builder.addJavaOption("-D" + MAVEN_REPO_LOCAL + "=" + localRepo);
+                    } else {
+                        System.out.println("Warning, no Maven local repository set.");
+                    }
                     ProcessBuilder p = new ProcessBuilder(builder.build());
                     p.redirectErrorStream(true);
                     Process process = p.start();
