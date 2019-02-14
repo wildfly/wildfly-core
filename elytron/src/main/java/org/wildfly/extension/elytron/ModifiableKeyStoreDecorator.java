@@ -182,7 +182,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
                 return;
             }
 
-            result.get(ElytronDescriptionConstants.ALIAS).set(name);
+            result.get(ElytronDescriptionConstants.NAME).set(name);
             result.get(ElytronDescriptionConstants.ENTRY_TYPE).set(ReadAliasHandler.getEntryType(keyStore, name));
 
             Date creationDate = keyStore.getCreationDate(name);
@@ -205,13 +205,13 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
     static class RemoveAliasHandler extends ElytronRuntimeOnlyHandler {
 
-        static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
+        static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)
                 .setAllowExpression(false)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
             resourceRegistration.registerOperationHandler(new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, descriptionResolver)
-                        .setParameters(ALIAS)
+                        .setParameters(NAME)
                         .setRuntimeOnly()
                         .build()
                     , new RemoveAliasHandler());
@@ -219,7 +219,7 @@ class ModifiableKeyStoreDecorator extends DelegatingResourceDefinition {
 
         @Override
         protected void executeRuntimeStep(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            String alias = NAME.resolveModelAttribute(context, operation).asString();
             KeyStore keyStore = getModifiableKeyStore(context);
 
             try {

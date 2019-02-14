@@ -395,7 +395,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test-copy.keystore");
+        operation.get(ElytronDescriptionConstants.PATH).set("test-copy.keystore");
         operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(KEYSTORE_PASSWORD);
         assertSuccess(services.executeOperation(operation));
