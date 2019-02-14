@@ -543,7 +543,7 @@ class SSLDefinitions {
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
 
                 if (crlNode.isDefined()) {
-                    return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode);
+                    return createX509CRLExtendedTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode, aliasFilter);
                 }
 
                 DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
@@ -581,7 +581,7 @@ class SSLDefinitions {
                 };
             }
 
-            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode) throws OperationFailedException {
+            private ValueSupplier<TrustManager> createX509CRLExtendedTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode, String aliasFilter) throws OperationFailedException {
                 String crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
                 String crlRelativeTo = RELATIVE_TO.resolveModelAttribute(context, crlNode).asStringOrNull();
                 int certPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, crlNode).asInt();
@@ -597,6 +597,14 @@ class SSLDefinitions {
                 return () -> {
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providersInjector.getOptionalValue(), providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
+
+                    if (aliasFilter != null) {
+                        try {
+                            keyStore = FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter));
+                        } catch (Exception e) {
+                            throw new StartException(e);
+                        }
+                    }
 
                     if (crlPath != null) {
                         try {
