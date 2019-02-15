@@ -51,7 +51,15 @@ public class SuffixValidator extends ModelTypeValidator {
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
-            final String suffix = value.asString();
+            String suffix = value.asString();
+            // The suffixes .gz and .zip are allowed at the end to indicate the file should be compressed on rotation.
+            // These are not valid SimpleDateFormat patterns and will fail validation. The suffix should be removed, if
+            // present, before the date validation is done.
+            if (suffix.endsWith(".zip")) {
+                suffix = suffix.substring(0, suffix.length() - 4);
+            } else if (suffix.endsWith(".gz")) {
+                suffix = suffix.substring(0, suffix.length() - 3);
+            }
             try {
                 new SimpleDateFormat(suffix);
                 if (denySeconds) {

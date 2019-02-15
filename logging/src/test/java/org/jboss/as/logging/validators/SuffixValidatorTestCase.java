@@ -51,4 +51,23 @@ public class SuffixValidatorTestCase {
         //valid pattern with custom suffix
         validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'custom suffix'"));
     }
+
+    @Test
+    public void testCompressionSuffixes() {
+        final SuffixValidator validator = new SuffixValidator();
+
+        // A pattern should be able to end with .zip
+        try {
+            validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'T'HH:mm.zip"));
+        } catch (Exception e) {
+            Assert.fail("Failed to allow .zip suffix: " + e.getMessage());
+        }
+
+        // A pattern should be able to end with .gz
+        try {
+            validator.validateParameter("suffix", new ModelNode(".yyyy-MM-dd'T'HH:mm.gz"));
+        } catch (Exception e) {
+            Assert.fail("Failed to allow .gz suffix: " + e.getMessage());
+        }
+    }
 }
