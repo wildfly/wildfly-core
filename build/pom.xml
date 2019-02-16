@@ -62,6 +62,7 @@
                             <install-dir>${project.build.directory}/${project.build.finalName}</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
