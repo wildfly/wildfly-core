@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:logging:6.0">
+<subsystem xmlns="urn:jboss:domain:logging:7.0">
     <console-handler name="CONSOLE">
         <level name="INFO"/>
         <formatter>
