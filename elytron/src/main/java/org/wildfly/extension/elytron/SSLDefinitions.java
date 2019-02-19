@@ -61,6 +61,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -92,6 +93,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
@@ -302,6 +304,7 @@ class SSLDefinitions {
             .setMinSize(0)
             .setAllowExpression(false)
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY)
+            .setMapValidator(new HostContextMapValidator())
             .setRestartAllServices()
             .build();
 
@@ -360,6 +363,23 @@ class SSLDefinitions {
                     CipherSuiteSelector.fromString(value.asString());
                 } catch (IllegalArgumentException e) {
                     throw ROOT_LOGGER.invalidCipherSuiteFilter(e, e.getLocalizedMessage());
+                }
+            }
+        }
+    }
+
+    static class HostContextMapValidator implements ParameterValidator{
+        // valid hosts in SNI mapping can contain letters, numbers, asterisks, dots and dashes
+        // dash and dot can be at most one at a time, and dash must be surrounded by [a-z0-9*]
+        static Pattern hostnamePattern = Pattern.compile("^([a-zA-Z0-9*]+(-[a-zA-Z0-9*]+)*\\.?)+[a-zA-Z0-9*]$");
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            if (value.isDefined()) {
+                for (String hostname : value.keys()) {
+                    if (!hostnamePattern.matcher(hostname).matches()) {
+                        throw ROOT_LOGGER.invalidHostContextMapValue(hostname);
+                    }
                 }
             }
         }
