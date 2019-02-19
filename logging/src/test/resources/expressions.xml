@@ -106,6 +106,7 @@
         <app-name value="${test.syslog.appname:jboss-as7}"/>
         <formatter>
             <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+            <named-formatter name="PATTERN"/>
         </formatter>
         <facility value="${test.syslog.facility:user-level}"/>
     </syslog-handler>
@@ -225,6 +226,7 @@
                 <app-name value="${test.syslog.appname:jboss-as7}"/>
                 <formatter>
                     <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+                    <named-formatter name="PATTERN"/>
                 </formatter>
                 <facility value="${test.syslog.facility:user-level}"/>
             </syslog-handler>

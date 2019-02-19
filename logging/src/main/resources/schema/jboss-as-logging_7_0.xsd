@@ -786,9 +786,10 @@
                 Defines a formatter.
             </xs:documentation>
         </xs:annotation>
-        <xs:choice minOccurs="1" maxOccurs="1">
+        <xs:all minOccurs="1" maxOccurs="1">
             <xs:element name="syslog-format" type="syslogFormatType" maxOccurs="1"/>
-        </xs:choice>
+            <xs:element name="named-formatter" type="namedFormatterType" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
 
     <xs:complexType name="syslogFormatType">

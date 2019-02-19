@@ -359,7 +359,8 @@ public class LoggingExtension implements Extension {
     private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_6_0_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_7_0_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_7_0_0, KnownModelVersion.VERSION_6_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_6_0_0, KnownModelVersion.VERSION_5_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
@@ -369,12 +370,14 @@ public class LoggingExtension implements Extension {
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
         }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
                 KnownModelVersion.VERSION_3_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_4_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_5_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
         });
     }
 
