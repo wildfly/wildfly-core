@@ -738,6 +738,12 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public LegacyKernelServicesInitializer excludeResourceFromParent(String exclusionFilter) {
+            classLoaderBuilder.excludeResourceFromParent(exclusionFilter);
+            return this;
+        }
+
+        @Override
         public LegacyKernelServicesInitializer addSingleChildFirstClass(Class<?>...classes) {
             classLoaderBuilder.addSingleChildFirstClass(classes);
             return this;

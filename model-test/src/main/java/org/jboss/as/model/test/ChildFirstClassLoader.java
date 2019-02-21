@@ -21,9 +21,11 @@
 */
 package org.jboss.as.model.test;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -40,9 +42,10 @@ public class ChildFirstClassLoader extends URLClassLoader {
     private final Set<Pattern> parentFirst;
     private final Set<Pattern> childFirst;
     private final ClassFilter parentExclusionFilter;
+    private final Pattern parentResourceExclusionFilter;
 
 
-    ChildFirstClassLoader(ClassLoader parent, Set<Pattern> parentFirst, Set<Pattern> childFirst, ClassFilter parentExclusionFilter, URL... urls) {
+    ChildFirstClassLoader(ClassLoader parent, Set<Pattern> parentFirst, Set<Pattern> childFirst, ClassFilter parentExclusionFilter, Pattern parentResourceExclusionFilter, URL... urls) {
         super(urls, parent);
         assert parent != null : "Null parent";
         assert parentFirst != null : "Null parent first";
@@ -51,6 +54,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
         this.childFirst = Collections.unmodifiableSet(childFirst);
         this.parentFirst = Collections.unmodifiableSet(parentFirst);
         this.parentExclusionFilter = parentExclusionFilter;
+        this.parentResourceExclusionFilter = parentResourceExclusionFilter;
 //        System.out.println("---------->");
 //        for (URL url : urls) {
 //            System.out.println(url);
@@ -94,7 +98,19 @@ public class ChildFirstClassLoader extends URLClassLoader {
         if (url != null) {
             return url;
         }
-        return super.getResource(name);
+        return excludeResourceFromParent(name) ? null : super.getResource(name);
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String name) throws IOException {
+        if (excludeResourceFromParent(name)) {
+            return findResources(name);
+        }
+        return super.getResources(name);
+    }
+
+    private boolean excludeResourceFromParent(String name) {
+        return parentResourceExclusionFilter != null && parentResourceExclusionFilter.matcher(name).matches();
     }
 
     private boolean loadFromParentOnly(String className) {

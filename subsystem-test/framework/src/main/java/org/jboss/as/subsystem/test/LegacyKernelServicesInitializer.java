@@ -35,7 +35,7 @@ import org.jboss.modules.filter.ClassFilter;
  * Contains the initialization of a controller containing a legacy version of a subsystem.
  *
  *
- * @see KernelServicesBuilder#createLegacyKernelServicesBuilder(AdditionalInitialization, org.jboss.as.controller.ModelVersion) (AdditionalInitialization, org.jboss.as.controller.ModelVersion, String, String...)
+ * @see KernelServicesBuilder#createLegacyKernelServicesBuilder(AdditionalInitialization, org.jboss.as.model.test.ModelTestControllerVersion, org.jboss.as.controller.ModelVersion)
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public interface LegacyKernelServicesInitializer {
@@ -185,7 +185,7 @@ public interface LegacyKernelServicesInitializer {
 
      /**
      * By default all the parent classloader classes are available to be kernel which may provides conflict with classes loaded
-     * through the service initializer. Thus we provide an exclusion mecanism.
+     * through the service initializer. Thus we provide an exclusion mechanism.
      *
      * @param exclusionFilter the class filter used to exclude class from the the parent classloader when resolving.
      * @return this initializer
@@ -193,10 +193,19 @@ public interface LegacyKernelServicesInitializer {
     LegacyKernelServicesInitializer excludeFromParent(ClassFilter exclusionFilter);
 
     /**
+     * By default all the parent classloader resources are available to the kernel which may provides conflict with resources loaded
+     * through the service initializer. Thus we provide an exclusion mechanism.
+     *
+     * @param exclusionFilter regex used to exclude resources from the the parent classloader when resolving.
+     * @return this initializer
+     */
+    LegacyKernelServicesInitializer excludeResourceFromParent(String exclusionFilter);
+
+    /**
      * Add classes to be loaded from the child classloader. The url's from the {@code classes} protection domain get added to the
      * list of URLs used by the child  first classloader. Classes coming from that URL, which are not specified in the {@code classes}
      * list, are loaded from the parent classloader. URLs implicitely added via this method must not be added via any of the other
-     * methods such as {@link #addSimpleResourceURL(String)} and {@link #addMavenResourceURL(String)}; if that happens an
+     * methods such as {@link #addSimpleResourceURL(String)} and {@link #addMavenResourceURL(String...)} ; if that happens an
      * {@link IllegalStateException} will get thrown when the controllers are built.
      *
      * This is useful for adding {@link AdditionalInitialization} implementations for the scoped legacy controller.
