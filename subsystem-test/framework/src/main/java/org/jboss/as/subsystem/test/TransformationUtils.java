@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.as.controller.ModelVersion;
@@ -43,6 +44,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.LegacyResourceDefinition;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.junit.Assert;
@@ -119,7 +121,12 @@ class TransformationUtils {
         res.writeModel(value);
 
         Set<PathElement> childAddresses = reg.getChildAddresses(PathAddress.EMPTY_ADDRESS);
-        for (PathElement path : childAddresses) {
+
+        // When we have overrides those should be used for the checking. The set of child addresses however,
+        // may have the wildcard children before more specific ones. So we move the specific ones first
+        List<PathElement> sortedChildAddresses = ModelTestUtils.moveWildcardChildrenToEnd(childAddresses);
+        Set<PathElement> handledChildren = new HashSet<>();
+        for (PathElement path : sortedChildAddresses) {
 
             ImmutableManagementResourceRegistration sub = reg.getSubModel(PathAddress.pathAddress(path));
             if (path.isWildcard()) {
@@ -127,16 +134,23 @@ class TransformationUtils {
                 if (subModel.isDefined()) {
                     for (Property p : subModel.asPropertyList()) {
                         if (p.getValue().isDefined()) {
-                            res.registerChild(PathElement.pathElement(path.getKey(), p.getName()), modelToResource(startAddress,sub, p.getValue(), includeUndefined, fullPath.append(path)));
+                            final PathElement element = PathElement.pathElement(path.getKey(), p.getName());
+                            if (!handledChildren.contains(element)) {
+                                res.registerChild(
+                                        element,
+                                        modelToResource(startAddress,sub, p.getValue(), includeUndefined, fullPath.append(path)));
+                            }
                         }
                     }
                 }
-            } else if (!childAddresses.contains(PathElement.pathElement(path.getKey()))) {
+            } else {
                 ModelNode subModel = model.get(path.getKeyValuePair());
                 if (subModel.isDefined()) {
                     res.registerChild(path, modelToResource(startAddress,sub, subModel, includeUndefined, fullPath.append(path)));
                 }
             }
+
+            handledChildren.add(path);
             allFields.remove(path.getKey());
         }
         if (!allFields.isEmpty()){

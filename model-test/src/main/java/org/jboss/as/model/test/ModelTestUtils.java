@@ -44,8 +44,10 @@ import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -516,18 +518,25 @@ public class ModelTestUtils {
             }
         }
 
-        for (PathElement pe : rr.getChildAddresses(PathAddress.EMPTY_ADDRESS)) {
+
+        // When we have overrides those should be used for the checking. The set of child addresses however,
+        // may have the wildcard children before more specific ones. So we move the specific ones first
+        List<PathElement> sortedChildAddresses = ModelTestUtils.moveWildcardChildrenToEnd(rr.getChildAddresses(PathAddress.EMPTY_ADDRESS));
+        Set<PathElement> handledChildren = new HashSet<>();
+        for (PathElement pe : sortedChildAddresses) {
             if (pe.isWildcard()) {
                 if (children.contains(pe.getKey()) && model.hasDefined(pe.getKey())) {
                     for (ModelNode v : model.get(pe.getKey()).asList()) {
                         String name = v.asProperty().getName();
-                        ModelNode value = v.asProperty().getValue();
-                        ManagementResourceRegistration sub = rr.getSubModel(PathAddress.pathAddress(pe));
-                        Assert.assertNotNull(getComparePathAsString(stack) + " Child with name '" + name + "' not found", sub);
-                        if (value.isDefined()) {
-                            stack.push(pe);
-                            checkModelAgainstDefinition(value, sub, stack);
-                            stack.pop();
+                        if (!handledChildren.contains(PathElement.pathElement(pe.getKey(), name))) {
+                            ModelNode value = v.asProperty().getValue();
+                            ManagementResourceRegistration sub = rr.getSubModel(PathAddress.pathAddress(pe));
+                            Assert.assertNotNull(getComparePathAsString(stack) + " Child with name '" + name + "' not found", sub);
+                            if (value.isDefined()) {
+                                stack.push(pe);
+                                checkModelAgainstDefinition(value, sub, stack);
+                                stack.pop();
+                            }
                         }
                     }
                 }
@@ -544,6 +553,7 @@ public class ModelTestUtils {
                     }
                 }
             }
+            handledChildren.add(pe);
         }
     }
 
@@ -690,4 +700,39 @@ public class ModelTestUtils {
         return result;
     }
 
+    public static List<PathElement> moveWildcardChildrenToEnd(Set<PathElement> children) {
+        Set<String> childKeys = new LinkedHashSet<>();
+        Map<String, List<PathElement>> childMap = new HashMap<>();
+        Map<String, PathElement> childWildcards = new HashMap<>();
+
+        for (PathElement child : children) {
+            String key = child.getKey();
+            childKeys.add(key);
+
+            if (child.isWildcard()) {
+                childWildcards.putIfAbsent(key, child);
+            } else {
+                List<PathElement> childrenForKey = childMap.get(key);
+                if (childrenForKey == null) {
+                    childrenForKey = new ArrayList<>();
+                    childMap.put(key, childrenForKey);
+                }
+                childrenForKey.add(child);
+            }
+        }
+
+        List<PathElement> result = new ArrayList<>();
+        for (String key : childKeys) {
+            List<PathElement> childrenForKey = childMap.get(key);
+            if (childrenForKey != null) {
+                result.addAll(childrenForKey);
+            }
+            PathElement wildcardForKey = childWildcards.get(key);
+            if (wildcardForKey != null) {
+                result.add(wildcardForKey);
+            }
+        }
+
+        return result;
+    }
 }
