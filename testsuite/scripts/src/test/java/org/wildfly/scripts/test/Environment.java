@@ -59,7 +59,7 @@ public class Environment {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to create the log directory", e);
         }
-        final String timeoutString = System.getProperty("jboss.test.start.timeout", "20");
+        final String timeoutString = System.getProperty("jboss.test.start.timeout", "120");
         TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(timeoutString));
     }
 

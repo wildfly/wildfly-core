@@ -167,10 +167,8 @@ public class ScriptProcess extends Process implements AutoCloseable {
 
     @Override
     public void close() {
-        if (delegate != null) {
-            delegate.destroyForcibly();
-            delegate = null;
-        }
+        destroy(delegate);
+        delegate = null;
     }
 
     @Override
@@ -279,15 +277,26 @@ public class ScriptProcess extends Process implements AutoCloseable {
         try {
             final Future<Boolean> future = service.submit(callable);
             if (!future.get()) {
-                if (process != null) {
-                    process.destroyForcibly();
-                }
+                destroy(process);
                 throw new TimeoutException(getErrorMessage(String.format("The %s did not start within %d seconds.", script.getFileName(), Environment.getTimeout())));
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(getErrorMessage(String.format("Failed to determine if the %s server is running.", script.getFileName())), e);
         } finally {
             service.shutdownNow();
+        }
+    }
+
+    private static void destroy(final Process process) {
+        if (process != null && process.isAlive()) {
+            final Process destroyed = process.destroyForcibly();
+            try {
+                if (destroyed.isAlive() && !destroyed.waitFor(Environment.getTimeout(), TimeUnit.SECONDS)) {
+                    LOGGER.errorf("The process was not destroyed within %d seconds.", Environment.getTimeout());
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
+            }
         }
     }
 }

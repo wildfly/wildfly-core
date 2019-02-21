@@ -34,7 +34,7 @@
     <properties>
         <!-- By default the scripts and configurations expect an IPv4 address so we should use one by default -->
         <jboss.test.script.address>127.0.0.1</jboss.test.script.address>
-        <jboss.test.start.timeout>20</jboss.test.start.timeout>
+        <jboss.test.start.timeout>120</jboss.test.start.timeout>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
         <test.log.level>INFO</test.log.level>
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
