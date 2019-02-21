@@ -68,6 +68,8 @@ public abstract class ScriptTestCase {
 
     private static final String[] POWER_SHELL_PREFIX = {
             "powershell",
+            "-ExecutionPolicy",
+            "Unrestricted",
             "-NonInteractive",
             "-File"
     };
