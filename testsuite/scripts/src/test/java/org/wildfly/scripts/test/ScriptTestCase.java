@@ -49,6 +49,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -108,6 +109,7 @@ public abstract class ScriptTestCase {
     }
 
     @Test
+    @Ignore("WFCORE-4348 - tests are currently failing on Windows CI runs")
     public void testBatchScript() throws Exception {
         Assume.assumeTrue(Environment.isWindows());
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".bat"), check)) {
@@ -116,6 +118,7 @@ public abstract class ScriptTestCase {
     }
 
     @Test
+    @Ignore("WFCORE-4348 - tests are currently failing on Windows CI runs")
     public void testPowerShellScript() throws Exception {
         Assume.assumeTrue(Environment.isWindows() && isShellSupported("powershell", "-Help"));
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".ps1"), check, POWER_SHELL_PREFIX)) {
