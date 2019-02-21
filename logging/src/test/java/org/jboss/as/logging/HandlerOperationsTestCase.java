@@ -474,6 +474,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         verifyFile(newFilename);
 
         testWrite(kernelServices, address, PeriodicHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH");
+        testWrite(kernelServices, address, PeriodicHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH.zip");
+        testWrite(kernelServices, address, PeriodicHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH.gz");
 
         // Undefine attributes
         testUndefineCommonAttributes(kernelServices, address);
@@ -513,7 +515,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX, 20);
         testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.ROTATE_SIZE, "50m");
-        testWrite(kernelServices, address, PeriodicHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH");
+        testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH");
+        testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH.zip");
+        testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd-HH.gz");
 
         // Undefine attributes
         testUndefineCommonAttributes(kernelServices, address);
@@ -554,6 +558,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX, 20);
         testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.ROTATE_SIZE, "50m");
         testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".yyyy-MM-dd'T'HH:mm:ssZ");
+        testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".zip");
+        testWrite(kernelServices, address, SizeRotatingHandlerResourceDefinition.SUFFIX, ".gz");
 
         // Undefine attributes
         testUndefineCommonAttributes(kernelServices, address);
