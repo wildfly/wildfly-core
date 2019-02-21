@@ -38,6 +38,7 @@
                             <install-dir>${project.build.directory}/layers-results/test-standalone-reference</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                             </plugin-options>
@@ -67,6 +68,7 @@
                             <install-dir>${project.build.directory}/layers-results/base-server</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -101,6 +103,7 @@
                             <install-dir>${project.build.directory}/layers-results/core-management</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -135,6 +138,7 @@
                             <install-dir>${project.build.directory}/layers-results/core-server</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -169,6 +173,7 @@
                             <install-dir>${project.build.directory}/layers-results/deployment-scanner</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -203,6 +208,7 @@
                             <install-dir>${project.build.directory}/layers-results/discovery</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -237,6 +243,7 @@
                             <install-dir>${project.build.directory}/layers-results/elytron</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -271,6 +278,7 @@
                             <install-dir>${project.build.directory}/layers-results/io</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -305,6 +313,7 @@
                             <install-dir>${project.build.directory}/layers-results/jmx</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -339,6 +348,7 @@
                             <install-dir>${project.build.directory}/layers-results/jmx-remoting</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -373,6 +383,7 @@
                             <install-dir>${project.build.directory}/layers-results/secure-management-realms-security</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -407,6 +418,7 @@
                             <install-dir>${project.build.directory}/layers-results/logging</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -441,6 +453,7 @@
                             <install-dir>${project.build.directory}/layers-results/management</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -475,6 +488,7 @@
                             <install-dir>${project.build.directory}/layers-results/remoting</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -509,6 +523,7 @@
                             <install-dir>${project.build.directory}/layers-results/request-controller</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -543,6 +558,7 @@
                             <install-dir>${project.build.directory}/layers-results/security-manager</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -577,6 +593,7 @@
                             <install-dir>${project.build.directory}/layers-results/core-tools</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
@@ -611,6 +628,7 @@
                             <install-dir>${project.build.directory}/layers-results/test-all-layers</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
                             <plugin-options>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
