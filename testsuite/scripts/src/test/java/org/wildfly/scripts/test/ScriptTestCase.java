@@ -42,14 +42,12 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -68,6 +66,8 @@ public abstract class ScriptTestCase {
 
     private static final String[] POWER_SHELL_PREFIX = {
             "powershell",
+            "-ExecutionPolicy",
+            "Unrestricted",
             "-NonInteractive",
             "-File"
     };
@@ -109,7 +109,6 @@ public abstract class ScriptTestCase {
     }
 
     @Test
-    @Ignore("WFCORE-4348 - tests are currently failing on Windows CI runs")
     public void testBatchScript() throws Exception {
         Assume.assumeTrue(Environment.isWindows());
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".bat"), check)) {
@@ -118,7 +117,6 @@ public abstract class ScriptTestCase {
     }
 
     @Test
-    @Ignore("WFCORE-4348 - tests are currently failing on Windows CI runs")
     public void testPowerShellScript() throws Exception {
         Assume.assumeTrue(Environment.isWindows() && isShellSupported("powershell", "-Help"));
         try (ScriptProcess script = new ScriptProcess(getExecutable(scriptBaseName + ".ps1"), check, POWER_SHELL_PREFIX)) {
@@ -158,7 +156,7 @@ public abstract class ScriptTestCase {
     }
 
     void validateProcess(final ScriptProcess script) throws InterruptedException, IOException {
-        if (script.waitFor(TimeoutUtil.adjust(10), TimeUnit.SECONDS)) {
+        if (script.waitFor(Environment.getTimeout(), TimeUnit.SECONDS)) {
             // The script has exited, validate the exit code is valid
             final int exitValue = script.exitValue();
             if (exitValue != 0) {
