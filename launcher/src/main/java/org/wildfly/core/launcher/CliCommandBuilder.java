@@ -586,7 +586,7 @@ public class CliCommandBuilder implements CommandBuilder {
      * @return the builder
      */
     public CliCommandBuilder setJavaHome(final String javaHome) {
-        environment.setJavaHome(javaHome);
+        environment.setJvm(Jvm.of(javaHome));
         return this;
     }
 
@@ -598,7 +598,7 @@ public class CliCommandBuilder implements CommandBuilder {
      * @return the builder
      */
     public CliCommandBuilder setJavaHome(final Path javaHome) {
-        environment.setJavaHome(javaHome);
+        environment.setJvm(Jvm.of(javaHome));
         return this;
     }
 
@@ -610,14 +610,14 @@ public class CliCommandBuilder implements CommandBuilder {
      * @return the path to the Java home directory
      */
     public Path getJavaHome() {
-        return environment.getJavaHome();
+        return environment.getJvm().getPath();
     }
 
     @Override
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();
         cmd.addAll(getJavaOptions());
-        if (Environment.isModularJavaHome(getJavaHome())) {
+        if (environment.getJvm().isModular()) {
             cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
         }
         cmd.add("-jar");
@@ -634,7 +634,7 @@ public class CliCommandBuilder implements CommandBuilder {
     @Override
     public List<String> build() {
         final List<String> cmd = new ArrayList<>();
-        cmd.add(environment.getJavaCommand());
+        cmd.add(environment.getJvm().getCommand());
         cmd.addAll(buildArguments());
         return cmd;
     }

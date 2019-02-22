@@ -46,8 +46,8 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     private static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
     private static final String DOMAIN_LOG_DIR = "jboss.domain.log.dir";
 
-    private Path hostControllerJavaHome;
-    private Path serverJavaHome;
+    private Jvm hostControllerJvm;
+    private Jvm serverJvm;
     private Path baseDir;
     private final Arguments hostControllerJavaOpts;
     private final Arguments processControllerJavaOpts;
@@ -59,14 +59,16 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * #of(java.nio.file.Path)} is preferred.
      *
      * @param wildflyHome the WildFly home directory
-     * @param javaHome    the default Java home directory
+     * @param jvm         the default JVM
      */
-    private DomainCommandBuilder(final Path wildflyHome, final Path javaHome) {
-        super(wildflyHome, javaHome);
+    private DomainCommandBuilder(final Path wildflyHome, final Jvm jvm) {
+        super(wildflyHome, jvm);
         hostControllerJavaOpts = new Arguments();
         hostControllerJavaOpts.addAll(DEFAULT_VM_ARGUMENTS);
         processControllerJavaOpts = new Arguments();
         processControllerJavaOpts.addAll(DEFAULT_VM_ARGUMENTS);
+        hostControllerJvm = Jvm.current();
+        serverJvm = Jvm.current();
     }
 
     /**
@@ -79,7 +81,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final Path wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), Environment.getDefaultJavaHome());
+        return new DomainCommandBuilder(Environment.validateWildFlyDir(wildflyHome), Jvm.current());
     }
 
     /**
@@ -92,7 +94,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final String wildflyHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), Environment.getDefaultJavaHome());
+        return new DomainCommandBuilder(Environment.validateWildFlyDir(wildflyHome), Jvm.current());
     }
 
     /**
@@ -104,7 +106,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final String wildflyHome, final String javaHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(javaHome));
+        return new DomainCommandBuilder(Environment.validateWildFlyDir(wildflyHome), Jvm.of(javaHome));
     }
 
     /**
@@ -116,7 +118,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return a new builder
      */
     public static DomainCommandBuilder of(final Path wildflyHome, final Path javaHome) {
-        return new DomainCommandBuilder(validateWildFlyDir(wildflyHome), validateJavaHome(javaHome));
+        return new DomainCommandBuilder(Environment.validateWildFlyDir(wildflyHome), Jvm.of(javaHome));
     }
 
     /**
@@ -333,11 +335,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder setHostControllerJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            this.hostControllerJavaHome = null;
-        } else {
-            this.hostControllerJavaHome = validateJavaHome(javaHome);
-        }
+        hostControllerJvm = Jvm.of(javaHome);
         return this;
     }
 
@@ -353,26 +351,17 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder setHostControllerJavaHome(final Path javaHome) {
-        if (javaHome == null) {
-            this.hostControllerJavaHome = null;
-        } else {
-            this.hostControllerJavaHome = validateJavaHome(javaHome);
-        }
+        hostControllerJvm = Jvm.of(javaHome);
         return this;
     }
 
     /**
      * Returns the Java home path the host controller will use.
-     * <p/>
-     * If the path was not previously set the default {@link #getJavaHome() Java home} will be used.
      *
      * @return the path to the Java home for the host controller
      */
     public Path getHostControllerJavaHome() {
-        if (hostControllerJavaHome == null) {
-            return getJavaHome();
-        }
-        return hostControllerJavaHome;
+        return hostControllerJvm.getPath();
     }
 
     /**
@@ -683,11 +672,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder setServerJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            this.serverJavaHome = null;
-        } else {
-            this.serverJavaHome = validateJavaHome(javaHome);
-        }
+        serverJvm = Jvm.of(javaHome);
         return this;
     }
 
@@ -704,26 +689,17 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      * @return the builder
      */
     public DomainCommandBuilder setServerJavaHome(final Path javaHome) {
-        if (javaHome == null) {
-            this.serverJavaHome = null;
-        } else {
-            this.serverJavaHome = validateJavaHome(javaHome);
-        }
+        serverJvm = Jvm.of(javaHome);
         return this;
     }
 
     /**
      * Returns the Java home path the servers will use.
-     * <p/>
-     * If the path was not previously set the default {@link #getJavaHome() Java home} will be used.
      *
      * @return the path to the Java home for the servers
      */
     public Path getServerJavaHome() {
-        if (serverJavaHome == null) {
-            return getJavaHome();
-        }
-        return serverJavaHome;
+        return serverJvm.getPath();
     }
 
     @Override
@@ -736,7 +712,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
         // PROCESS_CONTROLLER_JAVA_OPTS
         cmd.addAll(processControllerJavaOpts.asList());
-        if (isModularJavaHome(getJavaHome())) {
+        if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
 
@@ -753,7 +729,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.add("-jboss-home");
         cmd.add(getWildFlyHome().toString());
         cmd.add("-jvm");
-        cmd.add(getHostControllerJavaCommand());
+        cmd.add(hostControllerJvm.getCommand());
         cmd.add("-mp");
         cmd.add(getModulePaths());
 
@@ -764,13 +740,13 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
 
         // HOST_CONTROLLER_JAVA_OPTS
         cmd.addAll(hostControllerJavaOpts.asList());
-        if (isModularJavaHome(getHostControllerJavaHome())) {
+        if (hostControllerJvm.isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
 
         cmd.add("--");
         cmd.add("-default-jvm");
-        cmd.add(getServerJavaCommand());
+        cmd.add(serverJvm.getCommand());
         addSystemPropertyArg(cmd, DOMAIN_BASE_DIR, getBaseDirectory());
         addSystemPropertyArg(cmd, DOMAIN_LOG_DIR, getLogDirectory());
         addSystemPropertyArg(cmd, DOMAIN_CONFIG_DIR, getConfigurationDirectory());
@@ -782,14 +758,14 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     @Override
     public List<String> build() {
         final List<String> cmd = new ArrayList<>();
-        cmd.add(getJavaCommand());
+        cmd.add(environment.getJvm().getCommand());
         cmd.addAll(buildArguments());
         return cmd;
     }
 
     @Override
     public Path getJavaHome() {
-        return environment.getJavaHome();
+        return environment.getJvm().getPath();
     }
 
     @Override
@@ -828,19 +804,5 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
                 break;
         }
         return true;
-    }
-
-    private String getHostControllerJavaCommand() {
-        if (hostControllerJavaHome != null) {
-            return getJavaCommand(hostControllerJavaHome);
-        }
-        return getJavaCommand();
-    }
-
-    private String getServerJavaCommand() {
-        if (serverJavaHome != null) {
-            return getJavaCommand(serverJavaHome);
-        }
-        return getJavaCommand();
     }
 }
