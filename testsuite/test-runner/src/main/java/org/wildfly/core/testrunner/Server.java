@@ -230,7 +230,7 @@ public class Server {
             }
             if (!serverAvailable) {
                 destroyProcess();
-                throw new RuntimeException("Managed server was not started within 30s");
+                throw new RuntimeException("Managed server was not started within " + startupTimeout + " seconds.");
             }
 
         } catch (Exception e) {
