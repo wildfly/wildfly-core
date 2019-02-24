@@ -163,7 +163,7 @@ public abstract class ScriptTestCase {
                 Assert.fail(script.getErrorMessage(String.format("Expected an exit value 0f 0 got %d", exitValue)));
             }
         } else {
-            Assert.fail(script.getErrorMessage("The script process did not exit within 10 seconds."));
+            Assert.fail(script.getErrorMessage("The script process did not exit within " + Environment.getTimeout() + " seconds."));
         }
     }
 
