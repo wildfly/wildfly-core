@@ -39,7 +39,9 @@ public class LayersTestCase {
         "javax.sql.api",
         // No patching modules in layers
         "org.jboss.as.patching",
-        "org.jboss.as.patching.cli"
+        "org.jboss.as.patching.cli",
+        // Not currently used internally
+        "org.wildfly.event.logger"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning

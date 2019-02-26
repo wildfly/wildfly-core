@@ -246,6 +246,7 @@
         <module>domain-management</module>
         <module>elytron</module>
         <module>embedded</module>
+        <module>event-logger</module>
         <module>host-controller</module>
         <module>logging</module>
         <module>management-client-content</module>
@@ -1303,6 +1304,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-embedded</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-event-logger</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
