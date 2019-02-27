@@ -676,6 +676,8 @@ public enum Phase {
     public static final int INSTALL_LOGGING_DEPLOYMENT_RESOURCES        = 0x207a;
     public static final int INSTALL_DEPLOYMENT_COMPLETE_SERVICE         = 0x2100;
 
+    public static final int INSTALL_IIOP_CLEAR_CACHES                   = 0x3000;
+
     // CLEANUP
     public static final int CLEANUP_REFLECTION_INDEX                    = 0x0100;
     public static final int CLEANUP_EE                                  = 0x0200;
