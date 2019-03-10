@@ -26,22 +26,26 @@ import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOG
 
 import java.util.Map;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.HostControllerEnvironment;
-import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.HostRunningModeControl;
 import org.jboss.as.host.controller.RestartMode;
 import org.jboss.as.host.controller.ServerInventory;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -64,6 +68,11 @@ public class StartServersHandler implements OperationStepHandler {
     private final HostControllerEnvironment hostControllerEnvironment;
     private final HostRunningModeControl runningModeControl;
 
+    public static final AttributeDefinition ENABLE_AUTO_START = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLE_AUTO_START, ModelType.BOOLEAN)
+            .setRequired(false)
+            .setDefaultValue(ModelNode.FALSE)
+            .build();
+
     /**
      * Create the ServerAddHandler
      */
@@ -78,13 +87,18 @@ public class StartServersHandler implements OperationStepHandler {
      */
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+        final boolean enabledAutoStart = ENABLE_AUTO_START.resolveModelAttribute(context, operation).asBoolean();
 
-        if (!context.isBooting()) {
+        if (!context.isBooting() && !enabledAutoStart) {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.invocationNotAllowedAfterBoot(operation.require(OP)));
         }
 
         if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
+        }
+
+        if (enabledAutoStart) {
+            context.acquireControllerLock();
         }
 
         final ModelNode domainModel = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
@@ -97,9 +111,9 @@ public class StartServersHandler implements OperationStepHandler {
                 if(hostModel.hasDefined(SERVER_CONFIG)) {
                     final ModelNode servers = hostModel.get(SERVER_CONFIG).clone();
                     if (hostControllerEnvironment.isRestart() || runningModeControl.getRestartMode() == RestartMode.HC_ONLY){
-                        restartedHcStartOrReconnectServers(servers, domainModel, context);
+                        restartedHcStartOrReconnectServers(servers, domainModel, context, enabledAutoStart);
                         runningModeControl.setRestartMode(RestartMode.SERVERS);
-                    } else {
+                    } else if (enabledAutoStart) {
                         cleanStartServers(servers, domainModel, context);
                     }
                 }
@@ -127,12 +141,12 @@ public class StartServersHandler implements OperationStepHandler {
         }
     }
 
-    private void restartedHcStartOrReconnectServers(final ModelNode servers, final ModelNode domainModel, final OperationContext context){
+    private void restartedHcStartOrReconnectServers(final ModelNode servers, final ModelNode domainModel, final OperationContext context, final boolean enabledAutoStart) {
         Map<String, ProcessInfo> processInfos = serverInventory.determineRunningProcesses();
         for(final String serverName : servers.keys()) {
             ProcessInfo info = processInfos.get(serverInventory.getServerProcessName(serverName));
             boolean auto = servers.get(serverName, AUTO_START).asBoolean(true);
-            if (info == null && auto) {
+            if (info == null && auto && enabledAutoStart) {
                 try {
                     serverInventory.startServer(serverName, domainModel, START_BLOCKING, false);
                 } catch (Exception e) {

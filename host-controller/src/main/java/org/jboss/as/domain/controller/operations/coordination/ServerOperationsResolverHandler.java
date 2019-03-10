@@ -45,9 +45,11 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.ServerIdentity;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -75,17 +77,20 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
     private final PathAddress originalAddress;
     private final ImmutableManagementResourceRegistration originalRegistration;
     private final MultiPhaseLocalContext multiPhaseLocalContext;
+    private final ServerInventory serverInventory;
 
     ServerOperationsResolverHandler(final ServerOperationResolver resolver,
                                     final HostControllerExecutionSupport hostControllerExecutionSupport,
                                     final PathAddress originalAddress,
                                     final ImmutableManagementResourceRegistration originalRegistration,
-                                    final MultiPhaseLocalContext multiPhaseLocalContext) {
+                                    final MultiPhaseLocalContext multiPhaseLocalContext,
+                                    final ServerInventory serverInventory) {
         this.resolver = resolver;
         this.hostControllerExecutionSupport = hostControllerExecutionSupport;
         this.originalAddress = originalAddress;
         this.originalRegistration = originalRegistration;
         this.multiPhaseLocalContext = multiPhaseLocalContext;
+        this.serverInventory = serverInventory;
     }
 
     @Override
@@ -127,6 +132,19 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
 
             // Format that data and provide it to the coordinator
             ModelNode formattedServerOps = getFormattedServerOps(serverOps);
+            if (! serverOps.isEmpty()) {
+                final Set<String> serversStarting = new HashSet<>();
+                for (Map.Entry<ServerIdentity, ModelNode> serverIdentityModelNodeEntry : serverOps.entrySet()) {
+                    String serverName = serverIdentityModelNodeEntry.getKey().getServerName();
+                    ServerStatus serverStatus = serverInventory.determineServerStatus(serverName);
+                    if (serverStatus == ServerStatus.STARTING) {
+                        serversStarting.add(serverName);
+                    }
+                }
+                if (! serversStarting.isEmpty()) {
+                    throw HOST_CONTROLLER_LOGGER.serverManagementUnavailableDuringBoot(serversStarting.toString());
+                }
+            }
 
             if (multiPhaseLocalContext.isCoordinator()) {
                 // We're the coordinator, so just stash the server ops in the multiphase context
