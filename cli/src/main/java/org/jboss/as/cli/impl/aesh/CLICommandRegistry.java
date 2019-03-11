@@ -33,6 +33,7 @@ import org.aesh.command.impl.container.AeshCommandContainer;
 import org.aesh.command.impl.internal.ParsedCommand;
 import org.aesh.command.impl.parser.CommandLineParserBuilder;
 import org.aesh.command.impl.registry.MutableCommandRegistryImpl;
+import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.command.parser.OptionParserException;
 import org.aesh.command.registry.MutableCommandRegistry;
@@ -54,7 +55,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 public class CLICommandRegistry extends CommandRegistry implements org.aesh.command.registry.CommandRegistry {
     private static final Logger log = Logger.getLogger(CLICommandRegistry.class);
     private final MutableCommandRegistry reg = new MutableCommandRegistryImpl();
-    private final AeshCommandContainerBuilder containerBuilder = new AeshCommandContainerBuilder();
+    private final AeshCommandContainerBuilder<? extends CommandInvocation> containerBuilder = new AeshCommandContainerBuilder();
     private final CommandContextImpl ctx;
     private final OperationCommandContainer op;
     public CLICommandRegistry(CommandContextImpl ctx, OperationCommandContainer op) {
@@ -142,8 +143,8 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         return addCommand(command, renaming, true);
     }
 
-    public CommandContainer addCommand(Command<?> command, Map<String, String> renaming, boolean thirdparty) throws CommandLineException, CommandLineParserException {
-        CommandContainer container = containerBuilder.create(command);
+    public CommandContainer addCommand(Command<? extends CommandInvocation> command, Map<String, String> renaming, boolean thirdparty) throws CommandLineException, CommandLineParserException {
+        CommandContainer<? extends CommandInvocation> container = containerBuilder.create(command);
 
         // Sub command handling
         String name = container.getParser().getProcessedCommand().name();
@@ -167,23 +168,25 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
                     }
 
                     try {
-                        ProcessedCommand cmd = container.getParser().getProcessedCommand();
+                        CommandLineParser<? extends CommandInvocation> parser = container.getParser();
+                        ProcessedCommand<? extends Command<? extends CommandInvocation>, ? extends CommandInvocation> cmd = parser.getProcessedCommand();
+                        ProcessedCommandBuilder cmdBuilder = ProcessedCommandBuilder.builder();
+                        ProcessedCommand<? extends Command<? extends CommandInvocation>, ? extends CommandInvocation> cmd2 = cmdBuilder.
+                                activator(cmd.getActivator()).
+                                addOptions(cmd.getOptions()).
+                                aliases(cmd.getAliases()).
+                                arguments(cmd.getArguments()).
+                                argument(cmd.getArgument()).
+                                command(cmd.getCommand()).
+                                description(cmd.description()).
+                                name(childName).
+                                populator(cmd.getCommandPopulator()).
+                                resultHandler(cmd.resultHandler()).
+                                validator(cmd.validator()).
+                                create();
+
                         // Add sub to existing command.
-                        container = new AeshCommandContainer(
-                                new CommandLineParserBuilder()
-                                .processedCommand(new ProcessedCommandBuilder().
-                                        activator(cmd.getActivator()).
-                                        addOptions(cmd.getOptions()).
-                                        aliases(cmd.getAliases()).
-                                        arguments(cmd.getArguments()).
-                                        argument(cmd.getArgument()).
-                                        command(cmd.getCommand()).
-                                        description(cmd.description()).
-                                        name(childName).
-                                        populator(cmd.getCommandPopulator()).
-                                        resultHandler(cmd.resultHandler()).
-                                        validator(cmd.validator()).
-                                        create()).create());
+                        container = new AeshCommandContainer(cmd2);
                         existingParent.
                                 addChildParser(container.getParser());
                     } catch (CommandLineParserException ex) {
@@ -200,9 +203,10 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
         String rename = renaming.get(name);
         if (rename != null) {
             ProcessedCommand cmd = container.getParser().getProcessedCommand();
+            ProcessedCommandBuilder cmdBuilder = ProcessedCommandBuilder.builder();
             container = new AeshCommandContainer(
-                    new CommandLineParserBuilder()
-                    .processedCommand(new ProcessedCommandBuilder().
+                    CommandLineParserBuilder.builder()
+                    .processedCommand(cmdBuilder.
                             activator(cmd.getActivator()).
                             addOptions(cmd.getOptions()).
                             aliases(cmd.getAliases()).
@@ -230,9 +234,10 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
 
     private CommandContainer disableResolution(CommandLineParser parser) throws OptionParserException, CommandLineParserException {
         ProcessedCommand cmd = parser.getProcessedCommand();
+        ProcessedCommandBuilder cmdBuilder = ProcessedCommandBuilder.builder();
         CommandContainer convertedContainer = new AeshCommandContainer(
-                new CommandLineParserBuilder()
-                .processedCommand(new ProcessedCommandBuilder().
+                CommandLineParserBuilder.builder()
+                .processedCommand(cmdBuilder.
                         activator(cmd.getActivator()).
                         addOptions(ExpressionValueConverter.disableResolution(cmd.getOptions())).
                         aliases(cmd.getAliases()).
@@ -253,7 +258,7 @@ public class CLICommandRegistry extends CommandRegistry implements org.aesh.comm
     }
 
     @Override
-    public CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> getCommand(String name, String line)
+    public CommandContainer<CLICommandInvocation> getCommand(String name, String line)
             throws CommandNotFoundException {
         if (OperationCommandContainer.isOperation(name)) {
             return op;

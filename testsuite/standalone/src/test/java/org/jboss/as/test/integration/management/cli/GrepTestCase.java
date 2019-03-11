@@ -106,7 +106,7 @@ public class GrepTestCase {
 
     @Test(expected = CommandFormatException.class)
     public void testGrepWithNonExistingParameter() throws Exception {
-        testCommand("grep --mo", "'mo' is not a valid parameter name", false);
+        testCommand("grep --mo", "The option --mo is unknown.", false);
     }
 
     @Test

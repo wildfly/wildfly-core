@@ -147,11 +147,18 @@ public class AeshCommands {
             return execution.getCommand() instanceof OperationCommand;
         }
 
-        public String getLine() {
+        public String getLine() throws CommandLineParserException, OptionValidatorException {
             if (execution.getCommand() instanceof SpecialCommand) {
+                // SpecialCommand must be ppopulated for Parsing to occur and
+                // command part to be extracted from chained operators.
+                execution.populateCommand();
                 return ((SpecialCommand) execution.getCommand()).getLine();
             }
             return null;
+        }
+
+        public void populateCommand() throws CommandLineParserException, OptionValidatorException {
+            execution.populateCommand();
         }
 
         public CommandHandler getLegacyHandler() {
@@ -164,7 +171,7 @@ public class AeshCommands {
     }
 
     private final CLICommandInvocationBuilder invocationBuilder;
-    private final CommandRuntime<Command<CLICommandInvocation>, CLICommandInvocation> processor;
+    private final CommandRuntime<CLICommandInvocation> processor;
     private final CLICommandRegistry registry;
     private final CLICompletionHandler completionHandler;
 
@@ -265,6 +272,8 @@ public class AeshCommands {
                         exe.execution.execute();
                     } catch (CommandException | CommandValidatorException ex) {
                         throw new CommandLineException(ex.getLocalizedMessage());
+                    } catch (OptionValidatorException | CommandLineParserException ex) {
+                        throw new CommandFormatException(ex.getLocalizedMessage());
                     } catch (InterruptedException ex) {
                         Thread.interrupted();
                         throw new CommandLineException(ex);

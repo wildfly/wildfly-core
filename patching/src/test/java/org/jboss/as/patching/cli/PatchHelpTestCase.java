@@ -15,7 +15,6 @@ limitations under the License.
  */
 package org.jboss.as.patching.cli;
 
-import org.aesh.command.Command;
 import org.aesh.command.container.CommandContainer;
 import org.aesh.command.impl.parser.CommandLineParser;
 import org.jboss.as.cli.CommandContextFactory;
@@ -35,9 +34,9 @@ public class PatchHelpTestCase {
     public void testCLICommands() throws Exception {
         CommandContextImpl ctx = (CommandContextImpl) CommandContextFactory.getInstance().newCommandContext();
         AeshCommands commands = ctx.getAeshCommands();
-        CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> container = commands.getRegistry().getCommand("patch", "patch");
+        CommandContainer<CLICommandInvocation> container = commands.getRegistry().getCommand("patch", "patch");
         HelpSupport.checkCommand(null, container.getParser());
-        for (CommandLineParser<Command<CLICommandInvocation>> child : container.getParser().getAllChildParsers()) {
+        for (CommandLineParser<CLICommandInvocation> child : container.getParser().getAllChildParsers()) {
             HelpSupport.checkCommand(container.getParser(), child);
         }
     }

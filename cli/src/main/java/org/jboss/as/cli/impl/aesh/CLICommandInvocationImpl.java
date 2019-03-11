@@ -24,11 +24,11 @@ import org.aesh.readline.action.KeyAction;
 import org.aesh.command.impl.parser.CommandLineParser;
 import org.aesh.command.validator.CommandValidatorException;
 import org.aesh.command.validator.OptionValidatorException;
-import org.aesh.readline.AeshContext;
 import org.aesh.command.shell.Shell;
 import org.aesh.command.CommandException;
 import org.aesh.command.CommandNotFoundException;
 import org.aesh.command.CommandRuntime;
+import org.aesh.command.container.CommandContainer;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.invocation.CommandInvocationConfiguration;
 import org.aesh.command.parser.CommandLineParserException;
@@ -50,15 +50,17 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     private final ReadlineConsole console;
     private final CommandInvocationConfiguration config;
     private final CommandRuntime runtime;
+    private final CommandContainer<CLICommandInvocation> commandContainer;
     CLICommandInvocationImpl(CommandContext ctx, CLICommandRegistry registry,
             ReadlineConsole console, Shell shell, CommandRuntime runtime,
-            CommandInvocationConfiguration config) {
+            CommandInvocationConfiguration config, CommandContainer<CLICommandInvocation> commandContainer) {
         this.ctx = ctx;
         this.registry = registry;
         this.console = console;
         this.shell = shell;
         this.runtime = runtime;
         this.config = config;
+        this.commandContainer = commandContainer;
     }
 
     @Override
@@ -103,11 +105,6 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
     @Override
     public void stop() {
         ctx.terminateSession();
-    }
-
-    @Override
-    public AeshContext getAeshContext() {
-        return config.getAeshContext();
     }
 
     @Override
@@ -167,4 +164,8 @@ class CLICommandInvocationImpl implements CLICommandInvocation {
         return null;
     }
 
+    @Override
+    public String getHelpInfo() {
+        return commandContainer.getParser().parsedCommand().printHelp();
+    }
 }
