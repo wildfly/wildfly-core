@@ -7,6 +7,7 @@
     
     <feature spec="core-service.management.management-interface.http-interface">
         <param name="socket-binding" value="management-http"/>
+        <param name="http-authentication-factory" value="management-http-authentication"/>
         <feature spec="core-service.management.management-interface.http-interface.http-upgrade">
             <param name="sasl-authentication-factory" value="management-sasl-authentication"/>
         </feature>
