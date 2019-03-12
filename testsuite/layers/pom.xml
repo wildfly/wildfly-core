@@ -40,6 +40,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                             </plugin-options>
                             <feature-packs>
@@ -70,6 +71,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -105,6 +107,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -140,6 +143,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -175,6 +179,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -210,6 +215,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -245,6 +251,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -280,6 +287,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -315,6 +323,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -350,6 +359,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -385,6 +395,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -420,6 +431,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -455,6 +467,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -490,6 +503,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -525,6 +539,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -560,6 +575,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -595,6 +611,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -630,6 +647,7 @@
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
                             <plugin-options>
+                                <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                 <optional-packages>passive+</optional-packages>
                             </plugin-options>
@@ -676,6 +694,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
+                        <maven.repo.local>${settings.localRepository}</maven.repo.local>
                         <layers.install.root>${project.build.directory}/layers-results</layers.install.root>
                         <jbossas.version>${project.parent.version}</jbossas.version>
                         <cleanup.tmp>${cleanup.tmp}</cleanup.tmp>
