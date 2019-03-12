@@ -29,6 +29,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_5_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_6_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_7_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
@@ -66,6 +67,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 7.0.0 (WildFly 17) to 6.0.0 (WildFly 16)
+        from7(chainedBuilder);
         // 6.0.0 (WildFly 16) to 5.0.0 (WildFly 15)
         from6(chainedBuilder);
         // 5.0.0 (WildFly 15) to 4.0.0 (WildFly 14)
@@ -77,7 +80,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+
+    }
+
+    private static void from7(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_7_0_0, ELYTRON_6_0_0);
 
     }
 
