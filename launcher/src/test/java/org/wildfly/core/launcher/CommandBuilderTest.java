@@ -40,7 +40,6 @@ import org.wildfly.core.launcher.Arguments.Argument;
 public class CommandBuilderTest {
 
     private static final Path WILDFLY_HOME;
-    private static final Path JAVA_HOME;
 
     static {
         WILDFLY_HOME = Paths.get(System.getProperty("wildfly.launcher.home")).toAbsolutePath().normalize();
@@ -52,12 +51,6 @@ public class CommandBuilderTest {
             Files.createDirectories(WILDFLY_HOME.resolve("data"));
         } catch (IOException ignore) {
         }
-
-        String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null) {
-            javaHome = System.getProperty("java.home");
-        }
-        JAVA_HOME = Paths.get(javaHome).toAbsolutePath().normalize();
     }
 
     @Test
@@ -206,7 +199,7 @@ public class CommandBuilderTest {
 
     private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {
         // If we're using Java 9+ ensure the modular JDK options were added
-        if (Environment.isModularJavaHome(JAVA_HOME)) {
+        if (Jvm.current().isModular()) {
             assertArgumentExists(command, "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED", expectedCount);

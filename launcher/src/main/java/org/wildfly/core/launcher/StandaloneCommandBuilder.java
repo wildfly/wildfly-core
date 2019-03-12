@@ -79,7 +79,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return a new builder
      */
     public static StandaloneCommandBuilder of(final Path wildflyHome) {
-        return new StandaloneCommandBuilder(validateWildFlyDir(wildflyHome));
+        return new StandaloneCommandBuilder(Environment.validateWildFlyDir(wildflyHome));
     }
 
     /**
@@ -90,7 +90,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return a new builder
      */
     public static StandaloneCommandBuilder of(final String wildflyHome) {
-        return new StandaloneCommandBuilder(validateWildFlyDir(wildflyHome));
+        return new StandaloneCommandBuilder(Environment.validateWildFlyDir(wildflyHome));
     }
 
     /**
@@ -271,7 +271,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setJavaHome(final String javaHome) {
-        environment.setJavaHome(javaHome);
+        environment.setJvm(Jvm.of(javaHome));
         return this;
     }
 
@@ -283,7 +283,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      * @return the builder
      */
     public StandaloneCommandBuilder setJavaHome(final Path javaHome) {
-        environment.setJavaHome(javaHome);
+        environment.setJvm(Jvm.of(javaHome));
         return this;
     }
 
@@ -424,7 +424,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         final List<String> cmd = new ArrayList<>();
         cmd.add("-D[Standalone]");
         cmd.addAll(getJavaOptions());
-        if (isModularJavaHome(getJavaHome())) {
+        if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
         if (modulesLocklessArg != null) {
@@ -469,14 +469,14 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     @Override
     public List<String> build() {
         final List<String> cmd = new ArrayList<>();
-        cmd.add(getJavaCommand());
+        cmd.add(environment.getJvm().getCommand());
         cmd.addAll(buildArguments());
         return cmd;
     }
 
     @Override
     public Path getJavaHome() {
-        return environment.getJavaHome();
+        return environment.getJvm().getPath();
     }
 
     @Override

@@ -37,33 +37,20 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 class Environment {
-    private static final String JAVA_EXE;
-    private static final Path JAVA_HOME;
     private static final boolean MAC;
     private static final boolean WINDOWS;
 
     static final String HOME_DIR = "jboss.home.dir";
     static final String MODULES_JAR_NAME = "jboss-modules.jar";
-    private static final String JMODS_DIR = "jmods";
 
     static {
         final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         MAC = os.startsWith("mac");
         WINDOWS = os.contains("win");
-        String exe = "java";
-        if (WINDOWS) {
-            exe = "java.exe";
-        }
-        JAVA_EXE = exe;
-        String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null) {
-            javaHome = System.getProperty("java.home");
-        }
-        JAVA_HOME = Paths.get(javaHome);
     }
 
     private final Path wildflyHome;
-    private Path javaHome;
+    private Jvm jvm;
     private final List<String> modulesDirs;
     private boolean addDefaultModuleDir;
 
@@ -75,6 +62,7 @@ class Environment {
         this.wildflyHome = validateWildFlyDir(wildflyHome);
         modulesDirs = new ArrayList<>();
         addDefaultModuleDir = true;
+        jvm = Jvm.current();
     }
 
     /**
@@ -197,82 +185,13 @@ class Environment {
         return result.toString();
     }
 
-    /**
-     * Sets the Java home where the Java executable can be found.
-     *
-     * @param javaHome the Java home or {@code null} to use te system property {@code java.home}
-     */
-    public void setJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            this.javaHome = null;
-        } else {
-            this.javaHome = validateJavaHome(javaHome);
-        }
+    Jvm getJvm() {
+        return jvm;
     }
 
-    /**
-     * Sets the Java home where the Java executable can be found.
-     *
-     * @param javaHome the Java home or {@code null} to use te system property {@code java.home}
-     */
-    public void setJavaHome(final Path javaHome) {
-        if (javaHome == null) {
-            this.javaHome = null;
-        } else {
-            this.javaHome = validateJavaHome(javaHome);
-        }
-    }
-
-    /**
-     * Returns the Java home directory where the java executable command can be found.
-     * <p/>
-     * If the directory was not set the system property value, {@code java.home}, should be used.
-     *
-     * @return the path to the Java home directory
-     */
-    public Path getJavaHome() {
-        final Path path;
-        if (javaHome == null) {
-            path = JAVA_HOME;
-        } else {
-            path = javaHome;
-        }
-        return path;
-    }
-
-    /**
-     * Returns the Java executable command.
-     *
-     * @return the java command to use
-     */
-    public String getJavaCommand() {
-        return getJavaCommand(javaHome);
-    }
-
-    /**
-     * Returns the Java executable command.
-     *
-     * @param javaHome the java home directory or {@code null} to use the default
-     *
-     * @return the java command to use
-     */
-    public String getJavaCommand(final Path javaHome) {
-        final Path dir;
-        if (javaHome == null) {
-            dir = getJavaHome();
-        } else {
-            dir = javaHome;
-        }
-        final String exe;
-        if (dir == null) {
-            exe = "java";
-        } else {
-            exe = dir.resolve("bin").resolve("java").toString();
-        }
-        if (exe.contains(" ")) {
-            return "\"" + exe + "\"";
-        }
-        return exe;
+    Environment setJvm(final Jvm jvm) {
+        this.jvm = jvm == null ? Jvm.current() : jvm;
+        return this;
     }
 
     /**
@@ -301,14 +220,6 @@ class Environment {
         return WINDOWS;
     }
 
-    public static boolean supportsMaxPermSize() {
-        return false;
-    }
-
-    static Path getDefaultJavaHome() {
-        return JAVA_HOME;
-    }
-
     static Path validateWildFlyDir(final String wildflyHome) {
         if (wildflyHome == null) {
             throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
@@ -328,40 +239,5 @@ class Environment {
             throw LauncherMessages.MESSAGES.invalidDirectory(MODULES_JAR_NAME, wildflyHome);
         }
         return result;
-    }
-
-    static Path validateJavaHome(final String javaHome) {
-        if (javaHome == null) {
-            throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
-        }
-        return validateJavaHome(Paths.get(javaHome));
-    }
-
-    static Path validateJavaHome(final Path javaHome) {
-        if (javaHome == null || Files.notExists(javaHome)) {
-            throw LauncherMessages.MESSAGES.pathDoesNotExist(javaHome);
-        }
-        if (!Files.isDirectory(javaHome)) {
-            throw LauncherMessages.MESSAGES.invalidDirectory(javaHome);
-        }
-        final Path result = javaHome.toAbsolutePath().normalize();
-        final Path exe = result.resolve("bin").resolve(JAVA_EXE);
-        if (Files.notExists(exe)) {
-            final int count = exe.getNameCount();
-            throw LauncherMessages.MESSAGES.invalidDirectory(exe.subpath(count - 2, count).toString(), javaHome);
-        }
-        return result;
-    }
-
-    static boolean isModularJavaHome(final String javaHome) {
-        final Path validatedJavaHome = validateJavaHome(javaHome);
-        final Path jmodsDir = validatedJavaHome.resolve(JMODS_DIR);
-        return Files.isDirectory(jmodsDir);
-    }
-
-    static boolean isModularJavaHome(final Path javaHome) {
-        final Path validatedJavaHome = validateJavaHome(javaHome);
-        final Path jmodsDir = validatedJavaHome.resolve(JMODS_DIR);
-        return Files.isDirectory(jmodsDir);
     }
 }
