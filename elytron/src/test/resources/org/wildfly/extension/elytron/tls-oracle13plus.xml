@@ -1,0 +1,86 @@
+<!-- for needs of SaslTestCase and KeyStoresTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:7.0" default-ssl-context="ClientSslContextNoAuth">
+    <providers>
+        <provider-loader name="ManagerProviderLoader" class-names="sun.security.ssl.SunJSSE"/>
+    </providers>
+    <security-domains>
+        <security-domain name="MyDomain" default-realm="FileRealm">
+            <realm name="FileRealm"/>
+        </security-domain>
+    </security-domains>
+    <security-realms>
+        <filesystem-realm name="FileRealm" levels="2">
+            <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+    </security-realms>
+    <credential-stores>
+        <credential-store name="test" location="target/tlstest.keystore">
+            <implementation-properties>
+                <property name="keyStoreType" value="JCEKS"/>
+            </implementation-properties>
+            <credential-reference clear-text="super_secret"/>
+        </credential-store>
+    </credential-stores>
+    <tls>
+        <key-stores>
+            <key-store name="FireflyKeystore" >
+                <credential-reference store="test" alias="master-password-alias"/>
+                <implementation type="JKS" />
+                <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
+            </key-store>
+            <key-store name="LocalhostKeystore" >
+                <credential-reference store="test" alias="master-password-alias"/>
+                <implementation type="JKS" />
+                <file path="localhost.keystore" relative-to="jboss.server.config.dir" required="true"/>
+            </key-store>
+            <key-store name="ElytronCaTruststore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS" />
+                <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+            </key-store>
+            <key-store name="NewKeyStore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation type="JKS" />
+                <file path="target/not-existing.keystore" required="false"/>
+            </key-store>
+            <key-store name="AutomaticKeystore" >
+                <credential-reference clear-text="Elytron"/>
+                <implementation/>
+                <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
+            </key-store>
+            <filtering-key-store name="FilteringKeyStore" key-store="FireflyKeystore" alias-filter="NONE:+firefly"/>
+        </key-stores>
+        <key-managers>
+            <key-manager name="ServerKeyManager" algorithm="SunX509" key-store="LocalhostKeystore" alias-filter="NONE:+localhost">
+                <credential-reference store="test" alias="the-key-alias"/>
+            </key-manager>
+            <key-manager name="ClientKeyManager" algorithm="SunX509" key-store="FireflyKeystore">
+                <credential-reference clear-text="Elytron"/>
+            </key-manager>
+            <key-manager name="MyKeyManager" algorithm="SunX509" key-store="FireflyKeystore" providers="ManagerProviderLoader" provider-name="SunJSSE">
+                <credential-reference store="test" alias="the-key-alias"/>
+            </key-manager>
+        </key-managers>
+        <trust-managers>
+            <trust-manager name="CaTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore" alias-filter="NONE:+mykey"/>
+            <trust-manager name="MyTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore" providers="ManagerProviderLoader" provider-name="SunJSSE"/>
+            <trust-manager name="ProviderTrustManager" algorithm="SunX509" key-store="ElytronCaTruststore" providers="ManagerProviderLoader" provider-name="SunJSSE"/>
+            <trust-manager name="trust-with-crl" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-list path="crl.pem" relative-to="jboss.server.config.dir" maximum-cert-path="2"/>
+            </trust-manager>
+            <trust-manager name="trust-with-crl-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-list />
+            </trust-manager>
+        </trust-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="ServerSslContextNoAuth" key-manager="ServerKeyManager" trust-manager="CaTrustManager"/>
+            <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="false" use-cipher-suites-order="false"
+                                providers="ManagerProviderLoader" provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
+        </server-ssl-contexts>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
+            <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+        </client-ssl-contexts>
+    </tls>
+</subsystem>
