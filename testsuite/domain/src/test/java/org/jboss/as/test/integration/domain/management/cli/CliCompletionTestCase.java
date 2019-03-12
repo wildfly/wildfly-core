@@ -1594,6 +1594,56 @@ public class CliCompletionTestCase {
             candidates = complete(ctx, cmd, false, cmd.length());
             assertEquals(Arrays.asList("rollout"), candidates);
         }
+
+        {
+            String cmd = radical + "{foo=\"1 2 3\";allow-resource-service-restart=true;rollback-on-runtime-failure=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList("false", "true"), candidates);
+            candidates = complete(ctx, cmd, false, cmd.length());
+            assertEquals(Arrays.asList("false", "true"), candidates);
+        }
+
+        {
+            String cmd = radical + "{foo=";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList(), candidates);
+            candidates = complete(ctx, cmd, null, -1);
+            assertEquals(Arrays.asList(), candidates);
+        }
+
+        {
+            String cmd = radical + "{foo=\"";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList(), candidates);
+            candidates = complete(ctx, cmd, null, -1);
+            assertEquals(Arrays.asList(), candidates);
+        }
+
+        {
+            String cmd = radical + "{foo=\"1 2 3";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList(), candidates);
+            candidates = complete(ctx, cmd, null, -1);
+            assertEquals(Arrays.asList(), candidates);
+        }
+
+        {
+            String cmd = radical + "{foo=\"1 2 3\";";
+            List<String> candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                    cmd.length(), candidates);
+            assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
+            candidates = complete(ctx, cmd, false, cmd.length());
+            assertEquals(Arrays.asList("allow-resource-service-restart", "blocking-timeout", "rollback-on-runtime-failure", "rollout"), candidates);
+        }
     }
 
     @Test

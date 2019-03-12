@@ -22,9 +22,7 @@
 package org.jboss.as.cli.parsing.operation;
 
 import org.jboss.as.cli.CommandFormatException;
-import org.jboss.as.cli.parsing.BackQuotesState;
 import org.jboss.as.cli.parsing.CharacterHandler;
-import org.jboss.as.cli.parsing.DefaultStateWithEndCharacter;
 import org.jboss.as.cli.parsing.ExpressionBaseState;
 import org.jboss.as.cli.parsing.GlobalCharacterHandlers;
 import org.jboss.as.cli.parsing.ParsingContext;
@@ -44,20 +42,32 @@ public class HeaderValueState extends ExpressionBaseState {
         super(ID);
         putHandler(';', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
         putHandler('}', GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
-        enterState('"', QuotesState.QUOTES_INCLUDED);
-        enterState('`', BackQuotesState.QUOTES_INCLUDED);
-        enterState('[', new DefaultStateWithEndCharacter("BRACKETS", ']', true, true, enterStateHandlers));
-        enterState('(', new DefaultStateWithEndCharacter("PARENTHESIS", ')', true, true, enterStateHandlers));
-        enterState('{', new DefaultStateWithEndCharacter("BRACES", '}', true, true, enterStateHandlers));
-        setEnterHandler(new CharacterHandler(){
+        setEnterHandler(new CharacterHandler() {
             @Override
             public void handle(ParsingContext ctx) throws CommandFormatException {
-                if(ctx.getCharacter() != '=') {
-                    ctx.getCallbackHandler().character(ctx);
+                if (ctx.getCharacter() != '=') {
+                    if (ctx.getCharacter() == '"') {
+                        ctx.enterState(QuotesState.QUOTES_EXCLUDED);
+                    } else {
+                        ctx.getCallbackHandler().character(ctx);
+                    }
                 }
-            }});
+            }
+        });
         setDefaultHandler(WordCharacterHandler.IGNORE_LB_ESCAPE_ON);
-        setReturnHandler(GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
+        setReturnHandler(new CharacterHandler() {
+            @Override
+            public void handle(ParsingContext ctx) throws CommandFormatException {
+                // We do return from quoted content.
+                // We should leave if the separator were handled at the list level.
+                // Because they are not, we stay in the same state until the separator is found
+                // Doing so the separator is skip and not associated to any next header name.
+                char c = ctx.getCharacter();
+                if (c == ';' || c == '}') {
+                    ctx.leaveState();
+                }
+            }
+        });
         setIgnoreWhitespaces(true);
     }
 
