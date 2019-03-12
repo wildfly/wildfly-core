@@ -61,8 +61,8 @@ public class ModuleLoadService implements Service<Module> {
 
     private ModuleLoadService(final List<ModuleDependency> systemDependencies, final List<ModuleDependency> localDependencies, final List<ModuleDependency> userDependencies) {
         this.systemDependencies = systemDependencies;
-        this.userDependencies = userDependencies;
         this.localDependencies = localDependencies;
+        this.userDependencies = userDependencies;
 
         this.allDependencies = new ArrayList<>();
         this.allDependencies.addAll(systemDependencies);
@@ -72,16 +72,16 @@ public class ModuleLoadService implements Service<Module> {
 
     private ModuleLoadService(final List<ModuleDependency> aliasDependencies) {
         this.systemDependencies = Collections.emptyList();
-        this.userDependencies = Collections.emptyList();
         this.localDependencies = Collections.emptyList();
+        this.userDependencies = Collections.emptyList();
 
         this.allDependencies = new ArrayList<>(aliasDependencies);
     }
 
     private ModuleLoadService() {
         this.systemDependencies = Collections.emptyList();
-        this.userDependencies = Collections.emptyList();
         this.localDependencies = Collections.emptyList();
+        this.userDependencies = Collections.emptyList();
 
         this.allDependencies = Collections.emptyList();
     }
@@ -146,8 +146,8 @@ public class ModuleLoadService implements Service<Module> {
         return install(target, identifier, service);
     }
 
-    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleDependency> systemDependencies, final List<ModuleDependency> userDependencies, final List<ModuleDependency> localDependencies) {
-        final ModuleLoadService service = new ModuleLoadService(systemDependencies, userDependencies, localDependencies);
+    public static ServiceName install(final ServiceTarget target, final ModuleIdentifier identifier, final List<ModuleDependency> systemDependencies, final List<ModuleDependency> localDependencies, final List<ModuleDependency> userDependencies) {
+        final ModuleLoadService service = new ModuleLoadService(systemDependencies, localDependencies, userDependencies);
         return install(target, identifier, service);
     }
 
