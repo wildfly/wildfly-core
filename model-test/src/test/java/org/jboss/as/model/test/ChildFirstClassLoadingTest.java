@@ -23,7 +23,11 @@ package org.jboss.as.model.test;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jboss.as.model.test.api.SingleChildFirst1;
@@ -49,7 +53,7 @@ public class ChildFirstClassLoadingTest {
     public void testWithoutExclusion() throws Exception {
         URLClassLoader parent = new URLClassLoader(new URL[]{ChildFirstClassLoadingTest.class.getResource("parent.jar")}, this.getClass().getClassLoader());
         parent.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
-        ChildFirstClassLoader child = new ChildFirstClassLoader(parent, new HashSet<Pattern>(), new HashSet<Pattern>(), null, new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
+        ChildFirstClassLoader child = new ChildFirstClassLoader(parent, new HashSet<Pattern>(), new HashSet<Pattern>(), null, null, new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
         Class<?> welcomeParent = child.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
         Class<?> welcomeChild = child.loadClass("org.jboss.as.model.test.child.WelcomeChild");
         Class<?> welcome = this.getClass().getClassLoader().loadClass("org.jboss.as.model.test.api.Welcome");
@@ -63,7 +67,7 @@ public class ChildFirstClassLoadingTest {
         parent.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
         ChildFirstClassLoader child = new ChildFirstClassLoader(parent, new HashSet<Pattern>(), new HashSet<Pattern>(),
                 SingleClassFilter.createFilter(Welcome.class),
-                new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
+                null, new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
         Class<?> welcomeParent = child.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
         Class<?> welcomeChild = child.loadClass("org.jboss.as.model.test.child.WelcomeChild");
     }
@@ -110,5 +114,52 @@ public class ChildFirstClassLoadingTest {
         } finally {
             file.delete();
         }
+    }
+
+    @Test
+    public void testServiceLoaderWithoutExclusion() throws Exception {
+        URLClassLoader parent = new URLClassLoader(new URL[]{ChildFirstClassLoadingTest.class.getResource("parent.jar")}, this.getClass().getClassLoader());
+        parent.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
+        ChildFirstClassLoader child = new ChildFirstClassLoader(parent, new HashSet<Pattern>(), new HashSet<Pattern>(), null, null, new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
+        Class<?> welcomeParent = child.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
+        Class<?> welcomeChild = child.loadClass("org.jboss.as.model.test.child.WelcomeChild");
+        Class<?> welcome = this.getClass().getClassLoader().loadClass("org.jboss.as.model.test.api.Welcome");
+        ServiceLoader loader = ServiceLoader.load(welcome, child);
+        int loaded = 0;
+        Set<Class<?>> impls = new HashSet<>(Arrays.asList(welcomeParent, welcomeChild));
+        for (Object svc : loader) {
+            impls.remove(svc.getClass());
+            loaded++;
+        }
+        Assert.assertTrue(impls.toString(), impls.isEmpty());
+        Assert.assertEquals(2, loaded);
+    }
+
+    @Test
+    public void testServiceLoaderWithSpecificExclusion() throws Exception {
+        serviceLoaderWithExclusionTest("META-INF/services/org.jboss.as.model.test.api.Welcome");
+    }
+
+    @Test
+    public void testServiceLoaderWithWildcardExclusion() throws Exception {
+        serviceLoaderWithExclusionTest("META-INF/services/.*");
+    }
+
+    private void serviceLoaderWithExclusionTest(String exclusion) throws Exception {
+        URLClassLoader parent = new URLClassLoader(new URL[]{ChildFirstClassLoadingTest.class.getResource("parent.jar")}, this.getClass().getClassLoader());
+        parent.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
+        ChildFirstClassLoader child = new ChildFirstClassLoader(parent, new HashSet<Pattern>(), new HashSet<Pattern>(), null, Pattern.compile(exclusion), new URL[]{ChildFirstClassLoadingTest.class.getResource("child.jar")});
+        Class<?> welcomeParent = child.loadClass("org.jboss.as.model.test.parent.WelcomeParent");
+        Class<?> welcomeChild = child.loadClass("org.jboss.as.model.test.child.WelcomeChild");
+        Class<?> welcome = this.getClass().getClassLoader().loadClass("org.jboss.as.model.test.api.Welcome");
+        ServiceLoader loader = ServiceLoader.load(welcome, child);
+        int loaded = 0;
+        Set<Class<?>> impls = new HashSet<>(Collections.singleton(welcomeChild));
+        for (Object svc : loader) {
+            impls.remove(svc.getClass());
+            loaded++;
+        }
+        Assert.assertTrue(impls.toString(), impls.isEmpty());
+        Assert.assertEquals(1, loaded);
     }
 }

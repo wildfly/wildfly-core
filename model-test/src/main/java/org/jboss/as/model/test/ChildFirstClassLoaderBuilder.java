@@ -71,6 +71,7 @@ public class ChildFirstClassLoaderBuilder {
     private final Set<Pattern> parentFirst = new LinkedHashSet<Pattern>();
     private final Set<Pattern> childFirst = new LinkedHashSet<Pattern>();
     private ClassFilter parentExclusionFilter;
+    private Pattern parentResourceExclusionFilter;
     Map<URL, Set<String>> singleClassesByUrl = new HashMap<>();
     private static final Logger log = Logger.getLogger(ChildFirstClassLoaderBuilder.class);
 
@@ -248,6 +249,11 @@ public class ChildFirstClassLoaderBuilder {
         return this;
     }
 
+    public ChildFirstClassLoaderBuilder excludeResourceFromParent(String pattern) {
+        parentResourceExclusionFilter = pattern == null ? null : Pattern.compile(pattern);
+        return this;
+    }
+
     private String escape(String artifactGav) {
         return artifactGav.replaceAll(":", "-x-");
     }
@@ -285,7 +291,7 @@ public class ChildFirstClassLoaderBuilder {
             }
         }
         ClassLoader parent = this.getClass().getClassLoader() != null ? this.getClass().getClassLoader() : null;
-        return new ChildFirstClassLoader(parent, parentFirst, childFirst, parentExclusionFilter, classloaderURLs.toArray(new URL[classloaderURLs.size()]));
+        return new ChildFirstClassLoader(parent, parentFirst, childFirst, parentExclusionFilter, parentResourceExclusionFilter, classloaderURLs.toArray(new URL[classloaderURLs.size()]));
     }
 
     private void addParentFirstPatternsFromDirectory(File directory, String prefix) {
