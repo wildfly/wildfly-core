@@ -1496,6 +1496,14 @@
                         <groupId>*</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <!--
+                        This is needed due to problems in the dependency convergence checking. See
+                        https://issues.apache.org/jira/browse/MENFORCER-195 / https://issues.jboss.org/browse/WFCORE-4368
+                    -->
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
