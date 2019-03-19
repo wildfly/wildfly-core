@@ -36,6 +36,7 @@
         <module name="java.desktop"/>
         <module name="java.logging"/>
         <module name="java.xml"/>
+        <module name="java.sql"/>
         <module name="javax.mail.api" optional="true"/>
         <module name="javax.jms.api" optional="true"/>
         <module name="org.jboss.logmanager"/>
