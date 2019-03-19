@@ -60,7 +60,7 @@ import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
  * @author jdenise@redhat.com
  */
 @GroupCommandDefinition(name = "security", description = "")
-public class SecurityCommand implements GroupCommand<CLICommandInvocation, Command> {
+public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
 
     public static final FailureConsumer DEFAULT_FAILURE_CONSUMER = new FailureConsumer() {
 
@@ -131,8 +131,8 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation, Comma
     }
 
     @Override
-    public List<Command> getCommands() {
-        List<Command> commands = new ArrayList<>();
+    public List<Command<CLICommandInvocation>> getCommands() {
+        List<Command<CLICommandInvocation>> commands = new ArrayList<>();
         commands.add(new ManagementEnableSSLCommand(ctx));
         commands.add(new ManagementDisableSSLCommand(embeddedServerRef));
         commands.add(new HTTPServerEnableSSLCommand(ctx));

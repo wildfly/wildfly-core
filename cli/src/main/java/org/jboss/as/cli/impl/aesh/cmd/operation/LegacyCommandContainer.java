@@ -49,7 +49,7 @@ import org.wildfly.core.cli.command.aesh.activator.AbstractCommandActivator;
  *
  * @author jdenise@redhat.com
  */
-public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> {
+public class LegacyCommandContainer extends DefaultCommandContainer<CLICommandInvocation> {
 
     public class LegacyCommand implements Command<CLICommandInvocation>, SpecialCommand {
 
@@ -76,10 +76,10 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
         }
     }
 
-    public class CommandParser implements CommandLineParser<Command<CLICommandInvocation>> {
+    public class CommandParser implements CommandLineParser<CLICommandInvocation> {
 
         @Override
-        public ProcessedCommand<Command<CLICommandInvocation>> getProcessedCommand() {
+        public ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> getProcessedCommand() {
             return processedCommand;
         }
 
@@ -99,25 +99,25 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> getChildParser(String name) {
+        public CommandLineParser<CLICommandInvocation> getChildParser(String name) {
             return null;
         }
 
         @Override
-        public void addChildParser(CommandLineParser<Command<CLICommandInvocation>> childParser) {
+        public void addChildParser(CommandLineParser<CLICommandInvocation> childParser) {
 
         }
 
         @Override
-        public List<CommandLineParser<Command<CLICommandInvocation>>> getAllChildParsers() {
+        public List<CommandLineParser<CLICommandInvocation>> getAllChildParsers() {
             return Collections.emptyList();
         }
 
         @Override
-        public CommandPopulator<Object, Command<CLICommandInvocation>> getCommandPopulator() {
-            return new CommandPopulator<Object, Command<CLICommandInvocation>>() {
+        public CommandPopulator<Object, CLICommandInvocation> getCommandPopulator() {
+            return new CommandPopulator<Object, CLICommandInvocation>() {
                 @Override
-                public void populateObject(ProcessedCommand<Command<CLICommandInvocation>> processedCommand,
+                public void populateObject(ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> processedCommand,
                         InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
                 }
 
@@ -175,7 +175,7 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> parsedCommand() {
+        public CommandLineParser<CLICommandInvocation> parsedCommand() {
             return this;
         }
 
@@ -198,7 +198,7 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
 
     private String line;
 
-    private final CommandLineParser<Command<CLICommandInvocation>> parser = new CommandParser();
+    private final CommandLineParser<CLICommandInvocation> parser = new CommandParser();
     private final CommandContextImpl ctx;
     private final String name;
     private final CommandHandler handler;
@@ -210,12 +210,12 @@ public class LegacyCommandContainer extends DefaultCommandContainer<Command<CLIC
         this.name = names[0];
         this.aliases = names.length > 1 ? Arrays.asList(Arrays.copyOfRange(names, 1, names.length)) : Collections.emptyList();
         this.handler = handler;
-        processedCommand = new ProcessedCommandBuilder().command(command).name(name).
+        processedCommand = ProcessedCommandBuilder.<Command<CLICommandInvocation>, CLICommandInvocation>builder().command(command).name(name).
                 aliases(aliases).activator(new Activator()).create();
     }
 
     @Override
-    public CommandLineParser<Command<CLICommandInvocation>> getParser() {
+    public CommandLineParser<CLICommandInvocation> getParser() {
         return parser;
     }
 

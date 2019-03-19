@@ -16,8 +16,8 @@ limitations under the License.
 package org.jboss.as.cli.impl.aesh;
 
 import java.io.IOException;
-import org.aesh.command.Command;
 import org.aesh.command.CommandRuntime;
+import org.aesh.command.container.CommandContainer;
 import org.aesh.command.shell.Shell;
 import org.aesh.command.invocation.CommandInvocationBuilder;
 import org.aesh.command.invocation.CommandInvocationConfiguration;
@@ -39,7 +39,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  * @author jdenise@redhat.com
  */
 public class CLICommandInvocationBuilder implements
-        CommandInvocationBuilder<Command<CLICommandInvocation>, CLICommandInvocation> {
+        CommandInvocationBuilder<CLICommandInvocation> {
 
     public class ShellImpl implements Shell {
 
@@ -141,15 +141,15 @@ public class CLICommandInvocationBuilder implements
     }
 
     @Override
-    public CLICommandInvocation build(CommandRuntime<Command<CLICommandInvocation>, CLICommandInvocation> runtime,
-            CommandInvocationConfiguration configuration) {
+    public CLICommandInvocation build(CommandRuntime<CLICommandInvocation> runtime,
+            CommandInvocationConfiguration configuration, CommandContainer<CLICommandInvocation> commandContainer) {
         // We must set a CommandContext that can deal with timeout.
         // Another approach would have been to set the ctx CommandContext instance
         // and have the CommandExecutor to set the timeoutContext onto the CLICommandInvocation
         // but this would require a public setter on the CLICommandInvocationImpl class
         // something that we don't want.
         return new CLICommandInvocationImpl(ctx.newTimeoutCommandContext(),
-                registry, console, shell, runtime, configuration);
+                registry, console, shell, runtime, configuration, commandContainer);
     }
 
 }

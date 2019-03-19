@@ -47,7 +47,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  *
  * @author jdenise@redhat.com
  */
-public class OperationCommandContainer extends DefaultCommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> {
+public class OperationCommandContainer extends DefaultCommandContainer<CLICommandInvocation> {
 
     public static boolean isOperation(String mainCommand) {
         mainCommand = mainCommand.trim();
@@ -67,12 +67,12 @@ public class OperationCommandContainer extends DefaultCommandContainer<Command<C
         }
     }
 
-    public class OperationParser implements CommandLineParser<Command<CLICommandInvocation>> {
+    public class OperationParser implements CommandLineParser<CLICommandInvocation> {
 
         @Override
-        public ProcessedCommand<Command<CLICommandInvocation>> getProcessedCommand() {
+        public ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> getProcessedCommand() {
             try {
-                return new ProcessedCommandBuilder().command(command).name("/").create();
+                return ProcessedCommandBuilder.<Command<CLICommandInvocation>, CLICommandInvocation>builder().command(command).name("/").create();
             } catch (CommandLineParserException ex) {
                 throw new RuntimeException(ex);
             }
@@ -94,25 +94,25 @@ public class OperationCommandContainer extends DefaultCommandContainer<Command<C
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> getChildParser(String name) {
+        public CommandLineParser<CLICommandInvocation> getChildParser(String name) {
             return null;
         }
 
         @Override
-        public void addChildParser(CommandLineParser<Command<CLICommandInvocation>> childParser) {
+        public void addChildParser(CommandLineParser<CLICommandInvocation> childParser) {
 
         }
 
         @Override
-        public List<CommandLineParser<Command<CLICommandInvocation>>> getAllChildParsers() {
+        public List<CommandLineParser<CLICommandInvocation>> getAllChildParsers() {
             return Collections.emptyList();
         }
 
         @Override
-        public CommandPopulator<Object, Command<CLICommandInvocation>> getCommandPopulator() {
-            return new CommandPopulator<Object, Command<CLICommandInvocation>>() {
+        public CommandPopulator<Object, CLICommandInvocation> getCommandPopulator() {
+            return new CommandPopulator<Object, CLICommandInvocation>() {
                 @Override
-                public void populateObject(ProcessedCommand<Command<CLICommandInvocation>> processedCommand,
+                public void populateObject(ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> processedCommand,
                         InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
                 }
 
@@ -169,7 +169,7 @@ public class OperationCommandContainer extends DefaultCommandContainer<Command<C
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> parsedCommand() {
+        public CommandLineParser<CLICommandInvocation> parsedCommand() {
             return this;
         }
 
@@ -192,14 +192,14 @@ public class OperationCommandContainer extends DefaultCommandContainer<Command<C
 
     private String line;
 
-    private final CommandLineParser<Command<CLICommandInvocation>> parser = new OperationParser();
+    private final CommandLineParser<CLICommandInvocation> parser = new OperationParser();
     private final CommandContextImpl ctx;
     public OperationCommandContainer(CommandContextImpl ctx) {
         this.ctx = ctx;
     }
 
     @Override
-    public CommandLineParser<Command<CLICommandInvocation>> getParser() {
+    public CommandLineParser<CLICommandInvocation> getParser() {
         return parser;
     }
 

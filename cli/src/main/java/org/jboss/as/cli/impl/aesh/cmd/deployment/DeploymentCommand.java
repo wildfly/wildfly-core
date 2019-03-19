@@ -44,7 +44,7 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  */
 @GroupCommandDefinition(name = "deployment", description = "", activator = ControlledCommandActivator.class)
 public class DeploymentCommand extends CommandWithPermissions
-        implements GroupCommand<CLICommandInvocation, Command> {
+        implements GroupCommand<CLICommandInvocation> {
 
     public DeploymentCommand(CommandContext ctx, Permissions permissions) {
         super(ctx, AccessRequirements.deploymentAccess(permissions), permissions);
@@ -65,8 +65,8 @@ public class DeploymentCommand extends CommandWithPermissions
     }
 
     @Override
-    public List<Command> getCommands() {
-        List<Command> commands = new ArrayList<>();
+    public List<Command<CLICommandInvocation>> getCommands() {
+        List<Command<CLICommandInvocation>> commands = new ArrayList<>();
         commands.add(new EnableCommand(getCommandContext(), getPermissions()));
         commands.add(new EnableAllCommand(getCommandContext(), getPermissions()));
         commands.add(new DeployArchiveCommand(getCommandContext(), getPermissions()));

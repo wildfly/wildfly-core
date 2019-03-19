@@ -66,7 +66,7 @@ public class HelpSupportTestCase {
             if (!(container.getWrappedContainer() instanceof LegacyCommandContainer)
                     && !isAeshExtension(container.getParser().getCommand())) {
                 HelpSupport.checkCommand(null, container.getParser());
-                for (CommandLineParser<Command<CLICommandInvocation>> child : container.getParser().getAllChildParsers()) {
+                for (CommandLineParser<CLICommandInvocation> child : container.getParser().getAllChildParsers()) {
                     HelpSupport.checkCommand(container.getParser(), child);
                 }
             }

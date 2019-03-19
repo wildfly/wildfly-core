@@ -307,7 +307,7 @@ public class HelpSupport {
                     + buildAddress(address) + ":"
                     + Util.READ_OPERATION_DESCRIPTION + "(name=" + commandName + ")";
             ModelNode props = mn.get(Util.REQUEST_PROPERTIES);
-            ProcessedCommand<?> pcommand = new ProcessedCommandBuilder().
+            ProcessedCommand pcommand = ProcessedCommandBuilder.builder().
                     name(commandName).description(desc).create();
             for (String prop : props.keys()) {
                 ModelNode p = props.get(prop);
@@ -446,18 +446,18 @@ public class HelpSupport {
     }
 
     public static String getSubCommandHelp(String parentCommand,
-            CommandLineParser<Command<CLICommandInvocation>> parser) {
+            CommandLineParser<CLICommandInvocation> parser) {
         String commandName = parser.getProcessedCommand().name();
         return getCommandHelp(parentCommand, commandName, parser);
     }
 
-    public static String getCommandHelp(CommandLineParser<Command<CLICommandInvocation>> parser) {
+    public static String getCommandHelp(CommandLineParser<CLICommandInvocation> parser) {
         String commandName = parser.getProcessedCommand().name();
         return getCommandHelp(null, commandName, parser);
     }
 
     private static String getCommandHelp(String parentName, String commandName,
-            CommandLineParser<Command<CLICommandInvocation>> parser) {
+            CommandLineParser<CLICommandInvocation> parser) {
 
         // First retrieve deprecated options.
         Set<String> deprecated = new HashSet<>();
@@ -466,11 +466,11 @@ public class HelpSupport {
         retrieveDeprecated(deprecated, parser.getCommand().getClass(), superNames);
         retrieveHidden(deprecated, parser.getProcessedCommand());
 
-        List<CommandLineParser<Command<CLICommandInvocation>>> parsers = parser.getAllChildParsers();
+        List<CommandLineParser<CLICommandInvocation>> parsers = parser.getAllChildParsers();
 
         ResourceBundle bundle = getBundle(parser.getCommand());
 
-        ProcessedCommand<?> pcommand = retrieveDescriptions(bundle, parentName,
+        ProcessedCommand<?, ?> pcommand = retrieveDescriptions(bundle, parentName,
                 parser.getProcessedCommand(), superNames, deprecated);
 
         List<ProcessedOption> opts = new ArrayList<>();
@@ -491,12 +491,12 @@ public class HelpSupport {
 
     private static String getCommandHelp(ResourceBundle bundle, List<String> superNames,
             ProcessedOption arg,
-            List<CommandLineParser<Command<CLICommandInvocation>>> parsers,
+            List<CommandLineParser<CLICommandInvocation>> parsers,
             List<ProcessedOption> opts,
-            ProcessedCommand<?> pcommand,
+            ProcessedCommand<?, ?> pcommand,
             String parentName,
             String commandName,
-            ProcessedCommand<?> origCommand, boolean isOperation) {
+            ProcessedCommand<?, ?> origCommand, boolean isOperation) {
         StringBuilder builder = new StringBuilder();
         builder.append(Config.getLineSeparator());
 
@@ -572,7 +572,7 @@ public class HelpSupport {
     private static String printActions(ResourceBundle bundle,
             String parentName,
             String commandName,
-            List<CommandLineParser<Command<CLICommandInvocation>>> parsers,
+            List<CommandLineParser<CLICommandInvocation>> parsers,
             List<String> superNames) {
         StringBuilder builder = new StringBuilder();
         if (parsers != null && parsers.size() > 0) {
@@ -628,7 +628,7 @@ public class HelpSupport {
         return builder.toString();
     }
 
-    private static void retrieveHidden(Set<String> deprecated, ProcessedCommand<Command<CLICommandInvocation>> cmd) {
+    private static void retrieveHidden(Set<String> deprecated, ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> cmd) {
         if ((cmd.getArgument() != null && cmd.getArgument().activator() instanceof HideOptionActivator)
                 || (cmd.getArguments() != null && cmd.getArguments().activator() instanceof HideOptionActivator)) {
             deprecated.add("");
@@ -816,7 +816,7 @@ public class HelpSupport {
 
     private static ProcessedCommandBuilder retrieveDescriptionBuilder(ResourceBundle bundle,
             String parentName,
-            ProcessedCommand<?> pc, List<String> superNames) {
+            ProcessedCommand<?, ?> pc, List<String> superNames) {
         if (bundle == null) {
             if (testMode) {
                 throw new RuntimeException("Invalid help for command, no bundle");
@@ -828,13 +828,13 @@ public class HelpSupport {
         if (bdesc != null) {
             desc = bdesc;
         }
-        ProcessedCommandBuilder builder = new ProcessedCommandBuilder().name(pc.name()).description(desc);
+        ProcessedCommandBuilder builder = ProcessedCommandBuilder.builder().name(pc.name()).description(desc);
         return builder;
     }
 
     private static ProcessedCommand retrieveDescriptions(ResourceBundle bundle,
             String parentName,
-            ProcessedCommand<?> pc, List<String> superNames, Set<String> deprecated) {
+            ProcessedCommand<?, ?> pc, List<String> superNames, Set<String> deprecated) {
         try {
             ProcessedCommandBuilder builder = retrieveDescriptionBuilder(bundle, parentName, pc, superNames);
             if (builder == null) {
@@ -1044,8 +1044,8 @@ public class HelpSupport {
         testMode = mode;
     }
 
-    public static void checkCommand(CommandLineParser<Command<CLICommandInvocation>> parent,
-            CommandLineParser<Command<CLICommandInvocation>> child) throws Exception {
+    public static void checkCommand(CommandLineParser<CLICommandInvocation> parent,
+            CommandLineParser<CLICommandInvocation> child) throws Exception {
         boolean currentMode = testMode;
         testMode(true);
         try {

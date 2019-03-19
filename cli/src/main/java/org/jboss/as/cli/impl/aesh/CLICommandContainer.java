@@ -45,18 +45,18 @@ import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
  *
  * @author jfdenise
  */
-public class CLICommandContainer extends DefaultCommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> {
+public class CLICommandContainer extends DefaultCommandContainer<CLICommandInvocation> {
 
-    private class WrappedParser implements CommandLineParser<Command<CLICommandInvocation>> {
+    private class WrappedParser implements CommandLineParser<CLICommandInvocation> {
 
-        private final CommandLineParser<Command<CLICommandInvocation>> parser;
+        private final CommandLineParser<CLICommandInvocation> parser;
 
-        private WrappedParser(CommandLineParser<Command<CLICommandInvocation>> parser) {
+        private WrappedParser(CommandLineParser<CLICommandInvocation> parser) {
             this.parser = parser;
         }
 
         @Override
-        public ProcessedCommand<Command<CLICommandInvocation>> getProcessedCommand() {
+        public ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> getProcessedCommand() {
             return parser.getProcessedCommand();
         }
 
@@ -76,17 +76,17 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> getChildParser(String name) {
+        public CommandLineParser<CLICommandInvocation> getChildParser(String name) {
             return parser.getChildParser(name);
         }
 
         @Override
-        public void addChildParser(CommandLineParser<Command<CLICommandInvocation>> childParser) throws CommandLineParserException {
+        public void addChildParser(CommandLineParser<CLICommandInvocation> childParser) throws CommandLineParserException {
             parser.addChildParser(childParser);
         }
 
         @Override
-        public List<CommandLineParser<Command<CLICommandInvocation>>> getAllChildParsers() {
+        public List<CommandLineParser<CLICommandInvocation>> getAllChildParsers() {
             return parser.getAllChildParsers();
         }
 
@@ -143,7 +143,7 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> parsedCommand() {
+        public CommandLineParser<CLICommandInvocation> parsedCommand() {
             return parser.parsedCommand();
         }
 
@@ -163,14 +163,14 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
     }
 
-    public class CLICommandParser implements CommandLineParser<Command<CLICommandInvocation>> {
+    public class CLICommandParser implements CommandLineParser<CLICommandInvocation> {
 
-        public CommandLineParser<Command<CLICommandInvocation>> getWrappedParser() {
+        public CommandLineParser<CLICommandInvocation> getWrappedParser() {
             return container.getParser();
         }
 
         @Override
-        public ProcessedCommand<Command<CLICommandInvocation>> getProcessedCommand() {
+        public ProcessedCommand<Command<CLICommandInvocation>, CLICommandInvocation> getProcessedCommand() {
             return container.getParser().getProcessedCommand();
         }
 
@@ -190,17 +190,17 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> getChildParser(String name) {
+        public CommandLineParser<CLICommandInvocation> getChildParser(String name) {
             return container.getParser().getChildParser(name);
         }
 
         @Override
-        public void addChildParser(CommandLineParser<Command<CLICommandInvocation>> childParser) throws CommandLineParserException {
+        public void addChildParser(CommandLineParser<CLICommandInvocation> childParser) throws CommandLineParserException {
             container.getParser().addChildParser(childParser);
         }
 
         @Override
-        public List<CommandLineParser<Command<CLICommandInvocation>>> getAllChildParsers() {
+        public List<CommandLineParser<CLICommandInvocation>> getAllChildParsers() {
             return container.getParser().getAllChildParsers();
         }
 
@@ -255,7 +255,7 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
 
         @Override
-        public CommandLineParser<Command<CLICommandInvocation>> parsedCommand() {
+        public CommandLineParser<CLICommandInvocation> parsedCommand() {
             return container.getParser().parsedCommand();
         }
 
@@ -275,18 +275,18 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         }
     }
 
-    private final CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> container;
-    private final CommandLineParser<Command<CLICommandInvocation>> parser;
+    private final CommandContainer<CLICommandInvocation> container;
+    private final CommandLineParser<CLICommandInvocation> parser;
     private final CommandContext ctx;
 
-    CLICommandContainer(CommandContainer<Command<CLICommandInvocation>, CLICommandInvocation> container, CommandContext ctx) throws OptionParserException {
+    CLICommandContainer(CommandContainer<CLICommandInvocation> container, CommandContext ctx) throws OptionParserException {
         this.container = container;
         this.ctx = ctx;
         this.parser = new CLICommandParser();
     }
 
     @Override
-    public CommandLineParser<Command<CLICommandInvocation>> getParser() {
+    public CommandLineParser<CLICommandInvocation> getParser() {
         return parser;
     }
 
@@ -324,7 +324,7 @@ public class CLICommandContainer extends DefaultCommandContainer<Command<CLIComm
         return container;
     }
 
-    public CommandLineParser<Command<CLICommandInvocation>> wrapParser(CommandLineParser<Command<CLICommandInvocation>> p) {
+    public CommandLineParser<CLICommandInvocation> wrapParser(CommandLineParser<CLICommandInvocation> p) {
         return new WrappedParser(p);
     }
 
