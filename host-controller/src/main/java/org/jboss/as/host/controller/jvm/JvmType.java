@@ -59,7 +59,6 @@ public final class JvmType {
         modularJavaOpts.add("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
-        modularJavaOpts.add("--add-modules=java.se");
         DEFAULT_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }
 
