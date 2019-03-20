@@ -213,7 +213,6 @@
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
         <version.org.wildfly.security.elytron>1.9.0.CR2</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.4.0.Final</version.org.wildfly.security.elytron-web>
-        <version.org.wildfly.security.elytron.tool>1.6.0.Final</version.org.wildfly.security.elytron.tool>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
@@ -1810,7 +1809,7 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-tool</artifactId>
-                <version>${version.org.wildfly.security.elytron.tool}</version>
+                <version>${version.org.wildfly.security.elytron}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>*</groupId>
