@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <authentication-client xmlns="urn:elytron:client:1.6">
+
+        <credential-stores>
+            <credential-store name="store1">
+                <protection-parameter-credentials>
+                    <clear-password password="Elytron"/>
+                </protection-parameter-credentials>
+                <attributes>
+                    <attribute name="keyStoreType" value="JCEKS"/>
+                    <attribute name="create" value="true"/>
+                    <attribute name="location" value="target/ks-cred-stores/openssh-keys-test.jceks"/>
+                </attributes>
+            </credential-store>
+        </credential-stores>
+
+        <authentication-rules>
+            <rule use-configuration="test-rsa">
+                <match-user name="testRSA"/>
+            </rule>
+            <rule use-configuration="test-pkcs">
+                <match-user name="testPKCS"/>
+            </rule>
+            <rule use-configuration="test-ecdsa">
+                <match-user name="testEC"/>
+            </rule>
+            <rule use-configuration="test-http">
+                <match-user name="httptest"/>
+            </rule>
+            <rule use-configuration="test-cred-store-ref">
+                <match-user name="testCSRef"/>
+            </rule>
+            <rule use-configuration="test-unknown-host">
+                <match-user name="testUnknownHost"/>
+            </rule>
+        </authentication-rules>
+        <authentication-configurations>
+            <configuration name="test-rsa">
+                <credentials>
+                    <key-pair>
+                        <openssh-private-key pem="-----BEGIN OPENSSH PRIVATE KEY-----
+                        b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
+                        NhAAAAAwEAAQAAAYEApFc1kATRjgtmCDXLwsovwLT/OPEKv7uVR77kleqjEHXmY9q+KuaL
+                        GhzeWcfk8KOcq0FLOWTT0Kuv17y2ADjW1GrPkb6ACjXHIauCQv/GDuuOlzpqIjrfBxFgS3
+                        zs+DiPchS3zSh+l/eTOzFPLzgTzCiAl1P2yuY4ABqNi7+h4e+/sMCMD9+RA5zkBnsh5Xt0
+                        i5IWInvEsK6seLf6FHT3RnuCyEJp/oD6EAwiLKj8KA7OG72JH0hfHQp2sllxsMjOTh0uZT
+                        qlr2X+b3EYI4jf3o9NI33ArZFJT/ZdQAjmBqdUrG3axloLQupR2qvQ3kMnExQVlgFomzZj
+                        Q0tw0doa7ml1rVnFv50NCbKul+AyYlSo/Vdhl5O8egw4cjr6qbIB9D7LDNWmX4J2RI+MvR
+                        IlI8bXAV9g4zfNIfFrY16KnP6kJWMsipQ3XF5xOo9A2eNHZO6DGvTMc5pFRreOI7gEFTBQ
+                        /qBS4z/5EwoPAtGkoK1NgoQw+t9rH4Fq/sPK59xFAAAFmM03e0fNN3tHAAAAB3NzaC1yc2
+                        EAAAGBAKRXNZAE0Y4LZgg1y8LKL8C0/zjxCr+7lUe+5JXqoxB15mPavirmixoc3lnH5PCj
+                        nKtBSzlk09Crr9e8tgA41tRqz5G+gAo1xyGrgkL/xg7rjpc6aiI63wcRYEt87Pg4j3IUt8
+                        0ofpf3kzsxTy84E8wogJdT9srmOAAajYu/oeHvv7DAjA/fkQOc5AZ7IeV7dIuSFiJ7xLCu
+                        rHi3+hR090Z7gshCaf6A+hAMIiyo/CgOzhu9iR9IXx0KdrJZcbDIzk4dLmU6pa9l/m9xGC
+                        OI396PTSN9wK2RSU/2XUAI5ganVKxt2sZaC0LqUdqr0N5DJxMUFZYBaJs2Y0NLcNHaGu5p
+                        da1Zxb+dDQmyrpfgMmJUqP1XYZeTvHoMOHI6+qmyAfQ+ywzVpl+CdkSPjL0SJSPG1wFfYO
+                        M3zSHxa2Neipz+pCVjLIqUN1xecTqPQNnjR2Tugxr0zHOaRUa3jiO4BBUwUP6gUuM/+RMK
+                        DwLRpKCtTYKEMPrfax+Bav7DyufcRQAAAAMBAAEAAAGADVIERWgelCTYYFH78g3xUO1awo
+                        LHHENYFjiizoP2M59azT0trMyC+drdKunI5LheOoNQVZaWlJNV7WaeWeZBg3Yk3OtT9X/m
+                        ZBRCuquAojT1mcxiTeP3r9r4syWtD3GGLvj+7OIbYLXweRvGD028TQ/7XEix+EAwydFdJ7
+                        agqG+GWg1BTQgR+Pj+gof4d2FKUQXGRYVCrA98a0x+OKpCYLQiJZk8fiR2IFbbbkNELPsG
+                        ObljI+X5z6DJfitBy9J6xQ9WmceBd2/YY4WEHI4rAxihhXglt8xm4jc4vc+26Id6N8qV+c
+                        zzqdf2jicncUpGAJ61vRpKUZc5m0v0ehx35WH8I4T1tfIzBo1wLxOeW63XYpI9nUpcEED9
+                        7rkXOpmLX+xiG/RNkQ73oCDwgiPuZDOcEA2vJxhwJ8Hz3waL7n1fZWH2sTClVY7wXLBx0A
+                        4cCJYiaab0hwtDoH6xkixHWmMezPhhug3ZOUgQQxu78/ELW7xLN0rffyq8H2KEksEBAAAA
+                        wQCRJX4bPoY2y9f2ukzCY4KSpAxHLCJefmv+u6s1nnaGTs1nvaSpdv+Z6fnZ+4W6wfPNex
+                        I8IMEqyCccTs4IfY5bpwVE7wz5/ddshK5qopw9QlUWWk5lFWcjQPpE8oD/WfLaMkBqWPW6
+                        WNtZWyrg7Xj2g2d92txZhZdQUfs1ZmsLtn+Sd07y8nQjY4AekVNGjoPUysjP5ZQ3u6FlHU
+                        pvgR+/E9sg2QZiicvMJ3ZPsrKIS5db9oo8ZP6Lxoc+/y4TmXsAAADBANeZFd2qP6D6Xj0i
+                        iwrOwkA5B0k6CwEJWCrNUZ18bkxiVrdtJl9EF1PfucPxHs0pSAahGXNgayP85RZDzO6bRz
+                        kbf8QAZjy/DyzBSXn+03oOJ9YWzQhc7KcR7yqWXXiA1uYDXHAQTLZ7MdcEHDWjCDiuLR8j
+                        0d+E8j98jaXF+0omrJFUsm+kxUOVMjKdDamh9CwNwPTiq8oQU51g8mC6fySMB2ESnc/9ZE
+                        McoWgL9bxU8iSp/QVM3XrU23tmhOFIJwAAAMEAwyMl+DvO+Ym02oETKloi9IXbiNWtMdOS
+                        Xk/XutDd4nGVH/O0MPgAtvaG1IbDZREJtFGFlw+rKH/km8xHELGfL25F1spHFP3x4AFDW2
+                        JD9AZbWa4QugKyyFMMYMAWExUfCHXvwLPtczgyvI243M95DnhD7I7fv3o3Z8Ckohsdu0M/
+                        7W/SoMAYWh9ShNKoXoYj3QOyvMB6+b3dC+zezeOdSx/9RhMq7woiWR5RTqC3Y7gBTg/YBw
+                        OTU/z6+i1Giu+zAAAAHmFhYmRlbHNhQGxvY2FsaG9zdC5sb2NhbGRvbWFpbgECAwQ=
+                        -----END OPENSSH PRIVATE KEY-----"/>
+                    </key-pair>
+                    <ssh-credential ssh-directory="./src/test/resources/git-persistence/.ssh"/>
+                </credentials>
+            </configuration>
+            <configuration name="test-pkcs">
+                <credentials>
+                    <key-pair>
+                        <private-key-pem>-----BEGIN PRIVATE KEY-----
+                            MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgpEgHUzPQbM80Dya5
+                            Lp2pu+U5AMJFjxzIF3KpDfqaiGmhRANCAASt8FqpkX+tAn6aC386jgI369F0RLlk
+                            Tmp89t0Gt1jlolS9G8X2DDeooHiVpfzXkhzKP9vRJcjQFOMpdWLVCEUv
+                            -----END PRIVATE KEY-----
+                        </private-key-pem>
+                        <public-key-pem>-----BEGIN PUBLIC KEY-----
+                            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAErfBaqZF/rQJ+mgt/Oo4CN+vRdES5
+                            ZE5qfPbdBrdY5aJUvRvF9gw3qKB4laX815Icyj/b0SXI0BTjKXVi1QhFLw==
+                            -----END PUBLIC KEY-----
+                        </public-key-pem>
+                    </key-pair>
+                    <ssh-credential ssh-directory="./src/test/resources/git-persistence/.ssh"/>
+                </credentials>
+            </configuration>
+            <configuration name="test-ecdsa">
+                <credentials>
+                    <ssh-credential ssh-directory="./src/test/resources/git-persistence/.ssh" private-key-file="id_ecdsa"/>
+                </credentials>
+            </configuration>
+            <configuration name="test-http">
+                <sasl-mechanism-selector selector="BASIC" />
+                <set-user-name name="agitter"/>
+                <credentials>
+                    <clear-password password="letmein"/>
+                </credentials>
+                <set-mechanism-realm name="testRealm" />
+            </configuration>
+            <configuration name="test-cred-store-ref">
+                <credentials>
+                    <credential-store-reference store="store1" alias="RSAKey" clear-text="Elytron"/>
+                    <ssh-credential ssh-directory="./src/test/resources/git-persistence/.ssh"/>
+                </credentials>
+            </configuration>
+            <configuration name="test-unknown-host">
+                <credentials>
+                    <credential-store-reference store="store1" alias="RSAKey" clear-text="Elytron"/>
+                    <ssh-credential ssh-directory="./src/test/resources/git-persistence/.ssh" known-hosts-file="empty_hosts"/>
+                </credentials>
+            </configuration>
+        </authentication-configurations>
+    </authentication-client>
+</configuration>
+

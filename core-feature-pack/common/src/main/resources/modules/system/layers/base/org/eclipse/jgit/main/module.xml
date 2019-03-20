@@ -29,12 +29,14 @@
 
     <resources>
         <artifact name="${org.eclipse.jgit:org.eclipse.jgit}"/>
+        <artifact name="${org.eclipse.jgit:org.eclipse.jgit.ssh.apache}"/>
     </resources>
 
     <dependencies>
         <module name="org.slf4j" />
         <module name="org.slf4j.impl" />
         <module name="javax.api"/>
+        <module name="org.apache.sshd"/>
         <module name="com.googlecode.javaewah"/>
         <module name="org.apache.httpcomponents.core"/>
         <module name="org.bouncycastle.bcpg"/>
