@@ -157,7 +157,7 @@ public class ServerManagementTestCase {
                     PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.profile-includes-test")), domainMasterLifecycleUtil.getDomainClient());
         }
 
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;

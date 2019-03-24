@@ -111,7 +111,7 @@ public class ProcessStateListenerTestCase {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         PathUtil.deleteSilentlyRecursively(data);
     }
 

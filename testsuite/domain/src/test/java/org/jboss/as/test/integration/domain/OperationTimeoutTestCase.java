@@ -200,7 +200,7 @@ public class OperationTimeoutTestCase {
         ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
         executeForResult(safeTimeout(removeExtension), masterClient);
 
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         masterClient = null;
     }

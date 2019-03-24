@@ -89,7 +89,7 @@ public class JmxControlledStateNotificationsTestCase {
     @AfterClass
     public static void cleanClass() throws Exception {
         task.tearDown(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         domainMasterLifecycleUtil = null;
         DomainTestSuite.stopSupport();

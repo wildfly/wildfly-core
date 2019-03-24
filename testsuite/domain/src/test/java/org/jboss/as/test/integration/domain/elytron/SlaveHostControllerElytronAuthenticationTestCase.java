@@ -82,7 +82,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         domainMasterClient = null;
         domainSlaveClient = null;

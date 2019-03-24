@@ -115,7 +115,7 @@ public class HTTPSManagementInterfaceTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         httpManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         domainMasterLifecycleUtil = null;
         FileUtils.deleteDirectory(WORK_DIR);

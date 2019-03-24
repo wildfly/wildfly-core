@@ -53,7 +53,7 @@ public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveT
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
 
         FileUtils.deleteDirectory(WORK_DIR);

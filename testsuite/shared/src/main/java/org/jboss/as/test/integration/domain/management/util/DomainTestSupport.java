@@ -525,7 +525,10 @@ public class DomainTestSupport implements AutoCloseable {
     /**
      * Calls {@link #close()}. This object cannot be used for controlling or interacting with hosts after
      * this is called.
+     *
+     * @deprecated Use {@link #close()}
      */
+    @Deprecated
     public void stop() {
         close();
     }

@@ -221,7 +221,7 @@ public class OutboundLdapConnectionTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         domainMasterLifecycleUtil = null;
         testSupport = null;
     }
