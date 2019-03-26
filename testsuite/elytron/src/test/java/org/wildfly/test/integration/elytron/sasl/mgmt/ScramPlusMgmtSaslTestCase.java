@@ -60,7 +60,7 @@ import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.MatchRule;
 import org.wildfly.security.auth.permission.LoginPermission;
-import org.wildfly.security.mechanism.scram.ScramServerErrorCode;
+import org.wildfly.security.mechanism.ScramServerErrorCode;
 import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.wildfly.security.ssl.SSLContextBuilder;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
