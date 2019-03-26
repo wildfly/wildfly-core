@@ -163,7 +163,7 @@ public class DomainTestSupport {
         }
     }
 
-    public static void startHosts(long timeout, DomainLifecycleUtil... hosts) throws Exception {
+    public static void startHosts(long timeout, DomainLifecycleUtil... hosts) {
         Future<?>[] futures = new Future<?>[hosts.length];
         for (int i = 0; i < hosts.length; i++) {
             futures[i] = hosts[i].startAsync();
@@ -172,7 +172,7 @@ public class DomainTestSupport {
         processFutures(futures, timeout);
     }
 
-    public static void stopHosts(long timeout, DomainLifecycleUtil... hosts) throws Exception {
+    public static void stopHosts(long timeout, DomainLifecycleUtil... hosts) {
         Future<?>[] futures = new Future<?>[hosts.length];
         for (int i = 0; i < hosts.length; i++) {
             futures[i] = hosts[i].stopAsync();
@@ -269,7 +269,7 @@ public class DomainTestSupport {
         }
     }
 
-    private static void processFutures(Future<?>[] futures, long timeout) throws Exception {
+    private static void processFutures(Future<?>[] futures, long timeout) {
 
         try {
             for (int i = 0; i < futures.length; i++) {
@@ -279,8 +279,10 @@ public class DomainTestSupport {
                     throw e.getCause();
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw e;
+        } catch (Exception e) {
+            throw  new RuntimeException(e);
         } catch (Error e) {
             throw e;
         } catch (Throwable t) {
@@ -407,6 +409,12 @@ public class DomainTestSupport {
         }
     }
 
+    /**
+     * Stops the {@link #getDomainMasterLifecycleUtil() master host} and, if there is one, the
+     * {@link #getDomainSlaveLifecycleUtil() slave host}, and also closes any
+     * {@link #getSharedClientConfiguration() shared client configuration}. This object should not be used
+     * for controlling or interacting with hosts after this is called, even if {@link #start()} is called again.
+     */
     public void stop() {
         try {
             try {
@@ -418,6 +426,19 @@ public class DomainTestSupport {
             }
         } finally {
             StreamUtils.safeClose(sharedClientConfig);
+        }
+    }
+
+    /**
+     * Stops the {@link #getDomainMasterLifecycleUtil() master host} and, if there is one, the
+     * {@link #getDomainSlaveLifecycleUtil() slave host}. Stops are done concurrently with 2 minute
+     * timeout for a host to stop.
+     */
+    public void stopHosts() {
+        if (domainSlaveLifecycleUtil != null) {
+            stopHosts(120000, domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
+        } else {
+            stopHosts(120000, domainMasterLifecycleUtil);
         }
     }
 

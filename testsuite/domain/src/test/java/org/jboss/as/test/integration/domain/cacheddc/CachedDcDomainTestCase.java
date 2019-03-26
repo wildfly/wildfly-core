@@ -186,14 +186,10 @@ public class CachedDcDomainTestCase {
         domainManager.getDomainMasterLifecycleUtil()
             .executeForResult(getCreateOperationTestLoggingCategory());
 
-        domainManager.stop();
-        domainManager.getDomainSlaveLifecycleUtil().startAsync();
+        domainManager.stopHosts();
 
-        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, client);
-            waitForServersBeingStarted(TIMEOUT_S, client);
-            checkTestLoggerFromSlaveHost(client);
-        }
+        domainManager.getDomainSlaveLifecycleUtil().start();
+        checkTestLoggerFromSlaveHost(domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
     }
 
     /**
@@ -214,25 +210,17 @@ public class CachedDcDomainTestCase {
         assertEquals(false, domainManager.getDomainSlaveLifecycleUtil().isHostControllerStarted());
         domainManager.getDomainMasterLifecycleUtil()
             .executeForResult(getCreateOperationTestLoggingCategory());
-        domainManager.stop();
+        domainManager.stopHosts();
 
         // starting domain once again - reusing already changed config files
         domainConfig.getMasterConfiguration().setRewriteConfigFiles(false);
         domainConfig.getSlaveConfiguration().setRewriteConfigFiles(false);
 
         // HC started with old domain.cached-remote.xml
-        domainManager.getDomainSlaveLifecycleUtil().startAsync();
-        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, clientSlave);
-            waitForServersBeingStarted(TIMEOUT_S, clientSlave);
-        }
+        domainManager.getDomainSlaveLifecycleUtil().start();
 
         // DC started where domain config contains a configuration change (a new logger was created)
-        domainManager.getDomainMasterLifecycleUtil().startAsync();
-        try (final DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
-            waitForServersBeingStarted(TIMEOUT_S, clientMaster);
-        }
+        domainManager.getDomainMasterLifecycleUtil().start();
 
         // timeout waits to get changes from DC propagated to HC
         // by WFCORE-2331 the host controller log file should advert need of configuration change
@@ -294,7 +282,7 @@ public class CachedDcDomainTestCase {
         final ModelNode profileRead = readLoggingApiDependencies(client);
         assertEquals("Expecting value of attribute 'add-logging-api-dependencies' was changed" + profileRead,
             isAddLoggingApiDependencies, profileRead.get("result").asBoolean());
-        domainManager.stop();
+        domainManager.stopHosts();
 
         // starting domain once again - reusing already changed config files
         // slave will be started with cached dc parameter but not with backup parameter
@@ -303,37 +291,23 @@ public class CachedDcDomainTestCase {
             .setRewriteConfigFiles(false).setBackupDC(false).setCachedDC(true);
 
         // starting HC with old domain.cached-remote.xml
-        domainManager.getDomainSlaveLifecycleUtil().startAsync();
-        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, clientSlave);
-            waitForServersBeingStarted(TIMEOUT_S, clientSlave);
-        }
+        domainManager.getDomainSlaveLifecycleUtil().start();
 
         // starting DC where domain config contains a configuration change
-        domainManager.getDomainMasterLifecycleUtil().startAsync();
-        try (final DomainClient clientMaster = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, clientMaster);
-            waitForServersBeingStarted(TIMEOUT_S, clientMaster);
-        }
+        domainManager.getDomainMasterLifecycleUtil().start();
 
-        try (final DomainClient clientSlave = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            runWithTimeout(TIMEOUT_S, () -> {
-                ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(clientSlave);
-                assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
-                assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
-                    "reload-required", hostRead.get("response-headers").get("process-state").asString());
-            });
-        }
-        try (final DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
-            reloadServers(clientMaster);
-        }
-        try (final DomainClient clientMaster = getDomainClient(domainConfig.getMasterConfiguration())) {
-            runWithTimeout(TIMEOUT_S, () -> {
-                ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(clientMaster);
-                assertEquals("Expecting value of attribute 'add-logging-api-dependencies' changed: " + hostRead,
-                        isAddLoggingApiDependencies, hostRead.get("result").asBoolean());
-            });
-        }
+        runWithTimeout(TIMEOUT_S, () -> {
+            ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
+            assertEquals("Read operation should suceed", SUCCESS, hostRead.get(OUTCOME).asString());
+            assertEquals("Expecting change of attribute 'add-logging-api-dependencies' requests a reload: " + hostRead,
+                "reload-required", hostRead.get("response-headers").get("process-state").asString());
+        });
+        reloadServers(domainManager.getDomainMasterLifecycleUtil().getDomainClient());
+        runWithTimeout(TIMEOUT_S, () -> {
+            ModelNode hostRead = readLoggingApiDependenciesAtServerOtherTwo(domainManager.getDomainMasterLifecycleUtil().getDomainClient());
+            assertEquals("Expecting value of attribute 'add-logging-api-dependencies' changed: " + hostRead,
+                    isAddLoggingApiDependencies, hostRead.get("result").asBoolean());
+        });
         // by WFCORE-2331 the host controller log file should advert need of configuration change
         runWithTimeout(TIMEOUT_S, () -> checkHostControllerLogFile(domainConfig.getSlaveConfiguration(), "WFLYHC0202"));
     }
@@ -347,16 +321,10 @@ public class CachedDcDomainTestCase {
         assertTrue("Master should be started", masterHost.areServersStarted());
         assertTrue("Slave should be started", slaveHost.areServersStarted());
 
-        domainManager.stop();
+        domainManager.stopHosts();
 
         domainConfig.getSlaveConfiguration().setCachedDC(true);
-        slaveHost.startAsync();
-
-        // check that HC and servers were started
-        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, client);
-            waitForServersBeingStarted(TIMEOUT_S, client);
-        }
+        slaveHost.start();
     }
 
     /**
@@ -376,10 +344,8 @@ public class CachedDcDomainTestCase {
 
         // after starting DC, HC is ready to use with all its servers
         domainManager.getDomainMasterLifecycleUtil().start();
-        try (final DomainClient client = getDomainClient(domainConfig.getSlaveConfiguration())) {
-            waitForHostControllerBeingStarted(TIMEOUT_S, client);
-            waitForServersBeingStarted(TIMEOUT_S, client);
-        }
+        waitForHostControllerBeingStarted(TIMEOUT_S, domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
+        waitForServersBeingStarted(TIMEOUT_S, domainManager.getDomainSlaveLifecycleUtil().getDomainClient());
     }
 
     private DomainClient getDomainClient(WildFlyManagedConfiguration config) throws UnknownHostException {
