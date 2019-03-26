@@ -57,6 +57,8 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
 
     public static final String NAME = "pattern-formatter";
 
+    public static final String DEFAULT_FORMATTER_SUFFIX = "-wfcore-pattern-formatter";
+
     // Pattern formatter options
     public static final PropertyAttributeDefinition COLOR_MAP = PropertyAttributeDefinition.Builder.of("color-map", ModelType.STRING)
             .setAllowExpression(true)
@@ -111,6 +113,9 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             final String name = context.getCurrentAddressValue();
+            if (name.endsWith(DEFAULT_FORMATTER_SUFFIX)) {
+                throw LoggingLogger.ROOT_LOGGER.illegalFormatterName();
+            }
             FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             if (configuration == null) {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding formatter '%s' at '%s'", name, context.getCurrentAddress());

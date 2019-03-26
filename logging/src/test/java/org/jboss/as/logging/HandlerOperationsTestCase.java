@@ -216,6 +216,7 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
     public void testCompositeOperations() {
         final ModelNode address = createFileHandlerAddress("FILE").toModelNode();
         final String filename = "test-file.log";
+        final String defaultFormatterName = "FILE" + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX;
 
         // Add the handler
         ModelNode addOp = OperationBuilder.createAddOperation(address)
@@ -237,8 +238,8 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
         // Get the log context configuration to validate what has been configured
         final LogContextConfiguration configuration = ConfigurationPersistence.getConfigurationPersistence(LogContext.getLogContext());
         assertNotNull("Expected to find the configuration", configuration);
-        assertFalse("Expected the default formatter named FILE to be removed for the handler FILE",
-                configuration.getFormatterNames().contains("FILE"));
+        assertFalse("Expected the default formatter named " + defaultFormatterName + " to be removed for the handler FILE",
+                configuration.getFormatterNames().contains(defaultFormatterName));
         final HandlerConfiguration handlerConfiguration = configuration.getHandlerConfiguration("FILE");
         assertNotNull("Expected to find the configuration for the FILE handler", configuration);
         assertEquals("Expected the handler named FILE to use the PATTERN formatter", "PATTERN",
@@ -246,9 +247,9 @@ public class HandlerOperationsTestCase extends AbstractOperationsTestCase {
 
         // Undefine the named-formatter to ensure a formatter is created
         executeOperation(kernelServices, SubsystemOperations.createUndefineAttributeOperation(address, "named-formatter"));
-        assertTrue("Expected the default formatter named FILE to be added",
-                configuration.getFormatterNames().contains("FILE"));
-        assertEquals("Expected the handler named FILE to use the FILE formatter", "FILE",
+        assertTrue("Expected the default formatter named " + defaultFormatterName + " to be added",
+                configuration.getFormatterNames().contains(defaultFormatterName));
+        assertEquals("Expected the handler named FILE to use the FILE formatter", defaultFormatterName,
                 handlerConfiguration.getFormatterName());
     }
 
