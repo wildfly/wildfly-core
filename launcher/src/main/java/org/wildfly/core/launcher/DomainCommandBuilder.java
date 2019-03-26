@@ -67,8 +67,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         hostControllerJavaOpts.addAll(DEFAULT_VM_ARGUMENTS);
         processControllerJavaOpts = new Arguments();
         processControllerJavaOpts.addAll(DEFAULT_VM_ARGUMENTS);
-        hostControllerJvm = Jvm.current();
-        serverJvm = Jvm.current();
+        hostControllerJvm = serverJvm = environment.getJvm();
     }
 
     /**
