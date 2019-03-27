@@ -28,8 +28,16 @@ import org.jboss.msc.service.ServiceTarget;
  * CapabilityServiceBuilder that are not installed are ignored.
  *
  * @author Tomaz Cerar (c) 2017 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CapabilityServiceTarget extends ServiceTarget {
 
+    /**
+     * @deprecated use {@link #addCapability(RuntimeCapability)} method instead
+     */
+    @Deprecated
     <T> CapabilityServiceBuilder<T> addCapability(final RuntimeCapability<?> capability, final Service<T> service) throws IllegalArgumentException;
+
+    CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException;
+
 }

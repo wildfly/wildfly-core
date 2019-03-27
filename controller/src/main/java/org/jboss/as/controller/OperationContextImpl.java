@@ -2126,6 +2126,16 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
+        public CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException {
+            if (capability.isDynamicallyNamed()){
+                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName(targetAddress)), targetAddress);
+            }else{
+                return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName()), targetAddress);
+            }
+        }
+
+        @Override
         protected ServiceTarget getDelegate() {
             checkNotInManagementOperation();
             return super.getDelegate();
