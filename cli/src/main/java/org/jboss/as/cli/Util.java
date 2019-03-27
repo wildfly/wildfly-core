@@ -116,6 +116,7 @@ public class Util {
     public static final String CORE_SERVICE = "core-service";
     public static final String CREDENTIAL_REFERENCE = "credential-reference";
     public static final String CIPHER_SUITE_FILTER = "cipher-suite-filter";
+    public static final String CIPHER_SUITE_NAMES = "cipher-suite-names";
     public static final String DATASOURCES = "datasources";
     public static final String DEFAULT = "default";
     public static final String DEFAULT_PERMISSION_MAPPER = "default-permission-mapper";

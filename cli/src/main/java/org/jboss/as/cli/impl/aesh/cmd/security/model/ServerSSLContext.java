@@ -18,6 +18,7 @@ package org.jboss.as.cli.impl.aesh.cmd.security.model;
 import java.util.List;
 import org.jboss.as.cli.Util;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.security.ssl.CipherSuiteSelector;
 
 /**
  * Server SSLContext model class.
@@ -34,6 +35,7 @@ public class ServerSSLContext {
     private List<String> protocols;
     private boolean authenticationOptional;
     private String cipherSuiteFilter = "DEFAULT";
+    private String cipherSuiteNames = CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES;
     private String finalPrincipalTransformer;
     private String postRealmPrincipalTransformer;
     private String preRealmPrincipalTransformer;
@@ -110,6 +112,25 @@ public class ServerSSLContext {
     public void setCipherSuiteFilter(String cipherSuiteFilter) {
         this.cipherSuiteFilter = cipherSuiteFilter;
     }
+
+    /**
+     * Get the cipher suite names.
+     *
+     * @return the cipher suite names
+     */
+    public String getCipherSuiteNames() {
+        return cipherSuiteNames;
+    }
+
+    /**
+     * Set the cipher suite names.
+     *
+     * @param cipherSuiteNames the cipher suite names
+     */
+    public void setCipherSuiteNames(String cipherSuiteNames) {
+        this.cipherSuiteNames = cipherSuiteNames;
+    }
+
 
     /**
      * @return the finalPrincipalTransformer
@@ -276,6 +297,11 @@ public class ServerSSLContext {
             sslCtx.get(Util.CIPHER_SUITE_FILTER).set(cipherSuiteFilter);
         } else {
             sslCtx.get(Util.CIPHER_SUITE_FILTER);
+        }
+        if (cipherSuiteNames != null) {
+            sslCtx.get(Util.CIPHER_SUITE_NAMES).set(cipherSuiteNames);
+        } else {
+            sslCtx.get(Util.CIPHER_SUITE_NAMES);
         }
         if (finalPrincipalTransformer != null) {
             sslCtx.get(Util.FINAL_PRINCIPAL_TRANSFORMER).set(finalPrincipalTransformer);

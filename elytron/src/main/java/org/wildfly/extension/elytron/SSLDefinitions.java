@@ -213,6 +213,14 @@ class SSLDefinitions {
             .setDefaultValue(new ModelNode("DEFAULT"))
             .build();
 
+    static final SimpleAttributeDefinition CIPHER_SUITE_NAMES = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CIPHER_SUITE_NAMES, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .setValidator(new CipherSuiteNamesValidator())
+            .setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
+            .build();
+
     private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
@@ -443,6 +451,25 @@ class SSLDefinitions {
                     } catch (PatternSyntaxException exception) {
                         throw ROOT_LOGGER.invalidHostContextMapValue(hostname);
                     }
+                }
+            }
+        }
+    }
+
+    static class CipherSuiteNamesValidator extends ModelTypeValidator {
+
+        CipherSuiteNamesValidator() {
+            super(ModelType.STRING, true, true, false);
+        }
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+            if (value.isDefined()) {
+                try {
+                    CipherSuiteSelector.fromNamesString(value.asString());
+                } catch (IllegalArgumentException e) {
+                    throw ROOT_LOGGER.invalidCipherSuiteNames(e, e.getLocalizedMessage());
                 }
             }
         }
@@ -1077,7 +1104,7 @@ class SSLDefinitions {
                 .setRestartAllServices()
                 .build();
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, PROTOCOLS,
+        AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
                 SECURITY_DOMAIN, WANT_CLIENT_AUTH, NEED_CLIENT_AUTH, AUTHENTICATION_OPTIONAL,
                 USE_CIPHER_SUITES_ORDER, MAXIMUM_SESSION_CACHE_SIZE, SESSION_TIMEOUT, WRAP, keyManagerDefinition, TRUST_MANAGER,
                 PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, FINAL_PRINCIPAL_TRANSFORMER, REALM_MAPPER,
@@ -1100,7 +1127,8 @@ class SSLDefinitions {
 
                 final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
-                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asStringOrNull();
+                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
+                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asString();
                 final boolean wantClientAuth = WANT_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean needClientAuth = NEED_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean authenticationOptional = AUTHENTICATION_OPTIONAL.resolveModelAttribute(context, model).asBoolean();
@@ -1128,8 +1156,7 @@ class SSLDefinitions {
                         builder.setTrustManager(trustManager);
                     if (providers != null)
                         builder.setProviderSupplier(() -> providers);
-                    if (cipherSuiteFilter != null)
-                        builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
+                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(CipherSuiteSelector.fromNamesString(cipherSuiteNames), CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
                         for (String protocol : protocols) {
@@ -1162,9 +1189,9 @@ class SSLDefinitions {
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
                                 "ServerSSLContext supplying:  securityDomain = %s  keyManager = %s  trustManager = %s  "
-                                        + "providers = %s  cipherSuiteFilter = %s  protocols = %s  wantClientAuth = %s  needClientAuth = %s  "
+                                        + "providers = %s  cipherSuiteFilter = %s  cipherSuiteNames = %s protocols = %s  wantClientAuth = %s  needClientAuth = %s  "
                                         + "authenticationOptional = %s  maximumSessionCacheSize = %s  sessionTimeout = %s wrap = %s",
-                                securityDomain, keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter,
+                                securityDomain, keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter, cipherSuiteNames,
                                 Arrays.toString(protocols.toArray()), wantClientAuth, needClientAuth, authenticationOptional,
                                 maximumSessionCacheSize, sessionTimeout, wrap);
                     }
@@ -1253,7 +1280,7 @@ class SSLDefinitions {
                 .setRestartAllServices()
                 .build();
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, PROTOCOLS,
+        AttributeDefinition[] attributes = new AttributeDefinition[]{CIPHER_SUITE_FILTER, CIPHER_SUITE_NAMES, PROTOCOLS,
                 KEY_MANAGER, TRUST_MANAGER, providersDefinition, PROVIDER_NAME};
 
         AbstractAddStepHandler add = new TrivialAddHandler<SSLContext>(SSLContext.class, attributes, SSL_CONTEXT_RUNTIME_CAPABILITY) {
@@ -1266,8 +1293,8 @@ class SSLDefinitions {
 
                 final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
-                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asStringOrNull();
-
+                final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
+                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asString(); // has default value, can't be null
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
@@ -1277,8 +1304,7 @@ class SSLDefinitions {
                     if (keyManager != null) builder.setKeyManager(keyManager);
                     if (trustManager != null) builder.setTrustManager(trustManager);
                     if (providers != null) builder.setProviderSupplier(() -> providers);
-                    if (cipherSuiteFilter != null)
-                        builder.setCipherSuiteSelector(CipherSuiteSelector.fromString(cipherSuiteFilter));
+                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(CipherSuiteSelector.fromNamesString(cipherSuiteNames), CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
                         for (String protocol : protocols) {
@@ -1295,8 +1321,8 @@ class SSLDefinitions {
                     if (ROOT_LOGGER.isTraceEnabled()) {
                         ROOT_LOGGER.tracef(
                                 "ClientSSLContext supplying:  keyManager = %s  trustManager = %s  providers = %s  " +
-                                        "cipherSuiteFilter = %s  protocols = %s",
-                                keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter,
+                                        "cipherSuiteFilter = %s cipherSuiteNames = %s protocols = %s",
+                                keyManager, trustManager, Arrays.toString(providers), cipherSuiteFilter, cipherSuiteNames,
                                 Arrays.toString(protocols.toArray())
                         );
                     }

@@ -84,10 +84,25 @@
             <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" use-cipher-suites-order="false"
                                 providers="ManagerProviderLoader" provider-name="IBMJSSE2" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13" protocols="TLSv1.3 TLSv1.2 TLSv1.1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="ManagerProviderLoader" provider-name="IBMJSSE2"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13Only" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="ManagerProviderLoader" provider-name="IBMJSSE2"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS12Only" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="ManagerProviderLoader"
+                                provider-name="IBMJSSE2" session-timeout="321" maximum-session-cache-size="123"/>
         </server-ssl-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
             <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13Only" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_GCM_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
         </client-ssl-contexts>
     </tls>
 </subsystem>

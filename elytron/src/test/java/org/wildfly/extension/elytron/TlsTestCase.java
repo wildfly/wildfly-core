@@ -82,6 +82,7 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -342,6 +343,38 @@ public class TlsTestCase extends AbstractSubsystemTest {
         testCommunication("ServerSslContextAuth", "ClientSslContextAuth", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
     }
 
+    @Test
+    public void testSslServiceAuthTLS13() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthTLS13, test is not being run on JDK 11.",
+                System.getProperty("java.specification.version").equals("11"));
+        testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384");
+    }
+
+    @Test
+    public void testSslServiceAuthProtocolMismatch() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11.",
+                System.getProperty("java.specification.version").equals("11"));
+        try {
+            testCommunication("ServerSslContextTLS12Only", "ClientSslContextTLS13Only", false, "",
+                    "", "");
+            fail("Expected SSLHandshakeException not thrown");
+        } catch (SSLHandshakeException expected) {
+        }
+    }
+
+    @Test
+    public void testSslServiceAuthCipherSuiteMismatch() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthCipherSuiteMismatch, test is not being run on JDK 11.",
+                System.getProperty("java.specification.version").equals("11"));
+        try {
+            testCommunication("ServerSslContextTLS13Only", "ClientSslContextTLS13Only", false, "",
+                    "", "");
+            fail("Expected SSLHandshakeException not thrown");
+        } catch (SSLHandshakeException expected) {
+        }
+    }
+
     @Test(expected = SSLHandshakeException.class)
     public void testSslServiceAuthRequiredButNotProvided() throws Throwable {
         testCommunication("ServerSslContextAuth", "ClientSslContextNoAuth", false, "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "");
@@ -456,6 +489,11 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal) throws Throwable {
+        testCommunication(serverContextName, clientContextName, defaultClient, expectedServerPrincipal, expectedClientPrincipal, null);
+    }
+
+    private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite) throws Throwable {
+        boolean testSessions = ! System.getProperty("java.specification.version").equals("11"); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
 
@@ -501,7 +539,13 @@ public class TlsTestCase extends AbstractSubsystemTest {
         try {
             Assert.assertArrayEquals(new byte[]{0x12, 0x34}, serverFuture.get());
             Assert.assertArrayEquals(new byte[]{0x56, 0x78}, clientFuture.get());
-            testSessionsReading(serverContextName, clientContextName, expectedServerPrincipal, expectedClientPrincipal);
+            if (testSessions) {
+                testSessionsReading(serverContextName, clientContextName, expectedServerPrincipal, expectedClientPrincipal);
+            }
+            if (expectedCipherSuite != null) {
+                Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
+                Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());
+            }
         } catch (ExecutionException e) {
             if (e.getCause() != null && e.getCause() instanceof RuntimeException && e.getCause().getCause() != null) {
                 throw e.getCause().getCause(); // unpack

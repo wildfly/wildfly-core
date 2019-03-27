@@ -575,4 +575,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1065, value = "Multiple maximum-cert-path definitions found.")
     OperationFailedException multipleMaximumCertPathDefinitions();
 
+    @Message(id = 1066, value = "Invalid value for cipher-suite-names. %s")
+    OperationFailedException invalidCipherSuiteNames(@Cause Throwable cause, String causeMessage);
+
 }
