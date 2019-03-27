@@ -16,6 +16,46 @@
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
     </audit-logging>
     <security-realms>
+        <jdbc-realm name="JdbcBcryptHashHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcBcryptSaltHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" salt-encoding="hex"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcSaltedSimpleDigestHashHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <salted-simple-digest-mapper password-index="2" salt-index="3" algorithm="password-salt-digest-sha-1" hash-encoding="hex"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcSaltedSimpleDigestSaltHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <salted-simple-digest-mapper password-index="2" salt-index="3" algorithm="password-salt-digest-sha-1" salt-encoding="hex"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcSimpleDigestHashHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <simple-digest-mapper password-index="2" hash-encoding="hex" algorithm="simple-digest-sha-1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcScramHashHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <scram-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex" algorithm="scram-sha-1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcScramSaltHex">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <scram-mapper password-index="2" salt-index="3" iteration-count-index="4" salt-encoding="hex" algorithm="scram-sha-1"/>
+            </principal-query>
+        </jdbc-realm>
+        <jdbc-realm name="JdbcModularCrypt">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <modular-crypt-mapper password-index="2"/>
+            </principal-query>
+        </jdbc-realm>
         <token-realm name="SslTokenRealm">
             <jwt host-name-verification-policy="ANY" client-ssl-context="ClientContext"/>
         </token-realm>

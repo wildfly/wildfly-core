@@ -1121,6 +1121,7 @@
             <xs:element name="simple-digest-mapper" type="simpleDigestMapperType" minOccurs="0"/>
             <xs:element name="salted-simple-digest-mapper" type="saltedSimpleDigestMapperType" minOccurs="0"/>
             <xs:element name="scram-mapper" type="scramMapperType" minOccurs="0"/>
+            <xs:element name="modular-crypt-mapper" type="modularCryptMapperType" minOccurs="0"/>
             <xs:element name="attribute-mapping" type="jdbcAttributeMappingType" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="sql" type="xs:string" use="required">
@@ -1234,6 +1235,32 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="hash-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password hash.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64"/>
+                    <xs:enumeration value="hex"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="salt-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password salt.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64"/>
+                    <xs:enumeration value="hex"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="saltedSimpleDigestMapperType">
@@ -1287,6 +1314,32 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="hash-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password hash.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64" />
+                    <xs:enumeration value="hex" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="salt-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password salt.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64" />
+                    <xs:enumeration value="hex" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="simpleDigestMapperType">
@@ -1321,6 +1374,19 @@
             <xs:simpleType>
                 <xs:restriction base="xs:int">
                     <xs:minInclusive value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="hash-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password hash.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64" />
+                    <xs:enumeration value="hex" />
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
@@ -1375,6 +1441,52 @@
             <xs:annotation>
                 <xs:documentation>
                     The column index from an authentication query that represents the password's iteration count, if supported.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="hash-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password hash.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64" />
+                    <xs:enumeration value="hex" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="salt-encoding" default="base64">
+            <xs:annotation>
+                <xs:documentation>
+                    The encoding of the password salt.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="base64" />
+                    <xs:enumeration value="hex" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="modularCryptMapperType">
+        <xs:annotation>
+            <xs:documentation>
+                A key mapper that maps a column returned from a SQL query to a Modular Crypt key type.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="password-index" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The column index from an authentication query that represents the user password in Modular Crypt Format.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
