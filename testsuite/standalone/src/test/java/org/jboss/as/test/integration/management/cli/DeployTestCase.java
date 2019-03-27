@@ -709,4 +709,70 @@ public class DeployTestCase extends AbstractCliTestBase{
         assertThat("After disabling of already disabled application deployment something is change!",
                 after, is(before));
     }
+
+    @Test
+    public void testDeployInBatch() throws Exception {
+        ctx.handle("batch");
+        try {
+            ctx.handle("deploy " + cliTestApp1War.getAbsolutePath() + " --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged");
+            ctx.handle("run-batch");
+        } catch (Exception ex) {
+            try {
+                ctx.handle("discard-batch");
+            } catch (Exception ex2) {
+                // XXX OK, the batch failed but terminated.
+            }
+            throw ex;
+        }
+    }
+
+    @Test
+    public void testForceDeployInBatch() throws Exception {
+        ctx.handle("deploy " + cliTestApp1War.getAbsolutePath() +" --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged");
+        ctx.handle("batch");
+        try {
+            ctx.handle("deploy " + cliTestApp1War.getAbsolutePath() + " --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged --force");
+            ctx.handle("run-batch");
+        } catch (Exception ex) {
+            try {
+                ctx.handle("discard-batch");
+            } catch (Exception ex2) {
+                // XXX OK, the batch failed but terminated.
+            }
+            throw ex;
+        }
+    }
+
+    @Test
+    public void testDeployFileInBatch() throws Exception {
+        ctx.handle("batch");
+        try {
+            ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath() + " --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged");
+            ctx.handle("run-batch");
+        } catch (Exception ex) {
+            try {
+                ctx.handle("discard-batch");
+            } catch (Exception ex2) {
+                // XXX OK, the batch failed but terminated.
+            }
+            throw ex;
+        }
+    }
+
+    @Test
+    public void testForceDeployFileInBatch() throws Exception {
+        ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath() +" --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged");
+        ctx.handle("batch");
+        try {
+            ctx.handle("deployment deploy-file " + cliTestApp1War.getAbsolutePath() +" --runtime-name=calendar.war --name=calendar.war --disabled --unmanaged --replace");
+            ctx.handle("run-batch");
+        } catch(Exception ex) {
+            try {
+                ctx.handle("discard-batch");
+            } catch(Exception ex2) {
+                // XXX OK, the batch failed but terminated.
+            }
+            throw ex;
+        }
+    }
 }
