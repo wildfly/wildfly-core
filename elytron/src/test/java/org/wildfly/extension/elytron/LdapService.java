@@ -143,6 +143,7 @@ public class LdapService implements Closeable {
             for (String current : indexes) {
                 partitionFactory.addIndex(partition, current, indexSize);
             }
+            partition.setCacheService(directoryService.getCacheService());
             partition.initialize();
             directoryService.addPartition(partition);
 
@@ -196,7 +197,7 @@ public class LdapService implements Closeable {
             Transport ldaps = new TcpTransport( hostName, port, 3, 5 );
             ldaps.enableSSL(true);
             server.addTransports(ldaps);
-            server.setKeystoreFile(getClass().getResource(keyStore).getFile());
+            server.setKeystoreFile(new File(getClass().getResource(keyStore).getFile()).getAbsolutePath());
             server.setCertificatePassword(keyStorePassword);
             server.setDirectoryService(directoryService);
             servers.add(server);
