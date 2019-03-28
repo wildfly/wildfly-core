@@ -81,7 +81,7 @@ public class SSLMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase
     public static void tearDownDomain() throws Exception {
         masterManagementRealmSetup.tearDown(domainMasterLifecycleUtil.getDomainClient());
 
-        testSupport.stop();
+        testSupport.close();
         testSupport = null;
         domainMasterLifecycleUtil = null;
 

@@ -92,7 +92,7 @@ public class CachedDcDomainTestCase {
     @After
     public void stopDomain() {
         if(domainManager != null) {
-            domainManager.stop();
+            domainManager.close();
         }
     }
 

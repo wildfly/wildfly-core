@@ -52,7 +52,7 @@ public class KerberosServerIdentityTestCase {
             Assert.fail("Server did not start properly.");
         } finally {
             if (testSupport != null) {
-                testSupport.stop();
+                testSupport.close();
                 testSupport = null;
             }
             if (keytabFileCreated){

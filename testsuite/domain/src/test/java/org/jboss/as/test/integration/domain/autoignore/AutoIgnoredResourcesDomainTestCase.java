@@ -143,7 +143,7 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
         testSupport = null;
@@ -762,7 +762,7 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     private void restartDomainAndReloadReadOnlyConfig(boolean slaveIsBackupDC, boolean slaveIsCachedDC) throws Exception {
         DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
-        testSupport.stop();
+        testSupport.close();
 
         //Totally reinitialize the domain client
         setupDomain(slaveIsBackupDC, slaveIsCachedDC);

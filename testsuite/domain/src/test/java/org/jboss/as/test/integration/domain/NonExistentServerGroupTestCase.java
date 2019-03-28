@@ -42,7 +42,7 @@ public class NonExistentServerGroupTestCase {
     @After
     public void cleanUp() {
         if (testSupport != null) {
-            testSupport.stop();
+            testSupport.close();
         }
     }
 
