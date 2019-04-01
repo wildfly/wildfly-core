@@ -34,6 +34,7 @@ import org.jboss.msc.service.ServiceTarget;
  * the {@link DeploymentUnit}.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface DeploymentPhaseContext extends Attachable {
 
@@ -96,8 +97,20 @@ public interface DeploymentPhaseContext extends Attachable {
      * @param type the type to inject
      * @param injector the injector into which the dependency value is injected
      * @throws IllegalStateException If this is the last phase
+     * @deprecated use {@link #requires(ServiceName, DelegatingSupplier)} method instead
      */
+    @Deprecated
     <T> void addDependency(ServiceName serviceName, Class<T> type, Injector<T> injector);
+
+    /**
+     * Adds a dependency on the service to the next phase service.
+     *
+     * @param <T> the type of the injected value
+     * @param serviceName the service name to add to {@link Attachments#NEXT_PHASE_DEPS}
+     * @param supplier the supplier into which the dependency value is injected
+     * @throws IllegalStateException If this is the last phase
+     */
+    <T> void requires(ServiceName serviceName, DelegatingSupplier<T> supplier);
 
     /**
      * Adds a dependency on the service to the next phase service. The service value will be make available as an attachment to
