@@ -1743,6 +1743,11 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                         }
                     }
                 }
+                // Needed to have the command be fully parsed and retrieve the
+                // child command. This is caused by aesh 2.0 behavior.
+                if (isBatchMode()) {
+                    exec.populateCommand();
+                }
                 BatchCompliantCommand bc = exec.getBatchCompliant();
                 if (isBatchMode() && bc != null) {
                     try {
