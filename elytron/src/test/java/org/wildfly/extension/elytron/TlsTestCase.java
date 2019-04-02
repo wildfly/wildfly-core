@@ -435,6 +435,20 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Files.delete(Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
     }
 
+    @Test
+    public void testOcspCrl() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-crl");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+    }
+
+    @Test
+    public void testOcspSimple() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-simple");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+    }
+
     private SSLContext getSslContext(String contextName) {
         ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(contextName);
         SSLContext sslContext = (SSLContext) services.getContainer().getService(serviceName).getValue();

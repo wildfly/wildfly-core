@@ -107,5 +107,10 @@
                 </account-key>
             </certificate-authority-account>
         </certificate-authority-accounts>
+        <trust-managers>
+            <trust-manager name="TestingTrustManager" key-store="accounts.keystore">
+                <ocsp/>
+            </trust-manager>
+        </trust-managers>
     </tls>
 </subsystem>

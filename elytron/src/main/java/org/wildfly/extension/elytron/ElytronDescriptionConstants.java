@@ -340,7 +340,9 @@ interface ElytronDescriptionConstants {
     String OAUTH2_INTROSPECTION = "oauth2-introspection";
     String OBTAIN_CERTIFICATE = "obtain-certificate";
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
+    String OCSP = "ocsp";
     String OID = "oid";
+    String ONLY_LEAF_CERT = "only-leaf-cert";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
@@ -376,6 +378,7 @@ interface ElytronDescriptionConstants {
     String POST_REALM_PRINCIPAL_TRANSFORMER = "post-realm-principal-transformer";
     String PRE_REALM_PRINCIPAL_TRANSFORMER = "pre-realm-principal-transformer";
     String PREDEFINED_FILTER = "predefined-filter";
+    String PREFER_CRLS = "prefer-crls";
     String PREFIX = "prefix";
     String PRINCIPAL = "principal";
     String PRINCIPALS = "principals";
@@ -429,6 +432,9 @@ interface ElytronDescriptionConstants {
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
     String REQUISITE = "requisite";
+    String RESPONDER = "responder";
+    String RESPONDER_CERTIFICATE = "responder-certificate";
+    String RESPONDER_KEYSTORE = "responder-keystore";
     String REVERSE = "reverse";
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";
@@ -508,6 +514,7 @@ interface ElytronDescriptionConstants {
     String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
     String SNI_MAPPING = "sni-mapping";
+    String SOFT_FAIL = "soft-fail";
     String STAGING = "staging";
     String STAGING_URL = "staging-url";
     String START_SEGMENT = "start-segment";

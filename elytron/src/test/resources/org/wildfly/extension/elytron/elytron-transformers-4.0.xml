@@ -8,4 +8,17 @@
         <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="false" />
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" />
     </audit-logging>
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+            </key-store>
+        </key-stores>
+        <trust-managers>
+            <trust-manager name="TestingTrustManager" key-store="accounts.keystore" maximum-cert-path="10">
+                <certificate-revocation-list/>
+            </trust-manager>
+        </trust-managers>
+    </tls>
 </subsystem>

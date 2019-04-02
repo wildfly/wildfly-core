@@ -112,7 +112,11 @@ class TlsParser {
             .addAttribute(SSLDefinitions.ALIAS_FILTER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
-            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST);
+            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST)
+            .addAttribute(SSLDefinitions.OCSP)
+            .addAttribute(SSLDefinitions.ONLY_LEAF_CERT)
+            .addAttribute(SSLDefinitions.SOFT_FAIL)
+            .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH);
 
     private PersistentResourceXMLBuilder filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
             .addAttribute(FilteringKeyStoreDefinition.KEY_STORE)
