@@ -248,4 +248,15 @@ public class ExtensionResource implements Resource.ResourceEntry {
     public Set<String> getOrderedChildTypes() {
         return Collections.emptySet();
     }
+
+    @Override
+    public int hashCode() {
+        return this.moduleName.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof ExtensionResource)) return false;
+        return this.moduleName.equals(((ExtensionResource) object).moduleName);
+    }
 }
