@@ -172,7 +172,14 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
+                ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT)
+                .setRequired(false)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
                 ElytronDescriptionConstants.BCRYPT_MAPPER, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -251,7 +258,14 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
+                ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT)
+                .setRequired(false)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
                 ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, SALT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -310,7 +324,14 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        @Deprecated
         static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
+                ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD)
+                .setRequired(false)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(
                 ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER, ALGORITHM, PASSWORD, HASH_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -383,7 +404,13 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
-        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
+        @Deprecated
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT)
+                .setRequired(false)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition OBJECT_DEFINITION_7_0 = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.SCRAM_MAPPER, ALGORITHM, PASSWORD, SALT, ITERATION_COUNT, HASH_ENCODING, SALT_ENCODING)
                 .setRequired(false)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -494,6 +521,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             SUPPORTED_PASSWORD_MAPPERS = Collections.unmodifiableMap(supportedMappers);
         }
 
+        @Deprecated
         static final ObjectTypeAttributeDefinition PRINCIPAL_QUERY = new ObjectTypeAttributeDefinition.Builder(
                 ElytronDescriptionConstants.PRINCIPAL_QUERY,
                 SQL,
@@ -503,20 +531,41 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 BcryptPasswordObjectDefinition.OBJECT_DEFINITION,
                 SaltedSimpleDigestObjectDefinition.OBJECT_DEFINITION,
                 SimpleDigestMapperObjectDefinition.OBJECT_DEFINITION,
-                ScramMapperObjectDefinition.OBJECT_DEFINITION,
+                ScramMapperObjectDefinition.OBJECT_DEFINITION)
+                .setRequired(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
+        static final ObjectTypeAttributeDefinition PRINCIPAL_QUERY_7_0 = new ObjectTypeAttributeDefinition.Builder(
+                ElytronDescriptionConstants.PRINCIPAL_QUERY,
+                SQL,
+                DATA_SOURCE,
+                ATTRIBUTE_MAPPINGS,
+                ClearPasswordObjectDefinition.OBJECT_DEFINITION,
+                BcryptPasswordObjectDefinition.OBJECT_DEFINITION_7_0,
+                SaltedSimpleDigestObjectDefinition.OBJECT_DEFINITION_7_0,
+                SimpleDigestMapperObjectDefinition.OBJECT_DEFINITION_7_0,
+                ScramMapperObjectDefinition.OBJECT_DEFINITION_7_0,
                 ModularCryptMapperObjectDefinition.OBJECT_DEFINITION)
                 .setRequired(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
+        @Deprecated
         static final ObjectListAttributeDefinition PRINCIPAL_QUERIES = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY)
+                .setMinSize(1)
+                .setAllowDuplicates(true)
+                .setRestartAllServices()
+                .build();
+
+        static final ObjectListAttributeDefinition PRINCIPAL_QUERIES_7_0 = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.PRINCIPAL_QUERY, PRINCIPAL_QUERY_7_0)
                 .setMinSize(1)
                 .setAllowDuplicates(true)
                 .setRestartAllServices()
                 .build();
     }
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PrincipalQueryAttributes.PRINCIPAL_QUERIES};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -550,7 +599,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName realmName = runtimeCapability.getCapabilityServiceName(SecurityRealm.class);
-            ModelNode principalQueries = PrincipalQueryAttributes.PRINCIPAL_QUERIES.resolveModelAttribute(context, operation);
+            ModelNode principalQueries = PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0.resolveModelAttribute(context, operation);
             final JdbcSecurityRealmBuilder builder = JdbcSecurityRealm.builder();
 
             TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(builder::build);
