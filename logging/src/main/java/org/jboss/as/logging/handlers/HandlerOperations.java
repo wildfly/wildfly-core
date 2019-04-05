@@ -76,6 +76,7 @@ import org.jboss.logmanager.config.PojoConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.AsyncHandler;
+import org.jboss.logmanager.handlers.SyslogHandler;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -653,6 +654,16 @@ final class HandlerOperations {
                 // If the formatter was previously defined by the formatter attribute, remove the formatter
                 if (logContextConfiguration.getFormatterNames().contains(handlerName)) {
                     logContextConfiguration.removeFormatterConfiguration(handlerName);
+                }
+            } else if (configuration.getClassName().equals(SyslogHandler.class.getName())) {
+                // The value shouldn't be defined so we want to remove the current formatter, however a null formatter
+                // is not allowed in a java.util.logging.Handler. Therefore we must configure a formatter of some kind.
+                // We'll skip the config step on this and set the handler manually. This allows the formatter
+                // configuration not to be persisted. By default the SyslogHandler will use
+                // ExtLogRecord.getFormattedMessage() to get the message which the %s pattern should duplicate.
+                final Handler instance = configuration.getInstance();
+                if (instance != null) {
+                    instance.setFormatter(new PatternFormatter("%s"));
                 }
             } else {
                 // If the named-formatter was undefined we need to create a formatter based on the formatter attribute

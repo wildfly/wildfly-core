@@ -98,7 +98,7 @@ public class LoggingExtension implements Extension {
 
     private static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 7;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 8;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -269,6 +269,7 @@ public class LoggingExtension implements Extension {
         setParser(context, Namespace.LOGGING_4_0, new LoggingSubsystemParser_4_0());
         setParser(context, Namespace.LOGGING_5_0, new LoggingSubsystemParser_5_0());
         setParser(context, Namespace.LOGGING_6_0, new LoggingSubsystemParser_6_0());
+        setParser(context, Namespace.LOGGING_7_0, new LoggingSubsystemParser_7_0());
 
         // Hack to ensure the Element and Attribute enums are loaded during this call which
         // is part of concurrent boot. These enums trigger a lot of classloading and static
@@ -358,7 +359,8 @@ public class LoggingExtension implements Extension {
     private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_6_0_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_7_0_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_7_0_0, KnownModelVersion.VERSION_6_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_6_0_0, KnownModelVersion.VERSION_5_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
         // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
@@ -368,12 +370,14 @@ public class LoggingExtension implements Extension {
         chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
         }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
                 KnownModelVersion.VERSION_3_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_4_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_5_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
         });
     }
 

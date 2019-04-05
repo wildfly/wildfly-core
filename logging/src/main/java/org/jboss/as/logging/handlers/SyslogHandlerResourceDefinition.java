@@ -33,9 +33,13 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
+import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.Attribute;
 import org.jboss.as.logging.ElementAttributeMarshaller;
@@ -104,11 +108,9 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
                 @Override
                 public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
                     if (isMarshallable(attribute, resourceModel, marshallDefault)) {
-                        writer.writeStartElement(AbstractHandlerDefinition.FORMATTER.getXmlName());
                         writer.writeStartElement(attribute.getXmlName());
                         final String content = resourceModel.get(attribute.getName()).asString();
                         writer.writeAttribute(Attribute.SYSLOG_TYPE.getLocalName(), content);
-                        writer.writeEndElement();
                         writer.writeEndElement();
                     }
                 }
@@ -116,6 +118,13 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
             .setDefaultValue(new ModelNode(SyslogType.RFC5424.name()))
             .setPropertyName("syslogType")
             .setValidator(EnumValidator.create(SyslogType.class, EnumSet.allOf(SyslogType.class)))
+            .build();
+
+    // This is being redefined here to clear the "formatter" from the alternatives and redefine the how the attribute is
+    // persisted to the configuration file.
+    public static final SimpleAttributeDefinition NAMED_FORMATTER = SimpleAttributeDefinitionBuilder.create(AbstractHandlerDefinition.NAMED_FORMATTER)
+            .setAlternatives()
+            .setAttributeMarshaller(ElementAttributeMarshaller.NAME_ATTRIBUTE_MARSHALLER)
             .build();
 
     /*
@@ -129,7 +138,8 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
             LEVEL,
             PORT,
             SERVER_ADDRESS,
-            SYSLOG_FORMATTER
+            SYSLOG_FORMATTER,
+            NAMED_FORMATTER
     };
 
     private static final HandlerAddOperationStepHandler ADD_HANDLER = new HandlerAddOperationStepHandler(SyslogHandler.class, ATTRIBUTES);
@@ -153,7 +163,21 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
 
     @Override
     public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        //
+        switch (modelVersion) {
+            case VERSION_7_0_0: {
+                final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(SYSLOG_HANDLER_PATH);
+                final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(SYSLOG_HANDLER_PATH);
+                resourceBuilder.getAttributeBuilder()
+                        .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
+                        .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                        .end();
+                loggingProfileResourceBuilder.getAttributeBuilder()
+                        .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
+                        .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                        .end();
+                break;
+            }
+        }
     }
 
     public enum FacilityAttribute {
