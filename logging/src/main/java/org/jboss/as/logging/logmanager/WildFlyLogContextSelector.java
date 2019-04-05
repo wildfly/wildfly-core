@@ -112,12 +112,22 @@ public interface WildFlyLogContextSelector extends LogContextSelector {
     class Factory {
         private static final LogContext EMBEDDED_LOG_CONTEXT = LogContext.create();
 
+        /**
+         * Creates a new selector which wraps the current {@linkplain LogContext#getLogContextSelector() selector}.
+         *
+         * @return a new selector that wraps the current selector
+         */
         public static WildFlyLogContextSelector create() {
-            // Use the current log context as the default, not LogContext.DEFAULT_LOG_CONTEXT_SELECTOR
-            // This allows embedding use cases to control the log context
-            return new WildFlyLogContextSelectorImpl(LogContext.getLogContext());
+            // Wrap the current LogContextSelector. This will be used as the default in the cases where this selector
+            // does not find a log context.
+            return new WildFlyLogContextSelectorImpl(LogContext.getLogContextSelector());
         }
 
+        /**
+         * Creates a new selector which by default returns a static embedded context which can be used.
+         *
+         * @return a new selector
+         */
         public static WildFlyLogContextSelector createEmbedded() {
             clearLogContext();
             return new WildFlyLogContextSelectorImpl(EMBEDDED_LOG_CONTEXT);

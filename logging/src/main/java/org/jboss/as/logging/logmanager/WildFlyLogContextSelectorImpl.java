@@ -41,13 +41,17 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
     private final AtomicInteger counter;
 
     WildFlyLogContextSelectorImpl(final LogContext defaultLogContext) {
-        counter = new AtomicInteger(0);
-        contextSelector = new ClassLoaderLogContextSelector(new LogContextSelector() {
+        this(new ClassLoaderLogContextSelector(new LogContextSelector() {
             @Override
             public LogContext getLogContext() {
                 return defaultLogContext;
             }
-        }, true);
+        }));
+    }
+
+    WildFlyLogContextSelectorImpl(final LogContextSelector defaultLogContextSelector) {
+        counter = new AtomicInteger(0);
+        contextSelector = new ClassLoaderLogContextSelector(defaultLogContextSelector, true);
         threadLocalContextSelector = new ThreadLocalLogContextSelector(contextSelector);
     }
 
