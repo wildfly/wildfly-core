@@ -1499,7 +1499,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         registerCapability(capability, activeStep, null);
     }
 
-    void registerCapability(RuntimeCapability capability, Step step, String attribute) {
+    void registerCapability(RuntimeCapability<?> capability, Step step, String attribute) {
         assert isControllingThread();
         assertStageModel(currentStage);
         ensureLocalCapabilityRegistry();
@@ -1614,7 +1614,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         CapabilityScope context = createCapabilityContext(step.address);
         RuntimeCapabilityRegistration capReg = managementModel.getCapabilityRegistry().removeCapability(capabilityName, context, step.address);
         if (capReg != null) {
-            RuntimeCapability capability = capReg.getCapability();
+            RuntimeCapability<?> capability = capReg.getCapability();
             for (String required : capability.getRequirements()) {
                 removeRequirement(required, context, step);
             }
@@ -1994,7 +1994,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         return new RuntimeRequirementRegistration(required, dependent, context, rp, runtimeOnly);
     }
 
-    private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability capability, Step step, String attribute) {
+    private RuntimeCapabilityRegistration createCapabilityRegistration(RuntimeCapability<?> capability, Step step, String attribute) {
         CapabilityScope context = createCapabilityContext(step.address);
         RegistrationPoint rp = new RegistrationPoint(step.address, attribute);
         return new RuntimeCapabilityRegistration(capability, context, rp);
