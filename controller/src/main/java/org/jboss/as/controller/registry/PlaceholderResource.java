@@ -165,5 +165,16 @@ public class PlaceholderResource implements Resource {
         public PlaceholderResourceEntry clone() {
             return this;
         }
+
+        @Override
+        public int hashCode() {
+            return this.path.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof ResourceEntry)) return false;
+            return this.path.equals(((ResourceEntry) object).getPathElement());
+        }
     }
 }

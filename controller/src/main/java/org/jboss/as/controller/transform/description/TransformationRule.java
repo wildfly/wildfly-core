@@ -394,5 +394,16 @@ abstract class TransformationRule {
         public PathElement getPathElement() {
             return delegate.getPathElement();
         }
+
+        @Override
+        public int hashCode() {
+            return this.getPathElement().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof ResourceEntry)) return false;
+            return this.getPathElement().equals(((ResourceEntry) object).getPathElement());
+        }
     }
 }

@@ -450,6 +450,17 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         public Resource clone() {
            return delegate.clone();
         }
+
+        @Override
+        public int hashCode() {
+            return this.getPathElement().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object object) {
+            if (!(object instanceof ResourceEntry)) return false;
+            return this.getPathElement().equals(((ResourceEntry) object).getPathElement());
+        }
     }
 
 }

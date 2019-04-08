@@ -186,6 +186,16 @@ public class OperationCommandContainer extends DefaultCommandContainer<CLIComman
         @Override
         public void doPopulate(ProcessedCommand processedCommand, InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
         }
+
+        @Override
+        public void updateAnsiMode(boolean mode) {
+
+        }
+
+        @Override
+        public String getFormattedCommand(int offset, int descriptionStart) {
+            return null;
+        }
     }
 
     private final Command<CLICommandInvocation> command = new OperationCommand();
