@@ -63,8 +63,9 @@ public class AuditLogBootingSyslogTest {
 
 
     @BeforeClass
-    public static void noJDK12() {
+    public static void noJDK12Plus() {
         Assume.assumeFalse("Avoiding JDK 12 due to https://bugs.openjdk.java.net/browse/JDK-8219658", "12".equals(System.getProperty("java.specification.version")));
+        Assume.assumeFalse("Avoiding JDK 13 due to https://bugs.openjdk.java.net/browse/JDK-8219658", "13".equals(System.getProperty("java.specification.version")));
     }
 
 
