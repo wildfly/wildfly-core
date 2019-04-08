@@ -52,6 +52,7 @@
                     <path name="org/wildfly/security/password"/>
                     <path name="org/wildfly/security/password/interfaces"/>
                     <path name="org/wildfly/security/password/spec"/>
+                    <path name="org/wildfly/security/password/util"/>
                     <path name="org/wildfly/security/permission"/>
                     <path name="org/wildfly/security/sasl/util"/>
                     <path name="org/wildfly/security/ssl"/>
