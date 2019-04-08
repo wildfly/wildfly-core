@@ -43,6 +43,7 @@
                 <path name="com/sun/net/ssl/internal/ssl"/>
                 <path name="com/sun/crypto/provider"/>
                 <path name="sun/security/action"/>
+                <path name="sun/security/ssl"/>
                 <path name="sun/security/pkcs"/>
                 <path name="sun/security/x509"/>
                 <path name="sun/invoke"/>

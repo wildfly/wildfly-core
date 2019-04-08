@@ -394,7 +394,12 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
 
     @Before
     public void init() throws Exception {
-        String subsystemXml = System.getProperty("java.vendor").startsWith("IBM") ? "tls-ibm.xml" : "tls-sun.xml";
+        String subsystemXml;
+        if (JdkUtils.isIbmJdk()) {
+            subsystemXml = "tls-ibm.xml";
+        } else {
+            subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
+        }
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
         if (!services.isSuccessfulBoot()) {
             Assert.fail(services.getBootError().toString());
