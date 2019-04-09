@@ -220,7 +220,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
         <version.org.wildfly.security.elytron>1.9.0.CR2</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.4.0.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron-web>1.5.0.CR1</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
