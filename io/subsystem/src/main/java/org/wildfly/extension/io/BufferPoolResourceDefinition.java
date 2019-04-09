@@ -155,13 +155,15 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
             final boolean direct = directModel.isDefined() ? directModel.asBoolean() : defaultDirectBuffers;
 
             final BufferPoolService service = new BufferPoolService(bufferSize, bufferPerSlice, direct);
-            context.getCapabilityServiceTarget().addCapability(IO_POOL_RUNTIME_CAPABILITY, service)
+            context.getCapabilityServiceTarget().addCapability(IO_POOL_RUNTIME_CAPABILITY)
+                    .setInstance(service)
                     .setInitialMode(ServiceController.Mode.ON_DEMAND)
                     .install();
 
             ByteBufferPoolService poolService = new ByteBufferPoolService();
 
-            context.getCapabilityServiceTarget().addCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY, poolService)
+            context.getCapabilityServiceTarget().addCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
+                    .setInstance(poolService)
                     .addCapabilityRequirement(IO_POOL_RUNTIME_CAPABILITY.getDynamicName(address), Pool.class, poolService.bufferPool)
                     .setInitialMode(ServiceController.Mode.ON_DEMAND)
                     .install();

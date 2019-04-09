@@ -142,7 +142,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         service.getPortInjector().inject(port);
         service.getSecurePortInjector().inject(securePort);
         service.getAllowedOriginsInjector().inject(commonPolicy.getAllowedOrigins());
-        CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, service)
+        CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
+                .setInstance(service)
                 .addCapabilityRequirement("org.wildfly.network.interface",
                         NetworkInterfaceBinding.class, service.getInterfaceInjector(), interfaceName)
                 .addCapabilityRequirement("org.wildfly.network.interface",

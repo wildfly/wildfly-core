@@ -66,7 +66,6 @@ import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
 import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
-import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -137,8 +136,10 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
         undertowService.getAllowedOriginsInjector().inject(commonPolicy.getAllowedOrigins());
-        CapabilityServiceBuilder<HttpManagement> undertowBuilder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, undertowService).addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
+        CapabilityServiceBuilder<?> undertowBuilder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
+                .setInstance(undertowService)
                 .addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, undertowService.getSocketBindingManagerInjector())
+                .addDependency(Services.JBOSS_SERVER_CONTROLLER, ModelController.class, undertowService.getModelControllerInjector())
                 .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, undertowService.getControlledProcessStateServiceInjector())
                 .addDependency(RemotingServices.HTTP_LISTENER_REGISTRY, ListenerRegistry.class, undertowService.getListenerRegistry())
                 .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, undertowService.getRequestProcessorValue())
