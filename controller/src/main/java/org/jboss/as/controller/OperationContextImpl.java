@@ -2640,6 +2640,12 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
+        public CapabilityServiceBuilder<T> setInstance(org.jboss.msc.Service service) {
+            super.setInstance(service);
+            return this;
+        }
+
+        @Override
         public <V> Supplier<V> requiresCapability(String capabilityBaseName, Class<V> dependencyType, String... referenceNames) {
             String capabilityName;
             if (referenceNames != null && referenceNames.length > 0) {
