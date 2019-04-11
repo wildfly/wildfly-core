@@ -20,7 +20,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.security.util.ProviderUtil.findProvider;
+import static org.wildfly.security.provider.util.ProviderUtil.findProvider;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -73,6 +73,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-scram}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-password-impl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-permission}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-provider-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-realm}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-realm-jdbc}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-realm-ldap}"/>
