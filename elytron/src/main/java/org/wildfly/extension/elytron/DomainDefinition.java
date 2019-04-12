@@ -249,7 +249,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         DomainService domain = new DomainService(defaultRealm, trustedSecurityDomain, identityOperator);
 
         ServiceBuilder<SecurityDomain> domainBuilder = serviceTarget.addService(initialName, domain)
-                .setInitialMode(Mode.ACTIVE);
+                .setInitialMode(Mode.LAZY);
 
         if (preRealmPrincipalTransformer != null) {
             injectPrincipalTransformer(preRealmPrincipalTransformer, context, domainBuilder, domain.createPreRealmPrincipalTransformerInjector(preRealmPrincipalTransformer));
@@ -354,7 +354,7 @@ class DomainDefinition extends SimpleResourceDefinition {
 
         ServiceTarget serviceTarget = context.getServiceTarget();
         ServiceBuilder<SecurityDomain> domainBuilder = serviceTarget.addService(domainName, finalDomainService)
-                .setInitialMode(Mode.ACTIVE);
+                .setInitialMode(Mode.LAZY);
         domainBuilder.addDependency(initialName, SecurityDomain.class, securityDomain);
         for (String trustedDomainName : trustedSecurityDomainNames) {
             InjectedValue<SecurityDomain> trustedDomainInjector = new InjectedValue<>();

@@ -48,6 +48,7 @@ public class MappersTestCase extends AbstractSubsystemBaseTest {
             Assert.fail(services.getBootError().toString());
         }
 
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
         ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("tree");
         PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(transformer);

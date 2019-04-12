@@ -28,6 +28,8 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -46,16 +48,22 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
 
     private final RuntimeCapability<?> runtimeCapability;
     private final Mode initialMode;
+    private final Mode embeddedInitialMode;
 
     TrivialAddHandler(Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         this(serviceType, Mode.ACTIVE, attributes, runtimeCapability);
     }
 
     TrivialAddHandler(Class<T> serviceType, Mode initialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+        this(serviceType, initialMode, initialMode, attributes, runtimeCapability);
+    }
+
+    TrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode embeddedInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))), attributes);
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);
+        this.embeddedInitialMode = checkNotNullParam("embeddedInitialMode", embeddedInitialMode);
     }
 
     @SuppressWarnings("unchecked")
@@ -70,7 +78,7 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         trivialService.setValueSupplier(getValueSupplier(serviceBuilder, context, resource.getModel()));
 
         installedForResource(commonDependencies(serviceBuilder, dependOnProperties(), dependOnProviderRegistration())
-                .setInitialMode(initialMode)
+                .setInitialMode(!context.isBooting() && context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? embeddedInitialMode : initialMode)
                 .install(), resource);
     }
 
