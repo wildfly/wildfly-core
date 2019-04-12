@@ -78,7 +78,7 @@ public final class ParseUtils {
         Element element = nextElement(reader);
 
         if (element == null) {
-            return element;
+            return null;
         } else if (element != Element.UNKNOWN
                 && expectedNamespace.equals(Namespace.forUri(reader.getNamespaceURI()))) {
             return element;
@@ -418,7 +418,7 @@ public final class ParseUtils {
      *         element does not contain the specified attribute, contains other
      *         attributes, or contains child elements.
      */
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({"unchecked", "WeakerAccess"})
     public static <T> List<T> readListAttributeElement(final XMLExtendedStreamReader reader, final String attributeName,
             final Class<T> type) throws XMLStreamException {
         requireSingleAttribute(reader, attributeName);
@@ -539,6 +539,8 @@ public final class ParseUtils {
         }
     }
 
+    /** @deprecated Use an {@code AttributeDefinition} for this kind of parsing. Will be removed -- https://issues.jboss.org/browse/WFCORE-4419 */
+    @Deprecated
     public static ModelNode parseBoundedIntegerAttribute(final XMLExtendedStreamReader reader, final int index,
             final int minInclusive, final int maxInclusive, boolean allowExpression) throws XMLStreamException {
         final String stringValue = reader.getAttributeValue(index);
@@ -610,6 +612,7 @@ public final class ParseUtils {
         return node;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static boolean isExpression(String value) {
         int openIdx = value.indexOf("${");
         return openIdx > -1 && value.lastIndexOf('}') > openIdx;
@@ -626,6 +629,8 @@ public final class ParseUtils {
         return result;
     }
 
+    /** @deprecated Will be removed -- https://issues.jboss.org/browse/WFCORE-4419 */
+    @Deprecated
     public static String getWarningMessage(final String msg, final Location location) {
         return ControllerLogger.ROOT_LOGGER.parsingProblem(location.getLineNumber(), location.getColumnNumber(), msg);
     }
