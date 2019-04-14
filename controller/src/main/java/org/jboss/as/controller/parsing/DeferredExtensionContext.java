@@ -17,9 +17,7 @@
 package org.jboss.as.controller.parsing;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -59,23 +57,27 @@ public class DeferredExtensionContext {
     public void load() throws XMLStreamException {
         if (!loaded) {
             loaded = true;
+            int maxInitializationTasks = extensionRegistry.getMaxParallelBootExtensionTasks();
+            final GroupLoadTask[] loadTasks = bootExecutor != null && maxInitializationTasks > 1
+                    ? new GroupLoadTask[maxInitializationTasks] : null;
 
-            final Map<String, Future<XMLStreamException>> loadFutures = bootExecutor != null
-                    ? new LinkedHashMap<String, Future<XMLStreamException>>() : null;
-
+            int taskIdx = -1;
             for(ExtensionData extension : extensions) {
                 String moduleName = extension.moduleName;
                 XMLMapper xmlMapper = extension.xmlMapper;
-                if (loadFutures != null) {
+                if (loadTasks != null) {
                     // Load the module asynchronously
-                    Callable<XMLStreamException> callable = new Callable<XMLStreamException>() {
-                        @Override
-                        public XMLStreamException call() throws Exception {
-                            return loadModule(moduleName, xmlMapper);
-                        }
-                    };
-                    Future<XMLStreamException> future = bootExecutor.submit(callable);
-                    loadFutures.put(moduleName, future);
+                    if (taskIdx == maxInitializationTasks - 1) {
+                        taskIdx = 0;
+                    } else {
+                        taskIdx++;
+                    }
+                    LoadTask loadTask = new LoadTask(moduleName, xmlMapper);
+                    if (loadTasks[taskIdx] == null) {
+                        loadTasks[taskIdx] = new GroupLoadTask(loadTask);
+                    } else {
+                        loadTasks[taskIdx].loadTasks.add(loadTask);
+                    }
                 } else {
                     // Load the module from this thread
                     XMLStreamException xse = loadModule(moduleName, xmlMapper);
@@ -85,19 +87,25 @@ public class DeferredExtensionContext {
                 }
             }
 
-            if (loadFutures != null) {
-                for (Map.Entry<String, Future<XMLStreamException>> entry : loadFutures.entrySet()) {
-
-                    try {
-                        XMLStreamException xse = entry.getValue().get();
-                        if (xse != null) {
-                            throw xse;
+            if (loadTasks != null) {
+                for (GroupLoadTask loadTask : loadTasks) {
+                    if (loadTask != null) {
+                        loadTask.execute(bootExecutor);
+                    }
+                }
+                for (GroupLoadTask loadTask : loadTasks) {
+                    if (loadTask != null) {
+                        try {
+                            XMLStreamException xse = loadTask.future.get();
+                            if (xse != null) {
+                                throw xse;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(loadTask.currentModule);
+                        } catch (ExecutionException e) {
+                            throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e, loadTask.currentModule);
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(entry.getKey());
-                    } catch (ExecutionException e) {
-                        throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e, entry.getKey());
                     }
                 }
             }
@@ -141,6 +149,50 @@ public class DeferredExtensionContext {
         private ExtensionData(String moduleName, XMLMapper xmlMapper) {
             this.moduleName = moduleName;
             this.xmlMapper = xmlMapper;
+        }
+    }
+
+    private class LoadTask implements Callable<XMLStreamException> {
+
+        private final String moduleName;
+        private final XMLMapper xmlMapper;
+
+        private LoadTask(String moduleName, XMLMapper xmlMapper) {
+            this.moduleName = moduleName;
+            this.xmlMapper = xmlMapper;
+        }
+
+        @Override
+        public XMLStreamException call() throws Exception {
+            return loadModule(moduleName, xmlMapper);
+        }
+    }
+
+    private static class GroupLoadTask implements Callable<XMLStreamException> {
+        private final List<LoadTask> loadTasks = new ArrayList<>();
+        private volatile String currentModule;
+        private volatile Future<XMLStreamException> future;
+
+        private GroupLoadTask(LoadTask first) {
+            this.currentModule = first.moduleName;
+            loadTasks.add(first);
+        }
+
+        @Override
+        public XMLStreamException call() throws Exception {
+
+            for (LoadTask task : loadTasks) {
+                currentModule = task.moduleName;
+                XMLStreamException ex = task.call();
+                if (ex != null) {
+                    return ex;
+                }
+            }
+            return null;
+        }
+
+        private void execute(ExecutorService executorService) {
+            future = executorService.submit(this);
         }
     }
 }

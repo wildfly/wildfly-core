@@ -334,7 +334,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 rootResourceRegistration,
                 new ContainerStateMonitor(container, getStabilityMonitor()),
                 configurationPersister, processType, runningModeControl, prepareStep,
-                processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
+                processState, executorService,
+                getMaxParallelBootExtensionTasks(),
+                getMaxParallelBootSubsystemTasks(),
+                expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
                 injectedInstabilityListener.getOptionalValue());
 
@@ -393,6 +396,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
             }
         }, "Controller Boot Thread", bootStackSize);
         bootThread.start();
+    }
+
+    protected int getMaxParallelBootExtensionTasks() {
+        return 1;
+    }
+
+    protected int getMaxParallelBootSubsystemTasks() {
+        return 1;
     }
 
     /**

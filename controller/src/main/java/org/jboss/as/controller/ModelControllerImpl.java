@@ -125,6 +125,8 @@ class ModelControllerImpl implements ModelController {
     private final OperationStepHandler prepareStep;
     private final ControlledProcessState processState;
     private final ExecutorService executorService;
+    private final int maxParallelBootExtensionTasks;
+    private final int maxParallelBootSubsystemTasks;
     private final ExpressionResolver expressionResolver;
     private final Authorizer authorizer;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
@@ -153,6 +155,8 @@ class ModelControllerImpl implements ModelController {
                         final ContainerStateMonitor stateMonitor, final ConfigurationPersister persister,
                         final ProcessType processType, final RunningModeControl runningModeControl,
                         final OperationStepHandler prepareStep, final ControlledProcessState processState, final ExecutorService executorService,
+                        final int maxParallelBootExtensionTasks,
+                        final int maxParallelBootSubsystemTasks,
                         final ExpressionResolver expressionResolver, final Authorizer authorizer, final Supplier<SecurityIdentity> securityIdentitySupplier,
                         final ManagedAuditLogger auditLogger, NotificationSupport notificationSupport,
                         final BootErrorCollector bootErrorCollector, final OperationStepHandler extraValidationStepHandler,
@@ -186,6 +190,8 @@ class ModelControllerImpl implements ModelController {
         this.processState = processState;
         this.serviceTarget.addMonitor(stateMonitor.getStabilityMonitor());
         this.executorService = executorService;
+        this.maxParallelBootExtensionTasks = maxParallelBootExtensionTasks;
+        this.maxParallelBootSubsystemTasks = maxParallelBootSubsystemTasks;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;
         assert securityIdentitySupplier != null;
@@ -600,9 +606,10 @@ class ModelControllerImpl implements ModelController {
         final ManagementResourceRegistration rootRegistration = managementModel.get().getRootResourceRegistration();
         final MutableRootResourceRegistrationProvider parallellBRRRProvider = parallelBootRootResourceRegistrationProvider != null ?
                 parallelBootRootResourceRegistrationProvider : getMutableRootResourceRegistrationProvider();
-        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null ? null : new ParallelExtensionAddHandler(executorService, parallellBRRRProvider);
-        ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
-                ? new ParallelBootOperationStepHandler(executorService, rootRegistration, processState, this, lockPermit, extraValidationStepHandler) : null;
+        ParallelExtensionAddHandler parallelExtensionAddHandler = executorService == null || maxParallelBootExtensionTasks < 2 ? null : new ParallelExtensionAddHandler(executorService, maxParallelBootExtensionTasks, parallellBRRRProvider);
+        ParallelBootOperationStepHandler parallelSubsystemHandler = (executorService != null && maxParallelBootSubsystemTasks > 1 && processType.isServer() && runningModeControl.getRunningMode() == RunningMode.NORMAL)
+                ? new ParallelBootOperationStepHandler(executorService, maxParallelBootSubsystemTasks, rootRegistration, processState, this, lockPermit, extraValidationStepHandler)
+                : null;
         boolean registeredParallelSubsystemHandler = false;
         int subsystemIndex = 0;
         for (ModelNode bootOp : bootList) {

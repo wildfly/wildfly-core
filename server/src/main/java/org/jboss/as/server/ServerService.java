@@ -65,6 +65,7 @@ import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -271,11 +272,13 @@ public final class ServerService extends AbstractControllerService {
         Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = configuration.getConfigurationPersisterFactory();
         extensibleConfigurationPersister = configurationPersisterFactory.createConfigurationPersister(serverEnvironment, getExecutorServiceInjector().getOptionalValue());
         setConfigurationPersister(extensibleConfigurationPersister);
+        ExtensionRegistry exReg = configuration.getExtensionRegistry();
+        boolean parallelBoot = exReg.getMaxParallelBootExtensionTasks() > 1 && getExecutorServiceInjector().getOptionalValue() != null;
         rootResourceDefinition.setDelegate(
                 new ServerRootResourceDefinition(injectedContentRepository.getValue(),
                         extensibleConfigurationPersister, configuration.getServerEnvironment(), processState,
-                        runningModeControl, vaultReader, configuration.getExtensionRegistry(),
-                        getExecutorServiceInjector().getOptionalValue() != null,
+                        runningModeControl, vaultReader, exReg,
+                        parallelBoot,
                         (PathManagerService)injectedPathManagerService.getValue(),
                         new DomainServerCommunicationServices.OperationIDUpdater() {
                             @Override
@@ -290,6 +293,14 @@ public final class ServerService extends AbstractControllerService {
                         super.getBootErrorCollector(),
                         configuration.getCapabilityRegistry()));
         super.start(context);
+    }
+
+    protected int getMaxParallelBootExtensionTasks() {
+        return configuration.getExtensionRegistry().getMaxParallelBootExtensionTasks();
+    }
+
+    protected int getMaxParallelBootSubsystemTasks() {
+        return configuration.getExtensionRegistry().getMaxParallelBootSubystemTasks();
     }
 
     protected void boot(final BootContext context) throws ConfigurationPersistenceException {

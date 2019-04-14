@@ -25,9 +25,13 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -56,14 +60,17 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
     private final ModelControllerImpl controller;
     private final int operationId;
+    private final int maxParallelBootTasks;
 
     private final Map<String, List<ParsedBootOp>> opsBySubsystem = new LinkedHashMap<String, List<ParsedBootOp>>();
     private ParsedBootOp ourOp;
 
-    ParallelBootOperationStepHandler(final ExecutorService executorService, final ImmutableManagementResourceRegistration rootRegistration,
+    ParallelBootOperationStepHandler(final ExecutorService executorService, final int maxParallelBootTasks, final ImmutableManagementResourceRegistration rootRegistration,
                                      final ControlledProcessState processState, final ModelControllerImpl controller,
                                      final int operationId, final OperationStepHandler extraValidationStepHandler) {
+        assert maxParallelBootTasks > 1; // else this handler should not be used
         this.executor = executorService;
+        this.maxParallelBootTasks = maxParallelBootTasks;
         this.rootRegistration = rootRegistration;
         this.processState = processState;
 
@@ -117,17 +124,60 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
         final OperationContextImpl primaryContext = (OperationContextImpl) context;
 
-        // Make sure the lock has been taken
-        context.getResourceRegistrationForUpdate();
         final Resource rootResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
-        context.acquireControllerLock();
 
-        final Map<String, List<ParsedBootOp>> runtimeOpsBySubsystem = new LinkedHashMap<String, List<ParsedBootOp>>();
-        final Map<String, ParallelBootTransactionControl> transactionControls = new LinkedHashMap<String, ParallelBootTransactionControl>();
+        // Organize the boot ops into larger "chunks" with the chunks executed concurrently.
+        // All ops for a subsystem are in the same chunk.
+        // We attempt to have approximately the same number of ops per chunk. This
+        // is just a heuristic to try and get the chunks to take the same time to run,
+        // but of course different ops can take different amounts of time and how much is
+        // unknown to the kernel. Ideally any large variance in execution time between
+        // subsystems would be in the MSC threads, not in the management ops themselves,
+        // but this isn't always the case.
 
-        final CountDownLatch preparedLatch = new CountDownLatch(opsBySubsystem.size());
+        // We separately track the chunk for logging as we want to add its
+        // runtime steps first in order to get logging as-per-config as soon as possible
+        OpChunk loggingModelChunk = null;
+        // OpChunk is comparable based on # of ops it holds. So store in a TreeSet that will put the smallest chunk first
+        final Set<OpChunk> opChunks = new TreeSet<>();
+
+        // Organize subsystems by # of ops, most to fewest, so we end up creating chunks with big initial
+        // sizes and then filling them in with the smaller subsystems
+        Set<Map.Entry<String, List<ParsedBootOp>>> sortedEntries = sortSubsystemsByCount();
+
+        int count = 0;
+        for (Map.Entry<String, List<ParsedBootOp>> entry : sortedEntries) {
+            String subsystemName = entry.getKey();
+            if ("logging".equals(subsystemName)) {
+                loggingModelChunk = new OpChunk();
+                loggingModelChunk.addModelPhaseOps(subsystemName, entry.getValue());
+            } else {
+                OpChunk opChunk;
+                if (count < maxParallelBootTasks) {
+//                    ControllerLogger.MGMT_OP_LOGGER.debugf("Adding a chunk of %d ops for %s", entry.getValue().size(), subsystemName);
+                    opChunk = new OpChunk();
+                    count++;
+                } else {
+                    // Add this subsystem to the currently smallest, aka the first, chunk
+                    Iterator<OpChunk> iter = opChunks.iterator();
+                    opChunk = iter.next();
+                    iter.remove(); // so when we re-add below it gets sorted to its new position
+//                    ControllerLogger.MGMT_OP_LOGGER.debugf("Adding %d ops for %s to %s", entry.getValue().size(), subsystemName, opChunk.getSubsystemNames());
+                }
+                opChunk.addModelPhaseOps(subsystemName, entry.getValue());
+
+                opChunks.add(opChunk);
+            }
+        }
+
+        if (loggingModelChunk != null) {
+            opChunks.add(loggingModelChunk);
+        }
+
+        final Map<OpChunk, ParallelBootTransactionControl> transactionControls = new LinkedHashMap<>();
+        final CountDownLatch preparedLatch = new CountDownLatch(opChunks.size());
         final CountDownLatch committedLatch = new CountDownLatch(1);
-        final CountDownLatch completeLatch = new CountDownLatch(opsBySubsystem.size());
+        final CountDownLatch completeLatch = new CountDownLatch(opChunks.size());
 
         // TODO Elytron - We probably need a way to stop repeating this.
         final SecurityDomain bootSecurityDomain = SecurityDomain.builder()
@@ -135,20 +185,21 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 .addRealm("Empty", SecurityRealm.EMPTY_REALM).build()
                 .build();
 
-        for (Map.Entry<String, List<ParsedBootOp>> entry : opsBySubsystem.entrySet()) {
-            String subsystemName = entry.getKey();
-            List<ParsedBootOp> subsystemRuntimeOps = new ArrayList<ParsedBootOp>();
-            runtimeOpsBySubsystem.put(subsystemName, subsystemRuntimeOps);
+        for (OpChunk opChunk : opChunks) {
 
             final ParallelBootTransactionControl txControl = new ParallelBootTransactionControl(preparedLatch, committedLatch, completeLatch);
-            transactionControls.put(entry.getKey(), txControl);
+            transactionControls.put(opChunk, txControl);
+
+            Set<String> chunkSubsystems = opChunk.getSubsystemNames();
+            List<ParsedBootOp> modelPhaseOps = opChunk.getModelPhaseOps();
+            ControllerLogger.MGMT_OP_LOGGER.debugf("Chunk for %s has %d ops", chunkSubsystems, opChunk.opCount);
 
             // Execute the subsystem's ops in another thread
-            List<ParsedBootOp> bootOps = entry.getValue();
-            ParallelBootOperationContext pboc = bootOps.size() == 0
+            ParallelBootOperationContext pboc = modelPhaseOps.size() == 0
                     ? null
-                    : createOperationContext(primaryContext, bootSecurityDomain, txControl, subsystemRuntimeOps);
-            ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.MODEL, txControl, pboc);
+                    : createOperationContext(primaryContext, bootSecurityDomain, txControl, opChunk.runtimeOps);
+            ParallelBootTask subsystemTask = new ParallelBootTask(chunkSubsystems, modelPhaseOps,
+                    OperationContext.Stage.MODEL, txControl, pboc);
             executor.execute(subsystemTask);
         }
 
@@ -160,9 +211,9 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             checkForSubsystemFailures(context, transactionControls, OperationContext.Stage.MODEL);
 
             // Add any logging subsystem steps so we get logging early in the boot
-            List<ParsedBootOp> loggingOps = runtimeOpsBySubsystem.remove("logging");
-            if (loggingOps != null) {
-                for (ParsedBootOp loggingOp : loggingOps) {
+            if (loggingModelChunk != null) {
+                opChunks.remove(loggingModelChunk);
+                for (ParsedBootOp loggingOp : loggingModelChunk.runtimeOps) {
                     context.addStep(loggingOp.response, loggingOp.operation, loggingOp.handler, OperationContext.Stage.RUNTIME);
                 }
             }
@@ -182,7 +233,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
             }
 
             // Add step to execute all the runtime ops recorded by the other subsystem tasks
-            context.addStep(getRuntimeStep(runtimeOpsBySubsystem, bootSecurityDomain), OperationContext.Stage.RUNTIME);
+            context.addStep(getRuntimeStep(opChunks, bootSecurityDomain), OperationContext.Stage.RUNTIME);
 
         } catch (InterruptedException e) {
             context.getFailureDescription().set(new ModelNode().set(ControllerLogger.ROOT_LOGGER.subsystemBootInterrupted()));
@@ -222,9 +273,15 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 extraValidationStepHandler, bootSecurityDomain::getAnonymousSecurityIdentity);
     }
 
-    private void checkForSubsystemFailures(OperationContext context, Map<String, ParallelBootTransactionControl> transactionControls, OperationContext.Stage stage) {
+    private Set<Map.Entry<String, List<ParsedBootOp>>> sortSubsystemsByCount() {
+        TreeSet<Map.Entry<String, List<ParsedBootOp>>> result = new TreeSet<>(new EntryComparator());
+        result.addAll(opsBySubsystem.entrySet());
+        return result;
+    }
+
+    private void checkForSubsystemFailures(OperationContext context, Map<OpChunk, ParallelBootTransactionControl> transactionControls, OperationContext.Stage stage) {
         boolean failureRecorded = false;
-        for (Map.Entry<String, ParallelBootTransactionControl> entry : transactionControls.entrySet()) {
+        for (Map.Entry<OpChunk, ParallelBootTransactionControl> entry : transactionControls.entrySet()) {
             ParallelBootTransactionControl txControl = entry.getValue();
             if (txControl.transaction == null) {
                 // This means a set of subsystem steps didn't complete and rolled back
@@ -232,7 +289,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 if (txControl.response.getResponseNode().hasDefined(ModelDescriptionConstants.FAILURE_DESCRIPTION)) {
                     failureDesc = txControl.response.getResponseNode().get(ModelDescriptionConstants.FAILURE_DESCRIPTION).toString();
                 } else {
-                    failureDesc = ControllerLogger.ROOT_LOGGER.subsystemBootOperationFailed(entry.getKey());
+                    failureDesc = ControllerLogger.ROOT_LOGGER.subsystemBootOperationFailed(entry.getKey().getSubsystemNames());
                 }
                 MGMT_OP_LOGGER.error(failureDesc);
                 if (!failureRecorded) {
@@ -248,26 +305,30 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         }
     }
 
-    private void notifySubsystemTransactions(final Map<String, ParallelBootTransactionControl> transactionControls,
+    private void notifySubsystemTransactions(final Map<OpChunk, ParallelBootTransactionControl> transactionControls,
                                              final boolean rollback,
                                              final CountDownLatch committedLatch,
                                              final OperationContext.Stage stage) {
-        for (Map.Entry<String, ParallelBootTransactionControl> entry : transactionControls.entrySet()) {
+        for (Map.Entry<OpChunk, ParallelBootTransactionControl> entry : transactionControls.entrySet()) {
             ParallelBootTransactionControl txControl = entry.getValue();
             if (txControl.transaction != null) {
                 if (!rollback) {
                     txControl.transaction.commit();
-                    MGMT_OP_LOGGER.debugf("Committed transaction for %s subsystem %s stage boot operations", entry.getKey(), stage);
+                    if (MGMT_OP_LOGGER.isDebugEnabled()) {
+                        MGMT_OP_LOGGER.debugf("Committed transaction for %s subsystem %s stage boot operations", entry.getKey().getSubsystemNames(), stage);
+                    }
                 } else {
                     txControl.transaction.rollback();
-                    MGMT_OP_LOGGER.debugf("Rolled back transaction for %s subsystem %s stage boot operations", entry.getKey(), stage);
+                    if (MGMT_OP_LOGGER.isDebugEnabled()) {
+                        MGMT_OP_LOGGER.debugf("Rolled back transaction for %s subsystem %s stage boot operations", entry.getKey().getSubsystemNames(), stage);
+                    }
                 }
             }
         }
         committedLatch.countDown();
     }
 
-    private OperationStepHandler getRuntimeStep(final Map<String, List<ParsedBootOp>> runtimeOpsBySubsystem, final SecurityDomain bootSecurityDomain) {
+    private OperationStepHandler getRuntimeStep(final Set<OpChunk> opChunks, final SecurityDomain bootSecurityDomain) {
 
         return new OperationStepHandler() {
             @Override
@@ -283,23 +344,21 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 // make sure the registry lock is held
                 context.getServiceRegistry(true);
 
-                final Map<String, ParallelBootTransactionControl> transactionControls = new LinkedHashMap<String, ParallelBootTransactionControl>();
+                final Map<OpChunk, ParallelBootTransactionControl> transactionControls = new LinkedHashMap<>();
 
-                final CountDownLatch preparedLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
+                final CountDownLatch preparedLatch = new CountDownLatch(opChunks.size());
                 final CountDownLatch committedLatch = new CountDownLatch(1);
-                final CountDownLatch completeLatch = new CountDownLatch(runtimeOpsBySubsystem.size());
+                final CountDownLatch completeLatch = new CountDownLatch(opChunks.size());
 
-                for (Map.Entry<String, List<ParsedBootOp>> entry : runtimeOpsBySubsystem.entrySet()) {
-                    String subsystemName = entry.getKey();
+                for (OpChunk opChunk : opChunks) {
                     final ParallelBootTransactionControl txControl = new ParallelBootTransactionControl(preparedLatch, committedLatch, completeLatch);
-                    transactionControls.put(subsystemName, txControl);
+                    transactionControls.put(opChunk, txControl);
 
                     // Execute the subsystem's ops in another thread
-                    List<ParsedBootOp> bootOps = entry.getValue();
-                    ParallelBootOperationContext pboc = bootOps.size() == 0
+                    ParallelBootOperationContext pboc = opChunk.runtimeOps.size() == 0
                         ? null
                         : createOperationContext(primaryContext, bootSecurityDomain, txControl, null);
-                    ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.RUNTIME, txControl, pboc);
+                    ParallelBootTask subsystemTask = new ParallelBootTask(opChunk.getSubsystemNames(), opChunk.runtimeOps, OperationContext.Stage.RUNTIME, txControl, pboc);
                     executor.execute(subsystemTask);
                 }
 
@@ -343,19 +402,19 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
     private class ParallelBootTask implements Runnable {
 
-        private final String subsystemName;
+        private final Set<String> subsystemNames;
         private final List<ParsedBootOp> bootOperations;
         private final OperationContext.Stage executionStage;
         private final ParallelBootTransactionControl transactionControl;
         private final ParallelBootOperationContext pboc;
 
-        ParallelBootTask(final String subsystemName,
+        ParallelBootTask(final Set<String> subsystemNames,
                          final List<ParsedBootOp> bootOperations,
                          final OperationContext.Stage executionStage,
                          final ParallelBootTransactionControl transactionControl,
                          final ParallelBootOperationContext pboc) {
             assert bootOperations != null || pboc != null;
-            this.subsystemName = subsystemName;
+            this.subsystemNames = subsystemNames;
             this.bootOperations = bootOperations;
             this.executionStage = executionStage;
             this.transactionControl = transactionControl;
@@ -383,7 +442,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                 }
                 pboc.executeOperation();
             } catch (RuntimeException | Error t) {
-                MGMT_OP_LOGGER.failedSubsystemBootOperations(t, subsystemName);
+                MGMT_OP_LOGGER.failedSubsystemBootOperations(t, subsystemNames);
                 if (!transactionControl.signalled) {
                     ModelNode failure = new ModelNode();
                     failure.get(ModelDescriptionConstants.SUCCESS).set(false);
@@ -404,7 +463,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
                     if (!transactionControl.signalled) {
                         ModelNode failure = new ModelNode();
                         failure.get(ModelDescriptionConstants.SUCCESS).set(false);
-                        failure.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.subsystemBootOperationFailedExecuting(subsystemName));
+                        failure.get(ModelDescriptionConstants.FAILURE_DESCRIPTION).set(ControllerLogger.ROOT_LOGGER.subsystemBootOperationFailedExecuting(subsystemNames));
                         transactionControl.operationFailed(failure);
                     }
                 } else {
@@ -464,6 +523,51 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
         public void operationCompleted(OperationResponse response) {
             this.response = response;
             completeLatch.countDown();
+        }
+    }
+
+    private static class OpChunk implements Comparable<OpChunk> {
+        private final Map<String, List<ParsedBootOp>> ops = new LinkedHashMap<>();
+        private final List<ParsedBootOp> runtimeOps = new ArrayList<>();
+        private int opCount = 0;
+
+        Set<String> getSubsystemNames() {
+            return ops.keySet();
+        }
+
+        void addModelPhaseOps(String subsystem, List<ParsedBootOp> opsList) {
+            ops.put(subsystem, opsList);
+            opCount += opsList.size();
+        }
+
+        List<ParsedBootOp> getModelPhaseOps() {
+            List<ParsedBootOp> list = new ArrayList<>(opCount);
+            for (List<ParsedBootOp> item : ops.values()) {
+                list.addAll(item);
+            }
+            return list;
+        }
+
+        @Override
+        public int compareTo(OpChunk opChunk) {
+            if (this == opChunk) {
+                return 0;
+            } else {
+                int diff = opCount - opChunk.opCount;
+                return diff == 0 ? -1 : diff;
+            }
+        }
+    }
+
+    private static class EntryComparator implements Comparator<Map.Entry<String, List<ParsedBootOp>>> {
+
+        @Override
+        public int compare(Map.Entry<String, List<ParsedBootOp>> e1, Map.Entry<String, List<ParsedBootOp>> e2) {
+            if (e1 == e2) {
+                return 0;
+            }
+            int diff = e2.getValue().size() - e1.getValue().size();
+            return diff == 0 ? 1 : diff;
         }
     }
 }

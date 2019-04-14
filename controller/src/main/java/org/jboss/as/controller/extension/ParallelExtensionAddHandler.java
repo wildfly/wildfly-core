@@ -22,42 +22,44 @@
 
 package org.jboss.as.controller.extension;
 
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.jboss.as.controller._private.OperationFailedRuntimeException;
-import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ParsedBootOp;
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
-
-import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 /**
  * Special handler that executes extension initialization in parallel.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ParallelExtensionAddHandler implements OperationStepHandler {
+public final class ParallelExtensionAddHandler implements OperationStepHandler {
 
     private final ExecutorService executor;
     private final List<ParsedBootOp> extensionAdds = new ArrayList<ParsedBootOp>();
     private ParsedBootOp ourOp;
     private final MutableRootResourceRegistrationProvider rootResourceRegistrationProvider;
+    private final int maxParallelBootTasks;
 
-    public ParallelExtensionAddHandler(ExecutorService executorService,
+    public ParallelExtensionAddHandler(final ExecutorService executorService,
+                                       final int maxParallelBootTasks,
                                        MutableRootResourceRegistrationProvider rootResourceRegistrationProvider) {
+        assert maxParallelBootTasks > 1; // else this handler should not be used
         this.executor = executorService;
+        this.maxParallelBootTasks = maxParallelBootTasks;
         this.rootResourceRegistrationProvider = rootResourceRegistrationProvider;
     }
 
@@ -93,26 +95,44 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
                 long start = System.currentTimeMillis();
-                final Map<String, Future<OperationFailedRuntimeException>> futures = new LinkedHashMap<String, Future<OperationFailedRuntimeException>>();
+                final GroupInitializeTask[] initializeTasks = new GroupInitializeTask[maxParallelBootTasks];
                 final ManagementResourceRegistration rootResourceRegistration = rootResourceRegistrationProvider.getRootResourceRegistrationForUpdate(context);
+                int taskIdx = -1;
                 for (ParsedBootOp op : extensionAdds) {
+                    if (taskIdx == maxParallelBootTasks - 1) {
+                        taskIdx = 0;
+                    } else {
+                        taskIdx++;
+                    }
                     String module = op.address.getLastElement().getValue();
                     ExtensionAddHandler addHandler = ExtensionAddHandler.class.cast(op.handler);
-                    Future<OperationFailedRuntimeException> future = executor.submit(new ExtensionInitializeTask(module, addHandler, rootResourceRegistration));
-                    futures.put(module, future);
+                    ExtensionInitializeTask initializeTask = new ExtensionInitializeTask(module, addHandler, rootResourceRegistration);
+                    if (initializeTasks[taskIdx] == null) {
+                        initializeTasks[taskIdx] = new GroupInitializeTask(initializeTask);
+                    } else {
+                        initializeTasks[taskIdx].loadTasks.add(initializeTask);
+                    }
                 }
 
-                for (Map.Entry<String, Future<OperationFailedRuntimeException>> entry : futures.entrySet()) {
-                    try {
-                        OperationFailedRuntimeException ofe = entry.getValue().get();
-                        if (ofe != null) {
-                            throw ofe;
+                for (GroupInitializeTask initTask : initializeTasks) {
+                    if (initTask != null) {
+                        initTask.execute(executor);
+                    }
+                }
+
+                for (GroupInitializeTask initTask : initializeTasks) {
+                    if (initTask != null) {
+                        try {
+                            OperationFailedRuntimeException ofe = initTask.future.get();
+                            if (ofe != null) {
+                                throw ofe;
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw ControllerLogger.ROOT_LOGGER.moduleInitializationInterrupted(initTask.currentModule);
+                        } catch (ExecutionException e) {
+                            throw ControllerLogger.ROOT_LOGGER.failedInitializingModule(e, initTask.currentModule);
                         }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        throw ControllerLogger.ROOT_LOGGER.moduleInitializationInterrupted(entry.getKey());
-                    } catch (ExecutionException e) {
-                        throw ControllerLogger.ROOT_LOGGER.failedInitializingModule(e, entry.getKey());
                     }
                 }
 
@@ -130,8 +150,8 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
         private final ExtensionAddHandler addHandler;
         private final ManagementResourceRegistration rootResourceRegistration;
 
-        public ExtensionInitializeTask(String module, ExtensionAddHandler addHandler,
-                                       ManagementResourceRegistration rootResourceRegistration) {
+        ExtensionInitializeTask(String module, ExtensionAddHandler addHandler,
+                                ManagementResourceRegistration rootResourceRegistration) {
             this.module = module;
             this.addHandler = addHandler;
             this.rootResourceRegistration = rootResourceRegistration;
@@ -146,6 +166,34 @@ public class ParallelExtensionAddHandler implements OperationStepHandler {
                 failure = e;
             }
             return failure;
+        }
+    }
+
+    private static class GroupInitializeTask implements Callable<OperationFailedRuntimeException> {
+        private final List<ExtensionInitializeTask> loadTasks = new ArrayList<>();
+        private volatile String currentModule;
+        private volatile Future<OperationFailedRuntimeException> future;
+
+        private GroupInitializeTask(ExtensionInitializeTask first) {
+            this.currentModule = first.module;
+            loadTasks.add(first);
+        }
+
+        @Override
+        public OperationFailedRuntimeException call() throws Exception {
+
+            for (ExtensionInitializeTask task : loadTasks) {
+                currentModule = task.module;
+                OperationFailedRuntimeException ex = task.call();
+                if (ex != null) {
+                    return ex;
+                }
+            }
+            return null;
+        }
+
+        private void execute(ExecutorService executorService) {
+            future = executorService.submit(this);
         }
     }
 }
