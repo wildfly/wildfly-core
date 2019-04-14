@@ -736,10 +736,10 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
             final ImmutableManagementResourceRegistration registration,
             ModelNode requestProperties, CapabilityScope scope, boolean isProfile,
             Set<String> capabilities, Map<String, String> featureParamMappings) {
+        final Map<String, ModelNode> required = new TreeMap<>();
         if (requestProperties.isDefined()) {
             List<Property> request = requestProperties.asPropertyList();
             if (!request.isEmpty()) {
-                Map<String, ModelNode> required = new TreeMap<>();
                 boolean filteredOut = false;
                 for (String cap : capabilities) {
                     if (cap.startsWith("org.wildfly.domain.server-config.")) {
@@ -784,51 +784,52 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                         }
                     }
                 }}
-                Set<CapabilityReferenceRecorder> resourceRequirements = registration.getRequirements();
-                if (!resourceRequirements.isEmpty()) {
-                    PathAddress aliasAddress = createAliasPathAddress(registration, registration.getPathAddress());
-                    for (CapabilityReferenceRecorder requirement : resourceRequirements) {
-                        String[] segments = requirement.getRequirementPatternSegments(null, aliasAddress);
-                        String[] dynamicElements;
-                        if (segments == null || segments.length == 0) {
-                            dynamicElements = null;
-                        } else {
-                            dynamicElements = new String[segments.length];
-                            for (int i = 0; i < segments.length; i++) {
-                                dynamicElements[i] = "$" + segments[i];
-                            }
-                        }
-                        String baseRequirementName;
-                        if (isProfile) {
-                            baseRequirementName = PROFILE_PREFIX + requirement.getBaseRequirementName();
-                        } else {
-                            baseRequirementName = requirement.getBaseRequirementName();
-                        }
-                        ModelNode capability = new ModelNode();
-                        if (dynamicElements == null) {
-                            capability.get(NAME).set(baseRequirementName);
-                        } else {
-                            capability.get(NAME).set(RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, dynamicElements));
-                        }
-                        required.put(capability.get(NAME).asString(), capability);
+            }
+        }
+
+        Set<CapabilityReferenceRecorder> resourceRequirements = registration.getRequirements();
+        if (!resourceRequirements.isEmpty()) {
+            PathAddress aliasAddress = createAliasPathAddress(registration, registration.getPathAddress());
+            for (CapabilityReferenceRecorder requirement : resourceRequirements) {
+                String[] segments = requirement.getRequirementPatternSegments(null, aliasAddress);
+                String[] dynamicElements;
+                if (segments == null || segments.length == 0) {
+                    dynamicElements = null;
+                } else {
+                    dynamicElements = new String[segments.length];
+                    for (int i = 0; i < segments.length; i++) {
+                        dynamicElements[i] = "$" + segments[i];
                     }
                 }
-                // WFLY-4164 record the fixed requirements of the registration's capabilities
-                for (RuntimeCapability<?> regCap : registration.getCapabilities()) {
-                    for (String capReq : regCap.getRequirements()) {
-                        if (!required.containsKey(capReq)) {
-                            ModelNode capability = new ModelNode();
-                            capability.get(NAME).set(capReq);
-                            required.put(capReq, capability);
-                        }
-                    }
+                String baseRequirementName;
+                if (isProfile) {
+                    baseRequirementName = PROFILE_PREFIX + requirement.getBaseRequirementName();
+                } else {
+                    baseRequirementName = requirement.getBaseRequirementName();
                 }
-                if (!required.isEmpty()) {
-                    ModelNode requiresList = feature.get(REQUIRES);
-                    for (ModelNode req : required.values()) {
-                        requiresList.add(req);
-                    }
+                ModelNode capability = new ModelNode();
+                if (dynamicElements == null) {
+                    capability.get(NAME).set(baseRequirementName);
+                } else {
+                    capability.get(NAME).set(RuntimeCapability.buildDynamicCapabilityName(baseRequirementName, dynamicElements));
                 }
+                required.put(capability.get(NAME).asString(), capability);
+            }
+        }
+        // WFLY-4164 record the fixed requirements of the registration's capabilities
+        for (RuntimeCapability<?> regCap : registration.getCapabilities()) {
+            for (String capReq : regCap.getRequirements()) {
+                if (!required.containsKey(capReq)) {
+                    ModelNode capability = new ModelNode();
+                    capability.get(NAME).set(capReq);
+                    required.put(capReq, capability);
+                }
+            }
+        }
+        if (!required.isEmpty()) {
+            ModelNode requiresList = feature.get(REQUIRES);
+            for (ModelNode req : required.values()) {
+                requiresList.add(req);
             }
         }
     }
