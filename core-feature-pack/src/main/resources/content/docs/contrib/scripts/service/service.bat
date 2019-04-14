@@ -122,6 +122,8 @@ set DC_HOST=master
 set IS_DOMAIN=false
 set LOGLEVEL=INFO
 set LOGPATH=
+set PROPSPATH=
+set ENV_VARS=
 set JBOSSUSER=
 set JBOSSPASS=
 set SERVICE_USER=
@@ -212,6 +214,12 @@ echo                                   %JBOSS_HOME%\domain\log
 echo                                   %JBOSS_HOME%\standalone\log
 echo(
 echo     /debug                      : run the service install in debug mode
+echo(
+echo     /properties ^<path^>           : Path of the properties file to use
+echo                                 default none
+echo(
+echo     /environment ^<env^>           : List of environment variables that will be provided to the service in the form key=value. They are separated using either # or ; characters. If you need to embed either # or ; character within a value put them inside single quotes.
+echo                                 default none
 echo(
 echo Other commands:
 echo(
@@ -456,6 +464,38 @@ if /I "%~1"== "/logpath" (
   shift
   goto LoopArgs
 )
+if /I "%~1"== "/properties" (
+  set PROPSPATH=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set PROPSPATH=%~2
+    )
+  )
+  if "!PROPSPATH!" == "" (
+    echo ERROR: You need to specify a path for the properties file
+    goto endBatch
+  )
+  shift
+  shift
+  goto LoopArgs
+)
+if /I "%~1"== "/environment" (
+  set ENV_VARS=
+  if not "%~2"=="" (
+    set T=%~2
+    if not "!T:~0,1!"=="/" (
+      set ENV_VARS=%~2
+    )
+  )
+  if "!ENV_VARS!" == "" (
+    echo ERROR: You need to specify a list of environment variables
+    goto endBatch
+  )
+  shift
+  shift
+  goto LoopArgs
+)
 echo ERROR: Unrecognised option: %1
 echo(
 goto cmdUsage
@@ -497,7 +537,12 @@ if /I "%IS_DOMAIN%" == "true" (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\standalone"
   if "%CONFIG%"=="" set CONFIG=standalone.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=standalone.bat
-  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!"
+  if "%PROPSPATH%"=="" (
+    set "PROPS="
+  ) else (
+    set "PROPS=#--properties=%PROPSPATH%"
+  )
+  set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!!PROPS!"
   set STOPPARAM="/c !STOP_SCRIPT! --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown"
 )
 
@@ -523,6 +568,8 @@ if /I "%ISDEBUG%" == "true" (
   echo STOPPARAM=%STOPPARAM%
   echo LOGLEVEL=%LOGLEVEL%
   echo LOGPATH=%LOGPATH%
+  echo PROPSPATH=%PROPSPATH%
+  echo ENV_VARS=%ENV_VARS%
   echo CREDENTIALS=%CREDENTIALS%
   echo BASE="%BASE%"
   echo CONFIG="%CONFIG%"
@@ -538,8 +585,8 @@ if /I "%ISDEBUG%" == "true" (
 )
 
 @rem quotes around the "%DESCRIPTION%" and "%DISPLAYNAME" but nowhere else
-echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
-%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM%
+echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENV_VARS%
+%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENV_VARS%
 
 @if /I "%ISDEBUG%" == "true" (
   @echo off
