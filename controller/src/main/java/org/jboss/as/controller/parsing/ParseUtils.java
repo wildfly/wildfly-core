@@ -438,7 +438,7 @@ public final class ParseUtils {
         ModelNode value = null;
         for (int i = 0; i < cnt; i++) {
             String uri = reader.getAttributeNamespace(i);
-            if (uri != null&&!"".equals(XMLConstants.NULL_NS_URI)) {
+            if (uri != null && !uri.equals(XMLConstants.NULL_NS_URI)) {
                 throw unexpectedAttribute(reader, i);
             }
             final String localName = reader.getAttributeLocalName(i);
