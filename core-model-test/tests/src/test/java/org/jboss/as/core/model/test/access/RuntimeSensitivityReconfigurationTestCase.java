@@ -209,9 +209,11 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
 
         ModelNode operation = Util.createOperation(WRITE_ATTRIBUTE_OPERATION, address);
 
-        if (requiresAccess != null) {
-            operation.get(NAME).set(CONFIGURED_REQUIRES_ADDRESSABLE);
-            operation.get(VALUE).set(requiresAccess);
+        // WFCORE-3995 in separate operation execution, we can not set access to true first without setting read and write.
+        // Update to following order write - read - access for validation
+        if (requiresWrite != null) {
+            operation.get(NAME).set(CONFIGURED_REQUIRES_WRITE);
+            operation.get(VALUE).set(requiresWrite);
             executeWithRoles(operation, StandardRole.SUPERUSER);
         }
 
@@ -221,9 +223,9 @@ public class RuntimeSensitivityReconfigurationTestCase extends AbstractCoreModel
             executeWithRoles(operation, StandardRole.SUPERUSER);
         }
 
-        if (requiresWrite != null) {
-            operation.get(NAME).set(CONFIGURED_REQUIRES_WRITE);
-            operation.get(VALUE).set(requiresWrite);
+        if (requiresAccess != null) {
+            operation.get(NAME).set(CONFIGURED_REQUIRES_ADDRESSABLE);
+            operation.get(VALUE).set(requiresAccess);
             executeWithRoles(operation, StandardRole.SUPERUSER);
         }
     }

@@ -65,6 +65,7 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
     public void testConfiguration() throws Exception {
         //Initialize some additional constraints
         new SensitiveTargetAccessConstraintDefinition(new SensitivityClassification("play", "security-realm", true, true, true));
+        new SensitiveTargetAccessConstraintDefinition(new SensitivityClassification("system-property", "system-property", true, true, true));
         new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("play", "deployment", false));
 
 
@@ -79,6 +80,12 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
 
         //////////////////////////////////////////////////////////////////////////////////
         //Check that both set and undefined configured constraint settings get returned
+
+        /*
+         * <sensitive-classification type="play" name="security-realm" requires-addressable="false" requires-read="false" requires-write="false" />
+         * <sensitive-classification type="system-property" name="system-property" requires-addressable="true" requires-read="true" requires-write="true" />
+         * system-property sensitive classification default values are false, false, true
+         */
 
         System.out.println(kernelServices.readWholeModel());
         //Sensitivity classification
@@ -103,6 +110,86 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
                         pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getName())));
         checkResultExists(result, new ModelNode(false));
 
+        // WFCORE-3995 Test write operations on configured-requires-addressable
+        // This should fail as sensitivity constraint attribute configured-requires-read and configured-requires-write must not be false before writing configured-requires-addressable to true
+        result = ModelTestUtils.checkFailed(
+              kernelServices.executeOperation(
+                  Util.getWriteAttributeOperation(PathAddress.pathAddress(
+                      pathElement(CORE_SERVICE, MANAGEMENT),
+                      pathElement(ACCESS, AUTHORIZATION),
+                      pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                      pathElement(TYPE, "play"),
+                      pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getName(), true)));
+        checkResultNotExists(result);
+
+        // This should fail as sensitivity constraint attribute configured-requires-read and configured-requires-write must not be false before undefine configured-requires-addressable to its default value true
+        result = ModelTestUtils.checkFailed(
+              kernelServices.executeOperation(
+                  Util.getUndefineAttributeOperation(PathAddress.pathAddress(
+                      pathElement(CORE_SERVICE, MANAGEMENT),
+                      pathElement(ACCESS, AUTHORIZATION),
+                      pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                      pathElement(TYPE, "play"),
+                      pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_ADDRESSABLE.getName())));
+        checkResultNotExists(result);
+
+        // WFCORE-3995 Test write operations on configured-requires-read
+        // This should fail as sensitivity constraint attribute configured-requires-addressable must not be true before writing configured-requires-read to false
+        result = ModelTestUtils.checkFailed(
+                kernelServices.executeOperation(
+                    Util.getWriteAttributeOperation(PathAddress.pathAddress(
+                        pathElement(CORE_SERVICE, MANAGEMENT),
+                        pathElement(ACCESS, AUTHORIZATION),
+                        pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                        pathElement(TYPE, "system-propery"),
+                        pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName(), false)));
+        checkResultNotExists(result);
+
+        // This should fail as sensitivity constraint attribute configured-requires-addressable must not be true before undefine configured-requires-read its default value false
+        result = ModelTestUtils.checkFailed(
+                kernelServices.executeOperation(
+                    Util.getUndefineAttributeOperation(PathAddress.pathAddress(
+                        pathElement(CORE_SERVICE, MANAGEMENT),
+                        pathElement(ACCESS, AUTHORIZATION),
+                        pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                        pathElement(TYPE, "system-propery"),
+                        pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName())));
+        checkResultNotExists(result);
+
+        // This should fail as sensitivity constraint attribute configured-requires-write must not be false before writing configured-requires-read to true
+        result = ModelTestUtils.checkFailed(
+                kernelServices.executeOperation(
+                    Util.getWriteAttributeOperation(PathAddress.pathAddress(
+                        pathElement(CORE_SERVICE, MANAGEMENT),
+                        pathElement(ACCESS, AUTHORIZATION),
+                        pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                        pathElement(TYPE, "play"),
+                        pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName(), true)));
+        checkResultNotExists(result);
+
+        // This should fail as sensitivity constraint attribute configured-requires-addressable must not be false before undefine configured-requires-read to its default value true
+        result = ModelTestUtils.checkFailed(
+                kernelServices.executeOperation(
+                    Util.getUndefineAttributeOperation(PathAddress.pathAddress(
+                        pathElement(CORE_SERVICE, MANAGEMENT),
+                        pathElement(ACCESS, AUTHORIZATION),
+                        pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                        pathElement(TYPE, "play"),
+                        pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName())));
+        checkResultNotExists(result);
+
+        // WFCORE-3995 Test write operations on configured-requires-write
+        // This should fail as sensitivity constraint attribute configured-requires-addressable and configured-requires-read must not be true before writing configured-requires-read to false
+        result = ModelTestUtils.checkFailed(
+                kernelServices.executeOperation(
+                    Util.getWriteAttributeOperation(PathAddress.pathAddress(
+                        pathElement(CORE_SERVICE, MANAGEMENT),
+                        pathElement(ACCESS, AUTHORIZATION),
+                        pathElement(CONSTRAINT, SENSITIVITY_CLASSIFICATION),
+                        pathElement(TYPE, "system-propery"),
+                        pathElement(CLASSIFICATION, SECURITY_REALM)), SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName(), false)));
+        checkResultNotExists(result);
+
         //VaultExpression
         //It is defined
         PathAddress vaultAddress = PathAddress.pathAddress(
@@ -113,7 +200,10 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
                 kernelServices.executeOperation(
                         Util.getReadAttributeOperation(vaultAddress, SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName())));
         checkResultExists(result, new ModelNode(false));
-        //Now undefine it and check again
+        //Now undefine it and check again (need to undefine configured-requires-write first)
+        ModelTestUtils.checkOutcome(
+                kernelServices.executeOperation(
+                        Util.getUndefineAttributeOperation(vaultAddress, SensitivityResourceDefinition.CONFIGURED_REQUIRES_WRITE.getName())));
         ModelTestUtils.checkOutcome(
                 kernelServices.executeOperation(
                         Util.getUndefineAttributeOperation(vaultAddress, SensitivityResourceDefinition.CONFIGURED_REQUIRES_READ.getName())));
@@ -149,5 +239,9 @@ public class StandaloneAccessControlTestCase extends AbstractCoreModelTest {
     private void checkResultExists(ModelNode result, ModelNode expected) {
         Assert.assertTrue(result.has(RESULT));
         Assert.assertEquals(expected, result.get(RESULT));
+    }
+
+    private void checkResultNotExists(ModelNode result) {
+        Assert.assertFalse(result.has(RESULT));
     }
 }

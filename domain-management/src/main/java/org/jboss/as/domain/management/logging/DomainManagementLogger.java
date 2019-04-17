@@ -1264,6 +1264,11 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 142, value = "Following mechanisms configured on the server (%s) are not supported by the realm '%s'.")
     StartException legacyMechanismsAreNotSupported(String mechanismNames, String realmName);
 
+    @Message(id = 143, value = "Invalid sensitive classification attribute '%s'")
+    IllegalStateException invalidSensitiveClassificationAttribute(String attr);
+
+    @Message(id = 144, value = "Sensitivity constraint %s contains imcompatible attribute value to other sensitive classification constraints.")
+    OperationFailedException imcompatibleConfiguredRequiresAttributeValue(String addr);
 
     /**
      * Information message saying the username and password must be different.
