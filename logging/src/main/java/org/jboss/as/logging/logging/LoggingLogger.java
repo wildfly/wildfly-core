@@ -33,6 +33,7 @@ import java.util.Set;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.logging.BasicLogger;
@@ -976,4 +977,12 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 93, value = "Failed to configure SSL context for %s %s.")
     OperationFailedException failedToConfigureSslContext(@Cause Throwable cause, String resourceName, String resourceValue);
+
+    /**
+     * Creates an exception indicating a formatter is using a reserved name.
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 94, value = "Formatter name cannot end with '" + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX + "'")
+    OperationFailedException illegalFormatterName();
 }

@@ -369,6 +369,9 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
             }
 
             final String name = context.getCurrentAddressValue();
+            if (name.endsWith(PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX)) {
+                throw LoggingLogger.ROOT_LOGGER.illegalFormatterName();
+            }
             FormatterConfiguration configuration = logContextConfiguration.getFormatterConfiguration(name);
             final String className = type.getName();
 
