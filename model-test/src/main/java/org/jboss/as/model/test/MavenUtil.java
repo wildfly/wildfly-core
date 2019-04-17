@@ -249,7 +249,7 @@ class MavenUtil {
                 remoteRepositories.add(repository.build());
             }
             //always add jboss developer repository
-            RemoteRepository.Builder repository = new RemoteRepository.Builder("jboss-developer", "default", "http://repository.jboss.org/nexus/content/groups/developer/");
+            RemoteRepository.Builder repository = new RemoteRepository.Builder("jboss-developer", "default", "https://repository.jboss.org/nexus/content/groups/developer/");
             if (httpProxy != null) {
                 repository.setProxy(httpProxy);
             }
