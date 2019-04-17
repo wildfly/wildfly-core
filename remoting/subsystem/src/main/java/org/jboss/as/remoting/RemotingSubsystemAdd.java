@@ -83,7 +83,8 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             }
         }
 
-        context.getCapabilityServiceTarget().addCapability(REMOTING_ENDPOINT_CAPABILITY, endpointService)
+        context.getCapabilityServiceTarget().addCapability(REMOTING_ENDPOINT_CAPABILITY)
+                .setInstance(endpointService)
                 .addCapabilityRequirement(IO_WORKER_CAPABILITY_NAME, XnioWorker.class, endpointService.getWorker(), workerName)
                 .install();
     }

@@ -20,7 +20,7 @@ package org.jboss.as.controller;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 
 /**
  * A builder for an individual service in a {@code CapabilityServiceTarget}.
- * Create an instance via the {@link CapabilityServiceTarget#addCapability(RuntimeCapability, Service)},
+ * Create an instance via the {@link CapabilityServiceTarget#addCapability(RuntimeCapability)},
  * {@link #addCapabilityRequirement(String, Class, Injector)} or other methods.
  * Builder also add supports to add capability requirement for service injection via {@link #addCapabilityRequirement(String, Class, Injector)}
  *
@@ -102,6 +102,13 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      */
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
+
+    /**
+     * {@inheritDoc}
+     * @return this builder
+     */
+    @Override
+    CapabilityServiceBuilder<T> setInstance(Service service);
 
     /**
      * Capability requirement.

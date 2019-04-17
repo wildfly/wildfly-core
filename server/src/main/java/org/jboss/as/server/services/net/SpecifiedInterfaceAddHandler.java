@@ -45,7 +45,8 @@ public class SpecifiedInterfaceAddHandler extends InterfaceAddHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, String name, ParsedInterfaceCriteria criteria) {
-        context.getCapabilityServiceTarget().addCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.fromBaseCapability(name), createInterfaceService(name, criteria))
+        context.getCapabilityServiceTarget().addCapability(InterfaceResourceDefinition.INTERFACE_CAPABILITY.fromBaseCapability(name))
+            .setInstance(createInterfaceService(name, criteria))
             .addAliases(NetworkInterfaceService.JBOSS_NETWORK_INTERFACE.append(name))
             .setInitialMode(ServiceController.Mode.ON_DEMAND)
             .install();

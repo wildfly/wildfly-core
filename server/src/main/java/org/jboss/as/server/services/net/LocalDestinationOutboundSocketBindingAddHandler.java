@@ -147,7 +147,8 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
 
         // create the service
         final LocalDestinationOutboundSocketBindingService outboundSocketBindingService = new LocalDestinationOutboundSocketBindingService(outboundSocketName, sourcePort, fixedSourcePort);
-        final CapabilityServiceBuilder<OutboundSocketBinding> serviceBuilder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY, outboundSocketBindingService);
+        final CapabilityServiceBuilder<?> serviceBuilder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
+        serviceBuilder.setInstance(outboundSocketBindingService);
         // if a source interface has been specified then add a dependency on it
         if (sourceInterfaceName != null) {
             serviceBuilder.addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, outboundSocketBindingService.getSourceNetworkInterfaceBindingInjector(), sourceInterfaceName);
