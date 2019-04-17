@@ -664,6 +664,10 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-provider-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm</artifactId>
         </dependency>
         <dependency>
