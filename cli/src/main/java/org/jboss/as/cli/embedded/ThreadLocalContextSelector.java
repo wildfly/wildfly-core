@@ -69,7 +69,8 @@ class ThreadLocalContextSelector implements LogContextSelector, StdioContextSele
     @Override
     public StdioContext getStdioContext() {
         // CLI loggers should only use the default stdio context regardless if the thread-local context is set.
-        if (WildFlySecurityManager.getCurrentContextClassLoaderPrivileged().equals(cliClassLoader)) {
+        final ClassLoader tccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        if (tccl != null && tccl.equals(cliClassLoader)) {
             return defaultContexts.getStdioContext();
         }
         Contexts threadContext = threadLocal.get();
@@ -81,7 +82,8 @@ class ThreadLocalContextSelector implements LogContextSelector, StdioContextSele
     public LogContext getLogContext() {
         // CLI loggers should only use the default stdio context regardless if the thread-local context is set This
         // allows the context configured for CLI, e.g. jboss-cli-logging.properties.
-        if (WildFlySecurityManager.getCurrentContextClassLoaderPrivileged().equals(cliClassLoader)) {
+        final ClassLoader tccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        if (tccl != null && tccl.equals(cliClassLoader)) {
             return defaultContexts.getLogContext();
         }
         Contexts threadContext = threadLocal.get();
