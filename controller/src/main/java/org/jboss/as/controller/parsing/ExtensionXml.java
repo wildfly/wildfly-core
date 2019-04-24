@@ -71,8 +71,8 @@ public class ExtensionXml {
         this.extensionRegistry = null;
     }
     public ExtensionXml(final ModuleLoader loader, final ExecutorService executorService, final ExtensionRegistry extensionRegistry) {
-        this.moduleLoader = loader;
-        this.bootExecutor = executorService;
+        moduleLoader = loader;
+        bootExecutor = executorService;
         this.extensionRegistry = extensionRegistry;
         this.deferredExtensionContext = null;
     }
