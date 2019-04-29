@@ -379,7 +379,7 @@ public class ManagementHttpServer {
             ROOT_LOGGER.consoleModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
 
-        if (builder.consoleMode.hasConsole()) {
+        if (builder.consoleMode != ConsoleMode.NO_CONSOLE) {
             try {
                 addErrorContextHandler(pathHandler, builder);
             } catch (ModuleLoadException e) {
