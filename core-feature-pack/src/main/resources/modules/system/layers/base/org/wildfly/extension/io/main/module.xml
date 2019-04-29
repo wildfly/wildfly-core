@@ -41,6 +41,8 @@
         <!-- This is a workaround for WFLY-10394 -->
         <module name="java.naming"/>
         <module name="java.management"/>
+        <!-- This is a workaround for WFCORE-4450 -->
+        <module name="java.rmi"/>
         <module name="jdk.security.auth"/>
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.as.controller"/>
