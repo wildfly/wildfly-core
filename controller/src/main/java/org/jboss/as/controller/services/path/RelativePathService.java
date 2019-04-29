@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELATIVE_TO;
 
 import java.io.File;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
@@ -33,7 +35,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.Assert;
 
 /**
@@ -41,18 +42,25 @@ import org.wildfly.common.Assert;
  * to other paths.
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class RelativePathService extends AbstractPathService {
 
     private final String relativePath;
-    private final InjectedValue<String> injectedPath = new InjectedValue<String>();
+    private final Supplier<String> pathSupplier;
 
-    public static ServiceController<String> addService(final String name, final String relativePath,
+    private RelativePathService(final String relativePath, final Consumer<String> pathConsumer, final Supplier<String> pathSupplier) {
+        super(pathConsumer);
+        this.relativePath = convertPath(relativePath);
+        this.pathSupplier = pathSupplier;
+    }
+
+    public static ServiceController<?> addService(final String name, final String relativePath,
             final String relativeTo, final ServiceTarget serviceTarget) {
         return addService(pathNameOf(name), relativePath, false, relativeTo, serviceTarget);
     }
 
-    public static ServiceController<String> addService(final ServiceName name, final String relativePath,
+    public static ServiceController<?> addService(final ServiceName name, final String relativePath,
             final String relativeTo, final ServiceTarget serviceTarget) {
         return addService(name, relativePath, false, relativeTo, serviceTarget);
     }
@@ -69,19 +77,19 @@ public class RelativePathService extends AbstractPathService {
      * @param serviceTarget the {@link ServiceTarget} to use to install the service
      * @return the ServiceController for the path service
      */
-    public static ServiceController<String> addService(final ServiceName name, final String path,
+    public static ServiceController<?> addService(final ServiceName name, final String path,
                                                        boolean possiblyAbsolute, final String relativeTo, final ServiceTarget serviceTarget) {
 
         if (possiblyAbsolute && isAbsoluteUnixOrWindowsPath(path)) {
             return AbsolutePathService.addService(name, path, serviceTarget);
         }
 
-        RelativePathService service = new RelativePathService(path);
-        ServiceBuilder<String> builder =  serviceTarget.addService(name, service)
-            .addDependency(pathNameOf(relativeTo), String.class, service.injectedPath);
-        ServiceController<String> svc = builder.install();
-        return svc;
-    }
+        final ServiceBuilder<?> builder = serviceTarget.addService(name);
+        final Consumer<String> pathConsumer = builder.provides(name);
+        final Supplier<String> injectedPath = builder.requires(pathNameOf(relativeTo));
+        builder.setInstance(new RelativePathService(path, pathConsumer, injectedPath));
+        return builder.install();
+}
 
     public static void addService(final ServiceName name, final ModelNode element, final ServiceTarget serviceTarget) {
         final String relativePath = element.require(PATH).asString();
@@ -115,13 +123,9 @@ public class RelativePathService extends AbstractPathService {
         return base + File.separatorChar + relativePath;
     }
 
-    public RelativePathService(final String relativePath) {
-        this.relativePath = convertPath(relativePath);
-    }
-
     @Override
     protected String resolvePath() {
-        return doResolve(injectedPath.getValue(), relativePath);
+        return doResolve(pathSupplier.get(), relativePath);
     }
 
     private static boolean isWindows(){
