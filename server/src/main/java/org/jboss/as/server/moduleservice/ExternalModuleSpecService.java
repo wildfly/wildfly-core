@@ -21,7 +21,21 @@
  */
 package org.jboss.as.server.moduleservice;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.jar.JarFile;
+import java.util.stream.Stream;
+
 import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.logging.ServerLogger;
+import org.jboss.logging.Logger;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.ModuleDependencySpecBuilder;
 import org.jboss.modules.ModuleIdentifier;
@@ -33,21 +47,16 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.vfs.VFSUtils;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.jar.JarFile;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Service that manages the module spec for external modules (i.e. modules that reside outside of the application server).
  *
  * @author Stuart Douglas
- *
  */
 public class ExternalModuleSpecService implements Service<ModuleDefinition> {
+    public static final int MAX_NUMBER_OF_JAR_RESOURCES = Integer.parseInt(WildFlySecurityManager.getPropertyPrivileged("org.jboss.as.server.max_number_of_jar_resources", "256"));
+    private static final Logger log = Logger.getLogger(ExternalModuleSpecService.class);
 
     private static final List<String> EE_API_MODULES;
 
@@ -97,22 +106,61 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
     private volatile ModuleDefinition moduleDefinition;
 
-    private volatile JarFile jarFile;
+    private List<JarFile> jarFiles;
 
     public ExternalModuleSpecService(ModuleIdentifier moduleIdentifier, File file) {
         this.moduleIdentifier = moduleIdentifier;
         this.file = file;
+        this.jarFiles = new ArrayList<>();
     }
 
     @Override
     public synchronized void start(StartContext context) throws StartException {
+        final ModuleSpec.Builder specBuilder;
+        String currentName = "";
         try {
-            this.jarFile = new JarFile(file);
+            if (!file.isDirectory()) {
+                currentName = file.toString();
+                this.jarFiles.add(new JarFile(file));
+                specBuilder = ModuleSpec.build(moduleIdentifier.toString());
+                addResourceRoot(specBuilder, jarFiles.get(0));
+                log.debugf("Added %s jar file as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier.getName());
+            } else {
+                specBuilder = ModuleSpec.build(moduleIdentifier.toString());
+                final Path rootPath = file.toPath();
+
+                //This path resource root added here pointing to the rootPath will be able to find other file resources in any rootPath subdirectories.
+                //We do not need to add a addPathResourceRoot for each subdirectory
+                addPathResourceRoot(specBuilder, rootPath);
+                log.debugf("Added %s directory as resource root for %s module identifier", file.getAbsolutePath(), moduleIdentifier.getName());
+
+                //scan any jar in this directory and subdirectories
+                final List<Path> processedPaths = new ArrayList<>();
+                try (Stream<Path> pathStream = Files.walk(rootPath).filter(path -> !Files.isDirectory(path) && path.getFileName().toString().endsWith(".jar"))) {
+                    pathStream.forEach(p -> {
+                        processedPaths.add(p);
+                        if (processedPaths.size() > MAX_NUMBER_OF_JAR_RESOURCES)
+                            throw new RuntimeException(ServerLogger.ROOT_LOGGER.maximumNumberOfJarResources(specBuilder.getName(), MAX_NUMBER_OF_JAR_RESOURCES));
+                    });
+                }
+
+                if (! processedPaths.isEmpty()) {
+                    final TreeSet<Path> jars = new TreeSet<>(processedPaths);
+                    for (Path jar : jars) {
+                        currentName = jar.toString();
+                        JarFile jarFile = new JarFile(jar.toFile());
+                        this.jarFiles.add(jarFile);
+                        addResourceRoot(specBuilder, jarFile);
+                        log.debugf("Added %s jar file as resource root for %s module identifier", jar.toString(), moduleIdentifier.getName());
+                    }
+                }
+            }
         } catch (IOException e) {
+            throw ServerLogger.ROOT_LOGGER.errorOpeningZipFile(currentName, e);
+        } catch (Exception e) {
             throw new StartException(e);
         }
-        final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
-        addResourceRoot(specBuilder, jarFile);
+
         //TODO: We need some way of configuring module dependencies for external archives
         addEEDependencies(specBuilder);
         specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
@@ -122,13 +170,16 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
 
         ServiceModuleLoader.installModuleResolvedService(context.getChildTarget(), moduleIdentifier);
-
     }
 
     @Override
     public synchronized void stop(StopContext context) {
-        VFSUtils.safeClose(jarFile);
-        jarFile = null;
+        for (JarFile jarFile : jarFiles) {
+            log.debugf("Closing %s jar file which was added as resource root for %s module identifier", jarFile.getName(), moduleIdentifier.getName());
+            VFSUtils.safeClose(jarFile);
+        }
+        jarFiles.clear();
+        jarFiles = null;
         moduleDefinition = null;
     }
 
@@ -138,8 +189,11 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     }
 
     private static void addResourceRoot(final ModuleSpec.Builder specBuilder, final JarFile file) {
-        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(
-                    file.getName(), file)));
+        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(file)));
+    }
+
+    private static void addPathResourceRoot(final ModuleSpec.Builder specBuilder, Path path) {
+        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createPathResourceLoader(path)));
     }
 
     private static void addEEDependencies(ModuleSpec.Builder specBuilder) {

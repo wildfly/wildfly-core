@@ -1336,6 +1336,12 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 274, value = "Excluded dependency %s via jboss-deployment-structure.xml does not exist.")
     void excludedDependenciesNotExist(String dependency);
 
+    @Message(id = 275, value = "Maximum number of allowed jar resources reached for global-directory module name '%s'. The maximum allowed is %d files")
+    RuntimeException maximumNumberOfJarResources(String globalDirectory, long max);
+
+    @Message(id = 276, value = "There is an error in opening zip file %s")
+    StartException errorOpeningZipFile(String filename, @Cause Throwable throwable);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
@@ -1362,5 +1368,6 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = DEBUG)
     @Message(id = Message.NONE, value = "Deleting file %s")
     void deletingFile(Path name);
+
 
 }

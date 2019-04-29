@@ -62,15 +62,20 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
      * @return true if valid, false otherwise
      */
     public boolean isValid(String externalModule) {
-        return new File(externalModule).exists();
+        File f = new File(externalModule);
+        return f.exists() && !f.isDirectory();
     }
 
-    public ModuleIdentifier addExternalModule(String externalModule, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        ModuleIdentifier identifier = ModuleIdentifier.create(EXTERNAL_MODULE_PREFIX + externalModule);
+    public ModuleIdentifier addExternalModule(String moduleName, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
+        return addExternalModule(moduleName, serviceRegistry, serviceTarget, moduleName);
+    }
+
+    public ModuleIdentifier addExternalModule(String moduleName, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget, String path) {
+        ModuleIdentifier identifier = ModuleIdentifier.create(EXTERNAL_MODULE_PREFIX + moduleName);
         ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(identifier);
         ServiceController<?> controller = serviceRegistry.getService(serviceName);
         if (controller == null) {
-            ExternalModuleSpecService service = new ExternalModuleSpecService(identifier, new File(externalModule));
+            ExternalModuleSpecService service = new ExternalModuleSpecService(identifier, new File(path));
             serviceTarget.addService(serviceName)
                     .setInstance(service)
                     .setInitialMode(Mode.ON_DEMAND)
