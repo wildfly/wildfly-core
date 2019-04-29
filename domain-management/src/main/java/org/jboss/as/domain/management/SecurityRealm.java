@@ -24,6 +24,7 @@ package org.jboss.as.domain.management;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 import javax.security.auth.Subject;
@@ -40,6 +41,7 @@ import org.wildfly.security.auth.server.SaslAuthenticationFactory;
  * Interface to the security realm.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface SecurityRealm {
 
@@ -134,10 +136,17 @@ public interface SecurityRealm {
             return SecurityRealmResourceDefinition.MANAGEMENT_SECURITY_REALM_CAPABILITY.getCapabilityServiceName(realmName);
         }
 
+        /**
+         * @deprecated use {@link #requires(ServiceBuilder, String)} method instead
+         */
+        @Deprecated
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SecurityRealm> injector, String realmName) {
             return sb.addDependency(createServiceName(realmName), SecurityRealm.class, injector);
         }
 
+        public static Supplier<SecurityRealm> requires(final ServiceBuilder<?> sb, final String realmName) {
+            return sb.requires(createServiceName(realmName));
+        }
     }
 
 }

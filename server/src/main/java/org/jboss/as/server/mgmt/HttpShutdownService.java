@@ -25,15 +25,15 @@ package org.jboss.as.server.mgmt;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRequestTracker;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service preventing the http service from shutting down and closing the channels before
@@ -47,23 +47,32 @@ import org.jboss.msc.value.InjectedValue;
  * was used mgmt operations are now tracked using the {@linkplain ManagementChannelOpenListenerService}.
  *
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class HttpShutdownService implements Service<Void> {
+public class HttpShutdownService implements Service {
 
     private static final long SHUTDOWN_TIMEOUT = 15;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
 
-    private final InjectedValue<Executor> executorValue = new InjectedValue<>();
-    private final InjectedValue<ManagementHttpRequestProcessor> processorValue = new InjectedValue<>();
-    private final InjectedValue<ManagementChannelRegistryService> mgmtChannelRegistry = new InjectedValue<>();
+    private final Supplier<Executor> executorSupplier;
+    private final Supplier<ManagementHttpRequestProcessor> processorSupplier;
+    private final Supplier<ManagementChannelRegistryService> registrySupplier;
 
     private volatile ManagementRequestTracker trackerService;
 
+    public HttpShutdownService(final Supplier<Executor> executorSupplier,
+                               final Supplier<ManagementHttpRequestProcessor> processorSupplier,
+                               final Supplier<ManagementChannelRegistryService> registrySupplier) {
+        this.executorSupplier = executorSupplier;
+        this.processorSupplier = processorSupplier;
+        this.registrySupplier = registrySupplier;
+    }
+
     @Override
-    public synchronized void start(StartContext context) throws StartException {
+    public synchronized void start(final StartContext context) throws StartException {
         // Register the http request processor on the mgmt request tracker
-        final ManagementHttpRequestProcessor processor = processorValue.getValue();
-        trackerService = mgmtChannelRegistry.getValue().getTrackerService();
+        final ManagementHttpRequestProcessor processor = processorSupplier.get();
+        trackerService = registrySupplier.get().getTrackerService();
         trackerService.registerTracker(processor);
         processor.addShutdownListener(new ManagementHttpRequestProcessor.ShutdownListener() {
             @Override
@@ -79,7 +88,7 @@ public class HttpShutdownService implements Service<Void> {
         trackerService.prepareShutdown();
         context.asynchronous();
         try {
-            executorValue.getValue().execute(new Runnable() {
+            executorSupplier.get().execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -95,22 +104,5 @@ public class HttpShutdownService implements Service<Void> {
         } catch (RejectedExecutionException e) {
             context.complete();
         }
-    }
-
-    @Override
-    public Void getValue() throws IllegalStateException, IllegalArgumentException {
-        return null;
-    }
-
-    public InjectedValue<Executor> getExecutorValue() {
-        return executorValue;
-    }
-
-    public InjectedValue<ManagementHttpRequestProcessor> getProcessorValue() {
-        return processorValue;
-    }
-
-    public InjectedValue<ManagementChannelRegistryService> getMgmtChannelRegistry() {
-        return mgmtChannelRegistry;
     }
 }
