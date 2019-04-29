@@ -65,7 +65,10 @@ public final class MultistepUtil {
      *         in the {@code operations} list. Cannot be {@code null} but may be empty in which case this method will
      *                   create the response nodes and add them to this list.
      * @throws OperationFailedException if there is a problem registering a step for any of the operations
+     *
+     * @deprecated Do not use. Will be removed.
      */
+    @Deprecated
     public static void recordOperationSteps(final OperationContext context, final List<ModelNode> operations,
                                                        final List<ModelNode> responses) throws OperationFailedException {
         assert responses.isEmpty() || operations.size() == responses.size();
@@ -84,12 +87,10 @@ public final class MultistepUtil {
             }
             i++;
         }
-        recordOperationSteps(context, operationMap, responseMap, OperationHandlerResolver.DEFAULT, false);
+        recordOperationSteps(context, operationMap, responseMap, OperationHandlerResolver.DEFAULT, false, true);
 
         if (!responsesProvided) {
-            for (ModelNode response : responseMap.values()) {
-                responses.add(response);
-            }
+            responses.addAll(responseMap.values());
         }
     }
 
@@ -110,8 +111,9 @@ public final class MultistepUtil {
      * @param <T> the type of the keys in the maps
      * @throws OperationFailedException  if there is a problem registering a step for any of the operations
      */
+    @SuppressWarnings("unused")
     public static <T> void recordOperationSteps(final OperationContext context, final Map<T, ModelNode> operations,
-                                                                       final Map<T, ModelNode> responses) throws OperationFailedException {
+                                                final Map<T, ModelNode> responses) throws OperationFailedException {
         recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT, false, true);
     }
 
@@ -132,7 +134,9 @@ public final class MultistepUtil {
      *
      * @throws OperationFailedException  if there is a problem registering a step for any of the operations
      *
+     * @deprecated Do not use. Will be removed.
      */
+    @Deprecated
     public static <T> void recordOperationSteps(final OperationContext context,
                                                 final Map<T, ModelNode> operations,
                                                 final Map<T, ModelNode> responses,
@@ -155,7 +159,9 @@ public final class MultistepUtil {
      * @param handlerResolver an object that can provide the {@code OperationStepHandler} to use for the operation
      * @param adjustAddresses {@code true} if the address of each operation should be adjusted to become a child of the context's
      *                                {@link OperationContext#getCurrentAddress() current address}
-     * @param rejectPrivateOperations
+     * @param rejectPrivateOperations {@code true} if an {@link OperationFailedException} should be thrown if the
+     *                                            {@link OperationEntry} for any of the {@code operations} is
+     *                                            {@link OperationEntry.EntryType#PRIVATE}
      *
      * @throws OperationFailedException  if there is a problem registering a step for any of the operations
      *
