@@ -58,12 +58,14 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         this.initialMode = checkNotNullParam("initialMode", initialMode);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
         TrivialService<T> trivialService = new TrivialService<T>();
 
-        ServiceBuilder<T> serviceBuilder = context.getCapabilityServiceTarget().addCapability(runtimeCapability, trivialService);
+        ServiceBuilder<T> serviceBuilder = (ServiceBuilder<T>)context.getCapabilityServiceTarget().addCapability(runtimeCapability);
+        serviceBuilder.setInstance(trivialService);
 
         trivialService.setValueSupplier(getValueSupplier(serviceBuilder, context, resource.getModel()));
 

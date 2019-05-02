@@ -30,7 +30,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILTERS;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.security.util.ProviderUtil.findProviderService;
+import static org.wildfly.security.provider.util.ProviderUtil.findProviderService;
 
 import java.security.PrivilegedExceptionAction;
 import java.security.Provider;

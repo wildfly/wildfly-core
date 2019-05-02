@@ -42,6 +42,7 @@
                <sensitive-classification type="core" name="access-control" requires-addressable="false" requires-read="false" requires-write="false" />
                <sensitive-classification type="core" name="security-realm" requires-addressable="false" requires-read="false" requires-write="false" />
                <sensitive-classification type="play" name="security-realm" requires-addressable="false" requires-read="false" requires-write="false" />
+               <sensitive-classification type="system-property" name="system-property" requires-addressable="true" requires-read="true" requires-write="true" />
             </sensitive-classifications>
             <application-classifications>
                <application-classification type="core" name="deployment" application="false"/>

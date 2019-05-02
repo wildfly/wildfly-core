@@ -99,7 +99,7 @@ public class CLITestSuite {
 
     private static synchronized void stop() {
         if(support != null) {
-            support.stop();
+            support.close();
             support = null;
         }
     }

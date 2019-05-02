@@ -28,7 +28,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,18 +51,26 @@ import org.junit.Assert;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class DomainTestSupport {
+public class DomainTestSupport implements AutoCloseable {
 
 
     private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 
     public static final String masterAddress = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
     public static final String slaveAddress = System.getProperty("jboss.test.host.slave.address", "127.0.0.1");
+    /** @deprecated unused */
+    @Deprecated()
     public static final long domainBootTimeout = Long.valueOf(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
+    /** @deprecated unused */
+    @Deprecated
     public static final long domainShutdownTimeout = Long.valueOf(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
+    @SuppressWarnings("WeakerAccess")
     public static final String masterJvmHome = System.getProperty("jboss.test.host.master.jvmhome");
+    @SuppressWarnings("WeakerAccess")
     public static final String slaveJvmHome = System.getProperty("jboss.test.host.slave.jvmhome");
+    @SuppressWarnings("WeakerAccess")
     public static final String masterControllerJvmHome = System.getProperty("jboss.test.host.master.controller.jvmhome");
+    @SuppressWarnings("WeakerAccess")
     public static final String slaveControllerJvmHome = System.getProperty("jboss.test.host.slave.controller.jvmhome");
 
     /**
@@ -163,6 +170,7 @@ public class DomainTestSupport {
         }
     }
 
+    @SuppressWarnings("unused")
     public static void startHosts(long timeout, DomainLifecycleUtil... hosts) {
         Future<?>[] futures = new Future<?>[hosts.length];
         for (int i = 0; i < hosts.length; i++) {
@@ -181,23 +189,52 @@ public class DomainTestSupport {
         processFutures(futures, timeout);
     }
 
+    /**
+     * Gets the base dir in which content specific to {@code testname} should be written.
+     *
+     * @param testName name identifying a test or test suite whose written output so be segregated from other output
+     * @return the file representing the base dir
+     */
+    @SuppressWarnings("WeakerAccess")
     public static File getBaseDir(String testName) {
         return new File("target" + File.separator + "domains" + File.separator + testName);
     }
 
+    /**
+     * Gets the dir under {@link #getBaseDir(String)} in which content specific to a particular host should be written.
+     *
+     * @param testName name identifying a test or test suite whose written output so be segregated from other output
+     * @param hostName the name of the host
+     * @return the file representing the host's dir
+     */
     public static File getHostDir(String testName, String hostName) {
         return new File(getBaseDir(testName), hostName);
     }
 
+    /**
+     * Gets the dir under {@link #getBaseDir(String)} in which additional JBoss Modules modules used by
+     * the test should be written.
+     *
+     * @param testName name identifying a test or test suite whose written output so be segregated from other output
+     * @return the file representing the host's dir
+     */
     public static File getAddedModulesDir(String testName) {
         File f = new File(getBaseDir(testName), "added-modules");
-        f.mkdirs();
+        checkedMkDirs(f);
         return f;
     }
 
+    /**
+     * Gets the dir under {@link #getHostDir(String, String)} )} in which additional JBoss Modules modules used by
+     * the test but targetted to a particular host should be written.
+     *
+     * @param testName name identifying a test or test suite whose written output so be segregated from other output
+     * @return the file representing the host's dir
+     */
+    @SuppressWarnings("WeakerAccess")
     public static File getHostOverrideModulesDir(String testName, String hostName) {
         final File f = new File(getHostDir(testName, hostName), "added-modules");
-        f.mkdirs();
+        checkedMkDirs(f);
         return f;
     }
 
@@ -248,11 +285,15 @@ public class DomainTestSupport {
         return response.get(FAILURE_DESCRIPTION);
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static void cleanFile(File file) {
         if (file != null && file.exists()) {
             if (file.isDirectory()) {
-                for (File child : file.listFiles()) {
-                    cleanFile(child);
+                File[] children = file.listFiles();
+                if (children != null) {
+                    for (File child : children) {
+                        cleanFile(child);
+                    }
                 }
             }
             if (!file.delete()) {
@@ -261,7 +302,7 @@ public class DomainTestSupport {
         }
     }
 
-    public static void safeClose(final Closeable closeable) {
+    public static void safeClose(final AutoCloseable closeable) {
         if (closeable != null) try {
             closeable.close();
         } catch (Throwable t) {
@@ -303,12 +344,19 @@ public class DomainTestSupport {
         config.setModulePath(path.toString());
     }
 
+    private static void checkedMkDirs(File f) {
+        if (!f.mkdirs() && !f.exists()) {
+            throw new RuntimeException("Cannot create dir " + f);
+        }
+    }
+
     private final WildFlyManagedConfiguration masterConfiguration;
     private final WildFlyManagedConfiguration slaveConfiguration;
     private final DomainLifecycleUtil domainMasterLifecycleUtil;
     private final DomainLifecycleUtil domainSlaveLifecycleUtil;
     private final DomainControllerClientConfig sharedClientConfig;
     private final String testClass;
+    private volatile boolean closed;
 
 
 
@@ -357,7 +405,14 @@ public class DomainTestSupport {
         return masterConfiguration;
     }
 
+    /**
+     * Gets the {@link DomainLifecycleUtil} object for interacting with the master @{code HostController}.
+     * @return the util object. Will not return {@code null}
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been called
+     */
     public DomainLifecycleUtil getDomainMasterLifecycleUtil() {
+        checkClosed();
         return domainMasterLifecycleUtil;
     }
 
@@ -365,7 +420,15 @@ public class DomainTestSupport {
         return slaveConfiguration;
     }
 
+    /**
+     * Gets the {@link DomainLifecycleUtil} object for interacting with the non-master @{code HostController}, if there
+     * is one.
+     * @return the util object. May return {@code null} if this object was not configured to provide a non-master.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been called
+     */
     public DomainLifecycleUtil getDomainSlaveLifecycleUtil() {
+        checkClosed();
         return domainSlaveLifecycleUtil;
     }
 
@@ -373,7 +436,13 @@ public class DomainTestSupport {
         return sharedClientConfig;
     }
 
+    /**
+     * Starts the {@link DomainLifecycleUtil} objects managed by this object.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been called
+     */
     public void start() {
+        checkClosed();
         domainMasterLifecycleUtil.start();
         if (domainSlaveLifecycleUtil != null) {
             try {
@@ -389,20 +458,42 @@ public class DomainTestSupport {
         }
     }
 
+    /**
+     * Adds a new module to the {@link #getAddedModulesDir(String) added module dir} associated with the
+     * test suite or class for which this object is providing support.
+     *
+     * @param moduleName the name of the module
+     * @param moduleXml  stream providing the contents of the module's {@code moudle.xml} file
+     * @param contents   map of module contents, keyed by the name of the content
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been called
+     */
     public void addTestModule(String moduleName, InputStream moduleXml, Map<String, StreamExporter> contents) throws IOException {
+        checkClosed();
         File modulesDir = getAddedModulesDir(testClass);
         addModule(modulesDir, moduleName, moduleXml, contents);
     }
 
+    /**
+     * Adds a new module to the {@link #getHostOverrideModulesDir(String, String) host overrides module dir} associated with the
+     * test suite or class for which this object is providing support.
+     *
+     * @param moduleName the name of the module
+     * @param moduleXml  stream providing the contents of the module's {@code moudle.xml} file
+     * @param contents   map of module contents, keyed by the name of the content
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been called
+     */
     public void addOverrideModule(String hostName, String moduleName, InputStream moduleXml, Map<String, StreamExporter> contents) throws IOException {
+        checkClosed();
         File modulesDir = getHostOverrideModulesDir(testClass, hostName);
         addModule(modulesDir, moduleName, moduleXml, contents);
     }
 
-    static void addModule(final File modulesDir, String moduleName, InputStream moduleXml, Map<String, StreamExporter> resources) throws IOException {
+    private static void addModule(final File modulesDir, String moduleName, InputStream moduleXml, Map<String, StreamExporter> resources) throws IOException {
         String modulePath = moduleName.replace('.', File.separatorChar) + File.separatorChar + "main";
         File moduleDir = new File(modulesDir, modulePath);
-        moduleDir.mkdirs();
+        checkedMkDirs(moduleDir);
         FileUtils.copyFile(moduleXml, new File(moduleDir, "module.xml"));
         for (Map.Entry<String, StreamExporter> entry : resources.entrySet()) {
             entry.getValue().exportTo(new File(moduleDir, entry.getKey()), true);
@@ -412,21 +503,34 @@ public class DomainTestSupport {
     /**
      * Stops the {@link #getDomainMasterLifecycleUtil() master host} and, if there is one, the
      * {@link #getDomainSlaveLifecycleUtil() slave host}, and also closes any
-     * {@link #getSharedClientConfiguration() shared client configuration}. This object should not be used
-     * for controlling or interacting with hosts after this is called, even if {@link #start()} is called again.
+     * {@link #getSharedClientConfiguration() shared client configuration}. This object and any
+     * {@link DomainLifecycleUtil} objects obtained from it cannot be used
+     * for controlling or interacting with hosts after this is called.
      */
-    public void stop() {
+    public void close() {
+        closed = true;
         try {
             try {
                 if (domainSlaveLifecycleUtil != null) {
-                    domainSlaveLifecycleUtil.stop();
+                    domainSlaveLifecycleUtil.close();
                 }
             } finally {
-                domainMasterLifecycleUtil.stop();
+                domainMasterLifecycleUtil.close();
             }
         } finally {
             StreamUtils.safeClose(sharedClientConfig);
         }
+    }
+
+    /**
+     * Calls {@link #close()}. This object cannot be used for controlling or interacting with hosts after
+     * this is called.
+     *
+     * @deprecated Use {@link #close()}
+     */
+    @Deprecated
+    public void stop() {
+        close();
     }
 
     /**
@@ -435,10 +539,17 @@ public class DomainTestSupport {
      * timeout for a host to stop.
      */
     public void stopHosts() {
+        //checkClosed(); -- don't fail if already closed, as this is harmless
         if (domainSlaveLifecycleUtil != null) {
             stopHosts(120000, domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
         } else {
             stopHosts(120000, domainMasterLifecycleUtil);
+        }
+    }
+
+    private void checkClosed() {
+        if (closed) {
+            throw new IllegalStateException(getClass().getSimpleName() + " is closed");
         }
     }
 
@@ -472,10 +583,12 @@ public class DomainTestSupport {
             return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false);
         }
 
+        @SuppressWarnings("WeakerAccess")
         public static Configuration createDebugMaster(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
             return create(testName, domainConfig, masterConfig, slaveConfig, false, false, true, false, false);
         }
 
+        @SuppressWarnings("WeakerAccess")
         public static Configuration createDebugSlave(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
             return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false, false, true);
         }
@@ -521,7 +634,8 @@ public class DomainTestSupport {
             masterConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
             File masterDir = new File(domains, hostName);
             // TODO this should not be necessary
-            new File(masterDir, "configuration").mkdirs();
+            File cfgDir = new File(masterDir, "configuration");
+            checkedMkDirs(cfgDir);
             masterConfig.setDomainDirectory(masterDir.getAbsolutePath());
             if (masterJvmHome != null) masterConfig.setJavaHome(masterJvmHome);
             if (masterControllerJvmHome != null) masterConfig.setControllerJavaHome(masterControllerJvmHome);
@@ -548,10 +662,12 @@ public class DomainTestSupport {
             }
             slaveConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(hostConfigPath);
+            assert url != null;
             slaveConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
             File slaveDir = new File(domains, hostName);
             // TODO this should not be necessary
-            new File(slaveDir, "configuration").mkdirs();
+            File cfgDir = new File(slaveDir, "configuration");
+            checkedMkDirs(cfgDir);
             slaveConfig.setDomainDirectory(slaveDir.getAbsolutePath());
             if (slaveJvmHome != null) slaveConfig.setJavaHome(slaveJvmHome);
             if (slaveControllerJvmHome != null) slaveConfig.setControllerJavaHome(slaveControllerJvmHome);

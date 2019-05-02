@@ -40,6 +40,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
 import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.FailedOperationTransformationConfig.NewAttributesConfig;
@@ -71,7 +72,7 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-logging_6_0.xsd";
+        return "schema/jboss-as-logging_7_0.xsd";
     }
 
     @Test
@@ -163,8 +164,12 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
                         .addFailedAttribute(loggingProfileAddress.append("socket-handler"),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER)));
     }
 
     @Test
@@ -186,8 +191,12 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("socket-handler"),
-                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER)));
     }
 
     private void testEap7Transformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {

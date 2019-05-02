@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -64,6 +66,7 @@ import org.jboss.as.server.mgmt.HttpManagementRequestsService;
 import org.jboss.as.server.mgmt.HttpShutdownService;
 import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.server.mgmt.UndertowHttpManagementService;
+import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -77,6 +80,7 @@ import org.xnio.XnioWorker;
  *
  * @author Jason T. Greene
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
@@ -138,48 +142,38 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final ServiceName requestProcessorName = UndertowHttpManagementService.SERVICE_NAME.append("requests");
         HttpManagementRequestsService.installService(requestProcessorName, serviceTarget);
 
-        final UndertowHttpManagementService service = new UndertowHttpManagementService(consoleMode, environment.getProductConfig().getConsoleSlot());
-        service.getPortInjector().inject(port);
-        service.getSecurePortInjector().inject(securePort);
-        service.getAllowedOriginsInjector().inject(commonPolicy.getAllowedOrigins());
-        CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY, service)
-                .addCapabilityRequirement("org.wildfly.network.interface",
-                        NetworkInterfaceBinding.class, service.getInterfaceInjector(), interfaceName)
-                .addCapabilityRequirement("org.wildfly.network.interface",
-                        NetworkInterfaceBinding.class, service.getSecureInterfaceInjector(), secureInterfaceName)
-                .addDependency(DomainModelControllerService.SERVICE_NAME, ModelController.class, service.getModelControllerInjector())
-                .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.getControlledProcessStateServiceInjector())
-                .addDependency(RemotingServices.HTTP_LISTENER_REGISTRY, ListenerRegistry.class, service.getListenerRegistry())
-                .addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, service.getRequestProcessorValue())
-                .addDependency(ManagementWorkerService.SERVICE_NAME, XnioWorker.class, service.getWorker())
-                .addDependency(ExternalManagementRequestExecutor.SERVICE_NAME, Executor.class, service.getManagementExecutor());
-
-        String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
-        String securityRealm = commonPolicy.getSecurityRealm();
-        if (httpAuthenticationFactory != null) {
-            builder.addCapabilityRequirement(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class,
-                    service.getHttpAuthenticationFactoryInjector(), httpAuthenticationFactory);
-        } else if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(builder, service.getSecurityRealmInjector(), securityRealm);
-        } else {
+        final String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
+        final String securityRealm = commonPolicy.getSecurityRealm();
+        final String sslContext = commonPolicy.getSSLContext();
+        if (httpAuthenticationFactory == null && securityRealm == null) {
             ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
-        String sslContext = commonPolicy.getSSLContext();
-        if (sslContext != null) {
-            builder.addCapabilityRequirement(SSL_CONTEXT_CAPABILITY, SSLContext.class, service.getSSLContextInjector(), sslContext);
-        }
 
-        builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE)
-            .install();
+        final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
+        final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getCapabilityServiceName());
+        final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
+        final Supplier<ModelController> mcSupplier = builder.requires(DomainModelControllerService.SERVICE_NAME);
+        final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, interfaceName);
+        final Supplier<NetworkInterfaceBinding> sibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, secureInterfaceName);
+        final Supplier<ControlledProcessStateService> cpssSupplier = builder.requires(ControlledProcessStateService.SERVICE_NAME);
+        final Supplier<ManagementHttpRequestProcessor> rpSupplier = builder.requires(requestProcessorName);
+        final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
+        final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
+        final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
+        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? SecurityRealm.ServiceUtil.requires(builder, securityRealm) : null;
+        final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
+        final UndertowHttpManagementService service = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, null, null, null, ibSupplier, sibSupplier, cpssSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, srSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode, environment.getProductConfig().getConsoleSlot());
+        builder.setInstance(service);
+        builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE).install();
 
         // Add service preventing the server from shutting down
-        final HttpShutdownService shutdownService = new HttpShutdownService();
         final ServiceName shutdownName = UndertowHttpManagementService.SERVICE_NAME.append("shutdown");
-        final ServiceBuilder sb = serviceTarget.addService(shutdownName, shutdownService);
-        sb.addDependency(requestProcessorName, ManagementHttpRequestProcessor.class, shutdownService.getProcessorValue());
-        sb.addDependency(HostControllerService.HC_EXECUTOR_SERVICE_NAME, Executor.class, shutdownService.getExecutorValue());
-        sb.addDependency(ManagementChannelRegistryService.SERVICE_NAME, ManagementChannelRegistryService.class, shutdownService.getMgmtChannelRegistry());
+        final ServiceBuilder<?> sb = serviceTarget.addService(shutdownName);
+        final Supplier<Executor> executorSupplier = sb.requires(HostControllerService.HC_EXECUTOR_SERVICE_NAME);
+        final Supplier<ManagementHttpRequestProcessor> processorSupplier = sb.requires(requestProcessorName);
+        final Supplier<ManagementChannelRegistryService> registrySupplier = sb.requires(ManagementChannelRegistryService.SERVICE_NAME);
         sb.requires(UndertowHttpManagementService.SERVICE_NAME);
+        sb.setInstance(new HttpShutdownService(executorSupplier, processorSupplier, registrySupplier));
         sb.install();
 
         if (commonPolicy.isHttpUpgradeEnabled()) {

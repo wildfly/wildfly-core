@@ -41,13 +41,22 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
     private final AtomicInteger counter;
 
     WildFlyLogContextSelectorImpl(final LogContext defaultLogContext) {
-        counter = new AtomicInteger(0);
-        contextSelector = new ClassLoaderLogContextSelector(new LogContextSelector() {
+        this(new ClassLoaderLogContextSelector(new LogContextSelector() {
             @Override
             public LogContext getLogContext() {
                 return defaultLogContext;
             }
-        }, true);
+        }));
+    }
+
+    WildFlyLogContextSelectorImpl(final LogContextSelector defaultLogContextSelector) {
+        // There is not a way to reset the LogContextSelector after a reload. If the current selector is already a
+        // WildFlyLogContextSelectorImpl we should use the system default selector. This avoids possibly wrapping the
+        // same log context several times. It should also work with the embedded CLI selector as the commands handle
+        // setting and resetting the contexts.
+        final LogContextSelector dft = (defaultLogContextSelector instanceof WildFlyLogContextSelectorImpl ? LogContext.DEFAULT_LOG_CONTEXT_SELECTOR : defaultLogContextSelector);
+        counter = new AtomicInteger(0);
+        contextSelector = new ClassLoaderLogContextSelector(dft, true);
         threadLocalContextSelector = new ThreadLocalLogContextSelector(contextSelector);
     }
 

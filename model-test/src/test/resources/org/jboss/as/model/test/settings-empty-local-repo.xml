@@ -49,7 +49,7 @@
                 <repository>
                     <id>brew-maven-repo</id>
                     <name>Red Hat Brew repo</name>
-                    <url>http://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/</url>
+                    <url>https://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>
@@ -65,7 +65,7 @@
                 <pluginRepository>
                     <id>brew-maven-repo</id>
                     <name>Red Hat Brew repo</name>
-                    <url>http://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/</url>
+                    <url>https://download.lab.bos.redhat.com/brewroot/repos/jb-eap-6-rhel-6-build/latest/maven/</url>
                     <layout>default</layout>
                     <releases>
                         <enabled>true</enabled>

@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
@@ -53,23 +55,20 @@ import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.ExtensibleHttpManagement;
 import org.jboss.as.server.mgmt.domain.HttpManagement;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.common.Assert;
 import org.xnio.SslClientAuthMode;
 import org.xnio.XnioWorker;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class UndertowHttpManagementService implements Service<HttpManagement> {
 
@@ -88,23 +87,24 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public static final String JBOSS_REMOTING = "jboss-remoting";
     public static final String MANAGEMENT_ENDPOINT = "management-endpoint";
 
-    private final InjectedValue<ListenerRegistry> listenerRegistry = new InjectedValue<>();
-    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
-    private final InjectedValue<SocketBinding> injectedSocketBindingValue = new InjectedValue<SocketBinding>();
-    private final InjectedValue<SocketBinding> injectedSecureSocketBindingValue = new InjectedValue<SocketBinding>();
-    private final InjectedValue<NetworkInterfaceBinding> interfaceBindingValue = new InjectedValue<NetworkInterfaceBinding>();
-    private final InjectedValue<NetworkInterfaceBinding> secureInterfaceBindingValue = new InjectedValue<NetworkInterfaceBinding>();
-    private final InjectedValue<SocketBindingManager> injectedSocketBindingManager = new InjectedValue<SocketBindingManager>();
-    private final InjectedValue<Integer> portValue = new InjectedValue<Integer>();
-    private final InjectedValue<Integer> securePortValue = new InjectedValue<Integer>();
-    private final InjectedValue<HttpAuthenticationFactory> httpAuthenticationFactoryValue = new InjectedValue<>();
-    private final InjectedValue<SecurityRealm> securityRealmValue = new InjectedValue<SecurityRealm>();
-    private final InjectedValue<SSLContext> sslContextValue = new InjectedValue<>();
-    private final InjectedValue<ControlledProcessStateService> controlledProcessStateServiceValue = new InjectedValue<ControlledProcessStateService>();
-    private final InjectedValue<ManagementHttpRequestProcessor> requestProcessorValue = new InjectedValue<>();
-    private final InjectedValue<Collection<String>> allowedOriginsValue = new InjectedValue<Collection<String>>();
-    private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
-    private final InjectedValue<Executor> managementExecutor = new InjectedValue<>();
+    private final Consumer<HttpManagement> httpManagementConsumer;
+    private final Supplier<ListenerRegistry> listenerRegistrySupplier;
+    private final Supplier<ModelController> modelControllerSupplier;
+    private final Supplier<SocketBinding> socketBindingSupplier;
+    private final Supplier<SocketBinding> secureSocketBindingSupplier;
+    private final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier;
+    private final Supplier<NetworkInterfaceBinding> secureInterfaceBindingSupplier;
+    private final Supplier<SocketBindingManager> socketBindingManagerSupplier;
+    private final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier;
+    private final Supplier<ManagementHttpRequestProcessor> requestProcessorSupplier;
+    private final Supplier<XnioWorker> workerSupplier;
+    private final Supplier<Executor> executorSupplier;
+    private final Integer port;
+    private final Integer securePort;
+    private final Collection<String> allowedOrigins;
+    private final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier;
+    private final Supplier<SecurityRealm> securityRealmSupplier;
+    private final Supplier<SSLContext> sslContextSupplier;
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private ManagementHttpServer serverManagement;
@@ -157,18 +157,14 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             if (basicManagedBinding != null) {
                 return basicManagedBinding.getBindAddress().getPort();
             }
-            Integer port = portValue.getOptionalValue();
-            if (port != null) {
-                return port;
-            }
-            return -1;
+            return port != null ? port : -1;
         }
 
         @Override
         public NetworkInterfaceBinding getHttpNetworkInterfaceBinding() {
-            NetworkInterfaceBinding binding = interfaceBindingValue.getOptionalValue();
+            NetworkInterfaceBinding binding = interfaceBindingSupplier != null ? interfaceBindingSupplier.get() : null;
             if (binding == null) {
-                SocketBinding socketBinding = injectedSocketBindingValue.getOptionalValue();
+                SocketBinding socketBinding = socketBindingSupplier != null ? socketBindingSupplier.get() : null;
                 if (socketBinding != null) {
                     binding = socketBinding.getNetworkInterfaceBinding();
                 }
@@ -181,18 +177,14 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             if (secureManagedBinding != null) {
                 return secureManagedBinding.getBindAddress().getPort();
             }
-            Integer securePort = securePortValue.getOptionalValue();
-            if (securePort != null) {
-//                return securePort;
-            }
-            return -1;
+            return securePort != null ? securePort : -1;
         }
 
         @Override
         public NetworkInterfaceBinding getHttpsNetworkInterfaceBinding() {
-            NetworkInterfaceBinding binding = interfaceBindingValue.getOptionalValue();
+            NetworkInterfaceBinding binding = interfaceBindingSupplier != null ? interfaceBindingSupplier.get() : null;
             if (binding == null) {
-                SocketBinding socketBinding = injectedSecureSocketBindingValue.getOptionalValue();
+                SocketBinding socketBinding = secureSocketBindingSupplier != null ? secureSocketBindingSupplier.get() : null;
                 if (socketBinding != null) {
                     binding = socketBinding.getNetworkInterfaceBinding();
                 }
@@ -206,7 +198,44 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         }
     };
 
-    public UndertowHttpManagementService(ConsoleMode consoleMode, String consoleSlot) {
+    public UndertowHttpManagementService(final Consumer<HttpManagement> httpManagementConsumer,
+                                         final Supplier<ListenerRegistry> listenerRegistrySupplier,
+                                         final Supplier<ModelController> modelControllerSupplier,
+                                         final Supplier<SocketBinding> socketBindingSupplier,
+                                         final Supplier<SocketBinding> secureSocketBindingSupplier,
+                                         final Supplier<SocketBindingManager> socketBindingManagerSupplier,
+                                         final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
+                                         final Supplier<NetworkInterfaceBinding> secureInterfaceBindingSupplier,
+                                         final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier,
+                                         final Supplier<ManagementHttpRequestProcessor> requestProcessorSupplier,
+                                         final Supplier<XnioWorker> workerSupplier,
+                                         final Supplier<Executor> executorSupplier,
+                                         final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier,
+                                         final Supplier<SecurityRealm> securityRealmSupplier,
+                                         final Supplier<SSLContext> sslContextSupplier,
+                                         final Integer port,
+                                         final Integer securePort,
+                                         final Collection<String> allowedOrigins,
+                                         final ConsoleMode consoleMode,
+                                         final String consoleSlot) {
+        this.httpManagementConsumer = httpManagementConsumer;
+        this.listenerRegistrySupplier = listenerRegistrySupplier;
+        this.modelControllerSupplier = modelControllerSupplier;
+        this.socketBindingSupplier = socketBindingSupplier;
+        this.secureSocketBindingSupplier = secureSocketBindingSupplier;
+        this.socketBindingManagerSupplier = socketBindingManagerSupplier;
+        this.interfaceBindingSupplier = interfaceBindingSupplier;
+        this.secureInterfaceBindingSupplier = secureInterfaceBindingSupplier;
+        this.controlledProcessStateServiceSupplier = controlledProcessStateServiceSupplier;
+        this.requestProcessorSupplier = requestProcessorSupplier;
+        this.workerSupplier = workerSupplier;
+        this.executorSupplier = executorSupplier;
+        this.httpAuthFactorySupplier = httpAuthFactorySupplier;
+        this.securityRealmSupplier = securityRealmSupplier;
+        this.sslContextSupplier = sslContextSupplier;
+        this.port = port;
+        this.securePort = securePort;
+        this.allowedOrigins = allowedOrigins;
         this.consoleMode = consoleMode;
         this.consoleSlot = consoleSlot;
     }
@@ -218,15 +247,15 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @throws StartException If any errors occur
      */
     @Override
-    public synchronized void start(StartContext context) throws StartException {
-        final ModelController modelController = modelControllerValue.getValue();
-        final ControlledProcessStateService controlledProcessStateService = controlledProcessStateServiceValue.getValue();
-        socketBindingManager = injectedSocketBindingManager.getOptionalValue();
+    public synchronized void start(final StartContext context) throws StartException {
+        final ModelController modelController = modelControllerSupplier.get();
+        final ControlledProcessStateService controlledProcessStateService = controlledProcessStateServiceSupplier.get();
+        socketBindingManager = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
 
-        final SecurityRealm securityRealm = securityRealmValue.getOptionalValue();
-        final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthenticationFactoryValue.getOptionalValue();
+        final SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
+        final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthFactorySupplier != null ? httpAuthFactorySupplier.get() : null;
+        SSLContext sslContext = sslContextSupplier != null ? sslContextSupplier.get() : null;
         final SslClientAuthMode sslClientAuthMode;
-        SSLContext sslContext = sslContextValue.getOptionalValue();
         if (sslContext == null && securityRealm != null) {
             sslContext = securityRealm.getSSLContext();
             sslClientAuthMode = getSslClientAuthMode(securityRealm);
@@ -237,17 +266,19 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         InetSocketAddress bindAddress = null;
         InetSocketAddress secureBindAddress = null;
 
-        final SocketBinding basicBinding = injectedSocketBindingValue.getOptionalValue();
-        final SocketBinding secureBinding = injectedSecureSocketBindingValue.getOptionalValue();
-        final NetworkInterfaceBinding interfaceBinding = interfaceBindingValue.getOptionalValue();
-        final NetworkInterfaceBinding secureInterfaceBinding = secureInterfaceBindingValue.getOptionalValue();
+        final SocketBinding basicBinding = socketBindingSupplier != null ? socketBindingSupplier.get() : null;
+        final SocketBinding secureBinding = secureSocketBindingSupplier != null ? secureSocketBindingSupplier.get() : null;
+        final NetworkInterfaceBinding interfaceBinding = interfaceBindingSupplier != null ? interfaceBindingSupplier.get() : null;
+        final NetworkInterfaceBinding secureInterfaceBinding = secureInterfaceBindingSupplier != null ? secureInterfaceBindingSupplier.get() : null;
         if (interfaceBinding != null) {
             useUnmanagedBindings = true;
-            final int port = portValue.getOptionalValue();
+            assert this.port != null;
+            final int port = this.port;
             if (port > 0) {
                 bindAddress = new InetSocketAddress(interfaceBinding.getAddress(), port);
             }
-            final int securePort = securePortValue.getOptionalValue();
+            assert this.securePort != null;
+            final int securePort = this.securePort;
             if (securePort > 0) {
                 InetAddress secureAddress = secureInterfaceBinding == null ? interfaceBinding.getAddress() : secureInterfaceBinding.getAddress();
                 secureBindAddress = new InetSocketAddress(secureAddress, securePort);
@@ -274,20 +305,19 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         }
 
         final ChannelUpgradeHandler upgradeHandler = new ChannelUpgradeHandler();
-        context.getChildTarget().addService(HTTP_UPGRADE_SERVICE_NAME, new ValueService<Object>(new ImmediateValue<Object>(upgradeHandler)))
-                .addAliases(HTTPS_UPGRADE_SERVICE_NAME) //just to keep things consistent, should not be used for now
-                .install();
+        final ServiceBuilder<?> builder = context.getChildTarget().addService(HTTP_UPGRADE_SERVICE_NAME);
+        final Consumer<Object> upgradeHandlerConsumer = builder.provides(HTTP_UPGRADE_SERVICE_NAME, HTTPS_UPGRADE_SERVICE_NAME);
+        builder.setInstance(org.jboss.msc.Service.newInstance(upgradeHandlerConsumer, upgradeHandler));
+        builder.install();
         for (ListenerRegistry.Listener listener : listeners) {
             listener.addHttpUpgradeMetadata(new ListenerRegistry.HttpUpgradeMetadata(JBOSS_REMOTING, MANAGEMENT_ENDPOINT));
         }
 
-        if(listenerRegistry.getOptionalValue() != null) {
+        if (listenerRegistrySupplier.get() != null) {
             for(ListenerRegistry.Listener listener : listeners) {
-                listenerRegistry.getOptionalValue().addListener(listener);
+                listenerRegistrySupplier.get().addListener(listener);
             }
         }
-
-        final ManagementHttpRequestProcessor requestProcessor = requestProcessorValue.getValue();
 
         try {
             serverManagement = ManagementHttpServer.builder()
@@ -302,10 +332,10 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setConsoleMode(consoleMode)
                     .setConsoleSlot(consoleSlot)
                     .setChannelUpgradeHandler(upgradeHandler)
-                    .setManagementHttpRequestProcessor(requestProcessor)
-                    .setAllowedOrigins(allowedOriginsValue.getOptionalValue())
-                    .setWorker(worker.getValue())
-                    .setExecutor(managementExecutor.getValue())
+                    .setManagementHttpRequestProcessor(requestProcessorSupplier.get())
+                    .setAllowedOrigins(allowedOrigins)
+                    .setWorker(workerSupplier.get())
+                    .setExecutor(executorSupplier.get())
                     .build();
 
             serverManagement.start();
@@ -351,6 +381,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                 throw ServerLogger.ROOT_LOGGER.failedToStartHttpManagementService(e);
             }
         }
+        httpManagementConsumer.accept(httpManagement);
     }
 
     /**
@@ -359,8 +390,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
      * @param context The stop context
      */
     @Override
-    public synchronized void stop(StopContext context) {
-        ListenerRegistry lr = listenerRegistry.getOptionalValue();
+    public synchronized void stop(final StopContext context) {
+        httpManagementConsumer.accept(null);
+        ListenerRegistry lr = listenerRegistrySupplier.get();
         if(lr != null) {
             lr.removeListener(HTTP_MANAGEMENT);
             lr.removeListener(HTTPS_MANAGEMENT);
@@ -389,126 +421,9 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public HttpManagement getValue() throws IllegalStateException {
+    public HttpManagement getValue() throws IllegalStateException, IllegalArgumentException {
         return httpManagement;
-    }
-
-    /**
-     * Get the interface binding injector.
-     *
-     * @return The injector
-     */
-    public Injector<NetworkInterfaceBinding> getInterfaceInjector() {
-        return interfaceBindingValue;
-    }
-
-    /**
-     * Get the secure interface binding injector.
-     *
-     * @return The injector
-     */
-    public Injector<NetworkInterfaceBinding> getSecureInterfaceInjector() {
-        return secureInterfaceBindingValue;
-    }
-
-    public Injector<SocketBindingManager> getSocketBindingManagerInjector() {
-        return injectedSocketBindingManager;
-    }
-
-    public Injector<SocketBinding> getSocketBindingInjector() {
-        return injectedSocketBindingValue;
-    }
-
-    public Injector<SocketBinding> getSecureSocketBindingInjector() {
-        return injectedSecureSocketBindingValue;
-    }
-
-    /**
-     * Get the management port injector.
-     *
-     * @return The injector
-     */
-    public Injector<Integer> getPortInjector() {
-        return portValue;
-    }
-
-    /**
-     * Get the management secure port injector.
-     *
-     * @return The injector
-     */
-    public Injector<Integer> getSecurePortInjector() {
-        return securePortValue;
-    }
-
-    /**
-     * Get the model controller injector to dispatch management requests to
-     *
-     * @return the injector
-     */
-    public Injector<ModelController> getModelControllerInjector() {
-        return modelControllerValue;
-    }
-
-    /**
-     * Get the security realm injector.
-     *
-     * @return the securityRealmServiceValue
-     */
-    public InjectedValue<SecurityRealm> getSecurityRealmInjector() {
-        return securityRealmValue;
-    }
-
-    /**
-     * Get the SSLContext injector.
-     *
-     * @return the SSLContext injector.
-     */
-    public Injector<SSLContext> getSSLContextInjector() {
-        return sslContextValue;
-    }
-
-
-    /**
-     * Get the {@link Injector} for the HTTP authentication factory.
-     *
-     * @return The {@link Injector} for the HTTP authentication factory.
-     */
-    public Injector<HttpAuthenticationFactory> getHttpAuthenticationFactoryInjector() {
-        return httpAuthenticationFactoryValue;
-    }
-
-    /**
-     * Get the security realm injector.
-     *
-     * @return the securityRealmServiceValue
-     */
-    public InjectedValue<ControlledProcessStateService> getControlledProcessStateServiceInjector() {
-        return controlledProcessStateServiceValue;
-    }
-
-    public InjectedValue<ListenerRegistry> getListenerRegistry() {
-        return listenerRegistry;
-    }
-
-    public InjectedValue<ManagementHttpRequestProcessor> getRequestProcessorValue() {
-        return requestProcessorValue;
-    }
-
-    public InjectedValue<Collection<String>> getAllowedOriginsInjector() {
-        return allowedOriginsValue;
-    }
-
-    public InjectedValue<XnioWorker> getWorker() {
-        return worker;
-    }
-
-    public InjectedValue<Executor> getManagementExecutor() {
-        return managementExecutor;
     }
 
     private static SslClientAuthMode getSslClientAuthMode(final SecurityRealm securityRealm) {

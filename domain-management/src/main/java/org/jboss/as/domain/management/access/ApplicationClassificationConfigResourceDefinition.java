@@ -98,14 +98,11 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
             final String attribute = operation.require(NAME).asString();
             final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResource(PathAddress.EMPTY_ADDRESS);
             final ApplicationTypeConfig applicationType = resource.applicationType;
-            Boolean result;
+            Boolean result = null;
             if (attribute.equals(DEFAULT_APPLICATION.getName())) {
                 result = applicationType.isDefaultApplication();
             } else if (attribute.equals(CONFIGURED_APPLICATION.getName())) {
                 result = applicationType.getConfiguredApplication();
-            } else {
-                //TODO i18n
-                throw new IllegalStateException();
             }
 
             context.getResult();
@@ -121,17 +118,28 @@ public class ApplicationClassificationConfigResourceDefinition extends SimpleRes
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            final String attribute = operation.require(NAME).asString();
             final ModelNode value = operation.require(VALUE);
-            final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource)context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ApplicationTypeConfigResource resource = (ApplicationTypeConfigResource) context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
+            final ModelNode modelNode = resource.getModel();
+            // record model values for rollback handler
+            final ModelNode configuredApplication = modelNode.get(ModelDescriptionConstants.CONFIGURED_APPLICATION);
+
             final ApplicationTypeConfig classification = resource.applicationType;
-            if (attribute.equals(CONFIGURED_APPLICATION.getName())) {
-                Boolean confValue = readValue(context, value, CONFIGURED_APPLICATION);
-                classification.setConfiguredApplication(confValue);
-            } else {
-                //TODO i18n
-                throw new IllegalStateException();
-            }
+            classification.setConfiguredApplication(readValue(context, value, CONFIGURED_APPLICATION));
+
+            context.completeStep(new OperationContext.RollbackHandler() {
+
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    try {
+                        classification.setConfiguredApplication(readValue(context, configuredApplication, CONFIGURED_APPLICATION));
+                    } catch (OperationFailedException e) {
+                        // Should not happen since configured value is retrieved from resource.
+                        throw new RuntimeException(e);
+                    }
+
+                }
+            });
         }
 
         private Boolean readValue(OperationContext context, ModelNode value, AttributeDefinition definition) throws OperationFailedException {

@@ -132,7 +132,6 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-modules=java.se"
     }
     return $DEFAULT_MODULAR_JVM_OPTIONS
 }

@@ -217,7 +217,8 @@ class WorkerAdd extends AbstractAddStepHandler {
         registerMax(context, name, workerThreads);
 
         final WorkerService workerService = new WorkerService(builder);
-        context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY, workerService)
+        context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY)
+                .setInstance(workerService)
                 .addCapabilityRequirement("org.wildfly.management.executor",
                         ExecutorService.class, workerService.injectedExecutor)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND)

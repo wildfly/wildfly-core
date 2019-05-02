@@ -89,7 +89,7 @@ public abstract class AbstractConfigurationChangesTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;
         testSupport = null;

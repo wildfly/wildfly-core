@@ -30,9 +30,14 @@ import static org.junit.Assert.assertTrue;
 import static org.productivity.java.syslog4j.SyslogConstants.UDP;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -76,6 +81,7 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
 
     private static final String MSG = "syslog test log message";
 
+    private static final ModelNode JSON_FORMATTER_ADDR = createAddress("logging-profile", "syslog-profile", "json-formatter", "JSON");
     private static final ModelNode SYSLOG_PROFILE_ADDR = createAddress("logging-profile", "syslog-profile");
     private static final ModelNode SYSLOG_HANDLER_ADDR = createAddress("logging-profile", "syslog-profile", "syslog-handler", "SYSLOG");
     private static final ModelNode SYSLOG_PROFILE_ROOT_LOGGER_ADDR = createAddress("logging-profile", "syslog-profile", "root-logger", "ROOT");
@@ -127,6 +133,26 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
     }
 
+    @Test
+    public void testNamedFormatter() throws Exception {
+        final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
+        executeOperation(Operations.createWriteAttributeOperation(SYSLOG_HANDLER_ADDR, "named-formatter", "JSON"));
+        queue.clear();
+        makeLogs();
+        for (Level level : LoggingServiceActivator.LOG_LEVELS) {
+            testJsonLog(queue, level);
+        }
+        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+
+        // Reset the named-formatter which should reset the format
+        executeOperation(Operations.createUndefineAttributeOperation(SYSLOG_HANDLER_ADDR, "named-formatter"));
+        makeLogs();
+        for (Level level : LoggingServiceActivator.LOG_LEVELS) {
+            testLog(queue, level);
+        }
+        Assert.assertTrue("No other message was expected in syslog.", queue.isEmpty());
+    }
+
     /**
      * Tests if the next message in the syslog is the expected one with the given log-level.
      *
@@ -141,6 +167,26 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
         assertEquals("Message with unexpected Syslog event level received: " + msg, getSyslogLevel(expectedLevel), log.getLevel());
         final String expectedMsg = LoggingServiceActivator.formatMessage(MSG, expectedLevel);
         assertEquals("Message with unexpected Syslog event text received.", expectedMsg, msg);
+    }
+
+    /**
+     * Tests if the next message in the syslog is the expected one with the given log-level.
+     *
+     * @param expectedLevel the expected level of the next log message
+     *
+     * @throws Exception
+     */
+    private void testJsonLog(final BlockingQueue<SyslogServerEventIF> queue, final Level expectedLevel) throws Exception {
+        final SyslogServerEventIF log = queue.poll(15L * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
+        assertNotNull(log);
+        final String msg = log.getMessage();
+        assertNotNull(msg);
+        try (JsonReader reader = Json.createReader(new StringReader(msg))) {
+            final JsonObject json = reader.readObject();
+            assertEquals("Message with unexpected Syslog event text received.", expectedLevel.name(), json.getString("level"));
+            final String expectedMsg = LoggingServiceActivator.formatMessage(MSG, expectedLevel);
+            assertEquals("Message with unexpected Syslog event text received.", expectedMsg, json.getString("message"));
+        }
     }
 
     /**
@@ -217,6 +263,9 @@ public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
             op.get("level").set("TRACE");
             op.get("handlers").add("SYSLOG");
             builder.addStep(op);
+
+            // Add a JSON formatter
+            builder.addStep(Operations.createAddOperation(JSON_FORMATTER_ADDR));
 
             executeOperation(builder.build());
 

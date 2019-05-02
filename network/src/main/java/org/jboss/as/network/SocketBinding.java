@@ -113,7 +113,9 @@ public final class SocketBinding {
 
     private int calculatePort() {
         int port = this.port;
-        if (!isFixedPort) {
+        // 0 is a reserved port number indicating usage of system-allocated dynamic ports
+        // and thus port offset must not be applied
+        if (!isFixedPort && port != 0) {
             port += socketBindings.getPortOffset();
         }
         return port;
@@ -265,11 +267,11 @@ public final class SocketBinding {
     }
 
     /**
-     * Unlike the {@link #getPort()} method, this method takes into account the port offset, if the port
-     * is <i>not</i> a fixed port and returns the absolute port number which is the sum of the port offset
-     * and the (relative) port.
+     * Unlike the {@link #getPort()} method, this method takes into account the port offset, if the port is <i>not</i> a fixed
+     * port nor dynamically allocated ephemeral port (port number 0) and returns the absolute port number which is the sum of
+     * the port offset and the (relative) port.
      *
-     * @return port number configured for this socket binding taking port-offset into account
+     * @return port number configured for this socket binding taking port-offset into account when appropriate
      */
     public int getAbsolutePort() {
         return calculatePort();

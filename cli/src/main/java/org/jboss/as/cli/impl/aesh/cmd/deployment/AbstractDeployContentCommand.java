@@ -128,9 +128,11 @@ public abstract class AbstractDeployContentCommand extends AbstractDeployCommand
         // replace
         final ModelNode request = new ModelNode();
         request.get(Util.OPERATION).set(op);
-        request.get(Util.NAME).set(name);
         if (op.equals(Util.ADD)) { // replace is on root, add is on deployed artifact.
             request.get(Util.ADDRESS, Util.DEPLOYMENT).set(name);
+        } else {
+            request.get(Util.NAME).set(name);
+            request.get(Util.ADDRESS).setEmptyList();
         }
         if (runtimeName != null) {
             request.get(Util.RUNTIME_NAME).set(runtimeName);

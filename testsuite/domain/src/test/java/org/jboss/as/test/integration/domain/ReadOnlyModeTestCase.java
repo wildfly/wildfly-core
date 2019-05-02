@@ -56,7 +56,7 @@ public class ReadOnlyModeTestCase {
 
     @After
     public void tearDownDomain() throws Exception {
-        domainManager.stop();
+        domainManager.close();
         domainManager = null;
         domainMasterLifecycleUtil = null;
         domainSlaveLifecycleUtil = null;

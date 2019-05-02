@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<subsystem xmlns="urn:jboss:domain:logging:6.0">
+<subsystem xmlns="urn:jboss:domain:logging:7.0">
     <add-logging-api-dependencies value="${test.add.deps:true}"/>
     <use-deployment-logging-config value="${test.use.dep.config:true}"/>
 
@@ -106,6 +106,7 @@
         <app-name value="${test.syslog.appname:jboss-as7}"/>
         <formatter>
             <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+            <named-formatter name="PATTERN"/>
         </formatter>
         <facility value="${test.syslog.facility:user-level}"/>
     </syslog-handler>
@@ -225,6 +226,7 @@
                 <app-name value="${test.syslog.appname:jboss-as7}"/>
                 <formatter>
                     <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+                    <named-formatter name="PATTERN"/>
                 </formatter>
                 <facility value="${test.syslog.facility:user-level}"/>
             </syslog-handler>

@@ -234,10 +234,8 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
                 throw ControllerLogger.ROOT_LOGGER.invalidEnumValue(tuString, parameterName, toStringMap.keySet());
             }
             // Hack to store the allowed value in the model, not the user input
-            try {
+            if (!value.isProtected()) {
                 value.set(enumValue.toString());
-            } catch (Exception e) {
-                // node must be protected.
             }
         }
     }

@@ -161,6 +161,16 @@ public class CLICommandContainer extends DefaultCommandContainer<CLICommandInvoc
         public void doPopulate(ProcessedCommand processedCommand, InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
             parser.doPopulate(processedCommand, invocationProviders, aeshContext, mode);
         }
+
+        @Override
+        public void updateAnsiMode(boolean mode) {
+            parser.updateAnsiMode(mode);
+        }
+
+        @Override
+        public String getFormattedCommand(int offset, int descriptionStart) {
+            return parser.getFormattedCommand(offset, descriptionStart);
+        }
     }
 
     public class CLICommandParser implements CommandLineParser<CLICommandInvocation> {
@@ -272,6 +282,16 @@ public class CLICommandContainer extends DefaultCommandContainer<CLICommandInvoc
         @Override
         public void doPopulate(ProcessedCommand processedCommand, InvocationProviders invocationProviders, AeshContext aeshContext, Mode mode) throws CommandLineParserException, OptionValidatorException {
             container.getParser().doPopulate(processedCommand, invocationProviders, aeshContext, mode);
+        }
+
+        @Override
+        public void updateAnsiMode(boolean mode) {
+            container.getParser().updateAnsiMode(mode);
+        }
+
+        @Override
+        public String getFormattedCommand(int offset, int descriptionStart) {
+            return container.getParser().getFormattedCommand(offset, descriptionStart);
         }
     }
 

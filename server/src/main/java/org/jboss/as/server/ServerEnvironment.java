@@ -438,15 +438,6 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                     throw ServerLogger.ROOT_LOGGER.couldNotCreateServerBaseDirectory(tmp);
                 }
             }
-            try {
-                Path resolved = tmp.toPath().toRealPath();
-                if (!tmp.toPath().equals(resolved)){ //WFCORE-2652
-                    ServerLogger.ROOT_LOGGER.serverHomeMismatch(tmp.toPath(), resolved);
-                    tmp = resolved.toFile();
-                }
-            } catch (IOException e) {
-                //
-            }
             serverBaseDir = tmp;
 
             tmp = getFileFromProperty(SERVER_CONFIG_DIR, props);

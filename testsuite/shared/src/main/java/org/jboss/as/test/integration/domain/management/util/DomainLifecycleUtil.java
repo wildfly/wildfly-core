@@ -18,6 +18,8 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
+import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -76,7 +78,7 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class DomainLifecycleUtil {
+public class DomainLifecycleUtil implements AutoCloseable {
 
     public static final String SLAVE_HOST_USERNAME = "slave";
     public static final String SLAVE_HOST_PASSWORD = "slave_us3r_password";
@@ -99,6 +101,7 @@ public class DomainLifecycleUtil {
     private final DomainControllerClientConfig clientConfiguration;
     private final PathAddress address;
     private final boolean closeClientConfig;
+    private volatile boolean closed;
 
     public DomainLifecycleUtil(final WildFlyManagedConfiguration configuration) throws IOException {
         this(configuration, DomainControllerClientConfig.create(), true);
@@ -126,6 +129,13 @@ public class DomainLifecycleUtil {
         return address;
     }
 
+    /**
+     * Starts a {@code ProcessController} process configured according to the provided {@link #getConfiguration() configuration}.
+     * The {@code ProcessController} will start a {@code HostController} process, which, if it is so configured, will
+     * start managed servers. This method will block until any such servers are started.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     */
     public void start() {
         try {
             configuration.validate();
@@ -225,7 +235,7 @@ public class DomainLifecycleUtil {
 
             if (configuration.getDomainConfigFile() != null) {
                 final String prefix = configuration.isCachedDC() ? null : "testing-";
-                String name = null;
+                String name;
                 if(configuration.isRewriteConfigFiles()) {
                     name = copyConfigFile(configuration.getDomainConfigFile(), configDir, prefix);
                 } else {
@@ -240,7 +250,7 @@ public class DomainLifecycleUtil {
             }
             if (configuration.getHostConfigFile() != null) {
                 final String prefix = "testing-";
-                String name = null;
+                String name;
                 if(configuration.isRewriteConfigFiles()) {
                     name = copyConfigFile(configuration.getHostConfigFile(), configDir, prefix);
                 } else {
@@ -286,7 +296,15 @@ public class DomainLifecycleUtil {
 
     }
 
+    /**
+     * Creates a task to call {@link #start()} and executes it asynchronously.
+     *
+     * @return a {@link Future} which can be used to track the completion or failure of the task
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     */
     public Future<Void> startAsync() {
+        checkClosed();
         Callable<Void> c = new Callable<Void>() {
 
             @Override
@@ -339,6 +357,7 @@ public class DomainLifecycleUtil {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public Future<Void> stopAsync() {
         Callable<Void> c = new Callable<Void>() {
 
@@ -353,17 +372,29 @@ public class DomainLifecycleUtil {
     }
 
     /**
+     * Marks the object as closed and calls {@link #stop()}. The object will no longer be usable for managing
+     * the lifecycle of a host.
+     */
+    public void close() {
+        closed = true;
+        stop();
+    }
+
+    /**
      * Execute an operation and wait until the connection is closed. This is only useful for :reload and :shutdown operations.
      *
      * @param operation the operation to execute
      * @return the operation result
      * @throws IOException for any error
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public ModelNode executeAwaitConnectionClosed(final ModelNode operation) throws IOException {
+        checkClosed();
         final DomainTestClient client = internalGetOrCreateClient();
         final Channel channel = client.getChannel();
-        if( null == channel )
+        if ( null == channel ) {
             throw new IllegalStateException("Didn't get a remoting channel from the DomainTestClient.");
+        }
         final Connection ref = channel.getConnection();
         ModelNode result = new ModelNode();
         try {
@@ -379,10 +410,9 @@ public class DomainLifecycleUtil {
             } // else ignore, this might happen if the channel gets closed before we got the response
         }
         try {
-            if(channel != null) {
-                // Wait for the channel to close
-                channel.awaitClosed();
-            }
+            // Wait for the channel to close
+            channel.awaitClosed();
+
             // Wait for the connection to be closed
             connection.awaitConnectionClosed(ref);
         } catch (InterruptedException e) {
@@ -394,7 +424,7 @@ public class DomainLifecycleUtil {
     /**
      * Try to connect to the host controller.
      *
-     * @throws IOException
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public void connect() throws IOException {
         connect(30, TimeUnit.SECONDS);
@@ -405,8 +435,11 @@ public class DomainLifecycleUtil {
      *
      * @param timeout the timeout
      * @param timeUnit the timeUnit
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public void connect(final long timeout, final TimeUnit timeUnit) throws IOException {
+        checkClosed();
         final DomainTestConnection connection = this.connection;
         if(connection == null) {
             throw new IllegalStateException();
@@ -434,6 +467,8 @@ public class DomainLifecycleUtil {
      * Create a new model controller client. The client can (and should) be closed without affecting other usages.
      *
      * @return the domain client
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public DomainClient createDomainClient() {
         return createDomainClient(null);
@@ -445,8 +480,12 @@ public class DomainLifecycleUtil {
      * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
      *
      * @return the domain client
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
+    @SuppressWarnings("WeakerAccess")
     public DomainClient createDomainClient(final URI authConfigUri) {
+        checkClosed();
         final DomainTestConnection connection = this.connection;
         if(connection == null) {
             throw new IllegalStateException();
@@ -466,6 +505,8 @@ public class DomainLifecycleUtil {
      * Get a shared domain client.
      *
      * @return the domain client
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public synchronized DomainClient getDomainClient() {
         return getDomainClient(null);
@@ -477,8 +518,11 @@ public class DomainLifecycleUtil {
      * @param authConfigUri the path to the {@code wildfly-config.xml} to use or {@code null}
      *
      * @return the domain client
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
      */
     public synchronized DomainClient getDomainClient(final URI authConfigUri) {
+        checkClosed();
         if (authConfigUri == null) {
             return DomainClient.Factory.create(internalGetOrCreateClient());
         }
@@ -490,9 +534,17 @@ public class DomainLifecycleUtil {
         }
     }
 
-    /** Wait for all auto-start servers for the host to reach {@link ControlledProcessState.State#RUNNING} */
+    /**
+     * Poll until {@link #areServersStarted()} returns {@code true} or the
+     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     *
+     * @param start time in milliseconds that should be used as the starting time for the timeout check.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     * @throws TimeoutException if no call {@link #areServersStarted()} returns {@code true} before the timeout
+     */
     public void awaitServers(long start) throws InterruptedException, TimeoutException {
-
+        checkClosed();
         boolean serversAvailable = false;
         long deadline = start + configuration.getStartupTimeoutInSeconds() * 1000;
         while (!serversAvailable && getProcessExitCode() < 0) {
@@ -508,8 +560,17 @@ public class DomainLifecycleUtil {
         }
     }
 
+    /**
+     * Poll until {@link #isHostControllerStarted()} returns {@code true} or the
+     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     *
+     * @param start time in milliseconds that should be used as the starting time for the timeout check.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     * @throws TimeoutException if no call {@link #isHostControllerStarted()} returns {@code true} before the timeout
+     */
     public void awaitHostController(long start) throws InterruptedException, TimeoutException {
-
+        checkClosed();
         boolean hcAvailable = false;
         long deadline = start + configuration.getStartupTimeoutInSeconds() * 1000;
         while (!hcAvailable && getProcessExitCode() < 0) {
@@ -544,16 +605,23 @@ public class DomainLifecycleUtil {
         return executor;
     }
 
+    /**
+     * Returns whether the {@code server-state} attribute on the {@code /host=x/server=y} resource for all auto-start
+     * servers managed by the host managed by this object are reporting state {@link ControlledProcessState.State#RUNNING}.
+     * Problems connecting to the host result in returning {@code false}.
+     *
+     * @return {@code true} if the host reports as '{@code running}'
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     */
     public boolean areServersStarted() {
+        checkClosed();
         try {
             Map<ServerIdentity, ControlledProcessState.State> statuses = getServerStatuses();
             for (Map.Entry<ServerIdentity, ControlledProcessState.State> entry : statuses.entrySet()) {
-                switch (entry.getValue()) {
-                    case RUNNING:
-                        continue;
-                    default:
-                        log.log(Level.INFO, entry.getKey() + " status is " + entry.getValue());
-                        return false;
+                if (entry.getValue() != ControlledProcessState.State.RUNNING) {
+                    log.log(Level.INFO, entry.getKey() + " status is " + entry.getValue());
+                    return false;
                 }
             }
 //            serverStatuses.putAll(statuses);
@@ -564,7 +632,17 @@ public class DomainLifecycleUtil {
         return false;
     }
 
+    /**
+     * Returns whether the {@code host-state} attribute on the {@code /host=x} resource for the host managed
+     * by this object is reporting state {@link ControlledProcessState.State#RUNNING}.  Problems connecting to the
+     * host result in returning {@code false}.
+     *
+     * @return {@code true} if the host reports as '{@code running}'
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     */
     public boolean isHostControllerStarted() {
+        checkClosed();
         try {
             ModelNode address = new ModelNode();
             address.add("host", configuration.getHostName());
@@ -580,6 +658,7 @@ public class DomainLifecycleUtil {
     private synchronized void closeConnection() {
         if (connection != null) {
             try {
+                safeClose(domainClient);
                 domainClient = null;
                 connection.close();
             } catch (Exception e) {
@@ -638,11 +717,36 @@ public class DomainLifecycleUtil {
         return executeForResult(new OperationBuilder(op).build());
     }
 
+    /**
+     * Uses the {@link #getDomainClient() shared client} to execute an operation and return its {@code result} response
+     * value, throwing a {@link RuntimeException} if the operation does not succeed.
+     *
+     * @param op the operation.
+     *
+     * @return the value of the {@code result} node of the operation response (which may be an undefined node.)
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     * @throws RuntimeException if the operation did not execute resulting with a response with an {@code outcome} value
+     *                          of {@code success}
+     */
     public ModelNode executeForResult(ModelNode op) {
         return executeForResult(new OperationBuilder(op).build());
     }
 
+    /**
+     * Uses the {@link #getDomainClient() shared client} to execute an operation and return its {@code result} response
+     * value, throwing a {@link RuntimeException} if the operation does not succeed.
+     *
+     * @param op the operation.
+     *
+     * @return the value of the {@code result} node of the operation response (which may be an undefined node.)
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     * @throws RuntimeException if the operation did not execute resulting with a response with an {@code outcome} value
+     *                          of {@code success}
+     */
     public ModelNode executeForResult(Operation op) {
+        checkClosed();
         try {
             ModelNode result = getDomainClient().execute(op);
             if (result.hasDefined("outcome") && "success".equals(result.get("outcome").asString())) {
@@ -658,6 +762,12 @@ public class DomainLifecycleUtil {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkClosed() {
+        if (closed) {
+            throw new IllegalStateException(getClass().getSimpleName() + " is closed");
         }
     }
 

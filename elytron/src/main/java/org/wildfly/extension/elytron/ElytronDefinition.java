@@ -108,6 +108,13 @@ import org.wildfly.security.manager.action.ReadPropertyAction;
  */
 class ElytronDefinition extends SimpleResourceDefinition {
 
+    /**
+     * System property which if set to {@code true} will cause the JVM wide default {@link SSLContext} to be restored when the subsystem shuts down.
+     *
+     * This property is only for use by test cases.
+     */
+    static final String RESTORE_DEFAULT_SSL_CONTEXT = ElytronDefinition.class.getPackage().getName() + ".restore-default-ssl-context";
+
     private static final AttachmentKey<SecurityPropertyService> SECURITY_PROPERTY_SERVICE_KEY = AttachmentKey.create(SecurityPropertyService.class);
 
     private static final AuthenticationContextDependencyProcessor AUTHENITCATION_CONTEXT_PROCESSOR = new AuthenticationContextDependencyProcessor();

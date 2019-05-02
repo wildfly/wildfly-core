@@ -326,6 +326,11 @@ public final class Attachments {
     public static final AttachmentKey<AttachmentList<ServiceName>> JNDI_DEPENDENCIES = AttachmentKey.createList(ServiceName.class);
 
     /**
+     * Component JNDI dependencies, only attached to the top level deployment
+     */
+    public static final AttachmentKey<Map<ServiceName, Set<ServiceName>>> COMPONENT_JNDI_DEPENDENCIES = AttachmentKey.create(Map.class);
+
+    /**
      * The reflection index for the deployment.
      */
     public static final AttachmentKey<DeploymentReflectionIndex> REFLECTION_INDEX = AttachmentKey.create(DeploymentReflectionIndex.class);

@@ -69,6 +69,7 @@ import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.StructuredFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.XmlFormatterResourceDefinition;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
 import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
@@ -358,7 +359,15 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         HOSTNAME.marshallAsElement(model, writer);
         PORT.marshallAsElement(model, writer);
         APP_NAME.marshallAsElement(model, writer);
-        SYSLOG_FORMATTER.marshallAsElement(model, writer);
+
+        // Write the formatter elements
+        if (model.hasDefined(SYSLOG_FORMATTER.getName()) || model.hasDefined(SyslogHandlerResourceDefinition.NAMED_FORMATTER.getName())) {
+            writer.writeStartElement(AbstractHandlerDefinition.FORMATTER.getXmlName());
+            SYSLOG_FORMATTER.marshallAsElement(model, writer);
+            SyslogHandlerResourceDefinition.NAMED_FORMATTER.marshallAsElement(model, writer);
+            writer.writeEndElement();
+        }
+
         FACILITY.marshallAsElement(model, writer);
 
         writer.writeEndElement();

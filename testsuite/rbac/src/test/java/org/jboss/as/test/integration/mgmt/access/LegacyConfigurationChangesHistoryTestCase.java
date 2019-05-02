@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLASSIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONFIGURED_REQUIRES_READ;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONSTRAINT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
@@ -128,7 +129,11 @@ public class LegacyConfigurationChangesHistoryTestCase extends AbstractManagemen
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress(ADDRESS));
         add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         client.executeForResult(add);
-        ModelNode configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE, true);
+        // WFCORE-3995 sensitivity classification system property default configured-requires-read is false.
+        // Need to write configured-requires-read before configured-requires-addressable
+        ModelNode configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_READ, true);
+        client.executeForResult(configureSensitivity);
+        configureSensitivity = Util.getWriteAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE, true);
         client.executeForResult(configureSensitivity);
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", ALLOWED_ORIGINS_ADDRESS);
         setAllowedOrigins.get(NAME).set(ALLOWED_ORIGINS);
@@ -167,6 +172,8 @@ public class LegacyConfigurationChangesHistoryTestCase extends AbstractManagemen
         final ModelNode remove = Util.createRemoveOperation(ADDRESS);
         getManagementClient().executeForResult(remove);
         ModelNode configureSensitivity = Util.getUndefineAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_ADDRESSABLE);
+        getManagementClient().executeForResult(configureSensitivity);
+        configureSensitivity = Util.getUndefineAttributeOperation(SYSTEM_PROPERTY_CLASSIFICATION_ADDRESS, CONFIGURED_REQUIRES_READ);
         getManagementClient().executeForResult(configureSensitivity);
     }
 

@@ -58,6 +58,7 @@ import org.jboss.as.logging.ConfigurationProperty;
 import org.jboss.as.logging.Filters;
 import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.LoggingOperations;
+import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.Log4jAppenderHandler;
@@ -76,6 +77,7 @@ import org.jboss.logmanager.config.PojoConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.AsyncHandler;
+import org.jboss.logmanager.handlers.SyslogHandler;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 
@@ -620,52 +622,63 @@ final class HandlerOperations {
             configuration.setEncoding(resolvedValue);
         } else if (attribute.getName().equals(FORMATTER.getName())) {
             // The handler name will be used for the name of a formatter for the formatter attribute
-            final String handlerName = configuration.getName();
+            final String defaultFormatterName = configuration.getName() + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX;
             // Get the current model and check for a defined named-formatter attribute
             final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
             final ModelNode m = resource.getModel();
             if (m.hasDefined(NAMED_FORMATTER.getName())) {
                 // If a named-formatter exists in the model and a formatter already exists with the name of the handler
                 // remove the formatter
-                if (logContextConfiguration.getFormatterNames().contains(handlerName)) {
-                    logContextConfiguration.removeFormatterConfiguration(handlerName);
+                if (logContextConfiguration.getFormatterNames().contains(defaultFormatterName)) {
+                    logContextConfiguration.removeFormatterConfiguration(defaultFormatterName);
                 }
             } else {
                 // Create a formatter based on the handlers name
                 final FormatterConfiguration fmtConfig;
-                if (logContextConfiguration.getFormatterNames().contains(handlerName)) {
-                    fmtConfig = logContextConfiguration.getFormatterConfiguration(handlerName);
+                if (logContextConfiguration.getFormatterNames().contains(defaultFormatterName)) {
+                    fmtConfig = logContextConfiguration.getFormatterConfiguration(defaultFormatterName);
                 } else {
-                    fmtConfig = logContextConfiguration.addFormatterConfiguration(null, PatternFormatter.class.getName(), handlerName, PATTERN.getPropertyName());
+                    fmtConfig = logContextConfiguration.addFormatterConfiguration(null, PatternFormatter.class.getName(), defaultFormatterName, PATTERN.getPropertyName());
                 }
                 final String resolvedValue = (resolveValue ? FORMATTER.resolvePropertyValue(context, model) : model.asString());
                 fmtConfig.setPropertyValueString(PATTERN.getPropertyName(), resolvedValue);
-                configuration.setFormatterName(handlerName);
+                configuration.setFormatterName(defaultFormatterName);
             }
         } else if (attribute.getName().equals(NAMED_FORMATTER.getName())) {
             // The name of the handler will be used for a "formatter" if the named-formatter is not defined
             final String handlerName = configuration.getName();
+            final String defaultFormatterName = handlerName + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX;
             final ModelNode valueNode = (resolveValue ? NAMED_FORMATTER.resolveModelAttribute(context, model) : model);
             // Set the formatter if the value is defined
             if (valueNode.isDefined()) {
                 final String resolvedValue = valueNode.asString();
                 configuration.setFormatterName(resolvedValue);
                 // If the formatter was previously defined by the formatter attribute, remove the formatter
-                if (logContextConfiguration.getFormatterNames().contains(handlerName)) {
-                    logContextConfiguration.removeFormatterConfiguration(handlerName);
+                if (logContextConfiguration.getFormatterNames().contains(defaultFormatterName)) {
+                    logContextConfiguration.removeFormatterConfiguration(defaultFormatterName);
+                }
+            } else if (configuration.getClassName().equals(SyslogHandler.class.getName())) {
+                // The value shouldn't be defined so we want to remove the current formatter, however a null formatter
+                // is not allowed in a java.util.logging.Handler. Therefore we must configure a formatter of some kind.
+                // We'll skip the config step on this and set the handler manually. This allows the formatter
+                // configuration not to be persisted. By default the SyslogHandler will use
+                // ExtLogRecord.getFormattedMessage() to get the message which the %s pattern should duplicate.
+                final Handler instance = configuration.getInstance();
+                if (instance != null) {
+                    instance.setFormatter(new PatternFormatter("%s"));
                 }
             } else {
                 // If the named-formatter was undefined we need to create a formatter based on the formatter attribute
                 final FormatterConfiguration fmtConfig;
-                if (logContextConfiguration.getFormatterNames().contains(handlerName)) {
-                    fmtConfig = logContextConfiguration.getFormatterConfiguration(handlerName);
+                if (logContextConfiguration.getFormatterNames().contains(defaultFormatterName)) {
+                    fmtConfig = logContextConfiguration.getFormatterConfiguration(defaultFormatterName);
                 } else {
-                    fmtConfig = logContextConfiguration.addFormatterConfiguration(null, PatternFormatter.class.getName(), handlerName, PATTERN.getPropertyName());
+                    fmtConfig = logContextConfiguration.addFormatterConfiguration(null, PatternFormatter.class.getName(), defaultFormatterName, PATTERN.getPropertyName());
                 }
                 // Get the current model and set the value of the formatter based on the formatter attribute
                 final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
                 fmtConfig.setPropertyValueString(PATTERN.getPropertyName(), FORMATTER.resolvePropertyValue(context, resource.getModel()));
-                configuration.setFormatterName(handlerName);
+                configuration.setFormatterName(defaultFormatterName);
             }
         } else if (attribute.getName().equals(FILTER_SPEC.getName())) {
             final ModelNode valueNode = (resolveValue ? FILTER_SPEC.resolveModelAttribute(context, model) : model);

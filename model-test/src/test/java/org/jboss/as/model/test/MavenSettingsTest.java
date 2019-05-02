@@ -59,7 +59,7 @@ public class MavenSettingsTest {
     @Test
     public void testWithPassedRepository() throws Exception {
         System.setProperty("maven.repo.local", tmpdir.newFolder("repository").getAbsolutePath());
-        System.setProperty("remote.maven.repo", "http://repository.jboss.org/nexus/content/groups/public/,https://maven-central.storage.googleapis.com/");
+        System.setProperty("remote.maven.repo", "https://repository.jboss.org/nexus/content/groups/public/,https://maven-central.storage.googleapis.com/");
 
         try {
             clearCachedSettings();
@@ -67,7 +67,7 @@ public class MavenSettingsTest {
             List<String> remoteRepos = settings.getRemoteRepositories();
             Assert.assertTrue(remoteRepos.size() >= 3); //at least 3 must be present, other can come from settings.xml
             Assert.assertTrue(remoteRepos.contains("https://repo1.maven.org/maven2/"));
-            Assert.assertTrue(remoteRepos.contains("http://repository.jboss.org/nexus/content/groups/public/"));
+            Assert.assertTrue(remoteRepos.contains("https://repository.jboss.org/nexus/content/groups/public/"));
             Assert.assertTrue(remoteRepos.contains("https://maven-central.storage.googleapis.com/"));
 
         } finally {

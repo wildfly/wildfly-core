@@ -31,5 +31,6 @@
 
     <dependencies>
         <module name="java.sql" export="true"/>
+        <module name="java.sql.rowset" export="true"/>
     </dependencies>
 </module>

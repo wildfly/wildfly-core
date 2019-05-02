@@ -38,7 +38,7 @@ import org.jboss.as.controller.capability.Capability;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class CapabilityRegistration<C extends Capability> implements Comparable<CapabilityRegistration> {
+public class CapabilityRegistration<C extends Capability> implements Comparable<CapabilityRegistration<C>> {
 
     private final Map<PathAddress, RegistrationPoint> registrationPoints = new LinkedHashMap<>();
     private final C capability;

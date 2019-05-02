@@ -76,7 +76,7 @@ public class PatchRemoteHostUnitTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.stop();
+        testSupport.close();
 
         if (IoUtils.recursiveDelete(tempDir)) {
             tempDir.deleteOnExit();

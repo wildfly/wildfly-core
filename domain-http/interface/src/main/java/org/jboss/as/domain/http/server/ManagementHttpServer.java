@@ -379,10 +379,12 @@ public class ManagementHttpServer {
             ROOT_LOGGER.consoleModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
         }
 
-        try {
-            addErrorContextHandler(pathHandler, builder);
-        } catch (ModuleLoadException e) {
-            ROOT_LOGGER.errorContextModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
+        if (builder.consoleMode != ConsoleMode.NO_CONSOLE) {
+            try {
+                addErrorContextHandler(pathHandler, builder);
+            } catch (ModuleLoadException e) {
+                ROOT_LOGGER.errorContextModuleNotFound(builder.consoleSlot == null ? "main" : builder.consoleSlot);
+            }
         }
 
         ManagementRootConsoleRedirectHandler rootConsoleRedirectHandler = new ManagementRootConsoleRedirectHandler(consoleHandler);

@@ -149,7 +149,8 @@ public class OtherServicesSubsystemTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(8000, socketBinding.getSocketBindings().getPortOffset());
         Assert.assertFalse("fixed port", socketBinding.isFixedPort());
         Assert.assertEquals(0, socketBinding.getPort());
-        Assert.assertEquals(8000, socketBinding.getSocketAddress().getPort());
+        // Port 0 must not be affected by port-offset
+        Assert.assertEquals(0, socketBinding.getSocketAddress().getPort());
     }
 
     /**

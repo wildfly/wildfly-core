@@ -1076,8 +1076,7 @@ public class GlobalOperationHandlers {
         }
     }
 
-    static boolean getRecursive(OperationContext context, ModelNode op) throws OperationFailedException
-    {
+    static boolean getRecursive(OperationContext context, ModelNode op) throws OperationFailedException {
         // -1 means UNDEFINED
         ModelNode recursiveNode = RECURSIVE.resolveModelAttribute(context, op);
         final int recursiveValue = recursiveNode.isDefined() ? (recursiveNode.asBoolean() ? 1 : 0) : -1;
@@ -1089,8 +1088,7 @@ public class GlobalOperationHandlers {
                 recursiveValue != 0 && recursiveDepthValue > 0;
     }
 
-    static void setNextRecursive(OperationContext context, ModelNode op, ModelNode nextOp) throws OperationFailedException
-    {
+    static void setNextRecursive(OperationContext context, ModelNode op, ModelNode nextOp) throws OperationFailedException {
         // -1 means UNDEFINED
         final int recursiveDepthValue = RECURSIVE_DEPTH.resolveModelAttribute(context, op).asInt(-1);
         // WFCORE-76: We are recursing in the next step IFF:
