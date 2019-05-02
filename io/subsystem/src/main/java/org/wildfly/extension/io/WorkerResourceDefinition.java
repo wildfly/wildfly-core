@@ -244,7 +244,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode value, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
             XnioWorker worker = getXnioWorker(context);
-            if (worker == null) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
+            if (worker == null || !value.isDefined()) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
                 return true;
             }
             try {
