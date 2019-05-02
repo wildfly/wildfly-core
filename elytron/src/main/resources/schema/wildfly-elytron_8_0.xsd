@@ -830,6 +830,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="evidence-decoder" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to an EvidenceDecoder to be used by the domain.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="realm-mapper" type="xs:string">
             <xs:annotation>
                 <xs:documentation>
@@ -2443,6 +2450,9 @@
             <xs:element name="custom-role-mapper" type="customRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="logical-role-mapper" type="logicalRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="mapped-role-mapper" type="mappedRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="x500-subject-evidence-decoder" type="x500SubjectEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="x509-subject-alt-name-evidence-decoder" type="x509SubjectAltNameEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="aggregate-evidence-decoder" type="aggregateEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -3473,6 +3483,96 @@
             <xs:annotation>
                 <xs:documentation>
                     The name of the referenced RoleMapper.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="x500SubjectEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder that derives the principal associated with the given evidence from the subject from
+                the first certificate in the certificate chain.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="x509SubjectAltNameEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder that derives the principal associated with the given evidence from an X.509 subject
+                alternative name from the first certificate in the given evidence.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:attribute name="alt-name-type" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The subject alternative name type to decode from the given evidence.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="rfc822Name" />
+                            <xs:enumeration value="dNSName" />
+                            <xs:enumeration value="directoryName" />
+                            <xs:enumeration value="uniformResourceIdentifier" />
+                            <xs:enumeration value="iPAddress" />
+                            <xs:enumeration value="registeredID" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="segment" type="xs:int" default="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The 0-based occurrence of the subject alternative name to map. This attribute is optional and only
+                            used when there is more than one subject alternative name of the given alt-name-type
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="aggregateEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder definition that is an aggregation of other EvidenceDecoders.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:sequence>
+                    <xs:element name="evidence-decoder" type="evidenceDecoderRefType" minOccurs="2" maxOccurs="unbounded" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="evidenceDecoderRefType">
+        <xs:annotation>
+            <xs:documentation>
+                A reference to an EvidenceDecoder
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="evidenceDecoderType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                Base type for all EvidenceDecoder definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name for the EvidenceDecoder, note names used for EvidenceDecoder must be unique
+                    across the whole context.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

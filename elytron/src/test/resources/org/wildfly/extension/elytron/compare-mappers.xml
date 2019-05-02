@@ -109,6 +109,12 @@
             <role-mapping from="From" to="To1 to2"/>
             <role-mapping from="From2" to="To1 to3"/>
         </mapped-role-mapper>
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">

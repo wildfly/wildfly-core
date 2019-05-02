@@ -1,6 +1,6 @@
 <subsystem xmlns="urn:wildfly:elytron:8.0">
     <security-domains>
-        <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree">
+        <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder">
             <realm name="PropRealm"/>
         </security-domain>
     </security-domains>
@@ -32,6 +32,13 @@
         <regex-validating-principal-transformer name="isJbossEmail" pattern="(.*)@jboss.com"/>
         <regex-validating-principal-transformer name="isWildflyEmail" pattern="(.*)@wildfly.org"/>
         <regex-validating-principal-transformer name="genericEmail" pattern="(.*)@(.*)"/>
+
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
 
     </mappers>
 </subsystem>

@@ -35,6 +35,7 @@ interface ElytronDescriptionConstants {
     String ADD_PREFIX_ROLE_MAPPER = "add-prefix-role-mapper";
     String ADD_SUFFIX_ROLE_MAPPER = "add-suffix-role-mapper";
     String AGREE_TO_TERMS_OF_SERVICE = "agree-to-terms-of-service";
+    String AGGREGATE_EVIDENCE_DECODER = "aggregate-evidence-decoder";
     String AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY = "aggregate-http-server-mechanism-factory";
     String AGGREGATE_PRINCIPAL_DECODER = "aggregate-principal-decoder";
     String AGGREGATE_PRINCIPAL_TRANSFORMER = "aggregate-principal-transformer";
@@ -49,6 +50,7 @@ interface ElytronDescriptionConstants {
     String ALGORITHM = "algorithm";
     String ALGORITHM_FROM = "algorithm-from";
     String ALLOW_BLANK_PASSWORD = "allow-blank-password";
+    String ALT_NAME_TYPE = "alt-name-type";
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
@@ -174,6 +176,8 @@ interface ElytronDescriptionConstants {
     String ENABLING = "enabling";
     String ENCODED = "encoded";
     String ENTRY_TYPE = "entry-type";
+    String EVIDENCE_DECODER = "evidence-decoder";
+    String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
@@ -471,6 +475,7 @@ interface ElytronDescriptionConstants {
     String SELECTION_CRITERIA = "selection-criteria";
     String SEED = "seed";
     String SEED_FROM = "seed-from";
+    String SEGMENT = "segment";
     String SERVER_NAME = "server-name";
     String SERIAL_NUMBER = "serial-number";
     String SERIAL_NUMBER_FROM = "serial-number-from";
@@ -557,7 +562,9 @@ interface ElytronDescriptionConstants {
     String WRITABLE = "writable";
 
     String X500_ATTRIBUTE_PRINCIPAL_DECODER = "x500-attribute-principal-decoder";
+    String X500_SUBJECT_EVIDENCE_DECODER = "x500-subject-evidence-decoder";
     String X509_CREDENTIAL_MAPPER = "x509-credential-mapper";
+    String X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER = "x509-subject-alt-name-evidence-decoder";
     String XOR = "xor";
 
 }

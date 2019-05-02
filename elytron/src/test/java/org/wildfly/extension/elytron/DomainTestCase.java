@@ -18,6 +18,10 @@
 package org.wildfly.extension.elytron;
 
 import java.io.FilePermission;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -33,6 +37,7 @@ import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.security.asn1.ASN1Encodable;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.MechanismConfiguration;
@@ -44,7 +49,14 @@ import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.authz.PermissionMappable;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.Roles;
+import org.wildfly.security.evidence.X509PeerCertificateChainEvidence;
 import org.wildfly.security.permission.PermissionVerifier;
+import org.wildfly.security.x500.GeneralName;
+import org.wildfly.security.x500.X500;
+import org.wildfly.security.x500.X500AttributeTypeAndValue;
+import org.wildfly.security.x500.X500PrincipalBuilder;
+import org.wildfly.security.x500.cert.SubjectAlternativeNamesExtension;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import mockit.integration.junit4.JMockit;
 
@@ -90,6 +102,9 @@ public class DomainTestCase extends AbstractSubsystemTest {
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainTwo");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainThree");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AnotherDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AggregateEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
     }
 
     @Test
@@ -287,6 +302,60 @@ public class DomainTestCase extends AbstractSubsystemTest {
         Assert.assertFalse(verifier.implies(new FilePermission("aaa", "read")));
     }
 
+    @Test
+    public void testSubjectEvidenceDecoder() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectEvidenceDecoderDomain");
+        SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityDomain);
+
+        X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(populateCertificateChain(false));
+        ServerAuthenticationContext sac = securityDomain.createNewAuthenticationContext();
+        sac.setDecodedEvidencePrincipal(evidence);
+        Assert.assertEquals("CN=bob0", evidence.getDecodedPrincipal().getName());
+        sac.setAuthenticationPrincipal(evidence.getDecodedPrincipal());
+        Assert.assertEquals("0", sac.getAuthenticationPrincipal().getName());
+    }
+
+    @Test
+    public void testSubjectAltNameEvidenceDecoder() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SubjectAltNameEvidenceDecoderDomain");
+        SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityDomain);
+
+        X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(populateCertificateChain(true ));
+        ServerAuthenticationContext sac = securityDomain.createNewAuthenticationContext();
+        sac.setDecodedEvidencePrincipal(evidence);
+        Assert.assertEquals("bob0@anotherexample.com", evidence.getDecodedPrincipal().getName());
+        sac.setAuthenticationPrincipal(evidence.getDecodedPrincipal());
+        Assert.assertEquals("bob0", sac.getAuthenticationPrincipal().getName());
+    }
+
+    @Test
+    public void testAggregateEvidenceDecoder() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateEvidenceDecoderDomain");
+        SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityDomain);
+
+        // evidence will be decoded using a subject alternative name
+        X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(populateCertificateChain(true ));
+        ServerAuthenticationContext sac = securityDomain.createNewAuthenticationContext();
+        sac.setDecodedEvidencePrincipal(evidence);
+        Assert.assertEquals("bob0@anotherexample.com", evidence.getDecodedPrincipal().getName());
+        sac.setAuthenticationPrincipal(evidence.getDecodedPrincipal());
+        Assert.assertEquals("bob0", sac.getAuthenticationPrincipal().getName());
+
+        // evidence will be decoded using the subject
+        evidence = new X509PeerCertificateChainEvidence(populateCertificateChain(false));
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.setDecodedEvidencePrincipal(evidence);
+        Assert.assertEquals("CN=bob0", evidence.getDecodedPrincipal().getName());
+        sac.setAuthenticationPrincipal(evidence.getDecodedPrincipal());
+        Assert.assertEquals("0", sac.getAuthenticationPrincipal().getName());
+    }
+
     public static class MyPermissionMapper implements PermissionMapper {
         @Override
         public PermissionVerifier mapPermissions(PermissionMappable permissionMappable, Roles roles) {
@@ -308,5 +377,50 @@ public class DomainTestCase extends AbstractSubsystemTest {
         authenticationContext.authorize();
         authenticationContext.succeed();
         return authenticationContext.getAuthorizedIdentity();
+    }
+
+    private static X509Certificate[] populateCertificateChain(boolean includeSubjectAltNames) throws Exception {
+        KeyPairGenerator keyPairGenerator;
+        try {
+            keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        final KeyPair[] keyPairs = new KeyPair[5];
+        for (int i = 0; i < keyPairs.length; i++) {
+            keyPairs[i] = keyPairGenerator.generateKeyPair();
+        }
+        final X509Certificate[] orderedCertificates = new X509Certificate[5];
+        for (int i = 0; i < orderedCertificates.length; i++) {
+            X509CertificateBuilder builder = new X509CertificateBuilder();
+            X500PrincipalBuilder principalBuilder = new X500PrincipalBuilder();
+            principalBuilder.addItem(X500AttributeTypeAndValue.create(X500.OID_AT_COMMON_NAME,
+                    ASN1Encodable.ofUtf8String("bob" + i)));
+            X500Principal dn = principalBuilder.build();
+            builder.setSubjectDn(dn);
+            if (i == orderedCertificates.length - 1) {
+                // self-signed
+                builder.setIssuerDn(dn);
+                builder.setSigningKey(keyPairs[i].getPrivate());
+            } else {
+                principalBuilder = new X500PrincipalBuilder();
+                principalBuilder.addItem(X500AttributeTypeAndValue.create(X500.OID_AT_COMMON_NAME,
+                        ASN1Encodable.ofUtf8String("bob" + (i + 1))));
+                X500Principal issuerDn = principalBuilder.build();
+                builder.setIssuerDn(issuerDn);
+                builder.setSigningKey(keyPairs[i + 1].getPrivate());
+                if (includeSubjectAltNames) {
+                    builder.addExtension(new SubjectAlternativeNamesExtension(
+                            true,
+                            Arrays.asList(new GeneralName.RFC822Name("bob" + i + "@example.com"),
+                                    new GeneralName.DNSName("bob" + i + ".example.com"),
+                                    new GeneralName.RFC822Name("bob" + i + "@anotherexample.com"))));
+                }
+            }
+            builder.setSignatureAlgorithmName("SHA256withRSA");
+            builder.setPublicKey(keyPairs[i].getPublic());
+            orderedCertificates[i] = builder.build();
+        }
+        return orderedCertificates;
     }
 }
