@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>29</version>
+      <version>35</version>
     </parent>
 
     <groupId>org.wildfly.core</groupId>
@@ -108,14 +108,11 @@
         </surefire.system.args>
         <test.level>INFO</test.level>
 
-        <!-- use older version of checkstyle as otherwise lots of checks fail -->
-        <version.checkstyle>6.8</version.checkstyle>
-
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
         <version.org.jboss.galleon>4.0.0.Alpha1</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.10.Final</version.org.wildfly.build-tools>
-        <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.galleon-plugins>4.0.0.Alpha4</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>

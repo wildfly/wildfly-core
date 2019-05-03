@@ -22,7 +22,7 @@
     <mappers>
         <simple-permission-mapper name="SimplePermissionMapperLegacy" mapping-mode="and">
             <permission-mapping match-all="true">
-                <permission class-name="a.b.MyPermission" />
+                <permission class-name="java.security.AllPermission" />
             </permission-mapping>
         </simple-permission-mapper>
         <simple-permission-mapper name="SimplePermissionMapper" mapping-mode="and">
@@ -37,10 +37,10 @@
     </mappers>
     <permission-sets>
         <permission-set name="my-permission">
-            <permission class-name="a.b.MyPermission" />
+            <permission class-name="java.io.FilePermission" target-name="/tmp" action="read,write" />
         </permission-set>
         <permission-set name="user-permissions">
-            <permission class-name="a.b.UserPermission" />
+            <permission class-name="java.io.FilePermission" target-name="/home" action="read" />
         </permission-set>
     </permission-sets>
     <policy name="elytron-a">

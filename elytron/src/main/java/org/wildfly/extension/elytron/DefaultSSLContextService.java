@@ -16,8 +16,11 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronDefinition.RESTORE_DEFAULT_SSL_CONTEXT;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -38,6 +41,8 @@ import org.jboss.msc.service.StopContext;
 class DefaultSSLContextService implements Service {
 
     static final ServiceName SERVICE_NAME = ElytronExtension.BASE_SERVICE_NAME.append(ElytronDescriptionConstants.SSL_CONTEXT_REGISTRATION);
+
+    private static final boolean RESTORE_SSL_CONTEXT = doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean(RESTORE_DEFAULT_SSL_CONTEXT));
 
     private final Supplier<SSLContext> defaultSSLContextSupplier;
     private final Consumer<SSLContext> valueConsumer;
@@ -60,6 +65,18 @@ class DefaultSSLContextService implements Service {
     @Override
     public void stop(StopContext context) {
         // We can't set the default back to 'null' as that would cause a NullPointerException.
+        // For the purpose of testing we may want to restore the default.
+        if (RESTORE_SSL_CONTEXT) {
+            try {
+                final SSLContext defaultSSLContext = SSLContext.getInstance("Default");
+                doPrivileged((PrivilegedAction<Void>) () -> {
+                    SSLContext.setDefault(defaultSSLContext);
+                    return null;
+                });
+            } catch (NoSuchAlgorithmException e) {
+                ROOT_LOGGER.debug(e);
+            }
+        }
     }
 
 }

@@ -22,22 +22,30 @@
 
 package org.jboss.as.controller.services.path;
 
+import java.util.function.Consumer;
+
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 
 /**
  * Abstract superclass for services that return a path.
  *
  * @author Brian Stansberry
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class AbstractPathService implements Service<String> {
 
     private static final ServiceName SERVICE_NAME_BASE = ServiceName.JBOSS.append("server", "path");
+    private final Consumer<String> pathConsumer;
+    private volatile String path;
 
-    public static ServiceName pathNameOf(String pathName) {
+    AbstractPathService(final Consumer<String> pathConsumer) {
+        this.pathConsumer = pathConsumer;
+    }
+
+    public static ServiceName pathNameOf(final String pathName) {
         if (pathName == null) {
             throw new IllegalArgumentException("pathName is null");
         }
@@ -79,28 +87,28 @@ public abstract class AbstractPathService implements Service<String> {
         return false;
     }
 
-    private static boolean isDriveLetter(char c) {
+    private static boolean isDriveLetter(final char c) {
         return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
     }
-
-
-    private String path;
 
     // ------------------------------------------------------------  Service
 
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) {
         path = resolvePath();
+        pathConsumer.accept(path);
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        pathConsumer.accept(null);
+        path = null;
     }
 
     @Override
     public String getValue() throws IllegalStateException {
         final String path = this.path;
-        if(path == null) {
+        if (path == null) {
             throw new IllegalStateException();
         }
         return path;
@@ -109,4 +117,5 @@ public abstract class AbstractPathService implements Service<String> {
     // ------------------------------------------------------------  Protected
 
     protected abstract String resolvePath();
+
 }

@@ -75,6 +75,7 @@ interface ElytronDescriptionConstants {
     String AUTOFLUSH = "autoflush";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
 
+    String BASE64 = "base64";
     String BCRYPT = "bcrypt";
     String BCRYPT_MAPPER = "bcrypt-mapper";
 
@@ -212,7 +213,9 @@ interface ElytronDescriptionConstants {
     String HOST_CONTEXT_MAP = "host-context-map";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
+    String HASH_ENCODING = "hash-encoding";
     String HASH_FROM = "hash-from";
+    String HEX = "hex";
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
     String HTTP_SERVER_MECHANISM_FACTORY = "http-server-mechanism-factory";
@@ -318,6 +321,7 @@ interface ElytronDescriptionConstants {
     String MODIFIABLE_KEY_STORE = "modifiable-key-store";
     String MODIFIABLE_SECURITY_REALM = "modifiable-security-realm";
     String MODIFIED = "modified";
+    String MODULAR_CRYPT_MAPPER = "modular-crypt-mapper";
     String MODULE = "module";
 
     String NAME = "name";
@@ -439,6 +443,7 @@ interface ElytronDescriptionConstants {
     String ROTATE_ON_BOOT = "rotate-on-boot";
 
     String SALT = "salt";
+    String SALT_ENCODING = "salt-encoding";
     String SALT_INDEX = "salt-index";
     String SALTED_SIMPLE_DIGEST = "salted-simple-digest";
     String SALTED_SIMPLE_DIGEST_MAPPER = "salted-simple-digest-mapper";

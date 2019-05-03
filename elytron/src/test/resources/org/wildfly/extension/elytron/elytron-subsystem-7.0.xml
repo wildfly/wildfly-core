@@ -48,6 +48,19 @@
                 <scram-mapper algorithm="scram-sha-512" password-index="1" salt-index="2" iteration-count-index="10000"/>
             </principal-query>
         </jdbc-realm>
+        <jdbc-realm name="JdbcRealm">
+            <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
+                <attribute-mapping>
+                    <attribute index="1" to="role"/>
+                </attribute-mapping>
+                <clear-password-mapper password-index="2"/>
+                <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex" salt-encoding="hex"/>
+                <salted-simple-digest-mapper password-index="2" salt-index="3" algorithm="password-salt-digest-sha-1" hash-encoding="hex" salt-encoding="hex"/>
+                <simple-digest-mapper password-index="2" hash-encoding="hex" algorithm="simple-digest-sha-1"/>
+                <scram-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex" salt-encoding="hex" algorithm="scram-sha-1"/>
+                <modular-crypt-mapper password-index="2"/>
+            </principal-query>
+        </jdbc-realm>
         <properties-realm name="PropRealm">
             <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
         </properties-realm>

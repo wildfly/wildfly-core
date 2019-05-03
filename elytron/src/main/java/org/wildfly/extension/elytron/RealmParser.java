@@ -50,8 +50,12 @@ class RealmParser {
             .addAttributes(RealmDefinitions.IDENTITY_REALM_ATTRIBUTES)
             .setUseElementsForGroups(false)
             .build();
+    @Deprecated
     private final PersistentResourceXMLDescription jdbcRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), null)
             .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+            .build();
+    private final PersistentResourceXMLDescription jdbcRealmParser_7_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), null)
+            .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
     private final PersistentResourceXMLDescription keyStoreRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE_REALM), null)
             .addAttribute(KeyStoreRealmDefinition.KEYSTORE)
@@ -89,6 +93,19 @@ class RealmParser {
             .addChild(cachingRealmParser)
             .build();
 
+    final PersistentResourceXMLDescription realmParser_7_0 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_7_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser)
+            .addChild(ldapRealmParser)
+            .addChild(fileSystemRealmDescription)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .build();
 
     RealmParser() {
 

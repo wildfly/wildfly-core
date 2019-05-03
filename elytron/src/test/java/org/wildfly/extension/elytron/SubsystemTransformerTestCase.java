@@ -16,9 +16,11 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECTED_RESOURCE;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
 import static org.junit.Assert.assertTrue;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 
 import java.io.IOException;
 import java.util.List;
@@ -111,6 +113,14 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 )
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcBcryptHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcBcryptSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSaltedSimpleDigestHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSaltedSimpleDigestSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcSimpleDigestHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcScramHashHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcScramSaltHex")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcModularCrypt")), REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "SslTokenRealm")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM, "KeyMapTokenRealm")),
