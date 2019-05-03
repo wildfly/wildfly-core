@@ -67,4 +67,9 @@ public class ElytronSubsystemParser8_0 extends ElytronSubsystemParser7_0 {
     PersistentResourceXMLDescription getDomainParser() {
         return domainParser;
     }
+
+    @Override
+    PersistentResourceXMLDescription getAuditLoggingParser() {
+        return new AuditLoggingParser().parser8_0;
+    }
 }

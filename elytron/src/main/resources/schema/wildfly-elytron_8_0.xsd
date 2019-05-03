@@ -753,6 +753,20 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="syslog-format" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The RFC format to be used for formatting the log entry, default value of RFC5424.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="reconnect-attempts" type="xs:int">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The maximum amount of failed reconnect attempts that should be made for sending messages to a syslog server before the endpoint is closed, default value of 0 (no reconnect attempts).
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

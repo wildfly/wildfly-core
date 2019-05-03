@@ -121,6 +121,9 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG, "audit6")),
                         new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.AUTOFLUSH)
                 )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SYSLOG_AUDIT_LOG, "audit7")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.SYSLOG_FORMAT, AuditResourceDefinitions.RECONNECT_ATTEMPTS)
+                )
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(JDBC_REALM, "JdbcBcryptHashHex")), REJECTED_RESOURCE)

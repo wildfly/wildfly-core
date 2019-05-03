@@ -14,6 +14,8 @@
         <periodic-rotating-file-audit-log name="audit4" path="target/audit.log" format="JSON" suffix="y-M-d" synchronized="false" autoflush="true" />
         <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="true" autoflush="false" />
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
+        <syslog-audit-log name="audit7" server-address="127.0.0.1" port="10837" host-name="localhost" syslog-format="RFC3164" reconnect-attempts="5" />
+        <syslog-audit-log name="audit8" server-address="127.0.0.1" port="10837" host-name="localhost" reconnect-attempts="0" />
     </audit-logging>
     <security-domains>
         <security-domain name="X500Domain" default-realm="FileRealm" evidence-decoder="aggregateEvidenceDecoder">
