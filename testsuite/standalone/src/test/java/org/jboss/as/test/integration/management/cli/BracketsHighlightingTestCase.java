@@ -16,14 +16,17 @@
 
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.cli.Util;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * These tests check highlighting of matching open/close brackets in cli
@@ -66,6 +69,14 @@ public class BracketsHighlightingTestCase {
    @Before
    public void clearOutput() {
       cli.clearOutput();
+   }
+
+   /**
+    * Can't be tested on Windows in CI, so it should be assumed on Windows by default
+    */
+   @Before
+   public void windowsAssume() {
+      Assume.assumeFalse(Util.isWindows() && !Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged("run.brackets.highlighting.test.on.window", null)));
    }
 
    /**
