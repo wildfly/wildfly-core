@@ -91,7 +91,11 @@ public class OperationRequestHandler implements CommandHandler, OperationCommand
             if (Util.isSuccess(result)) {
                 ctx.printDMR(result);
             } else {
-                throw new CommandLineException(result.toString());
+                if (!ctx.getConfig().isOutputJSON()) {
+                    throw new CommandLineException(result.toString());
+                } else {
+                    throw new CommandLineException(result.toJSONString(false));
+                }
             }
         } catch(NoSuchElementException e) {
             throw new CommandLineException("ModelNode request is incomplete", e);
