@@ -1,0 +1,115 @@
+= WildFly Event Logging
+
+The WildFly Event Logging API offers a simple API for logging audit and access events. Audit logging is generally used
+for things like management changes or security audit logging. Access logging is generally used for things like web
+access or EJB access.
+
+== EventLogger
+
+The `EventLogger` is used to log events. Events are said to be a map of keys and values. The event source is used as a
+way to differentiate events logged. This is useful for log aggregation filters to differentiate types of log messages.
+
+There's an option to use a logger which writes immediately to the `EventWriter` associated with the logger. You can
+optionally create an asynchronous logger which will format and log the events in a new thread.
+
+When creating an `EventLogger` the event source, for example in `EventLogger.createLogger("web-access")` "web-access" is
+the event source, should be unique. This can be used in a query tool to help differentiate events logged.
+
+== JsonEventFormatter
+
+The `JsonEventFormatter` simply converts the logged event data to JSON format.
+
+=== Example
+
+[source,java]
+----
+final JsonEventFormatter formatter = JsonEventFormatter.builder()
+        .setIncludeTimestamp(false)
+        .addMetaData("@version", "1")
+        .addMetaData("currentYear", ZonedDateTime.now().getYear())
+        .build();
+----
+
+== StdoutEventWriter
+
+The `StdoutEventWriter` writes the formatted data to `stdout`.
+
+=== Example
+
+[source,java]
+----
+final StdoutEventWriter writer = StdoutEventWriter.of(JsonFeventFormatter.builder().build());
+
+----
+
+
+== Examples
+
+=== Synchronous Logger
+
+[source,java]
+----
+final JsonEventFormatter formatter = JsonEventFormatter.builder()
+        .setIncludeTimestamp(false)
+        .addMetaData("@version", "1")
+        .build();
+final EventLogger logger = EventLogger.createLogger("web-access", StdoutEventWriter.of(formatter));
+final Map<String, Object> event = new LinkedHashMap<>();
+event.put("bytesSent", 1504);
+event.put("dateTime", "[02/May/2019:09:16:05 -0700]");
+event.put("localIp", "127.0.0.1");
+event.put("localPort", 8443);
+event.put("remoteHost", "127.0.0.1");
+event.put("remoteUser", null);
+event.put("requestLine", "GET / HTTP/2.0");
+event.put("responseCode", 200);
+event.put("secureExchange", Boolean.TRUE);
+
+logger.log(event);
+----
+
+=== Asynchronous Logger
+
+[source,java]
+----
+final JsonEventFormatter formatter = JsonEventFormatter.builder()
+        .setIncludeTimestamp(false)
+        .addMetaData("@version", "1")
+        .build();
+final EventLogger logger = EventLogger.createAsyncLogger("web-access", StdoutEventWriter.of(formatter), executor);
+final Supplier<Map<String, Object>> eventSupplier = () -> {
+    final Map<String, Object> event = new LinkedHashMap<>();
+    event.put("bytesSent", 1504);
+    event.put("dateTime", "[02/May/2019:09:16:05 -0700]");
+    event.put("localIp", "127.0.0.1");
+    event.put("localPort", 8443);
+    event.put("remoteHost", "127.0.0.1");
+    event.put("remoteUser", null);
+    event.put("requestLine", "GET / HTTP/2.0");
+    event.put("responseCode", 200);
+    event.put("secureExchange", Boolean.TRUE);
+};
+
+logger.log(eventSupplier);
+----
+
+=== Example JSON Output
+
+[source,json]
+----
+{
+    "eventSource": "web-access",
+    "@version" : "1",
+    "bytesSent": 1504,
+    "dateTime": "[02/May/2019:09:57:25 -0700]",
+    "localIp": "127.0.0.1",
+    "localPort": 8443,
+    "remoteHost": "127.0.0.1",
+    "remoteUser": null,
+    "requestLine": "GET / HTTP/2.0",
+    "responseCode": 200,
+    "secureExchange": true
+}
+----
+
+NOTE: The JSON output will not be formatted like this on the output. It's formatted here for readability only.
