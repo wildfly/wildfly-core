@@ -411,6 +411,7 @@ public enum Phase {
     public static final int DEPENDENCIES_EJB_PERMISSIONS                = 0x0110;
     public static final int DEPENDENCIES_DISTRIBUTABLE_WEB              = 0x0120;
     public static final int DEPENDENCIES_EJB                            = 0x0200;
+    public static final int DEPENDENCIES_EJB_SERVER_INTERCEPTORS        = 0x0280;
     public static final int DEPENDENCIES_MODULE                         = 0x0300;
     public static final int DEPENDENCIES_RAR_CONFIG                     = 0x0400;
     public static final int DEPENDENCIES_MANAGED_BEAN                   = 0x0500;
@@ -511,6 +512,7 @@ public enum Phase {
     public static final int POST_MODULE_EJB_MDB_POOL_NAME_MERGE         = 0x0508;
     public static final int POST_MODULE_EJB_ENTITY_POOL_NAME_MERGE      = 0x0509;
     public static final int POST_MODULE_EJB_USER_APP_SPECIFIC_CONTAINER_INTERCEPTORS = 0x050A;
+    public static final int POST_MODULE_EJB_SERVER_INTERCEPTORS         = 0x050B;
     public static final int POST_MODULE_EJB_DD_INTERCEPTORS             = 0x0600;
     public static final int POST_MODULE_EJB_TIMER_SERVICE               = 0x0601;
     public static final int POST_MODULE_EJB_TRANSACTION_MANAGEMENT      = 0x0602;
