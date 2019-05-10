@@ -49,6 +49,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-client}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-impl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-store}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-digest}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http}"/>
