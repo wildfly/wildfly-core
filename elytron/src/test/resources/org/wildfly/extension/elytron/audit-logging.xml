@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:7.0" default-authentication-context="child">
+<subsystem xmlns="urn:wildfly:elytron:8.0" default-authentication-context="child">
     <authentication-client>
         <authentication-context name="child"/>
     </authentication-client>
