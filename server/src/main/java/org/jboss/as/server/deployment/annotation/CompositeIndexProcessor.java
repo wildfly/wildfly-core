@@ -90,12 +90,17 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
         for (final ModuleIdentifier moduleIdentifier : additionalModuleIndexes) {
             AdditionalModuleSpecification additional = additionalModuleSpecificationMap.get(moduleIdentifier);
             if(additional != null) {
+                final List<Index> moduleIndexes = new ArrayList<>();
                 for(ResourceRoot resource : additional.getResourceRoots()) {
                     ResourceRootIndexer.indexResourceRoot(resource);
                     Index indexAttachment = resource.getAttachment(Attachments.ANNOTATION_INDEX);
                     if(indexAttachment != null) {
                         indexes.add(indexAttachment);
+                        moduleIndexes.add(indexAttachment);
                     }
+                }
+                if (!moduleIndexes.isEmpty()) {
+                    additionalAnnotationIndexes.put(moduleIdentifier, new CompositeIndex(moduleIndexes));
                 }
             } else if (subdeploymentDependencies.containsKey(moduleIdentifier)) {
                 List<ResourceRoot> resourceRoots = subdeploymentDependencies.get(moduleIdentifier).getAttachment(Attachments.RESOURCE_ROOTS);
@@ -107,11 +112,16 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                 if (ModuleRootMarker.isModuleRoot(deploymentRoot)) {
                     allResourceRoots.add(deploymentRoot);
                 }
+                final List<Index> moduleIndexes = new ArrayList<>();
                 for (ResourceRoot resourceRoot : allResourceRoots) {
                     Index index = resourceRoot.getAttachment(Attachments.ANNOTATION_INDEX);
                     if (index != null) {
                         indexes.add(index);
+                        moduleIndexes.add(index);
                     }
+                }
+                if (!moduleIndexes.isEmpty()) {
+                    additionalAnnotationIndexes.put(moduleIdentifier, new CompositeIndex(moduleIndexes));
                 }
             } else {
                 try {
