@@ -431,6 +431,67 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testKeystoreReadVerbose() throws Exception {
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        Files.copy(resources.resolve("firefly.keystore"), resources.resolve("firefly-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+        ModelNode operation = new ModelNode(); // add keystore
+        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", "ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/firefly-copy.keystore");
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
+        assertSuccess(services.executeOperation(operation));
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
+        assertEquals(2, nodes.size());
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        operation.get(ElytronDescriptionConstants.VERBOSE).set(true);
+        operation.get(ElytronDescriptionConstants.RECURSIVE).set(true);
+        nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
+        assertEquals(2, nodes.size());
+
+        for(ModelNode node : nodes) {
+            //assertEquals(node.get(0)+"",1, nodes.size());
+            node = node.get(0);
+            final String alias = node.get(ElytronDescriptionConstants.ALIAS).asString();
+            final ModelNode certificateChain = node.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN);
+            if(certificateChain.isDefined()) {
+                for(ModelNode certificateFromChain : certificateChain.asList())
+                    checkCertificaite(certificateFromChain);
+            } else {
+                //need to clean after above .get
+                node.remove(ElytronDescriptionConstants.CERTIFICATE_CHAIN);
+                checkCertificaite(node.get(ElytronDescriptionConstants.CERTIFICATE));
+            }
+
+            final ModelNode readOperation = new ModelNode();
+            readOperation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+            readOperation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+            readOperation.get(ElytronDescriptionConstants.VERBOSE).set(true);
+            readOperation.get(ElytronDescriptionConstants.ALIAS).set(alias);
+            final ModelNode aliasReadNode = assertSuccess(services.executeOperation(readOperation)).get(ClientConstants.RESULT);
+            assertEquals(aliasReadNode, node);
+        }
+    }
+
+    private void checkCertificaite(final ModelNode certificate) {
+        final ModelNode publicKey = certificate.get(ElytronDescriptionConstants.PUBLIC_KEY);
+        assertNotNull(publicKey);
+        assertTrue(publicKey.isDefined());
+        final ModelNode encoded = certificate.get(ElytronDescriptionConstants.ENCODED);
+        assertNotNull(encoded);
+        assertTrue(encoded.isDefined());
+    }
+
+    @Test
     public void testFilteringKeystoreService() throws Exception {
         ServiceName serviceName = Capabilities.KEY_STORE_RUNTIME_CAPABILITY.getCapabilityServiceName("FilteringKeyStore");
         KeyStore keyStore = (KeyStore) services.getContainer().getService(serviceName).getValue();
