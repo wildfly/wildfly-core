@@ -521,14 +521,14 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                                     throw ROOT_LOGGER.trustedCertificateAlreadyInCacertsKeyStore(trustedCertificateAlias);
                                 }
                             }
-                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate);
+                            writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true);
                             throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                         } else {
                             try {
                                 final HashMap<Principal, HashSet<X509Certificate>> certificatesMap = getKeyStoreCertificates(keyStore, cacertsKeyStore);
                                 X500.createX509CertificateChain(trustedCertificate, certificatesMap);
                             } catch (IllegalArgumentException e) {
-                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate);
+                                writeCertificate(context.getResult().get(ElytronDescriptionConstants.CERTIFICATE), trustedCertificate, true);
                                 throw ROOT_LOGGER.unableToDetermineIfCertificateIsTrusted();
                             }
                         }

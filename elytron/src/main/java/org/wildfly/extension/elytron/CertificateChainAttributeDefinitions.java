@@ -115,17 +115,25 @@ class CertificateChainAttributeDefinitions {
     }
 
     static void writeCertificate(final ModelNode certificateModel, final Certificate certificate) throws CertificateEncodingException, NoSuchAlgorithmException {
-        certificateModel.get(ElytronDescriptionConstants.TYPE).set(certificate.getType());
+        writeCertificate(certificateModel, certificate, true);
+    }
+
+    static void writeCertificate(final ModelNode certificateModel, final Certificate certificate, final boolean verbose) throws CertificateEncodingException, NoSuchAlgorithmException {
+       certificateModel.get(ElytronDescriptionConstants.TYPE).set(certificate.getType());
 
         PublicKey publicKey = certificate.getPublicKey();
         certificateModel.get(ElytronDescriptionConstants.ALGORITHM).set(publicKey.getAlgorithm());
         certificateModel.get(ElytronDescriptionConstants.FORMAT).set(publicKey.getFormat());
-        certificateModel.get(ElytronDescriptionConstants.PUBLIC_KEY).set(encodedHexString(publicKey.getEncoded()));
+        if (verbose) {
+            certificateModel.get(ElytronDescriptionConstants.PUBLIC_KEY).set(encodedHexString(publicKey.getEncoded()));
+        }
 
         byte[] encodedCertificate = certificate.getEncoded();
         certificateModel.get(ElytronDescriptionConstants.SHA_1_DIGEST).set(encodedHexString(digest(SHA_1, encodedCertificate)));
         certificateModel.get(ElytronDescriptionConstants.SHA_256_DIGEST).set(encodedHexString(digest(SHA_256, encodedCertificate)));
-        certificateModel.get(ElytronDescriptionConstants.ENCODED).set(encodedHexString(encodedCertificate));
+        if (verbose) {
+            certificateModel.get(ElytronDescriptionConstants.ENCODED).set(encodedHexString(encodedCertificate));
+        }
 
         if (certificate instanceof X509Certificate) {
             writeX509Certificate(certificateModel, (X509Certificate) certificate);
@@ -154,10 +162,23 @@ class CertificateChainAttributeDefinitions {
      * @throws NoSuchAlgorithmException
      */
     static void writeCertificates(final ModelNode result, final Certificate[] certificates) throws CertificateEncodingException, NoSuchAlgorithmException {
+        writeCertificates(result, certificates, true);
+    }
+
+    /**
+     * Populate the supplied response with the model representation of the certificates.
+     *
+     * @param result the response to populate.
+     * @param certificates the certificates to add to the response.
+     * @param verbose mode of output.
+     * @throws CertificateEncodingException
+     * @throws NoSuchAlgorithmException
+     */
+    static void writeCertificates(final ModelNode result, final Certificate[] certificates, final boolean verbose) throws CertificateEncodingException, NoSuchAlgorithmException {
         if (certificates != null) {
             for (Certificate current : certificates) {
                 ModelNode certificate = new ModelNode();
-                writeCertificate(certificate, current);
+                writeCertificate(certificate, current, verbose);
                 result.add(certificate);
             }
         }

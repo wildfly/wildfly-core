@@ -107,6 +107,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private static final X500Principal FIREFLY_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly");
     private static final X500Principal INTERMEDIATE_DN = new X500Principal("O=Intermediate Certificate Authority, EMAILADDRESS=intermediateca@wildfly.org, C=UK, ST=Elytron, CN=Intermediate Elytron CA");
     private static final File FIREFLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly.keystore");
+    private static final File FIREFLY_COPY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly-copy.keystore");
     private static final File TEST_FILE = new File(WORKING_DIRECTORY_LOCATION, "test.keystore");
     private static final File TEST_SINGLE_CERT_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-single-cert-reply.cert");
     private static final File TEST_CERT_CHAIN_REPLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "test-cert-chain-reply.cert");
@@ -302,6 +303,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
     private static void removeTestFiles() {
         File[] testFiles = {
                 FIREFLY_FILE,
+                FIREFLY_COPY_FILE,
                 TEST_FILE,
                 TEST_SINGLE_CERT_REPLY_FILE,
                 TEST_CERT_CHAIN_REPLY_FILE,
@@ -428,6 +430,96 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
         operation.get(ClientConstants.OP).set(ClientConstants.REMOVE_OPERATION);
         assertSuccess(services.executeOperation(operation));
+    }
+
+    @Test
+    public void testKeystoreReadVerbose() throws Exception {
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        Files.copy(resources.resolve("firefly.keystore"), resources.resolve("firefly-copy.keystore"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+        ModelNode operation = new ModelNode(); // add keystore
+        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", "ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/firefly-copy.keystore");
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
+        assertSuccess(services.executeOperation(operation));
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
+        assertEquals(2, nodes.size());
+        //["ca", "firefly"]
+        assertEquals("ca",nodes.get(0).asString());
+        assertEquals("firefly",nodes.get(1).asString());
+
+        validateRecursiveReadAliases(true);
+        validateRecursiveReadAliases(false);
+
+        operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+        operation.get(ElytronDescriptionConstants.ALIAS).set("firefly");
+        operation.get(ElytronDescriptionConstants.VERBOSE).set(false);
+        checkCertificate(services.executeOperation(operation).get(ClientConstants.RESULT), false);
+    }
+
+    private void validateRecursiveReadAliases(final boolean verbose) {
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIASES);
+        operation.get(ElytronDescriptionConstants.VERBOSE).set(verbose);
+        operation.get(ElytronDescriptionConstants.RECURSIVE).set(true);
+        List<ModelNode> nodes = assertSuccess(services.executeOperation(operation)).get(ClientConstants.RESULT).asList();
+        assertEquals(2, nodes.size());
+        //[("ca" => {}),("firefly" => {})]
+
+        for(ModelNode node : nodes) {
+            node = node.get(0);
+            final String alias = node.get(ElytronDescriptionConstants.ALIAS).asString();
+            final ModelNode certificateChain = node.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN);
+            if(certificateChain.isDefined()) {
+                for(ModelNode certificateFromChain : certificateChain.asList())
+                    checkCertificate(certificateFromChain, verbose);
+            } else {
+                //need to clean after above .get
+                node.remove(ElytronDescriptionConstants.CERTIFICATE_CHAIN);
+                checkCertificate(node.get(ElytronDescriptionConstants.CERTIFICATE), verbose);
+            }
+
+            final ModelNode readOperation = new ModelNode();
+            readOperation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store","ModifiedKeyStore");
+            readOperation.get(ClientConstants.OP).set(ElytronDescriptionConstants.READ_ALIAS);
+            readOperation.get(ElytronDescriptionConstants.VERBOSE).set(verbose);
+            readOperation.get(ElytronDescriptionConstants.ALIAS).set(alias);
+            final ModelNode aliasReadNode = assertSuccess(services.executeOperation(readOperation)).get(ClientConstants.RESULT);
+            assertEquals(aliasReadNode, node);
+        }
+    }
+
+    private void checkCertificate(final ModelNode certificate, final boolean verbose) {
+        final ModelNode publicKey = certificate.get(ElytronDescriptionConstants.PUBLIC_KEY);
+        if(verbose) {
+            assertNotNull(publicKey);
+            assertTrue(publicKey.isDefined());
+        } else {
+            assertNotNull(publicKey);
+            assertTrue(!publicKey.isDefined());
+            //Cleanup
+            certificate.remove(ElytronDescriptionConstants.PUBLIC_KEY);
+        }
+        final ModelNode encoded = certificate.get(ElytronDescriptionConstants.ENCODED);
+        if(verbose) {
+            assertNotNull(encoded);
+            assertTrue(encoded.isDefined());
+        } else {
+            assertNotNull(encoded);
+            assertTrue(!encoded.isDefined());
+            //Cleanup
+            certificate.remove(ElytronDescriptionConstants.ENCODED);
+        }
     }
 
     @Test
