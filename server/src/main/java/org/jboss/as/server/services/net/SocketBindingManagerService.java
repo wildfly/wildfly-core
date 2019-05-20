@@ -22,36 +22,42 @@
 package org.jboss.as.server.services.net;
 
 import java.net.InetAddress;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.network.SocketBindingManagerImpl;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class SocketBindingManagerService extends SocketBindingManagerImpl implements Service<SocketBindingManager> {
+final class SocketBindingManagerService extends SocketBindingManagerImpl implements Service<SocketBindingManager> {
 
-    private final InjectedValue<NetworkInterfaceBinding> defaultInterfaceBinding = new InjectedValue<NetworkInterfaceBinding>();
+    private final Consumer<SocketBindingManager> socketBindingManagerConsumer;
+    private final Supplier<NetworkInterfaceBinding> networkInterfaceBindingSupplier;
     private final int portOffSet;
 
-    public SocketBindingManagerService(int portOffSet) {
+    SocketBindingManagerService(final Consumer<SocketBindingManager> socketBindingManagerConsumer,
+                                final Supplier<NetworkInterfaceBinding> networkInterfaceBindingSupplier,
+                                final int portOffSet) {
+        this.socketBindingManagerConsumer = socketBindingManagerConsumer;
+        this.networkInterfaceBindingSupplier = networkInterfaceBindingSupplier;
         this.portOffSet = portOffSet;
     }
 
     @Override
-    public void start(StartContext context) throws StartException {
-        //
+    public void start(final StartContext context) {
+        socketBindingManagerConsumer.accept(this);
     }
 
     @Override
-    public void stop(StopContext context) {
-
+    public void stop(final StopContext context) {
+        socketBindingManagerConsumer.accept(null);
     }
 
     @Override
@@ -66,17 +72,12 @@ public class SocketBindingManagerService extends SocketBindingManagerImpl implem
 
     @Override
     public InetAddress getDefaultInterfaceAddress() {
-        return defaultInterfaceBinding.getValue().getAddress();
+        return networkInterfaceBindingSupplier.get().getAddress();
     }
 
     @Override
     public NetworkInterfaceBinding getDefaultInterfaceBinding() {
-        return defaultInterfaceBinding.getValue();
-    }
-
-    public InjectedValue<NetworkInterfaceBinding> getDefaultInterfaceBindingInjector() {
-        return defaultInterfaceBinding;
+        return networkInterfaceBindingSupplier.get();
     }
 
 }
-

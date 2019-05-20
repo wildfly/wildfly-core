@@ -27,13 +27,15 @@ package org.wildfly.extension.io;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.net.CidrAddressTable;
 import org.wildfly.extension.io.logging.IOLogger;
 import org.xnio.OptionMap;
@@ -42,23 +44,36 @@ import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class WorkerService implements Service<XnioWorker> {
 
     private final XnioWorker.Builder builder;
-    final InjectedValue<ExecutorService> injectedExecutor = new InjectedValue<>();
+    private final Consumer<XnioWorker> workerConsumer;
+    private final Supplier<ExecutorService> executorSupplier;
     private final Object stopLock = new Object();
     private XnioWorker worker;
     private volatile StopContext stopContext;
 
     /**
-     * @deprecated Use {@link #WorkerService(XnioWorker.Builder)} instead to allow setting of full range of options.
+     * @deprecated
      */
+    @Deprecated
     public WorkerService(OptionMap optionMap) {
         this(Xnio.getInstance().createWorkerBuilder().populateFromOptions(optionMap));
     }
 
-    public WorkerService(XnioWorker.Builder builder) {
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public WorkerService(final XnioWorker.Builder builder) {
+        this(null, () -> Executors.newFixedThreadPool(1), builder);
+    }
+
+    public WorkerService(final Consumer<XnioWorker> workerConsumer, final Supplier<ExecutorService> executorSupplier, final XnioWorker.Builder builder) {
+        this.workerConsumer = workerConsumer;
+        this.executorSupplier = executorSupplier;
         this.builder = builder;
     }
 
@@ -66,14 +81,22 @@ public class WorkerService implements Service<XnioWorker> {
     public void start(StartContext startContext) throws StartException {
         builder.setTerminationTask(this::stopDone);
         worker = builder.build();
+        // TODO: when deprecated constructors usages are eliminated eliminate this null check
+        if (workerConsumer != null) {
+            workerConsumer.accept(worker);
+        }
     }
 
     @Override
     public void stop(final StopContext context) {
         this.stopContext = context;
-        final ExecutorService executorService = injectedExecutor.getValue();
+        final ExecutorService executorService = executorSupplier.get();
         Runnable asyncStop = () -> {
             XnioWorker localWorker = worker;
+            // TODO: when deprecated constructors usages are eliminated eliminate this null check
+            if (workerConsumer != null) {
+                workerConsumer.accept(null);
+            }
             worker = null;
             localWorker.shutdown();
             boolean interrupted = false;
