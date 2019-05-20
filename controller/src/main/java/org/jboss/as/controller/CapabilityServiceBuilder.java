@@ -18,14 +18,15 @@
 
 package org.jboss.as.controller;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-
-import java.util.function.Supplier;
 
 /**
  * A builder for an individual service in a {@code CapabilityServiceTarget}.
@@ -109,6 +110,15 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
      */
     @Override
     CapabilityServiceBuilder<T> setInstance(Service service);
+
+    /**
+     * Provided capability.
+     *
+     * @param capabilities names of capabilities service will provide.
+     * @param <V> consumed value type
+     * @return consumer providing value
+     */
+    <V> Consumer<V> provides(final RuntimeCapability<?>... capabilities);
 
     /**
      * Capability requirement.

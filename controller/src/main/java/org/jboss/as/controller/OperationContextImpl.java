@@ -61,6 +61,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
@@ -2128,9 +2129,9 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         @SuppressWarnings("unchecked")
         public CapabilityServiceBuilder<?> addCapability(final RuntimeCapability<?> capability) throws IllegalArgumentException {
-            if (capability.isDynamicallyNamed()){
+            if (capability.isDynamicallyNamed()) {
                 return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName(targetAddress)), targetAddress);
-            }else{
+            } else {
                 return new CapabilityServiceBuilderImpl(addService(capability.getCapabilityServiceName()), targetAddress);
             }
         }
@@ -2600,6 +2601,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private static class CapabilityServiceBuilderImpl<T> extends DelegatingServiceBuilder<T> implements CapabilityServiceBuilder<T> {
         private final PathAddress targetAddress;
+
         CapabilityServiceBuilderImpl(ServiceBuilder<T> delegate, PathAddress targetAddress) {
             super(delegate);
             this.targetAddress = targetAddress;
@@ -2643,6 +2645,20 @@ final class OperationContextImpl extends AbstractOperationContext {
         public CapabilityServiceBuilder<T> setInstance(org.jboss.msc.Service service) {
             super.setInstance(service);
             return this;
+        }
+
+        @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?>... capabilities) {
+            if (capabilities == null || capabilities.length == 0) return null;
+            final ServiceName[] serviceNames = new ServiceName[capabilities.length];
+            for (int i = 0; i < capabilities.length; i++) {
+                if (capabilities[i].isDynamicallyNamed()) {
+                    serviceNames[i] = capabilities[i].getCapabilityServiceName(targetAddress);
+                } else {
+                    serviceNames[i] = capabilities[i].getCapabilityServiceName();
+                }
+            }
+            return super.provides(serviceNames);
         }
 
         @Override
