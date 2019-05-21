@@ -685,8 +685,6 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addKeyManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
                                       ServiceTarget serviceTarget) throws OperationFailedException {
-        final ServiceBuilder<AbstractKeyManagerService> serviceBuilder;
-
         ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
 
@@ -700,10 +698,11 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         }
 
         ModelNode pathNode = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl);
+        final ServiceBuilder<?> serviceBuilder;
         if (pathNode.isDefined() == false) {
-            ProviderKeyManagerService keyManagerService = new ProviderKeyManagerService(provider, keystorePassword);
-
-            serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<AbstractKeyManagerService> kmsConsumer = serviceBuilder.provides(serviceName);
+            serviceBuilder.setInstance(new ProviderKeyManagerService(kmsConsumer, null, null, provider, keystorePassword));
         } else {
             String path = pathNode.asString();
 
@@ -716,26 +715,26 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             ModelNode aliasNode = KeystoreAttributes.ALIAS.resolveModelAttribute(context, ssl);
             String alias = aliasNode.isDefined() ? aliasNode.asString() : null;
 
-            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName);
-
-            serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
-
-            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyManagerService.getKeystoreCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
-            if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyManagerService.getKeyCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<AbstractKeyManagerService> kmsConsumer = serviceBuilder.provides(serviceName);
+            Supplier<PathManager> pathManagerSupplier = null;
             if (relativeTo != null) {
-                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                        PathManager.class, keyManagerService.getPathManagerInjector());
+                pathManagerSupplier = serviceBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
                 serviceBuilder.requires(pathName(relativeTo));
             }
+            ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier = null;
+            ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier = null;
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            serviceBuilder.setInstance(new FileKeyManagerService(kmsConsumer, pathManagerSupplier, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName));
         }
 
-        serviceBuilder.setInitialMode(ON_DEMAND).install();
+        serviceBuilder.setInitialMode(ON_DEMAND);
+        serviceBuilder.install();
     }
 
     private void addTrustManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
