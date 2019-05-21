@@ -84,6 +84,12 @@ public class DomainTestCase extends AbstractSubsystemTest {
         if (!services.isSuccessfulBoot()) {
             Assert.fail(services.getBootError().toString());
         }
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "MyDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500Domain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainTwo");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "X500DomainThree");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AnotherDomain");
     }
 
     @Test

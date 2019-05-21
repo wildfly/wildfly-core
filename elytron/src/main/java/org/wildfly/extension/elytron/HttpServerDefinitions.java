@@ -215,7 +215,7 @@ class HttpServerDefinitions {
 
     static ResourceDefinition getServiceLoaderServerMechanismFactoryDefinition() {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpServerAuthenticationMechanismFactory>(HttpServerAuthenticationMechanismFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.LAZY, attributes, HTTP_SERVER_MECHANISM_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpServerAuthenticationMechanismFactory> getValueSupplier(

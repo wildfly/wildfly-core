@@ -19,8 +19,13 @@ package org.wildfly.extension.elytron;
 
 import mockit.Mock;
 import mockit.MockUp;
+
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
+import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
@@ -198,4 +203,10 @@ class TestEnvironment extends AdditionalInitialization {
         new ClassLoadingAttributeDefinitionsMock();
     }
 
+    static void activateService(KernelServices services, RuntimeCapability capability, String... dynamicNameElements) throws InterruptedException {
+        ServiceName serviceName = capability.getCapabilityServiceName(dynamicNameElements);
+        ServiceController<?> serviceController = services.getContainer().getService(serviceName);
+        serviceController.setMode(ServiceController.Mode.ACTIVE);
+        serviceController.awaitValue();
+    }
 }

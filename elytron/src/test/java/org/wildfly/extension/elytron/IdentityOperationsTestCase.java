@@ -110,6 +110,9 @@ public class IdentityOperationsTestCase extends AbstractSubsystemTest {
         KernelServices services = createKernelServicesBuilder(null)
                 .setSubsystemXmlResource("identity-management.xml")
                 .build();
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FileSystemDomain");
+
         PathAddress securityDomainAddress = getSecurityDomainAddress("FileSystemDomain");
         String principalName = "plainUser";
         ModelNode operation = createAddIdentityOperation(getSecurityRealmAddress("FileSystemRealm"), principalName);

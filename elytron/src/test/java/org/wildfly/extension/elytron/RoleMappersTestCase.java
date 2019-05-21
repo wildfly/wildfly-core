@@ -34,6 +34,8 @@ import java.io.IOException;
  * @author <a href="mailto:mmazanek@redhat.com">Martin Mazanek</a>
  */
 public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
+    private KernelServices services = null;
+
     public RoleMappersTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
@@ -43,12 +45,21 @@ public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
         return readResource("role-mappers-test.xml");
     }
 
-    @Test
-    public void testMappedRoleMapper() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
+    private void init(String... domainsToActivate) throws Exception {
+        services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
             Assert.fail(services.getBootError().toString());
         }
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain1");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain2");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain3");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain4");
+    }
+
+    @Test
+    public void testMappedRoleMapper() throws Exception {
+        init("TestDomain1");
 
         ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain1");
         Assert.assertNotNull(services.getContainer());
@@ -73,10 +84,7 @@ public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testKeepMappedRoleMapper() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
-        if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
-        }
+        init("TestDomain2");
 
         ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain2");
         Assert.assertNotNull(services.getContainer());
@@ -101,10 +109,7 @@ public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testKeepNonMappedRoleMapper() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
-        if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
-        }
+        init("TestDomain3");
 
         ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain3");
         Assert.assertNotNull(services.getContainer());
@@ -129,10 +134,7 @@ public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testKeepBothMappedRoleMapper() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
-        if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
-        }
+        init("TestDomain4");
 
         ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("TestDomain4");
         Assert.assertNotNull(services.getContainer());

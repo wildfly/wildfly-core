@@ -371,7 +371,7 @@ class AuthenticationFactoryDefinitions {
         AttributeDefinition mechanismConfigurationAttribute = getMechanismConfiguration(HTTP_AUTHENTICATION_FACTORY_CAPABILITY);
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, HTTP_SERVER_MECHANISM_FACTORY, mechanismConfigurationAttribute };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpAuthenticationFactory>(HttpAuthenticationFactory.class, attributes, HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<HttpAuthenticationFactory>(HttpAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.LAZY, attributes, HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<HttpAuthenticationFactory> getValueSupplier(
@@ -456,7 +456,7 @@ class AuthenticationFactoryDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, SASL_SERVER_FACTORY, mechanismConfigurationAttribute };
 
-        AbstractAddStepHandler add = new TrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.LAZY, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SaslAuthenticationFactory> getValueSupplier(
