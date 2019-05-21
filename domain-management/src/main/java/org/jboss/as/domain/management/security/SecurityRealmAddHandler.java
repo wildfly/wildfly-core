@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -301,18 +302,15 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,
                                 boolean injectServerManager, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName jaasServiceName = JaasCallbackHandler.ServiceUtil.createServiceName(realmName);
-        String name = JaasAuthenticationResourceDefinition.NAME.resolveModelAttribute(context, jaas).asString();
-        boolean assignGroups = JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.resolveModelAttribute(context, jaas).asBoolean();
-        JaasCallbackHandler jaasCallbackHandler = new JaasCallbackHandler(realmName, name, assignGroups);
-
-        ServiceBuilder<?> jaasBuilder = serviceTarget.addService(jaasServiceName, jaasCallbackHandler);
-        if (injectServerManager) {
-            jaasBuilder.addDependency(ServiceName.JBOSS.append("security", "simple-security-manager"),
-                    ServerSecurityManager.class, jaasCallbackHandler.getSecurityManagerValue());
-        }
-
-        jaasBuilder.setInitialMode(ON_DEMAND).install();
+        final ServiceName jaasServiceName = JaasCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final String name = JaasAuthenticationResourceDefinition.NAME.resolveModelAttribute(context, jaas).asString();
+        final boolean assignGroups = JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.resolveModelAttribute(context, jaas).asBoolean();
+        final ServiceBuilder<?> builder = serviceTarget.addService(jaasServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(jaasServiceName);
+        final Supplier<ServerSecurityManager> smSupplier = injectServerManager ? builder.requires(ServiceName.JBOSS.append("security", "simple-security-manager")) : null;
+        builder.setInstance(new JaasCallbackHandler(chsConsumer, smSupplier, realmName, name, assignGroups));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName);
     }
