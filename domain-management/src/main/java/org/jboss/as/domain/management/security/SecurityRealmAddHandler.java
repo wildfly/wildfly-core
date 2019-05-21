@@ -783,19 +783,21 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
         ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
         boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
+        final ServiceBuilder<?> builder = serviceTarget.addService(secretServiceName);
+        final Consumer<CallbackHandlerFactory> chfConsumer = builder.provides(secretServiceName);
+        ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+        if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
+            credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, builder);
+        }
         SecretIdentityService sis;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-            sis = new SecretIdentityService(resolvedValueNode.asString(), false);
+            sis = new SecretIdentityService(chfConsumer, credentialSourceSupplier, resolvedValueNode.asString(), false);
         } else {
-            sis = new SecretIdentityService(resolvedValueNode.asString(), base64);
+            sis = new SecretIdentityService(chfConsumer, credentialSourceSupplier, resolvedValueNode.asString(), base64);
         }
-        final ServiceBuilder<CallbackHandlerFactory> serviceBuilder = serviceTarget.addService(secretServiceName, sis)
-                .setInitialMode(ON_DEMAND);
-        if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-                sis.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, serviceBuilder));
-            }
-        serviceBuilder.install();
+        builder.setInstance(sis);
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
         CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName);
     }
 
