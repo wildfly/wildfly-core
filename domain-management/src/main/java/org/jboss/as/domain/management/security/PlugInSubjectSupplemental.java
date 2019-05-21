@@ -34,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.Subject;
 
@@ -43,8 +45,10 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.plugin.AuthorizationPlugIn;
 import org.jboss.as.domain.management.plugin.PlugInConfigurationSupport;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -57,26 +61,32 @@ import org.wildfly.security.evidence.Evidence;
  * The {@link SubjectSupplementalService} for Plug-Ins
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PlugInSubjectSupplemental extends AbstractPlugInService implements Service<SubjectSupplementalService>,
+public class PlugInSubjectSupplemental extends AbstractPlugInService implements Service,
         SubjectSupplementalService {
 
     private static final String SERVICE_SUFFIX = "plug-in-authorization";
 
-    PlugInSubjectSupplemental(final String realmName, final String name, final Map<String, String> properties) {
-        super(realmName, name, properties);
+    private final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer;
+
+    PlugInSubjectSupplemental(final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer,
+                              final Supplier<PlugInLoaderService> plugInLoaderSupplier,
+                              final String realmName, final String name, final Map<String, String> properties) {
+        super(plugInLoaderSupplier, realmName, name, properties);
+        this.subjectSupplementalServiceConsumer = subjectSupplementalServiceConsumer;
     }
-
-    /*
-     * Service Methods
-     */
-
-    // The start/stop methods in the base class are sufficient.
 
     @Override
-    public SubjectSupplementalService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+    public void start(final StartContext context) {
+        subjectSupplementalServiceConsumer.accept(this);
     }
+
+    @Override
+    public void stop(final StopContext context) {
+        subjectSupplementalServiceConsumer.accept(null);
+    }
+
 
     @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {

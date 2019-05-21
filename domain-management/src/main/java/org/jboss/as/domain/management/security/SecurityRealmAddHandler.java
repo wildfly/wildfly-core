@@ -410,19 +410,18 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
                                                 SecurityRealmService registry, ServiceTarget serviceTarget,
                                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName plugInServiceName = PlugInAuthenticationCallbackHandler.ServiceUtil.createServiceName(realmName);
-
+        final ServiceName plugInServiceName = PlugInAuthenticationCallbackHandler.ServiceUtil.createServiceName(realmName);
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
         final Map<String, String> properties = resolveProperties(context, model);
-        String mechanismName = PlugInAuthenticationResourceDefinition.MECHANISM.resolveModelAttribute(context, model).asString();
-        AuthMechanism mechanism = AuthMechanism.valueOf(mechanismName);
-        PlugInAuthenticationCallbackHandler plugInService = new PlugInAuthenticationCallbackHandler(registry.getName(),
-                pluginName, properties, mechanism);
+        final String mechanismName = PlugInAuthenticationResourceDefinition.MECHANISM.resolveModelAttribute(context, model).asString();
+        final AuthMechanism mechanism = AuthMechanism.valueOf(mechanismName);
 
-        ServiceBuilder<CallbackHandlerService> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInService);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInService.getPlugInLoaderServiceValue(), realmName);
-
-        plugInBuilder.setInitialMode(ON_DEMAND).install();
+        final ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = plugInBuilder.provides(plugInServiceName);
+        final Supplier<PlugInLoaderService> pilSupplier = PlugInLoaderService.ServiceUtil.requires(plugInBuilder, realmName);
+        plugInBuilder.setInstance(new PlugInAuthenticationCallbackHandler(chsConsumer, pilSupplier, registry.getName(), pluginName, properties, mechanism));
+        plugInBuilder.setInitialMode(ON_DEMAND);
+        plugInBuilder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
     }
@@ -480,16 +479,16 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     private void addPlugInAuthorizationService(OperationContext context, ModelNode model, String realmName,
                                                ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
                                                InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
-
-        ServiceName plugInServiceName = PlugInSubjectSupplemental.ServiceUtil.createServiceName(realmName);
+        final ServiceName plugInServiceName = PlugInSubjectSupplemental.ServiceUtil.createServiceName(realmName);
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
         final Map<String, String> properties = resolveProperties(context, model);
-        PlugInSubjectSupplemental plugInSubjectSupplemental = new PlugInSubjectSupplemental(realmName, pluginName, properties);
 
-        ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInSubjectSupplemental);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInSubjectSupplemental.getPlugInLoaderServiceValue(), realmName);
-
-        plugInBuilder.setInitialMode(ON_DEMAND).install();
+        final ServiceBuilder<?> builder = serviceTarget.addService(plugInServiceName);
+        final Consumer<SubjectSupplementalService> sssConsumer = builder.provides(plugInServiceName);
+        final Supplier<PlugInLoaderService> pilSupplier = PlugInLoaderService.ServiceUtil.requires(builder, realmName);
+        builder.setInstance(new PlugInSubjectSupplemental(sssConsumer, pilSupplier, realmName, pluginName, properties));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
     }

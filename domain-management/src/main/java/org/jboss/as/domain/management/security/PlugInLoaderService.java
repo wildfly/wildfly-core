@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -42,7 +43,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service responsible for loading plug-ins as needed.
@@ -177,10 +177,9 @@ public class PlugInLoaderService implements Service {
             return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, InjectedValue<PlugInLoaderService> injector, String realmName) {
-            return sb.addDependency(createServiceName(realmName), PlugInLoaderService.class, injector);
+        public static Supplier<PlugInLoaderService> requires(final ServiceBuilder<?> sb, final String realmName) {
+            return sb.requires(createServiceName(realmName));
         }
-
     }
 
 }
