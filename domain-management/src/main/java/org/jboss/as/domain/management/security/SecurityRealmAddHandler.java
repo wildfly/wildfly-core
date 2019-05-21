@@ -655,29 +655,30 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
         if (keyManagerServiceName != null) {
             // An alias will not be set on the trust based SSLContext.
-            SSLContextService fullSSLContextService = new SSLContextService(protocol, enabledCipherSuites, enabledProtocols);
-            ServiceBuilder<SSLContext> fullBuilder = serviceTarget.addService(fullServiceName, fullSSLContextService);
-            AbstractKeyManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getKeyManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-            if (trustManagerServiceName != null) {
-                AbstractTrustManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-            }
+            final ServiceBuilder<?> fullBuilder = serviceTarget.addService(fullServiceName);
+            final Consumer<SSLContext> sslContextConsumer = fullBuilder.provides(fullServiceName);
+            final Supplier<AbstractKeyManagerService> keyManagersSupplier = AbstractKeyManagerService.ServiceUtil.requires(fullBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName));
+            final Supplier<TrustManager[]> trustManagersSupplier = trustManagerServiceName != null ? AbstractTrustManagerService.ServiceUtil.requires(fullBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName)) : null;
+            fullBuilder.setInstance(new SSLContextService(sslContextConsumer, keyManagersSupplier, trustManagersSupplier, protocol, enabledCipherSuites, enabledProtocols));
             serviceBuilderConsumer.accept(fullBuilder);
-
-            fullBuilder.setInitialMode(ON_DEMAND).install();
+            fullBuilder.setInitialMode(ON_DEMAND);
+            fullBuilder.install();
         }
 
         // Always register this one - if no KeyStore is defined we can add an alias to this.
-        SSLContextService trustOnlySSLContextService = new SSLContextService(protocol, enabledCipherSuites, enabledProtocols);
-        ServiceBuilder<SSLContext> trustBuilder = serviceTarget.addService(trustOnlyServiceName, trustOnlySSLContextService);
-        if (keyManagerServiceName == null) {
+        final ServiceBuilder<?> trustBuilder = serviceTarget.addService(trustOnlyServiceName);
+        final Consumer<SSLContext> sslContextConsumer;
+        if (keyManagerServiceName != null) {
+            sslContextConsumer = trustBuilder.provides(trustOnlyServiceName);
+        } else {
             // No KeyStore so just alias to this.
-            trustBuilder.addAliases(fullServiceName);
+            sslContextConsumer = trustBuilder.provides(trustOnlyServiceName, fullServiceName);
         }
-        if (trustManagerServiceName != null) {
-            AbstractTrustManagerService.ServiceUtil.addDependency(trustBuilder, trustOnlySSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-        }
+        final Supplier<TrustManager[]> trustManagersSupplier = trustManagerServiceName != null ? AbstractTrustManagerService.ServiceUtil.requires(trustBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName)) : null;
+        trustBuilder.setInstance(new SSLContextService(sslContextConsumer, null, trustManagersSupplier, protocol, enabledCipherSuites, enabledProtocols));
         serviceBuilderConsumer.accept(trustBuilder);
-        trustBuilder.setInitialMode(ON_DEMAND).install();
+        trustBuilder.setInitialMode(ON_DEMAND);
+        trustBuilder.install();
 
         SSLContextService.ServiceUtil.addDependency(realmBuilder, injector, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
     }

@@ -24,6 +24,7 @@ package org.jboss.as.domain.management.security;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
@@ -46,6 +47,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * Service to handle the creation of the TrustManager[].
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
 
@@ -149,12 +151,9 @@ abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
             return parentService.append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<TrustManager[]> injector, final ServiceName parentService) {
-            sb.addDependency(createServiceName(parentService), TrustManager[].class, injector);
-
-            return sb;
+        public static Supplier<TrustManager[]> requires(final ServiceBuilder<?> sb, final ServiceName parentService) {
+            return sb.requires(createServiceName(parentService));
         }
-
     }
 
 }

@@ -25,6 +25,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -46,6 +47,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * Service to handle the creation of the KeyManager[].
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerService> {
 
@@ -152,10 +154,8 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
             return parentService.append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<AbstractKeyManagerService> injector, final ServiceName parentService) {
-            sb.addDependency(createServiceName(parentService), AbstractKeyManagerService.class, injector);
-
-            return sb;
+        public static Supplier<AbstractKeyManagerService> requires(final ServiceBuilder<?> sb, final ServiceName parentService) {
+            return sb.requires(createServiceName(parentService));
         }
 
     }
