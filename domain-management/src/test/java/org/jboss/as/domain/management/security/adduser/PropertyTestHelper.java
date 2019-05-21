@@ -77,7 +77,7 @@ public class PropertyTestHelper {
     }
 
     protected Properties loadProperties(String filePath) throws StartException, IOException {
-        PropertiesFileLoader propertiesLoad = new PropertiesFileLoader(filePath, null);
+        PropertiesFileLoader propertiesLoad = new PropertiesFileLoader(filePath);
         propertiesLoad.start(null);
         Properties properties = (Properties) propertiesLoad.getProperties().clone();
         propertiesLoad.stop(null);

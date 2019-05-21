@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security;
 
+import org.jboss.as.controller.services.path.PathManager;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
@@ -57,8 +60,12 @@ public class UserPropertiesFileLoader extends PropertiesFileLoader {
      * End of state maintained during persistence.
      */
 
-    public UserPropertiesFileLoader(final String path, final String relativeTo) {
-        super(path, relativeTo);
+    public UserPropertiesFileLoader(final Supplier<PathManager> pathManagerSupplier, final String path, final String relativeTo) {
+        super(pathManagerSupplier, path, relativeTo);
+    }
+
+    public UserPropertiesFileLoader(final String path) {
+        super(null, path, null);
     }
 
     public String getRealmName() throws IOException {

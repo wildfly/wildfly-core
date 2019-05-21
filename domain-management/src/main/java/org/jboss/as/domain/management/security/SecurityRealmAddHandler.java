@@ -430,25 +430,22 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                                                     ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
                                                     Injector<CallbackHandlerService> injector) throws OperationFailedException {
 
-        ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
-
+        final ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
         final String path = PropertiesAuthenticationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
         final ModelNode relativeToNode = PropertiesAuthenticationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
         final boolean plainText = PropertiesAuthenticationResourceDefinition.PLAIN_TEXT.resolveModelAttribute(context, properties).asBoolean();
-        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+        final String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-        PropertiesCallbackHandler propsCallbackHandler = new PropertiesCallbackHandler(realmName, path, relativeTo, plainText);
-
-        ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsCallbackHandler);
-
+        final ServiceBuilder<?> builder = serviceTarget.addService(propsServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(propsServiceName);
+        Supplier<PathManager> pmSupplier = null;
         if (relativeTo != null) {
-            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                    PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
-            propsBuilder.requires(pathName(relativeTo));
+            pmSupplier = builder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+            builder.requires(pathName(relativeTo));
         }
-
-        propsBuilder.setInitialMode(ON_DEMAND)
-                .install();
+        builder.setInstance(new PropertiesCallbackHandler(chsConsumer, pmSupplier, realmName, path, relativeTo, plainText));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
     }
@@ -456,22 +453,21 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     private void addPropertiesAuthorizationService(OperationContext context, ModelNode properties,
                                                    String realmName, ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
                                                    InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
-        ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
-
+        final ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
         final String path = PropertiesAuthorizationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
         final ModelNode relativeToNode = PropertiesAuthorizationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
-        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+        final String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-        PropertiesSubjectSupplemental propsSubjectSupplemental = new PropertiesSubjectSupplemental(realmName, path, relativeTo);
-
-        ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsSubjectSupplemental);
+        final ServiceBuilder<?> builder = serviceTarget.addService(propsServiceName);
+        final Consumer<SubjectSupplementalService> sssConsumer = builder.provides(propsServiceName);
+        Supplier<PathManager> pmSupplier = null;
         if (relativeTo != null) {
-            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                    PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
-            propsBuilder.requires(pathName(relativeTo));
+            pmSupplier = builder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+            builder.requires(pathName(relativeTo));
         }
-
-        propsBuilder.setInitialMode(ON_DEMAND).install();
+        builder.setInstance(new PropertiesSubjectSupplemental(sssConsumer, pmSupplier, realmName, path, relativeTo));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
     }

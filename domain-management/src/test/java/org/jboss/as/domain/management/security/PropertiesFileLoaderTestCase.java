@@ -97,7 +97,7 @@ public class PropertiesFileLoaderTestCase {
             tmpFile = createTempFile();
             writeTestDataToFile(tmpFile);
 
-            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
             verifyProperties(props, props.size());
@@ -114,7 +114,7 @@ public class PropertiesFileLoaderTestCase {
             tmpFile = createTempFile();
             writeTestDataToFile(tmpFile);
 
-            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
             props.put("NEW", "VALUE");
@@ -122,7 +122,7 @@ public class PropertiesFileLoaderTestCase {
             loader.stop(null);
 
             // reload the file and make sure everything is there
-            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader2.start(null);
             Properties props2 = loader2.getProperties();
             verifyProperties(props2, props2.size()-1, "NEW", "VALUE");
@@ -139,7 +139,7 @@ public class PropertiesFileLoaderTestCase {
             tmpFile = createTempFile();
             writeTestDataToFile(tmpFile);
 
-            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
             props.put("EMPTY", "");
@@ -151,7 +151,7 @@ public class PropertiesFileLoaderTestCase {
             loader.stop(null);
 
             //verify all properties are present
-            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader2.start(null);
             Properties props2 = loader2.getProperties();
             verifyProperties(props2, props2.size()-2, "NEW", "VALUE");
@@ -173,7 +173,7 @@ public class PropertiesFileLoaderTestCase {
             tmpFile = createTempFile();
             writeTestDataToFile(tmpFile);
 
-            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
             props.remove("ABC");
@@ -181,7 +181,7 @@ public class PropertiesFileLoaderTestCase {
             loader.stop(null);
 
             // reload the file and make sure the removed item has been removed
-            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader2.start(null);
             Properties props2 = loader2.getProperties();
             verifyProperties(props2, props2.size()+1, "ABC", null);
@@ -199,7 +199,7 @@ public class PropertiesFileLoaderTestCase {
             tmpFile = createTempFile();
             writeTestDataToFile(tmpFile);
 
-            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
             props.put("ABC", "321");
@@ -207,7 +207,7 @@ public class PropertiesFileLoaderTestCase {
             loader.stop(null);
 
             // reload the file and make sure the removed item has been removed
-            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath(), null);
+            PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader2.start(null);
             Properties props2 = loader2.getProperties();
             verifyProperties(props2, props2.size(), "ABC", "321");
