@@ -382,18 +382,18 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     private void addLocalService(OperationContext context, ModelNode local, String realmName, ServiceTarget serviceTarget,
                                  ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
         ServiceName localServiceName = LocalCallbackHandlerService.ServiceUtil.createServiceName(realmName);
-
         ModelNode node = LocalAuthenticationResourceDefinition.DEFAULT_USER.resolveModelAttribute(context, local);
         String defaultUser = node.isDefined() ? node.asString() : null;
         node = LocalAuthenticationResourceDefinition.ALLOWED_USERS.resolveModelAttribute(context, local);
         String allowedUsers = node.isDefined() ? node.asString() : null;
         node = LocalAuthenticationResourceDefinition.SKIP_GROUP_LOADING.resolveModelAttribute(context, local);
         boolean skipGroupLoading = node.asBoolean();
-        LocalCallbackHandlerService localCallbackHandler = new LocalCallbackHandlerService(defaultUser, allowedUsers, skipGroupLoading);
 
-        serviceTarget.addService(localServiceName, localCallbackHandler)
-                .setInitialMode(ON_DEMAND)
-                .install();
+        final ServiceBuilder<?> builder = serviceTarget.addService(localServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(localServiceName);
+        builder.setInstance(new LocalCallbackHandlerService(chsConsumer, defaultUser, allowedUsers, skipGroupLoading));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName);
     }
