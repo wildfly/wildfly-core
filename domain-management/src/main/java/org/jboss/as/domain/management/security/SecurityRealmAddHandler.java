@@ -313,8 +313,8 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName);
     }
 
-    private <R, K> LdapCacheService<R, K> createCacheService(OperationContext context, LdapSearcher<R, K> searcher,
-            ModelNode cache) throws OperationFailedException {
+    private <R, K> LdapCacheService<R, K> createCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer,
+            final OperationContext context, final LdapSearcher<R, K> searcher, final ModelNode cache) throws OperationFailedException {
         if (cache != null && cache.isDefined()) {
             ModelNode cacheDefinition = null;
             boolean byAccessTime = false;
@@ -330,12 +330,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                         .asBoolean();
                 int maxSize = LdapCacheResourceDefinition.MAX_CACHE_SIZE.resolveModelAttribute(context, cacheDefinition).asInt();
 
-                return byAccessTime ? LdapCacheService.createByAccessCacheService(searcher, evictionTime, cacheFailures,
-                        maxSize) : LdapCacheService.createBySearchCacheService(searcher, evictionTime, cacheFailures, maxSize);
+                return byAccessTime ? LdapCacheService.createByAccessCacheService(ldapSearchCacheConsumer, searcher, evictionTime, cacheFailures,
+                        maxSize) : LdapCacheService.createBySearchCacheService(ldapSearchCacheConsumer, searcher, evictionTime, cacheFailures, maxSize);
             }
         }
 
-        return LdapCacheService.createNoCacheService(searcher);
+        return LdapCacheService.createNoCacheService(ldapSearchCacheConsumer, searcher);
     }
 
     private void addLdapService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
@@ -359,10 +359,13 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         } else {
             userSearcher = LdapUserSearcherFactory.createForAdvancedFilter(baseDn, recursive, userDn, advancedFilter, usernameLoad);
         }
-        final LdapCacheService<LdapEntry, String> cacheService = createCacheService(context, userSearcher, ldap.get(CACHE));
 
-        ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
-        serviceTarget.addService(userSearcherCacheName, cacheService).setInitialMode(ON_DEMAND).install();
+        final ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
+        final ServiceBuilder<?> userSearchCacheBuilder = serviceTarget.addService(userSearcherCacheName);
+        final Consumer<LdapSearcherCache<LdapEntry, String>> lscConsumer = userSearchCacheBuilder.provides(userSearcherCacheName);
+        userSearchCacheBuilder.setInstance(createCacheService(lscConsumer, context, userSearcher, ldap.get(CACHE)));
+        userSearchCacheBuilder.setInitialMode(ON_DEMAND);
+        userSearchCacheBuilder.install();
 
         final ServiceBuilder<?> builder = serviceTarget.addService(ldapServiceName);
         final Consumer<CallbackHandlerService> chsConsumer = builder.provides(ldapServiceName);
@@ -533,10 +536,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         }
 
         if (userSearcher != null) {
-            LdapCacheService<LdapEntry, String> userSearcherCache = createCacheService(context, userSearcher, userCache);
-
-            ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(false, true, realmName);
-            serviceTarget.addService(userSearcherCacheName, userSearcherCache).setInitialMode(ON_DEMAND).install();
+            final ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(false, true, realmName);
+            final ServiceBuilder<?> userSearchCacheBuilder = serviceTarget.addService(userSearcherCacheName);
+            final Consumer<LdapSearcherCache<LdapEntry, String>> lscConsumer = userSearchCacheBuilder.provides(userSearcherCacheName);
+            userSearchCacheBuilder.setInstance(createCacheService(lscConsumer, context, userSearcher, userCache));
+            userSearchCacheBuilder.setInitialMode(ON_DEMAND);
+            userSearchCacheBuilder.install();
         }
 
         ModelNode groupSearch = ldap.require(GROUP_SEARCH);
@@ -573,10 +578,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             groupSearcher = LdapGroupSearcherFactory.createForPrincipalToGroup(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, GroupName.SIMPLE == groupName, shouldParseGroupFromDN);
         }
 
-        LdapCacheService<LdapEntry[], LdapEntry> groupCacheService = createCacheService(context, groupSearcher, groupCache);
-
-        ServiceName groupCacheServiceName = LdapSearcherCache.ServiceUtil.createServiceName(false, false, realmName);
-        serviceTarget.addService(groupCacheServiceName, groupCacheService).setInitialMode(ON_DEMAND).install();
+        final ServiceName groupCacheServiceName = LdapSearcherCache.ServiceUtil.createServiceName(false, false, realmName);
+        final ServiceBuilder<?> groupCacheBuilder = serviceTarget.addService(groupCacheServiceName);
+        final Consumer<LdapSearcherCache<LdapEntry[], LdapEntry>> lscConsumer = groupCacheBuilder.provides(groupCacheServiceName);
+        groupCacheBuilder.setInstance(createCacheService(lscConsumer, context, groupSearcher, groupCache));
+        groupCacheBuilder.setInitialMode(ON_DEMAND);
+        groupCacheBuilder.install();
 
         String connectionName = LdapAuthorizationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
 
