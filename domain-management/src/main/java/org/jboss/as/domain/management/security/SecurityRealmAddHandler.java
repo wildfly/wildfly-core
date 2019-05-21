@@ -276,12 +276,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addClientCertService(String realmName, ServiceTarget serviceTarget,
                                       ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) {
-        ServiceName clientCertServiceName = ClientCertCallbackHandler.ServiceUtil.createServiceName(realmName);
-        ClientCertCallbackHandler clientCertCallbackHandler = new ClientCertCallbackHandler();
-
-        serviceTarget.addService(clientCertServiceName, clientCertCallbackHandler)
-                .setInitialMode(ON_DEMAND)
-                .install();
+        final ServiceName clientCertServiceName = ClientCertCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(clientCertServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(clientCertServiceName);
+        builder.setInstance(new ClientCertCallbackHandler(chsConsumer));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName);
     }
