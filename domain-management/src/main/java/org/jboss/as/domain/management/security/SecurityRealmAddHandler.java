@@ -288,12 +288,13 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
             ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
-        boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
-        KerberosCallbackHandler kerberosCallbackHandler = new KerberosCallbackHandler(removeRealm);
-
-        ServiceBuilder<?> ccBuilder = serviceTarget.addService(kerberosServiceName, kerberosCallbackHandler);
-        ccBuilder.setInitialMode(ON_DEMAND).install();
+        final ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
+        final ServiceBuilder<?> builder = serviceTarget.addService(kerberosServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(kerberosServiceName);
+        builder.setInstance(new KerberosCallbackHandler(chsConsumer, removeRealm));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName);
     }
