@@ -258,21 +258,18 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         return authConnectionManager.equals(authzConnectionManager);
     }
 
-    private ServiceName addPlugInLoaderService(String realmName, ModelNode plugInModel,
-                                               ServiceTarget serviceTarget) {
-        ServiceName plugInLoaderName = PlugInLoaderService.ServiceUtil.createServiceName(realmName);
-
-        List<Property> plugIns = plugInModel.asPropertyList();
-        ArrayList<String> knownNames = new ArrayList<String>(plugIns.size());
+    private void addPlugInLoaderService(String realmName, ModelNode plugInModel, ServiceTarget serviceTarget) {
+        final ServiceName plugInLoaderName = PlugInLoaderService.ServiceUtil.createServiceName(realmName);
+        final List<Property> plugIns = plugInModel.asPropertyList();
+        final ArrayList<String> knownNames = new ArrayList<String>(plugIns.size());
         for (Property current : plugIns) {
             knownNames.add(current.getName());
         }
-        PlugInLoaderService loaderService = new PlugInLoaderService(Collections.unmodifiableList(knownNames));
-        serviceTarget.addService(plugInLoaderName, loaderService)
-                .setInitialMode(Mode.ON_DEMAND)
-                .install();
-
-        return plugInLoaderName;
+        final ServiceBuilder<?> builder = serviceTarget.addService(plugInLoaderName);
+        final Consumer<PlugInLoaderService> pilsConsumer = builder.provides(plugInLoaderName);
+        builder.setInstance(new PlugInLoaderService(pilsConsumer, Collections.unmodifiableList(knownNames)));
+        builder.setInitialMode(Mode.ON_DEMAND);
+        builder.install();
     }
 
     private void addClientCertService(String realmName, ServiceTarget serviceTarget,
