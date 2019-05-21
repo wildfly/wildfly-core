@@ -82,6 +82,7 @@ import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService;
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource.GroupName;
 import org.jboss.dmr.ModelNode;
@@ -351,7 +352,6 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         final boolean recursive = LdapAuthenticationResourceDefinition.RECURSIVE.resolveModelAttribute(context, ldap).asBoolean();
         final boolean allowEmptyPasswords = LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.resolveModelAttribute(context, ldap).asBoolean();
         final String userDn = LdapAuthenticationResourceDefinition.USER_DN.resolveModelAttribute(context, ldap).asString();
-        UserLdapCallbackHandler ldapCallbackHandler = new UserLdapCallbackHandler(allowEmptyPasswords, shareConnection);
 
         final LdapSearcher<LdapEntry, String> userSearcher;
         if (usernameAttribute != null) {
@@ -364,12 +364,14 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
         serviceTarget.addService(userSearcherCacheName, cacheService).setInitialMode(ON_DEMAND).install();
 
-        ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapServiceName, ldapCallbackHandler);
-        String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, ldapCallbackHandler.getConnectionManagerInjector(), connectionManager);
-        LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, ldapCallbackHandler.getLdapUserSearcherInjector(), true, true, realmName);
-
-        ldapBuilder.setInitialMode(ON_DEMAND).install();
+        final ServiceBuilder<?> builder = serviceTarget.addService(ldapServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(ldapServiceName);
+        final String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
+        final Supplier<LdapConnectionManager> lcmSupplier = LdapConnectionManagerService.ServiceUtil.requires(builder, connectionManager);
+        final Supplier<LdapSearcherCache<LdapEntry, String>> uscSupplier = LdapSearcherCache.ServiceUtil.requires(builder, true, true, realmName);
+        builder.setInstance(new UserLdapCallbackHandler(chsConsumer, lcmSupplier, uscSupplier, allowEmptyPasswords, shareConnection));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, ldapServiceName);
     }

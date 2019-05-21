@@ -26,6 +26,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -51,6 +52,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * The LDAP connection manager to maintain the LDAP connections.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com>Richard Opalka</a>
  */
 public class LdapConnectionManagerService implements Service<LdapConnectionManager>, LdapConnectionManager {
 
@@ -347,10 +349,14 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
             return BASE_SERVICE_NAME.append(connectionName);
         }
 
+        @Deprecated
         public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<LdapConnectionManager> injector, String connectionName) {
             return sb.addDependency(createServiceName(connectionName), LdapConnectionManager.class, injector);
         }
 
+        public static Supplier<LdapConnectionManager> requires(final ServiceBuilder<?> sb, final String connectionName) {
+            return sb.requires(createServiceName(connectionName));
+        }
     }
 
     static class Config {
