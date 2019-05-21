@@ -582,15 +582,16 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
         String connectionName = LdapAuthorizationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
 
-        LdapSubjectSupplementalService service = new LdapSubjectSupplementalService(realmName, shareConnection, forceUserDnSearch, iterative, groupName);
-        ServiceBuilder<SubjectSupplementalService> ldapBuilder = serviceTarget.addService(ldapName, service)
-                .setInitialMode(ON_DEMAND);
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, service.getConnectionManagerInjector(), connectionName);
+        final ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapName);
+        final Consumer<SubjectSupplementalService> sssConsumer = ldapBuilder.provides(ldapName);
+        final Supplier<LdapConnectionManager> lcmSupplier = LdapConnectionManagerService.ServiceUtil.requires(ldapBuilder, connectionName);
+        Supplier<LdapSearcherCache<LdapEntry, String>> usSupplier = null;
         if (userSearcher != null) {
-            LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapUserSearcherInjector(), false, true, realmName);
+            usSupplier = LdapSearcherCache.ServiceUtil.requires(ldapBuilder, false, true, realmName);
         }
-        LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapGroupSearcherInjector(), false, false, realmName);
-
+        final Supplier<LdapSearcherCache<LdapEntry[], LdapEntry>> gsSupplier = LdapSearcherCache.ServiceUtil.requires(ldapBuilder, false, false, realmName);
+        ldapBuilder.setInstance(new LdapSubjectSupplementalService(sssConsumer, lcmSupplier, usSupplier, gsSupplier, realmName, shareConnection, forceUserDnSearch, iterative, groupName));
+        ldapBuilder.setInitialMode(ON_DEMAND);
         ldapBuilder.install();
 
         SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, ldapName);

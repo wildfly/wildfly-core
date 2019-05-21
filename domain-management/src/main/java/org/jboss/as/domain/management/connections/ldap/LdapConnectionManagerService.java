@@ -349,11 +349,6 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
             return BASE_SERVICE_NAME.append(connectionName);
         }
 
-        @Deprecated
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<LdapConnectionManager> injector, String connectionName) {
-            return sb.addDependency(createServiceName(connectionName), LdapConnectionManager.class, injector);
-        }
-
         public static Supplier<LdapConnectionManager> requires(final ServiceBuilder<?> sb, final String connectionName) {
             return sb.requires(createServiceName(connectionName));
         }
