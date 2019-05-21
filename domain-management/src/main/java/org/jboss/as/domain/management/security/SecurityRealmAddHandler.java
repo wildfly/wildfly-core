@@ -740,39 +740,41 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     private void addTrustManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
                                         ServiceTarget serviceTarget) throws OperationFailedException {
 
-        final ServiceBuilder<TrustManager[]> serviceBuilder;
+        final ServiceBuilder<?> serviceBuilder;
 
         ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
         final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
 
         if (!JKS.equalsIgnoreCase(provider)) {
-            final ProviderTrustManagerService trustManagerService = new ProviderTrustManagerService(provider, keystorePassword);
-            serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                trustManagerService.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
             }
+            serviceBuilder.setInstance(new ProviderTrustManagerService(trustManagersConsumer, credentialSourceSupplier, provider, keystorePassword));
         } else {
             String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();
             ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
             String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-            FileTrustManagerService trustManagerService = new FileTrustManagerService(provider, path, relativeTo, keystorePassword);
-
-            serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
-            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                trustManagerService.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
+            Supplier<PathManager> pathManagerSupplier = null;
             if (relativeTo != null) {
-                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                        PathManager.class, trustManagerService.getPathManagerInjector());
+                pathManagerSupplier = serviceBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
                 serviceBuilder.requires(pathName(relativeTo));
             }
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            serviceBuilder.setInstance(new FileTrustManagerService(trustManagersConsumer, pathManagerSupplier, credentialSourceSupplier, provider, path, relativeTo, keystorePassword));
         }
 
-        serviceBuilder.setInitialMode(ON_DEMAND).install();
+        serviceBuilder.setInitialMode(ON_DEMAND);
+        serviceBuilder.install();
     }
 
     private void addSecretService(OperationContext context, ModelNode secret, String realmName, ServiceTarget serviceTarget,
