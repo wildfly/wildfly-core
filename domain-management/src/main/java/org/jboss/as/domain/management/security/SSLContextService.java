@@ -180,12 +180,16 @@ public class SSLContextService implements Service {
             return parentService.append(trustOnly ? TRUST_ONLY_SERVICE_SUFFIX : SERVICE_SUFFIX);
         }
 
+        @Deprecated
         public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<SSLContext> injector, final ServiceName parentService, final boolean trustOnly) {
             sb.addDependency(createServiceName(parentService, trustOnly), SSLContext.class, injector);
 
             return sb;
         }
 
+        public static Supplier<SSLContext> requires(final ServiceBuilder<?> sb, final ServiceName parentService, final boolean trustOnly) {
+            return sb.requires(createServiceName(parentService, trustOnly));
+        }
     }
 
 

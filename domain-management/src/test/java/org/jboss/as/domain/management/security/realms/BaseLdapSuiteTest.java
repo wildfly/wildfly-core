@@ -49,8 +49,6 @@ import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService;
 import org.jboss.as.domain.management.security.operations.OutboundConnectionAddBuilder;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 
@@ -84,10 +82,7 @@ public abstract class BaseLdapSuiteTest extends SecurityRealmTestBase {
         if (TEST_REALM.equals(realmName)) {
             realm = securityRealm;
         } else {
-            ServiceContainer container = getContainer();
-            ServiceController<?> service = container.getRequiredService(SecurityRealm.ServiceUtil.createServiceName(realmName));
-
-            realm = (SecurityRealm) service.getValue();
+            realm = SecurityRealmHelper.getSecurityRealm(getContainer(), SecurityRealm.ServiceUtil.createServiceName(realmName));
         }
 
         return realm.getAuthorizingCallbackHandler(AuthMechanism.PLAIN);

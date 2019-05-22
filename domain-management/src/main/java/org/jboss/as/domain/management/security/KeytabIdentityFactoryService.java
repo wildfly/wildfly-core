@@ -37,7 +37,6 @@ import javax.security.auth.login.LoginException;
 
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.SubjectIdentity;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -183,10 +182,8 @@ class KeytabIdentityFactoryService implements Service {
             return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<KeytabIdentityFactoryService> injector,
-                String realmName) {
-            sb.addDependency(createServiceName(realmName), KeytabIdentityFactoryService.class, injector);
-            return sb;
+        public static Supplier<KeytabIdentityFactoryService> requires(final ServiceBuilder<?> sb, final String realmName) {
+            return sb.requires(createServiceName(realmName));
         }
 
     }

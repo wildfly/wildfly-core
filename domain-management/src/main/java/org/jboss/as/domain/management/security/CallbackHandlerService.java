@@ -26,11 +26,11 @@ import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.security.auth.callback.CallbackHandler;
 
 import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.SecurityRealm;
@@ -39,6 +39,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
  * The interface to be implemented by all services supplying callback handlers.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CallbackHandlerService {
 
@@ -110,10 +111,9 @@ public interface CallbackHandlerService {
         private ServiceUtil() {
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerService> injector, ServiceName serviceName) {
-            return sb.addDependency(serviceName, CallbackHandlerService.class, injector);
+        public static Supplier<CallbackHandlerService> requires(final ServiceBuilder<?> sb, final ServiceName serviceName) {
+            return sb.requires(serviceName);
         }
-
     }
 
 }

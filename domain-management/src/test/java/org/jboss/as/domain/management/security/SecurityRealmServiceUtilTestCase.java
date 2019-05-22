@@ -22,7 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.msc.service.Service;
@@ -100,14 +103,14 @@ public class SecurityRealmServiceUtilTestCase {
     public void testDifferentServiceBuilderTypes() {
         ServiceTarget serviceTarget = container.subTarget();
 
-        final SecurityRealmService securityRealmService = new SecurityRealmService(TESTNAME, false);
-        securityRealmService.getTmpDirPathInjector().inject(tmpDir.toAbsolutePath().toString());
+        final Supplier<String> tmpDirSupplier = () -> tmpDir.toAbsolutePath().toString();
 
         final ServiceName realmServiceName = SecurityRealm.ServiceUtil.createServiceName(TESTNAME);
-        ServiceController<?> realmController = serviceTarget
-                .addService(realmServiceName, securityRealmService)
-                .addAliases(SecurityRealm.ServiceUtil.createLegacyServiceName(TESTNAME))
-                .install();
+        final ServiceBuilder<?> realmBuilder = serviceTarget.addService(realmServiceName);
+        final Consumer<SecurityRealm> securityRealmConsumer = realmBuilder.provides(realmServiceName, SecurityRealm.ServiceUtil.createLegacyServiceName(TESTNAME));
+        final SecurityRealmService securityRealmService = new SecurityRealmService(securityRealmConsumer, null, null, null, null, tmpDirSupplier, new HashSet(), TESTNAME, false);
+        realmBuilder.setInstance(securityRealmService);
+        final ServiceController<?> realmController = realmBuilder.install();
 
         TestService legacy = new TestService();
         ServiceBuilder legacyBuilder = serviceTarget.addService(ServiceName.of("LEGACY"), legacy);
