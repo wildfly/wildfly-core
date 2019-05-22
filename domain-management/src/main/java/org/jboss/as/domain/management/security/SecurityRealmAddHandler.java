@@ -802,46 +802,49 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
     }
 
     private void addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
-            ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
-         ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
-         KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService();
-         ServiceBuilder<KeytabIdentityFactoryService> kifsBuilder = serviceTarget.addService(keyIdentityName, kifs)
-                 .setInitialMode(ON_DEMAND);
+        ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
+        ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> kifsBuilder = serviceTarget.addService(keyIdentityName);
+        final Consumer<KeytabIdentityFactoryService> kifsConsumer = kifsBuilder.provides(keyIdentityName);
+        final KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService(kifsConsumer);
+        kifsBuilder.setInstance(kifs);
+        kifsBuilder.setInitialMode(ON_DEMAND);
 
-         if (kerberos.hasDefined(KEYTAB)) {
-             List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
-             for (Property current : keytabList) {
-                 String principal = current.getName();
-                 ModelNode keytab = current.getValue();
-                 String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
-                 ModelNode relativeToNode = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
-                 String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
-                 boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
-                 final String[] forHostsValues;
-                 ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
-                 if (forHosts.isDefined()) {
-                     List<ModelNode> list = forHosts.asList();
-                     forHostsValues = new String[list.size()];
-                     for (int i=0;i<list.size();i++) {
-                         forHostsValues[i] = list.get(i).asString();
-                     }
-                 } else {
-                     forHostsValues = new String[0];
-                 }
-
-                 ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
-                 KeytabService ks = new KeytabService(principal, path, relativeTo, forHostsValues, debug);
-
-                 ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
-
-                if (relativeTo != null) {
-                    keytabBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                            PathManager.class, ks.getPathManagerInjector());
-                    keytabBuilder.requires(pathName(relativeTo));
+        if (kerberos.hasDefined(KEYTAB)) {
+            List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
+            for (Property current : keytabList) {
+                String principal = current.getName();
+                ModelNode keytab = current.getValue();
+                String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
+                ModelNode relativeToNode = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
+                String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+                boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
+                final String[] forHostsValues;
+                ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
+                if (forHosts.isDefined()) {
+                    List<ModelNode> list = forHosts.asList();
+                    forHostsValues = new String[list.size()];
+                    for (int i=0;i<list.size();i++) {
+                        forHostsValues[i] = list.get(i).asString();
+                    }
+                } else {
+                    forHostsValues = new String[0];
                 }
 
-                 keytabBuilder.install();
-                 KeytabService.ServiceUtil.addDependency(kifsBuilder, kifs.getKeytabInjector(), realmName, principal);
+                ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
+
+                final ServiceBuilder<?> keytabBuilder = serviceTarget.addService(keytabName);
+                final Consumer<KeytabService> ksConsumer = keytabBuilder.provides(keytabName);
+                Supplier<PathManager> pathManagerSupplier = null;
+
+                if (relativeTo != null) {
+                    pathManagerSupplier = keytabBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+                    keytabBuilder.requires(pathName(relativeTo));
+                }
+                keytabBuilder.setInstance(new KeytabService(ksConsumer, pathManagerSupplier, principal, path, relativeTo, forHostsValues, debug));
+                keytabBuilder.setInitialMode(ON_DEMAND);
+                keytabBuilder.install();
+                kifs.addKeytabSupplier(KeytabService.ServiceUtil.requires(kifsBuilder, realmName, principal));
              }
          }
 
