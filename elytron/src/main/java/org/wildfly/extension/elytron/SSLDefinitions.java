@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -368,16 +369,26 @@ class SSLDefinitions {
         }
     }
 
-    static class HostContextMapValidator implements ParameterValidator{
-        // valid hosts in SNI mapping can contain letters, numbers, asterisks, dots and dashes
-        // dash and dot can be at most one at a time, and dash must be surrounded by [a-z0-9*]
-        static Pattern hostnamePattern = Pattern.compile("^([a-zA-Z0-9*]+(-[a-zA-Z0-9*]+)*\\.?)+[a-zA-Z0-9*]$");
+    static class HostContextMapValidator implements ParameterValidator {
+        // Hostnames can contain ASCII letters a-z (case-insensitive), digits 0-9, hyphens and dots.
+        // This pattern allows also [,],*,? characters to make regular expressions possible. Non-escaped dot represents any character, escaped dot is delimeter.
+        static Pattern hostnameRegexPattern = Pattern.compile("[0-9a-zA-Z\\[.*]" + // first character can be digit, letter, left square bracket, non-escaped dot or asterisk
+                "([0-9a-zA-Z*.\\[\\]?-]" + // any combination of digits, letters, asterisks, non-escaped dots, square brackets, question marks and hyphens
+                "|" +                       // OR
+                "(?<!\\\\\\.)\\\\\\.)*" +   // if there is an escaped dot, there cannot be another escaped dot right behind it
+                // backslash must be escaped, so '\\\\' translates to literally slash, and '\\.' translates to literally dot
+                "[0-9a-zA-Z*.\\[\\]?]");   // escaped dot or hyphen cannot be at the end
 
         @Override
         public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
             if (value.isDefined()) {
                 for (String hostname : value.keys()) {
-                    if (!hostnamePattern.matcher(hostname).matches()) {
+                    if (!hostnameRegexPattern.matcher(hostname).matches()) {
+                        throw ROOT_LOGGER.invalidHostContextMapValue(hostname);
+                    }
+                    try {
+                        Pattern.compile(hostname);  // make sure the input is valid regex as well (eg. will check that the square brackets are paired)
+                    } catch (PatternSyntaxException exception) {
                         throw ROOT_LOGGER.invalidHostContextMapValue(hostname);
                     }
                 }
