@@ -855,14 +855,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
     private void addUsersService(OperationContext context, ModelNode users, String realmName, ServiceTarget serviceTarget,
                                  ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName usersServiceName = UserDomainCallbackHandler.ServiceUtil.createServiceName(realmName);
-
-        UserDomainCallbackHandler usersCallbackHandler = new UserDomainCallbackHandler(realmName, unmaskUsersPasswords(context, users));
-
-        ServiceBuilder<CallbackHandlerService> serviceBuilder = serviceTarget.addService(usersServiceName, usersCallbackHandler)
-                .setInitialMode(ServiceController.Mode.ON_DEMAND);
-        usersCallbackHandler.getCredentialSourceSupplierInjector().inject(unmaskUsersCredentials(context, serviceBuilder, users.clone()));
-        serviceBuilder.install();
+        final ServiceName usersServiceName = UserDomainCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(usersServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(usersServiceName);
+        builder.setInstance(new UserDomainCallbackHandler(chsConsumer, unmaskUsersCredentials(context, builder, users.clone()), realmName, unmaskUsersPasswords(context, users)));
+        builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+        builder.install();
 
         CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName);
     }
@@ -884,7 +882,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         return users;
     }
 
-    private Map<String, ExceptionSupplier<CredentialSource, Exception>> unmaskUsersCredentials(OperationContext context, ServiceBuilder<CallbackHandlerService> serviceBuilder, ModelNode users) throws OperationFailedException {
+    private Map<String, ExceptionSupplier<CredentialSource, Exception>> unmaskUsersCredentials(OperationContext context, ServiceBuilder<?> serviceBuilder, ModelNode users) throws OperationFailedException {
         Map<String, ExceptionSupplier<CredentialSource, Exception>> suppliers = new HashMap<>();
         for (Property property : users.get(USER).asPropertyList()) {
             // Don't use the value from property as it is a clone and does not update the returned users ModelNode.
