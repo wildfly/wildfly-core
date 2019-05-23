@@ -20,6 +20,8 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IDENTITY;
 
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -43,16 +45,13 @@ import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.server.SecurityDomain;
 
 /**
@@ -60,6 +59,7 @@ import org.wildfly.security.auth.server.SecurityDomain;
  * domains to attempt inflow from.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
@@ -112,18 +112,11 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-            String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asString();
-            final InjectedValue<SecurityDomain> securityDomainInjected = new InjectedValue<>();
-
-            final IdentityService service = new IdentityService(securityIdentitySupplier);
-
-            ServiceBuilder<Void> serviceBuilder = context.getServiceTarget().addService(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY.getCapabilityServiceName(), service)
-                    .setInitialMode(Mode.ACTIVE);
-
-            serviceBuilder.addDependency(context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY, securityDomain), SecurityDomain.class), SecurityDomain.class, securityDomainInjected);
-
-            service.setConfiguredSecurityDomain(securityDomainInjected);
-            serviceBuilder.install();
+            final String securityDomain = SECURITY_DOMAIN.resolveModelAttribute(context, model).asString();
+            final ServiceBuilder<?> sb = context.getServiceTarget().addService(MANAGEMENT_IDENTITY_RUNTIME_CAPABILITY.getCapabilityServiceName());
+            final Supplier<SecurityDomain> sdSupplier = sb.requires(context.getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(SECURITY_DOMAIN_CAPABILITY, securityDomain), SecurityDomain.class));
+            sb.setInstance(new IdentityService(sdSupplier, securityIdentitySupplier));
+            sb.install();
             //Let's verify that the IdentityService is correctly started.
             context.addStep((OperationContext context1, ModelNode operation1) -> {
                 try {
@@ -145,32 +138,24 @@ public class AccessIdentityResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    static class IdentityService implements Service<Void> {
-
-        private InjectedValue<SecurityDomain> configuredSecurityDomain = null;
+    private static final class IdentityService implements Service {
+        private final Supplier<SecurityDomain> securityDomainSupplier;
         private final ManagementSecurityIdentitySupplier securityIdentitySupplier;
 
-        public IdentityService(ManagementSecurityIdentitySupplier securityIdentitySupplier) {
+        private IdentityService(final Supplier<SecurityDomain> securityDomainSupplier,
+                                final ManagementSecurityIdentitySupplier securityIdentitySupplier) {
+            this.securityDomainSupplier = securityDomainSupplier;
             this.securityIdentitySupplier = securityIdentitySupplier;
         }
 
         @Override
-        public void start(StartContext context) throws StartException {
-             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(configuredSecurityDomain::getValue);
+        public void start(final StartContext context) {
+             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(securityDomainSupplier::get);
         }
 
         @Override
-        public void stop(StopContext context) {
+        public void stop(final StopContext context) {
             securityIdentitySupplier.setConfiguredSecurityDomainSupplier(null);
-        }
-
-        void setConfiguredSecurityDomain(InjectedValue<SecurityDomain> configuredSecurityDomain) {
-            this.configuredSecurityDomain = configuredSecurityDomain;
-        }
-
-        @Override
-        public Void getValue() throws IllegalStateException, IllegalArgumentException {
-            return null;
         }
     }
 
