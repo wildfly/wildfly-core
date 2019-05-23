@@ -816,7 +816,7 @@ final class HandlerOperations {
         } else if (attribute.getName().equals(SUBHANDLERS.getName())) {
             final Collection<String> resolvedValue = SUBHANDLERS.resolvePropertyValue(context, model);
             final Collection<String> currentValue = configuration.getHandlerNames();
-            result = (resolvedValue == null ? currentValue == null : resolvedValue.containsAll(currentValue));
+            result = (resolvedValue.size() == currentValue.size() && resolvedValue.containsAll(currentValue));
         } else if (attribute.getName().equals(PROPERTIES.getName())) {
             result = true;
             final PropertyConfigurable propertyConfigurable;
