@@ -47,7 +47,6 @@ import javax.net.ssl.TrustManager;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.Service;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -178,13 +177,6 @@ public class SSLContextService implements Service {
 
         public static ServiceName createServiceName(final ServiceName parentService, final boolean trustOnly) {
             return parentService.append(trustOnly ? TRUST_ONLY_SERVICE_SUFFIX : SERVICE_SUFFIX);
-        }
-
-        @Deprecated
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<SSLContext> injector, final ServiceName parentService, final boolean trustOnly) {
-            sb.addDependency(createServiceName(parentService, trustOnly), SSLContext.class, injector);
-
-            return sb;
         }
 
         public static Supplier<SSLContext> requires(final ServiceBuilder<?> sb, final ServiceName parentService, final boolean trustOnly) {
