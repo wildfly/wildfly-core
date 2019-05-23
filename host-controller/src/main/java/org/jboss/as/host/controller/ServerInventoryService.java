@@ -53,6 +53,7 @@ import org.jboss.threads.AsyncFutureTask;
  *
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class ServerInventoryService implements Service<ServerInventory> {
 
@@ -112,7 +113,7 @@ class ServerInventoryService implements Service<ServerInventory> {
             processControllerConnectionService.setServerInventory(serverInventory);
             serverCallback.getValue().setCallbackHandler(serverInventory.getServerCallbackHandler());
             if (domainServerCallback != null && domainServerCallback.getValue() != null) {
-                domainServerCallback.getValue().getServerCallbackHandlerInjector().inject(serverInventory.getServerCallbackHandler());
+                domainServerCallback.getValue().setServerCallbackHandler(serverInventory.getServerCallbackHandler());
             }
             futureInventory.setInventory(serverInventory);
         } catch (Exception e) {
