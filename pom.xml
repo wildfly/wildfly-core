@@ -117,7 +117,7 @@
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
-        <version.org.wildfly.component-matrix-plugin>1.0.2.Final</version.org.wildfly.component-matrix-plugin>
+        <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.0.0.Final</version.org.wildfly.plugins>
         <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
