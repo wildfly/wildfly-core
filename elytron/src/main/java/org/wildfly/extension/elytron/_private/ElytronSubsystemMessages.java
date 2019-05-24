@@ -557,6 +557,6 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1060, value = "Fileless KeyStore needs to have a defined type.")
     OperationFailedException filelessKeyStoreMissingType();
 
-    @Message(id = 1061, value = "Value of host context map '%s' is not a valid hostname.")
+    @Message(id = 1061, value = "Invalid value of host context map: '%s' is not valid hostname pattern.")
     OperationFailedException invalidHostContextMapValue(String hostname);
 }

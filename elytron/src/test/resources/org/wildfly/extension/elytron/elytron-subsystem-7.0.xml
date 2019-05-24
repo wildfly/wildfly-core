@@ -312,7 +312,7 @@
         <server-ssl-sni-contexts>
             <server-ssl-sni-context name="sni" default-ssl-context="server">
                 <sni-mapping host="server" ssl-context="server" />
-                <sni-mapping host="*.server" ssl-context="server2" />
+                <sni-mapping host=".*\.server" ssl-context="server2" />
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
     </tls>
