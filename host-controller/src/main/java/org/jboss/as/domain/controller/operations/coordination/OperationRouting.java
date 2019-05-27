@@ -68,13 +68,15 @@ class OperationRouting {
         HostControllerLogger.ROOT_LOGGER.tracef("Determining routing for %s", operation);
         final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String operationName = operation.require(OP).asString();
-        final Set<OperationEntry.Flag> operationFlags = resolveOperationFlags(address, operationName, rootRegistration, compositeStep);
+        final Set<OperationEntry.Flag> operationFlags = resolveOperationFlags(address, operationName, rootRegistration,
+                compositeStep, localHostControllerInfo.getLocalHostName());
         return determineRouting(operation, address, operationName, operationFlags, localHostControllerInfo, rootRegistration, hostNames);
     }
 
     private static Set<OperationEntry.Flag> resolveOperationFlags(final PathAddress address, final String operationName,
                                                                   final ImmutableManagementResourceRegistration rootRegistration,
-                                                                  final boolean compositeStep) throws OperationFailedException {
+                                                                  final boolean compositeStep,
+                                                                  final String localHostName) throws OperationFailedException {
         Set<OperationEntry.Flag> result = null;
         boolean validAddress = false;
 
@@ -88,22 +90,24 @@ class OperationRouting {
             validAddress = true;
             OperationEntry opE = targetReg.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName);
             result = opE == null ? null : opE.getFlags();
-        } else if (compositeStep) {
+        } else if (compositeStep && isDomainOrLocalHost(address, localHostName)) {
             // WFCORE-323. This could be a subsystem step in a composite where an earlier step adds
             // the extension. So the registration of the subsystem would not be done yet.
             // See if we can figure out flags usable for routing.
             PathAddress subsystemRoot = findSubsystemRootAddress(address);
             if (subsystemRoot != null // else this isn't for a subsystem
                     // Only bother if the subsystem root is not registered.
-                    // If the root is registered then the was already added
+                    // If the root is registered any child is already registered too.
                     && (address.equals(subsystemRoot) || rootRegistration.getSubModel(subsystemRoot) == null)) {
 
                 if (STD_READ_OPS.contains(operationName)) {
-                    // One of the global read ops
+                    // One of the global read ops. OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS handling
+                    // (which is only meant for core ops) is not supported.
                     result = Collections.singleton(OperationEntry.Flag.READ_ONLY);
                 } else if (STD_WRITE_OPS.contains(operationName)) {
                     // One of the global write ops, or 'add' or 'remove'.
-                    // Not read only and not allowed t
+                    // Not read only and OperationEntry.Flag.MASTER_HOST_CONTROLLER_ONLY handling
+                    // (which is only meant for core ops) is not supported.
                     result = Collections.emptySet();
                 } // else we don't know what this op does so we can't provide a routing.
             }
@@ -122,6 +126,11 @@ class OperationRouting {
 
         return result;
     }
+
+    private static boolean isDomainOrLocalHost(PathAddress address, String localHostName) {
+        return address.size() == 0 || !address.getElement(0).getKey().equals(HOST) || address.getElement(0).getValue().equals(localHostName);
+    }
+
 
     private static PathAddress findSubsystemRootAddress(PathAddress address) {
         PathAddress result = null;
@@ -242,7 +251,7 @@ class OperationRouting {
             // behavior for runtime-only ops that were registered against profile subsystems and should not have been
             if (operationFlags.contains(OperationEntry.Flag.READ_ONLY)
                     && ((!operationFlags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)
-                    && (!profileChildOp || !operationFlags.contains(OperationEntry.Flag.RUNTIME_ONLY)))
+                        && (!profileChildOp || !operationFlags.contains(OperationEntry.Flag.RUNTIME_ONLY)))
                     || operationFlags.contains(OperationEntry.Flag.HOST_CONTROLLER_ONLY))) {
                 // Execute locally
                 routing = new OperationRouting(localHostControllerInfo);
