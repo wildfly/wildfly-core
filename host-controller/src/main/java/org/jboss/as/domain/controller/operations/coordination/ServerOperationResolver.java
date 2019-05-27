@@ -113,6 +113,25 @@ public class ServerOperationResolver {
     private static final AttachmentKey<ModelNode> DOMAIN_MODEL_ATTACHMENT = AttachmentKey.create(ModelNode.class);
     private static final AttachmentKey<ModelNode> ORIGINAL_DOMAIN_MODEL_ATTACHMENT = AttachmentKey.create(ModelNode.class);
 
+    /**
+     * Gets whether the given address requires multiphase handling
+     * @param address an address, which most be 2 or more elements long with 'host' as the key of the first element
+     * @return {@code true} if the address requires multiphase handling; {@code} false if it can be handled
+     *         directly on the target host
+     */
+    static boolean isHostChildAddressMultiphase(PathAddress address) {
+        assert address.size() > 1 : "address size must be greater than 1";
+        assert ModelDescriptionConstants.HOST.equals(address.getElement(0).getKey()) : "Only host addresses allowed";
+        switch (address.getElement(1).getKey()) {
+            case ModelDescriptionConstants.EXTENSION:
+            case ModelDescriptionConstants.SUBSYSTEM:
+            case ModelDescriptionConstants.SERVER:
+            case SOCKET_BINDING_GROUP:
+                return false;
+            default:
+                return true;
+        }
+    }
     private enum DomainKey {
 
         UNKNOWN(null),

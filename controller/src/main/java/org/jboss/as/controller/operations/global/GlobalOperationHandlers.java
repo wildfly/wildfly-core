@@ -22,6 +22,7 @@
 package org.jboss.as.controller.operations.global;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
@@ -36,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
@@ -43,6 +45,7 @@ import static org.jboss.as.controller.operations.global.GlobalOperationAttribute
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.RECURSIVE_DEPTH;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -86,19 +89,42 @@ import org.jboss.dmr.ModelType;
  */
 public class GlobalOperationHandlers {
 
+    public static final Set<String> STD_WRITE_OPS = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(
+                    ADD,
+                    REMOVE,
+                    WriteAttributeHandler.DEFINITION.getName(),
+                    UndefineAttributeHandler.DEFINITION.getName(),
+                    MapOperations.MAP_PUT_DEFINITION.getName(),
+                    MapOperations.MAP_CLEAR_DEFINITION.getName(),
+                    MapOperations.MAP_REMOVE_DEFINITION.getName(),
+                    ListOperations.LIST_ADD_DEFINITION.getName(),
+                    ListOperations.LIST_CLEAR_DEFINITION.getName(),
+                    ListOperations.LIST_REMOVE_DEFINITION.getName())));
+
+    public static final Set<String> STD_READ_OPS = Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(
+                    ReadResourceHandler.DEFINITION.getName(),
+                    ReadAttributeHandler.DEFINITION.getName(),
+                    ReadAttributeGroupHandler.DEFINITION.getName(),
+                    ReadResourceDescriptionHandler.DEFINITION.getName(),
+                    ReadAttributeGroupNamesHandler.DEFINITION.getName(),
+                    ReadChildrenNamesHandler.DEFINITION.getName(),
+                    ReadChildrenTypesHandler.DEFINITION.getName(),
+                    ReadChildrenResourcesHandler.DEFINITION.getName(),
+                    ReadOperationNamesHandler.DEFINITION.getName(),
+                    QueryOperationHandler.DEFINITION.getName(),
+                    MapOperations.MAP_GET_DEFINITION.getName(),
+                    ListOperations.LIST_GET_DEFINITION.getName())));
 
     public static void registerGlobalOperations(ManagementResourceRegistration root, ProcessType processType) {
         if( processType.isHostController()) {
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.DEFINITION,
-                    org.jboss.as.controller.operations.global.ReadResourceHandler.INSTANCE, true);
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.DEFINITION,
-                    org.jboss.as.controller.operations.global.ReadAttributeHandler.INSTANCE, true);
+            root.registerOperationHandler(ReadResourceHandler.DEFINITION, ReadResourceHandler.INSTANCE, true);
+            root.registerOperationHandler(ReadAttributeHandler.DEFINITION, ReadAttributeHandler.INSTANCE, true);
             root.registerOperationHandler(ReadAttributeGroupHandler.DEFINITION, ReadAttributeGroupHandler.INSTANCE, true);
         }else{
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_DEFINITION,
-                    org.jboss.as.controller.operations.global.ReadResourceHandler.RESOLVE_INSTANCE, true);
-            root.registerOperationHandler(org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_DEFINITION,
-                    org.jboss.as.controller.operations.global.ReadAttributeHandler.RESOLVE_INSTANCE, true);
+            root.registerOperationHandler(ReadResourceHandler.RESOLVE_DEFINITION, ReadResourceHandler.RESOLVE_INSTANCE, true);
+            root.registerOperationHandler(ReadAttributeHandler.RESOLVE_DEFINITION, ReadAttributeHandler.RESOLVE_INSTANCE, true);
             root.registerOperationHandler(ReadAttributeGroupHandler.RESOLVE_DEFINITION, ReadAttributeGroupHandler.RESOLVE_INSTANCE, true);
         }
 
@@ -137,10 +163,8 @@ public class GlobalOperationHandlers {
             }
         }, true);
 
-        root.registerOperationHandler(org.jboss.as.controller.operations.global.WriteAttributeHandler.DEFINITION,
-                org.jboss.as.controller.operations.global.WriteAttributeHandler.INSTANCE, true);
-        root.registerOperationHandler(org.jboss.as.controller.operations.global.UndefineAttributeHandler.DEFINITION,
-                org.jboss.as.controller.operations.global.UndefineAttributeHandler.INSTANCE, true);
+        root.registerOperationHandler(WriteAttributeHandler.DEFINITION, WriteAttributeHandler.INSTANCE, true);
+        root.registerOperationHandler(UndefineAttributeHandler.DEFINITION, UndefineAttributeHandler.INSTANCE, true);
     }
 
     public static final String CHECK_DEFAULT_RESOURCE_ACCESS = "check-default-resource-access";

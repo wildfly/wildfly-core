@@ -162,7 +162,8 @@ public class ServerOperationsResolverHandler implements OperationStepHandler {
         final PathAddress relativeAddress = domainOpAddress.subAddress(originalAddress.size());
         if(! pushToServers) {
             Set<OperationEntry.Flag> flags = originalRegistration.getOperationFlags(relativeAddress, domainOp.require(OP).asString());
-            if (flags.contains(OperationEntry.Flag.READ_ONLY)
+            if (flags != null
+                    && flags.contains(OperationEntry.Flag.READ_ONLY)
                     && !flags.contains(OperationEntry.Flag.DOMAIN_PUSH_TO_SERVERS)
                     && !flags.contains(OperationEntry.Flag.RUNTIME_ONLY)) {
                 result = Collections.emptyMap();

@@ -41,6 +41,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -182,6 +185,63 @@ public class HcExtensionAndSubsystemManagementTestCase {
         //The main aim of this test is to make sure that the host capability context provides isolation
         checkSocketBindingCapabilities(MASTER_EXTENSION_ADDRESS);
         checkSocketBindingCapabilities(SLAVE_EXTENSION_ADDRESS);
+    }
+
+    @Test
+    public void testExtensionSubsystemComposite() throws Exception {
+        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        Exception err = null;
+        try {
+            // 1) Sanity check -- subsystem not there
+            ModelNode read = Util.getReadAttributeOperation(SLAVE_SUBSYSTEM_ADDRESS, NAME);
+            testBadOp(read);
+
+            // 2) sanity check -- subsystem add w/o extension -- fail
+            ModelNode subAdd = Util.createAddOperation(SLAVE_SUBSYSTEM_ADDRESS);
+            subAdd.get(NAME).set(TestHostCapableExtension.MODULE_NAME);
+            testBadOp(subAdd);
+
+            // 3) ext add + sub add + sub other in composite
+            ModelNode extAdd = Util.createAddOperation(SLAVE_EXTENSION_ADDRESS);
+            ModelNode goodAdd = buildComposite(extAdd, subAdd, read);
+            testGoodComposite(goodAdd);
+
+            // 4) Sanity check -- try read again outside the composite
+            ModelNode response = executeOp(read, "success");
+            assertTrue(response.toString(), response.has("result"));
+            assertEquals(response.toString(), TestHostCapableExtension.MODULE_NAME, response.get("result").asString());
+
+            // 5) sub remove + ext remove + sub add in composite -- fail
+            ModelNode subRemove = Util.createRemoveOperation(SLAVE_SUBSYSTEM_ADDRESS);
+            ModelNode extRemove = Util.createRemoveOperation(SLAVE_EXTENSION_ADDRESS);
+            ModelNode badRemove = buildComposite(read, subRemove, extRemove, subAdd);
+            response = testBadOp(badRemove);
+            // But the 'public' op should have worked
+            validateInvokePublicStep(response, 1, true);
+
+            // 6) sub remove + ext remove in composite
+            ModelNode goodRemove = buildComposite(read, subRemove, extRemove);
+            response = executeOp(goodRemove, "success");
+            validateInvokePublicStep(response, 1, false);
+
+            // 7) confirm ext add + sub add + sub other still works
+            testGoodComposite(goodAdd);
+
+            // 8) Sanity check -- try read again outside the composite
+            response = executeOp(read, "success");
+            assertTrue(response.toString(), response.has("result"));
+            assertEquals(response.toString(), TestHostCapableExtension.MODULE_NAME, response.get("result").asString());
+        } catch (Exception e) {
+            err = e;
+        } finally {
+            //Cleanup
+            removeIgnoreFailure(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(slaveClient, SLAVE_EXTENSION_ADDRESS);
+        }
+
+        if (err != null) {
+            throw err;
+        }
     }
 
     private void checkSubsystemNeedsExtensionInLocalModel(ModelControllerClient masterClient, ModelControllerClient slaveClient, PathAddress extensionAddress) throws Exception {
@@ -502,6 +562,53 @@ public class HcExtensionAndSubsystemManagementTestCase {
             // ignored
         }
         return false;
+    }
+
+    private ModelNode executeOp(ModelNode op, String outcome) throws IOException {
+        ModelNode response = domainSlaveLifecycleUtil.getDomainClient().execute(op);
+        assertTrue(response.toString(), response.hasDefined(OUTCOME));
+        assertEquals(response.toString(), outcome, response.get(OUTCOME).asString());
+        return response;
+    }
+
+    private void testGoodComposite(ModelNode composite) throws IOException {
+        ModelNode result = executeOp(composite, "success");
+        validateInvokePublicStep(result, 3, false);
+    }
+
+    private ModelNode testBadOp(ModelNode badOp) throws IOException {
+        ModelNode response = executeOp(badOp, "failed");
+        String msg = response.toString();
+        assertTrue(msg, response.has("failure-description"));
+        ModelNode failure = response.get("failure-description");
+        assertTrue(msg, failure.asString().contains("WFLYCTL0030"));
+        return response;
+    }
+
+    private static ModelNode buildComposite(ModelNode... steps) {
+        ModelNode result = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
+        ModelNode stepsParam = result.get("steps");
+        for (ModelNode step : steps) {
+            stepsParam.add(step);
+        }
+        return result;
+    }
+
+    private static void validateInvokePublicStep(ModelNode response, int step, boolean expectRollback) {
+        String msg = response.toString();
+        assertTrue(msg, response.has("result"));
+        ModelNode result = response.get("result");
+        assertTrue(msg, result.isDefined());
+        String stepKey = "step-"+step;
+        assertEquals(msg, expectRollback ? "failed" : "success", result.get(stepKey, "outcome").asString());
+        assertTrue(msg, result.has(stepKey, "result"));
+        assertEquals(msg, TestHostCapableExtension.MODULE_NAME, result.get(stepKey, "result").asString());
+        if (expectRollback) {
+            assertTrue(msg, result.has(stepKey, "rolled-back"));
+            assertTrue(msg, result.get(stepKey, "rolled-back").asBoolean());
+        } else {
+            assertFalse(msg, result.has(stepKey, "rolled-back"));
+        }
     }
 
     private enum Target {
