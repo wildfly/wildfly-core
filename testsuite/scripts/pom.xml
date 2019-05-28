@@ -35,7 +35,9 @@
         <!-- By default the scripts and configurations expect an IPv4 address so we should use one by default -->
         <jboss.test.script.address>127.0.0.1</jboss.test.script.address>
         <jboss.test.start.timeout>120</jboss.test.start.timeout>
-        <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
+        <!-- Specifying this on the command will disable testing on directories with special characters -->
+        <server.name>wildfly-core</server.name>
+        <wildfly.home>${project.basedir}${file.separator}target${file.separator}${server.name}</wildfly.home>
         <test.log.level>INFO</test.log.level>
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
     </properties>
@@ -48,10 +50,6 @@
                 <configuration>
                     <failIfNoTests>false</failIfNoTests>
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
-
-                    <environmentVariables>
-                        <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
-                    </environmentVariables>
 
                     <systemPropertyVariables>
                         <jboss.home>${wildfly.home}</jboss.home>
@@ -77,7 +75,7 @@
                         <phase>process-test-resources</phase>
                         <configuration>
                             <config-file>server-provisioning.xml</config-file>
-                            <server-name>wildfly-core</server-name>
+                            <server-name>${server.name}</server-name>
                         </configuration>
                     </execution>
                 </executions>

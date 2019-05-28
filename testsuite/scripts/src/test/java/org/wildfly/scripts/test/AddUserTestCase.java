@@ -42,10 +42,10 @@ public class AddUserTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        final Path standaloneMgmtUsers = Environment.getStandaloneConfig("mgmt-users.properties");
-        final Path standaloneMgmtGroups = Environment.getStandaloneConfig("mgmt-groups.properties");
-        final Path domainMgmtUsers = Environment.getDomainConfig("mgmt-users.properties");
-        final Path domainMgmtGroups = Environment.getDomainConfig("mgmt-groups.properties");
+        final Path standaloneMgmtUsers = script.getStandaloneConfig("mgmt-users.properties");
+        final Path standaloneMgmtGroups = script.getStandaloneConfig("mgmt-groups.properties");
+        final Path domainMgmtUsers = script.getDomainConfig("mgmt-users.properties");
+        final Path domainMgmtGroups = script.getDomainConfig("mgmt-groups.properties");
 
         script.start(MAVEN_JAVA_OPTS, "-p", "test.12345", "-u", "test-admin", "-g", "test-admin-1,test-admin-2");
         validateProcess(script);
