@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.commons.lang.StringUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -18,6 +19,12 @@ import org.wildfly.test.api.Authentication;
  * @author Stuart Douglas
  */
 public class TestSuiteEnvironment {
+    private static final boolean IS_WINDOWS;
+
+    static {
+        final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        IS_WINDOWS = os.contains("win");
+    }
 
     public static ModelControllerClient getModelControllerClient() {
         return getModelControllerClient(null);
@@ -251,5 +258,14 @@ public class TestSuiteEnvironment {
      */
     public static int getHttpPort() {
         return Integer.parseInt(getSystemProperty("jboss.http.port", "8080"));
+    }
+
+    /**
+     * Indicates whether or not the OS is Windows.
+     *
+     * @return {@code true} if the OS is Windows, otherwise {@code false}
+     */
+    public static boolean isWindows() {
+        return IS_WINDOWS;
     }
 }

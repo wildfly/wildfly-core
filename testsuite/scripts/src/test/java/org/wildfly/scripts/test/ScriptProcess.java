@@ -22,8 +22,10 @@ package org.wildfly.scripts.test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,22 +54,38 @@ import org.jboss.logging.Logger;
 public class ScriptProcess extends Process implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(ScriptProcess.class);
 
+    private static final Path PROC_DIR;
+
+    static {
+        PROC_DIR = Paths.get(System.getProperty("jboss.test.proc.dir"));
+        try {
+            Files.createDirectories(PROC_DIR);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to create the log directory", e);
+        }
+    }
+
     private static final Function<String, String> WINDOWS_ARG_FORMATTER = s -> "\"" + s + "\"";
+    private final Path containerHome;
     private final Path script;
     private final Path stdoutLog;
     private final Path input;
+    private final long timeout;
     private final Function<ModelControllerClient, Boolean> check;
     private final Collection<String> prefixCmds;
     private Process delegate;
     private String lastExecutedCmd;
 
-    ScriptProcess(final Path script, final Function<ModelControllerClient, Boolean> check, final String... prefixCmds) throws IOException {
-        this.script = script;
+    ScriptProcess(final Path containerHome, final String scriptName, final long timeout,
+                  final Function<ModelControllerClient, Boolean> check, final String... prefixCmds) throws IOException {
+        this.containerHome = containerHome;
+        this.script = containerHome.resolve("bin").resolve(scriptName);
+        this.timeout = timeout;
         this.check = check;
         this.prefixCmds = new ArrayList<>(Arrays.asList(prefixCmds));
         final String baseFileName = script.getFileName().toString().replace('.', '-');
-        stdoutLog = Environment.PROC_DIR.resolve(baseFileName + "-out.txt");
-        input = Environment.PROC_DIR.resolve(baseFileName + "-in.txt");
+        stdoutLog = PROC_DIR.resolve(baseFileName + "-out.txt");
+        input = PROC_DIR.resolve(baseFileName + "-in.txt");
         // Delete and create the input file
         Files.deleteIfExists(input);
         Files.createFile(input);
@@ -98,12 +116,13 @@ public class ScriptProcess extends Process implements AutoCloseable {
         }
         lastExecutedCmd = getCommandString(arguments);
         final ProcessBuilder builder = new ProcessBuilder(getCommand(arguments))
-                .directory(Environment.JBOSS_HOME.toFile())
+                .directory(containerHome.toFile())
                 .redirectInput(input.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(stdoutLog.toFile());
+        builder.environment().put("JBOSS_HOME", containerHome.toString());
         // The Windows scripts should not pause at the requiring user input
-        if (Environment.isWindows()) {
+        if (TestSuiteEnvironment.isWindows()) {
             builder.environment().put("NOPAUSE", "true");
         }
         // Add any other environment variables
@@ -152,10 +171,22 @@ public class ScriptProcess extends Process implements AutoCloseable {
         return errorMessage.toString();
     }
 
+    Path getStandaloneConfig(final String configFile) {
+        return containerHome.resolve("standalone").resolve("configuration").resolve(configFile);
+    }
+
+    Path getDomainConfig(final String configFile) {
+        return containerHome.resolve("domain").resolve("configuration").resolve(configFile);
+    }
+
+    Path getContainerHome() {
+        return containerHome;
+    }
+
     private List<String> getCommand(final Collection<String> arguments) {
         final List<String> cmd = new ArrayList<>(prefixCmds);
         cmd.add(script.toString());
-        if (Environment.isWindows()) {
+        if (TestSuiteEnvironment.isWindows()) {
             for (String arg : arguments) {
                 cmd.add(WINDOWS_ARG_FORMATTER.apply(arg));
             }
@@ -254,7 +285,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
         final Callable<Boolean> callable = new Callable<Boolean>() {
             @Override
             public Boolean call() throws InterruptedException, IOException {
-                long timeout = Environment.getTimeoutInMillis();
+                long timeout = (ScriptProcess.this.timeout * 1000);
                 final long sleep = 100L;
                 try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
                     while (timeout > 0) {
@@ -278,7 +309,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
             final Future<Boolean> future = service.submit(callable);
             if (!future.get()) {
                 destroy(process);
-                throw new TimeoutException(getErrorMessage(String.format("The %s did not start within %d seconds.", script.getFileName(), Environment.getTimeout())));
+                throw new TimeoutException(getErrorMessage(String.format("The %s did not start within %d seconds.", script.getFileName(), this.timeout)));
             }
         } catch (ExecutionException e) {
             throw new RuntimeException(getErrorMessage(String.format("Failed to determine if the %s server is running.", script.getFileName())), e);
@@ -287,12 +318,12 @@ public class ScriptProcess extends Process implements AutoCloseable {
         }
     }
 
-    private static void destroy(final Process process) {
+    private void destroy(final Process process) {
         if (process != null && process.isAlive()) {
             final Process destroyed = process.destroyForcibly();
             try {
-                if (destroyed.isAlive() && !destroyed.waitFor(Environment.getTimeout(), TimeUnit.SECONDS)) {
-                    LOGGER.errorf("The process was not destroyed within %d seconds.", Environment.getTimeout());
+                if (destroyed.isAlive() && !destroyed.waitFor(timeout, TimeUnit.SECONDS)) {
+                    LOGGER.errorf("The process was not destroyed within %d seconds.", timeout);
                 }
             } catch (InterruptedException e) {
                 LOGGER.error("The process was interrupted while waiting to be destroyed.", e);
