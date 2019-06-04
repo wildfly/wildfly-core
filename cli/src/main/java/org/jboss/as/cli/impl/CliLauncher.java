@@ -21,11 +21,11 @@
  */
 package org.jboss.as.cli.impl;
 
+import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.BufferedReader;
 import java.io.FileReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
