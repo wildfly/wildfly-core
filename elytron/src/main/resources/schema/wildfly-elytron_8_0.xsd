@@ -989,10 +989,22 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
-                <xs:attribute name="authorization-realm" type="xs:string" use="required">
+                <xs:attribute name="authorization-realm" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
                             The name of the realm to use for the authorization steps (loading of the identity).
+
+                            Exactly one of 'authorization-realm' and 'authorization-realms' must be specified.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="authorization-realms" type="stringListType">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A list of security realms that should be used for the authorizations steps resulting in an 
+                            aggregation of attributes if the identity is contained in multiple realms.
+
+                            Exactly one of 'authorization-realm' and 'authorization-realms' must be specified.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

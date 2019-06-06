@@ -16,7 +16,10 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALMS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
@@ -44,6 +47,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
@@ -99,11 +103,15 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from8(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_8_0_0, ELYTRON_7_0_0);
 
+        builder.addChildResource(PathElement.pathElement(AGGREGATE_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DISCARD_SINGLE_REALM, AUTHORIZATION_REALMS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, AUTHORIZATION_REALMS)
+                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALM);
     }
 
     private static void from7(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_7_0_0, ELYTRON_6_0_0);
-
         Map<String, RejectAttributeChecker> keyMapperChecker = new HashMap<>();
         keyMapperChecker.put(HASH_ENCODING, RejectAttributeChecker.DEFINED);
         keyMapperChecker.put(SALT_ENCODING, RejectAttributeChecker.DEFINED);
@@ -278,4 +286,30 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             return synced == attributeValue.asBoolean();
         }
     };
+
+    private static final DiscardAttributeChecker DISCARD_SINGLE_REALM = new DiscardAttributeChecker.DefaultDiscardAttributeChecker() {
+
+        @Override
+        protected boolean isValueDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.isDefined()) {
+                List<ModelNode> values = attributeValue.asList();
+                return (values.size() == 1);
+            }
+            return false;
+        }
+    };
+
+    private static final AttributeConverter ONE_AUTHORIZATION_REALMS = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (!attributeValue.isDefined()) {
+                /*
+                 * If we reach this point we know the attribute was not rejected to AUTHORIZATION_REALMS can only have one value.
+                 */
+                String authorizationRealm = context.readResourceFromRoot(address).getModel().get(AUTHORIZATION_REALMS).asList().get(0).asString();
+                attributeValue.set(authorizationRealm);
+            }
+        }
+    };
+
 }

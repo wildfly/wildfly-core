@@ -16,6 +16,7 @@
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
     </audit-logging>
     <security-realms>
+        <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
         <jdbc-realm name="JdbcBcryptHashHex">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>

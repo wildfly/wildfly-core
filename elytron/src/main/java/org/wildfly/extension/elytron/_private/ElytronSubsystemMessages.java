@@ -326,6 +326,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 41, value = "Unable to transform configuration to the target version - attribute '%s' is different from '%s'")
     String unableToTransformTornAttribute(String attribute1, String attribute2);
 
+    @Message(id = 42, value = "Unable to transform multiple 'authorization-realms' to the single value")
+    String unableToTransformMultipleRealms();
+
     // CREDENTIAL_STORE section
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);

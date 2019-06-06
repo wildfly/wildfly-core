@@ -35,8 +35,12 @@ import org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttribute
  */
 class RealmParser {
 
+    @Deprecated
     private final PersistentResourceXMLDescription aggregateRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_REALM), null)
             .addAttributes(AggregateRealmDefinition.ATTRIBUTES)
+            .build();
+    private final PersistentResourceXMLDescription aggregateRealmParser_8_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_REALM), null)
+            .addAttributes(AggregateRealmDefinition.ATTRIBUTES_8_0)
             .build();
     private final PersistentResourceXMLDescription customRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_REALM), null)
             .addAttributes(CustomComponentDefinition.ATTRIBUTES)
@@ -107,9 +111,22 @@ class RealmParser {
             .addChild(cachingRealmParser)
             .build();
 
+    final PersistentResourceXMLDescription realmParser_8_0 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_7_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser)
+            .addChild(ldapRealmParser)
+            .addChild(fileSystemRealmDescription)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .build();
+
     RealmParser() {
 
     }
-
 
 }

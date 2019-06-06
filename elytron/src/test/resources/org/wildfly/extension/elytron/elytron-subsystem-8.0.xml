@@ -38,6 +38,8 @@
         </security-domain>
     </security-domains>
     <security-realms>
+        <aggregate-realm name="AggregateOne" authentication-realm="PropRealm" authorization-realm="FileRealm" />
+        <aggregate-realm name="AggregateTwo" authentication-realm="JdbcRealm" authorization-realms="AggregateOne FileRealm" />
         <jdbc-realm name="NewJdbcScramSha384">
             <principal-query sql="SELECT" data-source="ExampleDS">
                 <scram-mapper algorithm="scram-sha-384" password-index="1" salt-index="2" iteration-count-index="10000"/>
