@@ -820,8 +820,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             return subregistry.getAttributeNames(iterator, next.getValue());
         } else {
             checkPermission();
-            synchronized (this) {
+            readLock.lock();
+            try {
                 return new HashSet<>(attributes.keySet());
+            } finally {
+                readLock.unlock();
             }
         }
     }
@@ -858,8 +861,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             return subregistry.getAttributes(iterator, next.getValue());
         } else {
             checkPermission();
-            synchronized (this) {
+            readLock.lock();
+            try {
                 return new HashMap<>(attributes);
+            } finally {
+                readLock.unlock();
             }
         }
     }
