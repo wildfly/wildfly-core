@@ -60,6 +60,9 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         modularJavaOpts.add("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
+        // As of jboss-modules 1.9.1.Final the java.se module is no longer required to be added. However as this API is
+        // designed to work with older versions of the server we still need to add this argument of modular JVM's.
+        modularJavaOpts.add("--add-modules=java.se");
         DEFAULT_MODULAR_VM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }
 

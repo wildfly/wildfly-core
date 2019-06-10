@@ -203,6 +203,7 @@ public class CommandBuilderTest {
             assertArgumentExists(command, "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-modules=java.se", expectedCount);
         } else {
             Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.nio.ch=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"));
@@ -210,6 +211,7 @@ public class CommandBuilderTest {
                     command.contains("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-modules=java.se\" to be in the command list", command.contains("--add-modules=java.se"));
         }
     }
 
