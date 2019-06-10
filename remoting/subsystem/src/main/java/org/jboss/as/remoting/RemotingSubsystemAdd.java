@@ -65,10 +65,10 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
-        ModelNode endpointModel = context.readResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH)).getModel();
-        String workerName = WORKER.resolveModelAttribute(context, endpointModel).asString();
+        ModelNode remotingModel = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+        String workerName = WORKER.resolveModelAttribute(context, remotingModel).asString();
 
-        final OptionMap map = EndpointConfigFactory.populate(context, endpointModel);
+        final OptionMap map = EndpointConfigFactory.populate(context, remotingModel);
 
         // create endpoint
         final String nodeName = WildFlySecurityManager.getPropertyPrivileged(RemotingExtension.NODE_NAME_PROPERTY, null);
