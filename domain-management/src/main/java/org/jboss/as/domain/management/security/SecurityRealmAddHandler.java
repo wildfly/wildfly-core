@@ -779,7 +779,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         ServiceName secretServiceName = SecretIdentityService.ServiceUtil.createServiceName(realmName);
 
         ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
-        boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
+        boolean base64 = true;
         SecretIdentityService sis;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
             sis = new SecretIdentityService(resolvedValueNode.asString(), false);
