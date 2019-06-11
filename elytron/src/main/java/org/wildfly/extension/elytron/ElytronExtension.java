@@ -59,6 +59,7 @@ public class ElytronExtension implements Extension {
     static final String NAMESPACE_5_0 = "urn:wildfly:elytron:5.0";
     static final String NAMESPACE_6_0 = "urn:wildfly:elytron:6.0";
     static final String NAMESPACE_7_0 = "urn:wildfly:elytron:7.0";
+    static final String NAMESPACE_8_0 = "urn:wildfly:elytron:8.0";
 
     /**
      * The name of our subsystem within the model.
@@ -78,8 +79,9 @@ public class ElytronExtension implements Extension {
     static final ModelVersion ELYTRON_5_0_0 = ModelVersion.create(5);
     static final ModelVersion ELYTRON_6_0_0 = ModelVersion.create(6);
     static final ModelVersion ELYTRON_7_0_0 = ModelVersion.create(7);
+    static final ModelVersion ELYTRON_8_0_0 = ModelVersion.create(8);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_7_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_8_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -118,6 +120,7 @@ public class ElytronExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_5_0, () -> new ElytronSubsystemParser5_0());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_6_0, () -> new ElytronSubsystemParser6_0());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_7_0, () -> new ElytronSubsystemParser7_0());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_8_0, () -> new ElytronSubsystemParser8_0());
     }
 
     @Override
@@ -130,7 +133,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser7_0());
+        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser8_0());
     }
 
     @SuppressWarnings("unchecked")
