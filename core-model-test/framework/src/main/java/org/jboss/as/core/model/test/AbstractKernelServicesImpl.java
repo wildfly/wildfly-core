@@ -51,6 +51,7 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
@@ -79,6 +80,8 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         //Create the controller
         ServiceContainer container = ServiceContainer.Factory.create("core-test" + counter.incrementAndGet());
         ServiceTarget target = container.subTarget();
+        StabilityMonitor stabilityMonitor = new StabilityMonitor();
+        target.addMonitor(stabilityMonitor);
 
         //Initialize the content repository
         File repositoryFile = new File("target/deployment-repository");
@@ -123,6 +126,10 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
             Service<ExecutorService> mgmtExecSvc = new ValueService<>(new ImmediateValue<>(mgmtExecutor));
             target.addService(AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), mgmtExecSvc).install();
         }
+
+        // Wait for MSC stability, as extra services added via additionalInit.addExtraServices
+        // may not be depended upon by anything in the boot, so we can't assume they are stable
+        stabilityMonitor.awaitStability(60, TimeUnit.SECONDS); // should be fast; long timeout to avoid false failures due to gc etc
 
         //sharedState = svc.state;
         svc.waitForSetup();

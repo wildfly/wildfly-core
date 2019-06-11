@@ -31,6 +31,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.ValueService;
 import org.jboss.msc.value.ImmediateValue;
 import org.jboss.threads.EnhancedQueueExecutor;
@@ -77,6 +78,8 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         //Initialize the controller
         ServiceContainer container = ServiceContainer.Factory.create("subsystem-test" + (legacyModelVersion != null ? "-legacy-" : "-") + counter.incrementAndGet());
         ServiceTarget target = container.subTarget();
+        StabilityMonitor stabilityMonitor = new StabilityMonitor();
+        target.addMonitor(stabilityMonitor);
         List<ModelNode> extraOps = controllerInitializer.initializeBootOperations();
         List<ModelNode> allOps = new ArrayList<ModelNode>();
         if (extraOps != null) {
@@ -126,6 +129,10 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
         }
 
         additionalInit.addExtraServices(target);
+
+        // Wait for MSC stability, as extra services added via additionalInit.addExtraServices
+        // may not be depended upon by anything in the boot, so we can't assume they are stable
+        stabilityMonitor.awaitStability(60, TimeUnit.SECONDS); // should be fast; long timeout to avoid false failures due to gc etc
 
         //sharedState = svc.state;
         svc.waitForSetup();
