@@ -21,9 +21,11 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.AdvancedModifiableKeyStoreDecorator.resetAcmeAccount;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.ElytronDefinition.commonRequirements;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -31,10 +33,10 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.ServiceLoader;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractAttributeDefinitionBuilder;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -51,7 +53,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -70,6 +71,7 @@ import org.wildfly.security.x500.cert.acme.AcmeAccount;
 import org.wildfly.security.x500.cert.acme.AcmeClientSpi;
 import org.wildfly.security.x500.cert.acme.AcmeException;
 import org.wildfly.security.x500.cert.acme.AcmeMetadata;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 /**
  * A {@link ResourceDefinition} for a single certificate authority account.
@@ -77,43 +79,6 @@ import org.wildfly.security.x500.cert.acme.AcmeMetadata;
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
 class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
-    private static final String DIRECTORY = "directory";
-
-    enum CertificateAuthority {
-
-        LETS_ENCRYPT("LetsEncrypt", "https://acme-v02.api.letsencrypt.org/" + DIRECTORY, "https://acme-staging-v02.api.letsencrypt.org/" + DIRECTORY);
-
-        private final String name;
-        private final String url;
-        private final String stagingUrl;
-
-        CertificateAuthority(final String name, final String url, final String stagingUrl) {
-            this.name = name;
-            this.url = url;
-            this.stagingUrl = stagingUrl;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-
-        public String getStagingUrl() {
-            return stagingUrl;
-        }
-
-        public static CertificateAuthority fromName(final String name) {
-            switch (name.toUpperCase(Locale.ENGLISH)) {
-                case "LETSENCRYPT":
-                    return LETS_ENCRYPT;
-                default:
-                    throw new IllegalArgumentException(name);
-            }
-        }
-    }
 
     static final StringListAttributeDefinition CONTACT_URLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.CONTACT_URLS)
             .setRequired(false)
@@ -122,11 +87,11 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY, ModelType.STRING, true)
+    static final SimpleAttributeDefinition CERTIFICATE_AUTHORITY = new CertificateAuthorityDefinitionBuilder(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(CertificateAuthority.LETS_ENCRYPT.getName()))
-            .setValidator(new StringAllowedValuesValidator(CertificateAuthority.LETS_ENCRYPT.getName()))
             .setAllowExpression(true)
             .setRestartAllServices()
+            .setCapabilityReference(CERTIFICATE_AUTHORITY_CAPABILITY, CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY)
             .build();
 
     static final SimpleAttributeDefinition KEY_STORE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_STORE, ModelType.STRING, false)
@@ -170,6 +135,33 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
         throw ROOT_LOGGER.unableToInstatiateAcmeClientSpiImplementation();
     }
 
+    private static class CertificateAuthorityAttributeDefinition extends SimpleAttributeDefinition {
+
+        CertificateAuthorityAttributeDefinition(AbstractAttributeDefinitionBuilder<?, ? extends CertificateAuthorityAttributeDefinition> builder) {
+            super(builder);
+        }
+
+        @Override
+        public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
+            // Check the existence of certificate authority only if it is not null or LetsEncrypt, since LetsEncrypt does not have to be added
+            if (attributeValue.asStringOrNull() != null && !attributeValue.asString().equalsIgnoreCase(CertificateAuthority.LETS_ENCRYPT.getName())) {
+                super.addCapabilityRequirements(context, resource, attributeValue);
+            }
+        }
+    }
+
+    private static class CertificateAuthorityDefinitionBuilder extends AbstractAttributeDefinitionBuilder<CertificateAuthorityDefinitionBuilder, CertificateAuthorityAttributeDefinition> {
+
+        CertificateAuthorityDefinitionBuilder(String attributeName, ModelType type, boolean optional) {
+            super(attributeName, type, optional);
+        }
+
+        @Override
+        public CertificateAuthorityAttributeDefinition build() {
+            return new CertificateAuthorityAttributeDefinition(this);
+        }
+    }
+
     private static final AbstractAddStepHandler ADD = new CertificateAuthorityAccountAddHandler();
 
     private static class CertificateAuthorityAccountAddHandler extends BaseAddHandler {
@@ -181,7 +173,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
-            CertificateAuthority certificateAuthority = CertificateAuthority.fromName(CERTIFICATE_AUTHORITY.resolveModelAttribute(context, model).asString().toUpperCase(Locale.ENGLISH));
+            String certificateAuthorityName = CERTIFICATE_AUTHORITY.resolveModelAttribute(context, model).asString();
             final String alias = ALIAS.resolveModelAttribute(context, model).asString();
             final String keyStoreName = KEY_STORE.resolveModelAttribute(context, model).asString();
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
@@ -194,7 +186,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
                 contactUrlsList.add(contactUrl.asString());
             }
 
-            AcmeAccountService acmeAccountService = new AcmeAccountService(certificateAuthority, contactUrlsList, alias, keyStoreName);
+            AcmeAccountService acmeAccountService = new AcmeAccountService(certificateAuthorityName, contactUrlsList, alias, keyStoreName);
             ServiceTarget serviceTarget = context.getServiceTarget();
             RuntimeCapability<Void> certificateAuthorityAccountRuntimeCapability = CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName acmeAccountServiceName = certificateAuthorityAccountRuntimeCapability.getCapabilityServiceName(AcmeAccount.class);
@@ -203,8 +195,12 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
             String keyStoreCapabilityName = RuntimeCapability.buildDynamicCapabilityName(KEY_STORE_CAPABILITY, keyStoreName);
             acmeAccountServiceBuilder.addDependency(context.getCapabilityServiceName(keyStoreCapabilityName, KeyStore.class), KeyStore.class, acmeAccountService.getKeyStoreInjector());
-
-            commonDependencies(acmeAccountServiceBuilder).install();
+            if (certificateAuthorityName.equalsIgnoreCase(CertificateAuthority.LETS_ENCRYPT.getName())) {
+                commonRequirements(acmeAccountServiceBuilder).install();
+            } else {
+                acmeAccountServiceBuilder.requires(CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY.getCapabilityServiceName(certificateAuthorityName));
+                commonRequirements(acmeAccountServiceBuilder).install();
+            }
         }
     }
 
@@ -422,7 +418,6 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
         return (ModifiableKeyStoreService) serviceContainer.getService();
     }
-
 
     private static AcmeAccountService getAcmeAccountService(OperationContext context) throws OperationFailedException {
         ServiceRegistry serviceRegistry = context.getServiceRegistry(true);

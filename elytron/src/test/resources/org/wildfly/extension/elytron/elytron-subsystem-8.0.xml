@@ -302,8 +302,16 @@
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
                                 provider-name="first"/>
         </client-ssl-contexts>
+        <certificate-authorities>
+            <certificate-authority name="testCA" url="https://www.test.com"/>
+        </certificate-authorities>
         <certificate-authority-accounts>
             <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
+                <account-key key-store="accounts.keystore" alias="server">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+            <certificate-authority-account name="MyCA2" certificate-authority="testCA">
                 <account-key key-store="accounts.keystore" alias="server">
                     <credential-reference clear-text="elytron"/>
                 </account-key>

@@ -127,7 +127,13 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
                 ).addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE, "automatic.keystore")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE
-                ));
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, "invalidCAA")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY)
+                )
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY)),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
+        );
     }
 
     @Test

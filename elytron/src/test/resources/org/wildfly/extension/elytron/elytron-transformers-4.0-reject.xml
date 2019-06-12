@@ -92,5 +92,20 @@
         <client-ssl-contexts>
             <client-ssl-context name="ClientContext"/>
         </client-ssl-contexts>
+        <certificate-authorities>
+            <certificate-authority name="testCA" url="http://www.test.com"/>
+        </certificate-authorities>
+        <certificate-authority-accounts>
+            <certificate-authority-account name="validCAA">
+                <account-key key-store="accounts.keystore" alias="alias">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+            <certificate-authority-account name="invalidCAA" certificate-authority="testCA">
+                <account-key key-store="accounts.keystore" alias="alias">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+        </certificate-authority-accounts>
     </tls>
 </subsystem>

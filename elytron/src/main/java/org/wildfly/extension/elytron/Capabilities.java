@@ -50,6 +50,7 @@ import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 
 /**
@@ -81,6 +82,12 @@ class Capabilities {
 
     static final RuntimeCapability<Void> CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY, true, AcmeAccount.class)
+            .build();
+
+    static final String CERTIFICATE_AUTHORITY_CAPABILITY = CAPABILITY_BASE + "certificate-authority";
+
+    static final RuntimeCapability<Void> CERTIFICATE_AUTHORITY_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(CERTIFICATE_AUTHORITY_CAPABILITY, true, CertificateAuthority.class)
             .build();
 
     static final String CREDENTIAL_STORE_CAPABILITY = CAPABILITY_BASE + "credential-store";

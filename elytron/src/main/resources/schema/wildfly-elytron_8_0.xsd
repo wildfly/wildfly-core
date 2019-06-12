@@ -4224,6 +4224,7 @@
             <xs:element name="trust-managers" type="trustManagersType" minOccurs="0"/>
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
+            <xs:element name="certificate-authorities" type="certificateAuthoritiesType" minOccurs="0" />
             <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
             <xs:element name="server-ssl-sni-contexts" type="serverSSLSNIContextsType" minOccurs="0" />
         </xs:all>
@@ -5039,22 +5040,57 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="certificate-authority" default="LetsEncrypt">
+        <xs:attribute name="certificate-authority" type="xs:string" default="LetsEncrypt">
             <xs:annotation>
                 <xs:documentation>
-                    The certificate authority to use.
+                    The reference to certificate authority to use.
                 </xs:documentation>
             </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="LetsEncrypt"/>
-                </xs:restriction>
-            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="contact-urls" type="stringListType" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     A list of URLs that the certificate authority can contact about any issues related to this account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthoritiesType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for certificate authority definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="certificate-authority" type="certificateAuthorityType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single certificate authority.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this certificate authority.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="url" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    URL of the certificate authority.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="staging-url" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    URL of the certificate authority to use in pre-production.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

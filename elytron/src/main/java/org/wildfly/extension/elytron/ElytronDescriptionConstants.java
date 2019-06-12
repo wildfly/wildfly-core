@@ -84,6 +84,7 @@ interface ElytronDescriptionConstants {
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_AUTHORITY = "certificate-authority";
+    String CERTIFICATE_AUTHORITIES = "certificate-authorities";
     String CERTIFICATE_AUTHORITY_ACCOUNT = "certificate-authority-account";
     String CERTIFICATE_AUTHORITY_ACCOUNTS = "certificate-authority-accounts";
     String CERTIFICATE_CHAIN = "certificate-chain";
@@ -508,6 +509,7 @@ interface ElytronDescriptionConstants {
     String SSL_SESSION = "ssl-session";
     String SNI_MAPPING = "sni-mapping";
     String STAGING = "staging";
+    String STAGING_URL = "staging-url";
     String START_SEGMENT = "start-segment";
     String STATE = "state";
     String STORE = "store";
