@@ -38,7 +38,9 @@
     <name>WildFly: Remoting Subsystem Test</name>
     <description>This is not in the remoting subsystem as it introduces circular dependencies</description>
     <properties>
-        <remoting.test.level>TRACE</remoting.test.level>
+        <as.test.level>INFO</as.test.level>
+        <msc.test.level>TRACE</msc.test.level>
+        <controller.test.level>DEBUG</controller.test.level>
     </properties>
 
     <dependencies>
@@ -88,7 +90,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <test.level>${remoting.test.level}</test.level>
+                        <msc.test.level>${msc.test.level}</msc.test.level>
+                        <as.test.level>${as.test.level}</as.test.level>
+                        <controller.test.level>${controller.test.level}</controller.test.level>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
