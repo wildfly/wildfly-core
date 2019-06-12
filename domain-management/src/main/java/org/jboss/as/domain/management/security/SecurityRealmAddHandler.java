@@ -62,6 +62,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -779,7 +781,15 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         ServiceName secretServiceName = SecretIdentityService.ServiceUtil.createServiceName(realmName);
 
         ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
-        boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
+
+        boolean base64=true;
+        if(secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() == ModelType.EXPRESSION) {
+           String pattern = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$";
+           Pattern p = Pattern.compile(pattern);
+           Matcher m = p.matcher(resolvedValueNode.asString());
+           base64 =(m.find())?true:false;
+        }
+
         SecretIdentityService sis;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
             sis = new SecretIdentityService(resolvedValueNode.asString(), false);
