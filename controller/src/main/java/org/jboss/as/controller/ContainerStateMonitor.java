@@ -253,6 +253,7 @@ final class ContainerStateMonitor {
                     }
                     msg.append(ControllerLogger.ROOT_LOGGER.serviceStatusReportMissing(entry.getKey(), createDependentsString(entry.getValue().getDependents())));
                 } else {
+                    ControllerLogger.ROOT_LOGGER.warnf("********** Failed or missing Service: %s - %s", entry.getKey(), entry.getValue());
                     transitiveDownCount++;
                 }
             }
@@ -418,6 +419,11 @@ final class ContainerStateMonitor {
          */
         Set<ServiceName> getDependents() {
             return Collections.unmodifiableSet(dependents);
+        }
+
+        @Override
+        public String toString() {
+            return "MissingDependencyInfo{serviceName=" + serviceName + ", unavailable=" + unavailable + ", dependents=" + dependents + "}";
         }
     }
 }
