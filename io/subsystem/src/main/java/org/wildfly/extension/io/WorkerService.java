@@ -144,4 +144,8 @@ public class WorkerService implements Service<XnioWorker> {
     public XnioWorker getValue() throws IllegalStateException, IllegalArgumentException {
         return worker;
     }
+
+    public InjectedValue<ExecutorService> getInjectedExecutor() {
+        return injectedExecutor;
+    }
 }

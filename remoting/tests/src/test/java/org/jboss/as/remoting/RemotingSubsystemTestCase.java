@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -368,11 +369,15 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
             protected void addExtraServices(ServiceTarget target) {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
-                target.addService(IOServices.WORKER.append("default"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
+                final WorkerService defaultService = new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2));
+                target.addService(IOServices.WORKER.append("default"), defaultService)
                         .setInitialMode(ServiceController.Mode.ON_DEMAND)
+                        .addDependency(ServiceName.parse("org.wildfly.management.executor"), ExecutorService.class, defaultService.getInjectedExecutor())
                         .install();
-                target.addService(IOServices.WORKER.append("default-remoting"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
+                final WorkerService defaultRemotingService = new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2));
+                target.addService(IOServices.WORKER.append("default-remoting"), defaultRemotingService)
                         .setInitialMode(ServiceController.Mode.ON_DEMAND)
+                        .addDependency(ServiceName.parse("org.wildfly.management.executor"), ExecutorService.class, defaultRemotingService.getInjectedExecutor())
                         .install();
             }
 
@@ -384,6 +389,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
                         RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
                 capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                         "default-remoting"), XnioWorker.class);
+                capabilities.put("org.wildfly.io.max-threads", Integer.class);
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
             }
         };
