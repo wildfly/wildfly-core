@@ -389,7 +389,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
                         RemotingSubsystemRootResource.WORKER.getDefaultValue().asString()), XnioWorker.class);
                 capabilities.put(buildDynamicCapabilityName(IO_WORKER_CAPABILITY_NAME,
                         "default-remoting"), XnioWorker.class);
-                capabilities.put("org.wildfly.io.max-threads", Integer.class);
+                //capabilities.put("org.wildfly.io.max-threads", Integer.class);
                 AdditionalInitialization.registerServiceCapabilities(capabilityRegistry, capabilities);
             }
         };
