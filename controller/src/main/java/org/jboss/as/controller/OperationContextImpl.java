@@ -460,6 +460,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (affectsRuntime) {
             MGMT_OP_LOGGER.debugf("Entered VERIFY stage; waiting for service container to settle");
             long timeout = getBlockingTimeout().getLocalBlockingTimeout();
+            MGMT_OP_LOGGER.warnf("********** timeout %d", timeout);
             ExecutionStatus originalExecutionStatus = executionStatus;
             try {
                 // First wait until any removals we've initiated have begun processing, otherwise
@@ -468,6 +469,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                 waitForRemovals();
                 ContainerStateMonitor.ContainerStateChangeReport changeReport =
                         modelController.awaitContainerStateChangeReport(timeout, TimeUnit.MILLISECONDS);
+
+                MGMT_OP_LOGGER.warnf("********** OperationContextImpl ChangeReport %s", changeReport);
                 if (changeReport != null && changeReport.hasNewProblems()) {
                     // If any services are missing, add a verification handler to see if we caused it
                     if (!changeReport.getMissingServices().isEmpty()) {
@@ -489,6 +492,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 throw te;
             } finally {
                 executionStatus = originalExecutionStatus;
+                MGMT_OP_LOGGER.warnf("********** executionStatus %s", executionStatus);
                 notifyModificationsComplete();
             }
         }

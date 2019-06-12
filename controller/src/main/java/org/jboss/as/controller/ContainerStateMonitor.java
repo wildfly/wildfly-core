@@ -239,6 +239,7 @@ final class ContainerStateMonitor {
     }
 
     static String createChangeReportLogMessage(ContainerStateChangeReport changeReport, boolean forException) {
+        ControllerLogger.ROOT_LOGGER.warnf("********** forException ? %s - ChangeReport: %s", forException, changeReport);
 
         final StringBuilder msg = new StringBuilder();
         msg.append(forException ? ControllerLogger.ROOT_LOGGER.serviceStatusReportFailureHeader() : ControllerLogger.ROOT_LOGGER.serviceStatusReportHeader());
@@ -360,6 +361,17 @@ final class ContainerStateMonitor {
          */
         boolean hasNewProblems() {
             return !newFailedControllers.isEmpty() || !missingServices.isEmpty();
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("ContainerStateChangeReport{");
+            sb.append("missingServices=").append(missingServices);
+            sb.append(", failedControllers=").append(failedControllers);
+            sb.append(", newFailedControllers=").append(newFailedControllers);
+            sb.append(", noLongerMissingServices=").append(noLongerMissingServices);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
