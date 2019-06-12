@@ -220,7 +220,7 @@ public class PropertyFileFinder implements State {
                     SERVER_CONFIG_DIR, SERVER_BASE_DIR, "standalone", fileName);
             if (standaloneProps.exists()) {
                 foundFiles.add(standaloneProps);
-            }
+            } // TODO should this invalid --sc be an error regardless of whether domainConfigOpt points to a valid dir?
         }
 
         if (domainConfigOpt != null) {
@@ -228,7 +228,7 @@ public class PropertyFileFinder implements State {
                     DOMAIN_CONFIG_DIR, DOMAIN_BASE_DIR, "domain", fileName);
             if (domainProps.exists()) {
                 foundFiles.add(domainProps);
-            }
+            } // TODO should this invalid --dc be an error regardless of whether serverConfigOpt points to a valid dir?
         }
 
         return !foundFiles.isEmpty();
@@ -242,8 +242,9 @@ public class PropertyFileFinder implements State {
                 serverBaseDirPropertyName, defaultBaseDir);
 
         File file = new File(dirPath, fileName);
-        validatePermissions(dirPath, file);
-
+        if (file.exists()) {
+            validatePermissions(dirPath, file);
+        } // else caller deals with non-existent files
         return file;
 
     }
