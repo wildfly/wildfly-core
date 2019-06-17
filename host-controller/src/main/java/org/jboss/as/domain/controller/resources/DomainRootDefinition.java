@@ -301,7 +301,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(ApplyExtensionsHandler.DEFINITION, aexh);
 
         }
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, isMaster ? new DeploymentFullReplaceHandler(contentRepo) : new DeploymentFullReplaceHandler(fileRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, new DeploymentFullReplaceHandler(contentRepo, fileRepository, isMaster, environment.isBackupDomainFiles()));
 
         resourceRegistration.registerOperationHandler(ValidateAddressOperationHandler.DEFINITION, ValidateAddressOperationHandler.INSTANCE);
 
