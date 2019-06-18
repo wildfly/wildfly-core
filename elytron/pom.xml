@@ -201,7 +201,7 @@
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
                             </excludes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_7_0.xsd</systemId>
+                            <systemId>src/main/resources/schema/wildfly-elytron_8_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>
