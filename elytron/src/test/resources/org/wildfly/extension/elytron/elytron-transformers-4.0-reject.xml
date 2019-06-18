@@ -22,6 +22,7 @@
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
+        <aggregate-realm name="AggregateTwo" authentication-realm="JdbcBcryptHashHex" authorization-realm="JdbcBcryptSaltHex" principal-transformer ="RegexOne"/>
         <jdbc-realm name="JdbcBcryptHashHex">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>
@@ -82,6 +83,7 @@
             <evidence-decoder name="rfc822Decoder"/>
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
+        <regex-principal-transformer name="RegexOne" pattern="a" replacement="b" />
     </mappers>
     <tls>
         <key-stores>

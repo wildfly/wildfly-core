@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<identity xmlns="urn:elytron:1.0">
+    <!-- generator: FileSystemSecurityRealmTest.testCreateIdentityWithEverything() -->
+    <attributes>
+        <attribute name="firstName" value="Jane2"></attribute>
+        <attribute name="lastName" value="Doe2"></attribute>
+        <attribute name="roles" value="Employee2"></attribute>
+        <attribute name="roles" value="Manager2"></attribute>
+        <attribute name="roles" value="Admin2"></attribute>
+    </attributes>
+</identity>

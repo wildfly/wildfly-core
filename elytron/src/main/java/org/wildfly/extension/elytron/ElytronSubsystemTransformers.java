@@ -28,6 +28,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENC
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
@@ -132,7 +133,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .getAttributeBuilder()
                 .setDiscard(DISCARD_SINGLE_REALM, AUTHORIZATION_REALMS)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, AUTHORIZATION_REALMS)
-                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALM);
+                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALM)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, PRINCIPAL_TRANSFORMER);
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)

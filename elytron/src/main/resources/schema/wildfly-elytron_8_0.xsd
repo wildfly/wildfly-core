@@ -1020,6 +1020,14 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="principal-transformer" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A principal transformer to be applied after the authentication steps but before the authorization
+                            steps.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
