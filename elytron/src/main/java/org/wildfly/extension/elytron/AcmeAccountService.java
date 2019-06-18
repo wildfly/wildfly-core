@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.extension.elytron.CertificateAuthorityAccountDefinition.CertificateAuthority;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -39,6 +38,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.x500.cert.acme.AcmeAccount;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 /**
  * A {@link Service} responsible for a single {@link AcmeAccount} instance.
@@ -49,14 +49,14 @@ class AcmeAccountService implements Service<AcmeAccount> {
 
     private final InjectedValue<KeyStore> keyStoreInjector = new InjectedValue<>();
     private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplierInjector = new InjectedValue<>();
-    private final CertificateAuthority certificateAuthority;
+    private final String certificateAuthorityName;
     private final List<String> contactUrlsList;
     private final String alias;
     private final String keyStoreName;
     private volatile AcmeAccount acmeAccount;
 
-    AcmeAccountService(CertificateAuthority certificateAuthority, List<String> contactUrlsList, String alias, String keyStoreName) {
-        this.certificateAuthority = certificateAuthority;
+    AcmeAccountService(String certificateAuthorityName, List<String> contactUrlsList, String alias, String keyStoreName) {
+        this.certificateAuthorityName = certificateAuthorityName;
         this.contactUrlsList = contactUrlsList;
         this.alias = alias;
         this.keyStoreName = keyStoreName;
@@ -69,10 +69,18 @@ class AcmeAccountService implements Service<AcmeAccount> {
             final ModifiableKeyStoreService keyStoreService = CertificateAuthorityAccountDefinition.getModifiableKeyStoreService(serviceRegistry, keyStoreName);
             char[] keyPassword = resolveKeyPassword((KeyStoreService) keyStoreService);
             KeyStore keyStore = keyStoreInjector.getValue();
+            CertificateAuthority certificateAuthority;
+            if (certificateAuthorityName.equalsIgnoreCase(CertificateAuthority.LETS_ENCRYPT.getName())) {
+                certificateAuthority = CertificateAuthority.LETS_ENCRYPT;
+            } else {
+                certificateAuthority = CertificateAuthorityDefinition.getCertificateAuthorityService(serviceRegistry, certificateAuthorityName).getValue();
+            }
 
             AcmeAccount.Builder acmeAccountBuilder = AcmeAccount.builder()
-                    .setServerUrl(certificateAuthority.getUrl())
-                    .setStagingServerUrl(certificateAuthority.getStagingUrl());
+                    .setServerUrl(certificateAuthority.getUrl());
+            if (certificateAuthority.getStagingUrl() != null) {
+                acmeAccountBuilder.setStagingServerUrl(certificateAuthority.getStagingUrl());
+            }
             if (! contactUrlsList.isEmpty()) {
                 acmeAccountBuilder = acmeAccountBuilder.setContactUrls(contactUrlsList.toArray(new String[contactUrlsList.size()]));
             }
