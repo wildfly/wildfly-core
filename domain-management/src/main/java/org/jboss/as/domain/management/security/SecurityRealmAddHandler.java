@@ -783,6 +783,11 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
 
         boolean base64=true;
+
+        /*
+          It will only go through this "if" block if value of secret is expression and then it is confirming whether the string "resolvedValueNode.asString()" is base64 or not with the help of pattern mentioned below .As per base64 , the count of characters should be multiple of 4 and the characters should be from this list - (A-Z ,a-z ,0-9,+,/) .In a set of 4 characters if only 3 characters are from that list then the 4th cahracter should be "=" , or if only 2 character are from that list then 3rd and 4th shold be "=" . 
+        */
+
         if(secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() == ModelType.EXPRESSION) {
            String pattern = "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$";
            Pattern p = Pattern.compile(pattern);
