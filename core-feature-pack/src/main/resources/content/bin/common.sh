@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 setModularJdk() {
-  $JAVA --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
+  "$JAVA" --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
 }
 
 setDefaultModularJvmOptions() {

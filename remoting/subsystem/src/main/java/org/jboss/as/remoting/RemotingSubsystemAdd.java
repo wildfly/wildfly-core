@@ -30,7 +30,6 @@ import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -63,9 +62,11 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
-        ModelNode endpointModel = context.readResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH)).getModel();
+        // WFCORE-4510 -- the effective endpoint configuration is from the root subsystem resource,
+        // not from the placeholder configuration=endpoint child resource.
+        ModelNode endpointModel = resource.getModel();
         String workerName = WORKER.resolveModelAttribute(context, endpointModel).asString();
 
         final OptionMap map = EndpointConfigFactory.populate(context, endpointModel);

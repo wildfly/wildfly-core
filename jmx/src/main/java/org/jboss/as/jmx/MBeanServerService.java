@@ -138,6 +138,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
 
     /** {@inheritDoc} */
     public synchronized void stop(final StopContext context) {
+        ((PluggableMBeanServerImpl) mBeanServer).setSecurityIdentitySupplier(null);
         mBeanServer.removePlugin(showModelPlugin);
         mBeanServer = null;
     }

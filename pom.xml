@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>9.0.0.Beta8-SNAPSHOT</version>
+    <version>9.0.2.Final-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -141,14 +141,14 @@
             For example: <version.org.jboss.hal.release-stream>
          -->
         <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
-        <version.com.fasterxml.jackson.core.jackson-databind>2.9.8</version.com.fasterxml.jackson.core.jackson-databind>
+        <version.com.fasterxml.jackson.core.jackson-databind>2.9.9</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.6</version.com.googlecode.javaewah>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.com.jcraft.jsch>0.1.54</version.com.jcraft.jsch>
         <version.com.jcraft.jzlib>1.1.1</version.com.jcraft.jzlib>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.0.20.Final</version.io.undertow>
+        <version.io.undertow>2.0.22.Final</version.io.undertow>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
         <version.javax.json.javax-json-api>1.1.2</version.javax.json.javax-json-api>
         <version.junit>4.12</version.junit>
@@ -183,8 +183,8 @@
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>2.0.7.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.4.5.Final</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.9.Final</version.org.jboss.remoting>
+        <version.org.jboss.msc.jboss-msc>1.4.7.Final</version.org.jboss.msc.jboss-msc>
+        <version.org.jboss.remoting>5.0.12.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.3.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.3.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
@@ -194,7 +194,7 @@
         <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
         <version.org.jboss.threads>2.3.3.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.7.1.Final</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.7.2.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
@@ -216,8 +216,8 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.9.1.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.5.0.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron>1.10.0.CR1</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web>1.6.0.CR1</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>
     </properties>
