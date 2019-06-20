@@ -63,11 +63,13 @@ class CertificateAuthorityDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.URL, ModelType.STRING, false)
             .setValidator(new URLValidator(false))
+            .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition STAGING_URL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING_URL, ModelType.STRING, true)
             .setValidator(new URLValidator(false))
+            .setAllowExpression(true)
             .setRestartAllServices()
             .build();
 
