@@ -27,6 +27,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.CapabilityServiceTarget;
@@ -47,6 +49,7 @@ import org.jboss.msc.service.ServiceController.Mode;
  * Handler for the server and host model socket-binding resource's add operation.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class BindingAddHandler extends SocketBindingAddHandler {
 
@@ -98,16 +101,15 @@ public class BindingAddHandler extends SocketBindingAddHandler {
         final ModelNode mappingsNode = config.get(CLIENT_MAPPINGS);
         final List<ClientMapping> clientMappings = mappingsNode.isDefined() ? parseClientMappings(context, mappingsNode) : null;
 
-        final SocketBindingService service = new SocketBindingService(name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(SOCKET_BINDING_CAPABILITY);
+        final Consumer<SocketBinding> sbConsumer = builder.provides(SOCKET_BINDING_CAPABILITY);
+        final Supplier<NetworkInterfaceBinding> ibSupplier = intf != null ? builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, intf) : null;
+        final Supplier<SocketBindingManager> sbSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+        final SocketBindingService service = new SocketBindingService(sbConsumer, ibSupplier, sbSupplier, name, port, fixedPort, mcastInet, mcastPort, clientMappings);
         builder.setInstance(service);
-        if (intf != null) {
-            builder.addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getInterfaceBinding(), intf);
-        }
-        builder.addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, service.getSocketBindings())
-                .addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name))
-                .setInitialMode(Mode.ON_DEMAND)
-                .install();
+        builder.addAliases(SocketBinding.JBOSS_BINDING_NAME.append(name));
+        builder.setInitialMode(Mode.ON_DEMAND);
+        builder.install();
     }
 
     static List<ClientMapping> parseClientMappings(OperationContext context, ModelNode mappings) throws OperationFailedException {

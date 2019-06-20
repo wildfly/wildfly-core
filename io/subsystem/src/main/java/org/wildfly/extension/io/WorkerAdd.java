@@ -34,11 +34,14 @@ import static org.wildfly.extension.io.WorkerResourceDefinition.WORKER_TASK_MAX_
 
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -57,6 +60,7 @@ import org.xnio.XnioWorker;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class WorkerAdd extends AbstractAddStepHandler {
     static final WorkerAdd INSTANCE = new WorkerAdd();
@@ -216,13 +220,12 @@ class WorkerAdd extends AbstractAddStepHandler {
 
         registerMax(context, name, workerThreads);
 
-        final WorkerService workerService = new WorkerService(builder);
-        context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY)
-                .setInstance(workerService)
-                .addCapabilityRequirement("org.wildfly.management.executor",
-                        ExecutorService.class, workerService.injectedExecutor)
-                .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .install();
+        final CapabilityServiceBuilder<?> capBuilder = context.getCapabilityServiceTarget().addCapability(IO_WORKER_RUNTIME_CAPABILITY);
+        final Consumer<XnioWorker> workerConsumer = capBuilder.provides(IO_WORKER_RUNTIME_CAPABILITY);
+        final Supplier<ExecutorService> executorSupplier = capBuilder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
+        capBuilder.setInstance(new WorkerService(workerConsumer, executorSupplier, builder));
+        capBuilder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+        capBuilder.install();
     }
 
     private void registerMax(OperationContext context, String name, int workerThreads) {
