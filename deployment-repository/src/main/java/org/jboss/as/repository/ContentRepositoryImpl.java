@@ -344,6 +344,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         cleanedContents.put(MARKED_CONTENT, new HashSet<>());
         cleanedContents.put(DELETED_CONTENT, new HashSet<>());
         synchronized (contentHashReferences) {
+            DeploymentRepositoryLogger.ROOT_LOGGER.debug("Current content hash references are "+contentHashReferences);
             for (ContentReference fsContent : listLocalContents()) {
                 if (!readWrite) {
                     return Collections.emptyMap();
