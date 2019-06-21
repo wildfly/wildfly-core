@@ -19,40 +19,54 @@
 package org.wildfly.extension.discovery;
 
 import java.io.IOException;
+import java.util.EnumSet;
+import java.util.Locale;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
+ * @author <a href="mailto:paul.ferraro@redhat.com">Paul Ferraro</a>
  */
+@RunWith(Parameterized.class)
 public class DiscoverySubsystemTestCase extends AbstractSubsystemBaseTest {
 
-    public DiscoverySubsystemTestCase() {
-        super(DiscoveryExtension.SUBSYSTEM_NAME, new DiscoveryExtension());
+    @Parameters
+    public static Iterable<DiscoverySchema> parameters() {
+        return EnumSet.allOf(DiscoverySchema.class);
     }
 
+    private final DiscoverySchema schema;
+
+    public DiscoverySubsystemTestCase(DiscoverySchema schema) {
+        super(DiscoveryExtension.SUBSYSTEM_NAME, new DiscoveryExtension());
+        this.schema = schema;
+    }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("discovery-1.0.xml");
+        return readResource(String.format(Locale.ROOT, "discovery-%d.%d.xml", this.schema.major(), this.schema.minor()));
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-discovery_1_0.xsd";
+        return String.format(Locale.ROOT, "schema/wildfly-discovery_%d_%d.xsd", this.schema.major(), this.schema.minor());
     }
 
     @Override
     protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/discovery.xml"
-        };
+        return new String[] { "/subsystem-templates/discovery.xml" };
     }
 
     @Test
     @Override
     public void testSchemaOfSubsystemTemplates() throws Exception {
-        super.testSchemaOfSubsystemTemplates();
+        if (this.schema == DiscoverySchema.CURRENT) {
+            super.testSchemaOfSubsystemTemplates();
+        }
     }
 }
