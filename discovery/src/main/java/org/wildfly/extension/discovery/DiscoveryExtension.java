@@ -22,9 +22,10 @@
 
 package org.wildfly.extension.discovery;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -41,7 +42,6 @@ import org.wildfly.discovery.spi.DiscoveryProvider;
 public final class DiscoveryExtension implements Extension {
 
     static final String SUBSYSTEM_NAME = "discovery";
-    static final String NAMESPACE = "urn:jboss:domain:discovery:1.0";
 
     static final String RESOURCE_NAME = DiscoveryExtension.class.getPackage().getName() + ".LocalDescriptions";
 
@@ -50,17 +50,11 @@ public final class DiscoveryExtension implements Extension {
             .setAllowMultipleRegistrations(true)
             .build();
 
-    /**
-     * Construct a new instance.
-     */
-    public DiscoveryExtension() {
-    }
-
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 0));
+        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, DiscoveryModel.CURRENT.getVersion());
         subsystemRegistration.setHostCapable();
-        subsystemRegistration.registerXMLElementWriter(DiscoverySubsystemParser::new);
+        subsystemRegistration.registerXMLElementWriter(new DiscoverySubsystemParser(DiscoverySchema.CURRENT));
 
         final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(new DiscoverySubsystemDefinition());
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
@@ -68,9 +62,9 @@ public final class DiscoveryExtension implements Extension {
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        // For the current version we don't use a Supplier as we want its description initialized
-        // TODO if any new xsd versions are added, use a Supplier for the old version
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, new DiscoverySubsystemParser());
+        for (DiscoverySchema schema : EnumSet.allOf(DiscoverySchema.class)) {
+            context.setSubsystemXmlMapping(SUBSYSTEM_NAME, schema.getNamespaceUri(), new DiscoverySubsystemParser(schema));
+        }
     }
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {

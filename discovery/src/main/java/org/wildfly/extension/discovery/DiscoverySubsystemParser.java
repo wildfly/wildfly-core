@@ -36,9 +36,15 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 final class DiscoverySubsystemParser extends PersistentResourceXMLParser {
 
+    private final DiscoverySchema schema;
+
+    DiscoverySubsystemParser(DiscoverySchema schema) {
+        this.schema = schema;
+    }
+
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return builder(DiscoverySubsystemDefinition.PATH, DiscoveryExtension.NAMESPACE)
+        return builder(DiscoverySubsystemDefinition.PATH, this.schema.getNamespaceUri())
                 .addChild(
                         builder(StaticDiscoveryProviderDefinition.PATH)
                                 .addAttribute(StaticDiscoveryProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
