@@ -51,7 +51,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -74,13 +77,19 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
     @Test
     public void testConfigurationChanges() throws Exception {
         try {
+            // These first two changes don't get recorded on hosts because the host subsystem is not installed yet
             createProfileConfigurationChange(DEFAULT_PROFILE, MAX_HISTORY_SIZE); // shouldn't appear on slave
             createProfileConfigurationChange(OTHER_PROFILE, MAX_HISTORY_SIZE);
+
             createConfigurationChanges(HOST_MASTER);
             createConfigurationChanges(HOST_SLAVE);
-            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER), 11);
-            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
-            checkConfigurationChanges(readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
+            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER),
+                    11, Collections.singleton(10)); // the first op from createConfigurationChanges is
+                                                         // non multi-process and gets no domain-uuid
+            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE),
+                    11, Collections.emptySet()); // All ops routed from master to slave get a domain-uuid
+            checkConfigurationChanges(readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE),
+                    11, Collections.emptySet()); // All ops routed from master to slave get a domain-uuid
 
             setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER, 19);
             checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
@@ -241,16 +250,18 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         }
     }
 
-    private void checkConfigurationChanges(List<ModelNode> changes, int size) throws IOException {
+    private void checkConfigurationChanges(List<ModelNode> changes, int size, Set<Integer> localOnly) throws IOException {
         assertThat(changes.toString(), changes.size(), is(size));
-        for (ModelNode change : changes) {
-            assertThat(change.hasDefined(OPERATION_DATE), is(true));
-            assertThat(change.hasDefined(USER_ID), is(false));
-            assertThat(change.hasDefined(DOMAIN_UUID), is(true));
-            assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
-            assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
-            assertThat(change.get(OPERATIONS).asList().size(), is(1));
+        for (int i = 0; i < size; i++) {
+            ModelNode change = changes.get(i);
+            String msg = i + " -- " + changes.toString();
+            assertThat(msg, change.hasDefined(OPERATION_DATE), is(true));
+            assertThat(msg, change.hasDefined(USER_ID), is(false));
+            assertThat(msg, change.hasDefined(DOMAIN_UUID), is(!localOnly.contains(i)));
+            assertThat(msg, change.hasDefined(ACCESS_MECHANISM), is(true));
+            assertThat(msg, change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
+            assertThat(msg, change.hasDefined(REMOTE_ADDRESS), is(true));
+            assertThat(msg, change.get(OPERATIONS).asList().size(), is(1));
         }
         validateChanges(changes);
     }
@@ -260,7 +271,9 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         for (ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
             assertThat(change.hasDefined(USER_ID), is(false));
-            assertThat(change.hasDefined(DOMAIN_UUID), is(true));
+            assertThat(change.hasDefined(DOMAIN_UUID), is(true)); // all the slave changes have a domain-uuid,
+                                                                        // either due to routing from the master or
+                                                                        // due to local need for rollout to servers
             assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
             assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
             assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
@@ -276,15 +289,6 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
     }
 
     private void validateChanges(List<ModelNode> changes) throws IOException {
-        for (ModelNode change : changes) {
-            assertThat(change.hasDefined(OPERATION_DATE), is(true));
-            assertThat(change.hasDefined(USER_ID), is(false));
-            assertThat(change.hasDefined(DOMAIN_UUID), is(true));
-            assertThat(change.hasDefined(ACCESS_MECHANISM), is(true));
-            assertThat(change.get(ACCESS_MECHANISM).asString(), is("NATIVE"));
-            assertThat(change.hasDefined(REMOTE_ADDRESS), is(true));
-            assertThat(change.get(OPERATIONS).asList().size(), is(1));
-        }
         ModelNode currentChange = changes.get(0);
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);

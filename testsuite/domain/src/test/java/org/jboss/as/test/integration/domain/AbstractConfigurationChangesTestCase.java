@@ -101,41 +101,41 @@ public abstract class AbstractConfigurationChangesTestCase {
         DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(host).append(getAddress()));
         add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
-        executeForResult(client, add);
+        executeForResult(client, add); // 0 -- write to host subsystem
         PathAddress allowedOrigins = PathAddress.pathAddress().append(host).append(ALLOWED_ORIGINS_ADDRESS);
         ModelNode setAllowedOrigins = Util.createEmptyOperation("list-add", allowedOrigins);
         setAllowedOrigins.get(ModelDescriptionConstants.NAME).set(ModelDescriptionConstants.ALLOWED_ORIGINS);
         setAllowedOrigins.get(ModelDescriptionConstants.VALUE).set("http://www.wildfly.org");
-        client.execute(setAllowedOrigins);
+        client.execute(setAllowedOrigins); // 1 -- write to host core
         PathAddress auditLogAddress = PathAddress.pathAddress().append(host).append(AUDIT_LOG_ADDRESS);
         ModelNode disableLogBoot = Util.getWriteAttributeOperation(auditLogAddress, ModelDescriptionConstants.LOG_BOOT, false);
-        client.execute(disableLogBoot);
+        client.execute(disableLogBoot); // 2 -- write to host core
         //read
         client.execute(Util.getReadAttributeOperation(allowedOrigins, ModelDescriptionConstants.ALLOWED_ORIGINS));
-        //invalid operation
+        //invalid operation; not recorded
         client.execute(Util.getUndefineAttributeOperation(allowedOrigins, "not-exists-attribute"));
-        //invalid operation
+        //invalid operation; not recorded
         client.execute(Util.getWriteAttributeOperation(allowedOrigins, "not-exists-attribute", "123456"));
         //write operation, failed
         ModelNode setAllowedOriginsFails = Util.getWriteAttributeOperation(allowedOrigins, ModelDescriptionConstants.ALLOWED_ORIGINS, "123456"); //wrong type, expected is LIST, op list-add
-        client.execute(setAllowedOriginsFails);
+        client.execute(setAllowedOriginsFails); // 3 -- write to host core (recorded despite failure)
         PathAddress systemPropertyAddress = PathAddress.pathAddress().append(host).append(SYSTEM_PROPERTY_ADDRESS);
         ModelNode setSystemProperty = Util.createAddOperation(systemPropertyAddress);
         setSystemProperty.get(ModelDescriptionConstants.VALUE).set("changeConfig");
-        client.execute(setSystemProperty);
+        client.execute(setSystemProperty); // 4  -- write to host core
         ModelNode unsetAllowedOrigins = Util.getUndefineAttributeOperation(allowedOrigins, ModelDescriptionConstants.ALLOWED_ORIGINS);
-        client.execute(unsetAllowedOrigins);
+        client.execute(unsetAllowedOrigins); // 5 -- write to host core
         ModelNode enableLogBoot = Util.getWriteAttributeOperation(auditLogAddress, ModelDescriptionConstants.LOG_BOOT, true);
-        client.execute(enableLogBoot);
+        client.execute(enableLogBoot);  // 6 -- write to host core
         ModelNode unsetSystemProperty = Util.createRemoveOperation(systemPropertyAddress);
-        client.execute(unsetSystemProperty);
+        client.execute(unsetSystemProperty); // 7 -- write to host core
         PathAddress inMemoryAddress = PathAddress.pathAddress().append(host).append(IN_MEMORY_HANDLER_ADDRESS);
         ModelNode addInMemoryHandler = Util.createAddOperation(inMemoryAddress);
-        client.execute(addInMemoryHandler);
+        client.execute(addInMemoryHandler); // 8  -- write to host core
         ModelNode editInMemoryHandler = Util.getWriteAttributeOperation(inMemoryAddress, ModelDescriptionConstants.MAX_HISTORY, 50);
-        client.execute(editInMemoryHandler);
+        client.execute(editInMemoryHandler); // 9  -- write to host core
         ModelNode removeInMemoryHandler = Util.createRemoveOperation(inMemoryAddress);
-        client.execute(removeInMemoryHandler);
+        client.execute(removeInMemoryHandler); // 10  -- write to host core
     }
 
     protected PathAddress removePrefix(ModelNode operation) {

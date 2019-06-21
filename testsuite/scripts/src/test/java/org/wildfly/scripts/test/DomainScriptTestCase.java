@@ -37,7 +37,6 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -53,8 +52,8 @@ public class DomainScriptTestCase extends ScriptTestCase {
                 // Check for admin-only
                 final ModelNode hostAddress = determineHostAddress(domainClient);
                 final Operations.CompositeOperationBuilder builder = Operations.CompositeOperationBuilder.create()
-                                                                                                         .addStep(Operations.createReadAttributeOperation(hostAddress, "running-mode"))
-                                                                                                         .addStep(Operations.createReadAttributeOperation(hostAddress, "host-state"));
+                        .addStep(Operations.createReadAttributeOperation(hostAddress, "running-mode"))
+                        .addStep(Operations.createReadAttributeOperation(hostAddress, "host-state"));
                 ModelNode response = domainClient.execute(builder.build());
                 if (Operations.isSuccessfulOutcome(response)) {
                     response = Operations.readResult(response);
@@ -87,13 +86,6 @@ public class DomainScriptTestCase extends ScriptTestCase {
 
     public DomainScriptTestCase() {
         super("domain", HOST_CONTROLLER_CHECK);
-    }
-
-    @BeforeClass
-    public static void updateConf() throws Exception {
-        // Likely not needed in the PC, but also won't hurt
-        appendConf("domain", "PROCESS_CONTROLLER_JAVA_OPTS");
-        appendConf("domain", "HOST_CONTROLLER_JAVA_OPTS");
     }
 
     @Override

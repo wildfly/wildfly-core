@@ -200,10 +200,11 @@ class HttpServerDefinitions {
                 Predicate<Provider.Service> serviceFilter = (Provider.Service s) -> HttpServerAuthenticationMechanismFactory.class.getSimpleName().equals(s.getType());
 
                 return () -> {
-                    if ( findProviderService(providerSupplier, serviceFilter) == null ) {
+                    final Provider[] actualProviders = providerSupplier.get();
+                    if ( findProviderService(actualProviders, serviceFilter) == null ) {
                         throw ROOT_LOGGER.noSuitableProvider(HttpServerAuthenticationMechanismFactory.class.getSimpleName());
                     }
-                    return new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(providerSupplier));
+                    return new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(actualProviders));
                 };
             }
 

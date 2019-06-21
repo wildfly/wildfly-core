@@ -277,4 +277,25 @@ public class PropertyTestHelper {
     private List<String> readContent(String filePath) throws IOException {
         return Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
     }
+
+    void cleanFiles(File file) {
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    cleanFiles(child);
+                }
+            }
+        }
+        file.delete();
+    }
+
+    void cleanProperties() {
+        System.clearProperty("jboss.server.config.dir");
+        System.clearProperty("jboss.domain.config.dir");
+        System.clearProperty("jboss.server.config.user.dir");
+        System.clearProperty("jboss.domain.config.user.dir");
+        System.clearProperty("jboss.server.config.group.dir");
+        System.clearProperty("jboss.domain.config.group.dir");
+    }
 }

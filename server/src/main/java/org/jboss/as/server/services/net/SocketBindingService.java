@@ -23,6 +23,8 @@ package org.jboss.as.server.services.net;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.network.ClientMapping;
 import org.jboss.as.network.NetworkInterfaceBinding;
@@ -30,12 +32,11 @@ import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SocketBindingService implements Service<SocketBinding> {
 
@@ -49,13 +50,20 @@ public class SocketBindingService implements Service<SocketBinding> {
     /** The created binding. */
     private SocketBinding binding;
 
-    private final InjectedValue<NetworkInterfaceBinding> interfaceBinding = new InjectedValue<NetworkInterfaceBinding>();
-    private final InjectedValue<SocketBindingManager> socketBindings = new InjectedValue<SocketBindingManager>();
+    private final Consumer<SocketBinding> socketBindingConsumer;
+    private final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier;
+    private final Supplier<SocketBindingManager> socketBindingsSupplier;
 
-    public SocketBindingService(final String name, int port, boolean isFixedPort,
+    public SocketBindingService(final Consumer<SocketBinding> socketBindingConsumer,
+                                final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
+                                final Supplier<SocketBindingManager> socketBindingsSupplier,
+                                final String name, int port, boolean isFixedPort,
                                 InetAddress multicastAddress, int multicastPort,
                                 List<ClientMapping> clientMappings) {
         assert name != null : "name is null";
+        this.socketBindingConsumer = socketBindingConsumer;
+        this.interfaceBindingSupplier = interfaceBindingSupplier;
+        this.socketBindingsSupplier = socketBindingsSupplier;
         this.name = name;
         this.port = port;
         this.isFixedPort = isFixedPort;
@@ -65,32 +73,27 @@ public class SocketBindingService implements Service<SocketBinding> {
     }
 
     @Override
-    public synchronized void start(StartContext context) throws StartException {
-        this.binding = new SocketBinding(name, port, isFixedPort,
+    public synchronized void start(final StartContext context) {
+        binding = new SocketBinding(name, port, isFixedPort,
            multicastAddress, multicastPort,
-           interfaceBinding.getOptionalValue(), socketBindings.getValue(), clientMappings);
+           interfaceBindingSupplier != null ? interfaceBindingSupplier.get() : null,
+           socketBindingsSupplier.get(), clientMappings);
+        socketBindingConsumer.accept(binding);
     }
 
     @Override
-    public synchronized void stop(StopContext context) {
-        this.binding = null;
+    public synchronized void stop(final StopContext context) {
+        socketBindingConsumer.accept(null);
+        binding = null;
     }
 
     @Override
     public synchronized SocketBinding getValue() throws IllegalStateException {
         final SocketBinding binding = this.binding;
-        if(binding == null) {
+        if (binding == null) {
             throw new IllegalStateException();
         }
         return binding;
-    }
-
-    public InjectedValue<SocketBindingManager> getSocketBindings() {
-        return socketBindings;
-    }
-
-    public InjectedValue<NetworkInterfaceBinding> getInterfaceBinding() {
-        return interfaceBinding;
     }
 
 }

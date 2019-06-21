@@ -23,6 +23,7 @@
 package org.jboss.as.domain.management.security.adduser;
 
 import org.jboss.as.domain.management.security.adduser.AddUser.FileMode;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -49,6 +50,16 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
     public void setup() throws IOException {
         values.setFileMode(FileMode.MANAGEMENT);
         values.getOptions().setJBossHome(getProperty("java.io.tmpdir")+File.separator+"permmissions");
+        cleanFiles("domain");
+        cleanFiles("standalone");
+        cleanProperties();
+    }
+
+    @After
+    public void teardown() {
+        cleanFiles("domain");
+        cleanFiles("standalone");
+        cleanProperties();
     }
 
     private File createPropertyFile(String filename, String mode) throws IOException {
@@ -71,6 +82,23 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
            bw.close();
         }
         return propertyUserFile;
+    }
+
+    /**
+     * Restore permissions for a dir structure (so we can clean it out) and then clean it.
+     * Allows clean rerunning of the test in an env where java.io.tmpdir doesn't change between runs.
+     */
+    private void cleanFiles(String mode) {
+        File dir = new File(getProperty("java.io.tmpdir")+File.separator+"permmissions"+File.separator+mode);
+        dir.setExecutable(true);
+        File[] children = dir.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                child.setReadable(true);
+                child.setWritable(true);
+            }
+        }
+        cleanFiles(dir);
     }
 
     @Test
@@ -101,7 +129,7 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
         // Test parent dir without execute
         if(standaloneDir.setExecutable(false)) {
             State nextState = propertyFileFinder.execute();
-            assertTrue(nextState instanceof ErrorState);
+            assertTrue(nextState.toString(), nextState instanceof ErrorState);
             standaloneDir.setExecutable(true);
         }
 
@@ -110,7 +138,7 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
         // Test file without read
         if(standaloneMgmtUserFile.setReadable(false)) {
             State nextState = propertyFileFinder.execute();
-            assertTrue(nextState instanceof ErrorState);
+            assertTrue(nextState.toString(), nextState instanceof ErrorState);
             standaloneMgmtUserFile.setReadable(true);
         }
 
@@ -119,7 +147,7 @@ public class PropertyFileFinderPermissionsTestCase extends PropertyTestHelper {
         // Test file without write
         if(standaloneMgmtUserFile.setWritable(false)) {
             State nextState = propertyFileFinder.execute();
-            assertTrue(nextState instanceof ErrorState);
+            assertTrue(nextState.toString(), nextState instanceof ErrorState);
             standaloneMgmtUserFile.setWritable(true);
         }
 

@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:7.0" register-jaspi-factory="false">
+<subsystem xmlns="urn:wildfly:elytron:8.0" register-jaspi-factory="false">
     <audit-logging>
         <!-- autoflush was added in 5.0 - should be discarded if identical with synchronized or undefined -->
         <file-audit-log name="audit1" path="target/audit.log" synchronized="false" autoflush="false" />

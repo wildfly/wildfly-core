@@ -27,14 +27,18 @@ import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.REMOTING_ENDPOINT_CAPABILITY;
 import static org.jboss.as.remoting.RemotingSubsystemRootResource.WORKER;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 import org.xnio.XnioWorker;
@@ -63,16 +67,17 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
-        ModelNode endpointModel = context.readResource(PathAddress.pathAddress(RemotingEndpointResource.ENDPOINT_PATH)).getModel();
+        // WFCORE-4510 -- the effective endpoint configuration is from the root subsystem resource,
+        // not from the placeholder configuration=endpoint child resource.
+        ModelNode endpointModel = resource.getModel();
         String workerName = WORKER.resolveModelAttribute(context, endpointModel).asString();
 
         final OptionMap map = EndpointConfigFactory.populate(context, endpointModel);
 
         // create endpoint
         final String nodeName = WildFlySecurityManager.getPropertyPrivileged(RemotingExtension.NODE_NAME_PROPERTY, null);
-        final EndpointService endpointService = new EndpointService(nodeName, EndpointService.EndpointType.SUBSYSTEM, map);
 
         // In case of a managed server the subsystem endpoint might already be installed {@see DomainServerCommunicationServices}
         if (context.getProcessType() == ProcessType.DOMAIN_SERVER) {
@@ -83,9 +88,10 @@ class RemotingSubsystemAdd extends AbstractAddStepHandler {
             }
         }
 
-        context.getCapabilityServiceTarget().addCapability(REMOTING_ENDPOINT_CAPABILITY)
-                .setInstance(endpointService)
-                .addCapabilityRequirement(IO_WORKER_CAPABILITY_NAME, XnioWorker.class, endpointService.getWorker(), workerName)
-                .install();
+        final CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(REMOTING_ENDPOINT_CAPABILITY);
+        final Consumer<Endpoint> endpointConsumer = builder.provides(REMOTING_ENDPOINT_CAPABILITY);
+        final Supplier<XnioWorker> workerSupplier = builder.requiresCapability(IO_WORKER_CAPABILITY_NAME, XnioWorker.class, workerName);
+        builder.setInstance(new EndpointService(endpointConsumer, workerSupplier, nodeName, EndpointService.EndpointType.SUBSYSTEM, map));
+        builder.install();
     }
 }

@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
@@ -37,6 +38,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_4_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_5_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_6_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_7_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_8_0_0;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERIES;
 import static org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes.PRINCIPAL_QUERY;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -59,6 +61,7 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.security.password.interfaces.ScramDigestPassword;
+import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 /**
  * Registers transformers for the elytron subsystem.
@@ -76,6 +79,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 8.0.0 (WildFly 18) to 7.0.0 (WildFly 17)
+        from8(chainedBuilder);
         // 7.0.0 (WildFly 17) to 6.0.0 (WildFly 16)
         from7(chainedBuilder);
         // 6.0.0 (WildFly 16) to 5.0.0 (WildFly 15)
@@ -89,7 +94,29 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+
+    }
+
+    private static void from8(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_8_0_0, ELYTRON_7_0_0);
+
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY));
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+
+                    @Override
+                    protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+                        // only 'LetsEncrypt' was allowed in older versions
+                        return value.isDefined() && !value.asString().equalsIgnoreCase(CertificateAuthority.LETS_ENCRYPT.getName());
+                    }
+
+                    @Override
+                    public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+                        return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_AUTHORITY).getMessage();
+                    }
+                }, ElytronDescriptionConstants.CERTIFICATE_AUTHORITY);
 
     }
 

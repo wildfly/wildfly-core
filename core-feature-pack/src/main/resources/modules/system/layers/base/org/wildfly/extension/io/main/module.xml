@@ -38,8 +38,6 @@
     </resources>
 
     <dependencies>
-        <!-- This is a workaround for WFLY-10394 -->
-        <module name="java.naming"/>
         <module name="java.management"/>
         <module name="jdk.security.auth"/>
         <module name="org.jboss.staxmapper"/>

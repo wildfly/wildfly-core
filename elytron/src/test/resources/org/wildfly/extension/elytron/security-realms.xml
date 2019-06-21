@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:7.0">
+<subsystem xmlns="urn:wildfly:elytron:8.0">
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="RealmThree" authorization-realm="RealmFour" />
         <custom-realm name="CustomOne" class-name="org.wildfly.security.ElytronRealm" module="a.b.c" />

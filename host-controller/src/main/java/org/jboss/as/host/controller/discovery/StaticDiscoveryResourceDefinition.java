@@ -24,7 +24,6 @@ package org.jboss.as.host.controller.discovery;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
 
-import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -36,6 +35,7 @@ import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHan
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.StaticDiscoveryAddHandler;
 import org.jboss.as.host.controller.operations.StaticDiscoveryRemoveHandler;
+import org.jboss.as.host.controller.operations.StaticDiscoveryWriteAttributeHandler;
 
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for a resource representing a static discovery option.
@@ -69,7 +69,7 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         for (final SimpleAttributeDefinition attribute : STATIC_DISCOVERY_ATTRIBUTES) {
-            resourceRegistration.registerReadWriteAttribute(attribute, null, new ModelOnlyWriteAttributeHandler(attribute));
+            resourceRegistration.registerReadWriteAttribute(attribute, null, new StaticDiscoveryWriteAttributeHandler(attribute));
         }
     }
 }

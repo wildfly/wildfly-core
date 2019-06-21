@@ -1023,7 +1023,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
     static AcmeAccount resetAcmeAccount(AcmeAccount acmeAccount, boolean staging) {
         String accountUrl = acmeAccount.getAccountUrl();
-        if (accountUrl != null) {
+        if (accountUrl != null && acmeAccount.getStagingServerUrl() != null) {
             String stagingEndpoint = acmeAccount.getStagingServerUrl().substring(0, acmeAccount.getStagingServerUrl().indexOf("/" + DIRECTORY));
             if ((accountUrl.startsWith(stagingEndpoint) && ! staging) || (! accountUrl.startsWith(stagingEndpoint) && staging)) {
                 // need to reset the account information so it will get populated with the correct staging / non-staging account URL

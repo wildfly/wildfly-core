@@ -23,13 +23,14 @@
 package org.jboss.as.remoting;
 
 import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.EndpointBuilder;
 import org.xnio.OptionMap;
@@ -46,9 +47,12 @@ public class EndpointService implements Service<Endpoint> {
     protected final String endpointName;
     protected volatile Endpoint endpoint;
     protected final OptionMap optionMap;
-    private final InjectedValue<XnioWorker> worker = new InjectedValue<>();
+    private final Consumer<Endpoint> endpointConsumer;
+    private final Supplier<XnioWorker> workerSupplier;
 
-    public EndpointService(String nodeName, EndpointType type, final OptionMap optionMap) {
+    public EndpointService(final Consumer<Endpoint> endpointConsumer, final Supplier<XnioWorker> workerSupplier, String nodeName, EndpointType type, final OptionMap optionMap) {
+        this.endpointConsumer = endpointConsumer;
+        this.workerSupplier = workerSupplier;
         if (nodeName == null) {
             nodeName = "remote";
         }
@@ -56,16 +60,12 @@ public class EndpointService implements Service<Endpoint> {
         this.optionMap = optionMap;
     }
 
-    InjectedValue<XnioWorker> getWorker() {
-        return worker;
-    }
-
     /** {@inheritDoc} */
     public void start(final StartContext context) throws StartException {
         final Endpoint endpoint;
         final EndpointBuilder builder = Endpoint.builder();
         builder.setEndpointName(endpointName);
-        builder.setXnioWorker(worker.getValue());
+        builder.setXnioWorker(workerSupplier.get());
         try {
             endpoint = builder.build();
         } catch (IOException e) {
@@ -73,11 +73,13 @@ public class EndpointService implements Service<Endpoint> {
         }
         // Reuse the options for the remote connection factory for now
         this.endpoint = endpoint;
+        endpointConsumer.accept(endpoint);
     }
 
     /** {@inheritDoc} */
     public void stop(final StopContext context) {
         context.asynchronous();
+        endpointConsumer.accept(null);
         final Endpoint endpoint = this.endpoint;
         this.endpoint = null;
         try {

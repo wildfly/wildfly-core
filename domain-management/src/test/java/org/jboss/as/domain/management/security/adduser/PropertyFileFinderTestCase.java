@@ -24,6 +24,7 @@ package org.jboss.as.domain.management.security.adduser;
 
 import org.jboss.as.domain.management.security.adduser.AddUser.FileMode;
 import org.jboss.msc.service.StartException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import static java.lang.System.getProperty;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -50,6 +52,16 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
     public void setup() throws IOException {
         values.setFileMode(FileMode.MANAGEMENT);
         values.getOptions().setJBossHome(getProperty("java.io.tmpdir"));
+        cleanFiles("domain");
+        cleanFiles("standalone");
+        cleanProperties();
+    }
+
+    @After
+    public void teardown() {
+        cleanFiles("domain");
+        cleanFiles("standalone");
+        cleanProperties();
     }
 
     private File createPropertyFile(String filename, String mode) throws IOException {
@@ -69,6 +81,11 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
            bw.close();
         }
         return propertyUserFile;
+    }
+
+    private void cleanFiles(String mode) {
+        File dir = new File(getProperty("java.io.tmpdir")+File.separator+mode);
+        cleanFiles(dir);
     }
 
     @Test
@@ -123,6 +140,38 @@ public class PropertyFileFinderTestCase extends PropertyTestHelper {
 
         assertUserPropertyFile(newUserName);
         consoleBuilder.validate();
+    }
+
+    @Test
+    public void noDomainDir() throws IOException {
+        File standaloneMgmtUserFile = createPropertyFile("mgmt-users.properties", "standalone");
+        File standaloneMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "standalone");
+        File domainDir = standaloneMgmtGroupFile.getParentFile().getParentFile().toPath().resolve("domain").toFile();
+        assertFalse(domainDir.exists());
+
+        System.setProperty("jboss.server.config.dir", standaloneMgmtGroupFile.getParent());
+        System.setProperty("jboss.domain.config.dir", domainDir.getAbsolutePath());
+        State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
+        State nextState = propertyFileFinder.execute();
+        assertTrue(nextState.toString(), nextState instanceof PromptRealmState);
+        assertTrue("Expected to find the "+USER_NAME+" in the list of known enabled users",values.getEnabledKnownUsers().contains(USER_NAME));
+        assertTrue("Expected the values.getPropertiesFiles() contained the "+standaloneMgmtUserFile,values.getUserFiles().contains(standaloneMgmtUserFile));
+    }
+
+    @Test
+    public void noStandaloneDir() throws IOException {
+        File domainMgmtUserFile = createPropertyFile("mgmt-users.properties", "domain");
+        File domainMgmtGroupFile = createPropertyFile("mgmt-groups.properties", "domain");
+        File standaloneDir = domainMgmtGroupFile.getParentFile().getParentFile().toPath().resolve("standalone").toFile();
+        assertFalse(standaloneDir.exists());
+
+        System.setProperty("jboss.server.config.dir", standaloneDir.getAbsolutePath());
+        System.setProperty("jboss.domain.config.dir", domainMgmtGroupFile.getParent());
+        State propertyFileFinder = new PropertyFileFinder(consoleMock, values);
+        State nextState = propertyFileFinder.execute();
+        assertTrue(nextState.toString(), nextState instanceof PromptRealmState);
+        assertTrue("Expected to find the "+USER_NAME+" in the list of known enabled users",values.getEnabledKnownUsers().contains(USER_NAME));
+        assertTrue("Expected the values.getPropertiesFiles() contained the "+domainMgmtUserFile,values.getUserFiles().contains(domainMgmtUserFile));
     }
 
 

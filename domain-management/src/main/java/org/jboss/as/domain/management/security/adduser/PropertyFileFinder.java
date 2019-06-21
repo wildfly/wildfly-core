@@ -220,7 +220,7 @@ public class PropertyFileFinder implements State {
                     SERVER_CONFIG_DIR, SERVER_BASE_DIR, "standalone", fileName);
             if (standaloneProps.exists()) {
                 foundFiles.add(standaloneProps);
-            }
+            } // TODO should this invalid --sc be an error regardless of whether domainConfigOpt points to a valid dir?
         }
 
         if (domainConfigOpt != null) {
@@ -228,7 +228,7 @@ public class PropertyFileFinder implements State {
                     DOMAIN_CONFIG_DIR, DOMAIN_BASE_DIR, "domain", fileName);
             if (domainProps.exists()) {
                 foundFiles.add(domainProps);
-            }
+            } // TODO should this invalid --dc be an error regardless of whether serverConfigOpt points to a valid dir?
         }
 
         return !foundFiles.isEmpty();
@@ -243,7 +243,6 @@ public class PropertyFileFinder implements State {
 
         File file = new File(dirPath, fileName);
         validatePermissions(dirPath, file);
-
         return file;
 
     }
@@ -281,7 +280,7 @@ public class PropertyFileFinder implements State {
     }
 
     /**
-     * This method performs a series of permissions checks given a directory and properties file path.
+     * This method performs a series of permissions checks given a directory and properties file path, if they exist.
      *
      * 1 - Check whether the parent directory dirPath has proper execute and read permissions
      * 2 - Check whether properties file path is readable and writable
@@ -289,18 +288,21 @@ public class PropertyFileFinder implements State {
      * If either of the permissions checks fail, update validFilePermissions and filePermissionsProblemPath
      * appropriately.
      *
+     * Permission checks are not performed if the dir or file do not exist, as the caller is expected to handle
+     * non-existing files separately, not as a permission problem.
+     *
      */
     private void validatePermissions(final File dirPath, final File file) {
 
         // Check execute and read permissions for parent dirPath
-        if( !dirPath.canExecute() || !dirPath.canRead()  ) {
+        if( dirPath.exists() && (!dirPath.canExecute() || !dirPath.canRead()) ) {
             validFilePermissions = false;
             filePermissionsProblemPath = dirPath.getAbsolutePath();
             return;
         }
 
         // Check read and write permissions for properties file
-        if( !file.canRead() || !file.canWrite() ) {
+        if( file.exists() && (!file.canRead() || !file.canWrite()) ) {
             validFilePermissions = false;
             filePermissionsProblemPath = dirPath.getAbsolutePath();
         }

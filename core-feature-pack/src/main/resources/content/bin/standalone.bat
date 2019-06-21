@@ -242,13 +242,13 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
 
             setlocal EnableDelayedExpansion
             if "!MODULAR_JDK!" == "true" (
-                set TMP_PARAM=-Xlog:gc*:file="\"%JBOSS_LOG_DIR%\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
+                set TMP_PARAM=-Xlog:gc*:file="\"!JBOSS_LOG_DIR!\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
             ) else (
-                set TMP_PARAM=-verbose:gc -Xloggc:"%JBOSS_LOG_DIR%\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+                set TMP_PARAM=-verbose:gc -Xloggc:"!JBOSS_LOG_DIR!\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
             )
-            "%JAVA%" !TMP_PARAM! -version > nul 2>&1
+            "!JAVA!" !TMP_PARAM! -version > nul 2>&1
             if not errorlevel == 1 (
-               set JAVA_OPTS=%JAVA_OPTS% !TMP_PARAM!
+               set "JAVA_OPTS=%JAVA_OPTS% !TMP_PARAM!"
             )
             rem Remove the gc.log file from the -version check
             del /F /Q "%JBOSS_LOG_DIR%\gc.log" > nul 2>&1
