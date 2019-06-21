@@ -23,32 +23,29 @@
 package org.wildfly.extension.discovery;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.wildfly.extension.discovery.DiscoveryExtension.AGGREGATE_PROVIDER;
-import static org.wildfly.extension.discovery.DiscoveryExtension.DISCOVERY;
-import static org.wildfly.extension.discovery.DiscoveryExtension.STATIC_PROVIDER;
 
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.PersistentResourceXMLParser;
 
 /**
+ * XML parser description for the discovery subsystem.
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:paul.ferraro@redhat.com">Paul Ferraro</a>
  */
 final class DiscoverySubsystemParser extends PersistentResourceXMLParser {
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return builder(PathElement.pathElement(SUBSYSTEM, DISCOVERY), DiscoveryExtension.NAMESPACE)
+        return builder(DiscoverySubsystemDefinition.PATH, DiscoveryExtension.NAMESPACE)
                 .addChild(
-                        builder(PathElement.pathElement(STATIC_PROVIDER))
-                                .addAttribute(StaticProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+                        builder(StaticDiscoveryProviderDefinition.PATH)
+                                .addAttribute(StaticDiscoveryProviderDefinition.SERVICES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
                 )
                 .addChild(
-                        builder(PathElement.pathElement(AGGREGATE_PROVIDER))
-                                .addAttribute(AggregateProviderDefinition.PROVIDER_NAMES)
+                        builder(AggregateDiscoveryProviderDefinition.PATH)
+                                .addAttribute(AggregateDiscoveryProviderDefinition.PROVIDER_NAMES)
                 )
                 .build();
     }
