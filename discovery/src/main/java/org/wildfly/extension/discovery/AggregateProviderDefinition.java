@@ -26,7 +26,6 @@ import static org.wildfly.extension.discovery.DiscoveryExtension.AGGREGATE_PROVI
 import static org.wildfly.extension.discovery.DiscoveryExtension.DISCOVERY_PROVIDER_RUNTIME_CAPABILITY;
 
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -49,11 +48,5 @@ final class AggregateProviderDefinition extends SimpleResourceDefinition {
 
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(PROVIDER_NAMES, null, AggregateProviderAddHandler::modifyRegistrationModel);
-    }
-
-    private static final ResourceDefinition INSTANCE = new AggregateProviderDefinition();
-
-    static ResourceDefinition getInstance() {
-        return INSTANCE;
     }
 }

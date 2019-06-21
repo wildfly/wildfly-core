@@ -30,7 +30,6 @@ import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -67,8 +66,6 @@ final class StaticProviderDefinition extends SimpleResourceDefinition {
 
     static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder(DiscoveryExtension.SERVICES, SERVICE).build();
 
-    private static final ResourceDefinition INSTANCE = new StaticProviderDefinition();
-
     StaticProviderDefinition() {
         super(new Parameters(PathElement.pathElement(STATIC_PROVIDER), DiscoveryExtension.getResourceDescriptionResolver(STATIC_PROVIDER))
             .setAddHandler(StaticProviderAddHandler.getInstance())
@@ -78,9 +75,5 @@ final class StaticProviderDefinition extends SimpleResourceDefinition {
 
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(SERVICES, null, StaticProviderAddHandler::modifyRegistrationModel);
-    }
-
-    static ResourceDefinition getInstance() {
-        return INSTANCE;
     }
 }

@@ -22,7 +22,6 @@
 
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 
@@ -30,22 +29,17 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class DiscoverySubsystemDefinition extends SimpleResourceDefinition {
-    private static final ResourceDefinition INSTANCE = new DiscoverySubsystemDefinition();
 
-    private DiscoverySubsystemDefinition() {
+    DiscoverySubsystemDefinition() {
         super(new Parameters(DiscoveryExtension.SUBSYSTEM_PATH, DiscoveryExtension.getResourceDescriptionResolver())
             .setAddHandler(DiscoverySubsystemAddHandler.getInstance())
             .setRemoveHandler(new TrivialRemoveStepHandler())
         );
     }
 
-    static ResourceDefinition getInstance() {
-        return INSTANCE;
-    }
-
     @Override
     public void registerChildren(final ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(AggregateProviderDefinition.getInstance());
-        resourceRegistration.registerSubModel(StaticProviderDefinition.getInstance());
+        resourceRegistration.registerSubModel(new AggregateProviderDefinition());
+        resourceRegistration.registerSubModel(new StaticProviderDefinition());
     }
 }

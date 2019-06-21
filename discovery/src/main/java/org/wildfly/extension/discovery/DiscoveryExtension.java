@@ -84,7 +84,7 @@ public final class DiscoveryExtension implements Extension {
         subsystemRegistration.setHostCapable();
         subsystemRegistration.registerXMLElementWriter(DiscoverySubsystemParser::new);
 
-        final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(DiscoverySubsystemDefinition.getInstance());
+        final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(new DiscoverySubsystemDefinition());
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
     }
 
