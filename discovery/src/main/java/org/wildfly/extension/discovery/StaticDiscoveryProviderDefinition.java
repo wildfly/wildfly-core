@@ -62,6 +62,7 @@ final class StaticDiscoveryProviderDefinition extends SimpleResourceDefinition {
     static final ObjectListAttributeDefinition ATTRIBUTES = new ObjectListAttributeDefinition.Builder("attributes", ATTRIBUTE)
             .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+            .setRequired(false)
             .build();
 
     static final ObjectTypeAttributeDefinition SERVICE = new ObjectTypeAttributeDefinition.Builder("service",
