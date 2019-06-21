@@ -24,63 +24,71 @@ package org.jboss.as.domain.management.security;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECURITY_LOGGER;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.login.LoginException;
 
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.SubjectIdentity;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedSetValue;
 
 /**
  * {@link Service} responsible for {@link SubjectIdentity} creation.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryService> {
+class KeytabIdentityFactoryService implements Service {
 
     private static final String SERVICE_SUFFIX = "keytab_factory";
 
-    private final InjectedSetValue<KeytabService> keytabServices = new InjectedSetValue<KeytabService>();
+    private final Consumer<KeytabIdentityFactoryService> serviceConsumer;
+    private final Set<Supplier<KeytabService>> keytabServices = Collections.synchronizedSet(new HashSet<>());
 
     private volatile KeytabService defaultService = null;
     private volatile Map<String, KeytabService> hostServiceMap = null;
+
+    KeytabIdentityFactoryService(final Consumer<KeytabIdentityFactoryService> serviceConsumer) {
+        this.serviceConsumer = serviceConsumer;
+    }
 
     /*
      * Service Methods.
      */
 
     @Override
-    public void start(StartContext context) throws StartException {
-        Set<KeytabService> services = keytabServices.getValue();
+    public void start(final StartContext context) throws StartException {
+        Set<Supplier<KeytabService>> services = keytabServices;
 
         hostServiceMap = new HashMap<String, KeytabService>(services.size()); // Assume at least one per service.
         /*
          * Iterate the services and find the first one to offer default resolution, also create a hostname to KeytabService map
          * for the first one that claims each host.
          */
-        for (KeytabService current : services) {
-            for (String currentHost : current.getForHosts()) {
+        for (Supplier<KeytabService> current : services) {
+            for (String currentHost : current.get().getForHosts()) {
                 if ("*".equals(currentHost)) {
                     if (defaultService == null) {
-                        defaultService = current;
+                        defaultService = current.get();
                     }
                 } else if (currentHost != null) {
                     int idx = currentHost.indexOf("/");
                     String hostKey = idx > -1 ? currentHost.substring(0, idx) + "/" + currentHost.substring(idx + 1).toLowerCase(Locale.ENGLISH) :
                         currentHost.toLowerCase(Locale.ENGLISH);
                     if (hostServiceMap.containsKey(hostKey) == false) {
-                        hostServiceMap.put(hostKey, current);
+                        hostServiceMap.put(hostKey, current.get());
                     }
                 }
             }
@@ -90,38 +98,39 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
          * Iterate the services again and attempt to identify host names from the principal name and add to the map if there is
          * not already a mapping for that host name.
          */
-        for (KeytabService current : services) {
-            String principal = current.getPrincipal();
+        for (Supplier<KeytabService> current : services) {
+            String principal = current.get().getPrincipal();
             int start = principal.indexOf('/');
             int end = principal.indexOf('@');
 
             String currentHost = principal.substring(start > -1 ? start + 1 : 0, end > -1 ? end : principal.length() - 1);
             if (hostServiceMap.containsKey(currentHost.toLowerCase(Locale.ENGLISH)) == false) {
-                hostServiceMap.put(currentHost.toLowerCase(Locale.ENGLISH), current);
+                hostServiceMap.put(currentHost.toLowerCase(Locale.ENGLISH), current.get());
             }
             principal = principal.substring(0, end > -1 ? end : principal.length() - 1);
             if (principal.equals(currentHost) == false) {
                 String principalKey = principal.substring(0, start) + "/" + currentHost.toLowerCase(Locale.ENGLISH);
                 if (hostServiceMap.containsKey(principalKey) == false) {
-                    hostServiceMap.put(principalKey, current);
+                    hostServiceMap.put(principalKey, current.get());
                 }
             }
+        }
+        if (serviceConsumer != null) {
+            serviceConsumer.accept(this);
         }
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        if (serviceConsumer != null) {
+            serviceConsumer.accept(null);
+        }
         defaultService = null;
         hostServiceMap = null;
     }
 
-    @Override
-    public KeytabIdentityFactoryService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    Injector<KeytabService> getKeytabInjector() {
-        return keytabServices.injector();
+    void addKeytabSupplier(final Supplier<KeytabService> supplier) {
+        keytabServices.add(supplier);
     }
 
     /*
@@ -173,10 +182,8 @@ class KeytabIdentityFactoryService implements Service<KeytabIdentityFactoryServi
             return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<KeytabIdentityFactoryService> injector,
-                String realmName) {
-            sb.addDependency(createServiceName(realmName), KeytabIdentityFactoryService.class, injector);
-            return sb;
+        public static Supplier<KeytabIdentityFactoryService> requires(final ServiceBuilder<?> sb, final String realmName) {
+            return sb.requires(createServiceName(realmName));
         }
 
     }

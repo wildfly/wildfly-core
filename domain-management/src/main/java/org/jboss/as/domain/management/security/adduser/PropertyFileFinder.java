@@ -161,7 +161,7 @@ public class PropertyFileFinder implements State {
     }
 
     private UserPropertiesFileLoader loadUsersFile(File file) throws IOException {
-        UserPropertiesFileLoader fileLoader = new UserPropertiesFileLoader(file.getAbsolutePath(), null);
+        UserPropertiesFileLoader fileLoader = new UserPropertiesFileLoader(file.getAbsolutePath());
         try {
             fileLoader.start(null);
         } catch (StartException e) {
@@ -176,7 +176,7 @@ public class PropertyFileFinder implements State {
         for (File file : foundGroupsFiles) {
             PropertiesFileLoader propertiesLoad = null;
             try {
-                propertiesLoad = new PropertiesFileLoader(file.getCanonicalPath(), null);
+                propertiesLoad = new PropertiesFileLoader(file.getCanonicalPath());
                 propertiesLoad.start(null);
                 loadedGroups.putAll((Map) propertiesLoad.getProperties());
             } finally {

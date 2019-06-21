@@ -24,20 +24,20 @@ package org.jboss.as.domain.management.security;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -46,15 +46,19 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * Service to handle the creation of the TrustManager[].
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
+abstract class AbstractTrustManagerService implements Service {
 
     private volatile char[] keystorePassword;
-    private volatile TrustManager[] theTrustManagers;
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
+    private final Consumer<TrustManager[]> trustManagersConsumer;
+    private final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier;
 
-
-    AbstractTrustManagerService(final char[] keystorePassword) {
+    AbstractTrustManagerService(final Consumer<TrustManager[]> trustManagersConsumer,
+                                final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
+                                char[] keystorePassword) {
+        this.trustManagersConsumer = trustManagersConsumer;
+        this.credentialSourceSupplier = credentialSourceSupplier;
         this.keystorePassword = keystorePassword;
     }
 
@@ -66,14 +70,10 @@ abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
         this.keystorePassword = keystorePassword;
     }
 
-    /*
-     * Service Lifecycle Methods
-     */
-
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
         try {
-            theTrustManagers = createTrustManagers();
+            trustManagersConsumer.accept(createTrustManagers());
         } catch (NoSuchAlgorithmException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         } catch (KeyStoreException e) {
@@ -82,26 +82,13 @@ abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
     }
 
     @Override
-    public void stop(StopContext context) {
-        this.theTrustManagers = null;
-    }
-
-    /*
-     * Value Method
-     */
-
-    @Override
-    public TrustManager[] getValue() throws IllegalStateException, IllegalArgumentException {
-        return theTrustManagers;
-    }
-
-    Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
-        return credentialSourceSupplier;
+    public void stop(final StopContext context) {
+        trustManagersConsumer.accept(null);
     }
 
     protected char[] resolvePassword() {
         try {
-            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getOptionalValue();
+            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier;
             if (sourceSupplier != null) {
                 CredentialSource cs = sourceSupplier.get();
                 if (cs != null) {
@@ -149,12 +136,9 @@ abstract class AbstractTrustManagerService implements Service<TrustManager[]> {
             return parentService.append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<TrustManager[]> injector, final ServiceName parentService) {
-            sb.addDependency(createServiceName(parentService), TrustManager[].class, injector);
-
-            return sb;
+        public static Supplier<TrustManager[]> requires(final ServiceBuilder<?> sb, final ServiceName parentService) {
+            return sb.requires(createServiceName(parentService));
         }
-
     }
 
 }

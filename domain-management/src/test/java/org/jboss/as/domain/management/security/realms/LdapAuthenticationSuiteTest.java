@@ -203,8 +203,8 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
      */
 
     private AuthorizingCallbackHandler getAdvancedCallbackHandler() {
-        return ((SecurityRealm) getContainer().getService(SecurityRealm.ServiceUtil.createServiceName(ADVANCED_REALM))
-                .getValue()).getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
+        return SecurityRealmHelper.getSecurityRealm(getContainer(), SecurityRealm.ServiceUtil.createServiceName(ADVANCED_REALM))
+                .getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
     }
 
     @Test

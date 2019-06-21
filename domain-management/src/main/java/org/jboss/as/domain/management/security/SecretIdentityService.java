@@ -27,7 +27,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -35,6 +35,7 @@ import org.jboss.msc.service.StopContext;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.function.Consumer;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -43,8 +44,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.RealmChoiceCallback;
 import java.io.IOException;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.auth.callback.OptionalNameCallback;
 import org.wildfly.security.credential.source.CredentialSource;
@@ -54,24 +53,29 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * A simple identity service for an identity represented by a single secret or password.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class SecretIdentityService implements Service<CallbackHandlerFactory> {
+public class SecretIdentityService implements Service {
 
     private static final String SERVICE_SUFFIX = "secret";
 
     private final String password;
     private final boolean base64;
 
-    private volatile CallbackHandlerFactory factory;
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
+    private final Consumer<CallbackHandlerFactory> callbackHandlerFactoryConsumer;
+    private final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier;
 
-    public SecretIdentityService(final String password, boolean base64) {
+    public SecretIdentityService(final Consumer<CallbackHandlerFactory> callbackHandlerFactoryConsumer,
+                                 final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
+                                 final String password, boolean base64) {
+        this.callbackHandlerFactoryConsumer = callbackHandlerFactoryConsumer;
+        this.credentialSourceSupplier = credentialSourceSupplier;
         this.password = password;
         this.base64 = base64;
     }
 
     @Override
-    public void start(StartContext startContext) throws StartException {
+    public void start(final StartContext startContext) throws StartException {
         final char[] thePassword;
         if (base64) {
             byte[] value = Base64.getDecoder().decode(password);
@@ -86,24 +90,16 @@ public class SecretIdentityService implements Service<CallbackHandlerFactory> {
             thePassword = password.toCharArray();
         }
 
-        factory = (String username) -> new SecretCallbackHandler(username, resolvePassword(thePassword));
+        callbackHandlerFactoryConsumer.accept((String username) -> new SecretCallbackHandler(username, resolvePassword(thePassword)));
     }
 
-    public void stop(StopContext stopContext) {
-        factory = null;
-    }
-
-    public CallbackHandlerFactory getValue() throws IllegalStateException, IllegalArgumentException {
-        return factory;
-    }
-
-    Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
-        return credentialSourceSupplier;
+    public void stop(final StopContext stopContext) {
+        callbackHandlerFactoryConsumer.accept(null);
     }
 
     private char[] resolvePassword(char[] thePassword) {
         try {
-            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getOptionalValue();
+            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier;
             if (sourceSupplier == null) {
                 return thePassword;
             }

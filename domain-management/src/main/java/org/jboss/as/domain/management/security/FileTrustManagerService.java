@@ -27,6 +27,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
@@ -39,11 +41,11 @@ import org.jboss.as.controller.services.path.PathManager.Callback;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -51,10 +53,11 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * store.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class FileTrustManagerService extends AbstractTrustManagerService {
 
-    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
+    private final Supplier<PathManager> pathManagerSupplier;
 
     private volatile String provider;
     private volatile String path;
@@ -63,8 +66,12 @@ class FileTrustManagerService extends AbstractTrustManagerService {
     private volatile TrustManagerFactory trustManagerFactory;
     private volatile FileKeystore keyStore;
 
-    FileTrustManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword) {
-        super(keystorePassword);
+    FileTrustManagerService(final Consumer<TrustManager[]> trustManagersConsumer,
+                            final Supplier<PathManager> pathManagerSupplier,
+                            final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
+                            final String provider, final String path, final String relativeTo, final char[] keystorePassword) {
+        super(trustManagersConsumer, credentialSourceSupplier, keystorePassword);
+        this.pathManagerSupplier = pathManagerSupplier;
         this.provider = provider;
         this.path = path;
         this.relativeTo = relativeTo;
@@ -109,7 +116,7 @@ class FileTrustManagerService extends AbstractTrustManagerService {
         // expect that to be complete.
         String file = path;
         if (relativeTo != null) {
-            PathManager pm = pathManager.getValue();
+            PathManager pm = pathManagerSupplier.get();
 
             file = pm.resolveRelativePathEntry(file, relativeTo);
             pm.registerCallback(relativeTo, new Callback() {
@@ -222,10 +229,6 @@ class FileTrustManagerService extends AbstractTrustManagerService {
             return delegate;
         }
 
-    }
-
-    public Injector<PathManager> getPathManagerInjector() {
-        return pathManager;
     }
 
 }

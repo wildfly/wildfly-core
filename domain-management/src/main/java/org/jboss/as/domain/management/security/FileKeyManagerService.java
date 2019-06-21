@@ -35,6 +35,8 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -44,23 +46,22 @@ import org.jboss.as.controller.services.path.PathManager.Callback;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 /**
  * An extension to {@link AbstractKeyManagerService} so that a KeyManager[] can be provided based on a JKS file based key store.
  *
- *
- *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class FileKeyManagerService extends AbstractKeyManagerService {
 
     public static final String SHA_256_WITH_RSA = "SHA256withRSA";
-    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
+    private final Supplier<PathManager> pathManagerSupplier;
 
     private volatile String provider;
     private volatile String path;
@@ -69,9 +70,14 @@ class FileKeyManagerService extends AbstractKeyManagerService {
     private volatile FileKeystore keyStore;
     private String autoGenerateCertHostName;
 
-    FileKeyManagerService(final String provider, final String path, final String relativeTo, final char[] keystorePassword,
+    FileKeyManagerService(final Consumer<AbstractKeyManagerService> keyManagerServiceConsumer,
+                          final Supplier<PathManager> pathManagerSupplier,
+                          final ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier,
+                          final ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier,
+                          final String provider, final String path, final String relativeTo, final char[] keystorePassword,
                           final char[] keyPassword, final String alias, String autoGenerateCertHostName) {
-        super(keystorePassword, keyPassword);
+        super(keyManagerServiceConsumer, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, keystorePassword, keyPassword);
+        this.pathManagerSupplier = pathManagerSupplier;
         this.provider = provider;
         this.path = path;
         this.relativeTo = relativeTo;
@@ -137,7 +143,7 @@ class FileKeyManagerService extends AbstractKeyManagerService {
             }
             String file = path;
             if (relativeTo != null) {
-                PathManager pm = pathManager.getValue();
+                PathManager pm = pathManagerSupplier.get();
 
                 file = pm.resolveRelativePathEntry(file, relativeTo);
                 pm.registerCallback(relativeTo, new Callback() {
@@ -245,9 +251,4 @@ class FileKeyManagerService extends AbstractKeyManagerService {
         }
         return buf.toString();
     }
-
-    public Injector<PathManager> getPathManagerInjector() {
-        return pathManager;
-    }
-
 }

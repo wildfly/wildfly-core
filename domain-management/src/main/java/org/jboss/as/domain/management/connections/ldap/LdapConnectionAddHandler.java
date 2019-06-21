@@ -38,6 +38,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -51,13 +53,18 @@ import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDef
 import org.jboss.as.domain.management.security.SSLContextService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.security.credential.source.CredentialSource;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Handler for adding ldap management connections.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class LdapConnectionAddHandler extends AbstractAddStepHandler {
 
@@ -80,26 +87,30 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
         final String name = address.getLastElement().getValue();
 
         final ServiceTarget serviceTarget = context.getServiceTarget();
-        final LdapConnectionManagerService connectionManagerService = new LdapConnectionManagerService(name, connectionManagerRegistry);
-        updateRuntime(context, model, connectionManagerService);
+        final ServiceName ldapConMgrName = LdapConnectionManagerService.ServiceUtil.createServiceName(name);
+        final ServiceBuilder<?> sb = serviceTarget.addService(ldapConMgrName);
+        final Consumer<LdapConnectionManager> lcmConsumer = sb.provides(ldapConMgrName);
 
-        ServiceBuilder<LdapConnectionManager> sb = serviceTarget.addService(
-                LdapConnectionManagerService.ServiceUtil.createServiceName(name), connectionManagerService).setInitialMode(
-                ServiceController.Mode.ACTIVE);
-
-        ModelNode securityRealm = SECURITY_REALM.resolveModelAttribute(context, model);
+        final ModelNode securityRealm = SECURITY_REALM.resolveModelAttribute(context, model);
+        Supplier<SSLContext> fullSSLContextSupplier = null;
+        Supplier<SSLContext> trustSSLContextSupplier = null;
         if (securityRealm.isDefined()) {
             String realmName = securityRealm.asString();
-            SSLContextService.ServiceUtil.addDependency(sb, connectionManagerService.getFullSSLContextInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName), false);
-            SSLContextService.ServiceUtil.addDependency(sb, connectionManagerService.getTrustOnlySSLContextInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName), true);
+            fullSSLContextSupplier = SSLContextService.ServiceUtil.requires(sb, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
+            trustSSLContextSupplier = SSLContextService.ServiceUtil.requires(sb, SecurityRealm.ServiceUtil.createServiceName(realmName), true);
         }
-        if(LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE.resolveModelAttribute(context, model).isDefined()) {
-            connectionManagerService.getCredentialSourceSupplierInjector().inject(CredentialReference.getCredentialSourceSupplier(context, LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE, model, sb));
+        ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+        if (LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE.resolveModelAttribute(context, model).isDefined()) {
+            credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE, model, sb);
         }
+        final LdapConnectionManagerService connectionManagerService = new LdapConnectionManagerService(
+                lcmConsumer, fullSSLContextSupplier, trustSSLContextSupplier, credentialSourceSupplier, name, connectionManagerRegistry);
+        updateRuntime(context, model, connectionManagerService);
+        sb.setInstance(connectionManagerService);
         sb.install();
     }
 

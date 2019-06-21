@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -54,12 +55,10 @@ import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.security.SimpleGroup;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.SupportLevel;
@@ -77,8 +76,9 @@ import org.wildfly.security.evidence.PasswordGuessEvidence;
  * A CallbackHandler verifying users usernames and passwords by using a JAAS LoginContext.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com>Richard Opalka</a>
  */
-public class JaasCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService, CallbackHandler {
+public class JaasCallbackHandler implements Service, CallbackHandlerService, CallbackHandler {
 
     private static final String SERVICE_SUFFIX = "jaas";
 
@@ -94,13 +94,25 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
     private final String realm;
     private final String name;
     private final boolean assignGroups;
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
+    private final Supplier<ServerSecurityManager> securityManagerSupplier;
 
-    private final InjectedValue<ServerSecurityManager> securityManagerValue = new InjectedValue<ServerSecurityManager>();
-
-    public JaasCallbackHandler(final String realm, final String name, final boolean assignGroups) {
+    JaasCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                        final Supplier<ServerSecurityManager> securityManagerSupplier,
+                        final String realm, final String name, final boolean assignGroups) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
+        this.securityManagerSupplier = securityManagerSupplier;
         this.realm = realm;
         this.name = name;
         this.assignGroups = assignGroups;
+    }
+
+    public void start(final StartContext context) {
+        callbackHandlerServiceConsumer.accept(this);
+    }
+
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
     /*
@@ -199,7 +211,7 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
 
     private boolean verify(String userName, char[] password, Subject subject, Consumer<Subject> subjectConsumer) {
         ServerSecurityManager securityManager;
-        if ((securityManager = securityManagerValue.getOptionalValue()) != null) {
+        if ((securityManager = securityManagerSupplier != null ? securityManagerSupplier.get() : null) != null) {
             try {
                 securityManager.push(name, userName, password, subject);
                 securityManager.authenticate();
@@ -271,24 +283,6 @@ public class JaasCallbackHandler implements Service<CallbackHandlerService>, Cal
                 return false;
             }
         }
-    }
-
-    /*
-     * Service Methods
-     */
-
-    public void start(final StartContext context) throws StartException {
-    }
-
-    public void stop(final StopContext context) {
-    }
-
-    public InjectedValue<ServerSecurityManager> getSecurityManagerValue() {
-        return securityManagerValue;
-    }
-
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {

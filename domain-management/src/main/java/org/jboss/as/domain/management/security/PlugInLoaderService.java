@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
@@ -36,13 +38,11 @@ import org.jboss.as.domain.management.plugin.PlugInProvider;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service responsible for loading plug-ins as needed.
@@ -51,32 +51,33 @@ import org.jboss.msc.value.InjectedValue;
  * many plug-ins but will never load more than 2.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PlugInLoaderService implements Service<PlugInLoaderService> {
+public class PlugInLoaderService implements Service {
 
     private static final String SERVICE_SUFFIX = "plug-in-loader";
 
+    private final Consumer<PlugInLoaderService> plugInLoaderServiceConsumer;
     private final List<String> plugInNames;
     private final Map<String, List<PlugInProvider>> cachedProviders = new HashMap<String, List<PlugInProvider>>();
     private final Map<String, PlugInProvider> authenticationProviders = new HashMap<String, PlugInProvider>();
     private final Map<String, PlugInProvider> authorizationProviders = new HashMap<String, PlugInProvider>();
 
-    public PlugInLoaderService(final List<String> plugInNames) {
+    PlugInLoaderService(final Consumer<PlugInLoaderService> plugInLoaderServiceConsumer, final List<String> plugInNames) {
+        this.plugInLoaderServiceConsumer = plugInLoaderServiceConsumer;
         this.plugInNames = plugInNames;
     }
 
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) {
+        plugInLoaderServiceConsumer.accept(this);
     }
 
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        plugInLoaderServiceConsumer.accept(null);
         // Clear any cached data so it can be reloaded on next start.
         cachedProviders.clear();
         authenticationProviders.clear();
         authorizationProviders.clear();
-    }
-
-    public PlugInLoaderService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
     private List<PlugInProvider> loadPlugInProvider(final String name) {
@@ -176,10 +177,9 @@ public class PlugInLoaderService implements Service<PlugInLoaderService> {
             return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, InjectedValue<PlugInLoaderService> injector, String realmName) {
-            return sb.addDependency(createServiceName(realmName), PlugInLoaderService.class, injector);
+        public static Supplier<PlugInLoaderService> requires(final ServiceBuilder<?> sb, final String realmName) {
+            return sb.requires(createServiceName(realmName));
         }
-
     }
 
 }

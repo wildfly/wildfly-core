@@ -26,17 +26,21 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.function.Consumer;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.EmptyProvider;
+import org.wildfly.security.credential.source.CredentialSource;
 
 /**
  * Extension of {@link AbstractKeyManagerService} to load the KeyStore using a specified provider.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class ProviderKeyManagerService extends AbstractKeyManagerService {
 
@@ -45,15 +49,17 @@ class ProviderKeyManagerService extends AbstractKeyManagerService {
 
     private volatile KeyStore theKeyStore;
 
-    ProviderKeyManagerService(final String provider, final char[] storePassword) {
-        super(null, null);
+    ProviderKeyManagerService(final Consumer<AbstractKeyManagerService> keyManagerServiceConsumer,
+                              final ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier,
+                              final ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier,
+                              final String provider, final char[] storePassword) {
+        super(keyManagerServiceConsumer, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, null, null);
         this.provider = provider;
         this.storePassword = storePassword;
     }
 
     @Override
     public void start(StartContext context) throws StartException {
-
         try {
             KeyStore theKeyStore = KeyStore.getInstance(provider);
             synchronized (EmptyProvider.getInstance()) {

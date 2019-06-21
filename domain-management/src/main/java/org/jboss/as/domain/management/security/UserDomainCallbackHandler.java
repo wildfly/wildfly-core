@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -54,13 +55,10 @@ import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.Assert;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.auth.SupportLevel;
@@ -83,6 +81,7 @@ import org.wildfly.security.password.spec.PasswordSpec;
  * A CallbackHandler for users defined within the domain model.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class UserDomainCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService, CallbackHandler {
 
@@ -92,19 +91,20 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
     private final String realm;
 
     private volatile ModelNode userDomain;
-    private final InjectedValue<Map<String, ExceptionSupplier<CredentialSource, Exception>>> credentialSourceSupplier = new InjectedValue<>();
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
+    private final Map<String, ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier;
 
-    public UserDomainCallbackHandler(String realm, ModelNode userDomain) {
+    UserDomainCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                              final Map<String, ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier,
+                              final String realm, final ModelNode userDomain) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
+        this.credentialSourceSupplier = credentialSourceSupplier;
         this.realm = realm;
         setUserDomain(userDomain);
     }
 
     void setUserDomain(final ModelNode userDomain) {
         this.userDomain = userDomain == null || !userDomain.isDefined() ? new ModelNode().setEmptyObject() : userDomain.clone();
-    }
-
-    Injector<Map<String, ExceptionSupplier<CredentialSource, Exception>>> getCredentialSourceSupplierInjector() {
-        return credentialSourceSupplier;
     }
 
     /*
@@ -137,17 +137,18 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
         return new SecurityRealmImpl();
     }
 
-    /*
-     *  Service Methods
-     */
-
-    public void start(StartContext context) throws StartException {
+    @Override
+    public void start(final StartContext context) {
+        callbackHandlerServiceConsumer.accept(this);
     }
 
-    public void stop(StopContext context) {
+    @Override
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
-    public UserDomainCallbackHandler getValue() throws IllegalStateException, IllegalArgumentException {
+    @Override
+    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
     }
 
@@ -242,8 +243,8 @@ public class UserDomainCallbackHandler implements Service<CallbackHandlerService
 
     private ExceptionSupplier<CredentialSource, Exception> getUserCredentialSourceSupplier(String userName) {
         ExceptionSupplier<CredentialSource, Exception> userCredentialSourceSupplier = null;
-        if (credentialSourceSupplier.getOptionalValue() != null && credentialSourceSupplier.getValue().containsKey(userName)) {
-            userCredentialSourceSupplier = credentialSourceSupplier.getValue().get(userName);
+        if (credentialSourceSupplier != null && credentialSourceSupplier.containsKey(userName)) {
+            userCredentialSourceSupplier = credentialSourceSupplier.get(userName);
         }
         return userCredentialSourceSupplier;
     }

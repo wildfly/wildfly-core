@@ -22,11 +22,11 @@
 package org.jboss.as.domain.management.security;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 import javax.naming.NamingException;
 
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 
@@ -36,6 +36,7 @@ import org.jboss.msc.service.ServiceName;
  * The big difference here is now a {@link SearchResult} is returned which allows the caller to attach to the cached result.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com>Richard Opalka</a>
  */
 interface LdapSearcherCache<R, K> {
 
@@ -173,11 +174,9 @@ interface LdapSearcherCache<R, K> {
         }
 
         @SuppressWarnings("unchecked")
-        public static <R, K> ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Class injectorType,
-                Injector<LdapSearcherCache<R, K>> injector, final boolean forAuthentication, final boolean forUserSearch,
-                String realmName) {
-            sb.addDependency(createServiceName(forAuthentication, forUserSearch, realmName), injectorType, injector);
-            return sb;
+        public static <R, K> Supplier<LdapSearcherCache<R, K>> requires(final ServiceBuilder<?> sb, final boolean forAuthentication,
+                                                           final boolean forUserSearch, final String realmName) {
+            return sb.requires(createServiceName(forAuthentication, forUserSearch, realmName));
         }
     }
 

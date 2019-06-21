@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -60,8 +62,10 @@ import org.jboss.as.domain.management.plugin.Identity;
 import org.jboss.as.domain.management.plugin.PasswordCredential;
 import org.jboss.as.domain.management.plugin.PlugInConfigurationSupport;
 import org.jboss.as.domain.management.plugin.ValidatePasswordCredential;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.security.auth.SupportLevel;
@@ -83,31 +87,36 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  * CallbackHandlerService to integrate the plug-ins.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService implements Service<CallbackHandlerService>,
+public class PlugInAuthenticationCallbackHandler extends AbstractPlugInService implements Service,
         CallbackHandlerService {
 
     private static final String SERVICE_SUFFIX = "plug-in-authentication";
 
     private static UsernamePasswordHashUtil hashUtil = null;
-
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
     private final AuthMechanism mechanism;
 
-    PlugInAuthenticationCallbackHandler(final String realmName,
+    PlugInAuthenticationCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                                        final Supplier<PlugInLoaderService> plugInLoaderSupplier,
+                                        final String realmName,
                                         final String pluginName,
                                         final Map<String, String> properties,
                                         final AuthMechanism mechanism) {
-        super(realmName, pluginName, properties);
+        super(plugInLoaderSupplier, realmName, pluginName, properties);
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
         this.mechanism = mechanism;
     }
 
-    /*
-     * Service Methods
-     */
+    @Override
+    public void start(final StartContext context) {
+        callbackHandlerServiceConsumer.accept(this);
+    }
 
     @Override
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
     private static UsernamePasswordHashUtil getHashUtil() {

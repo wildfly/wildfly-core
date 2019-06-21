@@ -68,8 +68,8 @@ public abstract class BaseLdapSuiteAuthenticationReferralsTest extends BaseLdapS
      */
 
     protected AuthorizingCallbackHandler getSlaveCallbackHandler() {
-        return ((SecurityRealm) getContainer().getService(SecurityRealm.ServiceUtil.createServiceName(SLAVE_REALM))
-                .getValue()).getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
+        return SecurityRealmHelper.getSecurityRealm(getContainer(), SecurityRealm.ServiceUtil.createServiceName(SLAVE_REALM))
+                .getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
     }
 
     @Test

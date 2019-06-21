@@ -33,6 +33,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.naming.NamingException;
 import javax.security.auth.Subject;
@@ -42,13 +44,10 @@ import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource.GroupName;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -63,12 +62,14 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author <a href="mailto:flemming.harms@gmail.com">Flemming Harms</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class LdapSubjectSupplementalService implements Service<SubjectSupplementalService>, SubjectSupplementalService {
+public class LdapSubjectSupplementalService implements Service, SubjectSupplementalService {
 
-    private final InjectedValue<LdapConnectionManager> connectionManager = new InjectedValue<LdapConnectionManager>();
-    private final InjectedValue<LdapSearcherCache<LdapEntry, String>> userSearcherInjector = new InjectedValue<LdapSearcherCache<LdapEntry, String>>();
-    private final InjectedValue<LdapSearcherCache<LdapEntry[], LdapEntry>> groupSearcherInjector = new InjectedValue<LdapSearcherCache<LdapEntry[], LdapEntry>>();
+    private final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer;
+    private final Supplier<LdapConnectionManager> connectionManagerSupplier;
+    private final Supplier<LdapSearcherCache<LdapEntry, String>> userSearcherSupplier;
+    private final Supplier<LdapSearcherCache<LdapEntry[], LdapEntry>> groupSearcherSupplier;
 
     private LdapSearcherCache<LdapEntry, String> userSearcher;
     private LdapSearcherCache<LdapEntry[], LdapEntry> groupSearcher;
@@ -81,7 +82,16 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
     private final boolean iterative;
     private final GroupName groupName;
 
-    public LdapSubjectSupplementalService(final String realmName, final boolean shareConnection, final boolean forceUserDnSearch, final boolean iterative, final GroupName groupName) {
+    LdapSubjectSupplementalService(final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer,
+                                   final Supplier<LdapConnectionManager> connectionManagerSupplier,
+                                   final Supplier<LdapSearcherCache<LdapEntry, String>> userSearcherSupplier,
+                                   final Supplier<LdapSearcherCache<LdapEntry[], LdapEntry>> groupSearcherSupplier,
+                                   final String realmName, final boolean shareConnection, final boolean forceUserDnSearch,
+                                   final boolean iterative, final GroupName groupName) {
+        this.subjectSupplementalServiceConsumer = subjectSupplementalServiceConsumer;
+        this.connectionManagerSupplier = connectionManagerSupplier;
+        this.userSearcherSupplier = userSearcherSupplier;
+        this.groupSearcherSupplier = groupSearcherSupplier;
         this.realmName = realmName;
         this.shareConnection = shareConnection;
         this.forceUserDnSearch = forceUserDnSearch;
@@ -89,17 +99,9 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
         this.groupName = groupName;
     }
 
-    /*
-     * Service Methods
-     */
-
-    public SubjectSupplementalService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    public void start(StartContext context) throws StartException {
-        userSearcher = userSearcherInjector.getOptionalValue();
-        groupSearcher = groupSearcherInjector.getValue();
+    public void start(final StartContext context) {
+        userSearcher = userSearcherSupplier != null ? userSearcherSupplier.get() : null;
+        groupSearcher = groupSearcherSupplier.get();
 
         if (SECURITY_LOGGER.isTraceEnabled()) {
             SECURITY_LOGGER.tracef("LdapSubjectSupplementalService realmName=%s", realmName);
@@ -108,26 +110,13 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
             SECURITY_LOGGER.tracef("LdapSubjectSupplementalService iterative=%b", iterative);
             SECURITY_LOGGER.tracef("LdapSubjectSupplementalService groupName=%s", groupName);
         }
+        subjectSupplementalServiceConsumer.accept(this);
     }
 
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        subjectSupplementalServiceConsumer.accept(null);
         groupSearcher = null;
         userSearcher = null;
-    }
-
-    /*
-     *  Access to Injectors
-     */
-    public Injector<LdapConnectionManager> getConnectionManagerInjector() {
-        return connectionManager;
-    }
-
-    public Injector<LdapSearcherCache<LdapEntry, String>> getLdapUserSearcherInjector() {
-        return userSearcherInjector;
-    }
-
-    public Injector<LdapSearcherCache<LdapEntry[], LdapEntry>> getLdapGroupSearcherInjector() {
-        return groupSearcherInjector;
     }
 
     /*
@@ -199,7 +188,7 @@ public class LdapSubjectSupplementalService implements Service<SubjectSupplement
                 connectionHandler = (LdapConnectionHandler) sharedState.remove(LdapConnectionHandler.class.getName());
             } else {
                 SECURITY_LOGGER.trace("Creating new LdapConnectionHandler.");
-                connectionHandler = LdapConnectionHandler.newInstance(connectionManager.getValue());
+                connectionHandler = LdapConnectionHandler.newInstance(connectionManagerSupplier.get());
             }
             try {
                 // In general we expect exactly one RealmUser, however we could cope with multiple

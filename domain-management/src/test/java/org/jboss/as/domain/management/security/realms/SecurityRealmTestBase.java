@@ -31,8 +31,6 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.security.operations.SecurityRealmAddBuilder;
 import org.jboss.as.domain.management.security.util.ManagementControllerTestBase;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceContainer;
-import org.jboss.msc.service.ServiceController;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,10 +56,7 @@ public abstract class SecurityRealmTestBase extends ManagementControllerTestBase
 
     @Before
     public void lookupSecurityRealm() {
-        ServiceContainer container = getContainer();
-        ServiceController<?> service = container.getRequiredService(SecurityRealm.ServiceUtil.createServiceName(TEST_REALM));
-
-        securityRealm = (SecurityRealm) service.getValue();
+        securityRealm = SecurityRealmHelper.getSecurityRealm(getContainer(), SecurityRealm.ServiceUtil.createServiceName(TEST_REALM));
     }
 
     @After

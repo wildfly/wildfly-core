@@ -23,8 +23,8 @@
 package org.jboss.as.domain.management.security;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.security.auth.server.SecurityRealm;
@@ -33,6 +33,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
  * Interface to be implemented by services supplying SubjectSupplemental implementations.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface SubjectSupplementalService {
 
@@ -63,8 +64,8 @@ public interface SubjectSupplementalService {
         private ServiceUtil() {
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<SubjectSupplementalService> injector, ServiceName serviceName) {
-            return sb.addDependency(serviceName, SubjectSupplementalService.class, injector);
+        public static Supplier<SubjectSupplementalService> requires(final ServiceBuilder<?> sb, final ServiceName serviceName) {
+            return sb.requires(serviceName);
         }
 
     }

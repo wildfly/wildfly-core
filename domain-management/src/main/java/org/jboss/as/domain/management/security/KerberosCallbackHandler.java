@@ -31,6 +31,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import javax.security.auth.callback.Callback;
@@ -40,10 +41,9 @@ import javax.security.sasl.AuthorizeCallback;
 
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.principal.NamePrincipal;
@@ -57,29 +57,25 @@ import org.wildfly.security.evidence.Evidence;
  * additional verification.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class KerberosCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService {
+public class KerberosCallbackHandler implements Service, CallbackHandlerService {
 
     private static final String SERVICE_SUFFIX = "kerberos";
-
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
     private final boolean removeRealm;
 
-    KerberosCallbackHandler(final boolean removeRealm) {
+    KerberosCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer, final boolean removeRealm) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
         this.removeRealm = removeRealm;
     }
 
-    /*
-     * Service Methods
-     */
-
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+    public void start(final StartContext context) {
+        callbackHandlerServiceConsumer.accept(this);
     }
 
-    public void start(StartContext context) throws StartException {
-    }
-
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
     /*

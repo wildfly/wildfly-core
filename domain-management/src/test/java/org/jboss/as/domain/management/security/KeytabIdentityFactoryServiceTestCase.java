@@ -23,7 +23,7 @@
 
 package org.jboss.as.domain.management.security;
 
-
+import java.util.function.Supplier;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
@@ -60,12 +60,12 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testForHostWithProto() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/EXAMPLE", RIGHT_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "EXAMPLE", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/EXAMPLE", RIGHT_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "EXAMPLE", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "EXAMPLE");
@@ -79,12 +79,12 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testForHostWithoutProto() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "EXAMPLE", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "EXAMPLE", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "EXAMPLE");
@@ -98,12 +98,12 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testPrincipalWithProto() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "EXAMPLE");
@@ -117,12 +117,12 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testPrincipalWithoutProto() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/EXAMPLE@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", WRONG_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "EXAMPLE");
@@ -136,12 +136,12 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testDefault() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", RIGHT_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "HTTP/SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "*", RIGHT_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "EXAMPLE");
@@ -155,10 +155,10 @@ public class KeytabIdentityFactoryServiceTestCase {
      */
     @Test
     public void testHostNameCaseInSensitive() throws StartException {
-        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService();
-        service.getKeytabInjector().inject(createKeytabService("HTTP/localhost@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
-        service.getKeytabInjector().inject(createKeytabService("PROTO/ANYVALUE@SOMETHING.COM", "localhost", WRONG_SUBJECT_IDENTITY));
+        KeytabIdentityFactoryService service = new KeytabIdentityFactoryService(null);
+        service.addKeytabSupplier(createKeytabService("HTTP/localhost@SOMETHING.COM", "SOMEHOST", RIGHT_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("HTTP/ANYVALUE@SOMETHING.COM", "SOMEHOST", WRONG_SUBJECT_IDENTITY));
+        service.addKeytabSupplier(createKeytabService("PROTO/ANYVALUE@SOMETHING.COM", "localhost", WRONG_SUBJECT_IDENTITY));
         service.start(null);
 
         SubjectIdentity subjectIdentity = service.getSubjectIdentity("HTTP", "LocalHost");
@@ -171,11 +171,16 @@ public class KeytabIdentityFactoryServiceTestCase {
     /**
      * Creates mocked KeytabService
      */
-    private KeytabService createKeytabService(String principal, String forHost, final SubjectIdentity subjectIdentity) {
-        return new KeytabService(principal, null, null, new String[]{forHost}, true) {
+    private Supplier<KeytabService> createKeytabService(String principal, String forHost, final SubjectIdentity subjectIdentity) {
+        return new Supplier<KeytabService>() {
             @Override
-            public SubjectIdentity createSubjectIdentity(boolean isClient) throws LoginException {
-                return subjectIdentity;
+            public KeytabService get() {
+                return new KeytabService(null, null, principal, null, null, new String[]{forHost}, true) {
+                    @Override
+                    public SubjectIdentity createSubjectIdentity(boolean isClient) throws LoginException {
+                        return subjectIdentity;
+                    }
+                };
             }
         };
     }

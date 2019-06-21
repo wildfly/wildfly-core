@@ -21,23 +21,28 @@
  */
 package org.jboss.as.domain.management.security;
 
-
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.function.Consumer;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.EmptyProvider;
+import org.wildfly.security.credential.source.CredentialSource;
+
+import javax.net.ssl.TrustManager;
 
 /**
  * Extension of {@link AbstractTrustManagerService} to load the KeyStore using a specified provider.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ProviderTrustManagerService extends AbstractTrustManagerService {
 
@@ -45,8 +50,10 @@ public class ProviderTrustManagerService extends AbstractTrustManagerService {
 
     private volatile KeyStore theKeyStore;
 
-    ProviderTrustManagerService(final String provider, final char[] storePassword) {
-        super(storePassword);
+    ProviderTrustManagerService(final Consumer<TrustManager[]> trustManagersConsumer,
+                                final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
+                                final String provider, final char[] storePassword) {
+        super(trustManagersConsumer, credentialSourceSupplier, storePassword);
         this.provider = provider;
     }
 

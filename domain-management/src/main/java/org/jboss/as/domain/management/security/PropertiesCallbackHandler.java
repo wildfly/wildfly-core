@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -53,13 +55,15 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.security.auth.SupportLevel;
@@ -86,19 +90,24 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  * A CallbackHandler obtaining the users and their passwords from a properties file.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PropertiesCallbackHandler extends UserPropertiesFileLoader implements Service<CallbackHandlerService>,
+public class PropertiesCallbackHandler extends UserPropertiesFileLoader implements Service,
         CallbackHandlerService, CallbackHandler {
 
     private static final String SERVICE_SUFFIX = "properties_authentication";
 
     private static UsernamePasswordHashUtil hashUtil = null;
 
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
     private final String realm;
     private final boolean plainText;
 
-    public PropertiesCallbackHandler(String realm, String path, String relativeTo, boolean plainText) {
-        super(path, relativeTo);
+    PropertiesCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                              final Supplier<PathManager> pathManagerSupplier,
+                              final String realm, final String path, final String relativeTo, final boolean plainText) {
+        super(pathManagerSupplier, path, relativeTo);
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
         this.realm = realm;
         this.plainText = plainText;
     }
@@ -157,7 +166,7 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
     }
 
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
         super.start(context);
         try {
             String fileRealm = getRealmName();
@@ -167,10 +176,13 @@ public class PropertiesCallbackHandler extends UserPropertiesFileLoader implemen
         } catch (IOException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToLoadProperties(e);
         }
+        callbackHandlerServiceConsumer.accept(this);
     }
 
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+    @Override
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
+        super.stop(context);
     }
 
     /*

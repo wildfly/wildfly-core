@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -46,22 +48,21 @@ import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.SubjectIdentity;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A service used for loading Kerberos keytabs.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class KeytabService implements Service<KeytabService> {
+public class KeytabService implements Service {
 
     private static final boolean IS_IBM = System.getProperty("java.vendor").contains("IBM");
     private static final String KRB5LoginModule = "com.sun.security.auth.module.Krb5LoginModule";
@@ -80,13 +81,17 @@ public class KeytabService implements Service<KeytabService> {
     private final String relativeTo;
     private final String[] forHosts;
     private final boolean debug;
-    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
+    private final Consumer<KeytabService> serviceConsumer;
+    private final Supplier<PathManager> pathManagerSupplier;
 
     private Handle pathHandle = null;
     private Configuration clientConfiguration;
     private Configuration serverConfiguration;
 
-    KeytabService(final String principal, final String path, final String relativeTo, final String[] forHosts, final boolean debug) {
+    KeytabService(final Consumer<KeytabService> serviceConsumer, final Supplier<PathManager> pathManagerSupplier,
+                  final String principal, final String path, final String relativeTo, final String[] forHosts, final boolean debug) {
+        this.serviceConsumer = serviceConsumer;
+        this.pathManagerSupplier = pathManagerSupplier;
         this.principal = principal;
         this.path = path;
         this.relativeTo = relativeTo;
@@ -94,20 +99,11 @@ public class KeytabService implements Service<KeytabService> {
         this.debug = debug;
     }
 
-    /*
-     * Service Methods
-     */
-
     @Override
-    public KeytabService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
         String file = path;
         if (relativeTo != null) {
-            PathManager pm = pathManager.getValue();
+            PathManager pm = pathManagerSupplier.get();
 
             file = pm.resolveRelativePathEntry(file, relativeTo);
             pathHandle = pm.registerCallback(relativeTo, new org.jboss.as.controller.services.path.PathManager.Callback() {
@@ -137,6 +133,7 @@ public class KeytabService implements Service<KeytabService> {
         } catch (MalformedURLException e) {
             throw SECURITY_LOGGER.invalidKeytab(e);
         }
+        serviceConsumer.accept(this);
     }
 
     private Configuration createConfiguration(final boolean isServer, final File keyTabFile) throws MalformedURLException {
@@ -177,7 +174,8 @@ public class KeytabService implements Service<KeytabService> {
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        serviceConsumer.accept(null);
         clientConfiguration = null;
         serverConfiguration = null;
 
@@ -185,10 +183,6 @@ public class KeytabService implements Service<KeytabService> {
             pathHandle.remove();
             pathHandle = null;
         }
-    }
-
-    Injector<PathManager> getPathManagerInjector() {
-        return pathManager;
     }
 
     /*
@@ -254,10 +248,8 @@ public class KeytabService implements Service<KeytabService> {
             return KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName).append(principal);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<KeytabService> injector,
-                String realmName, String principal) {
-            sb.addDependency(createServiceName(realmName, principal), KeytabService.class, injector);
-            return sb;
+        public static Supplier<KeytabService> requires(final ServiceBuilder<?> sb, final String realmName, final String principal) {
+            return sb.requires(createServiceName(realmName, principal));
         }
 
     }

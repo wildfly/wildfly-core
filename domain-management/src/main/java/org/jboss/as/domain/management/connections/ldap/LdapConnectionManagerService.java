@@ -26,6 +26,8 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.SECU
 import java.net.URI;
 import java.util.Hashtable;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -34,14 +36,12 @@ import javax.naming.directory.InitialDirContext;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.ReferralHandling;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.manager.WildFlySecurityManager;
@@ -51,6 +51,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * The LDAP connection manager to maintain the LDAP connections.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com>Richard Opalka</a>
  */
 public class LdapConnectionManagerService implements Service<LdapConnectionManager>, LdapConnectionManager {
 
@@ -59,14 +60,23 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
     private final LdapConnectionManagerRegistry connectionManagerRegistry;
     private final String name;
 
-    private final InjectedValue<SSLContext> fullSSLContext = new InjectedValue<SSLContext>();
-    private final InjectedValue<SSLContext> trustSSLContext = new InjectedValue<SSLContext>();
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> credentialSourceSupplier = new InjectedValue<>();
+    private final Consumer<LdapConnectionManager> ldapConnectionManagerConsumer;
+    private final Supplier<SSLContext> fullSSLContextSupplier;
+    private final Supplier<SSLContext> trustSSLContextSupplier;
+    private final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier;
 
     private volatile Config configuration;
     private volatile Hashtable<String, String> properties = new Hashtable<String, String>();
 
-    public LdapConnectionManagerService(final String name, final LdapConnectionManagerRegistry connectionManagerRegistry) {
+    LdapConnectionManagerService(final Consumer<LdapConnectionManager> ldapConnectionManagerConsumer,
+                                 final Supplier<SSLContext> fullSSLContextSupplier,
+                                 final Supplier<SSLContext> trustSSLContextSupplier,
+                                 final ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier,
+                                 final String name, final LdapConnectionManagerRegistry connectionManagerRegistry) {
+        this.ldapConnectionManagerConsumer = ldapConnectionManagerConsumer;
+        this.fullSSLContextSupplier = fullSSLContextSupplier;
+        this.trustSSLContextSupplier = trustSSLContextSupplier;
+        this.credentialSourceSupplier = credentialSourceSupplier;
         this.name = name;
         this.connectionManagerRegistry = connectionManagerRegistry;
     }
@@ -85,55 +95,41 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
         this.configuration = configuration;
     }
 
-    /*
-    *  Service Lifecycle Methods
-    */
-
-    public synchronized void start(final StartContext context) throws StartException {
-        try {
-            context.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    connectionManagerRegistry.addLdapConnectionManagerService(name, LdapConnectionManagerService.this);
-                    context.complete();
-                }
-            });
-        } finally {
-            context.asynchronous();
-        }
-    }
-
-    public synchronized void stop(final StopContext context) {
-        try {
-            context.execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    connectionManagerRegistry.removeLdapConnectionManagerService(name);
-                    context.complete();
-                }
-            });
-
-        } finally {
-            context.asynchronous();
-        }
-    }
-
-    public synchronized LdapConnectionManagerService getValue() throws IllegalStateException, IllegalArgumentException {
+    @Override
+    public LdapConnectionManager getValue() throws IllegalStateException, IllegalArgumentException {
         return this;
     }
 
-    public InjectedValue<SSLContext> getFullSSLContextInjector() {
-        return fullSSLContext;
+    @Override
+    public void start(final StartContext context) throws StartException {
+        try {
+            context.execute(new Runnable() {
+                @Override
+                public void run() {
+                    connectionManagerRegistry.addLdapConnectionManagerService(name, LdapConnectionManagerService.this);
+                    ldapConnectionManagerConsumer.accept(LdapConnectionManagerService.this);
+                    context.complete();
+                }
+            });
+        } finally {
+            context.asynchronous();
+        }
     }
 
-    public InjectedValue<SSLContext> getTrustOnlySSLContextInjector() {
-        return trustSSLContext;
-    }
-
-    Injector<ExceptionSupplier<CredentialSource, Exception>> getCredentialSourceSupplierInjector() {
-        return credentialSourceSupplier;
+    @Override
+    public void stop(final StopContext context) {
+        try {
+            context.execute(new Runnable() {
+                @Override
+                public void run() {
+                    connectionManagerRegistry.removeLdapConnectionManagerService(name);
+                    ldapConnectionManagerConsumer.accept(null);
+                    context.complete();
+                }
+            });
+        } finally {
+            context.asynchronous();
+        }
     }
 
     /*
@@ -284,12 +280,12 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
 
     private SSLContext getSSLContext(final boolean trustOnly) {
         if (trustOnly) {
-            return trustSSLContext.getOptionalValue();
+            return trustSSLContextSupplier != null ? trustSSLContextSupplier.get() : null;
         }
 
-        SSLContext sslContext = fullSSLContext.getOptionalValue();
+        SSLContext sslContext = fullSSLContextSupplier != null ? fullSSLContextSupplier.get() : null;
         if (sslContext == null) {
-            sslContext = trustSSLContext.getOptionalValue();
+            sslContext = trustSSLContextSupplier != null ? trustSSLContextSupplier.get() : null;
         }
         return sslContext;
     }
@@ -319,7 +315,7 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
 
     private String resolveSearchCredential() {
         try {
-            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier.getOptionalValue();
+            ExceptionSupplier<CredentialSource, Exception> sourceSupplier = credentialSourceSupplier;
             if (sourceSupplier != null) {
                 CredentialSource cs = sourceSupplier.get();
                 if (cs != null) {
@@ -347,10 +343,9 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
             return BASE_SERVICE_NAME.append(connectionName);
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<LdapConnectionManager> injector, String connectionName) {
-            return sb.addDependency(createServiceName(connectionName), LdapConnectionManager.class, injector);
+        public static Supplier<LdapConnectionManager> requires(final ServiceBuilder<?> sb, final String connectionName) {
+            return sb.requires(createServiceName(connectionName));
         }
-
     }
 
     static class Config {

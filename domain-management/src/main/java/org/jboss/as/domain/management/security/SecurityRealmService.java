@@ -47,6 +47,8 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -78,7 +80,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedSetValue;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.WildFlyElytronProvider;
@@ -117,7 +118,9 @@ import org.wildfly.security.sasl.util.SortedMechanismSaslServerFactory;
  * requiring any of the capabilities provided by the realm.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
+// TODO: refactor org.jboss.msc.service.Service to org.jboss.msc.Service when WildFly codebase is fixed
 public class SecurityRealmService implements Service<SecurityRealm>, SecurityRealm {
 
     private static final String[] ADDITIONAL_PERMISSION = new String[] { "org.wildfly.transaction.client.RemoteTransactionPermission", "org.jboss.ejb.client.RemoteEJBPermission" };
@@ -139,14 +142,19 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
     }
 
-    private final InjectedValue<SubjectSupplementalService> subjectSupplemental = new InjectedValue<SubjectSupplementalService>();
+    private final Consumer<SecurityRealm> securityRealmConsumer;
+    private final Supplier<SubjectSupplementalService> subjectSupplementalSupplier;
+    private final Supplier<CallbackHandlerFactory> secretCallbackFactorySupplier;
+    private final Supplier<KeytabIdentityFactoryService> keytabFactorySupplier;
+    private final Supplier<SSLContext> sslContextSupplier;
+    // TODO: eliminate sslContext field when WildFly codebase is migrated to new constructor
+    @Deprecated
     private final InjectedValue<SSLContext> sslContext = new InjectedValue<SSLContext>();
-
-    private final InjectedValue<CallbackHandlerFactory> secretCallbackFactory = new InjectedValue<CallbackHandlerFactory>();
-    private final InjectedValue<KeytabIdentityFactoryService> keytabFactory = new InjectedValue<KeytabIdentityFactoryService>();
-    private final InjectedSetValue<CallbackHandlerService> callbackHandlerServices = new InjectedSetValue<CallbackHandlerService>();
-
+    private final Supplier<String> tmpDirPathSupplier;
+    // TODO: eliminate tmpDirPath field when WildFly codebase is migrated to new constructor
+    @Deprecated
     private final InjectedValue<String> tmpDirPath = new InjectedValue<>();
+    private final Set<Supplier<CallbackHandlerService>> callbackHandlerServices;
 
     private final String name;
     private final boolean mapGroupsToRoles;
@@ -159,29 +167,66 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
     private Map<String, String> mechanismConfiguration = new HashMap<>();
     private MechanismConfigurationSelector mechanismConfigurationSelector;
 
-    public SecurityRealmService(String name, boolean mapGroupsToRoles) {
+    @Deprecated // TODO: eliminate this constructor when WildFly codebase is migrated to new constructor
+    public SecurityRealmService(final String name, final boolean mapGroupsToRoles) {
+        this(null, null, null, null, null, null, null, name, mapGroupsToRoles);
+    }
+
+    public SecurityRealmService(final Consumer<SecurityRealm> securityRealmConsumer,
+                         final Supplier<SubjectSupplementalService> subjectSupplementalSupplier,
+                         final Supplier<CallbackHandlerFactory> secretCallbackFactorySupplier,
+                         final Supplier<KeytabIdentityFactoryService> keytabFactorySupplier,
+                         final Supplier<SSLContext> sslContextSupplier,
+                         final Supplier<String> tmpDirPathSupplier,
+                         final Set<Supplier<CallbackHandlerService>> callbackHandlerServices,
+                         final String name, final boolean mapGroupsToRoles) {
+        this.securityRealmConsumer = securityRealmConsumer;
+        this.subjectSupplementalSupplier = subjectSupplementalSupplier;
+        this.secretCallbackFactorySupplier = secretCallbackFactorySupplier;
+        this.keytabFactorySupplier = keytabFactorySupplier;
+        this.sslContextSupplier = sslContextSupplier;
+        this.tmpDirPathSupplier = tmpDirPathSupplier;
+        this.callbackHandlerServices = callbackHandlerServices;
         this.name = name;
         this.mapGroupsToRoles = mapGroupsToRoles;
     }
 
+    @Deprecated // TODO: eliminate this method when WildFly codebase is migrated to new constructor
+    public InjectedValue<SSLContext> getSSLContextInjector() {
+        return sslContext;
+    }
+
+    @Deprecated // TODO: eliminate this method when WildFly codebase is migrated to new constructor
+    public Injector<String> getTmpDirPathInjector() {
+        return tmpDirPath;
+    }
     /*
      * Service Methods
      */
 
-    public void start(StartContext context) throws StartException {
+    @Deprecated // TODO: eliminate this method when WildFly codebase is migrated to new constructor
+    @Override
+    public SecurityRealm getValue() throws IllegalStateException, IllegalArgumentException {
+        return this;
+    }
+
+    @Override
+    public void start(final StartContext context) throws StartException {
         ROOT_LOGGER.debugf("Starting '%s' Security Realm Service", name);
-        for (CallbackHandlerService current : callbackHandlerServices.getValue()) {
-            // accept this, but don't actually install it in the map
-            if (current instanceof DomainManagedServerCallbackHandler) {
-                domainManagedServersCallback = (DomainManagedServerCallbackHandler) current;
-                continue;
+        if (callbackHandlerServices != null) {
+            for (Supplier<CallbackHandlerService> current : callbackHandlerServices) {
+                // accept this, but don't actually install it in the map
+                if (current instanceof DomainManagedServerCallbackHandler) {
+                    domainManagedServersCallback = (DomainManagedServerCallbackHandler) current;
+                    continue;
+                }
+                AuthMechanism mechanism = current.get().getPreferredMechanism();
+                if (registeredServices.containsKey(mechanism)) {
+                    registeredServices.clear();
+                    throw DomainManagementLogger.ROOT_LOGGER.multipleCallbackHandlerForMechanism(mechanism.name());
+                }
+                registeredServices.put(mechanism, current.get());
             }
-            AuthMechanism mechanism = current.getPreferredMechanism();
-            if (registeredServices.containsKey(mechanism)) {
-                registeredServices.clear();
-                throw DomainManagementLogger.ROOT_LOGGER.multipleCallbackHandlerForMechanism(mechanism.name());
-            }
-            registeredServices.put(mechanism, current);
         }
 
         /*
@@ -190,7 +235,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         final Map<AuthMechanism, MechanismConfiguration> configurationMap = new HashMap<>();
 
-        SubjectSupplementalService subjectSupplementalService = this.subjectSupplemental.getOptionalValue();
+        SubjectSupplementalService subjectSupplementalService = subjectSupplementalSupplier != null ? subjectSupplementalSupplier.get() : null;
         org.wildfly.security.auth.server.SecurityRealm authorizationRealm = subjectSupplementalService != null ? subjectSupplementalService.getElytronSecurityRealm() : null;
 
         SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
@@ -231,7 +276,8 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
             }
         }
 
-        mechanismConfiguration.put(LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPath.getValue()));
+        // TODO: eliminate tmpDirPathSupplier null check when WildFly code base is migrated to new MSC API
+        mechanismConfiguration.put(LOCAL_USER_CHALLENGE_PATH, getAuthDir(tmpDirPathSupplier != null ? tmpDirPathSupplier.get() : tmpDirPath.getValue()));
         mechanismConfiguration.put(WildFlySasl.ALTERNATIVE_PROTOCOLS, "remoting");
 
         domainBuilder.addRealm("EMPTY", org.wildfly.security.auth.server.SecurityRealm.EMPTY_REALM).build();
@@ -318,6 +364,22 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         saslBuilder.setFactory(saslServerFactory);
         saslBuilder.setMechanismConfigurationSelector(mechanismConfigurationSelector);
         saslAuthenticationFactory = saslBuilder.build();
+        if (securityRealmConsumer != null) {
+            // TODO: eliminate above null check when WildFly code base is migrated to new MSC API
+            securityRealmConsumer.accept(this);
+        }
+    }
+
+    @Override
+    public void stop(final StopContext context) {
+        ROOT_LOGGER.debugf("Stopping '%s' Security Realm Service", name);
+        if (securityRealmConsumer != null) {
+            // TODO: eliminate above null check when WildFly code base is migrated to new MSC API
+            securityRealmConsumer.accept(null);
+        }
+        registeredServices.clear();
+        saslAuthenticationFactory = null;
+        httpAuthenticationFactory = null;
     }
 
     public static PermissionVerifier createPermissionVerifier() {
@@ -408,18 +470,6 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
 
         return authDir.getAbsolutePath();
-    }
-
-
-    public void stop(StopContext context) {
-        ROOT_LOGGER.debugf("Stopping '%s' Security Realm Service", name);
-        registeredServices.clear();
-        saslAuthenticationFactory = null;
-        httpAuthenticationFactory = null;
-    }
-
-    public SecurityRealmService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
     public String getName() {
@@ -528,7 +578,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
                 Object skipGroupLoading = sharedState.get(SKIP_GROUP_LOADING_KEY);
                 if (skipGroupLoading == null || Boolean.parseBoolean(skipGroupLoading.toString()) == false) {
-                    SubjectSupplementalService subjectSupplementalService = subjectSupplemental.getOptionalValue();
+                    SubjectSupplementalService subjectSupplementalService = subjectSupplementalSupplier != null ? subjectSupplementalSupplier.get() : null;
                     if (subjectSupplementalService != null) {
                         SubjectSupplemental subjectSupplemental = subjectSupplementalService.getSubjectSupplemental(sharedState);
                         subjectSupplemental.supplementSubject(subject);
@@ -567,7 +617,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
     @Override
     public SubjectIdentity getSubjectIdentity(String protocol, String forHost) {
-        KeytabIdentityFactoryService kifs = keytabFactory.getOptionalValue();
+        KeytabIdentityFactoryService kifs = keytabFactorySupplier != null ? keytabFactorySupplier.get() : null;
 
         return kifs != null ? kifs.getSubjectIdentity(protocol, forHost) : null;
     }
@@ -678,40 +728,13 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         return httpAuthenticationFactory;
     }
 
-    /*
-     * Injectors
-     */
-
-    public InjectedValue<SubjectSupplementalService> getSubjectSupplementalInjector() {
-        return subjectSupplemental;
-    }
-
-    public InjectedValue<SSLContext> getSSLContextInjector() {
-        return sslContext;
-    }
-
-    public InjectedValue<CallbackHandlerFactory> getSecretCallbackFactory() {
-        return secretCallbackFactory;
-    }
-
-    public InjectedValue<KeytabIdentityFactoryService> getKeytabIdentityFactoryInjector() {
-        return keytabFactory;
-    }
-
-    public InjectedSetValue<CallbackHandlerService> getCallbackHandlerService() {
-        return callbackHandlerServices;
-    }
-
-    public Injector<String> getTmpDirPathInjector() {
-        return tmpDirPath;
-    }
-
     public SSLContext getSSLContext() {
-        return sslContext.getOptionalValue();
+        // TODO: replace sslContext.getOptionalValue() with null once WildFly code base is migrated to new MSC API
+        return sslContextSupplier != null ? sslContextSupplier.get() : sslContext.getOptionalValue();
     }
 
     public CallbackHandlerFactory getSecretCallbackHandlerFactory() {
-        return secretCallbackFactory.getOptionalValue();
+        return secretCallbackFactorySupplier != null ? secretCallbackFactorySupplier.get() : null;
     }
 
     private GSSKerberosCredential getGSSKerberosCredential(final String protocol, final String forHost)
