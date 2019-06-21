@@ -51,6 +51,7 @@ class AggregateProviderAddHandler extends AbstractAddStepHandler {
         super(new Parameters().addAttribute(AggregateProviderDefinition.PROVIDER_NAMES));
     }
 
+    @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.registerCapability(
             RuntimeCapability.Builder
@@ -59,6 +60,7 @@ class AggregateProviderAddHandler extends AbstractAddStepHandler {
         super.execute(context, operation);
     }
 
+    @Override
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         final AttributeDefinition ad = AggregateProviderDefinition.PROVIDER_NAMES;
         ad.addCapabilityRequirements(context, resource, resource.getModel().get(ad.getName()));

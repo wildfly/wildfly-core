@@ -69,10 +69,11 @@ final class StaticProviderDefinition extends SimpleResourceDefinition {
     StaticProviderDefinition() {
         super(new Parameters(PathElement.pathElement(STATIC_PROVIDER), DiscoveryExtension.getResourceDescriptionResolver(STATIC_PROVIDER))
             .setAddHandler(StaticProviderAddHandler.getInstance())
-            .setRemoveHandler(new TrivialRemoveStepHandler(DISCOVERY_PROVIDER_RUNTIME_CAPABILITY))
+            .setRemoveHandler(TrivialRemoveStepHandler.getInstance())
             .setCapabilities(DISCOVERY_PROVIDER_RUNTIME_CAPABILITY));
     }
 
+    @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(SERVICES, null, StaticProviderAddHandler::modifyRegistrationModel);
     }

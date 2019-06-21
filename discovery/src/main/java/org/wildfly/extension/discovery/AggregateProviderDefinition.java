@@ -42,10 +42,11 @@ final class AggregateProviderDefinition extends SimpleResourceDefinition {
     AggregateProviderDefinition() {
         super(new Parameters(PathElement.pathElement(AGGREGATE_PROVIDER), DiscoveryExtension.getResourceDescriptionResolver(AGGREGATE_PROVIDER))
             .setAddHandler(AggregateProviderAddHandler.getInstance())
-            .setRemoveHandler(new TrivialRemoveStepHandler(DISCOVERY_PROVIDER_RUNTIME_CAPABILITY))
+            .setRemoveHandler(TrivialRemoveStepHandler.getInstance())
             .setCapabilities(DISCOVERY_PROVIDER_RUNTIME_CAPABILITY));
     }
 
+    @Override
     public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(PROVIDER_NAMES, null, AggregateProviderAddHandler::modifyRegistrationModel);
     }

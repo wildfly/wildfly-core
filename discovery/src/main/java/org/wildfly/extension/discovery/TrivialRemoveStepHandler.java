@@ -22,23 +22,20 @@
 
 package org.wildfly.extension.discovery;
 
-import java.util.Set;
-
 import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.OperationStepHandler;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class TrivialRemoveStepHandler extends AbstractRemoveStepHandler {
-    TrivialRemoveStepHandler() {
+    
+    private static final OperationStepHandler INSTANCE = new TrivialRemoveStepHandler();
+
+    static OperationStepHandler getInstance() {
+        return INSTANCE;
     }
 
-    TrivialRemoveStepHandler(final RuntimeCapability... capabilities) {
-        super(capabilities);
-    }
-
-    TrivialRemoveStepHandler(final Set<RuntimeCapability> capabilities) {
-        super(capabilities);
+    private TrivialRemoveStepHandler() {
     }
 }

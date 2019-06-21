@@ -39,6 +39,7 @@ import org.jboss.as.controller.PersistentResourceXMLParser;
  */
 final class DiscoverySubsystemParser extends PersistentResourceXMLParser {
 
+    @Override
     public PersistentResourceXMLDescription getParserDescription() {
         return builder(PathElement.pathElement(SUBSYSTEM, DISCOVERY), DiscoveryExtension.NAMESPACE)
                 .addChild(

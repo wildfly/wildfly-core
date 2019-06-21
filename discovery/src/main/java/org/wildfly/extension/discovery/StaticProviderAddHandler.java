@@ -54,6 +54,7 @@ class StaticProviderAddHandler extends AbstractAddStepHandler {
         super(new Parameters().addAttribute(StaticProviderDefinition.SERVICES));
     }
 
+    @Override
     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         context.registerCapability(
             RuntimeCapability.Builder
@@ -62,6 +63,7 @@ class StaticProviderAddHandler extends AbstractAddStepHandler {
         super.execute(context, operation);
     }
 
+    @Override
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
         // no operation
     }
