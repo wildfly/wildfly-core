@@ -997,7 +997,7 @@
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                             <licensesConfigFile>${feature-pack.license.directory}/core-feature-pack-licenses.xml</licensesConfigFile>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
-                            <excludedScopes>system,provided</excludedScopes>
+                            <excludedScopes>system</excludedScopes>
                         </configuration>
                     </execution>
                 </executions>
