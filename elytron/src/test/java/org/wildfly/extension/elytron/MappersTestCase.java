@@ -112,6 +112,24 @@ public class MappersTestCase extends AbstractSubsystemBaseTest {
 
     }
 
+    @Test
+    public void testCustomEvidenceDecoder() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "CustomTestingDomain");
+
+        X509Certificate[] certificateChain = populateCertificateChain(true);
+        X509PeerCertificateChainEvidence evidence = new X509PeerCertificateChainEvidence(certificateChain);
+
+        ServiceName serviceName = Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY.getCapabilityServiceName("customEvidenceDecoder");
+        EvidenceDecoder evidenceDecoder = (EvidenceDecoder) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(evidenceDecoder);
+        // custom evidence decoder just converts the subject name to upper case
+        Assert.assertEquals("CN=BOB0", evidenceDecoder.getPrincipal(evidence).getName());
+    }
+
     private static X509Certificate[] populateCertificateChain(boolean includeSubjectAltNames) throws Exception {
         KeyPairGenerator keyPairGenerator;
         try {

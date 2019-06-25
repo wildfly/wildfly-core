@@ -139,6 +139,7 @@ interface ElytronDescriptionConstants {
     String CRITICAL = "critical";
 
     String CUSTOM_CREDENTIAL_SECURITY_FACTORY = "custom-credential-security-factory";
+    String CUSTOM_EVIDENCE_DECODER = "custom-evidence-decoder";
     String CUSTOM_PERMISSION_MAPPER = "custom-permission-mapper";
     String CUSTOM_POLICY = "custom-policy";
     String CUSTOM_PRINCIPAL_DECODER = "custom-principal-decoder";

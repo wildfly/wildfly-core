@@ -2452,6 +2452,7 @@
             <xs:element name="mapped-role-mapper" type="mappedRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="x500-subject-evidence-decoder" type="x500SubjectEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="x509-subject-alt-name-evidence-decoder" type="x509SubjectAltNameEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="custom-evidence-decoder" type="customEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="aggregate-evidence-decoder" type="aggregateEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
@@ -3549,6 +3550,31 @@
                 <xs:sequence>
                     <xs:element name="evidence-decoder" type="evidenceDecoderRefType" minOccurs="2" maxOccurs="unbounded" />
                 </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="customEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                Generic definition for a custom EvidenceDecoder implementation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:sequence>
+                    <xs:element name="configuration"
+                                type="customComponentConfiguration" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The configuration to apply to the EvidenceDecoder implementation.
+
+                                Note: If configuration is supplied the EvidenceDecoder MUST implement the initialize(Map&lt;String, String&gt;) method.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="customComponentAttributes" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

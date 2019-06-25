@@ -76,6 +76,7 @@
     <mappers>
         <x500-subject-evidence-decoder name="subjectDecoder" />
         <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <custom-evidence-decoder name="customEvidenceDecoder" class-name="org.wildfly.elytron.CustomEvidenceDecoder" module="l.m" />
         <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
             <evidence-decoder name="rfc822Decoder"/>
             <evidence-decoder name="subjectDecoder"/>

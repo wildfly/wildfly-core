@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER;
@@ -61,7 +62,7 @@ class MapperParser {
         VERSION_1_1,
         VERSION_3_0, // permission-sets in permission-mappings and constant-permission-mappers
         VERSION_4_0, // mapped-role-mappers
-        CURRENT // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, aggregate-evidence-decoder
+        CURRENT // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
     }
 
     private final Version version;
@@ -377,6 +378,7 @@ class MapperParser {
                 .addChild(mappedRoleMapperParser)
                 .addChild(x500SubjectEvidenceDecoderParser) // new
                 .addChild(x509SubjectAltNameEvidenceDecoder) // new
+                .addChild(getCustomComponentParser(CUSTOM_EVIDENCE_DECODER)) // new
                 .addChild(aggregateEvidenceDecoderParser) // new
                 .build();
     }
