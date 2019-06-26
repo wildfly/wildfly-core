@@ -19,23 +19,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.test.integration.management.cli;
+package org.jboss.as.test.manualmode.management.cli;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 
 /**
  * Start an embedded server in the CLI remote process.
  * embedded server updates System I/O in a way that impacts CLI output.
  * @author jdenise@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
-public class CliEmbedServerTestCase {
+public class CliEmbedServerInProcessTestCase {
 
     @Rule
     public final TemporaryFolder temporaryUserHome = new TemporaryFolder();
