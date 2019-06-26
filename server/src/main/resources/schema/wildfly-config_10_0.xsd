@@ -20,11 +20,13 @@
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="urn:jboss:domain:10.0"
+           xmlns:credential-reference="urn:wildfly:credential-reference:1.0"
            targetNamespace="urn:jboss:domain:10.0"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified"
         >
 
+    <xs:import namespace="urn:wildfly:credential-reference:1.0" schemaLocation="wildfly-credential-reference_1_0.xsd"/>
 
     <xs:element name="domain">
         <xs:annotation>
@@ -273,7 +275,7 @@
         </xs:annotation>
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" />
-            <xs:element name="search-credential-reference" type="credentialReferenceType" minOccurs="0">
+            <xs:element name="search-credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         The credential reference to use when connecting to perform a search.
@@ -578,7 +580,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used by as protection parameter for the Credential Store.
@@ -652,7 +654,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="keystore-password-credential-reference" type="credentialReferenceType" minOccurs="0">
+            <xs:element name="keystore-password-credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Credential reference to be used by as protection parameter for the Keystore.
@@ -679,7 +681,7 @@
         <xs:complexContent>
             <xs:extension base="keyStoreType">
                 <xs:sequence>
-                    <xs:element name="key-password-credential-reference" type="credentialReferenceType" minOccurs="0">
+                    <xs:element name="key-password-credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
                         <xs:annotation>
                             <xs:documentation>
                                 Credential reference to be used by as protection parameter when loading keys from the keystore.
@@ -4992,50 +4994,6 @@
         <xs:sequence>
             <xs:element name="extension" type="extensionType" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
-    </xs:complexType>
-
-    <!-- Credential Reference Types -->
-    <xs:attributeGroup name="credentialReferenceStoreBased">
-        <xs:annotation>
-            <xs:documentation>
-                Group of attributes used when referencing credential through credential store.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="store" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Credential store name used to fetch credential with given 'alias' from.
-                    Credential store name has to be defined elsewhere.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="alias" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Alias of credential in the credential store.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="type" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Type of credential to be fetched from credential store.
-                    It is usually fully qualified class name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
-    <xs:complexType name="credentialReferenceType">
-        <xs:attributeGroup ref="credentialReferenceStoreBased"/>
-        <xs:attribute name="clear-text" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Credential/password in clear text. Use just for testing purpose.
-                    Otherwise use credential store to mask the actual credential from your configuration.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
     </xs:complexType>
 
 </xs:schema>
