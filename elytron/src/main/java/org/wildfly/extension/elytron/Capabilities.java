@@ -37,6 +37,7 @@ import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
@@ -182,6 +183,12 @@ class Capabilities {
 
     static final RuntimeCapability<Void> ROLE_MAPPER_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(ROLE_MAPPER_CAPABILITY, true, RoleMapper.class)
+            .build();
+
+    static final String EVIDENCE_DECODER_CAPABILITY = CAPABILITY_BASE + "evidence-decoder";
+
+    static final RuntimeCapability<Void> EVIDENCE_DECODER_RUNTIME_CAPABILITY =  RuntimeCapability
+            .Builder.of(EVIDENCE_DECODER_CAPABILITY, true, EvidenceDecoder.class)
             .build();
 
     static final String SECURITY_EVENT_LISTENER_CAPABILITY = CAPABILITY_BASE + "security-event-listener";

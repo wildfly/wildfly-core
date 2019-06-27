@@ -33,6 +33,9 @@
         <security-domain name="X500DomainThree" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderThree">
             <realm name="FileRealm"/>
         </security-domain>
+        <security-domain name="X500DomainFour" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderThree" evidence-decoder="aggregateEvidenceDecoder">
+            <realm name="FileRealm"/>
+        </security-domain>
         <security-domain name="AnotherDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-security-domains="MyDomain">
             <realm name="PropRealm"/>
         </security-domain>
@@ -179,6 +182,13 @@
             <role-mapping from="Admin" to="Administrator"/>
             <role-mapping from="foo" to="bar baz"/>
         </mapped-role-mapper>
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <custom-evidence-decoder name="customEvidenceDecoder" class-name="org.wildfly.elytron.CustomEvidenceDecoder" module="l.m" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">

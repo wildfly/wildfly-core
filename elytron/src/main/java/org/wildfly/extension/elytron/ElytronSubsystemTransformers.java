@@ -100,6 +100,15 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from8(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_8_0_0, ELYTRON_7_0_0);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.EVIDENCE_DECODER)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, DomainDefinition.EVIDENCE_DECODER)
+                .end();
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.X500_SUBJECT_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_EVIDENCE_DECODER));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY));
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
                 .getAttributeBuilder()

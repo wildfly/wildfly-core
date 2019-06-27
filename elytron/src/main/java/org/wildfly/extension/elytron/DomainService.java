@@ -35,6 +35,7 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.SecurityDomain;
@@ -69,6 +70,7 @@ class DomainService implements Service<SecurityDomain> {
     private final InjectedValue<PrincipalDecoder> principalDecoderInjector = new InjectedValue<>();
     private final InjectedValue<RealmMapper> realmMapperInjector = new InjectedValue<>();
     private final InjectedValue<PermissionMapper> permissionMapperInjector = new InjectedValue<>();
+    private final InjectedValue<EvidenceDecoder> evidenceDecoderInjector = new InjectedValue<>();
     private final InjectedValue<SecurityEventListener> securityEventListenerInjector = new InjectedValue<>();
 
     DomainService(final String defaultRealm, final Predicate<SecurityDomain> trustedSecurityDomain, final UnaryOperator<SecurityIdentity> identityOperator) {
@@ -147,6 +149,10 @@ class DomainService implements Service<SecurityDomain> {
         return createRoleMapperInjector(name);
     }
 
+    Injector<EvidenceDecoder> getEvidenceDecoderInjector() {
+        return evidenceDecoderInjector;
+    }
+
     Injector<SecurityEventListener> getSecurityEventListenerInjector() {
         return securityEventListenerInjector;
     }
@@ -175,6 +181,10 @@ class DomainService implements Service<SecurityDomain> {
         }
         if (roleMapper != null) {
             builder.setRoleMapper(roleMappers.get(roleMapper).getValue());
+        }
+        EvidenceDecoder evidenceDecoder = evidenceDecoderInjector.getOptionalValue();
+        if (evidenceDecoder != null) {
+            builder.setEvidenceDecoder(evidenceDecoder);
         }
         if (defaultRealm != null) {
             builder.setDefaultRealmName(defaultRealm);
