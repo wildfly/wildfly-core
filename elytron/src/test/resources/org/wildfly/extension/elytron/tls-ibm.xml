@@ -71,6 +71,13 @@
             <trust-manager name="trust-with-crl-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-list />
             </trust-manager>
+            <trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="ElytronCaTruststore" soft-fail="true" only-leaf-cert="true">
+                <certificate-revocation-list />
+                <ocsp responder="http://localhost/ocsp"/>
+            </trust-manager>
+            <trust-manager name="trust-with-ocsp-simple" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <ocsp/>
+            </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="ServerSslContextNoAuth" key-manager="ServerKeyManager" trust-manager="CaTrustManager"/>

@@ -44,6 +44,13 @@
             <trust-manager name="trust-with-crl-dp" algorithm="SunX509" key-store="jks_store">
                 <certificate-revocation-list />
             </trust-manager>
+            <trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="jks_store" soft-fail="true" only-leaf-cert="true">
+                <certificate-revocation-list />
+                <ocsp responder="http://localhost/ocsp"/>
+            </trust-manager>
+            <trust-manager name="trust-with-ocsp-simple" algorithm="PKIX" key-store="jks_store">
+                <ocsp/>
+            </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false" maximum-session-cache-size="10"

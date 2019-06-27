@@ -100,7 +100,6 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from8(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_8_0_0, ELYTRON_7_0_0);
-
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY));
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
                 .getAttributeBuilder()
@@ -117,23 +116,29 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                         return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_AUTHORITY).getMessage();
                     }
                 }, ElytronDescriptionConstants.CERTIFICATE_AUTHORITY);
-
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)
+                .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.MAXIMUM_CERT_PATH)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), ElytronDescriptionConstants.ONLY_LEAF_CERT)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), ElytronDescriptionConstants.SOFT_FAIL)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.ONLY_LEAF_CERT)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.SOFT_FAIL)
+                .end();
     }
 
     private static void from7(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_7_0_0, ELYTRON_6_0_0);
-
         Map<String, RejectAttributeChecker> keyMapperChecker = new HashMap<>();
         keyMapperChecker.put(HASH_ENCODING, RejectAttributeChecker.DEFINED);
         keyMapperChecker.put(SALT_ENCODING, RejectAttributeChecker.DEFINED);
-
         Map<String, RejectAttributeChecker> principalQueryCheckers = new HashMap<>();
         principalQueryCheckers.put(BCRYPT_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
         principalQueryCheckers.put(SALTED_SIMPLE_DIGEST_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
         principalQueryCheckers.put(SIMPLE_DIGEST_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
         principalQueryCheckers.put(SCRAM_MAPPER, new RejectAttributeChecker.ObjectFieldsRejectAttributeChecker(keyMapperChecker));
         principalQueryCheckers.put(MODULAR_CRYPT_MAPPER, RejectAttributeChecker.DEFINED);
-
         builder.addChildResource(PathElement.pathElement(JDBC_REALM))
                 .getAttributeBuilder()
                 .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(
@@ -270,6 +275,23 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                     }
                 }
                 attributeValue.set(allPermissions);
+            }
+        }
+    };
+
+    // Moves maximum-cert-path from trust-manager back to certificate-revocation-list
+    private static final AttributeConverter MAXIMUM_CERT_PATH_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.isDefined()) {
+                ModelNode trustManager = context.readResourceFromRoot(address).getModel();
+                Integer maxCertPath = trustManager.get(ElytronDescriptionConstants.MAXIMUM_CERT_PATH).asIntOrNull();
+
+                if (maxCertPath != null) {
+                    attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(maxCertPath));
+                } else {
+                    attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(5));
+                }
             }
         }
     };

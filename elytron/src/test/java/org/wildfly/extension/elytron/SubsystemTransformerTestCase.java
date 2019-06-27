@@ -133,7 +133,9 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 )
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
-        );
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER, "TestingTrustManager")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                );
     }
 
     @Test

@@ -4328,6 +4328,7 @@
         </xs:annotation>
         <xs:all>
             <xs:element name="certificate-revocation-list" type="certificateRevocationListType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ocsp" type="ocspType" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -4380,6 +4381,27 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="maximum-cert-path" type="xs:int" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="only-leaf-cert" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Check revocation status only of leaf certificates.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="soft-fail" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Accept certificate if revocation status is unknown.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="certificateRevocationListType">
@@ -4406,6 +4428,28 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ocspType">
+        <xs:annotation>
+            <xs:documentation>
+                Enables online certificate status protocol checks to a trust manager.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="responder" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    OCSP responder URI to override those extracted from certificate.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefer-crls" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Prefer certificate revocation list revocation over OCSP if certificate-revocation-list is defined.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
