@@ -1665,7 +1665,7 @@
     </dependency>
     <dependency>
       <groupId>org.wildfly.security</groupId>
-      <artifactId>wildfly-elytron-sasl-auth-util</artifactId>
+      <artifactId>wildfly-elytron-sasl-anonymous</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
@@ -1676,7 +1676,7 @@
     </dependency>
     <dependency>
       <groupId>org.wildfly.security</groupId>
-      <artifactId>wildfly-elytron-sasl-anonymous</artifactId>
+      <artifactId>wildfly-elytron-sasl-auth-util</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
@@ -1841,6 +1841,17 @@
     </dependency>
     <dependency>
       <groupId>org.wildfly.security</groupId>
+      <artifactId>wildfly-elytron-tool</artifactId>
+      <licenses>
+        <license>
+          <name>Apache License 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+    </dependency>
+    <dependency>
+      <groupId>org.wildfly.security</groupId>
       <artifactId>wildfly-elytron-util</artifactId>
       <licenses>
         <license>
@@ -1908,17 +1919,6 @@
     <dependency>
       <groupId>org.wildfly.security</groupId>
       <artifactId>wildfly-elytron-x500-principal</artifactId>
-      <licenses>
-        <license>
-          <name>Apache License 2.0</name>
-          <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-          <distribution>repo</distribution>
-        </license>
-      </licenses>
-    </dependency>
-    <dependency>
-      <groupId>org.wildfly.security</groupId>
-      <artifactId>wildfly-elytron-tool</artifactId>
       <licenses>
         <license>
           <name>Apache License 2.0</name>
