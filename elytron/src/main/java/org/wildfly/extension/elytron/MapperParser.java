@@ -19,12 +19,14 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PERMISSION_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_REALM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_ROLE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_ROLE_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EVIDENCE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
@@ -59,7 +61,8 @@ class MapperParser {
         VERSION_1_0,
         VERSION_1_1,
         VERSION_3_0, // permission-sets in permission-mappings and constant-permission-mappers
-        CURRENT // mapped-role-mappers
+        VERSION_4_0, // mapped-role-mappers
+        CURRENT // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
     }
 
     private final Version version;
@@ -222,6 +225,18 @@ class MapperParser {
             .addAttribute(RoleMapperDefinitions.RIGHT)
             .build();
 
+    private PersistentResourceXMLDescription x500SubjectEvidenceDecoderParser = PersistentResourceXMLDescription.builder(EvidenceDecoderDefinitions.getX500SubjectEvidenceDecoderDefinition().getPathElement())
+            .build();
+
+    private PersistentResourceXMLDescription x509SubjectAltNameEvidenceDecoder = PersistentResourceXMLDescription.builder(EvidenceDecoderDefinitions.getX509SubjectAltNameEvidenceDecoderDefinition().getPathElement())
+            .addAttribute(EvidenceDecoderDefinitions.ALT_NAME_TYPE)
+            .addAttribute(EvidenceDecoderDefinitions.SEGMENT)
+            .build();
+
+    private PersistentResourceXMLDescription aggregateEvidenceDecoderParser = PersistentResourceXMLDescription.builder(EvidenceDecoderDefinitions.getAggregateEvidenceDecoderDefinition().getPathElement())
+            .addAttribute(EvidenceDecoderDefinitions.getAggregateEvidenceDecoderDefinition().getReferencesAttribute(), new AttributeParsers.NamedStringListParser(EVIDENCE_DECODER), new AttributeMarshallers.NamedStringListMarshaller(EVIDENCE_DECODER))
+            .build();
+
     MapperParser(Version version) {
         this.version = version;
     }
@@ -292,10 +307,7 @@ class MapperParser {
                 .build();
     }
 
-    public PersistentResourceXMLDescription getParser() {
-        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
-            return getParser_1_0_to_3_0();
-        }
+    private PersistentResourceXMLDescription getParser_4_0() {
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
@@ -325,6 +337,49 @@ class MapperParser {
                 .addChild(getCustomComponentParser(CUSTOM_ROLE_MAPPER))
                 .addChild(logicalRoleMapperParser)
                 .addChild(mappedRoleMapperParser) // new
+                .build();
+    }
+
+    public PersistentResourceXMLDescription getParser() {
+        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
+            return getParser_1_0_to_3_0();
+        }
+        if (version.equals(Version.VERSION_4_0)) {
+            return getParser_4_0();
+        }
+        return decorator(ElytronDescriptionConstants.MAPPERS)
+                .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
+                .addChild(logicalPermissionMapper)
+                .addChild(getSimpleMapperParser())
+                .addChild(getConstantPermissionMapperParser())
+                .addChild(aggregatePrincipalDecoderParser)
+                .addChild(concatenatingPrincipalDecoderParser)
+                .addChild(constantPrincipalDecoderParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_DECODER))
+                .addChild(x500AttributePrincipalDecoderParser)
+                .addChild(aggregatePrincipalTransformerParser)
+                .addChild(chainedPrincipalTransformersParser)
+                .addChild(constantPrincipalTransformersParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_TRANSFORMER))
+                .addChild(regexPrincipalTransformerParser)
+                .addChild(regexValidatingTransformerParser)
+                .addChild(constantRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_REALM_MAPPER))
+                .addChild(simpleRegexRealmMapperParser)
+                .addChild(mappedRegexRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_DECODER))
+                .addChild(simpleRoleDecoderParser)
+                .addChild(addPrefixRoleMapperParser)
+                .addChild(addSuffixRoleMapperParser)
+                .addChild(aggregateRoleMapperParser)
+                .addChild(constantRoleMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_MAPPER))
+                .addChild(logicalRoleMapperParser)
+                .addChild(mappedRoleMapperParser)
+                .addChild(x500SubjectEvidenceDecoderParser) // new
+                .addChild(x509SubjectAltNameEvidenceDecoder) // new
+                .addChild(getCustomComponentParser(CUSTOM_EVIDENCE_DECODER)) // new
+                .addChild(aggregateEvidenceDecoderParser) // new
                 .build();
     }
 }
