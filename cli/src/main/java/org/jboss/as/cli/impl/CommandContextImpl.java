@@ -79,7 +79,7 @@ import org.aesh.command.parser.CommandLineParserException;
 import org.aesh.command.validator.OptionValidatorException;
 import org.aesh.extensions.grep.Grep;
 import org.aesh.readline.Prompt;
-import org.aesh.utils.Config;
+import org.aesh.terminal.utils.Config;
 import org.aesh.readline.util.FileAccessPermission;
 import org.jboss.as.cli.Attachments;
 import org.jboss.as.cli.CliConfig;

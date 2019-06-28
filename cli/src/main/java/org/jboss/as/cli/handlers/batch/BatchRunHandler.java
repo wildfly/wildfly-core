@@ -27,7 +27,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
-import org.aesh.utils.Config;
+import org.aesh.terminal.utils.Config;
 import org.jboss.as.cli.Attachments;
 
 import org.jboss.as.cli.CommandContext;

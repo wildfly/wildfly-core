@@ -108,7 +108,7 @@
     <dependencies>
         <dependency>
             <groupId>org.aesh</groupId>
-            <artifactId>aesh-readline</artifactId>
+            <artifactId>readline</artifactId>
         </dependency>
 
         <dependency>
