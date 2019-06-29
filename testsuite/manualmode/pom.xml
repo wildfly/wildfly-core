@@ -190,8 +190,6 @@
                             as the risk of cross-test pollution is too high -->
                             <reuseForks>false</reuseForks>
 
-                            <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
-
                             <!-- Parameters to test cases. -->
                             <systemPropertyVariables combine.children="append">
                                 <byteman.server.ipaddress>${node0}</byteman.server.ipaddress>
@@ -208,7 +206,7 @@
                             <environmentVariables>
                                 <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                             </environmentVariables>
-                            <argLine>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</argLine>
+                            <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args}</argLine>
                         </configuration>
                     </plugin>
                     <plugin>
