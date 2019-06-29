@@ -95,14 +95,13 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
 
                     <environmentVariables>
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                     </environmentVariables>
 
                     <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
                         <jboss.home>${wildfly.home}</jboss.home>
 			<!-- This is required so JBoss Modules knows which repository to use -->

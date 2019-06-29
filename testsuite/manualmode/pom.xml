@@ -190,9 +190,10 @@
                             as the risk of cross-test pollution is too high -->
                             <reuseForks>false</reuseForks>
 
+                            <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
+
                             <!-- Parameters to test cases. -->
                             <systemPropertyVariables combine.children="append">
-                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <byteman.server.ipaddress>${node0}</byteman.server.ipaddress>
                                 <byteman.server.port>${byteman.port}</byteman.server.port>
                                 <jboss.home>${wildfly.home}</jboss.home>

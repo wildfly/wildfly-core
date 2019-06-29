@@ -162,12 +162,11 @@
                     <failIfNoTests>false</failIfNoTests>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
 
                     <systemPropertyVariables>
                         <jboss.options>-ea</jboss.options>
                         <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <module.path>${jboss.dist}/modules</module.path>
                         <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>
@@ -230,12 +229,11 @@
                             <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                             <!-- System properties to forked surefire JVM which runs clients. -->
-                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args}</argLine>
+                            <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.system.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
 
                             <systemPropertyVariables>
                                 <jboss.options>-ea</jboss.options>
                                 <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
-                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                                 <module.path>${jboss.dist}/modules</module.path>
                                 <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>

@@ -120,8 +120,8 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
                             <systemPropertyVariables>
-                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <org.jboss.logging.provider>jboss</org.jboss.logging.provider>
                                 <test.log.level>${test.log.level}</test.log.level>
                                 <test.log.file>${test.log.file}</test.log.file>

@@ -79,14 +79,13 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <!-- System properties to forked surefire JVM which runs clients. -->
-                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.jacoco.args}</argLine>
+                    <argLine>${jvm.args.ip.client} ${jvm.args.timeouts} ${surefire.jacoco.args} -Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
 
                     <environmentVariables>
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                     </environmentVariables>
 
                     <systemPropertyVariables>
-                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <jboss.home>${wildfly.home}</jboss.home>
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
