@@ -570,11 +570,25 @@ public class DomainLifecycleUtil implements AutoCloseable {
      * @throws TimeoutException if no call {@link #isHostControllerStarted()} returns {@code true} before the timeout
      */
     public void awaitHostController(long start) throws InterruptedException, TimeoutException {
+        awaitHostController(start, ControlledProcessState.State.RUNNING);
+    }
+
+    /**
+     * Poll until {@link #isHostControllerInState(ControlledProcessState.State)} returns {@code true} or the
+     * {@link WildFlyManagedConfiguration#getStartupTimeoutInSeconds() configured timeout} is reached.
+     *
+     * @param start time in milliseconds that should be used as the starting time for the timeout check.
+     * @param state The {@link ControlledProcessState.State} to compare.
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     * @throws TimeoutException      if no call {@link #isHostControllerStarted()} returns {@code true} before the timeout
+     */
+    public void awaitHostController(long start, ControlledProcessState.State state) throws InterruptedException, TimeoutException {
         checkClosed();
         boolean hcAvailable = false;
         long deadline = start + configuration.getStartupTimeoutInSeconds() * 1000;
         while (!hcAvailable && getProcessExitCode() < 0) {
-            hcAvailable = isHostControllerStarted();
+            hcAvailable = isHostControllerInState(state);
             long remaining = deadline - System.currentTimeMillis();
             if(remaining <= 0) {
                 break;
@@ -649,6 +663,30 @@ public class DomainLifecycleUtil implements AutoCloseable {
 
             ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("host-state", address).asString().toUpperCase(Locale.ENGLISH));
             return status == ControlledProcessState.State.RUNNING;
+        } catch (Exception ignored) {
+            //
+        }
+        return false;
+    }
+
+    /**
+     * Returns whether the {@code host-state} attribute on the {@code /host=x} resource for the host managed
+     * by this object is reporting the state passed as argument.  Problems connecting to the host result in
+     * returning {@code false}.
+     *
+     * @param state The {@link ControlledProcessState.State} to compare
+     * @return
+     *
+     * @throws IllegalStateException if {@link #close()} has previously been invoked on this instance.
+     */
+    public boolean isHostControllerInState(ControlledProcessState.State state) {
+        checkClosed();
+        try {
+            ModelNode address = new ModelNode();
+            address.add("host", configuration.getHostName());
+
+            ControlledProcessState.State status = Enum.valueOf(ControlledProcessState.State.class, readAttribute("host-state", address).asString().toUpperCase(Locale.ENGLISH));
+            return status == state;
         } catch (Exception ignored) {
             //
         }
