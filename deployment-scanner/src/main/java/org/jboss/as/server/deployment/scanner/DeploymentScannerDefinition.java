@@ -95,7 +95,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_ZIPPED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_ZIPPED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_ZIPPED)
-                    .setDefaultValue(new ModelNode().set(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .setAllowExpression(true)
                     .build();
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_EXPLODED =
@@ -109,7 +109,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_XML, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_XML)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .build();
 
     protected static final SimpleAttributeDefinition DEPLOYMENT_TIMEOUT =

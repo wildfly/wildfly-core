@@ -125,7 +125,7 @@ public class ModelTypeValidatorUnitTestCase {
     @Test
     public void testBoolean() {
         ModelTypeValidator testee = new ModelTypeValidator(ModelType.BOOLEAN, false, false, false);
-        assertOk(testee, new ModelNode().set(true));
+        assertOk(testee, ModelNode.TRUE);
         assertOk(testee, new ModelNode().set("true"));
         assertOk(testee, new ModelNode().set("TruE"));
         assertOk(testee, new ModelNode().set("false"));
@@ -134,7 +134,7 @@ public class ModelTypeValidatorUnitTestCase {
         assertInvalid(testee, ModelNode.ZERO);
 
         testee = new ModelTypeValidator(ModelType.BOOLEAN, false, false, true);
-        assertOk(testee, new ModelNode().set(true));
+        assertOk(testee, ModelNode.TRUE);
         assertInvalid(testee, new ModelNode().set("false"));
         assertInvalid(testee, ModelNode.ZERO);
     }

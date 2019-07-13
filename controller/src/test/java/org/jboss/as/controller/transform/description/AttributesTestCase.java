@@ -753,7 +753,7 @@ public class AttributesTestCase {
         OperationTransformer.TransformedOperation transformedAdd = transformOperation(add);
         Assert.assertTrue(transformedAdd.rejectOperation(success()));
 
-        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", new ModelNode().set(true));
+        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", ModelNode.TRUE);
         OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
         Assert.assertTrue(transformedWrite.rejectOperation(success()));
     }
@@ -780,7 +780,7 @@ public class AttributesTestCase {
         OperationTransformer.TransformedOperation transformedAdd = transformOperation(add);
         Assert.assertTrue(transformedAdd.rejectOperation(success()));
 
-        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", new ModelNode().set(true));
+        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", ModelNode.TRUE);
         OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
         Assert.assertTrue(transformedWrite.rejectOperation(success()));
     }
