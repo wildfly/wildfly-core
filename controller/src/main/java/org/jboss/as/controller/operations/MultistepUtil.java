@@ -62,47 +62,6 @@ public final class MultistepUtil {
     private MultistepUtil() {}
 
     /**
-     * Adds a step to the given {@link OperationContext} for each operation included in the given {@code operations} list, either
-     * using for each step a response node provided in the {@code responses} list, or if the {@code responses} list is empty,
-     * creating them and storing them in the {@code responses} list. The response objects are not tied into the overall response
-     * to the operation associated with {@code context}. It is the responsibility of the caller to do that.
-     *
-     * @param context the {@code OperationContext}. Cannot be {@code null}
-     * @param operations the list of operations, each element of which must be a proper OBJECT type model node with a structure describing an operation
-     * @param responses  a list of response nodes to use for each operation, each element of which corresponds to the operation in the equivalent position
-     *         in the {@code operations} list. Cannot be {@code null} but may be empty in which case this method will
-     *                   create the response nodes and add them to this list.
-     * @throws OperationFailedException if there is a problem registering a step for any of the operations
-     *
-     * @deprecated Do not use. Will be removed.
-     */
-    @Deprecated
-    public static void recordOperationSteps(final OperationContext context, final List<ModelNode> operations,
-                                                       final List<ModelNode> responses) throws OperationFailedException {
-        assert responses.isEmpty() || operations.size() == responses.size();
-
-        boolean responsesProvided = !responses.isEmpty();
-
-        LinkedHashMap<Integer, ModelNode> operationMap = new LinkedHashMap<>();
-        Map<Integer, ModelNode> responseMap  = new LinkedHashMap<>();
-        int i = 0;
-        for (ModelNode op : operations) {
-            operationMap.put(i, op);
-            if (responsesProvided) {
-                ModelNode response = responses.get(i);
-                assert response != null : "No response provided for " + i;
-                responseMap.put(i, response);
-            }
-            i++;
-        }
-        recordOperationSteps(context, operationMap, responseMap, OperationHandlerResolver.DEFAULT, false, true);
-
-        if (!responsesProvided) {
-            responses.addAll(responseMap.values());
-        }
-    }
-
-    /**
      * Adds a step to the given {@link OperationContext} for each operation included in the given map, either
      * using for each step a response node provided in the {@code responses} map, or if the {@code responses} map is empty,
      * creating them and storing them in the {@code responses} map. The response objects are not tied into the overall response
@@ -123,34 +82,6 @@ public final class MultistepUtil {
     public static <T> void recordOperationSteps(final OperationContext context, final Map<T, ModelNode> operations,
                                                 final Map<T, ModelNode> responses) throws OperationFailedException {
         recordOperationSteps(context, operations, responses, OperationHandlerResolver.DEFAULT, false, true);
-    }
-
-    /**
-     * This is a specialized version of the other variant of this method that allows a pluggable strategy
-     * for resolving the {@link OperationStepHandler} to use for the added steps. It is not expected to
-     * be needed by users outside the WildFly Core kernel.
-     *
-     * @param <T> the type of the keys in the maps
-     * @param context the {@code OperationContext}. Cannot be {@code null}
-     * @param operations the operations, each value of which must be a proper OBJECT type model node with a structure describing an operation.
-     * @param responses  a map of the response nodes, the keys for which match the keys in the {@code operations} param.
-     *                   Cannot be {@code null} but may be empty in which case this method will
-     *                   create the response nodes and store them in this map.
-     * @param handlerResolver an object that can provide the {@code OperationStepHandler} to use for the operation
-     * @param adjustAddresses {@code true} if the address of each operation should be adjusted to become a child of the context's
-     *                                {@link OperationContext#getCurrentAddress() current address}
-     *
-     * @throws OperationFailedException  if there is a problem registering a step for any of the operations
-     *
-     * @deprecated Do not use. Will be removed.
-     */
-    @Deprecated
-    public static <T> void recordOperationSteps(final OperationContext context,
-                                                final Map<T, ModelNode> operations,
-                                                final Map<T, ModelNode> responses,
-                                                final OperationHandlerResolver handlerResolver,
-                                                final boolean adjustAddresses) throws OperationFailedException {
-        recordOperationSteps(context, operations, responses, handlerResolver, adjustAddresses, true);
     }
 
     /**
