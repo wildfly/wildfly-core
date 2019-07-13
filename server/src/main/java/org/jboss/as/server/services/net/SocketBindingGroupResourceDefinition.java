@@ -49,7 +49,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
 
     public static final SimpleAttributeDefinition PORT_OFFSET = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PORT_OFFSET, ModelType.INT, true)
             .setAllowExpression(true).setValidator(new IntRangeValidator(-65535, 65535, true, true))
-            .setDefaultValue(new ModelNode().set(0)).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+            .setDefaultValue(ModelNode.ZERO).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
 
