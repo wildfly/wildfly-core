@@ -79,7 +79,7 @@ class KerberosSecurityFactoryDefinition {
 
     static final SimpleAttributeDefinition MINIMUM_REMAINING_LIFETIME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MINIMUM_REMAINING_LIFETIME, ModelType.INT, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(0))
+        .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 

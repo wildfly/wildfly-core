@@ -82,7 +82,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .setRequired(false)
             .build();
     private static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setRequired(false)
             .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
             .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))

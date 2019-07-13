@@ -62,7 +62,7 @@ class CommonAttributes {
 
     static final SimpleAttributeDefinition MAX_DEPTH = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.MAX_DEPTH, ModelType.INT)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setMinSize(1)
             .build();
 

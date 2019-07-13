@@ -90,7 +90,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SOCKET_CONFIG).build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setXmlName(Attribute.PORT_OFFSET.getLocalName())
             .setAllowExpression(true)
             .setValidator(new IntRangeValidator(-65535, 65535, true, true))

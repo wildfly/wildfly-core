@@ -120,7 +120,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_PORT_OFFSET = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET, ModelType.INT, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setXmlName(Attribute.PORT_OFFSET.getLocalName())
             .setValidator(new IntRangeValidator(-65535, 65535, true, true))
             .build();

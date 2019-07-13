@@ -112,7 +112,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final SimpleAttributeDefinition ROLE_RECURSION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_RECURSION, ModelType.INT, true)
-                .setDefaultValue(new ModelNode(0))
+                .setDefaultValue(ModelNode.ZERO)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();

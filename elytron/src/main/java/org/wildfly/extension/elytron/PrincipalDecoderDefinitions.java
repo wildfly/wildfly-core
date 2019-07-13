@@ -87,7 +87,7 @@ class PrincipalDecoderDefinitions {
 
     static final SimpleAttributeDefinition START_SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.START_SEGMENT, ModelType.INT, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(0))
+        .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 

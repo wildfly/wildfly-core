@@ -72,7 +72,7 @@ public class HostShutdownHandler implements OperationStepHandler {
 
     private static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))

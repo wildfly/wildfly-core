@@ -242,7 +242,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // Discard new "fail-cache" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY))
             .getAttributeBuilder()
-            .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(0)), KerberosSecurityFactoryDefinition.FAIL_CACHE)
+            .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ModelNode.ZERO), KerberosSecurityFactoryDefinition.FAIL_CACHE)
             .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
     }
 

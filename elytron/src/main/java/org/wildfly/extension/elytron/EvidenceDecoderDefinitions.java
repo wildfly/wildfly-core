@@ -106,7 +106,7 @@ class EvidenceDecoderDefinitions {
 
     static final SimpleAttributeDefinition SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEGMENT, ModelType.INT, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setValidator(new IntRangeValidator(0, true, true))
             .setRestartAllServices()
             .build();
