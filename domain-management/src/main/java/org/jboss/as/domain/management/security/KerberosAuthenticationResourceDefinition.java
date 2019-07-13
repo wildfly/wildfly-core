@@ -47,7 +47,7 @@ import org.jboss.dmr.ModelType;
 public class KerberosAuthenticationResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition REMOVE_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.REMOVE_REALM, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

@@ -82,7 +82,7 @@ class AuthenticationClientDefinitions {
 
     static final SimpleAttributeDefinition ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAlternatives(ElytronDescriptionConstants.AUTHENTICATION_NAME, ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY)
             .setRestartAllServices()
             .build();
@@ -172,7 +172,7 @@ class AuthenticationClientDefinitions {
 
     static final SimpleAttributeDefinition MATCH_NO_USER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MATCH_NO_USER, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAlternatives(ElytronDescriptionConstants.MATCH_USER)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

@@ -102,7 +102,7 @@ public class AuditLogTestCase {
             op = Util.getWriteAttributeOperation(
                     auditLogConfigAddress,
                     AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                    new ModelNode(false));
+                    ModelNode.FALSE);
             result = client.execute(op);
             Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
             Assert.assertTrue(file.exists());

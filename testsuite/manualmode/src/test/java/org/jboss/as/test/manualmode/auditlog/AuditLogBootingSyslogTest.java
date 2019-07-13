@@ -103,7 +103,7 @@ public class AuditLogBootingSyslogTest {
         final Operations.CompositeOperationBuilder compositeOp = Operations.CompositeOperationBuilder.create();
 
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.ENABLED.getName(), ModelNode.FALSE));
 
         resetElytron(compositeOp);
         resetServerName(compositeOp);
@@ -177,7 +177,7 @@ public class AuditLogBootingSyslogTest {
 
     private boolean makeOneLog() throws IOException {
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(false));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.FALSE);
         ModelNode result = container.getClient().getControllerClient().execute(op);
         return Operations.isSuccessfulOutcome(result);
     }

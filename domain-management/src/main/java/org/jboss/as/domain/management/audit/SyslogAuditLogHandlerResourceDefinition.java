@@ -87,7 +87,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
 
     public static final SimpleAttributeDefinition TRUNCATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TRUNCATE, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .build();
 

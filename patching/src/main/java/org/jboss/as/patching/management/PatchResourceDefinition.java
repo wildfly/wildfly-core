@@ -78,7 +78,7 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
 
     // Patch operation
     static final AttributeDefinition EXCLUDE_AGEDOUT = SimpleAttributeDefinitionBuilder.create(Constants.EXCLUDE_AGED_OUT, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
     private static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
@@ -88,11 +88,11 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
             .build();
     private static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
     private static final AttributeDefinition OVERRIDE_ALL = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_ALL, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
     private static final AttributeDefinition OVERRIDE = PrimitiveListAttributeDefinition.Builder.of(Constants.OVERRIDE, ModelType.STRING)
@@ -121,12 +121,12 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     static final AttributeDefinition ROLLBACK_TO = SimpleAttributeDefinitionBuilder.create(Constants.ROLLBACK_TO, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
 
     static final AttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(Constants.VERBOSE, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
 

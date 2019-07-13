@@ -170,16 +170,16 @@ public class AuditLogTestCase {
 
     @After
     public void turnOffSysylog() throws Exception {
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, new ModelNode(false));
+        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.FALSE);
         masterLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, new ModelNode(false));
+        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.FALSE);
         slaveLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, new ModelNode(false));
+        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.FALSE);
         masterLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, new ModelNode(false));
+        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.FALSE);
         slaveLifecycleUtil.executeForResult(op);
     }
 
@@ -356,7 +356,7 @@ public class AuditLogTestCase {
 
                 //Now disable the server logger
                 PathAddress serverLoggerAddress = baseAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
-                final ModelNode writeFalseEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, new ModelNode(false));
+                final ModelNode writeFalseEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, ModelNode.FALSE);
                 masterLifecycleUtil.executeForResult(writeFalseEnabled);
                 for (int i = 0 ; i < servers.size() ; i++) {
                     expectSyslogData(serverLoggerAddressOnServer, writeFalseEnabled, false);

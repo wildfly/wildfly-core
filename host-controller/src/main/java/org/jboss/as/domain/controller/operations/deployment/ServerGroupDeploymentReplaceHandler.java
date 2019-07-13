@@ -115,7 +115,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
             deployNode.get(ENABLED).set(true); // Enable
         } else {
             deploymentResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS.append(deploymentPath));
-            ModelNode enabled = deploymentResource.getModel().hasDefined(ENABLED) ? deploymentResource.getModel().get(ENABLED) : new ModelNode(false);
+            ModelNode enabled = deploymentResource.getModel().hasDefined(ENABLED) ? deploymentResource.getModel().get(ENABLED) : ModelNode.FALSE;
             if (enabled.getType() == ModelType.BOOLEAN && enabled.asBoolean()) {
                 throw operationFailed(DomainControllerLogger.ROOT_LOGGER.deploymentAlreadyStarted(toReplace));
             }

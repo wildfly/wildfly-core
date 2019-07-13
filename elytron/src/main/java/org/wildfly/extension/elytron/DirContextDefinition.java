@@ -97,7 +97,7 @@ class DirContextDefinition extends SimpleResourceDefinition {
                     .build();
 
     static final SimpleAttributeDefinition ENABLE_CONNECTION_POOLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLE_CONNECTION_POOLING, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();

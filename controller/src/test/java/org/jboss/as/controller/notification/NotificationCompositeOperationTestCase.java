@@ -57,7 +57,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
 
     private static final SimpleAttributeDefinition FAIL_OPERATION = SimpleAttributeDefinitionBuilder.create("fail-operation", ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     @Override

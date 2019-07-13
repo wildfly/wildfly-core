@@ -105,7 +105,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition UPDATE_AUTO_START_WITH_SERVER_STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.UPDATE_AUTO_START_WITH_SERVER_STATUS, ModelType.BOOLEAN, true)
             .setAllowExpression(false)
-            .setDefaultValue(new ModelNode(false)).build();
+            .setDefaultValue(ModelNode.FALSE).build();
 
     public static final SimpleAttributeDefinition SOCKET_BINDING_GROUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SOCKET_BINDING_GROUP, ModelType.STRING, true)
             .setCapabilityReference(SocketBindingGroupResourceDefinition.SOCKET_BINDING_GROUP_CAPABILITY_NAME, SERVER_CONFIG_CAPABILITY_NAME)

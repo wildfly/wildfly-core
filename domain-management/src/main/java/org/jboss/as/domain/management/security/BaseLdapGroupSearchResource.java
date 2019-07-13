@@ -53,7 +53,7 @@ public abstract class BaseLdapGroupSearchResource extends SimpleResourceDefiniti
             .build();
 
     public static final SimpleAttributeDefinition ITERATIVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ITERATIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

@@ -114,7 +114,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREATE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

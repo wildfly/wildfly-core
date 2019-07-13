@@ -102,24 +102,24 @@ class KerberosSecurityFactoryDefinition {
 
     static final SimpleAttributeDefinition OBTAIN_KERBEROS_TICKET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OBTAIN_KERBEROS_TICKET, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition DEBUG = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DEBUG, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition WRAP_GSS_CREDENTIAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP_GSS_CREDENTIAL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition REQUIRED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REQUIRED, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();

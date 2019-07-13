@@ -136,7 +136,7 @@ class AuditResourceDefinitions {
 
     static final SimpleAttributeDefinition ROTATE_ON_BOOT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROTATE_ON_BOOT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

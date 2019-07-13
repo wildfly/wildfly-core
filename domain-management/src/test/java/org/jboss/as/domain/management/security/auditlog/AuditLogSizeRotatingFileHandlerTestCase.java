@@ -274,7 +274,7 @@ public class AuditLogSizeRotatingFileHandlerTestCase extends AbstractAuditLogHan
 
         //Now try changing the used formatter at runtime
         file.delete();
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.ESCAPE_NEW_LINE.getName(), new ModelNode(false));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.ESCAPE_NEW_LINE.getName(), ModelNode.FALSE);
         executeForResult(op);
         fullRecord = readFullFileRecord(file);
         Assert.assertTrue(Pattern.matches("\\{[\\s\\S]*", fullRecord)); //This regexp allows for new lines

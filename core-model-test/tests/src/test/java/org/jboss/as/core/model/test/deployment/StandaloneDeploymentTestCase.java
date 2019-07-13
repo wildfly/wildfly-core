@@ -376,7 +376,7 @@ public class StandaloneDeploymentTestCase extends AbstractCoreModelTest {
         op = createWriteAttributeOperation(kernelServices, "Test1", ENABLED, new ModelNode(true));
         kernelServices.executeForFailure(op);
 
-        op = createWriteAttributeOperation(kernelServices, "Test1", PERSISTENT, new ModelNode(false));
+        op = createWriteAttributeOperation(kernelServices, "Test1", PERSISTENT, ModelNode.FALSE);
         kernelServices.executeForFailure(op);
 
         op = createWriteAttributeOperation(kernelServices, "Test1", CONTENT, createList(getByteContent(1, 2, 3)));

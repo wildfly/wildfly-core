@@ -124,7 +124,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
     static final SimpleAttributeDefinition CRITICAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CRITICAL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALUE, ModelType.STRING)
@@ -395,7 +395,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition TRUST_CACERTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.TRUST_CACERTS, ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .build();
 
         static final SimpleAttributeDefinition VALIDATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALIDATE, ModelType.BOOLEAN, true)
@@ -605,7 +605,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition PEM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PEM, ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
@@ -739,7 +739,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .build();
 
         static final SimpleAttributeDefinition ALGORITHM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALGORITHM, ModelType.STRING, true)
@@ -834,7 +834,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
@@ -951,7 +951,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                     if (daysToExpiry <= expiration) {
                         result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
                     } else {
-                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(false));
+                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(ModelNode.FALSE);
                     }
                 }
                 result.get(ElytronDescriptionConstants.DAYS_TO_EXPIRY).set(new ModelNode(daysToExpiry));

@@ -104,7 +104,7 @@ public class LdapConnectionResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition ALWAYS_SEND_CLIENT_CERT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ALWAYS_SEND_CLIENT_CERT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final AttributeDefinition[] ATTRIBUTE_DEFINITIONS = {URL, SEARCH_DN, SEARCH_CREDENTIAL, SEARCH_CREDENTIAL_REFERENCE, SECURITY_REALM, INITIAL_CONTEXT_FACTORY, REFERRALS, HANDLES_REFERRALS_FOR, ALWAYS_SEND_CLIENT_CERT};

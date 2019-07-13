@@ -120,7 +120,7 @@ class CertificateAuthorityAccountDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition STAGING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.STAGING, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final AcmeClientSpi acmeClient;

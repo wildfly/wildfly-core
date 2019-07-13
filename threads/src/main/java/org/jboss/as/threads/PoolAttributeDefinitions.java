@@ -61,7 +61,7 @@ public interface PoolAttributeDefinitions {
 
     SimpleAttributeDefinition ALLOW_CORE_TIMEOUT = new SimpleAttributeDefinitionBuilder(CommonAttributes.ALLOW_CORE_TIMEOUT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     SimpleAttributeDefinition GROUP_NAME = new SimpleAttributeDefinitionBuilder(CommonAttributes.GROUP_NAME, ModelType.STRING, true)

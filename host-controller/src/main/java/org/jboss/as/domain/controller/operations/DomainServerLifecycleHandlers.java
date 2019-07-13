@@ -83,7 +83,7 @@ import org.jboss.dmr.Property;
 public class DomainServerLifecycleHandlers {
 
     private static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)

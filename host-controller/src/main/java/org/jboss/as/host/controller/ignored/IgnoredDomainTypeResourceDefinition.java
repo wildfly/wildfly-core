@@ -48,7 +48,7 @@ import org.jboss.dmr.ModelType;
 public class IgnoredDomainTypeResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition WILDCARD = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.WILDCARD, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false)).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
+            .setDefaultValue(ModelNode.FALSE).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static final ListAttributeDefinition NAMES = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.NAMES, ModelType.STRING)
             .setRequired(false)

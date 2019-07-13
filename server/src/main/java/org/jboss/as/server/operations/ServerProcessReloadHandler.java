@@ -58,7 +58,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
     protected static final AttributeDefinition ADMIN_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY, ModelType.BOOLEAN, true)
             .setAlternatives(ModelDescriptionConstants.START_MODE)
             .setDeprecated(ModelVersion.create(5, 0, 0))
-            .setDefaultValue(new ModelNode(false)).build();
+            .setDefaultValue(ModelNode.FALSE).build();
 
     private static final AttributeDefinition SERVER_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_CONFIG, ModelType.STRING, true)
             .setAlternatives(ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG)

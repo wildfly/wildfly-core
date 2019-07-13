@@ -106,7 +106,7 @@ public class OpTypesExtension implements Extension {
             .setStorageRuntime()
             .build();
     private static final AttributeDefinition METRIC = SimpleAttributeDefinitionBuilder.create("metric", ModelType.BOOLEAN)
-            .setUndefinedMetricValue(new ModelNode(false))
+            .setUndefinedMetricValue(ModelNode.FALSE)
             .build();
 
     @Override

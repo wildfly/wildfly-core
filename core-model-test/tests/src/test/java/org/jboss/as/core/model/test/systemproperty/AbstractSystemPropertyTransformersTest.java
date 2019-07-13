@@ -105,7 +105,7 @@ public abstract class AbstractSystemPropertyTransformersTest extends AbstractCor
         Assert.assertEquals(1, properties.get("sys.prop.test.one", VALUE).asInt());
         Assert.assertEquals(new ModelNode(true), properties.get("sys.prop.test.two", BOOT_TIME));
         Assert.assertEquals(2, properties.get("sys.prop.test.two", VALUE).asInt());
-        Assert.assertEquals(new ModelNode(false), properties.get("sys.prop.test.three", BOOT_TIME));
+        Assert.assertEquals(ModelNode.FALSE, properties.get("sys.prop.test.three", BOOT_TIME));
         Assert.assertEquals(3, properties.get("sys.prop.test.three", VALUE).asInt());
         Assert.assertEquals(expectedUndefined, properties.get("sys.prop.test.four", BOOT_TIME));
         Assert.assertFalse(properties.get("sys.prop.test.four", VALUE).isDefined());

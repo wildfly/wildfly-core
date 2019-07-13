@@ -99,7 +99,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition MANAGEMENT_SUBSYSTEM_ENDPOINT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MANAGEMENT_SUBSYSTEM_ENDPOINT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
             .build();
 

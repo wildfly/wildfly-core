@@ -56,7 +56,7 @@ class RequestControllerRootDefinition extends PersistentResourceDefinition {
 
     public static final SimpleAttributeDefinition TRACK_INDIVIDUAL_ENDPOINTS = SimpleAttributeDefinitionBuilder.create(Constants.TRACK_INDIVIDUAL_ENDPOINTS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

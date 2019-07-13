@@ -67,7 +67,7 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition LOG_READ_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.LOG_READ_ONLY, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false)).build();
+            .setDefaultValue(ModelNode.FALSE).build();
 
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)

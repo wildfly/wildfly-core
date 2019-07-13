@@ -58,7 +58,7 @@ public class LocalAuthenticationResourceDefinition extends SimpleResourceDefinit
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES).build();
 
     public static final SimpleAttributeDefinition SKIP_GROUP_LOADING = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SKIP_GROUP_LOADING, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)

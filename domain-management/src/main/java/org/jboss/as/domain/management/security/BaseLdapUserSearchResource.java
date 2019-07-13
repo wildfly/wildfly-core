@@ -49,7 +49,7 @@ public abstract class BaseLdapUserSearchResource extends SimpleResourceDefinitio
      */
 
     public static final SimpleAttributeDefinition FORCE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FORCE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -61,7 +61,7 @@ public abstract class BaseLdapUserSearchResource extends SimpleResourceDefinitio
             .build();
 
     public static final SimpleAttributeDefinition RECURSIVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RECURSIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

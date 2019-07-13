@@ -58,7 +58,7 @@ import org.jboss.dmr.ModelType;
 public class ReadOperationNamesHandler implements OperationStepHandler {
 
     private static final AttributeDefinition ACCESS_CONTROL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ACCESS_CONTROL, ModelType.BOOLEAN, true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .build();
 
     static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(READ_OPERATION_NAMES_OPERATION, ControllerResolver.getResolver("global"))

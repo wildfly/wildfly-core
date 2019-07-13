@@ -98,7 +98,7 @@ public class DeploymentAttributes {
             .build();
 
     public static final SimpleAttributeDefinition ENABLED = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(false) // allowing expressions here complicates domain mode and deployment scanners
         .setAttributeMarshaller(new AttributeMarshaller() {
 
@@ -113,7 +113,7 @@ public class DeploymentAttributes {
 
             @Override
             public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                ModelNode value = resourceModel.hasDefined(attribute.getName()) ? resourceModel.get(attribute.getName()) : new ModelNode(false);
+                ModelNode value = resourceModel.hasDefined(attribute.getName()) ? resourceModel.get(attribute.getName()) : ModelNode.FALSE;
                 if (value.getType() != ModelType.BOOLEAN || !value.asBoolean()) {
                     writer.writeAttribute(attribute.getXmlName(), value.asString());
                 }
@@ -159,7 +159,7 @@ public class DeploymentAttributes {
                     ModelDescriptionConstants.HASH, ModelDescriptionConstants.INPUT_STREAM_INDEX,
                     ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL,
                     ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_INPUT_STREAM_INDEX =
@@ -232,7 +232,7 @@ public class DeploymentAttributes {
             .setDefaultValue(new ModelNode(-1))
             .build();
     public static final SimpleAttributeDefinition ARCHIVE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     /** The complex content  operation parameters */
@@ -362,7 +362,7 @@ public class DeploymentAttributes {
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
     public static SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VERBOSE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final OperationDefinition LIST_MODULES = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.LIST_MODULES, DEPLOYMENT_RESOLVER)

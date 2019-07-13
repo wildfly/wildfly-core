@@ -226,21 +226,21 @@ class SSLDefinitions {
 
     static final SimpleAttributeDefinition WANT_CLIENT_AUTH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WANT_CLIENT_AUTH, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition NEED_CLIENT_AUTH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NEED_CLIENT_AUTH, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition AUTHENTICATION_OPTIONAL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHENTICATION_OPTIONAL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setMinSize(1)
             .setRestartAllServices()
             .build();
@@ -268,7 +268,7 @@ class SSLDefinitions {
 
     static final SimpleAttributeDefinition WRAP = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRAP, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
@@ -311,19 +311,19 @@ class SSLDefinitions {
             .build();
 
     static final SimpleAttributeDefinition PREFER_CRLS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PREFER_CRLS, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition SOFT_FAIL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SOFT_FAIL, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition ONLY_LEAF_CERT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ONLY_LEAF_CERT, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setRestartAllServices()
             .build();

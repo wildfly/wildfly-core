@@ -88,7 +88,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
 
         // Don't log boot operations by default
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.FALSE));
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
                 new ModelNode(true)));
 
@@ -104,7 +104,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
         final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
 
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.ENABLED.getName(), ModelNode.FALSE));
 
         resetUser(compositeOp);
 
