@@ -400,7 +400,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
         static final SimpleAttributeDefinition VALIDATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VALIDATE, ModelType.BOOLEAN, true)
                 .setAllowExpression(true)
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .build();
 
         static void register(ManagementResourceRegistration resourceRegistration, ResourceDescriptionResolver descriptionResolver) {
@@ -945,11 +945,11 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 ModelNode result = context.getResult();
                 if (daysToExpiry <= 0) {
                     // already expired
-                    result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
+                    result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(ModelNode.TRUE);
                     daysToExpiry = 0;
                 } else {
                     if (daysToExpiry <= expiration) {
-                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(new ModelNode(true));
+                        result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(ModelNode.TRUE);
                     } else {
                         result.get(ElytronDescriptionConstants.SHOULD_RENEW_CERTIFICATE).set(ModelNode.FALSE);
                     }

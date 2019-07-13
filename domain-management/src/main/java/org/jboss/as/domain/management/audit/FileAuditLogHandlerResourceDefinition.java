@@ -48,7 +48,7 @@ public class FileAuditLogHandlerResourceDefinition extends AbstractFileAuditLogH
 
     public static final SimpleAttributeDefinition ROTATE_AT_STARTUP = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ROTATE_AT_STARTUP, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     protected static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{ROTATE_AT_STARTUP};

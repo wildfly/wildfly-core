@@ -95,7 +95,7 @@ public class WriteAttributeOperationTestCase extends AbstractControllerTestBase 
     protected static final SimpleAttributeDefinition BOOLEAN_ATT = new SimpleAttributeDefinitionBuilder(BOOLEAN_ATT_NAME, ModelType.BOOLEAN)
             .setRequired(false)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .setMaxSize(1)
             .build();

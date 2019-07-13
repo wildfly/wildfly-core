@@ -46,7 +46,7 @@ final class OperationHeaders {
 
     private static final AttributeDefinition ROLLBACK = SimpleAttributeDefinitionBuilder.create(ROLLBACK_ON_RUNTIME_FAILURE, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private static final AttributeDefinition RESTART = SimpleAttributeDefinitionBuilder.create(ALLOW_RESOURCE_SERVICE_RESTART, ModelType.BOOLEAN)

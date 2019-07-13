@@ -72,7 +72,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
                     .setXmlName(CommonAttributes.PATH)
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-                    .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
+                    .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
                     .build();
     protected static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)
@@ -84,7 +84,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_ENABLED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.SCAN_ENABLED)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .build();
     protected static final SimpleAttributeDefinition SCAN_INTERVAL =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_INTERVAL, ModelType.INT, true)

@@ -101,7 +101,7 @@ public abstract class AbstractJvmModelTest extends AbstractCoreModelTest {
     @Test
     public void testWriteEnvClasspathIgnored() throws Exception {
         KernelServices kernelServices = doEmptyJvmAdd();
-        ModelNode value = new ModelNode(true);
+        ModelNode value = ModelNode.TRUE;
         Assert.assertEquals(value, writeTest(kernelServices, "env-classpath-ignored", value));
     }
 
@@ -189,7 +189,7 @@ public abstract class AbstractJvmModelTest extends AbstractCoreModelTest {
     public void testFullAdd() throws Exception {
         ModelNode typeValue = new ModelNode("IBM");
         ModelNode agentLibValue = new ModelNode("agentLib");
-        ModelNode envClasspathIgnored = new ModelNode(true);
+        ModelNode envClasspathIgnored = ModelNode.TRUE;
         ModelNode javaAgentValue = new ModelNode("javaAgent");
         ModelNode javaHomeValue = new ModelNode("javaHome");
         ModelNode stackSizeValue = new ModelNode("stackSize");
@@ -202,7 +202,7 @@ public abstract class AbstractJvmModelTest extends AbstractCoreModelTest {
         environmentVariablesValue.get("ENV1").set("one");
         environmentVariablesValue.get("ENV2").set("two");
 
-        ModelNode debugEnabledValue = new ModelNode(true);
+        ModelNode debugEnabledValue = ModelNode.TRUE;
         ModelNode debugOptionsValue = new ModelNode("debugOptions");
 
         ModelNode op = createOperation(ADD);

@@ -166,8 +166,8 @@ public class DeploymentAttributes {
             createContentValueTypeAttribute(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL,
                     ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
-            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
+            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
+            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_HASH =
@@ -210,23 +210,23 @@ public class DeploymentAttributes {
 
     //Exploded content attributes
     public static final SimpleAttributeDefinition DEPLOYMENT_CONTENT_PATH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, true)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .build();
     public static final SimpleAttributeDefinition TARGET_PATH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TARGET_PATH, ModelType.STRING, false)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .build();
     public static final StringListAttributeDefinition REMOVED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATHS)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .setAllowExpression(true)
             .setRequired(true)
             .build();
     public static final StringListAttributeDefinition UPDATED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATH)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .setAllowExpression(true)
             .setRequired(true)
             .build();
     public static final SimpleAttributeDefinition OVERWRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.OVERWRITE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
     public static final SimpleAttributeDefinition DEPTH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEPTH, ModelType.INT, true)
             .setDefaultValue(new ModelNode(-1))
@@ -437,7 +437,7 @@ public class DeploymentAttributes {
     //Upload deployment url definitions
     public static final AttributeDefinition URL_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_URL)
             .setRequired(true)
-            .addArbitraryDescriptor(WEB_URL, new ModelNode(true))
+            .addArbitraryDescriptor(WEB_URL, ModelNode.TRUE)
             .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
             .setParameters(URL_NOT_NULL)

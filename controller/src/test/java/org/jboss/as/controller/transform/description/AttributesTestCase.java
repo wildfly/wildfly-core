@@ -737,7 +737,7 @@ public class AttributesTestCase {
         resourceModel.get("reject").set(true);
 
         final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PATH);
-        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), "reject").end();
+        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), "reject").end();
         TransformationDescription.Tools.register(builder.build(), transformersSubRegistration);
 
         final Resource resource = transformResource();

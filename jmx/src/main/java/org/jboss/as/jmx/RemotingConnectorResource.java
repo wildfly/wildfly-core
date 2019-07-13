@@ -48,7 +48,7 @@ public class RemotingConnectorResource extends SimpleResourceDefinition {
     static final PathElement REMOTE_CONNECTOR_CONFIG_PATH = PathElement.pathElement(REMOTING_CONNECTOR, JMX);
     static final SimpleAttributeDefinition USE_MANAGEMENT_ENDPOINT
             = new SimpleAttributeDefinitionBuilder(CommonAttributes.USE_MANAGEMENT_ENDPOINT, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .build();
 

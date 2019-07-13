@@ -190,28 +190,28 @@ public class AuditLogTestCase {
         Assert.assertFalse(slaveAuditLog.exists());
         Assert.assertFalse(slaveServerAuditLog.exists());
 
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, new ModelNode(true));
+        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.TRUE);
         masterLifecycleUtil.executeForResult(op);
         Assert.assertTrue(masterAuditLog.exists());
         Assert.assertFalse(masterServerAuditLog.exists());
         Assert.assertFalse(slaveAuditLog.exists());
         Assert.assertFalse(slaveServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.TRUE);
         slaveLifecycleUtil.executeForResult(op);
         Assert.assertTrue(masterAuditLog.exists());
         Assert.assertFalse(masterServerAuditLog.exists());
         Assert.assertTrue(slaveAuditLog.exists());
         Assert.assertFalse(slaveServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.TRUE);
         masterLifecycleUtil.executeForResult(op);
         Assert.assertTrue(masterAuditLog.exists());
         Assert.assertTrue(masterServerAuditLog.exists());
         Assert.assertTrue(slaveAuditLog.exists());
         Assert.assertFalse(slaveServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.TRUE);
         slaveLifecycleUtil.executeForResult(op);
         Assert.assertTrue(masterAuditLog.exists());
         Assert.assertTrue(masterServerAuditLog.exists());
@@ -305,13 +305,13 @@ public class AuditLogTestCase {
         final PathAddress handlerAddress = PathAddress.pathAddress(baseAddress.append(SYSLOG_HANDLER, "test-syslog"));
 
         //First enable all the loggers
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, new ModelNode(true));
+        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.TRUE);
         masterLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.TRUE);
         slaveLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.TRUE);
         masterLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, new ModelNode(true));
+        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.TRUE);
         slaveLifecycleUtil.executeForResult(op);
 
 
@@ -371,7 +371,7 @@ public class AuditLogTestCase {
                 expectNoSyslogData();
 
                 //Now enable the server logger again
-                final ModelNode writeTrueEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, new ModelNode(true));
+                final ModelNode writeTrueEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, ModelNode.TRUE);
                 masterLifecycleUtil.executeForResult(writeTrueEnabled);
                 for (int i = 0 ; i < servers.size() ; i++) {
                     expectSyslogData(serverLoggerAddressOnServer, writeTrueEnabled, false);

@@ -635,7 +635,7 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
         checkOpsEqual(op, loggedOp);
 
         file.delete();
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), new ModelNode(true));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), ModelNode.TRUE);
         executeForResult(op);
         fullRecord = readFullFileRecord(file);
         Assert.assertTrue(Pattern.matches("\\{.*", fullRecord)); //This regexp allows for new lines
@@ -644,7 +644,7 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
         loggedOp = checkBootRecordHeader(record, 1, "core", false, false, true).get(0);
         checkOpsEqual(op, loggedOp);
 
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), new ModelNode(true));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), ModelNode.TRUE);
         executeForResult(op);
         op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.DATE_FORMAT.getName(), new ModelNode("yyyy/MM/dd HH-mm-ss"));
         executeForResult(op);
@@ -738,7 +738,7 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
             loggedOp = checkBootRecordHeader(record, 1, "core", false, false, true).get(0);
             checkOpsEqual(op, loggedOp);
 
-            op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), new ModelNode(true));
+            op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), ModelNode.TRUE);
             executeForResult(op);
             bytes = server.receiveData();
             fullRecord = stripSyslogHeader(bytes);
@@ -748,7 +748,7 @@ public class AuditLogHandlerBootEnabledTestCase extends AbstractAuditLogHandlerT
             loggedOp = checkBootRecordHeader(record, 1, "core", false, false, true).get(0);
             checkOpsEqual(op, loggedOp);
 
-            op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), new ModelNode(true));
+            op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), ModelNode.TRUE);
             executeForResult(op);
             bytes = server.receiveData();
             op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.DATE_FORMAT.getName(), new ModelNode("yyyy/MM/dd HH-mm-ss"));

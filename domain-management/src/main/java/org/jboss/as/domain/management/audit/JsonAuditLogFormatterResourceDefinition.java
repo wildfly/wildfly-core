@@ -61,7 +61,7 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
 
     public static final SimpleAttributeDefinition INCLUDE_DATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_DATE, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(true))
+        .setDefaultValue(ModelNode.TRUE)
         .setAllowExpression(true)
         .build();
 

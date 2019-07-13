@@ -84,8 +84,8 @@ class PatchResourceDefinition extends SimpleResourceDefinition {
     private static final AttributeDefinition INPUT_STREAM_IDX_DEF = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT)
             .setDefaultValue(ModelNode.ZERO)
             .setRequired(false)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
-            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
+            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
+            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .build();
     private static final AttributeDefinition OVERRIDE_MODULES = SimpleAttributeDefinitionBuilder.create(Constants.OVERRIDE_MODULES, ModelType.BOOLEAN)
             .setDefaultValue(ModelNode.FALSE)

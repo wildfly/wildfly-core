@@ -87,9 +87,9 @@ public class AuditLogBootingSyslogTest {
         compositeOp = Operations.CompositeOperationBuilder.create();
         configureAliases(compositeOp);
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(true)));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.TRUE));
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true)));
+                ModelNode.TRUE));
         executeForSuccess(client, compositeOp.build());
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
         queue.clear();

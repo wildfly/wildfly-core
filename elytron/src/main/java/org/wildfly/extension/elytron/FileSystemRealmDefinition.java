@@ -83,7 +83,7 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition ENCODED =
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENCODED, ModelType.BOOLEAN, true)
-                    .setDefaultValue(new ModelNode(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .setAllowExpression(true)
                     .setRestartAllServices()
                     .build();
