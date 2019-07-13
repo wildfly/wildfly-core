@@ -88,7 +88,7 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition CACHE_FAILURES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CACHE_FAILURES, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode().set(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 

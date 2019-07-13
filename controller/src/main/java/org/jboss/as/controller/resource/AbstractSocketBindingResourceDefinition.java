@@ -76,7 +76,7 @@ public abstract class AbstractSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
     public static final SimpleAttributeDefinition FIXED_PORT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FIXED_PORT, ModelType.BOOLEAN, true)
-            .setAllowExpression(true).setDefaultValue(new ModelNode().set(false))
+            .setAllowExpression(true).setDefaultValue(ModelNode.FALSE)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 

@@ -97,7 +97,7 @@ public class LegacyTypeConverterUnitTestCase {
         ModelNode description = createDescription(ModelType.BOOLEAN);
         TypeConverter converter = getConverter(description);
         Assert.assertEquals(SimpleType.BOOLEAN, converter.getOpenType());
-        Assert.assertEquals(Boolean.FALSE, assertCast(Boolean.class, converter.fromModelNode(new ModelNode().set(false))));
+        Assert.assertEquals(Boolean.FALSE, assertCast(Boolean.class, converter.fromModelNode(ModelNode.FALSE)));
         Assert.assertEquals(true, converter.toModelNode(Boolean.TRUE).asBoolean());
         assertToArray(converter, Boolean.TRUE, Boolean.FALSE);
     }

@@ -65,7 +65,7 @@ public class HostAddHandler extends AbstractAddStepHandler {
 
     private static final SimpleAttributeDefinition PERSIST_NAME = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PERSIST_NAME, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode().set(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final SimpleAttributeDefinition IS_DOMAIN_CONTROLLER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.IS_DOMAIN_CONTROLLER, ModelType.BOOLEAN)

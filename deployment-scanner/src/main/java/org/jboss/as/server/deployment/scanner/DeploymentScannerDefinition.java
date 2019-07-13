@@ -102,7 +102,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_EXPLODED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_EXPLODED)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .build();
 
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_XML =
@@ -123,7 +123,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .build();
 
     protected static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {PATH,RELATIVE_TO,SCAN_ENABLED,SCAN_INTERVAL,AUTO_DEPLOY_EXPLODED,AUTO_DEPLOY_XML,AUTO_DEPLOY_ZIPPED,DEPLOYMENT_TIMEOUT,RUNTIME_FAILURE_CAUSES_ROLLBACK};
