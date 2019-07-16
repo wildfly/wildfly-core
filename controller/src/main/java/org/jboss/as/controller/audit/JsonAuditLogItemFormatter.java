@@ -115,8 +115,14 @@ public class JsonAuditLogItemFormatter extends AuditLogItemFormatter {
 
         formatted.get(METHOD_PARAMETERS);
         for (Object param : item.getMethodParams()) {
-            //TODO handle arrays better
-            formatted.get(METHOD_PARAMETERS).add(param == null ? UNDEFINED : new ModelNode(param.toString()));
+            if (param != null && param.getClass().isArray()) {
+                Object[] arrayParams = (Object[]) param;
+                for (Object arrayParam : arrayParams) {
+                    formatted.get(METHOD_PARAMETERS).add(arrayParam == null ? UNDEFINED : new ModelNode(arrayParam.toString()));
+                }
+            } else {
+                formatted.get(METHOD_PARAMETERS).add(param == null ? UNDEFINED : new ModelNode(param.toString()));
+            }
         }
 
         final Throwable throwable = item.getError();

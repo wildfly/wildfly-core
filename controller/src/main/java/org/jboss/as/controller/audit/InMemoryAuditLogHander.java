@@ -154,8 +154,14 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
             }
             entry.get(METHOD_PARAMETERS);
             for (Object param : item.getMethodParams()) {
-                //TODO handle arrays better
-                entry.get(METHOD_PARAMETERS).add(param == null ? UNDEFINED : new ModelNode(param.toString()));
+                if (param != null && param.getClass().isArray()) {
+                    Object[] arrayParams = (Object[]) param;
+                    for (Object arrayParam : arrayParams) {
+                        entry.get(METHOD_PARAMETERS).add(arrayParam == null ? UNDEFINED : new ModelNode(arrayParam.toString()));
+                    }
+                } else {
+                    entry.get(METHOD_PARAMETERS).add(param == null ? UNDEFINED : new ModelNode(param.toString()));
+                }
             }
             final Throwable throwable = item.getError();
             if (throwable != null) {

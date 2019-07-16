@@ -3,7 +3,6 @@ package org.jboss.as.test.manualmode.auditlog;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT_LOG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -22,6 +21,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.domain.management.audit.AuditLogLoggerResourceDefinition;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -67,21 +67,26 @@ public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCa
         Assert.assertFalse(log.get("domainUUID").isDefined());
         Assert.assertEquals("JMX", log.get("access").asString());
         Assert.assertTrue(log.get("remote-address").isDefined());
-        Assert.assertEquals("queryMBeans", log.get("method").asString());
+        Assert.assertEquals("getAttribute", log.get("method").asString());
         List<ModelNode> sig = log.get("sig").asList();
         Assert.assertEquals(2, sig.size());
         List<ModelNode> params = log.get("params").asList();
-        Assert.assertEquals(2, params.size());
+        Assert.assertEquals(4, params.size());
+        for (ModelNode param : params) {
+            Assert.assertTrue(param.getType() == ModelType.STRING);
+            Assert.assertTrue(param.asString().equals("java.lang:type=Runtime") || param.asString().equals("InputArguments")
+                    || param.asString().equals("ObjectName") || param.asString().equals("SpecName"));
+        }
     }
 
-    private void makeOneLog() throws IOException {
+    private void makeOneLog() {
         ObjectName objectName;
         try {
-            objectName = ObjectName.getInstance("java.lang:*");
+            objectName = ObjectName.getInstance("java.lang:type=Runtime");
+            connection.getAttributes(objectName, new String[] {"InputArguments", "ObjectName", "SpecName"});
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        connection.queryNames(objectName, null);
     }
 
     @Before
