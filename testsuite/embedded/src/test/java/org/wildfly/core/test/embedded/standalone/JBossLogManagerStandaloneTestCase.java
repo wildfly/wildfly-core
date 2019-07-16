@@ -19,7 +19,10 @@
 
 package org.wildfly.core.test.embedded.standalone;
 
-import org.junit.Assume;
+import java.io.InputStream;
+import java.util.logging.LogManager;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.core.embedded.Configuration;
 import org.wildfly.core.test.embedded.LoggingTestCase;
@@ -32,11 +35,16 @@ public class JBossLogManagerStandaloneTestCase extends LoggingTestCase {
 
     @Test
     public void testLogManager() throws Exception {
-        // The IBM JDK creates a logger early on doesn't allow the JBoss Log Manager to be used. For now we will ignore
-        // the test when the IBM JDK is being used.
-        Assume.assumeFalse(isIbmJdk());
         System.setProperty("test.log.file", "test-standalone-jbl.log");
-        System.setProperty("logging.configuration", getClass().getResource("/logging.properties").toExternalForm());
+        // The IBM JVM creates a logger early on and requires the log manager to be reconfigured
+        if (isIbmJdk()) {
+            // We need to reconfigure logging as the log manager is likely already setup
+            try (InputStream in = getClass().getResourceAsStream("/jbl-logging.properties")) {
+                Assert.assertNotNull("Failed to find the logging.properties file", in);
+                LogManager.getLogManager().readConfiguration(in);
+            }
+        }
+        System.setProperty("logging.configuration", getClass().getResource("/jbl-logging.properties").toExternalForm());
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         testStandalone(Configuration.LoggerHint.JBOSS_LOG_MANAGER, "test-standalone-jbl.log", "[jboss-logmanager]");
     }

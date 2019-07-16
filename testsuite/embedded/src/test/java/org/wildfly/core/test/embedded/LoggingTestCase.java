@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -160,6 +161,12 @@ public abstract class LoggingTestCase extends AbstractTestCase {
             }
         } finally {
             server.stop();
+            // We want to delete the log file in case another test checks for the same file. However on Windows the
+            // log manager would still have the file open and the delete will fail. For Windows we need to ignore the
+            // deleting the file to avoid the file lock failure.
+            if (!TestSuiteEnvironment.isWindows()) {
+                Files.deleteIfExists(logFile);
+            }
         }
     }
 

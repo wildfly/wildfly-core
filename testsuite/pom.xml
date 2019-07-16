@@ -307,8 +307,8 @@
                     <configuration>
                         <failIfNoTests>false</failIfNoTests>
                         <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
+                        <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
                         <systemPropertyVariables>
-                            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                             <jboss.dist>${jboss.dist}</jboss.dist>
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
                             <org.wildfly.test.kill-servers-before-test>${org.wildfly.test.kill-servers-before-test}</org.wildfly.test.kill-servers-before-test>
