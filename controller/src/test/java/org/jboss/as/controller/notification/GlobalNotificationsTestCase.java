@@ -82,11 +82,11 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
             .build();
     public static final SimpleAttributeDefinition FAIL_ADD_OPERATION = create("fail-add-operation", BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
     public static final SimpleAttributeDefinition FAIL_REMOVE_OPERATION = create("fail-remove-operation", BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static long runtimeAttributeValue;

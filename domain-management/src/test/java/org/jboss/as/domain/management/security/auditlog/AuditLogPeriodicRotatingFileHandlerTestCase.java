@@ -262,7 +262,7 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
 
         //Now try changing the used formatter at runtime
         file.delete();
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.ESCAPE_NEW_LINE.getName(), new ModelNode(false));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.ESCAPE_NEW_LINE.getName(), ModelNode.FALSE);
         executeForResult(op);
         fullRecord = readFullFileRecord(file);
         Assert.assertTrue(Pattern.matches("\\{[\\s\\S]*", fullRecord)); //This regexp allows for new lines
@@ -272,7 +272,7 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
         checkOpsEqual(op, loggedOp);
 
         file.delete();
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), new ModelNode(true));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.COMPACT.getName(), ModelNode.TRUE);
         executeForResult(op);
         fullRecord = readFullFileRecord(file);
         Assert.assertTrue(Pattern.matches("\\{.*", fullRecord)); //This regexp allows for new lines
@@ -281,7 +281,7 @@ public class AuditLogPeriodicRotatingFileHandlerTestCase extends AbstractAuditLo
         loggedOp = checkBootRecordHeader(record, 1, "core", false, false, true).get(0);
         checkOpsEqual(op, loggedOp);
 
-        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), new ModelNode(true));
+        op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.INCLUDE_DATE.getName(), ModelNode.TRUE);
         executeForResult(op);
         op = Util.getWriteAttributeOperation(createJsonFormatterAddress("escaped-formatter"), JsonAuditLogFormatterResourceDefinition.DATE_FORMAT.getName(), new ModelNode("yyyy/MM/dd HH-mm-ss"));
         executeForResult(op);

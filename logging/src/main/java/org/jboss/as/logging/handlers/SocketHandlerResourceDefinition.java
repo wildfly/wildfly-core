@@ -90,7 +90,7 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
 
     public static final SimpleAttributeDefinition BLOCK_ON_RECONNECT = SimpleAttributeDefinitionBuilder.create("block-on-reconnect", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final SimpleAttributeDefinition FILTER_SPEC = SimpleAttributeDefinitionBuilder.create(CommonAttributes.FILTER_SPEC)

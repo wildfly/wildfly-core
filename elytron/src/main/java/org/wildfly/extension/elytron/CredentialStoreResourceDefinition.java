@@ -106,7 +106,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition MODIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIABLE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(false)
             .setRestartAllServices()
             .build();
@@ -114,7 +114,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition CREATE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREATE, ModelType.BOOLEAN, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

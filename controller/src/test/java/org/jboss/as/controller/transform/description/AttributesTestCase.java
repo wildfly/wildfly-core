@@ -737,7 +737,7 @@ public class AttributesTestCase {
         resourceModel.get("reject").set(true);
 
         final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PATH);
-        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), "reject").end();
+        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), "reject").end();
         TransformationDescription.Tools.register(builder.build(), transformersSubRegistration);
 
         final Resource resource = transformResource();
@@ -753,7 +753,7 @@ public class AttributesTestCase {
         OperationTransformer.TransformedOperation transformedAdd = transformOperation(add);
         Assert.assertTrue(transformedAdd.rejectOperation(success()));
 
-        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", new ModelNode().set(true));
+        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", ModelNode.TRUE);
         OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
         Assert.assertTrue(transformedWrite.rejectOperation(success()));
     }
@@ -764,7 +764,7 @@ public class AttributesTestCase {
         resourceModel.get("reject").set(true);
 
         final ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createInstance(PATH);
-        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleAcceptAttributeChecker(new ModelNode(false)), "reject").end();
+        builder.getAttributeBuilder().addRejectCheck(new RejectAttributeChecker.SimpleAcceptAttributeChecker(ModelNode.FALSE), "reject").end();
         TransformationDescription.Tools.register(builder.build(), transformersSubRegistration);
 
         final Resource resource = transformResource();
@@ -780,7 +780,7 @@ public class AttributesTestCase {
         OperationTransformer.TransformedOperation transformedAdd = transformOperation(add);
         Assert.assertTrue(transformedAdd.rejectOperation(success()));
 
-        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", new ModelNode().set(true));
+        ModelNode write = Util.getWriteAttributeOperation(PathAddress.pathAddress(PATH), "reject", ModelNode.TRUE);
         OperationTransformer.TransformedOperation transformedWrite = transformOperation(write);
         Assert.assertTrue(transformedWrite.rejectOperation(success()));
     }

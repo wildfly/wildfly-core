@@ -589,14 +589,14 @@ public class PersistentResourceXMLParserTestCase {
         static final SimpleAttributeDefinition STATISTICS_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.STATISTICS_ENABLED, ModelType.BOOLEAN)
                 .setAttributeGroup("statistics")
                 .setXmlName("enabled")
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setRequired(false)
                 .setAllowExpression(true)
                 .build();
         static final SimpleAttributeDefinition SECURITY_ENABLED = new SimpleAttributeDefinitionBuilder("security-enabled", ModelType.BOOLEAN)
                 .setAttributeGroup("security")
                 .setXmlName("enabled")
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .setRequired(false)
                 .setAllowExpression(true)
                 .setRestartAllServices()
@@ -984,7 +984,7 @@ public class PersistentResourceXMLParserTestCase {
         static final AttributeDefinition EXPORT_CORBALOC = new SimpleAttributeDefinitionBuilder(
                 Constants.NAMING_EXPORT_CORBALOC, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.NAMING)
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setAllowExpression(true)
                 .build();
@@ -994,7 +994,7 @@ public class PersistentResourceXMLParserTestCase {
         static final AttributeDefinition SUPPORT_SSL = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_SUPPORT_SSL, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.SECURITY)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setAllowExpression(true)
                 .build();
@@ -1009,7 +1009,7 @@ public class PersistentResourceXMLParserTestCase {
         static final AttributeDefinition ADD_COMPONENT_INTERCEPTOR = new SimpleAttributeDefinitionBuilder(
                 Constants.SECURITY_ADD_COMP_VIA_INTERCEPTOR, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.SECURITY)
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                 .setAllowExpression(true)
                 .build();
@@ -1068,7 +1068,7 @@ public class PersistentResourceXMLParserTestCase {
                 Constants.IOR_AS_CONTEXT_REQUIRED, ModelType.BOOLEAN, true)
                 .setAttributeGroup(Constants.IOR_AS_CONTEXT)
                 .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .build();
 
@@ -1342,7 +1342,7 @@ public class PersistentResourceXMLParserTestCase {
 
             static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder("use-recursive-search", ModelType.BOOLEAN)
                     .setRequired(false)
-                    .setDefaultValue(new ModelNode(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .setAllowExpression(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();

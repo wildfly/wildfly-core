@@ -46,12 +46,12 @@ final class OperationHeaders {
 
     private static final AttributeDefinition ROLLBACK = SimpleAttributeDefinitionBuilder.create(ROLLBACK_ON_RUNTIME_FAILURE, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private static final AttributeDefinition RESTART = SimpleAttributeDefinitionBuilder.create(ALLOW_RESOURCE_SERVICE_RESTART, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(BLOCKING_TIMEOUT, ModelType.INT)

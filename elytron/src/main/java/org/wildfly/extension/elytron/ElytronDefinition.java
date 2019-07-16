@@ -151,7 +151,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleAttributeDefinition REGISTER_JASPI_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REGISTER_JASPI_FACTORY, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();

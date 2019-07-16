@@ -130,8 +130,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)
                 .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.MAXIMUM_CERT_PATH)
-                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), ElytronDescriptionConstants.ONLY_LEAF_CERT)
-                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(new ModelNode(true)), ElytronDescriptionConstants.SOFT_FAIL)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.ONLY_LEAF_CERT)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.SOFT_FAIL)
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.ONLY_LEAF_CERT)
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.SOFT_FAIL)
                 .end();
@@ -242,7 +242,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // Discard new "fail-cache" if it's undefined or has a value same as old unconfigurable behavior; reject otherwise
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KERBEROS_SECURITY_FACTORY))
             .getAttributeBuilder()
-            .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(0)), KerberosSecurityFactoryDefinition.FAIL_CACHE)
+            .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(ModelNode.ZERO), KerberosSecurityFactoryDefinition.FAIL_CACHE)
             .addRejectCheck(RejectAttributeChecker.DEFINED, KerberosSecurityFactoryDefinition.FAIL_CACHE);
     }
 

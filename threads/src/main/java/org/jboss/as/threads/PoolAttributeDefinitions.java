@@ -61,7 +61,7 @@ public interface PoolAttributeDefinitions {
 
     SimpleAttributeDefinition ALLOW_CORE_TIMEOUT = new SimpleAttributeDefinitionBuilder(CommonAttributes.ALLOW_CORE_TIMEOUT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     SimpleAttributeDefinition GROUP_NAME = new SimpleAttributeDefinitionBuilder(CommonAttributes.GROUP_NAME, ModelType.STRING, true)
@@ -79,24 +79,24 @@ public interface PoolAttributeDefinitions {
 
     // Metrics
     AttributeDefinition CURRENT_THREAD_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.CURRENT_THREAD_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition LARGEST_THREAD_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.LARGEST_THREAD_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition REJECTED_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.REJECTED_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition ACTIVE_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.ACTIVE_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition COMPLETED_TASK_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.COMPLETED_TASK_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition TASK_COUNT = new SimpleAttributeDefinitionBuilder(CommonAttributes.TASK_COUNT, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
     AttributeDefinition QUEUE_SIZE = new SimpleAttributeDefinitionBuilder(CommonAttributes.QUEUE_SIZE, ModelType.INT)
-            .setUndefinedMetricValue(new ModelNode(0))
+            .setUndefinedMetricValue(ModelNode.ZERO)
             .build();
 }

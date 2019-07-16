@@ -67,7 +67,7 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, false)
                 .setAllowExpression(true)
                 .setValidator(new StringLengthValidator(1, false))
-                .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
+                .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
                 .build();
 
     static final SimpleAttributeDefinition PATH_NAMED =
@@ -78,7 +78,7 @@ public abstract class PathResourceDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition READ_ONLY =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.READ_ONLY, ModelType.BOOLEAN, true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setStorageRuntime()
                 .setRuntimeServiceNotRequired()
                 .build();

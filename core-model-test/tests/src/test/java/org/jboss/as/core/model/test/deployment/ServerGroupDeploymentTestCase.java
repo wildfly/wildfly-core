@@ -205,7 +205,7 @@ public class ServerGroupDeploymentTestCase extends AbstractCoreModelTest {
         op = createWriteAttributeOperation(kernelServices, "Test1", RUNTIME_NAME, new ModelNode("Whatever"));
         kernelServices.executeForFailure(op);
 
-        op = createWriteAttributeOperation(kernelServices, "Test1", ENABLED, new ModelNode(true));
+        op = createWriteAttributeOperation(kernelServices, "Test1", ENABLED, ModelNode.TRUE);
         kernelServices.executeForFailure(op);
     }
 

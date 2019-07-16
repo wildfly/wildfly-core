@@ -125,7 +125,7 @@ class SaslServerDefinitions {
 
     static final SimpleAttributeDefinition ENABLING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENABLING, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(true))
+        .setDefaultValue(ModelNode.TRUE)
         .setRestartAllServices()
         .build();
 

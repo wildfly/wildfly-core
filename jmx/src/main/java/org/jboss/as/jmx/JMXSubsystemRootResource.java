@@ -73,7 +73,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL)
             .setXmlName(CommonAttributes.NON_CORE_MBEANS)
-            .setDefaultValue(new ModelNode(false)).build();
+            .setDefaultValue(ModelNode.FALSE).build();
 
     static final String JMX_CAPABILITY_NAME = "org.wildfly.management.jmx";
     static final RuntimeCapability<Void> JMX_CAPABILITY =

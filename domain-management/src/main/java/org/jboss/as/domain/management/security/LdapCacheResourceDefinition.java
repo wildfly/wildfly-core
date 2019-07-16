@@ -88,13 +88,13 @@ public class LdapCacheResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition CACHE_FAILURES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CACHE_FAILURES, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode().set(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
     public static final SimpleAttributeDefinition MAX_CACHE_SIZE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MAX_CACHE_SIZE, ModelType.INT, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode().set(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 

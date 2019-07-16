@@ -67,7 +67,7 @@ import org.jboss.msc.service.ServiceRegistry;
 public class ServerShutdownHandler implements OperationStepHandler {
 
     protected static final SimpleAttributeDefinition RESTART = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .build();
 

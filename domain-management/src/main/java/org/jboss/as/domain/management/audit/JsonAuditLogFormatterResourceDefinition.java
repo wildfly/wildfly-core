@@ -61,7 +61,7 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
 
     public static final SimpleAttributeDefinition INCLUDE_DATE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_DATE, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(true))
+        .setDefaultValue(ModelNode.TRUE)
         .setAllowExpression(true)
         .build();
 
@@ -81,19 +81,19 @@ public class JsonAuditLogFormatterResourceDefinition extends SimpleResourceDefin
 
     public static final SimpleAttributeDefinition COMPACT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.COMPACT, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition ESCAPE_NEW_LINE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ESCAPE_NEW_LINE, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .build();
 
     public static final SimpleAttributeDefinition ESCAPE_CONTROL_CHARACTERS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ESCAPE_CONTROL_CHARACTERS, ModelType.BOOLEAN)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .build();
 

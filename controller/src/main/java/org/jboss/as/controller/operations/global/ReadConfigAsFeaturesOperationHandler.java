@@ -75,7 +75,7 @@ public class ReadConfigAsFeaturesOperationHandler implements OperationStepHandle
             .setReplyValueType(ModelType.OBJECT)
             .addParameter(SimpleAttributeDefinitionBuilder.create(NESTED, ModelType.BOOLEAN)
                     .setRequired(false)
-                    .setDefaultValue(new ModelNode(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .build())
             .build();
 

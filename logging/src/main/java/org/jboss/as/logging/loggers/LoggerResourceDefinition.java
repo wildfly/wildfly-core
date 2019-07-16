@@ -90,7 +90,7 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
 
     public static final PropertyAttributeDefinition USE_PARENT_HANDLERS = PropertyAttributeDefinition.Builder.of("use-parent-handlers", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setPropertyName("useParentHandlers")
             .build();
 

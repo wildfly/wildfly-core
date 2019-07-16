@@ -91,7 +91,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
     public static final SimpleAttributeDefinition CONSOLE_ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.CONSOLE_ENABLED, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
         .setXmlName(Attribute.CONSOLE_ENABLED.getLocalName())
-        .setDefaultValue(new ModelNode(true))
+        .setDefaultValue(ModelNode.TRUE)
         .setRestartAllServices()
         .build();
 
@@ -102,7 +102,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .build();
 
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 

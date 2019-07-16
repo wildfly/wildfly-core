@@ -60,15 +60,15 @@ public class JmxAuditLoggerResourceDefinition extends SimpleResourceDefinition {
 
     public static final SimpleAttributeDefinition LOG_BOOT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.LOG_BOOT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true)).build();
+            .setDefaultValue(ModelNode.TRUE).build();
 
     public static final SimpleAttributeDefinition LOG_READ_ONLY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.LOG_READ_ONLY, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false)).build();
+            .setDefaultValue(ModelNode.FALSE).build();
 
     public static final SimpleAttributeDefinition ENABLED = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true)).build();
+            .setDefaultValue(ModelNode.TRUE).build();
 
     static final List<SimpleAttributeDefinition> AUDIT_LOG_ATTRIBUTE_DEFINITIONS = Arrays.asList(LOG_BOOT, LOG_READ_ONLY, ENABLED);
 

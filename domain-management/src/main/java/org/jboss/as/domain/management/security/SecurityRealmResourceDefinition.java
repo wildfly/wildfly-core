@@ -57,7 +57,7 @@ public class SecurityRealmResourceDefinition extends SimpleResourceDefinition {
     static final String DEPRECATED_PARENT_CATEGORY = "core.management.security-realm";
 
     public static final SimpleAttributeDefinition MAP_GROUPS_TO_ROLES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.MAP_GROUPS_TO_ROLES, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

@@ -85,7 +85,7 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
             .build();
 
     public static final SimpleAttributeDefinition USE_IDENTITY_ROLES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_IDENTITY_ROLES, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     static final ListAttributeDefinition STANDARD_ROLE_NAMES = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.STANDARD_ROLE_NAMES)

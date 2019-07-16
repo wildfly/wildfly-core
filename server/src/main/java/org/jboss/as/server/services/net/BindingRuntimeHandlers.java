@@ -96,7 +96,7 @@ public final class BindingRuntimeHandlers {
         }
 
         ModelNode getNoMetrics() {
-            return new ModelNode().set(false);
+            return ModelNode.FALSE;
         }
 
     }

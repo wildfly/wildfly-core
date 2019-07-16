@@ -53,7 +53,7 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
         .setRequired(true)
         .setAllowExpression(true)
         .setValidator(new InetAddressValidator(false, true))
-        .setDefaultValue(new ModelNode(0))
+        .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 

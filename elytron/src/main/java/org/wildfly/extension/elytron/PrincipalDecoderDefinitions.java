@@ -87,7 +87,7 @@ class PrincipalDecoderDefinitions {
 
     static final SimpleAttributeDefinition START_SEGMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.START_SEGMENT, ModelType.INT, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(0))
+        .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 
@@ -99,13 +99,13 @@ class PrincipalDecoderDefinitions {
 
     static final SimpleAttributeDefinition REVERSE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REVERSE, ModelType.BOOLEAN, true)
         .setAllowExpression(true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition CONVERT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CONVERT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

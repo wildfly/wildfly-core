@@ -95,7 +95,7 @@ final class LdapKeyStoreDefinition extends SimpleResourceDefinition {
             .setXmlName("recursive")
             .setAllowExpression(true)
             .setRestartAllServices()
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     static final SimpleAttributeDefinition SEARCH_TIME_LIMIT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_TIME_LIMIT, ModelType.INT, true)

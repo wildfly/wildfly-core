@@ -51,7 +51,7 @@ public class ExposeModelResourceResolved extends ExposeModelResource {
 
     static final SimpleAttributeDefinition PROPER_PROPERTY_FORMAT = SimpleAttributeDefinitionBuilder.create(CommonAttributes.PROPER_PROPERTY_FORMAT, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;

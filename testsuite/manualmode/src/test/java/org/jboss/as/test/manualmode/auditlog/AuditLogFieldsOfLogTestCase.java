@@ -88,9 +88,9 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
 
         // Don't log boot operations by default
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.FALSE));
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true)));
+                ModelNode.TRUE));
 
         executeForSuccess(client, compositeOp.build());
 
@@ -104,7 +104,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
         final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
 
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.ENABLED.getName(), ModelNode.FALSE));
 
         resetUser(compositeOp);
 
@@ -163,7 +163,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
 
     private boolean makeOneLog() throws IOException {
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(true));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.TRUE);
         ModelNode result = container.getClient().getControllerClient().execute(op);
         return Operations.isSuccessfulOutcome(result);
     }

@@ -95,7 +95,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .build();
     static final OptionAttributeDefinition STACK_SIZE = new OptionAttributeDefinition.Builder(Constants.STACK_SIZE, Options.STACK_SIZE)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setDefaultValue(new ModelNode(0L))
+            .setDefaultValue(ModelNode.ZERO_LONG)
             .setValidator(new LongRangeValidator(0L))
             .setAllowExpression(true)
             .build();

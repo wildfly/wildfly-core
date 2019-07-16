@@ -98,7 +98,7 @@ public class DeploymentAttributes {
             .build();
 
     public static final SimpleAttributeDefinition ENABLED = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ENABLED, ModelType.BOOLEAN, true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(false) // allowing expressions here complicates domain mode and deployment scanners
         .setAttributeMarshaller(new AttributeMarshaller() {
 
@@ -113,7 +113,7 @@ public class DeploymentAttributes {
 
             @Override
             public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                ModelNode value = resourceModel.hasDefined(attribute.getName()) ? resourceModel.get(attribute.getName()) : new ModelNode(false);
+                ModelNode value = resourceModel.hasDefined(attribute.getName()) ? resourceModel.get(attribute.getName()) : ModelNode.FALSE;
                 if (value.getType() != ModelType.BOOLEAN || !value.asBoolean()) {
                     writer.writeAttribute(attribute.getXmlName(), value.asString());
                 }
@@ -159,15 +159,15 @@ public class DeploymentAttributes {
                     ModelDescriptionConstants.HASH, ModelDescriptionConstants.INPUT_STREAM_INDEX,
                     ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL,
                     ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_INPUT_STREAM_INDEX =
             createContentValueTypeAttribute(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT, new StringLengthValidator(1, true), false,
                     ModelDescriptionConstants.HASH, ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL,
                     ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO, ModelDescriptionConstants.EMPTY)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
-            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
+            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
+            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_HASH =
@@ -210,29 +210,29 @@ public class DeploymentAttributes {
 
     //Exploded content attributes
     public static final SimpleAttributeDefinition DEPLOYMENT_CONTENT_PATH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PATH, ModelType.STRING, true)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .build();
     public static final SimpleAttributeDefinition TARGET_PATH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TARGET_PATH, ModelType.STRING, false)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .build();
     public static final StringListAttributeDefinition REMOVED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATHS)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .setAllowExpression(true)
             .setRequired(true)
             .build();
     public static final StringListAttributeDefinition UPDATED_PATHS = new StringListAttributeDefinition.Builder(ModelDescriptionConstants.PATH)
-            .addArbitraryDescriptor(RELATIVE_TO, new ModelNode(true))
+            .addArbitraryDescriptor(RELATIVE_TO, ModelNode.TRUE)
             .setAllowExpression(true)
             .setRequired(true)
             .build();
     public static final SimpleAttributeDefinition OVERWRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.OVERWRITE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
     public static final SimpleAttributeDefinition DEPTH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEPTH, ModelType.INT, true)
             .setDefaultValue(new ModelNode(-1))
             .build();
     public static final SimpleAttributeDefinition ARCHIVE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.ARCHIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     /** The complex content  operation parameters */
@@ -362,7 +362,7 @@ public class DeploymentAttributes {
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
     public static SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VERBOSE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final OperationDefinition LIST_MODULES = SimpleOperationDefinitionBuilder.of(ModelDescriptionConstants.LIST_MODULES, DEPLOYMENT_RESOLVER)
@@ -437,7 +437,7 @@ public class DeploymentAttributes {
     //Upload deployment url definitions
     public static final AttributeDefinition URL_NOT_NULL = SimpleAttributeDefinitionBuilder.create(DeploymentAttributes.CONTENT_URL)
             .setRequired(true)
-            .addArbitraryDescriptor(WEB_URL, new ModelNode(true))
+            .addArbitraryDescriptor(WEB_URL, ModelNode.TRUE)
             .build();
     public static final OperationDefinition UPLOAD_URL_DEFINITION = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.UPLOAD_DEPLOYMENT_URL, DEPLOYMENT_RESOLVER)
             .setParameters(URL_NOT_NULL)

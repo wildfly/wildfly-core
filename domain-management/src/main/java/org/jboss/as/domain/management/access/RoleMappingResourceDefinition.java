@@ -48,7 +48,7 @@ public class RoleMappingResourceDefinition extends SimpleResourceDefinition {
     public static final String PATH_KEY = ROLE_MAPPING;
 
     public static final SimpleAttributeDefinition INCLUDE_ALL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_ALL, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private final DelegatingConfigurableAuthorizer authorizer;

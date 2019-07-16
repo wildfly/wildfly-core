@@ -34,7 +34,7 @@ public class XmlFormatterResourceDefinition extends StructuredFormatterResourceD
 
     public static final PropertyAttributeDefinition PRINT_NAMESPACE = PropertyAttributeDefinition.Builder.of("print-namespace", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setPropertyName("printNamespace")
             .build();
 

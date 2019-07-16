@@ -52,7 +52,7 @@ public class DeploymentOverlayDeploymentRemoveHandler extends AbstractRemoveStep
     public static final AttributeDefinition REDEPLOY_AFFECTED_DEFINITION
             = SimpleAttributeDefinitionBuilder.create(REDEPLOY_AFFECTED, ModelType.BOOLEAN)
                     .setRequired(false)
-                    .setDefaultValue(new ModelNode(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .build();
     public static final OperationDefinition REMOVE_DEFINITION
             = new SimpleOperationDefinitionBuilder(REMOVE, ControllerResolver.getResolver(DEPLOYMENT_OVERLAY + '.' + DEPLOYMENT))
