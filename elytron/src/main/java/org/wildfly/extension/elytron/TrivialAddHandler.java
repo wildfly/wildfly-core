@@ -78,7 +78,7 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         trivialService.setValueSupplier(getValueSupplier(serviceBuilder, context, resource.getModel()));
 
         installedForResource(commonDependencies(serviceBuilder, dependOnProperties(), dependOnProviderRegistration())
-                .setInitialMode(!context.isBooting() && context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? embeddedInitialMode : initialMode)
+                .setInitialMode(context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? embeddedInitialMode : initialMode)
                 .install(), resource);
     }
 
