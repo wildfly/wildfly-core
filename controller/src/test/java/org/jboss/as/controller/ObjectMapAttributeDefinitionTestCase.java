@@ -18,6 +18,9 @@
 
 package org.jboss.as.controller;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
@@ -84,6 +87,69 @@ public class ObjectMapAttributeDefinitionTestCase {
             Assert.fail("Did not reject " + op);
         } catch (OperationFailedException good) {
             //
+        }
+    }
+
+    /**
+     * WFCORE-3255
+     */
+    @Test
+    public void testParameterCorrector() throws OperationFailedException {
+        final AttributeDefinition aBoolean = SimpleAttributeDefinitionBuilder.create("a-boolean", ModelType.BOOLEAN)
+                .setCorrector(new FalseTrueCorrector())
+                .build();
+        final AttributeDefinition anInt = SimpleAttributeDefinitionBuilder.create("an-int", ModelType.INT)
+                .setRequired(false)
+                .build();
+        final ObjectTypeAttributeDefinition anObject = ObjectTypeAttributeDefinition.Builder.of("an-object", aBoolean, anInt)
+                .setCorrector(new ObjectCorrectionCorrector())
+                .build();
+        final AttributeDefinition anObjectMap = ObjectMapAttributeDefinition.Builder.of("an-object-map", anObject)
+                .setCorrector(new KeyRenameCorrector())
+                .build();
+
+        ModelNode testOperation = new ModelNode();
+        ModelNode testMap = testOperation.get("an-object-map");
+        testMap.get("a-key","a-boolean").set(false);
+
+        ModelNode aModel = new ModelNode();
+        anObjectMap.validateAndSet(testOperation, aModel);
+
+        ModelNode aMap = aModel.get("an-object-map");
+        assertEquals(aModel.toString(), 1, aMap.asInt());
+        assertTrue(aModel.toString(), aMap.get("a-different-key", "a-boolean").asBoolean());
+        assertEquals(aModel.toString(), 5, aMap.get("a-different-key", "an-int").asInt());
+    }
+
+    /** Corrector for a field in an object */
+    private static class FalseTrueCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.set(true);
+            return newValue;
+        }
+    }
+
+    /** Corrector for the overall object */
+    private static class ObjectCorrectionCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.get("an-int").set(5);
+            return newValue;
+        }
+    }
+
+    /** Corrector for the overall map */
+    private static class KeyRenameCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            if (newValue.has("a-key")) {
+                newValue.get("a-different-key").set(newValue.remove("a-key"));
+            }
+            return newValue;
         }
     }
 }

@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
@@ -102,5 +105,65 @@ public class ObjectTypeAttributeDefinitionUnitTestCase {
 
         ModelNode validated = ld.validateOperation(op);
         org.junit.Assert.assertEquals(validated.toString(), 1, validated.get("a").asInt());
+    }
+
+    /** WFCORE-3255 */
+    @Test
+    public void testParameterCorrector() throws OperationFailedException {
+        final AttributeDefinition aBoolean = SimpleAttributeDefinitionBuilder.create("a-boolean", ModelType.BOOLEAN)
+            .setCorrector(new FalseTrueCorrector())
+            .build();
+        final AttributeDefinition anInt = SimpleAttributeDefinitionBuilder.create("an-int", ModelType.INT)
+                .setRequired(false)
+                .build();
+        final AttributeDefinition anObject = ObjectTypeAttributeDefinition.Builder.of("an-object", aBoolean, anInt)
+                .setCorrector(new ObjectCorrectionCorrector())
+                .build();
+        final AttributeDefinition aNestedObject = ObjectTypeAttributeDefinition.Builder.of("a-nested-object", aBoolean, anInt, anObject).build();
+
+        ModelNode testOperation = new ModelNode();
+        testOperation.get("an-object", "a-boolean").set(false);
+
+        ModelNode aModel = new ModelNode();
+        anObject.validateAndSet(testOperation, aModel);
+
+        // Field must be corrected
+        assertTrue(aModel.toString(), aModel.get("an-object", "a-boolean").asBoolean());
+        // Overall object corrector must execute as well
+        assertEquals(aModel.toString(), 5, aModel.get("an-object", "an-int").asInt());
+
+        // Now nest the object in another one to confirm that works too
+        testOperation = new ModelNode();
+        testOperation.get("a-nested-object","an-object", "a-boolean").set(false);
+        testOperation.get("a-nested-object", "a-boolean").set(false);
+
+
+        aModel = new ModelNode();
+
+        aNestedObject.validateAndSet(testOperation, aModel);
+
+        assertTrue(aModel.toString(), aModel.get("a-nested-object", "a-boolean").asBoolean());
+        assertTrue(aModel.toString(), aModel.get("a-nested-object", "an-object", "a-boolean").asBoolean());
+        assertEquals(aModel.toString(), 5, aModel.get("a-nested-object", "an-object", "an-int").asInt());
+    }
+
+    /** Corrector for a field in an object */
+    private static class FalseTrueCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.set(true);
+            return newValue;
+        }
+    }
+
+    /** Corrector for the overall object */
+    private static class ObjectCorrectionCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.get("an-int").set(5);
+            return newValue;
+        }
     }
 }
