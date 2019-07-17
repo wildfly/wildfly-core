@@ -626,10 +626,11 @@ class SSLDefinitions {
 
                 ModelNode crlNode = CERTIFICATE_REVOCATION_LIST.resolveModelAttribute(context, model);
                 ModelNode ocspNode = OCSP.resolveModelAttribute(context, model);
+                boolean softFail = SOFT_FAIL.resolveModelAttribute(context, model).asBoolean();
                 Integer maxCertPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, model).asIntOrNull();
 
                 if (crlNode.isDefined() || ocspNode.isDefined()) {
-                    return createX509RevocationTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, crlNode, ocspNode, maxCertPath, aliasFilter);
+                    return createX509RevocationTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, softFail, crlNode, ocspNode, maxCertPath, aliasFilter);
                 }
 
                 DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
@@ -667,7 +668,7 @@ class SSLDefinitions {
                 };
             }
 
-            private ValueSupplier<TrustManager> createX509RevocationTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, ModelNode crlNode, ModelNode ocspNode, Integer maxCertPath, String aliasFilter) throws OperationFailedException {
+            private ValueSupplier<TrustManager> createX509RevocationTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, boolean softFail, ModelNode crlNode, ModelNode ocspNode, Integer maxCertPath, String aliasFilter) throws OperationFailedException {
 
 
                 //BW compatibility, max cert path is now in trust-manager
@@ -718,7 +719,7 @@ class SSLDefinitions {
 
                 X509RevocationTrustManager.Builder builder = X509RevocationTrustManager.builder();
                 builder.setResponderURI(responderUri);
-                builder.setSoftFail(SOFT_FAIL.resolveModelAttribute(context, ocspNode).asBoolean());
+                builder.setSoftFail(softFail);
                 if (maxCertPath != null) {
                     builder.setMaxCertPath(maxCertPath.intValue());
                 }
