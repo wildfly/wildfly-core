@@ -516,7 +516,18 @@ public class PathAddress implements Iterable<PathElement> {
             sb.append('/');
             sb.append(pe.getKey());
             sb.append(keyValSeparator);
+
+            boolean quote = false;
+            if (pe.getValue().contains("/") || pe.getValue().contains("=")) {
+                quote = true;
+            }
+            if (quote) {
+                sb.append("\"");
+            }
             sb.append(pe.getValue());
+            if (quote) {
+                sb.append("\"");
+            }
         }
         return sb.toString();
     }
