@@ -299,7 +299,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             listeners.add(http);
         }
         if(secureBindAddress != null) {
-            ListenerRegistry.Listener https = new ListenerRegistry.Listener("https", HTTPS_MANAGEMENT, SERVER_NAME, bindAddress);
+            ListenerRegistry.Listener https = new ListenerRegistry.Listener("https", HTTPS_MANAGEMENT, SERVER_NAME, secureBindAddress);
             https.setContextInformation("socket-binding", secureBinding);
             listeners.add(https);
         }
