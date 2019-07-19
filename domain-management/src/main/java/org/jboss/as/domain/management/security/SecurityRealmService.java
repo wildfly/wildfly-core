@@ -379,6 +379,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         }
         registeredServices.clear();
         saslAuthenticationFactory = null;
+        httpAuthenticationFactory.shutdownAuthenticationMechanismFactory();
         httpAuthenticationFactory = null;
     }
 
