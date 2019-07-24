@@ -82,10 +82,27 @@
             <artifactId>wildfly-jmx</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.jboss.galleon</groupId>
                 <artifactId>galleon-maven-plugin</artifactId>
@@ -175,6 +192,7 @@
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
                         <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                         <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
+                        <jboss.test.host.server.byteman.javaagent>${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar},sys:${org.wildfly.core:wildfly-core-testsuite-shared:jar},script:${project.build.directory}/test-classes/byteman-scripts/</jboss.test.host.server.byteman.javaagent>
                     </systemPropertyVariables>
                     <includes>
                         <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>

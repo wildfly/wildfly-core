@@ -46,6 +46,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
 
@@ -147,4 +148,7 @@ public class PrepareStepHandler  implements OperationStepHandler {
         }
     }
 
+    public void setServerInventory(ServerInventory serverInventory) {
+        this.slaveHandler.setServerInventory(serverInventory);
+    }
 }

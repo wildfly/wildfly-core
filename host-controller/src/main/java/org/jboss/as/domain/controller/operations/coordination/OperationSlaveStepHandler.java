@@ -46,6 +46,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.operations.SyncModelOperationHandlerWrapper;
+import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry;
 import org.jboss.dmr.ModelNode;
 
@@ -60,6 +61,7 @@ class OperationSlaveStepHandler {
     private final Map<String, ProxyController> serverProxies;
     private final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private final ExtensionRegistry extensionRegistry;
+    private ServerInventory serverInventory;
 
     OperationSlaveStepHandler(final LocalHostControllerInfo localHostControllerInfo, Map<String, ProxyController> serverProxies,
                               final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry,
@@ -142,7 +144,7 @@ class OperationSlaveStepHandler {
 
         ServerOperationResolver resolver = new ServerOperationResolver(localHostControllerInfo.getLocalHostName(), serverProxies);
         ServerOperationsResolverHandler sorh = new ServerOperationsResolverHandler(
-                resolver, hostControllerExecutionSupport, originalAddress, originalRegistration, multiPhaseLocalContext);
+                resolver, hostControllerExecutionSupport, originalAddress, originalRegistration, multiPhaseLocalContext, this.serverInventory);
         context.addStep(sorh, OperationContext.Stage.DOMAIN);
 
         return hostControllerExecutionSupport;
@@ -199,5 +201,9 @@ class OperationSlaveStepHandler {
             }
             return domainModelResource;
         }
+    }
+
+    public void setServerInventory(ServerInventory serverInventory) {
+        this.serverInventory = serverInventory;
     }
 }

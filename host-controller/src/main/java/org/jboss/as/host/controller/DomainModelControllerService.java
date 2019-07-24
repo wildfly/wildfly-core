@@ -25,6 +25,7 @@ package org.jboss.as.host.controller;
 import static java.security.AccessController.doPrivileged;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLE_AUTO_START;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_CONNECTION;
@@ -334,6 +335,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         this.hostProxies = hostProxies;
         this.serverProxies = serverProxies;
         this.prepareStepHandler = prepareStepHandler;
+        this.prepareStepHandler.setServerInventory(new DelegatingServerInventory());
         this.vaultReader = vaultReader;
         this.ignoredRegistry = ignoredRegistry;
         this.bootstrapListener = bootstrapListener;
@@ -839,7 +841,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
                 reachedServers = true;
                 if (currentRunningMode == RunningMode.NORMAL) {
-                    startServers();
+                    startServers(false);
                 }
             }
 
@@ -852,6 +854,9 @@ public class DomainModelControllerService extends AbstractControllerService impl
             if (ok) {
                 try {
                     finishBoot();
+                    if (runningModeControl.getRunningMode() == RunningMode.NORMAL) {
+                        startServers(true);
+                    }
                 } finally {
                     // Trigger the started message
                     Notification notification = new Notification(ModelDescriptionConstants.BOOT_COMPLETE_NOTIFICATION, PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
@@ -1017,10 +1022,11 @@ public class DomainModelControllerService extends AbstractControllerService impl
         }
     }
 
-    private void startServers() {
+    private void startServers(boolean enabledAutoStart) {
         ModelNode addr = new ModelNode();
         addr.add(HOST, hostControllerInfo.getLocalHostName());
         ModelNode op = Util.getEmptyOperation(StartServersHandler.OPERATION_NAME, addr);
+        op.get(ENABLE_AUTO_START).set(enabledAutoStart);
 
         getValue().execute(op, null, null, null);
     }
