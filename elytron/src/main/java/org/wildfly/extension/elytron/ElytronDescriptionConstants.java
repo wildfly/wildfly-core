@@ -67,6 +67,7 @@ interface ElytronDescriptionConstants {
     String AUTHENTICATION_CLIENT = "authentication-client";
     String AUTHENTICATION_CONFIGURATION = "authentication-configuration";
     String AUTHENTICATION_CONTEXT = "authentication-context";
+    String AUTHENTICATION_CONTEXT_REGISTRATION = "authentication-context-registration";
     String AUTHENTICATION_LEVEL = "authentication-level";
     String AUTHENTICATION_NAME = "authentication-name";
     String AUTHENTICATION_OPTIONAL = "authentication-optional";

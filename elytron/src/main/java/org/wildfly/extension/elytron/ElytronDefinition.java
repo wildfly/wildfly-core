@@ -89,6 +89,7 @@ import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.Version;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
 import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
 import org.wildfly.security.auth.server.EvidenceDecoder;
@@ -437,8 +438,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
         @Override
         protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             ModelNode model = resource.getModel();
-            ModelNode defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model);
-            AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(defaultAuthenticationContext.isDefined() ? defaultAuthenticationContext.asString() : null);
+            final String defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
+            AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(defaultAuthenticationContext);
             Map<String,String> securityProperties = SECURITY_PROPERTIES.unwrap(context, model);
             final String defaultSSLContext = DEFAULT_SSL_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
 
@@ -465,6 +466,18 @@ class ElytronDefinition extends SimpleResourceDefinition {
                         Provider[].class, prs.getFinalProviders());
             }
             builder.install();
+
+            if (defaultAuthenticationContext != null) {
+                ServiceBuilder<?> serviceBuilder = target
+                        .addService(DefaultAuthenticationContextService.SERVICE_NAME)
+                        .setInitialMode(Mode.ACTIVE);
+                Supplier<AuthenticationContext> defaultAuthenticationContextSupplier = serviceBuilder.requires(context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, defaultAuthenticationContext, AuthenticationContext.class));
+                Consumer<AuthenticationContext> valueConsumer = serviceBuilder.provides(DefaultAuthenticationContextService.SERVICE_NAME);
+
+                DefaultAuthenticationContextService defaultAuthenticationContextService = new DefaultAuthenticationContextService(defaultAuthenticationContextSupplier, valueConsumer);
+                serviceBuilder.setInstance(defaultAuthenticationContextService)
+                        .install();
+            }
 
             if (defaultSSLContext != null) {
                 ServiceBuilder<?> serviceBuilder = target
