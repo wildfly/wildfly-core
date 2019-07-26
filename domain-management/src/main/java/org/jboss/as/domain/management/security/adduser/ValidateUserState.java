@@ -44,7 +44,7 @@ public class ValidateUserState extends AbstractValidationState {
     private static final String VALID_SYMBOLS;
 
     static {
-        char[] validPunctuation = { '.', '-', ',', '@', '/', '\\', '=' };
+        char[] validPunctuation = { '.', '-', ',', '@', '/', '\\', '=', '_' };
         Arrays.sort(validPunctuation);
         VALID_PUNCTUATION = validPunctuation;
 
