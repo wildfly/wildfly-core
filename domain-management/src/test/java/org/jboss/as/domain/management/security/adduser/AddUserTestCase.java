@@ -58,12 +58,12 @@ public class AddUserTestCase extends PropertyTestHelper {
 
     @Test
     public void testAddEnabledUser() throws IOException, StartException {
-        enableUser("Donny.Donowitz", UUID.randomUUID().toString(), ROLES);
+        enableUser("Donny_Donowitz", UUID.randomUUID().toString(), ROLES);
     }
 
     @Test
     public void testAddDisabledUser() throws IOException, StartException {
-        disableUser("Hugo.Stiglitz", UUID.randomUUID().toString(), ROLES);
+        disableUser("Hugo_Stiglitz", UUID.randomUUID().toString(), ROLES);
     }
 
     @Test
@@ -77,9 +77,9 @@ public class AddUserTestCase extends PropertyTestHelper {
     @Test
     public void testEnableDisabledUser_newRolesPassword() throws IOException, StartException {
         // Disable user
-        disableUser("Guillaume.Grossetie", UUID.randomUUID().toString(), ROLES);
+        disableUser("Guillaume_Grossetie", UUID.randomUUID().toString(), ROLES);
         // Enable user with a new password and groups
-        enableUser("Guillaume.Grossetie", UUID.randomUUID().toString(), "developer");
+        enableUser("Guillaume_Grossetie", UUID.randomUUID().toString(), "developer");
     }
 
     @Test

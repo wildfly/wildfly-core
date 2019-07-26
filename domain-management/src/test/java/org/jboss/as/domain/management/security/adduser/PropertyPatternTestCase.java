@@ -28,7 +28,8 @@ public class PropertyPatternTestCase {
                 "# Comment",
                 "",
                 "#",
-                "#Omar.Ulmer=soldier"
+                "#Omar.Ulmer=soldier",
+                "user_name=pwd"
         );
         List<String> keys = new ArrayList<String>();
         List<String> values = new ArrayList<String>();
@@ -40,15 +41,17 @@ public class PropertyPatternTestCase {
                 values.add(matcher.group(2));
             }
         }
-        assertEquals(3, keys.size());
+        assertEquals(4, keys.size());
         assertEquals("Guillaume.Grossetie", keys.get(0));
         assertEquals("Aldo.Raine@Inglorious-Basterds.com", keys.get(1));
         assertEquals("Omar.Ulmer", keys.get(2));
+        assertEquals("user_name", keys.get(3));
 
-        assertEquals(3, values.size());
+        assertEquals(4, values.size());
         assertEquals("developer", values.get(0));
         assertEquals("sergent,2division", values.get(1));
         assertEquals("soldier", values.get(2));
+        assertEquals("pwd", values.get(3));
     }
 
     @Test
@@ -61,7 +64,8 @@ public class PropertyPatternTestCase {
                 "# Comment",
                 "",
                 "#",
-                "#Omar.Ulmer=ghi789"
+                "#Omar.Ulmer=ghi789",
+                "#user_name=pwd"
         );
         PrintWriter writer = new PrintWriter(usersPropertyFile, "UTF-8");
         try {
@@ -74,10 +78,11 @@ public class PropertyPatternTestCase {
         UserPropertiesFileLoader propertiesLoad = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
         propertiesLoad.start(null);
         assertEquals(1, propertiesLoad.getEnabledUserNames().size());
-        assertEquals(2, propertiesLoad.getDisabledUserNames().size());
-        assertEquals(3, propertiesLoad.getUserNames().size());
+        assertEquals(3, propertiesLoad.getDisabledUserNames().size());
+        assertEquals(4, propertiesLoad.getUserNames().size());
         assertTrue(propertiesLoad.getEnabledUserNames().contains("Aldo.Raine@Inglorious-Basterds.com"));
         assertTrue(propertiesLoad.getDisabledUserNames().contains("Guillaume.Grossetie"));
+        assertTrue(propertiesLoad.getDisabledUserNames().contains("user_name"));
         propertiesLoad.stop(null);
     }
 
@@ -91,7 +96,9 @@ public class PropertyPatternTestCase {
                 "# Comment",
                 "#user3=789",
                 "# Another comment",
-                "user4=012"
+                "user4=012",
+                "user_name=pwd",
+                "#disabled_user=pass"
         );
         PrintWriter writer = new PrintWriter(usersPropertyFile, "UTF-8");
         try {
@@ -114,13 +121,15 @@ public class PropertyPatternTestCase {
         // reload the file and make sure everything is there
         UserPropertiesFileLoader loader2 = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
         loader2.start(null);
-        assertEquals(2, loader2.getEnabledUserNames().size());
-        assertEquals(2, loader2.getDisabledUserNames().size());
-        assertEquals(4, loader2.getUserNames().size());
+        assertEquals(3, loader2.getEnabledUserNames().size());
+        assertEquals(3, loader2.getDisabledUserNames().size());
+        assertEquals(6, loader2.getUserNames().size());
         assertTrue(loader2.getEnabledUserNames().contains("user2"));
         assertTrue(loader2.getEnabledUserNames().contains("newUser"));
+        assertTrue(loader2.getEnabledUserNames().contains("user_name"));
         assertTrue(loader2.getDisabledUserNames().contains("user1"));
         assertTrue(loader2.getDisabledUserNames().contains("user3"));
+        assertTrue(loader2.getDisabledUserNames().contains("disabled_user"));
         loader2.stop(null);
     }
 

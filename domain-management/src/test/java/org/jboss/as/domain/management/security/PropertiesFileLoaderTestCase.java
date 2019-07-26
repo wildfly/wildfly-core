@@ -38,7 +38,8 @@ public class PropertiesFileLoaderTestCase {
         "ABC=123",
         "DEF=456",
         "#this is a comment, not a property",
-        "GHI=789"
+        "GHI=789",
+        "user_name=password"
     };
 
     private File createTempFile() throws Exception {
@@ -202,7 +203,7 @@ public class PropertiesFileLoaderTestCase {
             PropertiesFileLoader loader = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader.start(null);
             Properties props = loader.getProperties();
-            props.put("ABC", "321");
+            props.put("user_name", "321");
             loader.persistProperties();
             loader.stop(null);
 
@@ -210,7 +211,7 @@ public class PropertiesFileLoaderTestCase {
             PropertiesFileLoader loader2 = new PropertiesFileLoader(tmpFile.getAbsolutePath());
             loader2.start(null);
             Properties props2 = loader2.getProperties();
-            verifyProperties(props2, props2.size(), "ABC", "321");
+            verifyProperties(props2, props2.size(), "user_name", "321");
             loader2.stop(null);
         } finally {
             cleanupTempFile(tmpFile);
