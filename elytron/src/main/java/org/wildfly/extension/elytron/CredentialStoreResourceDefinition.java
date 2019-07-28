@@ -29,6 +29,9 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
+import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
+import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -43,6 +46,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
+
+import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -77,7 +82,9 @@ import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
+import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
 import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
@@ -173,6 +180,16 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setMinSize(1)
             .build();
 
+    static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
+            .setMinSize(1)
+            .setDefaultValue(new ModelNode(256))
+            .setAllowedValues(128, 192, 256)
+            .build();
+
+    static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
+            .setMinSize(1)
+            .build();
+
     private static final Class<?>[] SUPPORTED_CREDENTIAL_TYPES = {
             PasswordCredential.class
     };
@@ -216,6 +233,21 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
             .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
+            .setRuntimeOnly()
+            .build();
+
+    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, RESOURCE_RESOLVER)
+            .setParameters(ALIAS, KEY_SIZE)
+            .setRuntimeOnly()
+            .build();
+
+    private static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_SECRET_KEY, RESOURCE_RESOLVER)
+            .setParameters(ALIAS, KEY)
+            .setRuntimeOnly()
+            .build();
+
+    private static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, RESOURCE_RESOLVER)
+            .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
@@ -266,6 +298,9 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             resourceRegistration.registerOperationHandler(ADD_ALIAS, CredentialStoreHandler.INSTANCE);
             resourceRegistration.registerOperationHandler(REMOVE_ALIAS, CredentialStoreHandler.INSTANCE);
             resourceRegistration.registerOperationHandler(SET_SECRET, CredentialStoreHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, CredentialStoreHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, CredentialStoreHandler.INSTANCE);
+            resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, CredentialStoreHandler.INSTANCE);
         }
     }
 
@@ -486,7 +521,46 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                         throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
+                case ElytronDescriptionConstants.GENERATE_SECRET_KEY:
+                    try {
+                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+                        int keySize = KEY_SIZE.resolveModelAttribute(context, operation).asInt();
+                        CredentialStore credentialStore = credentialStoreService.getValue();
 
+                        SecretKey secretKey = generateSecretKey(keySize);
+                        storeSecretKey(credentialStore, alias, secretKey);
+
+                    } catch (CredentialStoreException e) {
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+                    }
+                    break;
+                case ElytronDescriptionConstants.EXPORT_SECRET_KEY:
+                    try {
+                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+
+                        CredentialStore credentialStore = credentialStoreService.getValue();
+                        SecretKey secretKey = credentialStore.retrieve(alias, SecretKeyCredential.class).getSecretKey();
+                        String exportedKey = exportSecretKey(secretKey);
+
+                        result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
+                    } catch (CredentialStoreException e) {
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+                    }
+                    break;
+                case ElytronDescriptionConstants.IMPORT_SECRET_KEY:
+                    try {
+                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+                        String rawKey = KEY.resolveModelAttribute(context, operation).asString();
+
+                        SecretKey secretKey = importSecretKey(rawKey);
+
+                        CredentialStore credentialStore = credentialStoreService.getValue();
+                        storeSecretKey(credentialStore, alias, secretKey);
+
+                    } catch (CredentialStoreException e) {
+                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+                    }
+                    break;
                 default:
                     throw ROOT_LOGGER.invalidOperationName(operationName, ElytronDescriptionConstants.LOAD);
             }
@@ -550,7 +624,15 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
 
     private static void storeSecret(CredentialStore credentialStore, String alias, String secretValue) throws CredentialStoreException {
         char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
-        credentialStore.store(alias, createCredentialFromPassword(secret));
+        storeCredential(credentialStore, alias, createCredentialFromPassword(secret));
+    }
+
+    private static void storeSecretKey(CredentialStore credentialStore, String alias, SecretKey secretKey) throws CredentialStoreException {
+        storeCredential(credentialStore, alias, new SecretKeyCredential(secretKey));
+    }
+
+    private static void storeCredential(CredentialStore credentialStore, String alias, Credential credential) throws CredentialStoreException {
+        credentialStore.store(alias, credential);
         try {
             credentialStore.flush();
         } catch (CredentialStoreException e) {

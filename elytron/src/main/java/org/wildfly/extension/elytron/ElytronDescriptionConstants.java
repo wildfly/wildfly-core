@@ -188,6 +188,7 @@ interface ElytronDescriptionConstants {
     String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
+    String EXPORT_SECRET_KEY = "export-secret-key";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
@@ -217,6 +218,7 @@ interface ElytronDescriptionConstants {
 
     String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
     String GENERATE_KEY_PAIR = "generate-key-pair";
+    String GENERATE_SECRET_KEY = "generate-secret-key";
     String GENERATE_SELF_SIGNED_CERTIFICATE_HOST = "generate-self-signed-certificate-host";
     String GET_METADATA = "get-metadata";
     String GREATER_THAN = "greater-than";
@@ -243,6 +245,7 @@ interface ElytronDescriptionConstants {
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";
+    String IMPORT_SECRET_KEY = "import-secret-key";
     String INDEX = "index";
     String INFO = "info";
     String INIT = "init";
