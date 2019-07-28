@@ -190,20 +190,19 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .setMinSize(1)
             .build();
 
-    private static final Class<?>[] SUPPORTED_CREDENTIAL_TYPES = {
-            PasswordCredential.class
-    };
-
-    static final SimpleAttributeDefinition ENTRY_TYPE;
+    static final SimpleAttributeDefinition ADD_ENTRY_TYPE;
+    static final SimpleAttributeDefinition REMOVE_ENTRY_TYPE;
 
     static {
-        List<String> entryTypes = new ArrayList<>();
-        for (Class<?> SUPPORTED_CREDENTIAL_TYPE : SUPPORTED_CREDENTIAL_TYPES) {
-            String canonicalName = SUPPORTED_CREDENTIAL_TYPE.getCanonicalName();
-            entryTypes.add(canonicalName);
-        }
-        ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
-                .setAllowedValues(entryTypes.toArray(new String[entryTypes.size()]))
+        String[] addEntryTypes = new String[] { PasswordCredential.class.getCanonicalName() };
+        ADD_ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
+                .setAllowedValues(addEntryTypes)
+                .build();
+        String[] removeEntryTypes = new String[] { PasswordCredential.class.getCanonicalName(), PasswordCredential.class.getSimpleName(),
+                                                   SecretKeyCredential.class.getCanonicalName(), SecretKeyCredential.class.getSimpleName()};
+        REMOVE_ENTRY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ENTRY_TYPE, ModelType.STRING, true)
+                .setAllowedValues(removeEntryTypes)
+                .setDefaultValue(new ModelNode(PasswordCredential.class.getSimpleName()))
                 .build();
     }
 
@@ -222,17 +221,17 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
-            .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
+            .setParameters(ALIAS, ADD_ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
     private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
-            .setParameters(ALIAS)
+            .setParameters(ALIAS, REMOVE_ENTRY_TYPE)
             .setRuntimeOnly()
             .build();
 
     private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
-            .setParameters(ALIAS, ENTRY_TYPE, SECRET_VALUE)
+            .setParameters(ALIAS, ADD_ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
@@ -460,7 +459,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 case ElytronDescriptionConstants.ADD_ALIAS:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                        String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
                         String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
                         CredentialStore credentialStore = credentialStoreService.getValue();
                         if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
@@ -480,12 +479,14 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 case ElytronDescriptionConstants.REMOVE_ALIAS:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+                        String entryType = REMOVE_ENTRY_TYPE.resolveModelAttribute(context, operation).asString();
                         CredentialStore credentialStore = credentialStoreService.getValue();
-                        PasswordCredential retrieved = credentialStore.retrieve(alias, PasswordCredential.class);
+                        Class<? extends Credential> credentialType = fromEntryType(entryType);
+                        Credential retrieved = credentialStore.retrieve(alias, credentialType);
                         if (retrieved == null) {
-                            throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
+                            throw ROOT_LOGGER.credentialDoesNotExist(alias, entryType);
                         }
-                        credentialStore.remove(alias, PasswordCredential.class);
+                        credentialStore.remove(alias, credentialType);
                         context.addResponseWarning(Level.WARNING, ROOT_LOGGER.updateDependantServices(alias));
                         try {
                             credentialStore.flush();
@@ -503,7 +504,7 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
                 case ElytronDescriptionConstants.SET_SECRET:
                     try {
                         String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                        String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
                         String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
                         CredentialStore credentialStore = credentialStoreService.getValue();
 
@@ -652,5 +653,15 @@ final class CredentialStoreResourceDefinition extends SimpleResourceDefinition {
             c = c.getCause() == c ? null : c.getCause();
         }
         return sb.toString();
+    }
+
+    private static Class<? extends Credential> fromEntryType(final String entryTyoe) {
+        if (PasswordCredential.class.getCanonicalName().equals(entryTyoe) || PasswordCredential.class.getSimpleName().equals(entryTyoe)) {
+            return PasswordCredential.class;
+        } else if (SecretKeyCredential.class.getCanonicalName().equals(entryTyoe) || SecretKeyCredential.class.getSimpleName().equals(entryTyoe)) {
+            return SecretKeyCredential.class;
+        }
+
+        return null;
     }
 }
