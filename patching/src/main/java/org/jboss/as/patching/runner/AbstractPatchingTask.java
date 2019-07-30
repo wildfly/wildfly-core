@@ -164,7 +164,7 @@ abstract class AbstractPatchingTask<T extends ContentItem> implements PatchingTa
         final ContentModification rollbackAction = createRollbackEntry(original, contentHash, backupHash);
         context.recordChange(original, rollbackAction);
         // Fail after adding the undo action
-        if (! Arrays.equals(contentHash, contentItem.getContentHash()) && failOnContentMismatch(context)) {
+        if (! Arrays.equals(contentHash, contentItem.getContentHash()) && failOnContentMismatch(context) && !context.isIgnored(contentItem)) {
             throw PatchLogger.ROOT_LOGGER.wrongCopiedContent(contentItem);
         }
     }

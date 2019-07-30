@@ -54,6 +54,15 @@ public interface PatchingTaskContext {
     boolean isExcluded(ContentItem contentItem);
 
     /**
+     * Check the content verification policy whether a given
+     * content item can be ignored or not.
+     *
+     * @param contentItem the content item
+     * @return whether the content can be ignored or not
+     */
+    boolean isIgnored(ContentItem item);
+
+    /**
      * Record a change to be included in the patch history.
      *
      * @param change         the modification
