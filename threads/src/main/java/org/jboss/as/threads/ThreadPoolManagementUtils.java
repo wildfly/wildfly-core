@@ -21,11 +21,6 @@
 */
 package org.jboss.as.threads;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.threads.CommonAttributes.KEEPALIVE_TIME;
-import static org.jboss.as.threads.CommonAttributes.TIME;
-import static org.jboss.as.threads.CommonAttributes.UNIT;
-
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -41,6 +36,11 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.threads.CommonAttributes.KEEPALIVE_TIME;
+import static org.jboss.as.threads.CommonAttributes.TIME;
+import static org.jboss.as.threads.CommonAttributes.UNIT;
 
 /**
  * Utilities related to management of thread pools.
@@ -176,6 +176,15 @@ class ThreadPoolManagementUtils {
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
     }
 
+    static EnhancedQueueThreadPoolParameters parseEnhancedQueueThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
+        parseBaseThreadPoolOperationParameters(context, operation, model, params);
+
+        ModelNode coreTh = PoolAttributeDefinitions.CORE_THREADS.resolveModelAttribute(context, model);
+        params.coreThreads = coreTh.isDefined() ? coreTh.asInt() : params.maxThreads;
+        return params;
+    }
+
     static BaseThreadPoolParameters parseScheduledThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
@@ -259,7 +268,11 @@ class ThreadPoolManagementUtils {
         int getQueueLength();
     }
 
-    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters {
+    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
+        int getCoreThreads();
+    }
+
+    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters, EnhancedQueueThreadPoolParameters {
         ModelNode address;
         String name;
         String threadFactory;

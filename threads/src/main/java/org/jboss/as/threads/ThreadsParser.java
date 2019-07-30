@@ -22,28 +22,6 @@
 
 package org.jboss.as.threads;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
-import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.threads.CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.BOUNDED_QUEUE_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.HANDOFF_EXECUTOR;
-import static org.jboss.as.threads.CommonAttributes.QUEUELESS_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.SCHEDULED_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.THREAD_FACTORY;
-import static org.jboss.as.threads.CommonAttributes.TIME;
-import static org.jboss.as.threads.CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL;
-import static org.jboss.as.threads.CommonAttributes.UNIT;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Collections;
@@ -65,6 +43,28 @@ import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.common.cpu.ProcessorInfo;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
+import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
+import static org.jboss.as.controller.parsing.ParseUtils.readStringAttributeElement;
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
+import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.threads.CommonAttributes.BLOCKING_BOUNDED_QUEUE_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.BLOCKING_QUEUELESS_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.BOUNDED_QUEUE_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.HANDOFF_EXECUTOR;
+import static org.jboss.as.threads.CommonAttributes.QUEUELESS_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.SCHEDULED_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.THREAD_FACTORY;
+import static org.jboss.as.threads.CommonAttributes.TIME;
+import static org.jboss.as.threads.CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL;
+import static org.jboss.as.threads.CommonAttributes.UNIT;
 
 /**
  * Parser for the threads subsystem or for other subsystems that use pieces of the basic threads subsystem
@@ -471,68 +471,12 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
 
     public String parseUnboundedQueueThreadPool(final XMLExtendedStreamReader reader, String expectedNs, Namespace threadsNamespace, final ModelNode parentAddress,
                                                 final List<ModelNode> list, final String childType, final String providedName) throws XMLStreamException {
-        final ModelNode op = new ModelNode();
-        list.add(op);
-        op.get(OP).set(ADD);
+        return parseUnboundedQueueThreadPoolInternal(reader, expectedNs, threadsNamespace, parentAddress, list, childType, providedName, false);
+    }
 
-        String name = null;
-        int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            switch (attribute) {
-                case NAME: {
-                    name = value;
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-        if (providedName != null) {
-            name = providedName;
-        } else if (name == null) {
-            throw missingRequired(reader, Collections.singleton(Attribute.NAME));
-        }
-
-        final ModelNode address = parentAddress.clone();
-        address.add(childType, name);
-        address.protect();
-        op.get(OP_ADDR).set(address);
-
-        boolean foundMaxThreads = false;
-        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            Element element = nextElement(reader, expectedNs);
-            switch (element) {
-                case MAX_THREADS: {
-                    String scaledCount = parseCount(reader, threadsNamespace);
-                    PoolAttributeDefinitions.MAX_THREADS.parseAndSetParameter(scaledCount, op, reader);
-                    foundMaxThreads = true;
-                    break;
-                }
-                case KEEPALIVE_TIME: {
-                    PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op, reader);
-                    break;
-                }
-                case THREAD_FACTORY: {
-                    String ref = readStringAttributeElement(reader, Attribute.NAME.getLocalName());
-                    PoolAttributeDefinitions.THREAD_FACTORY.parseAndSetParameter(ref, op, reader);
-                    break;
-                }
-                case PROPERTIES: {
-                    parseProperties(reader, threadsNamespace);
-                    break;
-                }
-                default: {
-                    throw unexpectedElement(reader);
-                }
-            }
-        }
-        if (!foundMaxThreads) {
-            throw missingRequiredElement(reader, Collections.singleton(Element.MAX_THREADS));
-        }
-        return name;
+    public String parseEnhancedQueueThreadPool(final XMLExtendedStreamReader reader, String expectedNs, Namespace threadsNamespace, final ModelNode parentAddress,
+                                                final List<ModelNode> list, final String childType, final String providedName) throws XMLStreamException {
+        return parseUnboundedQueueThreadPoolInternal(reader, expectedNs, threadsNamespace, parentAddress, list, childType, providedName, true);
     }
 
     public String parseScheduledThreadPool(final XMLExtendedStreamReader reader, String expectedNs, Namespace threadsNamespace, final ModelNode parentAddress,
@@ -579,6 +523,81 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
                 }
                 case KEEPALIVE_TIME: {
                     PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op,reader);
+                    break;
+                }
+                case THREAD_FACTORY: {
+                    String ref = readStringAttributeElement(reader, Attribute.NAME.getLocalName());
+                    PoolAttributeDefinitions.THREAD_FACTORY.parseAndSetParameter(ref, op, reader);
+                    break;
+                }
+                case PROPERTIES: {
+                    parseProperties(reader, threadsNamespace);
+                    break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
+                }
+            }
+        }
+        if (!foundMaxThreads) {
+            throw missingRequiredElement(reader, Collections.singleton(Element.MAX_THREADS));
+        }
+        return name;
+    }
+
+    private String parseUnboundedQueueThreadPoolInternal(final XMLExtendedStreamReader reader, String expectedNs, Namespace threadsNamespace, final ModelNode parentAddress,
+                                                         final List<ModelNode> list, final String childType, final String providedName, final boolean supportsCoreThreads) throws XMLStreamException {
+        final ModelNode op = new ModelNode();
+        list.add(op);
+        op.get(OP).set(ADD);
+
+        String name = null;
+        int count = reader.getAttributeCount();
+        for (int i = 0; i < count; i++) {
+            requireNoNamespaceAttribute(reader, i);
+            final String value = reader.getAttributeValue(i);
+            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+            switch (attribute) {
+                case NAME: {
+                    name = value;
+                    break;
+                }
+                default:
+                    throw unexpectedAttribute(reader, i);
+            }
+        }
+        if (providedName != null) {
+            name = providedName;
+        } else if (name == null) {
+            throw missingRequired(reader, Collections.singleton(Attribute.NAME));
+        }
+
+        final ModelNode address = parentAddress.clone();
+        address.add(childType, name);
+        address.protect();
+        op.get(OP_ADDR).set(address);
+
+        boolean foundMaxThreads = false;
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            Element element = nextElement(reader, expectedNs);
+            switch (element) {
+                case MAX_THREADS: {
+                    String scaledCount = parseCount(reader, threadsNamespace);
+                    PoolAttributeDefinitions.MAX_THREADS.parseAndSetParameter(scaledCount, op, reader);
+                    foundMaxThreads = true;
+                    break;
+                }
+                case CORE_THREADS: {
+                    if (supportsCoreThreads) {
+                        String scaledCount = parseCount(reader, threadsNamespace);
+                        PoolAttributeDefinitions.CORE_THREADS.parseAndSetParameter(scaledCount, op, reader);
+                        break;
+                    } else {
+                        throw unexpectedElement(reader);
+                    }
+                }
+                case KEEPALIVE_TIME: {
+                    PoolAttributeDefinitions.KEEPALIVE_TIME.parseAndSetParameter(op, reader);
                     break;
                 }
                 case THREAD_FACTORY: {
@@ -1064,12 +1083,28 @@ public final class ThreadsParser implements XMLStreamConstants, XMLElementReader
 
     public void writeUnboundedQueueThreadPool(final XMLExtendedStreamWriter writer, final Property property, final String elementName, final boolean includeName)
             throws XMLStreamException {
+        writeUnboundedQueueThreadPoolInternal(writer, property, elementName, includeName, false);
+    }
+
+    public void writeEnhancedQueueThreadPool(final XMLExtendedStreamWriter writer, final Property property, final String elementName, final boolean includeName)
+            throws XMLStreamException {
+        writeUnboundedQueueThreadPoolInternal(writer, property, elementName, includeName, true);
+    }
+
+    private void writeUnboundedQueueThreadPoolInternal(final XMLExtendedStreamWriter writer, final Property property,
+                                                       final String elementName, final boolean includeName,
+                                                       final boolean supportsCoreThreads) throws XMLStreamException {
         writer.writeStartElement(elementName);
         ModelNode node = property.getValue();
         if (includeName) {
             writer.writeAttribute(Attribute.NAME.getLocalName(), property.getName());
         }
         writeCountElement(PoolAttributeDefinitions.MAX_THREADS, node, writer);
+
+        if(supportsCoreThreads) {
+            writeCountElement(PoolAttributeDefinitions.CORE_THREADS, node, writer);
+        }
+
         writeTime(writer, node, Element.KEEPALIVE_TIME);
         writeRef(writer, node, Element.THREAD_FACTORY, THREAD_FACTORY);
 

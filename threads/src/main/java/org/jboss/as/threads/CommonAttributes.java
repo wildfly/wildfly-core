@@ -56,6 +56,7 @@ public interface CommonAttributes {
     String THREAD_FACTORY = "thread-factory";
     String THREAD_NAME_PATTERN = "thread-name-pattern";
     String UNBOUNDED_QUEUE_THREAD_POOL = "unbounded-queue-thread-pool";
+    String ENHANCED_QUEUE_THREAD_POOL = "enhanced-queue-thread-pool";
     String UNIT = "unit";
     String VALUE = "value";
 }
