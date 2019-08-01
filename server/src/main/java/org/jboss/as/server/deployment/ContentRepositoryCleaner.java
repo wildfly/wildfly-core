@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.LocalModelControllerClient;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
@@ -55,7 +55,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 class ContentRepositoryCleaner {
 
     private final LocalModelControllerClient client;
-    private final ControlledProcessStateService controlledProcessStateService;
+    private final ProcessStateNotifier processStateNotifier;
     private final ScheduledExecutorService scheduledExecutor;
 
     private long cleanInterval = 0L;
@@ -73,9 +73,9 @@ class ContentRepositoryCleaner {
         }
     }
 
-    public ContentRepositoryCleaner(LocalModelControllerClient client, ControlledProcessStateService controlledProcessStateService,
+    public ContentRepositoryCleaner(LocalModelControllerClient client, ProcessStateNotifier processStateNotifier,
                                     ScheduledExecutorService scheduledExecutor, long interval, boolean server) {
-        this.controlledProcessStateService = controlledProcessStateService;
+        this.processStateNotifier = processStateNotifier;
         this.client = client;
         this.scheduledExecutor = scheduledExecutor;
         this.enabled = true;
@@ -117,7 +117,7 @@ class ContentRepositoryCleaner {
     }
 
     void cleanObsoleteContent() {
-        if (controlledProcessStateService.getCurrentState() == ControlledProcessState.State.RUNNING) {
+        if (processStateNotifier.getCurrentState() == ControlledProcessState.State.RUNNING) {
             PathAddress address = PathAddress.EMPTY_ADDRESS;
             if (!server) {
                 ModelNode request = Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, LOCAL_HOST_NAME);

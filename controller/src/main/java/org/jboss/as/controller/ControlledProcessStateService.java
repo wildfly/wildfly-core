@@ -39,14 +39,21 @@ import org.jboss.msc.service.StopContext;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ControlledProcessStateService implements Service<ControlledProcessStateService> {
+public class ControlledProcessStateService implements Service<ControlledProcessStateService>, ProcessStateNotifier {
 
+    /** @deprecated use the 'org.wildfly.management.controlled-process-state-notifier' capability to obtain a {@link ProcessStateNotifier}*/
+    @Deprecated
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("controlled-process-state");
+    /** Only for use within the WildFly Core kernel; may change or be removed at any time */
+    public static final ServiceName INTERNAL_SERVICE_NAME = AbstractControllerService.PROCESS_STATE_NOTIFIER_CAPABILITY.getCapabilityServiceName();
 
+    @SuppressWarnings("deprecation")
     public static ServiceController<ControlledProcessStateService> addService(ServiceTarget target,
                                                                               ControlledProcessState processState) {
         ControlledProcessStateService service = processState.getService();
-        return target.addService(SERVICE_NAME, service).install();
+        return target.addService(INTERNAL_SERVICE_NAME, service)
+                .addAliases(SERVICE_NAME)
+                .install();
     }
 
     private ControlledProcessState.State processState;
@@ -75,6 +82,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      *
      * @return  the current state
      */
+    @Override
     public ControlledProcessState.State getCurrentState() {
         return processState;
     }
@@ -84,6 +92,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      *
      * @param listener the listener
      */
+    @Override
     public void addPropertyChangeListener(
             PropertyChangeListener listener) {
         changeSupport.addPropertyChangeListener(listener);
@@ -94,6 +103,7 @@ public class ControlledProcessStateService implements Service<ControlledProcessS
      *
      * @param listener the listener
      */
+    @Override
     public void removePropertyChangeListener(
             PropertyChangeListener listener) {
         changeSupport.removePropertyChangeListener(listener);

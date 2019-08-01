@@ -74,7 +74,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.notification.Notification;
@@ -143,7 +143,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private final Map<File, IncompleteDeploymentStatus> incompleteDeployments = new HashMap<File, IncompleteDeploymentStatus>();
 
     private final ScheduledExecutorService scheduledExecutor;
-    private final ControlledProcessStateService processStateService;
+    private final ProcessStateNotifier processStateNotifier;
     private volatile DeploymentOperations.Factory deploymentOperationsFactory;
     private volatile DeploymentOperations deploymentOperations;
 
@@ -266,7 +266,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     FileSystemDeploymentService(final PathAddress resourceAddress, final String relativeTo, final File deploymentDir, final File relativeToDir,
                                 final DeploymentOperations.Factory deploymentOperationsFactory,
                                 final ScheduledExecutorService scheduledExecutor,
-                                final ControlledProcessStateService processStateService)
+                                final ProcessStateNotifier processStateNotifier)
             throws OperationFailedException {
 
         assert resourceAddress != null;
@@ -280,8 +280,8 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         this.deploymentDir = deploymentDir;
         this.deploymentOperationsFactory = deploymentOperationsFactory;
         this.scheduledExecutor = scheduledExecutor;
-        this.processStateService = processStateService;
-        if(processStateService != null) {
+        this.processStateNotifier = processStateNotifier;
+        if(processStateNotifier != null) {
             this.propertyChangeListener = new PropertyChangeListener() {
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
@@ -298,11 +298,11 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                             undeployScanTask.cancel(true);
                             undeployScanTask = null;
                         }
-                        processStateService.removePropertyChangeListener(propertyChangeListener);
+                        processStateNotifier.removePropertyChangeListener(propertyChangeListener);
                     }
                 }
             };
-            this.processStateService.addPropertyChangeListener(propertyChangeListener);
+            this.processStateNotifier.addPropertyChangeListener(propertyChangeListener);
         } else {
             this.propertyChangeListener = null;
         }
@@ -770,7 +770,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
             if(rollbackOnRuntimeFailure) {
                 forcedUndeployScan();
             }
-            processStateService.removePropertyChangeListener(propertyChangeListener);
+            processStateNotifier.removePropertyChangeListener(propertyChangeListener);
         }
     }
 

@@ -25,6 +25,7 @@ package org.jboss.as.host.controller;
 import java.util.concurrent.CountDownLatch;
 
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.server.jmx.RunningStateJmx;
@@ -62,8 +63,8 @@ public class HostControllerBootstrap {
         final ControlledProcessState processState = new ControlledProcessState(true);
         shutdownHook.setControlledProcessState(processState);
         ServiceTarget target = serviceContainer.subTarget();
-        ControlledProcessStateService controlledProcessStateService = ControlledProcessStateService.addService(target, processState).getValue();
-        RunningStateJmx.registerMBean(controlledProcessStateService, null, runningModeControl, false);
+        ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(target, processState).getValue();
+        RunningStateJmx.registerMBean(processStateNotifier, null, runningModeControl, false);
         final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState);
         target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
     }

@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.server.Services;
@@ -67,7 +68,7 @@ public class ContentCleanerService implements Service {
 
     private final Supplier<ModelControllerClientFactory> clientFactorySupplier;
     private final Supplier<ScheduledExecutorService> scheduledExecutorSupplier;
-    private final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier;
+    private final Supplier<ProcessStateNotifier> processStateNotifierSupplier;
     private final Supplier<ExecutorService> executorServiceSupplier;
 
     private ContentRepositoryCleaner deploymentContentCleaner;
@@ -78,10 +79,10 @@ public class ContentCleanerService implements Service {
     public static void addService(final ServiceTarget serviceTarget, final ServiceName clientFactoryService, final ServiceName scheduledExecutorServiceName) {
         final ServiceBuilder<?> builder = serviceTarget.addService(SERVICE_NAME);
         final Supplier<ModelControllerClientFactory> mccfSupplier = builder.requires(clientFactoryService);
-        final Supplier<ControlledProcessStateService> cpssSupplier = builder.requires(ControlledProcessStateService.SERVICE_NAME);
+        final Supplier<ProcessStateNotifier> cpsnSupplier = builder.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
         final Supplier<ScheduledExecutorService> sesSupplier = builder.requires(scheduledExecutorServiceName);
         final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(builder);
-        builder.setInstance(new ContentCleanerService(true, mccfSupplier, cpssSupplier, sesSupplier, esSupplier));
+        builder.setInstance(new ContentCleanerService(true, mccfSupplier, cpsnSupplier, sesSupplier, esSupplier));
         builder.install();
     }
 
@@ -89,23 +90,23 @@ public class ContentCleanerService implements Service {
                                                   final ServiceName hostControllerExecutorServiceName, final ServiceName scheduledExecutorServiceName) {
         final ServiceBuilder<?> builder = serviceTarget.addService(SERVICE_NAME);
         final Supplier<ModelControllerClientFactory> mccfSupplier = builder.requires(clientFactoryServiceName);
-        final Supplier<ControlledProcessStateService> cpssSupplier = builder.requires(ControlledProcessStateService.SERVICE_NAME);
+        final Supplier<ProcessStateNotifier> cpsnSupplier = builder.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
         final Supplier<ScheduledExecutorService> sesSupplier = builder.requires(scheduledExecutorServiceName);
         final Supplier<ExecutorService> esSupplier = builder.requires(hostControllerExecutorServiceName);
-        builder.setInstance(new ContentCleanerService(false, mccfSupplier, cpssSupplier, sesSupplier, esSupplier));
+        builder.setInstance(new ContentCleanerService(false, mccfSupplier, cpsnSupplier, sesSupplier, esSupplier));
         builder.install();
     }
 
     private ContentCleanerService(final boolean server,
                                   final Supplier<ModelControllerClientFactory> clientFactorySupplier,
-                                  final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier,
+                                  final Supplier<ProcessStateNotifier> processStateNotifierSupplier,
                                   final Supplier<ScheduledExecutorService> scheduledExecutorSupplier,
                                   final Supplier<ExecutorService> executorServiceSupplier) {
         this.interval = DEFAULT_INTERVAL;
         this.unit = TimeUnit.MILLISECONDS;
         this.server = server;
         this.clientFactorySupplier = clientFactorySupplier;
-        this.controlledProcessStateServiceSupplier = controlledProcessStateServiceSupplier;
+        this.processStateNotifierSupplier = processStateNotifierSupplier;
         this.scheduledExecutorSupplier = scheduledExecutorSupplier;
         this.executorServiceSupplier = executorServiceSupplier;
     }
@@ -114,7 +115,7 @@ public class ContentCleanerService implements Service {
     public synchronized void start(StartContext context) throws StartException {
         this.deploymentContentCleaner = new ContentRepositoryCleaner(
                 clientFactorySupplier.get().createSuperUserClient(executorServiceSupplier.get(), false),
-                controlledProcessStateServiceSupplier.get(),
+                processStateNotifierSupplier.get(),
                 scheduledExecutorSupplier.get(), unit.toMillis(interval), server);
         deploymentContentCleaner.startScan();
     }

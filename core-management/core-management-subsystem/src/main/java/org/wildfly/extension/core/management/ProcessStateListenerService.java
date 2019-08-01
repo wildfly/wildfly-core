@@ -22,7 +22,7 @@
 package org.wildfly.extension.core.management;
 
 
-import static org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER;
+import static org.wildfly.extension.core.management.ProcessStateListenerResourceDefinition.PROCESS_STATE_LISTENER_CAPABILITY;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -35,18 +35,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessState.State;
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.server.Services;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.msc.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -71,7 +70,7 @@ public class ProcessStateListenerService implements Service {
 
     static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("core", "management", "process-state-listener");
 
-    private final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier;
+    private final Supplier<ProcessStateNotifier> processStateNotifierSupplier;
     private final Supplier<SuspendController> suspendControllerSupplier;
     private final Supplier<ExecutorService> executorServiceSupplier;
     private final PropertyChangeListener propertyChangeListener;
@@ -86,7 +85,7 @@ public class ProcessStateListenerService implements Service {
     private volatile Process.RunningState runningState = null;
 
     private ProcessStateListenerService(ProcessType processType, RunningMode runningMode, String name, ProcessStateListener listener, Map<String, String> properties, int timeout,
-                                        final Supplier<ControlledProcessStateService> controlledProcessStateServiceSupplier,
+                                        final Supplier<ProcessStateNotifier> processStateNotifierSupplier,
                                         final Supplier<SuspendController> suspendControllerSupplier,
                                         final Supplier<ExecutorService> executorServiceSupplier
     ) {
@@ -107,7 +106,7 @@ public class ProcessStateListenerService implements Service {
                 transition(oldState, newState);
             }
         };
-        this.controlledProcessStateServiceSupplier = controlledProcessStateServiceSupplier;
+        this.processStateNotifierSupplier = processStateNotifierSupplier;
         this.suspendControllerSupplier = suspendControllerSupplier;
         this.executorServiceSupplier = executorServiceSupplier;
         if (!processType.isHostController()) {
@@ -238,12 +237,12 @@ public class ProcessStateListenerService implements Service {
         }
     }
 
-    static void install(ServiceTarget serviceTarget, ProcessType processType, RunningMode runningMode, String listenerName, ProcessStateListener listener, Map<String, String> properties, int timeout) {
-        final ServiceBuilder<?> builder = serviceTarget.addService(SERVICE_NAME.append(listenerName));
-        final Supplier<ControlledProcessStateService> cpssSupplier = builder.requires(ControlledProcessStateService.SERVICE_NAME);
-        final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(builder);
-        final Supplier<SuspendController> scSupplier = !processType.isHostController() ? builder.requires(JBOSS_SUSPEND_CONTROLLER) : null;
-        builder.setInstance(new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout, cpssSupplier, scSupplier, esSupplier));
+    static void install(CapabilityServiceTarget serviceTarget, ProcessType processType, RunningMode runningMode, String listenerName, ProcessStateListener listener, Map<String, String> properties, int timeout) {
+        final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(PROCESS_STATE_LISTENER_CAPABILITY.fromBaseCapability(listenerName));
+        final Supplier<ProcessStateNotifier> psnSupplier = builder.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
+        final Supplier<ExecutorService> esSupplier = builder.requiresCapability("org.wildfly.management.executor", ExecutorService.class);
+        final Supplier<SuspendController> scSupplier = !processType.isHostController() ? builder.requiresCapability("org.wildfly.server.suspend-controller", SuspendController.class) : null;
+        builder.setInstance(new ProcessStateListenerService(processType, runningMode, listenerName, listener, properties, timeout, psnSupplier, scSupplier, esSupplier));
         builder.install();
     }
 
@@ -252,7 +251,7 @@ public class ProcessStateListenerService implements Service {
         Runnable task = () -> {
             try {
                 ProcessStateListenerService.this.listener.init(parameters);
-                controlledProcessStateServiceSupplier.get().addPropertyChangeListener(propertyChangeListener);
+                processStateNotifierSupplier.get().addPropertyChangeListener(propertyChangeListener);
                 final Supplier<SuspendController> suspendControllerSupplier = ProcessStateListenerService.this.suspendControllerSupplier;
                 SuspendController controller = suspendControllerSupplier != null ? suspendControllerSupplier.get() : null;
                 if (controller != null) {
@@ -270,7 +269,7 @@ public class ProcessStateListenerService implements Service {
                             }
                             break;
                         case SUSPENDED:
-                            if (controlledProcessStateServiceSupplier.get().getCurrentState() == State.STARTING) {
+                            if (processStateNotifierSupplier.get().getCurrentState() == State.STARTING) {
                                 this.runningState = Process.RunningState.STARTING;
                             } else {
                                 this.runningState = Process.RunningState.SUSPENDED;
@@ -281,8 +280,8 @@ public class ProcessStateListenerService implements Service {
                             break;
                     }
                 } else {
-                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a ControllerProcessState of %s", controlledProcessStateServiceSupplier.get().getCurrentState());
-                    if (controlledProcessStateServiceSupplier.get().getCurrentState() == State.STARTING) {
+                    CoreManagementLogger.ROOT_LOGGER.debugf("Starting ProcessStateListenerService with a ControllerProcessState of %s", processStateNotifierSupplier.get().getCurrentState());
+                    if (processStateNotifierSupplier.get().getCurrentState() == State.STARTING) {
                         this.runningState = Process.RunningState.STARTING;
                     } else {
                         if (parameters.getRunningMode() == Process.RunningMode.NORMAL) {
@@ -315,7 +314,7 @@ public class ProcessStateListenerService implements Service {
     public void stop(StopContext context) {
         Runnable asyncStop = () -> {
             synchronized (stopLock) {
-                controlledProcessStateServiceSupplier.get().removePropertyChangeListener(propertyChangeListener);
+                processStateNotifierSupplier.get().removePropertyChangeListener(propertyChangeListener);
                 SuspendController controller = suspendControllerSupplier != null ? suspendControllerSupplier.get() : null;
                 if (controller != null) {
                     controller.removeListener(operationListener);
