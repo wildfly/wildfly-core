@@ -85,6 +85,7 @@ import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.Cancellable;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
@@ -565,11 +566,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
         capabilityReg.registerCapability(
                 new RuntimeCapabilityRegistration(PATH_MANAGER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityReg.registerCapability(
-                new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+                        new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityReg.registerCapability(
+                new RuntimeCapabilityRegistration(PROCESS_STATE_NOTIFIER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
         rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
         rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
+        rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
 
         // Register the slave host info
         ResourceProvider.Tool.addResourceProvider(HOST_CONNECTION, new ResourceProvider() {
@@ -1719,14 +1723,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     private static class DeferredDomainConnectService implements Service<Void>, PropertyChangeListener {
         private final MasterDomainControllerClient domainControllerClient;
-        private final InjectedValue<ControlledProcessStateService> injectedValue = new InjectedValue<>();
+        private final InjectedValue<ProcessStateNotifier> injectedValue = new InjectedValue<>();
         private boolean activated;
         private volatile Cancellable connectionFuture;
 
         private static void install(ServiceTarget target, MasterDomainControllerClient domainControllerClient) {
             DeferredDomainConnectService service = new DeferredDomainConnectService(domainControllerClient);
             target.addService(DomainModelControllerService.SERVICE_NAME.append("deferred-domain-connect"), service)
-                    .addDependency(ControlledProcessStateService.SERVICE_NAME, ControlledProcessStateService.class, service.injectedValue)
+                    .addDependency(ControlledProcessStateService.INTERNAL_SERVICE_NAME, ProcessStateNotifier.class, service.injectedValue)
                     .install();
         }
 
@@ -1736,8 +1740,8 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         @Override
         public void start(StartContext context) throws StartException {
-            ControlledProcessStateService cpss = injectedValue.getValue();
-            cpss.addPropertyChangeListener(this);
+            ProcessStateNotifier cpsn = injectedValue.getValue();
+            cpsn.addPropertyChangeListener(this);
         }
 
         @Override

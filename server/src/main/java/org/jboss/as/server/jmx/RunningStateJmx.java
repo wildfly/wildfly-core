@@ -33,7 +33,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
@@ -156,7 +156,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         sendNotification(notification);
     }
 
-    public static void registerMBean(ControlledProcessStateService processStateService, SuspendController suspendController, RunningModeControl runningModeControl, boolean isServer) {
+    public static void registerMBean(ProcessStateNotifier processStateNotifier, SuspendController suspendController, RunningModeControl runningModeControl, boolean isServer) {
         try {
             final ObjectName name = new ObjectName(OBJECT_NAME);
             final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
@@ -165,7 +165,7 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
                 server.unregisterMBean(name);
             }
             server.registerMBean(mbean, name);
-            registerStateListener(mbean, processStateService);
+            registerStateListener(mbean, processStateNotifier);
             if (suspendController != null) {
                 suspendController.addListener(new OperationListener() {
                     @Override
@@ -202,8 +202,8 @@ public class RunningStateJmx extends NotificationBroadcasterSupport implements R
         }
     }
 
-    private static void registerStateListener(RunningStateJmxMBean mbean, ControlledProcessStateService processStateService) {
-        processStateService.addPropertyChangeListener((PropertyChangeEvent evt) -> {
+    private static void registerStateListener(RunningStateJmxMBean mbean, ProcessStateNotifier processStateNotifier) {
+        processStateNotifier.addPropertyChangeListener((PropertyChangeEvent evt) -> {
             if ("currentState".equals(evt.getPropertyName())) {
                 ControlledProcessState.State oldState = (ControlledProcessState.State) evt.getOldValue();
                 ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();

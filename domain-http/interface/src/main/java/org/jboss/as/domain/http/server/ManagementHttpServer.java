@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
@@ -393,7 +393,7 @@ public class ManagementHttpServer {
         HttpHandler domainApiHandler = StreamReadLimitHandler.wrap(CorrelationHandler.wrap(
                 InExecutorHandler.wrap(
                     builder.executor,
-                    associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.controlledProcessStateService,
+                    associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.processStateNotifier,
                         builder.allowedOrigins), builder)
                 )));
 
@@ -498,7 +498,7 @@ public class ManagementHttpServer {
         private SSLContext sslContext;
         private SslClientAuthMode sslClientAuthMode;
         private HttpAuthenticationFactory httpAuthenticationFactory;
-        private ControlledProcessStateService controlledProcessStateService;
+        private ProcessStateNotifier processStateNotifier;
         private ConsoleMode consoleMode;
         private String consoleSlot;
         private ChannelUpgradeHandler upgradeHandler;
@@ -567,11 +567,17 @@ public class ManagementHttpServer {
             return this;
         }
 
-        public Builder setControlledProcessStateService(ControlledProcessStateService controlledProcessStateService) {
+        public Builder setControlledProcessStateNotifier(ProcessStateNotifier processStateNotifier) {
             assertNotBuilt();
-            this.controlledProcessStateService = controlledProcessStateService;
+            this.processStateNotifier = processStateNotifier;
 
             return this;
+        }
+
+        /** @deprecated use {@link #setControlledProcessStateNotifier(ProcessStateNotifier)} */
+        @Deprecated
+        public Builder setControlledProcessStateService(ProcessStateNotifier processStateNotifier) {
+            return setControlledProcessStateNotifier(processStateNotifier);
         }
 
         public Builder setConsoleMode(ConsoleMode consoleMode) {

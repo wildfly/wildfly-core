@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -125,7 +126,7 @@ class DeploymentScannerAdd implements OperationStepHandler {
                 }
                 PathAddress ownerAddress = context.getCurrentAddress();
                 bootTimeScanner = new FileSystemDeploymentService(ownerAddress, relativeTo, new File(pathName), relativePath, null, scheduledExecutorService,
-                        (ControlledProcessStateService) context.getServiceRegistry(false).getService(ControlledProcessStateService.SERVICE_NAME).getValue());
+                        (ProcessStateNotifier) context.getServiceRegistry(false).getService(ControlledProcessStateService.SERVICE_NAME).getValue());
                 bootTimeScanner.setAutoDeployExplodedContent(autoDeployExp);
                 bootTimeScanner.setAutoDeployZippedContent(autoDeployZip);
                 bootTimeScanner.setAutoDeployXMLContent(autoDeployXml);
