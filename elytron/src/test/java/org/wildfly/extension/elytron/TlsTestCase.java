@@ -282,18 +282,17 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
 
     @BeforeClass
-    public static void noJDK13Plus() {
-        Assume.assumeFalse("Avoiding JDK 13 due to https://issues.jboss.org/browse/WFCORE-4532", "13".equals(System.getProperty("java.specification.version")));
+    public static void noJDK14Plus() {
         Assume.assumeFalse("Avoiding JDK 14 due to https://issues.jboss.org/browse/WFCORE-4532", "14".equals(System.getProperty("java.specification.version")));
     }
 
-    private static boolean isJDK13Plus() {
-        return "13".equals(System.getProperty("java.specification.version")) || "14".equals(System.getProperty("java.specification.version"));
+    private static boolean isJDK14Plus() {
+        return "14".equals(System.getProperty("java.specification.version"));
     }
 
     @BeforeClass
     public static void initTests() throws Exception {
-        if (isJDK13Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
+        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         setUpKeyStores();
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
         csUtil = new CredentialStoreUtility("target/tlstest.keystore");
@@ -303,7 +302,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @AfterClass
     public static void cleanUpTests() {
-        if (isJDK13Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
+        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         deleteKeyStoreFiles();
         csUtil.cleanUp();
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
