@@ -4515,7 +4515,7 @@
         <xs:attribute name="maximum-cert-path" type="xs:int" use="optional" default="5">
             <xs:annotation>
                 <xs:documentation>
-                    The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                    The maximum number of non-self-issued intermediate certificates that may exist in a certification path for OCSP and CRL checks. If neither OCSP and CRL is configured, this attribute has no effect.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
