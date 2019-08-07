@@ -81,7 +81,11 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
         this(null, addOperation, unavailableCapabilities);
     }
 
-    protected ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation) {
+    /**
+     * Creates a {@code ServiceRemoveStepHandler}.
+     * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
+     */
+    public ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation) {
         this(null, addOperation);
     }
 
