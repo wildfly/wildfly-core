@@ -24,6 +24,7 @@ package org.jboss.as.patching.tests;
 
 import static org.jboss.as.patching.runner.TestUtils.randomString;
 import static org.jboss.as.patching.runner.TestUtils.tree;
+import static org.jboss.as.patching.tool.PatchTool.Factory.policyBuilder;
 
 import java.io.File;
 
@@ -37,6 +38,7 @@ import org.jboss.as.patching.metadata.MiscContentItem;
 import org.jboss.as.patching.metadata.ModificationType;
 import org.jboss.as.patching.metadata.ModuleItem;
 import org.jboss.as.patching.runner.ContentModificationUtils;
+import org.jboss.as.patching.tool.ContentVerificationPolicy;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -185,5 +187,40 @@ public class PatchUndoTestCase extends AbstractPatchingTest {
 
     }
 
+
+    @Test
+    public void testWrongModuleContentOverrideAll() throws Exception {
+        testWrongModuleContentOverride(policyBuilder().overrideAll().createPolicy());
+    }
+
+    @Test
+    public void testWrongModuleContentOverrideModules() throws Exception {
+        testWrongModuleContentOverride(policyBuilder().ignoreModuleChanges().createPolicy());
+    }
+
+    private void testWrongModuleContentOverride (final ContentVerificationPolicy contentVerificationPolicy) throws Exception {
+        final PatchingTestBuilder builder = createDefaultBuilder();
+
+        // Add some random content
+        ContentModificationUtils.addModule(builder.getRoot(), "base-patch-003", "test.module", randomString());
+        // Override the hash with a wrong one
+        final ModuleItem item = new ModuleItem("test.module", "main", WRONG_HASH);
+        final ContentModification wrongModification = new ContentModification(item, IoUtils.NO_CONTENT, ModificationType.ADD);
+
+        final PatchingTestStepBuilder step1 = builder.createStepBuilder();
+        step1.oneOffPatchIdentity(PRODUCT_VERSION)
+                .setPatchId("oo3")
+                .oneOffPatchElement("base-patch-003", "base", false)
+                .addContentModification(wrongModification)
+                .getParent()
+                .addFileWithRandomContent(null, "test", "content");
+
+            apply(step1, contentVerificationPolicy);
+            Assert.assertTrue(builder.hasFile("test", "content"));
+            final InstalledIdentity identity = loadInstallationManager().getDefaultIdentity();
+            final PatchableTarget base = identity.getLayer("base");
+            Assert.assertTrue(base.getDirectoryStructure().getModulePatchDirectory("base-patch-003").exists());
+            Assert.assertTrue(identity.getInstalledImage().getPatchHistoryDir("oo3").exists());
+    }
 
 }

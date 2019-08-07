@@ -754,6 +754,11 @@ class IdentityPatchContext implements PatchContentProvider {
         }
 
         @Override
+        public boolean isIgnored(ContentItem contentItem) {
+            return contentPolicy.ignoreContentValidation(contentItem);
+        }
+
+        @Override
         public void recordChange(final ContentModification change, final ContentModification rollbackAction) {
             if (state == State.ROLLBACK_ONLY) {
                 // don't record undo tasks
