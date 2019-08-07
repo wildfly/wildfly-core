@@ -48,6 +48,7 @@ import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
 import org.jboss.as.test.integration.management.extension.optypes.OpTypesExtension;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -55,6 +56,7 @@ import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -96,6 +98,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
+        Assume.assumeFalse("This test does not work with the IBM J9 JVM. There seems to be an issue with stdout" +
+                " logging.", TestSuiteEnvironment.isIbmJvm());
 
         CLIEmbedUtil.copyConfig(ROOT, "domain", "logging.properties", "logging.properties.backup", false);
 
@@ -117,16 +121,18 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void afterClass() throws IOException {
-        CLIEmbedUtil.copyConfig(ROOT, "domain", "logging.properties.backup", "logging.properties", false);
-        try {
-            StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
-        } finally {
-            if (uninstallStdio) {
-                StdioContext.uninstall();
+        if (!TestSuiteEnvironment.isIbmJvm()) {
+            CLIEmbedUtil.copyConfig(ROOT, "domain", "logging.properties.backup", "logging.properties", false);
+            try {
+                StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
+            } finally {
+                if (uninstallStdio) {
+                    StdioContext.uninstall();
+                }
             }
+            ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
+            ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
         }
-        ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
-        ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
     }
 
     @Before
