@@ -25,6 +25,7 @@ package org.jboss.as.remoting;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.domain.management.CallbackHandlerFactory;
@@ -32,13 +33,11 @@ import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -59,45 +58,39 @@ import javax.net.ssl.SSLContext;
 final class RemoteOutboundConnectionService extends AbstractOutboundConnectionService implements Service<RemoteOutboundConnectionService> {
 
     static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
-
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
-
     private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
 
-    private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
-    private final InjectedValue<SecurityRealm> securityRealmInjectedValue = new InjectedValue<SecurityRealm>();
-    private final InjectedValue<AuthenticationContext> authenticationContext = new InjectedValue<>();
+    private final Consumer<RemoteOutboundConnectionService> serviceConsumer;
+    private final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier;
+    private final Supplier<SecurityRealm> securityRealmSupplier;
+    private final Supplier<AuthenticationContext> authenticationContextSupplier;
 
     private final OptionMap connectionCreationOptions;
     private final String username;
     private final String protocol;
 
-    private URI destination;
-    private SSLContext sslContext;
+    private volatile URI destination;
+    private volatile SSLContext sslContext;
+    private volatile Supplier<AuthenticationConfiguration> authenticationConfiguration;
 
-    private Supplier<AuthenticationConfiguration> authenticationConfiguration;
-
-    RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
-        super();
+    RemoteOutboundConnectionService(
+            final Consumer<RemoteOutboundConnectionService> serviceConsumer,
+            final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier,
+            final Supplier<SecurityRealm> securityRealmSupplier,
+            final Supplier<AuthenticationContext> authenticationContextSupplier,
+            final OptionMap connectionCreationOptions, final String username, final String protocol) {
+        this.serviceConsumer = serviceConsumer;
+        this.outboundSocketBindingSupplier = outboundSocketBindingSupplier;
+        this.securityRealmSupplier = securityRealmSupplier;
+        this.authenticationContextSupplier = authenticationContextSupplier;
         this.connectionCreationOptions = connectionCreationOptions;
         this.username = username;
         this.protocol = protocol;
     }
 
-    Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {
-        return this.destinationOutboundSocketBindingInjectedValue;
-    }
-
-    Injector<SecurityRealm> getSecurityRealmInjector() {
-        return securityRealmInjectedValue;
-    }
-
-    Injector<AuthenticationContext> getAuthenticationContextInjector() {
-        return authenticationContext;
-    }
-
     public void start(final StartContext context) throws StartException {
-        final OutboundSocketBinding binding = destinationOutboundSocketBindingInjectedValue.getValue();
+        final OutboundSocketBinding binding = outboundSocketBindingSupplier.get();
         final String hostName = NetworkUtils.formatPossibleIpv6Address(binding.getUnresolvedDestinationAddress());
         final int port = binding.getDestinationPort();
         URI uri;
@@ -108,7 +101,7 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         } catch (URISyntaxException e) {
             throw new StartException(e);
         }
-        final AuthenticationContext injectedContext = this.authenticationContext.getOptionalValue();
+        final AuthenticationContext injectedContext = authenticationContextSupplier != null ? authenticationContextSupplier.get() : null;
         if (injectedContext != null) {
             AuthenticationConfiguration configuration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, injectedContext, -1, null, null);
             try {
@@ -126,7 +119,7 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
             URI finalUri = uri;
             authenticationConfiguration = () -> AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(finalUri, injectedContext);
         } else {
-            final SecurityRealm securityRealm = securityRealmInjectedValue.getOptionalValue();
+            final SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
             AuthenticationConfiguration configuration = AuthenticationConfiguration.empty();
             if (securityRealm != null) {
                 // legacy remote-outbound-connection configuration
@@ -148,14 +141,18 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
         }
         this.destination = uri;
         this.sslContext = sslContext;
+        this.serviceConsumer.accept(this);
     }
 
     public void stop(final StopContext context) {
+        serviceConsumer.accept(null);
         authenticationConfiguration = null;
+        destination = null;
+        sslContext = null;
     }
 
     public AuthenticationConfiguration getAuthenticationConfiguration() {
-        AuthenticationConfiguration authenticationConfiguration = this.authenticationConfiguration.get();
+        final AuthenticationConfiguration authenticationConfiguration = this.authenticationConfiguration.get();
         final OptionMap optionMap = this.connectionCreationOptions;
         if (optionMap != null) {
             return RemotingOptions.mergeOptionsIntoAuthenticationConfiguration(optionMap, authenticationConfiguration);

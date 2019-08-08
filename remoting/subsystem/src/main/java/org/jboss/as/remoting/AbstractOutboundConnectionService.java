@@ -27,9 +27,6 @@ import java.net.URI;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
@@ -41,12 +38,6 @@ public abstract class AbstractOutboundConnectionService {
     public static final ServiceName OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("outbound-connection");
 
     protected AbstractOutboundConnectionService() {
-    }
-
-    public void start(StartContext context) throws StartException {
-    }
-
-    public void stop(StopContext context) {
     }
 
     /**

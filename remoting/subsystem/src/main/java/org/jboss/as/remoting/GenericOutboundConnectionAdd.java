@@ -1,4 +1,4 @@
-/*
+    /*
  * JBoss, Home of Professional Open Source.
  * Copyright 2011, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
@@ -26,6 +26,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
@@ -80,13 +82,12 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
         // Get the destination URI
         final URI uri = getDestinationURI(context, operation);
         // create the service
-        final GenericOutboundConnectionService outboundRemotingConnectionService = new GenericOutboundConnectionService(uri);
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = GenericOutboundConnectionService.GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
-        builder.setInstance(outboundRemotingConnectionService);
-        builder.addAliases(aliasServiceName);
+        final Consumer<GenericOutboundConnectionService> serviceConsumer = builder.provides(serviceName, aliasServiceName);
+        builder.setInstance(new GenericOutboundConnectionService(serviceConsumer, uri));
         builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
         builder.install();
     }
@@ -99,4 +100,5 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
             throw RemotingLogger.ROOT_LOGGER.couldNotCreateURI(uri,e.toString());
         }
     }
+
 }

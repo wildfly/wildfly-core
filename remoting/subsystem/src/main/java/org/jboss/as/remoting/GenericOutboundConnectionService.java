@@ -26,8 +26,12 @@ import java.net.URI;
 
 import javax.net.ssl.SSLContext;
 
+import java.util.function.Consumer;
+
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
@@ -44,11 +48,23 @@ final class GenericOutboundConnectionService extends AbstractOutboundConnectionS
 
     static final ServiceName GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("generic-outbound-connection");
 
+    private final Consumer<GenericOutboundConnectionService> serviceConsumer;
     private volatile URI destination;
 
-    GenericOutboundConnectionService(final URI destination) {
+    GenericOutboundConnectionService(final Consumer<GenericOutboundConnectionService> serviceConsumer, final URI destination) {
         Assert.checkNotNullParam("destination", destination);
+        this.serviceConsumer = serviceConsumer;
         this.destination = destination;
+    }
+
+    @Override
+    public void start(final StartContext startContext) {
+        serviceConsumer.accept(this);
+    }
+
+    @Override
+    public void stop(final StopContext stopContext) {
+        serviceConsumer.accept(null);
     }
 
     @Override
@@ -71,4 +87,5 @@ final class GenericOutboundConnectionService extends AbstractOutboundConnectionS
     public SSLContext getSSLContext() {
         return null;
     }
+
 }

@@ -26,11 +26,14 @@ import java.net.URI;
 
 import javax.net.ssl.SSLContext;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.jboss.as.network.OutboundSocketBinding;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.value.InjectedValue;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
@@ -43,13 +46,22 @@ final class LocalOutboundConnectionService extends AbstractOutboundConnectionSer
 
     static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
 
-    private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
+    private final Consumer<LocalOutboundConnectionService> serviceConsumer;
+    private final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier;
 
-    LocalOutboundConnectionService() {
+    LocalOutboundConnectionService(final Consumer<LocalOutboundConnectionService> serviceConsumer, final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier) {
+        this.serviceConsumer = serviceConsumer;
+        this.outboundSocketBindingSupplier = outboundSocketBindingSupplier;
     }
 
-    Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {
-        return this.destinationOutboundSocketBindingInjectedValue;
+    @Override
+    public void start(final StartContext context) {
+        serviceConsumer.accept(this);
+    }
+
+    @Override
+    public void stop(final StopContext context) {
+        serviceConsumer.accept(null);
     }
 
     @Override
@@ -68,4 +80,5 @@ final class LocalOutboundConnectionService extends AbstractOutboundConnectionSer
     public SSLContext getSSLContext() {
         return null;
     }
+
 }
