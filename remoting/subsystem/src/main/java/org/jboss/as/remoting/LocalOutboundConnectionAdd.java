@@ -34,7 +34,6 @@ import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
-import org.xnio.OptionMap;
 
 /**
  * @author Jaikiran Pai
@@ -50,20 +49,15 @@ class LocalOutboundConnectionAdd extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        installRuntimeService(context, operation, fullModel);
+        installRuntimeService(context, operation);
     }
 
-    void installRuntimeService(final OperationContext context, final ModelNode operation,
-                                            final ModelNode fullModel) throws OperationFailedException {
+    void installRuntimeService(final OperationContext context, final ModelNode operation) throws OperationFailedException {
         final PathAddress address = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR));
         final String connectionName = address.getLastElement().getValue();
         final String outboundSocketBindingRef = LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.resolveModelAttribute(context, operation).asString();
         final ServiceName outboundSocketBindingDependency = context.getCapabilityServiceName(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, outboundSocketBindingRef, OutboundSocketBinding.class);
-        // fetch the connection creation options from the model
-        final OptionMap connectionCreationOptions = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
-        // create the service
-        final LocalOutboundConnectionService outboundConnectionService = new LocalOutboundConnectionService(connectionName, connectionCreationOptions);
+        final LocalOutboundConnectionService outboundConnectionService = new LocalOutboundConnectionService();
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = LocalOutboundConnectionService.LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);

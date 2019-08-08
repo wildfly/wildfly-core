@@ -38,7 +38,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
-import org.xnio.OptionMap;
 
 /**
  * @author Jaikiran Pai
@@ -75,17 +74,13 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
     }
 
     void installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel) throws OperationFailedException {
-
         final PathAddress pathAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
         final String connectionName = pathAddress.getLastElement().getValue();
-        final OptionMap connectionCreationOptions = ConnectorUtils.getOptions(context, fullModel.get(CommonAttributes.PROPERTY));
 
-
-        //final OptionMap connectionCreationOptions = getConnectionCreationOptions(outboundConnection);
         // Get the destination URI
         final URI uri = getDestinationURI(context, operation);
         // create the service
-        final GenericOutboundConnectionService outboundRemotingConnectionService = new GenericOutboundConnectionService(connectionName, uri, connectionCreationOptions);
+        final GenericOutboundConnectionService outboundRemotingConnectionService = new GenericOutboundConnectionService(uri);
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = GenericOutboundConnectionService.GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);

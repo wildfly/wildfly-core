@@ -54,10 +54,11 @@ import javax.net.ssl.SSLContext;
  * A {@link RemoteOutboundConnectionService} manages a remoting connection created out of a remote:// URI scheme.
  *
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class RemoteOutboundConnectionService extends AbstractOutboundConnectionService implements Service<RemoteOutboundConnectionService> {
+final class RemoteOutboundConnectionService extends AbstractOutboundConnectionService implements Service<RemoteOutboundConnectionService> {
 
-    public static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
+    static final ServiceName REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("remote-outbound-connection");
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
 
@@ -76,7 +77,7 @@ public class RemoteOutboundConnectionService extends AbstractOutboundConnectionS
 
     private Supplier<AuthenticationConfiguration> authenticationConfiguration;
 
-    public RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
+    RemoteOutboundConnectionService(final OptionMap connectionCreationOptions, final String username, final String protocol) {
         super();
         this.connectionCreationOptions = connectionCreationOptions;
         this.username = username;

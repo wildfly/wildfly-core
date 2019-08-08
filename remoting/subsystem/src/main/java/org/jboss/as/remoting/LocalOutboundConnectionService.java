@@ -32,21 +32,20 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.xnio.OptionMap;
 
 /**
  * A {@link LocalOutboundConnectionService} manages a local remoting connection (i.e. a connection created with local:// URI scheme).
  *
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class LocalOutboundConnectionService extends AbstractOutboundConnectionService implements Service<LocalOutboundConnectionService> {
+final class LocalOutboundConnectionService extends AbstractOutboundConnectionService implements Service<LocalOutboundConnectionService> {
 
-    public static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
+    static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
 
     private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
 
-    public LocalOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions) {
-        super();
+    LocalOutboundConnectionService() {
     }
 
     Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {

@@ -30,7 +30,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.xnio.OptionMap;
 
 /**
  * A {@link GenericOutboundConnectionService} manages a remote outbound connection which is configured via
@@ -39,17 +38,15 @@ import org.xnio.OptionMap;
  * {@link org.jboss.remoting3.spi.ConnectionProviderFactory})
  *
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class GenericOutboundConnectionService extends AbstractOutboundConnectionService implements Service<GenericOutboundConnectionService> {
+final class GenericOutboundConnectionService extends AbstractOutboundConnectionService implements Service<GenericOutboundConnectionService> {
 
-    public static final ServiceName GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("generic-outbound-connection");
+    static final ServiceName GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("generic-outbound-connection");
 
     private volatile URI destination;
 
-    public GenericOutboundConnectionService(final String connectionName, final URI destination, final OptionMap connectionCreationOptions) {
-
-        super();
-
+    GenericOutboundConnectionService(final URI destination) {
         Assert.checkNotNullParam("destination", destination);
         this.destination = destination;
     }

@@ -34,6 +34,7 @@ import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class AbstractOutboundConnectionService {
 
