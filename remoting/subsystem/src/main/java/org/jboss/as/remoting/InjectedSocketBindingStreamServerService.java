@@ -36,12 +36,13 @@ import org.xnio.OptionMap;
  * {@link AbstractStreamServerService} that uses an injected socket binding.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class InjectedSocketBindingStreamServerService extends AbstractStreamServerService {
+final class InjectedSocketBindingStreamServerService extends AbstractStreamServerService {
 
     private final InjectedValue<SocketBinding> socketBindingValue = new InjectedValue<SocketBinding>();
 
-    public InjectedSocketBindingStreamServerService(final OptionMap connectorPropertiesOptionMap) {
+    InjectedSocketBindingStreamServerService(final OptionMap connectorPropertiesOptionMap) {
         super(connectorPropertiesOptionMap);
     }
 

@@ -57,9 +57,9 @@ import org.xnio.channels.AcceptingChannel;
  * Contains the remoting stream server
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
- * @version $Revision: 1.1 $
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
+abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
 
     private final InjectedValue<SecurityRealm> securityRealm = new InjectedValue<>();
     private final InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();

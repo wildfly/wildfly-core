@@ -33,13 +33,14 @@ import org.xnio.OptionMap;
  * {@link AbstractStreamServerService} that uses an injected network interface binding service.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class InjectedNetworkBindingStreamServerService extends AbstractStreamServerService {
+final class InjectedNetworkBindingStreamServerService extends AbstractStreamServerService {
 
     private final InjectedValue<NetworkInterfaceBinding> interfaceBindingValue = new InjectedValue<NetworkInterfaceBinding>();
     private final int port;
 
-    public InjectedNetworkBindingStreamServerService(final OptionMap connectorPropertiesOptionMap, int port) {
+    InjectedNetworkBindingStreamServerService(final OptionMap connectorPropertiesOptionMap, int port) {
         super(connectorPropertiesOptionMap);
         this.port = port;
     }
