@@ -188,7 +188,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 }
 
                 final FileSystemDeploymentService scanner = new FileSystemDeploymentService(resourceAddress, relativeTo, new File(pathName),
-                        relativePath, factory, scheduledExecutorValue.getValue(), processStateNotifierValue.getValue());
+                        relativePath, factory, scheduledExecutorValue.getValue());
 
                 scanner.setScanInterval(unit.toMillis(interval));
                 scanner.setAutoDeployExplodedContent(autoDeployExploded);
@@ -201,6 +201,9 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 // The boot-time scanner should use our DeploymentOperations.Factory
                 this.scanner.setDeploymentOperationsFactory(factory);
             }
+            // Provide the scanner a ProcessStateNotifier so it can do cleanup work when boot completes.
+            // We do this for both a boot-time scanner or one we constructed ourselves above
+            this.scanner.setProcessStateNotifier(processStateNotifierValue.getValue());
             notificationRegistryValue.getValue().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
             if (enabled) {
                 scanner.startScanner();
