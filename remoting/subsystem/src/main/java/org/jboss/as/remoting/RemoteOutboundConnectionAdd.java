@@ -36,12 +36,12 @@ import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.xnio.OptionMap;
 
 /**
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
@@ -75,20 +75,20 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
-        final ServiceBuilder<RemoteOutboundConnectionService> svcBuilder = context.getServiceTarget().addService(serviceName, outboundConnectionService)
-                .addAliases(aliasServiceName)
-                .addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, outboundConnectionService.getEndpointInjector())
-                .addDependency(outboundSocketBindingDependency, OutboundSocketBinding.class, outboundConnectionService.getDestinationOutboundSocketBindingInjector());
+        final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
+        builder.setInstance(outboundConnectionService);
+        builder.addAliases(aliasServiceName);
+        builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
+        builder.addDependency(outboundSocketBindingDependency, OutboundSocketBinding.class, outboundConnectionService.getDestinationOutboundSocketBindingInjector());
 
         if (securityRealm != null) {
-            SecurityRealm.ServiceUtil.addDependency(svcBuilder, outboundConnectionService.getSecurityRealmInjector(), securityRealm);
+            SecurityRealm.ServiceUtil.addDependency(builder, outboundConnectionService.getSecurityRealmInjector(), securityRealm);
         }
         if (authenticationContext != null) {
-            svcBuilder.addDependency(
+            builder.addDependency(
                     context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContext, AuthenticationContext.class),
                     AuthenticationContext.class, outboundConnectionService.getAuthenticationContextInjector());
         }
-        svcBuilder.install();
-
+        builder.install();
     }
 }

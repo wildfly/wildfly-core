@@ -26,13 +26,10 @@ import java.net.URI;
 
 import javax.net.ssl.SSLContext;
 
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
-import org.jboss.remoting3.Endpoint;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
@@ -42,8 +39,6 @@ public abstract class AbstractOutboundConnectionService {
 
     public static final ServiceName OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("outbound-connection");
 
-    protected final InjectedValue<Endpoint> endpointInjectedValue = new InjectedValue<Endpoint>();
-
     protected AbstractOutboundConnectionService() {
     }
 
@@ -51,10 +46,6 @@ public abstract class AbstractOutboundConnectionService {
     }
 
     public void stop(StopContext context) {
-    }
-
-    Injector<Endpoint> getEndpointInjector() {
-        return this.endpointInjectedValue;
     }
 
     /**

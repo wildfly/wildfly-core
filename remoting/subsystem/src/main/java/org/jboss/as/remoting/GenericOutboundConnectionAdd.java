@@ -35,13 +35,14 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.remoting3.Endpoint;
 import org.wildfly.common.Assert;
 import org.xnio.OptionMap;
 
 /**
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
 
@@ -88,10 +89,11 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
         final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = GenericOutboundConnectionService.GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
-        context.getServiceTarget().addService(serviceName, outboundRemotingConnectionService)
-                .addAliases(aliasServiceName)
-                .addDependency(RemotingServices.SUBSYSTEM_ENDPOINT, Endpoint.class, outboundRemotingConnectionService.getEndpointInjector())
-                .install();
+        final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
+        builder.setInstance(outboundRemotingConnectionService);
+        builder.addAliases(aliasServiceName);
+        builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
+        builder.install();
     }
 
     URI getDestinationURI(final OperationContext context, final ModelNode outboundConnection) throws OperationFailedException {
