@@ -32,15 +32,15 @@ import java.util.concurrent.atomic.AtomicStampedReference;
  */
 public class ControlledProcessState {
 
-    public static enum State {
+    public enum State {
         /**
          * The process is starting and its runtime state is being made consistent with its persistent configuration.
          */
-        STARTING("starting"),
+        STARTING("starting", false),
         /**
          * The process is started, is running normally and has a runtime state consistent with its persistent configuration.
          */
-        RUNNING("running"),
+        RUNNING("running", true),
         /**
          * The process requires a stop and re-start of its root service (but not a full process restart) in order to
          * ensure stable operation and/or to bring its running state in line with its persistent configuration. A
@@ -49,21 +49,35 @@ public class ControlledProcessState {
          * handle external requests is similar to that of a full process restart. However, a reload can execute more
          * quickly than a full process restart.
          */
-        RELOAD_REQUIRED("reload-required"),
+        RELOAD_REQUIRED("reload-required", true),
         /**
          * The process must be terminated and replaced with a new process in order to ensure stable operation and/or to bring
          * the running state in line with the persistent configuration.
          */
-        RESTART_REQUIRED("restart-required"),
+        RESTART_REQUIRED("restart-required", true),
         /** The process is stopping. */
-        STOPPING("stopping"),
+        STOPPING("stopping", false),
         /** The process is stopped */
-        STOPPED("stopped");
+        STOPPED("stopped", false);
 
         private final String stringForm;
+        private final boolean running;
 
-        private State(final String stringForm) {
+        State(final String stringForm, final boolean running) {
             this.stringForm = stringForm;
+            this.running = running;
+        }
+
+        /**
+         * Gets whether this state represents a process that is fully 'running'; i.e. it is not still starting
+         * and has not begun or completed stopping. The {@link #RUNNING}, {@link #RELOAD_REQUIRED} and {@link #RESTART_REQUIRED}
+         * states are all 'running', just with different relationships between the currently running process
+         * configuration and its persistent configuration.
+         *
+         * @return {@code true} if the state indicates the process if fully running.
+         */
+        public boolean isRunning() {
+            return running;
         }
 
         @Override
