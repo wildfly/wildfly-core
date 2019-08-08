@@ -23,11 +23,20 @@ package org.jboss.as.remoting;
 
 import java.net.InetSocketAddress;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
-import org.jboss.msc.value.InjectedValue;
+import org.jboss.remoting3.Endpoint;
+import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
+import org.xnio.StreamConnection;
+import org.xnio.channels.AcceptingChannel;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * {@link AbstractStreamServerService} that uses an injected network interface binding service.
@@ -37,26 +46,32 @@ import org.xnio.OptionMap;
  */
 final class InjectedNetworkBindingStreamServerService extends AbstractStreamServerService {
 
-    private final InjectedValue<NetworkInterfaceBinding> interfaceBindingValue = new InjectedValue<NetworkInterfaceBinding>();
+    private final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier;
     private final int port;
 
-    InjectedNetworkBindingStreamServerService(final OptionMap connectorPropertiesOptionMap, int port) {
-        super(connectorPropertiesOptionMap);
+    InjectedNetworkBindingStreamServerService(
+            final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
+            final Supplier<Endpoint> endpointSupplier,
+            final Supplier<SecurityRealm> securityRealmSupplier,
+            final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
+            final Supplier<SSLContext> sslContextSupplier,
+            final Supplier<SocketBindingManager> socketBindingManagerSupplier,
+            final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
+            final OptionMap connectorPropertiesOptionMap, int port) {
+        super(streamServerConsumer, endpointSupplier, securityRealmSupplier, saslAuthenticationFactorySupplier,
+                sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap);
+        this.interfaceBindingSupplier = interfaceBindingSupplier;
         this.port = port;
-    }
-
-    public InjectedValue<NetworkInterfaceBinding> getInterfaceBindingInjector(){
-        return interfaceBindingValue;
     }
 
     @Override
     InetSocketAddress getSocketAddress() {
-        return new InetSocketAddress(interfaceBindingValue.getValue().getAddress(), port);
+        return new InetSocketAddress(interfaceBindingSupplier.get().getAddress(), port);
     }
 
     @Override
     ManagedBinding registerSocketBinding(SocketBindingManager socketBindingManager) {
-        InetSocketAddress address = new InetSocketAddress(interfaceBindingValue.getValue().getAddress(), port);
+        InetSocketAddress address = new InetSocketAddress(interfaceBindingSupplier.get().getAddress(), port);
         ManagedBinding binding = ManagedBinding.Factory.createSimpleManagedBinding("management-native", address, null);
         socketBindingManager.getUnnamedRegistry().registerBinding(binding);
         return binding;
@@ -66,4 +81,5 @@ final class InjectedNetworkBindingStreamServerService extends AbstractStreamServ
     void unregisterSocketBinding(ManagedBinding managedBinding, SocketBindingManager socketBindingManager) {
         socketBindingManager.getUnnamedRegistry().unregisterBinding(managedBinding);
     }
+
 }
