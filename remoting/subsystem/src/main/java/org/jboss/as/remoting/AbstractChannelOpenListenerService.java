@@ -26,18 +26,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRequestTracker;
-import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Endpoint;
@@ -46,14 +45,14 @@ import org.jboss.remoting3.Registration;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.OptionMap;
 
-
 /**
  * Abstract service responsible for listening for channel open requests.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author Emanuel Muckenhuber
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public abstract class AbstractChannelOpenListenerService implements Service<Void>, OpenListener {
+public abstract class AbstractChannelOpenListenerService implements Service, OpenListener {
 
     /** How long we wait for active operations to clear before allowing channel close to proceed */
     protected static final int CHANNEL_SHUTDOWN_TIMEOUT;
@@ -71,8 +70,8 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         CHANNEL_SHUTDOWN_TIMEOUT = timeout;
     }
 
-    private final InjectedValue<Endpoint> endpointValue = new InjectedValue<Endpoint>();
-    private final InjectedValue<ManagementChannelRegistryService> registry = new InjectedValue<ManagementChannelRegistryService>();
+    private final Supplier<Endpoint> endpointSupplier;
+    private final Supplier<ManagementChannelRegistryService> registrySupplier;
 
     protected final String channelName;
     private final OptionMap optionMap;
@@ -81,26 +80,13 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
     private volatile ManagementRequestTracker trackerService;
     private volatile boolean closed = true;
 
-    public AbstractChannelOpenListenerService(final String channelName, OptionMap optionMap) {
+    public AbstractChannelOpenListenerService(final Supplier<Endpoint> endpointSupplier,
+                                              final Supplier<ManagementChannelRegistryService> registrySupplier,
+                                              final String channelName, final OptionMap optionMap) {
+        this.endpointSupplier = endpointSupplier;
+        this.registrySupplier = registrySupplier;
         this.channelName = channelName;
         this.optionMap = optionMap;
-    }
-
-    public ServiceName getServiceName(ServiceName endpointName) {
-        return RemotingServices.channelServiceName(endpointName, channelName);
-    }
-
-    public InjectedValue<Endpoint> getEndpointInjector(){
-        return endpointValue;
-    }
-
-    public InjectedValue<ManagementChannelRegistryService> getRegistry() {
-        return registry;
-    }
-
-    @Override
-    public Void getValue() throws IllegalStateException, IllegalArgumentException {
-        return null;
     }
 
     @Override
@@ -108,8 +94,8 @@ public abstract class AbstractChannelOpenListenerService implements Service<Void
         try {
             closed = false;
             RemotingLogger.ROOT_LOGGER.debugf("Registering channel listener for %s", channelName);
-            final ManagementChannelRegistryService registry = this.registry.getValue();
-            final Registration registration = endpointValue.getValue().registerService(channelName, this, optionMap);
+            final ManagementChannelRegistryService registry = this.registrySupplier.get();
+            final Registration registration = endpointSupplier.get().registerService(channelName, this, optionMap);
             // Add to global registry
             registry.register(registration);
             trackerService = registry.getTrackerService();
