@@ -73,7 +73,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -88,7 +90,7 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
-import org.jboss.as.controller.ModelController.OperationTransactionControl;
+import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -102,6 +104,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.TransformingProxyController;
+import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
@@ -133,6 +136,8 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.PlaceholderResource;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.registry.ResourceProvider;
+import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
+import org.jboss.as.controller.remote.ModelControllerOperationHandlerFactory;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.transform.Transformers;
 import org.jboss.as.domain.controller.DomainController;
@@ -198,6 +203,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * Creates the service that acts as the {@link org.jboss.as.controller.ModelController} for a Host Controller process.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DomainModelControllerService extends AbstractControllerService implements DomainController, HostModelUtil.HostModelRegistrar, HostRegistrations {
 
@@ -791,7 +797,26 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     if (ok && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
                         InternalExecutor executor = new InternalExecutor();
                         ManagementRemotingServices.installManagementChannelServices(serviceTarget, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                                new MasterDomainControllerOperationHandlerService(this, executor, executor, environment.getDomainTempDir(), this, domainHostExcludeRegistry),
+                                new ModelControllerOperationHandlerFactory() {
+                                    @Override
+                                    public AbstractModelControllerOperationHandlerFactoryService newInstance(
+                                            final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer,
+                                            final Supplier<ModelController> modelControllerSupplier,
+                                            final Supplier<ExecutorService> executorSupplier,
+                                            final Supplier<ScheduledExecutorService> scheduledExecutorSupplier) {
+                                        return new MasterDomainControllerOperationHandlerService(
+                                                serviceConsumer,
+                                                modelControllerSupplier,
+                                                executorSupplier,
+                                                scheduledExecutorSupplier,
+                                                DomainModelControllerService.this,
+                                                executor,
+                                                executor,
+                                                environment.getDomainTempDir(),
+                                                DomainModelControllerService.this,
+                                                domainHostExcludeRegistry);
+                                    }
+                                },
                                 DomainModelControllerService.SERVICE_NAME, ManagementRemotingServices.DOMAIN_CHANNEL,
                                 HC_EXECUTOR_SERVICE_NAME, HC_SCHEDULED_EXECUTOR_SERVICE_NAME);
 

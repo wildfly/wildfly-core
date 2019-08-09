@@ -30,6 +30,7 @@ import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.ModelController;
@@ -40,6 +41,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
+import org.jboss.as.controller.remote.ModelControllerOperationHandlerFactory;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
 import org.jboss.as.remoting.RemotingServices;
@@ -147,21 +149,20 @@ public final class ManagementRemotingServices extends RemotingServices {
     public static void installManagementChannelServices(
             final ServiceTarget serviceTarget,
             final ServiceName endpointName,
-            final AbstractModelControllerOperationHandlerFactoryService operationHandlerService,
+            final ModelControllerOperationHandlerFactory operationHandlerServiceFactory,
             final ServiceName modelControllerName,
             final String channelName,
             final ServiceName executorServiceName,
             final ServiceName scheduledExecutorServiceName) {
-
         final OptionMap options = OptionMap.EMPTY;
         final ServiceName operationHandlerName = endpointName.append(channelName).append(ModelControllerClientOperationHandlerFactoryService.OPERATION_HANDLER_NAME_SUFFIX);
-
-        serviceTarget.addService(operationHandlerName, operationHandlerService)
-            .addDependency(modelControllerName, ModelController.class, operationHandlerService.getModelControllerInjector())
-            .addDependency(executorServiceName, ExecutorService.class, operationHandlerService.getExecutorInjector())
-            .addDependency(scheduledExecutorServiceName, ScheduledExecutorService.class, operationHandlerService.getScheduledExecutorInjector())
-            .setInitialMode(ACTIVE)
-            .install();
+        final ServiceBuilder<?> builder = serviceTarget.addService(operationHandlerName);
+        final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer = builder.provides(operationHandlerName);
+        final Supplier<ModelController> mcSupplier = builder.requires(modelControllerName);
+        final Supplier<ExecutorService> eSupplier = builder.requires(executorServiceName);
+        final Supplier<ScheduledExecutorService> seSupplier = builder.requires(scheduledExecutorServiceName);
+        builder.setInstance(operationHandlerServiceFactory.newInstance(serviceConsumer, mcSupplier, eSupplier, seSupplier));
+        builder.install();
 
         installManagementChannelOpenListenerService(serviceTarget, endpointName, channelName, operationHandlerName, options, false);
     }
