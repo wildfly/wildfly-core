@@ -24,10 +24,13 @@ package org.jboss.as.remoting;
 
 import org.jboss.as.network.SocketBinding;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
+
+import java.util.function.Consumer;
 
 /**
  * Service that publishes socket binding information for remoting connectors
@@ -39,9 +42,11 @@ public final class RemotingConnectorBindingInfoService implements Service<Remoti
 
     private static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("remotingConnectorInfoService");
 
+    private final Consumer<RemotingConnectorInfo> serviceConsumer;
     private final RemotingConnectorInfo binding;
 
-    private RemotingConnectorBindingInfoService(final RemotingConnectorInfo binding) {
+    private RemotingConnectorBindingInfoService(final Consumer<RemotingConnectorInfo> serviceConsumer, final RemotingConnectorInfo binding) {
+        this.serviceConsumer = serviceConsumer;
         this.binding = binding;
     }
 
@@ -50,15 +55,20 @@ public final class RemotingConnectorBindingInfoService implements Service<Remoti
     }
 
     public static void install(final ServiceTarget target, final String connectorName, final SocketBinding binding, final Protocol protocol) {
-        target.addService(serviceName(connectorName)).setInstance(new RemotingConnectorBindingInfoService(new RemotingConnectorInfo(binding, protocol))).install();
+        final ServiceBuilder<?> sb = target.addService(serviceName(connectorName));
+        final Consumer<RemotingConnectorInfo> serviceConsumer = sb.provides(serviceName(connectorName));
+        sb.setInstance(new RemotingConnectorBindingInfoService(serviceConsumer, new RemotingConnectorInfo(binding, protocol)));
+        sb.install();
     }
 
     @Override
     public void start(final StartContext startContext) {
+        serviceConsumer.accept(binding);
     }
 
     @Override
     public void stop(final StopContext stopContext) {
+        serviceConsumer.accept(null);
     }
 
     @Override
