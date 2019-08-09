@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -42,7 +42,7 @@ import org.xnio.XnioWorker;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class EndpointService implements Service<Endpoint> {
+public class EndpointService implements Service {
 
     protected final String endpointName;
     protected volatile Endpoint endpoint;
@@ -89,13 +89,6 @@ public class EndpointService implements Service<Endpoint> {
                 context.complete();
             });
         }
-    }
-
-    /** {@inheritDoc} */
-    public Endpoint getValue() throws IllegalStateException {
-        final Endpoint endpoint = this.endpoint;
-        if (endpoint == null) throw RemotingLogger.ROOT_LOGGER.endpointEmpty();
-        return endpoint;
     }
 
     public enum EndpointType {

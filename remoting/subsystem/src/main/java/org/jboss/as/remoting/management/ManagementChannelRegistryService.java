@@ -23,7 +23,7 @@
 package org.jboss.as.remoting.management;
 
 import org.jboss.as.remoting.RemotingServices;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  * @author Emanuel Muckenhuber
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public final class ManagementChannelRegistryService implements Service<ManagementChannelRegistryService> {
+public final class ManagementChannelRegistryService implements Service {
 
     public static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("management", "channel", "registry");
     private final ArrayList<Registration> registrations = new ArrayList<Registration>();
@@ -84,11 +84,6 @@ public final class ManagementChannelRegistryService implements Service<Managemen
 
     public void register(final Registration registration) {
         registrations.add(registration);
-    }
-
-    @Override
-    public ManagementChannelRegistryService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
     }
 
 }

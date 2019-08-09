@@ -35,7 +35,7 @@ import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -60,7 +60,7 @@ import org.xnio.channels.AcceptingChannel;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
+abstract class AbstractStreamServerService implements Service {
 
     private final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer;
     /* not private due to testing purposes */ final Supplier<Endpoint> endpointSupplier;
@@ -88,11 +88,6 @@ abstract class AbstractStreamServerService implements Service<AcceptingChannel<S
         this.sslContextSupplier = sslContextSupplier;
         this.socketBindingManagerSupplier = socketBindingManagerSupplier;
         this.connectorPropertiesOptionMap = connectorPropertiesOptionMap;
-    }
-
-    @Override
-    public AcceptingChannel<StreamConnection> getValue() throws IllegalStateException, IllegalArgumentException {
-        return streamServer;
     }
 
     @Override

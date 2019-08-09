@@ -23,7 +23,7 @@
 package org.jboss.as.remoting;
 
 import org.jboss.as.network.SocketBinding;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -38,7 +38,7 @@ import java.util.function.Consumer;
  * @author Stuart Douglas
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public final class RemotingConnectorBindingInfoService implements Service<RemotingConnectorBindingInfoService.RemotingConnectorInfo> {
+public final class RemotingConnectorBindingInfoService implements Service {
 
     private static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("remotingConnectorInfoService");
 
@@ -69,11 +69,6 @@ public final class RemotingConnectorBindingInfoService implements Service<Remoti
     @Override
     public void stop(final StopContext stopContext) {
         serviceConsumer.accept(null);
-    }
-
-    @Override
-    public RemotingConnectorInfo getValue() throws IllegalStateException, IllegalArgumentException {
-        return binding;
     }
 
     public static final class RemotingConnectorInfo {

@@ -36,7 +36,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.domain.management.security.SecurityRealmService;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -66,7 +66,7 @@ import org.xnio.StreamConnection;
  * @author Stuart Douglas
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeService> {
+public class RemotingHttpUpgradeService implements Service {
 
     public static final String JBOSS_REMOTING = "jboss-remoting";
 
@@ -234,8 +234,4 @@ public class RemotingHttpUpgradeService implements Service<RemotingHttpUpgradeSe
         upgradeRegistrySupplier.get().removeProtocol(JBOSS_REMOTING);
     }
 
-    @Override
-    public synchronized RemotingHttpUpgradeService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
 }
