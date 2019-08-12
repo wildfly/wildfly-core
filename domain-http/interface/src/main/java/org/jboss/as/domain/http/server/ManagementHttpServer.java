@@ -252,6 +252,8 @@ public class ManagementHttpServer {
         }
     }
 
+    private static final ByteBufferSlicePool bufferPool = new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096);
+
     private static ManagementHttpServer create(Builder builder) {
         SSLContext sslContext = null;
         SslClientAuthMode sslClientAuthMode = builder.sslClientAuthMode;
@@ -262,7 +264,7 @@ public class ManagementHttpServer {
             }
         }
 
-        HttpOpenListener openListener = new HttpOpenListener(new ByteBufferSlicePool(BufferAllocator.DIRECT_BYTE_BUFFER_ALLOCATOR, 4096, 10 * 4096));
+        HttpOpenListener openListener = new HttpOpenListener(bufferPool);
 
         int secureRedirectPort = builder.secureBindAddress != null ? builder.secureBindAddress.getPort() : -1;
         // WFLY-2870 -- redirect not supported if bindAddress and secureBindAddress are using different InetAddress
