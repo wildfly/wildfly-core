@@ -37,6 +37,7 @@ import org.xnio.Pool;
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
+ * @author Flavia Rainone
  */
 public class BufferPoolService implements Service<Pool<ByteBuffer>> {
     private final Consumer<Pool<ByteBuffer>> byteBufferConsumer;
@@ -62,6 +63,8 @@ public class BufferPoolService implements Service<Pool<ByteBuffer>> {
     @Override
     public void stop(final StopContext context) {
         byteBufferConsumer.accept(null);
+        ((ByteBufferSlicePool) bufferPool).clean();
+        bufferPool = null;
     }
 
     @Override
