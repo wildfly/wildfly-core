@@ -247,6 +247,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
      * WFCORE-3327. Use the management API to add the subsystem, with the endpoint configuration done via
      * the root /subsystem=remoting resource.
      */
+    @Ignore("WFCORE-4604")
     @Test
     public void testEndpointConfigurationViaSubsystemRoot() throws Exception {
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
