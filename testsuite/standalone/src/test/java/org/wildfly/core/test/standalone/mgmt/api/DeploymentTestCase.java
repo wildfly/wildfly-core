@@ -294,6 +294,53 @@ public class DeploymentTestCase {
         }
     }
 
+    @Test
+    public void testReplaceWithRuntimeName() throws Exception {
+        final JavaArchive archive1 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment1.jar", properties);
+        final JavaArchive archive2 = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment2.jar", properties2);
+        archive2.addAsManifestResource(DeploymentTestCase.class.getPackage(), "marker.txt", "marker.txt");
+
+        final ModelControllerClient client = managementClient.getControllerClient();
+        final ServerDeploymentManager manager = ServerDeploymentManager.Factory.create(client);
+        try (InputStream is1 = archive1.as(ZipExporter.class).exportAsInputStream();
+                InputStream is2 = archive2.as(ZipExporter.class).exportAsInputStream();) {
+            Future<?> future = manager.execute(manager.newDeploymentPlan()
+                    .add("test-deployment1.jar", "test-deployment1.jar", is1)
+                    .add("test-deployment2.jar", "test-deployment2.jar", is2)
+                    .build());
+            awaitDeploymentExecution(future);
+            checkDeploymentStatus(client, "test-deployment1.jar", "STOPPED");
+            checkDeploymentStatus(client, "test-deployment2.jar", "STOPPED");
+            future = manager.execute(manager.newDeploymentPlan().deploy("test-deployment1.jar").build());
+            awaitDeploymentExecution(future);
+            checkDeploymentStatus(client, "test-deployment1.jar", "OK");
+            checkDeploymentStatus(client, "test-deployment2.jar", "STOPPED");
+            ModelNode response = client.execute(Util.getReadAttributeOperation(pathAddress(pathElement("deployment", "test-deployment1.jar")), "runtime-name"));
+            Assert.assertEquals("success", response.get("outcome").asString());
+            Assert.assertEquals("test-deployment1.jar", response.get("result").asString());
+            ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties);
+            ModelNode op = Operations.createOperation("replace-deployment");
+            op.get("name").set("test-deployment2.jar");
+            op.get("to-replace").set("test-deployment1.jar");
+            op.get("runtime-name").set("test-deployment1.jar");
+            future = client.executeAsync(op);
+            awaitDeploymentExecution(future);
+            checkDeploymentStatus(client, "test-deployment1.jar", "STOPPED");
+            checkDeploymentStatus(client, "test-deployment2.jar", "OK");
+            response = client.execute(Util.getReadAttributeOperation(pathAddress(pathElement("deployment", "test-deployment2.jar")), "runtime-name"));
+            Assert.assertEquals("success", response.get("outcome").asString());
+            Assert.assertEquals("test-deployment1.jar", response.get("result").asString());
+            ServiceActivatorDeploymentUtil.validateProperties(managementClient.getControllerClient(), properties2);
+            future = manager.execute(manager.newDeploymentPlan()
+                    .undeploy("test-deployment1.jar")
+                    .remove("test-deployment1.jar")
+                    .undeploy("test-deployment2.jar")
+                    .remove("test-deployment2.jar")
+                    .build());
+            awaitDeploymentExecution(future);
+        }
+    }
+
     private void checkDeploymentStatus(ModelControllerClient client, String deploymentName, String status) throws IOException {
         ModelNode response = client.execute(Util.getReadAttributeOperation(pathAddress(pathElement("deployment", deploymentName)), "status"));
         Assert.assertEquals("success", response.get("outcome").asString());
