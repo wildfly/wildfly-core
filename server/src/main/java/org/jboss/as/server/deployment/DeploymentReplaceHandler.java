@@ -81,7 +81,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         final PathElement deployPath = PathElement.pathElement(DEPLOYMENT, name);
         final PathElement replacePath = PathElement.pathElement(DEPLOYMENT, toReplace);
 
-        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         if (! root.hasChild(replacePath)) {
             throw ServerLogger.ROOT_LOGGER.noSuchDeployment(toReplace);
         }
