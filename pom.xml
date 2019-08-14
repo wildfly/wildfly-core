@@ -141,7 +141,7 @@
             For example: <version.org.jboss.hal.release-stream>
          -->
         <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
-        <version.com.fasterxml.jackson.core.jackson-databind>2.9.9</version.com.fasterxml.jackson.core.jackson-databind>
+        <version.com.fasterxml.jackson.core.jackson-databind>2.9.9.3</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.6</version.com.googlecode.javaewah>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.com.jcraft.jsch>0.1.54</version.com.jcraft.jsch>
