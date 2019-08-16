@@ -52,6 +52,8 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 public class TestModule {
 
     private static final Logger log  = Logger.getLogger(TestModule.class);
+    private static final String ILLEGAL_BUILD_DIR = "build" + File.separator + "target" + File.separator;
+    private static final String ILLEGAL_DIST_DIR = "dist" + File.separator + "target" + File.separator;
 
     private final String moduleName;
     private final File moduleXml;
@@ -80,7 +82,7 @@ public class TestModule {
      * <p>Creates a new module with the given name and module dependencies. The module.xml will be generated</p>
      *
      * @param moduleName The name of the module.
-     * @param moduleXml The module definition file.
+     * @param dependencies Names of modules to add as dependencies of the module.
      */
     public TestModule(String moduleName, String...dependencies) {
         this.moduleName = moduleName;
@@ -275,9 +277,23 @@ public class TestModule {
                 throw new IllegalStateException("Neither -Dmodule.path nor -Djboss.home were set");
             }
 
+            if (isImmutableModulePath(jbossHome)) {
+                throw new IllegalStateException(String.format("Writing test modules in jboss.home directory %s is not allowed", jbossHome));
+            }
+
             modulePath = jbossHome + File.separatorChar + "modules";
         } else {
-            modulePath = modulePath.split(File.pathSeparator)[0];
+            String pathElement = null;
+            for (String candidate : modulePath.split(File.pathSeparator)) {
+                if (!isImmutableModulePath(candidate)) {
+                    pathElement = candidate;
+                    break;
+                }
+            }
+            if (pathElement == null) {
+                throw new IllegalStateException(String.format("Writing test modules in module.path directories %s is not allowed", modulePath));
+            }
+            modulePath = pathElement;
         }
 
         File moduleDir = new File(modulePath);
@@ -291,6 +307,10 @@ public class TestModule {
         }
 
         return moduleDir;
+    }
+
+    private static boolean isImmutableModulePath(String path) {
+        return path.contains(ILLEGAL_BUILD_DIR) || path.contains(ILLEGAL_DIST_DIR);
     }
 
     private static void copyFile(File target, InputStream src) throws IOException {
