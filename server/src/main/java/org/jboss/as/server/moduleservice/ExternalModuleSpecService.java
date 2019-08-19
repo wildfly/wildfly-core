@@ -23,6 +23,7 @@ package org.jboss.as.server.moduleservice;
 
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.modules.DependencySpec;
+import org.jboss.modules.ModuleDependencySpecBuilder;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
@@ -35,7 +36,9 @@ import org.jboss.vfs.VFSUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.jar.JarFile;
 
 /**
@@ -45,6 +48,48 @@ import java.util.jar.JarFile;
  *
  */
 public class ExternalModuleSpecService implements Service<ModuleDefinition> {
+
+    private static final List<String> EE_API_MODULES;
+
+    static {
+        // CRITICAL! Update this if any new EE API is added
+        EE_API_MODULES = Arrays.asList(
+                "javax.activation.api",
+                "javax.annotation.api",
+                "javax.batch.api",
+                "javax.ejb.api",
+                "javax.enterprise.api",
+                "javax.enterprise.concurrent.api",
+                "javax.inject.api",
+                "javax.interceptor.api",
+                "javax.json.api",
+                "javax.jms.api",
+                "javax.jws.api",
+                "javax.mail.api",
+                "javax.management.j2ee.api",
+                "javax.persistence.api",
+                "javax.resource.api",
+                "javax.rmi.api",
+                "javax.security.auth.message.api",
+                "javax.security.jacc.api",
+                "javax.servlet.api",
+                "javax.servlet.jsp.api",
+                "javax.transaction.api",
+                "javax.validation.api",
+                "javax.ws.rs.api",
+                "javax.websocket.api",
+                "javax.xml.bind.api",
+                "javax.xml.soap.api",
+                "javax.xml.ws.api",
+                "org.glassfish.jakarta.el",
+                //TODO WFLY-5966 validate the need for these and remove if not needed.
+                // Prior to WFLY-5922 they were exported by javax.ejb.api
+                "javax.xml.rpc.api",
+                "org.omg.api",
+                // This one always goes last.
+                "javax.api"
+        );
+    }
 
     private final ModuleIdentifier moduleIdentifier;
 
@@ -69,8 +114,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         addResourceRoot(specBuilder, jarFile);
         //TODO: We need some way of configuring module dependencies for external archives
-        ModuleIdentifier javaee = ModuleIdentifier.create("javaee.api");
-        specBuilder.addDependency(DependencySpec.createModuleDependencySpec(javaee));
+        addEEDependencies(specBuilder);
         specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
         // TODO: external resource need some kind of dependency mechanism
         ModuleSpec moduleSpec = specBuilder.create();
@@ -96,6 +140,19 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     private static void addResourceRoot(final ModuleSpec.Builder specBuilder, final JarFile file) {
         specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(
                     file.getName(), file)));
+    }
+
+    private static void addEEDependencies(ModuleSpec.Builder specBuilder) {
+        /*
+            Legacy code that was replaced by the full list of EE API modules
+            DependencySpec javaee = new ModuleDependencySpecBuilder().setName("javaee.api").setOptional(true).build();
+            specBuilder.addDependency(javaee);
+         */
+
+        for (String api : EE_API_MODULES) {
+            DependencySpec dependencySpec = new ModuleDependencySpecBuilder().setName(api).setOptional(true).build();
+            specBuilder.addDependency(dependencySpec);
+        }
     }
 
 }
