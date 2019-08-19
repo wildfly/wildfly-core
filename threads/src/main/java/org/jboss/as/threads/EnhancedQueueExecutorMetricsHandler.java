@@ -35,18 +35,14 @@ import org.jboss.msc.service.ServiceName;
 /**
  * Handles metrics for an {@code org.jboss.threads.EnhancedQueueExecutor}.
  */
-public class EnhancedQueueExecutorMetricsHandler extends ThreadPoolMetricsHandler {
+class EnhancedQueueExecutorMetricsHandler extends ThreadPoolMetricsHandler {
 
     private static final List<AttributeDefinition> METRICS = Arrays.asList(PoolAttributeDefinitions.ACTIVE_COUNT,
             PoolAttributeDefinitions.COMPLETED_TASK_COUNT, PoolAttributeDefinitions.CURRENT_THREAD_COUNT,
             PoolAttributeDefinitions.LARGEST_THREAD_COUNT, PoolAttributeDefinitions.REJECTED_COUNT,
             PoolAttributeDefinitions.TASK_COUNT, PoolAttributeDefinitions.QUEUE_SIZE);
 
-    public EnhancedQueueExecutorMetricsHandler(final ServiceName serviceNameBase) {
-        this(null, serviceNameBase);
-    }
-
-    public EnhancedQueueExecutorMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
+    EnhancedQueueExecutorMetricsHandler(final RuntimeCapability capability, final ServiceName serviceNameBase) {
         super(METRICS, capability, serviceNameBase);
     }
 

@@ -34,9 +34,8 @@ import org.jboss.threads.EnhancedQueueExecutor;
 
 /**
  * Service responsible for creating, starting and stopping an {@code org.jboss.threads.EnhancedQueueExecutor}.
- *
  */
-public class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueueExecutor> {
+class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueueExecutor> {
     private final InjectedValue<ThreadFactory> threadFactoryValue = new InjectedValue<ThreadFactory>();
 
     private ManagedEnhancedQueueExecutor executor;
@@ -46,11 +45,11 @@ public class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueu
     private TimeSpec keepAlive;
     private boolean allowCoreThreadTimeout;
 
-    public EnhancedQueueExecutorService(boolean allowCoreThreadTimeout, int maxThreads, int coreThreads, TimeSpec keepAlive) {
+    EnhancedQueueExecutorService(boolean allowCoreThreadTimeout, int maxThreads, int coreThreads, TimeSpec keepAlive) {
         this.maxThreads = maxThreads;
         this.coreThreads = coreThreads;
         this.keepAlive = keepAlive;
-        this.allowCoreThreadTimeout= allowCoreThreadTimeout;
+        this.allowCoreThreadTimeout = allowCoreThreadTimeout;
     }
 
     public synchronized void start(final StartContext context) {
@@ -86,11 +85,11 @@ public class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueu
         return value;
     }
 
-    public Injector<ThreadFactory> getThreadFactoryInjector() {
+    Injector<ThreadFactory> getThreadFactoryInjector() {
         return threadFactoryValue;
     }
 
-    public synchronized void setMaxThreads(final int maxThreads) {
+    synchronized void setMaxThreads(final int maxThreads) {
         final ManagedEnhancedQueueExecutor executor = this.executor;
         if (executor != null) {
             executor.setMaxThreads(maxThreads);
@@ -98,7 +97,7 @@ public class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueu
         this.maxThreads = maxThreads;
     }
 
-    public synchronized void setCoreThreads(final int coreThreads) {
+    synchronized void setCoreThreads(final int coreThreads) {
         final ManagedEnhancedQueueExecutor executor = this.executor;
         if (executor != null) {
             executor.setCoreThreads(coreThreads);
@@ -106,50 +105,50 @@ public class EnhancedQueueExecutorService implements Service<ManagedEnhancedQueu
         this.coreThreads = coreThreads;
     }
 
-    public synchronized void setKeepAlive(final TimeSpec keepAlive) {
+    synchronized void setKeepAlive(final TimeSpec keepAlive) {
         this.keepAlive = keepAlive;
         final ManagedEnhancedQueueExecutor executor = this.executor;
-        if(executor != null) {
+        if (executor != null) {
             executor.setKeepAlive(keepAlive);
         }
     }
 
-    public int getActiveCount() {
+    int getActiveCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getActiveCount();
     }
 
-    public long getCompletedTaskCount() {
+    long getCompletedTaskCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getCompletedTaskCount();
     }
 
-    public int getCurrentThreadCount() {
+    int getCurrentThreadCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getCurrentThreadCount();
     }
 
-    public int getLargestPoolSize() {
+    int getLargestPoolSize() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getLargestPoolSize();
     }
 
-    public int getLargestThreadCount() {
+    int getLargestThreadCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getLargestThreadCount();
     }
 
-    public int getRejectedCount() {
+    int getRejectedCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getRejectedCount();
     }
 
-    public long getTaskCount() {
+    long getTaskCount() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getTaskCount();
     }
 
-    public int getQueueSize() {
+    int getQueueSize() {
         final ManagedEnhancedQueueExecutor executor = getValue();
         return executor.getQueueSize();
     }

@@ -22,28 +22,6 @@
 
 package org.jboss.as.threads;
 
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-
-import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.parsing.ParseUtils;
-import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
-import org.jboss.staxmapper.XMLElementReader;
-import org.jboss.staxmapper.XMLElementWriter;
-import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
-import org.wildfly.common.cpu.ProcessorInfo;
-
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -65,6 +43,28 @@ import static org.jboss.as.threads.CommonAttributes.THREAD_FACTORY;
 import static org.jboss.as.threads.CommonAttributes.TIME;
 import static org.jboss.as.threads.CommonAttributes.UNBOUNDED_QUEUE_THREAD_POOL;
 import static org.jboss.as.threads.CommonAttributes.UNIT;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
+import org.jboss.staxmapper.XMLElementReader;
+import org.jboss.staxmapper.XMLElementWriter;
+import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
+import org.wildfly.common.cpu.ProcessorInfo;
 
 /**
  * Parser for the threads subsystem or for other subsystems that use pieces of the basic threads subsystem

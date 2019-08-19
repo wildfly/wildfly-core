@@ -29,13 +29,12 @@ import org.jboss.dmr.ModelNode;
 
 /**
  * Removes an {@code org.jboss.threads.EnhancedQueueExecutor}.
- *
  */
-public class EnhancedQueueExecutorRemove extends AbstractRemoveStepHandler {
+class EnhancedQueueExecutorRemove extends AbstractRemoveStepHandler {
 
     private final EnhancedQueueExecutorAdd addHandler;
 
-    public EnhancedQueueExecutorRemove(EnhancedQueueExecutorAdd addHandler) {
+    EnhancedQueueExecutorRemove(EnhancedQueueExecutorAdd addHandler) {
         this.addHandler = addHandler;
     }
 
@@ -43,7 +42,7 @@ public class EnhancedQueueExecutorRemove extends AbstractRemoveStepHandler {
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final EnhancedQueueThreadPoolParameters params =
                 ThreadPoolManagementUtils.parseEnhancedQueueThreadPoolParameters(context, operation, model);
-        ThreadPoolManagementUtils.removeThreadPoolService(params.getName(),  addHandler.getCapability(), addHandler.getServiceNameBase(),
+        ThreadPoolManagementUtils.removeThreadPoolService(params.getName(), addHandler.getCapability(), addHandler.getServiceNameBase(),
                 params.getThreadFactory(), addHandler.getThreadFactoryResolver(),
                 context);
     }

@@ -21,8 +21,6 @@
  */
 package org.jboss.as.threads;
 
-
-
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.OperationContext;
@@ -32,22 +30,15 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
-
 /**
  * Handles attribute writes for an {@code org.jboss.threads.EnhancedQueueExecutor}.
- *
  */
-public class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
+class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttributeOperationHandler {
 
     private final ServiceName serviceNameBase;
     private final RuntimeCapability capability;
 
-    @Deprecated
-    public EnhancedQueueExecutorWriteAttributeHandler(ServiceName serviceNameBase) {
-        this(null, serviceNameBase);
-    }
-
-    public EnhancedQueueExecutorWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
+    EnhancedQueueExecutorWriteAttributeHandler(final RuntimeCapability capability, ServiceName serviceNameBase) {
         super(EnhancedQueueExecutorAdd.ATTRIBUTES, EnhancedQueueExecutorAdd.RW_ATTRIBUTES);
         this.serviceNameBase = serviceNameBase;
         this.capability = capability;
@@ -57,15 +48,15 @@ public class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttr
     protected void applyOperation(final OperationContext context, ModelNode model, String attributeName,
                                   ServiceController<?> service, boolean forRollback) throws OperationFailedException {
 
-        final EnhancedQueueExecutorService pool =  (EnhancedQueueExecutorService) service.getService();
+        final EnhancedQueueExecutorService pool = (EnhancedQueueExecutorService) service.getService();
 
         if (PoolAttributeDefinitions.KEEPALIVE_TIME.getName().equals(attributeName)) {
             TimeUnit defaultUnit = pool.getKeepAliveUnit();
             final TimeSpec spec = getTimeSpec(context, model, defaultUnit);
             pool.setKeepAlive(spec);
-        } else if(PoolAttributeDefinitions.MAX_THREADS.getName().equals(attributeName)) {
+        } else if (PoolAttributeDefinitions.MAX_THREADS.getName().equals(attributeName)) {
             pool.setMaxThreads(PoolAttributeDefinitions.MAX_THREADS.resolveModelAttribute(context, model).asInt());
-        }else if(PoolAttributeDefinitions.CORE_THREADS.getName().equals(attributeName)) {
+        } else if (PoolAttributeDefinitions.CORE_THREADS.getName().equals(attributeName)) {
             pool.setCoreThreads(PoolAttributeDefinitions.CORE_THREADS.resolveModelAttribute(context, model).asInt());
         } else if (!forRollback) {
             // Programming bug. Throw a RuntimeException, not OFE, as this is not a client error
@@ -78,10 +69,10 @@ public class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttr
         final String name = context.getCurrentAddressValue();
         ServiceName serviceName = null;
         ServiceController<?> controller = null;
-        if(capability != null) {
+        if (capability != null) {
             serviceName = capability.getCapabilityServiceName(context.getCurrentAddress());
             controller = context.getServiceRegistry(true).getService(serviceName);
-            if(controller != null) {
+            if (controller != null) {
                 return controller;
             }
         }
@@ -89,7 +80,7 @@ public class EnhancedQueueExecutorWriteAttributeHandler extends ThreadsWriteAttr
             serviceName = serviceNameBase.append(name);
             controller = context.getServiceRegistry(true).getService(serviceName);
         }
-        if(controller == null) {
+        if (controller == null) {
             throw ThreadsLogger.ROOT_LOGGER.enhancedQueueExecutorServiceNotFound(serviceName);
         }
         return controller;

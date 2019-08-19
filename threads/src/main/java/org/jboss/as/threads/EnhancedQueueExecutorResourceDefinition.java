@@ -22,8 +22,11 @@
 
 package org.jboss.as.threads;
 
+import static org.jboss.as.threads.CommonAttributes.ENHANCED_QUEUE_THREAD_POOL;
+
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathElement;
@@ -34,19 +37,13 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.msc.service.ServiceName;
 
-import static org.jboss.as.threads.CommonAttributes.ENHANCED_QUEUE_THREAD_POOL;
-
 /**
  * {@link org.jboss.as.controller.ResourceDefinition} for an {@code org.jboss.threads.EnhancedQueueExecutor} resource.
- *
  */
-public class EnhancedQueueExecutorResourceDefinition extends PersistentResourceDefinition {
+public final class EnhancedQueueExecutorResourceDefinition extends PersistentResourceDefinition {
     private final EnhancedQueueExecutorWriteAttributeHandler writeAttributeHandler;
     private final EnhancedQueueExecutorMetricsHandler metricsHandler;
-
     private final boolean registerRuntimeOnly;
-    public static final RuntimeCapability<Void> CAPABILITY =
-            ThreadsServices.createCapability(ENHANCED_QUEUE_THREAD_POOL, ManagedEnhancedQueueExecutor.class);
 
     public static EnhancedQueueExecutorResourceDefinition create(boolean registerRuntimeOnly) {
         return create(ENHANCED_QUEUE_THREAD_POOL, ThreadsServices.getThreadFactoryResolver(ENHANCED_QUEUE_THREAD_POOL),
@@ -55,12 +52,9 @@ public class EnhancedQueueExecutorResourceDefinition extends PersistentResourceD
 
     public static EnhancedQueueExecutorResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,
                                                                  ServiceName serviceNameBase, boolean registerRuntimeOnly) {
-        return create(PathElement.pathElement(type), threadFactoryResolver, serviceNameBase, registerRuntimeOnly);
-    }
-
-    public static EnhancedQueueExecutorResourceDefinition create(PathElement path, ThreadFactoryResolver threadFactoryResolver,
-                                                                 ServiceName serviceNameBase, boolean registerRuntimeOnly) {
-        return create(path, threadFactoryResolver, serviceNameBase, registerRuntimeOnly, CAPABILITY, false);
+        return create(type, threadFactoryResolver, serviceNameBase, registerRuntimeOnly,
+                ThreadsServices.createCapability(type, ExecutorService.class),
+                false);
     }
 
     public static EnhancedQueueExecutorResourceDefinition create(String type, ThreadFactoryResolver threadFactoryResolver,

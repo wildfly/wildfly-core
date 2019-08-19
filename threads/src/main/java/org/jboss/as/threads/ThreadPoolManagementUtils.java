@@ -21,6 +21,11 @@
 */
 package org.jboss.as.threads;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.threads.CommonAttributes.KEEPALIVE_TIME;
+import static org.jboss.as.threads.CommonAttributes.TIME;
+import static org.jboss.as.threads.CommonAttributes.UNIT;
+
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -36,11 +41,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.threads.CommonAttributes.KEEPALIVE_TIME;
-import static org.jboss.as.threads.CommonAttributes.TIME;
-import static org.jboss.as.threads.CommonAttributes.UNIT;
 
 /**
  * Utilities related to management of thread pools.

@@ -33,26 +33,25 @@ import org.jboss.msc.service.ServiceName;
 
 /**
  * Adds an {@code org.jboss.threads.EnhancedQueueExecutor}.
- *
  */
-public class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
+class EnhancedQueueExecutorAdd extends AbstractAddStepHandler {
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PoolAttributeDefinitions.KEEPALIVE_TIME,
-        PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.CORE_THREADS, PoolAttributeDefinitions.THREAD_FACTORY};
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PoolAttributeDefinitions.KEEPALIVE_TIME,
+            PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.CORE_THREADS, PoolAttributeDefinitions.THREAD_FACTORY};
 
-    static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[] {PoolAttributeDefinitions.KEEPALIVE_TIME,
-        PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.CORE_THREADS};
+    static final AttributeDefinition[] RW_ATTRIBUTES = new AttributeDefinition[]{PoolAttributeDefinitions.KEEPALIVE_TIME,
+            PoolAttributeDefinitions.MAX_THREADS, PoolAttributeDefinitions.CORE_THREADS};
 
     private final ThreadFactoryResolver threadFactoryResolver;
     private final ServiceName serviceNameBase;
     private final RuntimeCapability<Void> capability;
     private final boolean allowCoreThreadTimeout;
 
-    public EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
+    EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase) {
         this(threadFactoryResolver, serviceNameBase, null, false);
     }
 
-    public EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability, boolean allowCoreThreadTimeout) {
+    EnhancedQueueExecutorAdd(ThreadFactoryResolver threadFactoryResolver, ServiceName serviceNameBase, RuntimeCapability<Void> capability, boolean allowCoreThreadTimeout) {
         super(ATTRIBUTES);
         this.threadFactoryResolver = threadFactoryResolver;
         this.serviceNameBase = serviceNameBase;

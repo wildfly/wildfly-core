@@ -42,7 +42,7 @@ class ManagedEnhancedQueueExecutor extends ManagedExecutorService {
         shutdownListenable.shutdown();
     }
 
-    public int getCoreThreads() {
+    int getCoreThreads() {
         return executor.getCorePoolSize();
     }
 
@@ -51,7 +51,7 @@ class ManagedEnhancedQueueExecutor extends ManagedExecutorService {
         executor.setCorePoolSize(coreThreads);
     }
 
-    public boolean isAllowCoreTimeout() {
+    boolean isAllowCoreTimeout() {
         return executor.allowsCoreThreadTimeOut();
     }
 
@@ -59,7 +59,7 @@ class ManagedEnhancedQueueExecutor extends ManagedExecutorService {
         executor.allowCoreThreadTimeOut(allowCoreTimeout);
     }
 
-    public int getMaxThreads() {
+    int getMaxThreads() {
         return executor.getMaximumPoolSize();
     }
 
@@ -67,7 +67,7 @@ class ManagedEnhancedQueueExecutor extends ManagedExecutorService {
         executor.setMaximumPoolSize(maxThreads);
     }
 
-    public long getKeepAlive() {
+    long getKeepAlive() {
         return executor.getKeepAliveTime(TimeUnit.MILLISECONDS);
     }
 
@@ -75,35 +75,35 @@ class ManagedEnhancedQueueExecutor extends ManagedExecutorService {
         executor.setKeepAliveTime(keepAlive.getDuration(), keepAlive.getUnit());
     }
 
-    public int getRejectedCount() {
+    int getRejectedCount() {
         return (int) executor.getRejectedTaskCount();
     }
 
-    public long getTaskCount() {
+    long getTaskCount() {
         return executor.getSubmittedTaskCount();
     }
 
-    public int getLargestThreadCount() {
+    int getLargestThreadCount() {
         return executor.getLargestPoolSize();
     }
 
-    public int getLargestPoolSize() {
+    int getLargestPoolSize() {
         return executor.getLargestPoolSize();
     }
 
-    public int getCurrentThreadCount() {
+    int getCurrentThreadCount() {
         return executor.getPoolSize();
     }
 
-    public long getCompletedTaskCount() {
+    long getCompletedTaskCount() {
         return executor.getCompletedTaskCount();
     }
 
-    public int getActiveCount() {
+    int getActiveCount() {
         return executor.getActiveCount();
     }
 
-    public int getQueueSize() {
+    int getQueueSize() {
         return executor.getQueueSize();
     }
 
