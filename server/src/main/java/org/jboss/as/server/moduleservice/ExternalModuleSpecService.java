@@ -23,6 +23,7 @@ package org.jboss.as.server.moduleservice;
 
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.modules.DependencySpec;
+import org.jboss.modules.ModuleDependencySpecBuilder;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.ResourceLoaderSpec;
@@ -69,8 +70,8 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
         final ModuleSpec.Builder specBuilder = ModuleSpec.build(moduleIdentifier);
         addResourceRoot(specBuilder, jarFile);
         //TODO: We need some way of configuring module dependencies for external archives
-        ModuleIdentifier javaee = ModuleIdentifier.create("javaee.api");
-        specBuilder.addDependency(DependencySpec.createModuleDependencySpec(javaee));
+        DependencySpec javaee = new ModuleDependencySpecBuilder().setName("javaee.api").setOptional(true).build();
+        specBuilder.addDependency(javaee);
         specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
         // TODO: external resource need some kind of dependency mechanism
         ModuleSpec moduleSpec = specBuilder.create();
