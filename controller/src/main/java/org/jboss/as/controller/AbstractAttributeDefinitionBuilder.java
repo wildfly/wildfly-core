@@ -190,7 +190,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         List<AccessConstraintDefinition> acl = basis.getAccessConstraints();
         this.accessConstraints = acl.toArray(new AccessConstraintDefinition[acl.size()]);
         this.parser = basis.getParser();
-        Set<AttributeAccess.Flag> basisFlags = basis.getImmutableFlags();
+        Set<AttributeAccess.Flag> basisFlags = basis.getFlags();
         this.flags = basisFlags.toArray(new AttributeAccess.Flag[basisFlags.size()]);
         if (basis.getAllowedValues().size() > 0) {
             List<ModelNode> basisAllowedValues = basis.getAllowedValues();
