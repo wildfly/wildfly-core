@@ -29,6 +29,7 @@ import static org.wildfly.extension.elytron.Capabilities.SASL_AUTHENTICATION_FAC
 import static org.wildfly.extension.elytron.Capabilities.SASL_SERVER_FACTORY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_FACTORY_CREDENTIAL_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 
 import org.wildfly.security.http.HttpConstants;
@@ -46,6 +47,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.security.sasl.SaslServerFactory;
 
@@ -57,7 +59,10 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ProcessType;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -371,10 +376,21 @@ class AuthenticationFactoryDefinitions {
         AttributeDefinition mechanismConfigurationAttribute = getMechanismConfiguration(HTTP_AUTHENTICATION_FACTORY_CAPABILITY);
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, HTTP_SERVER_MECHANISM_FACTORY, mechanismConfigurationAttribute };
-        AbstractAddStepHandler add = new TrivialAddHandler<HttpAuthenticationFactory>(HttpAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.LAZY, attributes, HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new BaseAddHandler(HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY, attributes) {
 
+            @SuppressWarnings("unchecked")
             @Override
-            protected ValueSupplier<HttpAuthenticationFactory> getValueSupplier(
+            protected final void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+                ServiceBuilder<HttpAuthenticationFactory> serviceBuilder = (ServiceBuilder<HttpAuthenticationFactory>)context.getCapabilityServiceTarget().addCapability(HTTP_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY);
+                HttpAuthenticationFactoryService httpAuthenticationFactoryService = new HttpAuthenticationFactoryService(getHttpAuthenticationFactorySupplier(serviceBuilder, context, resource.getModel()));
+                serviceBuilder.setInstance(httpAuthenticationFactoryService);
+
+                commonDependencies(serviceBuilder, true, true)
+                        .setInitialMode(context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE)
+                        .install();
+            }
+
+            private Supplier<HttpAuthenticationFactory> getHttpAuthenticationFactorySupplier(
                     ServiceBuilder<HttpAuthenticationFactory> serviceBuilder, OperationContext context, ModelNode model)
                     throws OperationFailedException {
 
