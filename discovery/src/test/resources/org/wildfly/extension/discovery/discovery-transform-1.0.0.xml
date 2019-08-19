@@ -18,7 +18,7 @@
 
 <subsystem xmlns="urn:jboss:domain:discovery:1.0">
     <static-provider name="test">
-        <service uri="local://" abstract-type="ejb" abstract-type-authority="jboss" uri-scheme-authority="test">
+        <service uri="local://127.0.0.1" abstract-type="ejb" abstract-type-authority="jboss" uri-scheme-authority="test">
            <attribute name="x" value="y" />
         </service>
     </static-provider>

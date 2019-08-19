@@ -51,7 +51,7 @@ final class StaticDiscoveryProviderDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition ABSTRACT_TYPE = new SimpleAttributeDefinitionBuilder("abstract-type", ModelType.STRING, true).setAllowExpression(true).build();
     static final SimpleAttributeDefinition ABSTRACT_TYPE_AUTHORITY = new SimpleAttributeDefinitionBuilder("abstract-type-authority", ModelType.STRING, true).setAllowExpression(true).build();
-    static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder("uri", ModelType.STRING, false).setAllowExpression(true).build();
+    static final SimpleAttributeDefinition URI = new SimpleAttributeDefinitionBuilder("uri", ModelType.STRING, false).setValidator(new ServiceURIValidator()).setAllowExpression(true).build();
     static final SimpleAttributeDefinition URI_SCHEME_AUTHORITY = new SimpleAttributeDefinitionBuilder("uri-scheme-authority", ModelType.STRING, true).setAllowExpression(true).build();
 
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false).setAllowExpression(true).build();
