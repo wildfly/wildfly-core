@@ -64,6 +64,7 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
+import org.jboss.as.logging.filters.FilterResourceDefinition;
 import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -235,6 +236,13 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         writeStructuredFormatters(writer, JsonFormatterResourceDefinition.NAME, model);
         writeStructuredFormatters(writer, XmlFormatterResourceDefinition.NAME, model,
                 XmlFormatterResourceDefinition.PRINT_NAMESPACE, XmlFormatterResourceDefinition.NAMESPACE_URI);
+
+        // Write the filters
+        if (model.hasDefined(FilterResourceDefinition.NAME)) {
+            for (String name : model.get(FilterResourceDefinition.NAME).keys()) {
+                writeFilterElement(writer, model.get(FilterResourceDefinition.NAME, name), name);
+            }
+        }
     }
 
     private void writeCommonLogger(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
@@ -440,5 +448,15 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
                 writer.writeEndElement(); // end formatter
             }
         }
+    }
+
+    private void writeFilterElement(final XMLExtendedStreamWriter writer, final ModelNode model, final String name) throws XMLStreamException {
+        writer.writeStartElement(Element.FILTER.getLocalName());
+        writer.writeAttribute(NAME.getXmlName(), name);
+        CLASS.marshallAsAttribute(model, writer);
+        MODULE.marshallAsAttribute(model, writer);
+        FilterResourceDefinition.CONSTRUCTOR_PROPERTIES.marshallAsElement(model, writer);
+        PROPERTIES.marshallAsElement(model, writer);
+        writer.writeEndElement();
     }
 }

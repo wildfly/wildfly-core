@@ -50,6 +50,7 @@
             <xs:element name="custom-handler" type="customHandlerType"/>
             <xs:element name="syslog-handler" type="syslogHandlerType"/>
             <xs:element name="formatter" type="formatterType"/>
+            <xs:element name="filter" type="filterType"/>
             <xs:element name="add-logging-api-dependencies" type="booleanTrueValueType">
                 <xs:annotation>
                     <xs:documentation>
@@ -102,6 +103,7 @@
             <xs:element name="custom-handler" type="customHandlerType"/>
             <xs:element name="syslog-handler" type="syslogHandlerType"/>
             <xs:element name="formatter" type="formatterType"/>
+            <xs:element name="filter" type="filterType"/>
         </xs:choice>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
@@ -820,6 +822,23 @@
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="filterType">
+        <xs:annotation>
+            <xs:documentation>
+                <![CDATA[
+                Defines a filter to be used to filter log messages.
+                ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="constructor-properties" type="propertiesType" minOccurs="0"/>
+            <xs:element name="properties" type="propertiesType" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="module" type="xs:string" use="required"/>
+        <xs:attribute name="class" type="xs:string" use="required"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 
 </xs:schema>

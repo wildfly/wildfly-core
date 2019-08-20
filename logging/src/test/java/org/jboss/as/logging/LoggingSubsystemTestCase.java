@@ -169,7 +169,11 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(loggingProfileAddress.append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("syslog-handler"),
-                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER)));
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
     @Test
@@ -196,7 +200,34 @@ public class LoggingSubsystemTestCase extends AbstractLoggingSubsystemTest {
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("socket-handler"),
                                 FailedOperationTransformationConfig.REJECTED_RESOURCE)
                         .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("syslog-handler"),
-                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER)));
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
+    }
+
+    @Test
+    public void testTransformersEAP720() throws Exception {
+        testEap7Transformer(ModelTestControllerVersion.EAP_7_2_0, ModelVersion.create(7, 0, 0), readResource("/logging_6_0.xml"));
+    }
+
+    @Test
+    public void testFailedTransformersEAP720() throws Exception {
+        final ModelTestControllerVersion controllerVersion = ModelTestControllerVersion.EAP_7_2_0;
+        final ModelVersion modelVersion = ModelVersion.create(7, 0, 0);
+
+        // Test against current
+        testEap7FailedTransformers(controllerVersion, modelVersion, readResource("/expressions.xml"),
+                new FailedOperationTransformationConfig()
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("syslog-handler"),
+                                new NewAttributesConfig(SyslogHandlerResourceDefinition.NAMED_FORMATTER))
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                        .addFailedAttribute(SUBSYSTEM_ADDRESS.append(CommonAttributes.LOGGING_PROFILE).append("filter"),
+                                FailedOperationTransformationConfig.REJECTED_RESOURCE));
     }
 
     private void testEap7Transformer(final ModelTestControllerVersion controllerVersion, final ModelVersion legacyModelVersion, final String subsystemXml, final ModelFixer... modelFixers) throws Exception {
