@@ -2,7 +2,7 @@
 
 <config xmlns="urn:jboss:galleon:config:1.0" name="standalone.xml" model="standalone">
     <layers>
-        <include name="management"/>
+        <include name="legacy-management"/>
         <include name="elytron"/> 
         <include name="jmx-remoting"/> 
         <include name="logging"/>
@@ -12,8 +12,6 @@
         <include name="discovery"/>
         <include name="core-tools"/>
     </layers>
-    <feature-group name="standalone-security-realms"/>
-    <feature-group name="management-legacy-security"/>
     <!-- package included in case configuration is provisioned without inheriting all modules -->
     <packages>
         <package name="org.jboss.as.patching.cli"/>
