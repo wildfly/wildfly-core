@@ -21,9 +21,16 @@
 */
 package org.jboss.as.subsystem.test;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALTERNATIVES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILDREN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEFAULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
@@ -39,12 +46,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -106,6 +115,8 @@ import org.jboss.as.subsystem.bridge.impl.LegacyControllerKernelServicesProxy;
 import org.jboss.as.subsystem.bridge.local.ScopedKernelServicesBootstrap;
 import org.jboss.as.subsystem.test.ModelDescriptionValidator.ValidationConfiguration;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.jboss.modules.filter.ClassFilter;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLMapper;
@@ -423,6 +434,10 @@ final class SubsystemTestDelegate {
         if (legacyModelFixer != null) {
             legacySubsystem = legacyModelFixer.fixModel(legacySubsystem);
         }
+
+        // WFCORE-4287 introduced defaults not to be included if there is an alias. We'll use a custom model fixer to
+        // undefine these attributes in the legacy model.
+        fixAlternatives(kernelServices, PathAddress.pathAddress(SUBSYSTEM, mainSubsystemName), legacySubsystem);
 
         //1) Check that the transformed model is the same as the whole model read from the legacy controller.
         //The transformed model is done via the resource transformers
@@ -835,6 +850,9 @@ final class SubsystemTestDelegate {
             if (reverseCheckModelFixer != null) {
                 reverseSubsystem = reverseCheckModelFixer.fixModel(reverseSubsystem);
             }
+
+            fixAlternatives(mainServices, PathAddress.pathAddress(SUBSYSTEM, getMainSubsystemName()), reverseSubsystem);
+
             ModelTestUtils.compare(mainServices.readWholeModel().get(SUBSYSTEM, getMainSubsystemName()), reverseSubsystem);
             return reverseServices;
         }
@@ -1126,5 +1144,83 @@ final class SubsystemTestDelegate {
         }
     };
 
+    private static void fixAlternatives(final KernelServices kernelServices, final PathAddress subsystemAddress, final ModelNode legacyModel) {
+        final ModelNode op = Util.createOperation(READ_RESOURCE_DESCRIPTION_OPERATION, subsystemAddress);
+        op.get(RECURSIVE).set(true);
+        final ModelNode result = kernelServices.executeOperation(op);
+        if (!Operations.isSuccessfulOutcome(result)) {
+            throw new RuntimeException("Failed to read the subsystem resource description: " + Operations.getFailureDescription(result).asString());
+        }
+        final ModelNode description = Operations.readResult(result);
+        fixAlternateAttributes(legacyModel, description);
+    }
+
+    private static void fixAlternateAttributes(final ModelNode legacyModel, final ModelNode description) {
+        if (!legacyModel.isDefined()) return;
+
+        final ModelNode attributes = description.hasDefined(ATTRIBUTES) ? description.get(ATTRIBUTES) : new ModelNode().setEmptyObject();
+        final Map<String, Set<String>> alternateAttributes = new HashMap<>();
+        for (Property attribute : attributes.asPropertyList()) {
+            if (attribute.getValue().hasDefined(ALTERNATIVES)) {
+                alternateAttributes.computeIfAbsent(attribute.getName(), s -> new HashSet<>())
+                        .addAll(attribute.getValue().get(ALTERNATIVES).asList()
+                                .stream()
+                                .map(ModelNode::asString)
+                                .collect(Collectors.toSet())
+                        );
+            }
+        }
+
+        // Process the legacy model
+        alternateAttributes.forEach((attributeName, alternates) -> {
+            if (legacyModel.hasDefined(attributeName)) {
+                    ModelNode a = attributes.get(attributeName);
+                    // If the attribute has a default we need to see if we need to undefine it
+                    if (a.hasDefined(DEFAULT)) {
+                        // Process each alternative, if one of them is set we need to undefine the attribute
+                        // TODO (jrp) note this may mess up values which have no default
+                        for (String alternateAttributeName : alternates) {
+                            if (legacyModel.hasDefined(alternateAttributeName) && !legacyModel.get(alternateAttributeName).equals(a.get(DEFAULT))) {
+                                legacyModel.get(attributeName).clear();
+                                break;
+                            }
+                        }
+                    }
+                }
+            //}
+        });
+
+        // Process the child resources
+        if (description.hasDefined(CHILDREN)) {
+            for (Property childResource : description.get(CHILDREN).asPropertyList()) {
+                final ModelNode child = childResource.getValue();
+                if (child.hasDefined(MODEL_DESCRIPTION)) {
+                    final ModelNode childDescription = child.get(MODEL_DESCRIPTION);
+                    for (Property rd : childDescription.asPropertyList()) {
+                        if (legacyModel.hasDefined(childResource.getName())) {
+                            for (Property ch : legacyModel.get(childResource.getName()).asPropertyList()) {
+                                fixAlternateAttributes(ch.getValue(), rd.getValue());
+                                legacyModel.get(childResource.getName(), ch.getName()).set(ch.getValue());
+                            }
+                        } else if (legacyModel.getType() == ModelType.OBJECT) {
+                            // Process complex children which are likely resources
+                            for (Property p : legacyModel.asPropertyList()) {
+                                if (legacyModel.hasDefined(p.getName(), childResource.getName())) {
+                                    fixAlternateAttributes(legacyModel.get(p.getName(), childResource.getName()), rd.getValue());
+                                    for (Property ch : legacyModel.get(p.getName(), childResource.getName()).asPropertyList()) {
+                                        fixAlternateAttributes(ch.getValue(), rd.getValue());
+                                        legacyModel.get(p.getName(), childResource.getName(), ch.getName()).set(ch.getValue());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Should be unlikely, but we may as well check it
+                    fixAlternateAttributes(legacyModel, child);
+                }
+            }
+        }
+    }
 
 }
