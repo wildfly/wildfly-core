@@ -22,30 +22,42 @@
 
 package org.wildfly.extension.discovery;
 
-import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.ModelOnlyAddStepHandler;
+import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.controller.transform.description.TransformationDescription;
+import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 
 /**
+ * Definition for the discovery subsystem resource.
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:paul.ferraro@redhat.com">Paul Ferraro</a>
  */
 final class DiscoverySubsystemDefinition extends SimpleResourceDefinition {
-    private static final ResourceDefinition INSTANCE = new DiscoverySubsystemDefinition();
 
-    private DiscoverySubsystemDefinition() {
-        super(new Parameters(DiscoveryExtension.SUBSYSTEM_PATH, DiscoveryExtension.getResourceDescriptionResolver())
-            .setAddHandler(DiscoverySubsystemAddHandler.getInstance())
-            .setRemoveHandler(new TrivialRemoveStepHandler())
-        );
+    static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, DiscoveryExtension.SUBSYSTEM_NAME);
+
+    static TransformationDescription buildTransformers(ModelVersion version) {
+        ResourceTransformationDescriptionBuilder builder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+
+        return builder.build();
     }
 
-    static ResourceDefinition getInstance() {
-        return INSTANCE;
+    DiscoverySubsystemDefinition() {
+        super(new Parameters(PATH, DiscoveryExtension.getResourceDescriptionResolver())
+            .setAddHandler(new ModelOnlyAddStepHandler())
+            .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
+        );
     }
 
     @Override
     public void registerChildren(final ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(AggregateProviderDefinition.getInstance());
-        resourceRegistration.registerSubModel(StaticProviderDefinition.getInstance());
+        resourceRegistration.registerSubModel(new AggregateDiscoveryProviderDefinition());
+        resourceRegistration.registerSubModel(new StaticDiscoveryProviderDefinition());
     }
 }
