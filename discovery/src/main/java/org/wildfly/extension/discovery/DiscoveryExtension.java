@@ -22,13 +22,12 @@
 
 package org.wildfly.extension.discovery;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
@@ -42,57 +41,30 @@ import org.wildfly.discovery.spi.DiscoveryProvider;
  */
 public final class DiscoveryExtension implements Extension {
 
-    // shared constants
-
     static final String SUBSYSTEM_NAME = "discovery";
-    static final String NAMESPACE = "urn:jboss:domain:discovery:1.0";
-
-    // XML and DMR name strings
-
-    static final String ABSTRACT_TYPE = "abstract-type";
-    static final String ABSTRACT_TYPE_AUTHORITY = "abstract-type-authority";
-    static final String AGGREGATE_PROVIDER = "aggregate-provider";
-    static final String ATTRIBUTE = "attribute";
-    static final String ATTRIBUTES = "attributes";
-    static final String DISCOVERY = "discovery";
-    static final String NAME = "name";
-    static final String PROVIDERS = "providers";
-    static final String SERVICE = "service";
-    static final String SERVICES = "services";
-    static final String STATIC_PROVIDER = "static-provider";
-    static final String URI = "uri";
-    static final String URI_SCHEME_AUTHORITY = "uri-scheme-authority";
-    static final String VALUE = "value";
 
     static final String RESOURCE_NAME = DiscoveryExtension.class.getPackage().getName() + ".LocalDescriptions";
 
-    static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
-
-    static final String DISCOVERY_PROVIDER_CAPABILITY = "org.wildfly.discovery.provider";
-
-    static final RuntimeCapability<?> DISCOVERY_PROVIDER_RUNTIME_CAPABILITY = RuntimeCapability.Builder.of(DISCOVERY_PROVIDER_CAPABILITY, true).setServiceType(DiscoveryProvider.class).build();
-
-    /**
-     * Construct a new instance.
-     */
-    public DiscoveryExtension() {
-    }
+    static final RuntimeCapability<?> DISCOVERY_PROVIDER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.discovery.provider", true)
+            .setServiceType(DiscoveryProvider.class)
+            .setAllowMultipleRegistrations(true)
+            .build();
 
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1, 0));
+        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, DiscoveryModel.CURRENT.getVersion());
         subsystemRegistration.setHostCapable();
-        subsystemRegistration.registerXMLElementWriter(DiscoverySubsystemParser::new);
+        subsystemRegistration.registerXMLElementWriter(new DiscoverySubsystemParser(DiscoverySchema.CURRENT));
 
-        final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(DiscoverySubsystemDefinition.getInstance());
+        final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(new DiscoverySubsystemDefinition());
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
     }
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        // For the current version we don't use a Supplier as we want its description initialized
-        // TODO if any new xsd versions are added, use a Supplier for the old version
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE, new DiscoverySubsystemParser());
+        for (DiscoverySchema schema : EnumSet.allOf(DiscoverySchema.class)) {
+            context.setSubsystemXmlMapping(SUBSYSTEM_NAME, schema.getNamespaceUri(), new DiscoverySubsystemParser(schema));
+        }
     }
 
     static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {
