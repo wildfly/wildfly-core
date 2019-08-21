@@ -284,7 +284,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         } else if (subModel.hasDefined(attribute.getName())) {
             final ModelNode result = subModel.get(attribute.getName());
             context.getResult().set(result);
-        } else if (defaults && attribute.getDefaultValue() != null) {
+        } else if (defaults && attribute.getDefaultValue() != null && !attribute.hasAlternative(subModel)) {
             // No defined value in the model. See if we should reply with a default from the metadata,
             // reply with undefined, or fail because it's a non-existent attribute name
             context.getResult().set(attribute.getDefaultValue());
