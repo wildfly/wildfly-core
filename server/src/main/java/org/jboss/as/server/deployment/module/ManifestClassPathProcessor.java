@@ -155,7 +155,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                 final VirtualFile topLevelClassPathFile = deploymentRoot.getRoot().getParent().getChild(item);
                 if (item.startsWith("/")) {
                     if (externalModuleService.isValid(item)) {
-                        final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item);
+                        final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item, phaseContext.getServiceRegistry(), phaseContext.getServiceTarget());
                         target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleIdentifier);
                         ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", classPathFile, resourceRoot.getRoot());
                     } else {
