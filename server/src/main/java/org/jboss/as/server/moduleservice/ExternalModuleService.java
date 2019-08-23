@@ -21,21 +21,20 @@
  */
 package org.jboss.as.server.moduleservice;
 
-import org.jboss.as.server.logging.ServerLogger;
+import java.io.File;
+
 import org.jboss.as.server.Services;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-
-import java.io.File;
 
 /**
  * Service that manages external modules.
@@ -53,7 +52,7 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
 
     public static final String EXTERNAL_MODULE_PREFIX = ServiceModuleLoader.MODULE_PREFIX + "external.";
 
-    private volatile ServiceContainer serviceContainer;
+    private boolean started;
 
     /**
      * Is external module item valid.
@@ -66,29 +65,30 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
         return new File(externalModule).exists();
     }
 
-    public ModuleIdentifier addExternalModule(String externalModule) {
+    public ModuleIdentifier addExternalModule(String externalModule, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
         ModuleIdentifier identifier = ModuleIdentifier.create(EXTERNAL_MODULE_PREFIX + externalModule);
         ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(identifier);
-        ServiceController<?> controller = serviceContainer.getService(serviceName);
+        ServiceController<?> controller = serviceRegistry.getService(serviceName);
         if (controller == null) {
             ExternalModuleSpecService service = new ExternalModuleSpecService(identifier, new File(externalModule));
-            serviceContainer.addService(serviceName, service).setInitialMode(Mode.ON_DEMAND).install();
+            serviceTarget.addService(serviceName)
+                    .setInstance(service)
+                    .setInitialMode(Mode.ON_DEMAND)
+                    .install();
         }
         return identifier;
     }
 
     @Override
-    public void start(StartContext context) throws StartException {
-        if (serviceContainer != null) {
+    public synchronized void start(StartContext context) throws StartException {
+        if (started) {
             throw ServerLogger.ROOT_LOGGER.externalModuleServiceAlreadyStarted();
         }
-        serviceContainer = context.getController().getServiceContainer();
+        started = true;
     }
 
     @Override
-    public void stop(StopContext context) {
-        serviceContainer = null;
-    }
+    public void stop(StopContext context) {}
 
     @Override
     public ExternalModuleService getValue() throws IllegalStateException, IllegalArgumentException {
@@ -96,8 +96,8 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
     }
 
     public static void addService(final ServiceTarget serviceTarget) {
-        Service<ExternalModuleService> service = new ExternalModuleService();
-        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_EXTERNAL_MODULE_SERVICE, service);
-        serviceBuilder.install();
+        serviceTarget.addService(Services.JBOSS_EXTERNAL_MODULE_SERVICE)
+                .setInstance(new ExternalModuleService())
+                .install();
     }
 }
