@@ -29,6 +29,7 @@
         <exclude path="org/wildfly/extension/elytron/ElytronSubsystemTransformers"/>
         <exclude path="org/wildfly/extension/elytron/_private"/>
         <exclude path="org/wildfly/extension/elytron/capabilities/_private"/>
+        <exclude path="org/wildfly/extension/elytron/expression"/>
     </exports>
 
     <resources>

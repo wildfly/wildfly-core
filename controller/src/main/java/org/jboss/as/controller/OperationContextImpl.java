@@ -1279,7 +1279,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-        return modelController.resolveExpressions(node);
+        return modelController.resolveExpressions(node, this);
     }
 
     @Override

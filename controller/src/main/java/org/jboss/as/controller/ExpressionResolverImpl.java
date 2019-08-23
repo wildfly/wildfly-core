@@ -63,17 +63,23 @@ public class ExpressionResolverImpl implements ExpressionResolver {
 
     @Override
     public final ModelNode resolveExpressions(final ModelNode node) throws OperationFailedException {
-        return resolveExpressionsRecursively(node);
+        return resolveExpressions(node, null);
+    }
+
+    @Override
+    public ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
+        return resolveExpressionsRecursively(node, context);
     }
 
     /**
      * Examine the given model node, resolving any expressions found within, including within child nodes.
      *
      * @param node the node
+     * @param context the {@link OperationContext}
      * @return a node with all expressions resolved
      * @throws OperationFailedException if an expression cannot be resolved
      */
-    private ModelNode resolveExpressionsRecursively(final ModelNode node) throws OperationFailedException {
+    private ModelNode resolveExpressionsRecursively(final ModelNode node, final OperationContext context) throws OperationFailedException {
         if (!node.isDefined()) {
             return node;
         }
@@ -81,23 +87,23 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         ModelType type = node.getType();
         ModelNode resolved;
         if (type == ModelType.EXPRESSION) {
-            resolved = resolveExpressionStringRecursively(node.asExpression().getExpressionString(), lenient, true);
+            resolved = resolveExpressionStringRecursively(node.asExpression().getExpressionString(), lenient, true, context);
         } else if (type == ModelType.OBJECT) {
             resolved = node.clone();
             for (Property prop : resolved.asPropertyList()) {
-                resolved.get(prop.getName()).set(resolveExpressionsRecursively(prop.getValue()));
+                resolved.get(prop.getName()).set(resolveExpressionsRecursively(prop.getValue(), context));
             }
         } else if (type == ModelType.LIST) {
             resolved = node.clone();
             ModelNode list = new ModelNode();
             list.setEmptyList();
             for (ModelNode current : resolved.asList()) {
-                list.add(resolveExpressionsRecursively(current));
+                list.add(resolveExpressionsRecursively(current, context));
             }
             resolved = list;
         } else if (type == ModelType.PROPERTY) {
             resolved = node.clone();
-            resolved.set(resolved.asProperty().getName(), resolveExpressionsRecursively(resolved.asProperty().getValue()));
+            resolved.set(resolved.asProperty().getName(), resolveExpressionsRecursively(resolved.asProperty().getValue(), context));
         } else {
             resolved = node;
         }
@@ -116,11 +122,12 @@ public class ExpressionResolverImpl implements ExpressionResolver {
      * </p>
      *
      * @param node a node of type {@link ModelType#EXPRESSION}
+     * @param context the current {@link OperationContext}
      *
      * @throws OperationFailedException if the expression in {@code node} is of a form that should be resolvable by this
      *                                  method but some resolution failure occurs
      */
-    protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
+    protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
     }
 
     /**
@@ -139,13 +146,13 @@ public class ExpressionResolverImpl implements ExpressionResolver {
      * @throws OperationFailedException if the expression cannot be resolved
      */
     private ModelNode resolveExpressionStringRecursively(final String expressionString, final boolean ignoreDMRResolutionFailure,
-                                                         final boolean initial) throws OperationFailedException {
-        ParseAndResolveResult resolved = parseAndResolve(expressionString, ignoreDMRResolutionFailure);
+                                                         final boolean initial, final OperationContext context) throws OperationFailedException {
+        ParseAndResolveResult resolved = parseAndResolve(expressionString, ignoreDMRResolutionFailure, context);
         if (resolved.recursive) {
             // Some part of expressionString resolved into a different expression.
             // So, start over, ignoring failures. Ignore failures because we don't require
             // that expressions must not resolve to something that *looks like* an expression but isn't
-            return resolveExpressionStringRecursively(resolved.result, true, false);
+            return resolveExpressionStringRecursively(resolved.result, true, false, context);
         } else if (resolved.modified) {
             // Typical case
             return new ModelNode(resolved.result);
@@ -165,7 +172,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         }
     }
 
-    private ParseAndResolveResult parseAndResolve(final String initialValue, boolean lenient) throws OperationFailedException {
+    private ParseAndResolveResult parseAndResolve(final String initialValue, boolean lenient, OperationContext context) throws OperationFailedException {
 
 
         final StringBuilder builder = new StringBuilder();
@@ -243,7 +250,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 continue;
                             }
                             String toResolve = getStringToResolve(initialValue, stack, i);
-                            final String resolved = resolveExpressionString(toResolve); // TODO we could catch OFE here
+                            final String resolved = resolveExpressionString(toResolve, context); // TODO we could catch OFE here
                                                                                         // and if lenient respond with
                                                                                         // the initial value, else rethrow
                                                                                         // But for now it's a corner case
@@ -327,7 +334,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
     }
 
     /** Resolve the given string using any plugin and the DMR resolve method */
-    private String resolveExpressionString(final String unresolvedString) throws OperationFailedException {
+    private String resolveExpressionString(final String unresolvedString, final OperationContext context) throws OperationFailedException {
 
         // parseAndResolve should only be providing expressions with no leading or trailing chars
         assert unresolvedString.startsWith("${") && unresolvedString.endsWith("}");
@@ -338,7 +345,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         ModelNode resolveNode = new ModelNode(new ValueExpression(unresolvedString));
 
         // Try plug-in resolution; i.e. vault
-        resolvePluggableExpression(resolveNode);
+        resolvePluggableExpression(resolveNode, context);
 
         if (resolveNode.getType() == ModelType.EXPRESSION ) {
             // resolvePluggableExpression did nothing. Try standard resolution

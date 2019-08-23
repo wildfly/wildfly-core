@@ -29,7 +29,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.security.sasl.SaslServerFactory;
 
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.ServiceBuilder;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
@@ -274,8 +273,5 @@ class Capabilities {
     static final String DATA_SOURCE_CAPABILITY_NAME = "org.wildfly.data-source";
 
     static final String EXPRESSION_RESOLVER_CAPABILITY = "org.wildfly.controller.expression-resolver";
-    static final RuntimeCapability<Void> EXPRESSION_RESOLVER_RUNTIME_CAPABILITY =  RuntimeCapability
-            .Builder.of(EXPRESSION_RESOLVER_CAPABILITY, false, ExpressionResolver.class)
-            .build();
 
 }

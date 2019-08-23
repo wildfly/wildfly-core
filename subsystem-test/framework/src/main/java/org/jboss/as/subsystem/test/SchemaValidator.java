@@ -44,6 +44,7 @@ import javax.xml.validation.SchemaFactory;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.subsystem.test.xml.JBossEntityResolver;
 import org.jboss.dmr.ModelNode;
@@ -167,7 +168,7 @@ public class SchemaValidator {
         }
 
         @Override
-        protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
+        protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
             String expression = node.asString();
             if (expression.startsWith("${") && expression.endsWith("}")) {
                 int colon = expression.indexOf(':');
