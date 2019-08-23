@@ -25,8 +25,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition.SOCKET_BINDING_MANAGER_CAPABILITY;
 
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -45,6 +48,7 @@ import org.jboss.msc.service.ServiceController;
  * Handler for the server socket-binding-group resource's add operation.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class BindingGroupAddHandler extends AbstractAddStepHandler {
 
@@ -104,15 +108,15 @@ public class BindingGroupAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        int portOffset = SocketBindingGroupResourceDefinition.PORT_OFFSET.resolveModelAttribute(context, model).asInt();
-        String defaultInterface = SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.resolveModelAttribute(context, model).asString();
+        final int portOffset = SocketBindingGroupResourceDefinition.PORT_OFFSET.resolveModelAttribute(context, model).asInt();
+        final String defaultInterface = SocketBindingGroupResourceDefinition.DEFAULT_INTERFACE.resolveModelAttribute(context, model).asString();
 
-        SocketBindingManagerService service = new SocketBindingManagerService(portOffset);
-        context.getCapabilityServiceTarget().addCapability(SOCKET_BINDING_MANAGER_CAPABILITY)
-                .setInstance(service)
-                .addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, service.getDefaultInterfaceBindingInjector(), defaultInterface)
-                .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .addAliases(SocketBindingManager.SOCKET_BINDING_MANAGER)
-                .install();
+        final CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(SOCKET_BINDING_MANAGER_CAPABILITY);
+        final Consumer<SocketBindingManager> sbmConsumer = builder.provides(SOCKET_BINDING_MANAGER_CAPABILITY);
+        final Supplier<NetworkInterfaceBinding> nibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, defaultInterface);
+        builder.setInstance(new SocketBindingManagerService(sbmConsumer, nibSupplier, portOffset));
+        builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+        builder.addAliases(SocketBindingManager.SOCKET_BINDING_MANAGER);
+        builder.install();
     }
 }

@@ -70,6 +70,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -281,7 +282,17 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
 
     @BeforeClass
+    public static void noJDK14Plus() {
+        Assume.assumeFalse("Avoiding JDK 14 due to https://issues.jboss.org/browse/WFCORE-4532", "14".equals(System.getProperty("java.specification.version")));
+    }
+
+    private static boolean isJDK14Plus() {
+        return "14".equals(System.getProperty("java.specification.version"));
+    }
+
+    @BeforeClass
     public static void initTests() throws Exception {
+        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         setUpKeyStores();
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
         csUtil = new CredentialStoreUtility("target/tlstest.keystore");
@@ -291,6 +302,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @AfterClass
     public static void cleanUpTests() {
+        if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         deleteKeyStoreFiles();
         csUtil.cleanUp();
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -420,6 +432,20 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(newFoundDN.getIssuerX500Principal(), NEW_DN);
 
         Files.delete(Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
+    }
+
+    @Test
+    public void testOcspCrl() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-crl");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+    }
+
+    @Test
+    public void testOcspSimple() {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-simple");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
     }
 
     private SSLContext getSslContext(String contextName) {

@@ -678,7 +678,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         private static final AttributeDefinition MAIN_RESOURCE_ATTR =
                 new SimpleAttributeDefinitionBuilder(MAIN_RESOURCE, ModelType.STRING)
                         .setCapabilityReference(MAIN_RESOURCE_CAPABILITY_NAME, REFERENCING_RESOURCE_CAPABILITY)
-                        .addArbitraryDescriptor(FEATURE_REFERENCE, new ModelNode(true))
+                        .addArbitraryDescriptor(FEATURE_REFERENCE, ModelNode.TRUE)
                         .build();
 
         ReferencingResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {

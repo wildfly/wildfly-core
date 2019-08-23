@@ -50,13 +50,13 @@ public class PrincipalToGroupResourceDefinition extends BaseLdapGroupSearchResou
 
     public static final SimpleAttributeDefinition SKIP_MISSING_GROUPS =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SKIP_MISSING_GROUPS, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
     public static final SimpleAttributeDefinition PARSE_ROLES_FROM_DN =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PARSE_ROLES_FROM_DN, ModelType.BOOLEAN, true)
-                    .setDefaultValue(new ModelNode(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .setAllowExpression(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();

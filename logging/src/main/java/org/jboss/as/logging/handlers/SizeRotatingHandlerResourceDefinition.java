@@ -63,7 +63,7 @@ public class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDe
     public static final PropertyAttributeDefinition ROTATE_ON_BOOT = PropertyAttributeDefinition.Builder.of("rotate-on-boot", ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setPropertyName("rotateOnBoot")
             .build();
 

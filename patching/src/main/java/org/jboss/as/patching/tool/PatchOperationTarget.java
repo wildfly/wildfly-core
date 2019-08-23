@@ -171,32 +171,27 @@ public abstract class PatchOperationTarget {
                 if(vInfo.hasLayers()) {
                     final ModelNode layersNode = result.get(Constants.LAYER);
                     for(String name : vInfo.getLayerNames()) {
-                        final TargetInfo layerInfo = vInfo.getLayerInfo(name);
-                        final ModelNode layerNode = layersNode.get(name);
-                        layerNode.get(Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
-                        final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
-                        if(!layerInfo.getPatchIDs().isEmpty()) {
-                            for(String patchId : layerInfo.getPatchIDs()) {
-                                patchesNode.add(patchId);
-                            }
-                        }
+                        addLayerInfo(layersNode.get(name), vInfo.getLayerInfo(name));
                     }
                 }
                 if(vInfo.hasAddOns()) {
-                    final ModelNode layerNode = result.get(Constants.ADD_ON);
+                    final ModelNode layersNode = result.get(Constants.ADD_ON);
                     for(String name : vInfo.getAddOnNames()) {
-                        final TargetInfo layerInfo = vInfo.getAddOnInfo(name);
-                        layerNode.get(name, Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
-                        final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
-                        if(!layerInfo.getPatchIDs().isEmpty()) {
-                            for(String patchId : layerInfo.getPatchIDs()) {
-                                patchesNode.add(patchId);
-                            }
-                        }
+                        addLayerInfo(layersNode.get(name), vInfo.getAddOnInfo(name));
                     }
                 }
             }
             return response;
+        }
+
+        private void addLayerInfo(final ModelNode layerNode, final TargetInfo layerInfo) {
+            layerNode.get(Constants.CUMULATIVE).set(layerInfo.getCumulativePatchID());
+            final ModelNode patchesNode = layerNode.get(Constants.PATCHES).setEmptyList();
+            if(!layerInfo.getPatchIDs().isEmpty()) {
+                for(String patchId : layerInfo.getPatchIDs()) {
+                    patchesNode.add(patchId);
+                }
+            }
         }
 
         @Override

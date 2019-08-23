@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -38,15 +39,13 @@ import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -74,8 +73,9 @@ import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_
  * uses to connect back to the host-controller after start {@see HostControllerConnection}.
  *
  * @author <a href="mailto:kwills@jboss.com">Ken Wills</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class DomainManagedServerCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService, CallbackHandler {
+public class DomainManagedServerCallbackHandler implements Service, CallbackHandlerService, CallbackHandler {
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("domain", "management", "security", "server-auth");
 
@@ -83,23 +83,28 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
     public static final String DOMAIN_SERVER_AUTH_PREFIX = System.getProperty("org.jboss.as.domain.management.security.domain-auth-server-prefix", "=");
 
     private static final String SERVICE_SUFFIX = "internal-domain-server-authentication";
-    private final InjectedValue<CallbackHandler> serverCallbackHandler = new InjectedValue<>();
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
+    private volatile CallbackHandler serverCallbackHandler;
 
-    public DomainManagedServerCallbackHandler() {
+    DomainManagedServerCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
     }
 
     public static void install(final ServiceTarget serviceTarget) {
-        DomainManagedServerCallbackHandler domainServersCallBackHandler = new DomainManagedServerCallbackHandler();
-        ServiceBuilder<CallbackHandlerService> builder = serviceTarget.addService(DomainManagedServerCallbackHandler.SERVICE_NAME, domainServersCallBackHandler)
-                .setInitialMode(ON_DEMAND);
+        final ServiceBuilder<?> builder = serviceTarget.addService(DomainManagedServerCallbackHandler.SERVICE_NAME);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(DomainManagedServerCallbackHandler.SERVICE_NAME);
+        builder.setInstance(new DomainManagedServerCallbackHandler(chsConsumer));
+        builder.setInitialMode(ON_DEMAND);
         builder.install();
-
     }
 
     // the callback handler passed through from ServerInventory, containing the server authkeys.
     // we don't have the ManagedServer etc classes here, so this seems to be the cleanest method of doing it.
-    public Injector<CallbackHandler> getServerCallbackHandlerInjector() {
-        return serverCallbackHandler;
+    public void setServerCallbackHandler(final CallbackHandler serverCallbackHandler) {
+        if (this.serverCallbackHandler != null) {
+            throw new UnsupportedOperationException();
+        }
+        this.serverCallbackHandler = serverCallbackHandler;
     }
 
     /*
@@ -135,20 +140,14 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
         return new SecurityRealmImpl();
     }
 
-    /*
-     *  Service Methods
-     */
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
+        callbackHandlerServiceConsumer.accept(this);
     }
 
     @Override
-    public void stop(StopContext context) {
-    }
-
-    @Override
-    public DomainManagedServerCallbackHandler getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
     /*
@@ -156,8 +155,9 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
      */
     @Override
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-        if (serverCallbackHandler.getValue() != null) {
-            serverCallbackHandler.getValue().handle((callbacks));
+        final CallbackHandler serverCallbackHandler = this.serverCallbackHandler;
+        if (serverCallbackHandler != null) {
+            serverCallbackHandler.handle((callbacks));
         }
     }
 
@@ -302,7 +302,8 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
     }
 
     private char[] fetchCredential(final String serverName) throws UnsupportedCallbackException, IOException {
-        if (serverCallbackHandler.getValue() == null) {
+        final CallbackHandler serverCallbackHandler = this.serverCallbackHandler;
+        if (serverCallbackHandler == null) {
             throw DomainManagementLogger.ROOT_LOGGER.callbackHandlerNotInitialized(serverName);
         }
         final List<Callback> callbacks = new ArrayList<>();
@@ -310,7 +311,7 @@ public class DomainManagedServerCallbackHandler implements Service<CallbackHandl
         callbacks.add(nc);
         final PasswordCallback pc = new PasswordCallback("Password: ", false);
         callbacks.add(pc);
-        serverCallbackHandler.getValue().handle(callbacks.toArray(new Callback[callbacks.size()]));
+        serverCallbackHandler.handle(callbacks.toArray(new Callback[callbacks.size()]));
         return pc.getPassword();
     }
 

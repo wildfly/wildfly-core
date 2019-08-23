@@ -64,12 +64,13 @@ import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.Service;
 
 /**
  * Resource to list all configuration changes.
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceDefinition {
 
@@ -128,7 +129,7 @@ public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceD
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             super.performRuntime(context, operation, resource);
             ModelNode maxHistory = MAX_HISTORY.resolveModelAttribute(context, operation);
-            context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName(), new AbstractService<Void>() {}).install();
+            context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName()).setInstance(Service.NULL).install();
             ConfigurationChangesCollector.INSTANCE.setMaxHistory(maxHistory.asInt());
         }
 

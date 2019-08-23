@@ -33,6 +33,9 @@
         <security-domain name="X500DomainThree" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderThree">
             <realm name="FileRealm"/>
         </security-domain>
+        <security-domain name="X500DomainFour" default-realm="FileRealm" principal-decoder="MyX500PrincipalDecoderThree" evidence-decoder="aggregateEvidenceDecoder">
+            <realm name="FileRealm"/>
+        </security-domain>
         <security-domain name="AnotherDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-security-domains="MyDomain">
             <realm name="PropRealm"/>
         </security-domain>
@@ -181,6 +184,13 @@
             <role-mapping from="Admin" to="Administrator"/>
             <role-mapping from="foo" to="bar baz"/>
         </mapped-role-mapper>
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <custom-evidence-decoder name="customEvidenceDecoder" class-name="org.wildfly.elytron.CustomEvidenceDecoder" module="l.m" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">
@@ -304,8 +314,16 @@
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
                                 provider-name="first"/>
         </client-ssl-contexts>
+        <certificate-authorities>
+            <certificate-authority name="testCA" url="https://www.test.com"/>
+        </certificate-authorities>
         <certificate-authority-accounts>
             <certificate-authority-account name="MyCA" certificate-authority="LetsEncrypt">
+                <account-key key-store="accounts.keystore" alias="server">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+            <certificate-authority-account name="MyCA2" certificate-authority="testCA">
                 <account-key key-store="accounts.keystore" alias="server">
                     <credential-reference clear-text="elytron"/>
                 </account-key>

@@ -299,7 +299,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
             listeners.add(http);
         }
         if(secureBindAddress != null) {
-            ListenerRegistry.Listener https = new ListenerRegistry.Listener("https", HTTPS_MANAGEMENT, SERVER_NAME, bindAddress);
+            ListenerRegistry.Listener https = new ListenerRegistry.Listener("https", HTTPS_MANAGEMENT, SERVER_NAME, secureBindAddress);
             https.setContextInformation("socket-binding", secureBinding);
             listeners.add(https);
         }
@@ -307,6 +307,12 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         final ChannelUpgradeHandler upgradeHandler = new ChannelUpgradeHandler();
         final ServiceBuilder<?> builder = context.getChildTarget().addService(HTTP_UPGRADE_SERVICE_NAME);
         final Consumer<Object> upgradeHandlerConsumer = builder.provides(HTTP_UPGRADE_SERVICE_NAME, HTTPS_UPGRADE_SERVICE_NAME);
+        // TODO: An "alias" shouldn't actually be needed since we already do a
+        // builder.provides(...) with this same ServiceName. However, without this explicit aliasing
+        // the call to (service)registry.getService(...) returns null if it's queried by the "provided"
+        // ServiceName. It works fine if it's instead queried by the "alias".
+        // See WFCORE-4560 for more details.
+        builder.addAliases(HTTPS_UPGRADE_SERVICE_NAME);
         builder.setInstance(org.jboss.msc.Service.newInstance(upgradeHandlerConsumer, upgradeHandler));
         builder.install();
         for (ListenerRegistry.Listener listener : listeners) {

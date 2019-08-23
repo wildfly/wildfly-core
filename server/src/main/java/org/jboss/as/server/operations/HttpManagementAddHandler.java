@@ -145,7 +145,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
 
         ServerEnvironment environment = (ServerEnvironment) context.getServiceRegistry(false).getRequiredService(ServerEnvironmentService.SERVICE_NAME).getValue();
         final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
-        final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY.getCapabilityServiceName());
+        final Consumer<HttpManagement> hmConsumer = builder.provides(EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY);
         final Supplier<ListenerRegistry> lrSupplier = builder.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<ModelController> mcSupplier = builder.requires(Services.JBOSS_SERVER_CONTROLLER);
         final Supplier<SocketBinding> sbSupplier = socketBindingName != null ? builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, socketBindingName) : null;

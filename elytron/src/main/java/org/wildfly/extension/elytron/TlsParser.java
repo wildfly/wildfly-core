@@ -20,6 +20,8 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
 import static org.jboss.as.controller.parsing.ParseUtils.requireAttributes;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITIES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CLIENT_SSL_CONTEXT;
@@ -110,7 +112,11 @@ class TlsParser {
             .addAttribute(SSLDefinitions.ALIAS_FILTER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
-            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST);
+            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST)
+            .addAttribute(SSLDefinitions.OCSP)
+            .addAttribute(SSLDefinitions.ONLY_LEAF_CERT)
+            .addAttribute(SSLDefinitions.SOFT_FAIL)
+            .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH);
 
     private PersistentResourceXMLBuilder filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
             .addAttribute(FilteringKeyStoreDefinition.KEY_STORE)
@@ -154,6 +160,11 @@ class TlsParser {
             .addAttribute(SSLDefinitions.TRUST_MANAGER)
             .addAttribute(SSLDefinitions.PROVIDERS)
             .addAttribute(SSLDefinitions.PROVIDER_NAME);
+
+    private PersistentResourceXMLBuilder certificateAuthorityParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY))
+            .setXmlWrapperElement(CERTIFICATE_AUTHORITIES)
+            .addAttribute(CertificateAuthorityDefinition.URL)
+            .addAttribute(CertificateAuthorityDefinition.STAGING_URL);
 
     private PersistentResourceXMLBuilder certificateAuthorityAccountParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(CERTIFICATE_AUTHORITY_ACCOUNT))
             .setXmlWrapperElement(CERTIFICATE_AUTHORITY_ACCOUNTS)
@@ -227,4 +238,18 @@ class TlsParser {
             .addChild(serverSslSniContextParser) // new
             .build();
 
+    final PersistentResourceXMLDescription tlsParser_8_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser)
+            .addChild(trustManagerParser)
+            .addChild(serverSslContextParser)
+            .addChild(clientSslContextParser)
+            .addChild(certificateAuthorityParser) // new
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .build();
 }

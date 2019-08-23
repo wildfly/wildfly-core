@@ -32,6 +32,8 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -44,31 +46,37 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service to handle the creation of a single SSLContext based on the injected key and trust managers.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class SSLContextService implements Service<SSLContext> {
+public class SSLContextService implements Service {
 
-    private final InjectedValue<AbstractKeyManagerService> injectedKeyManagers = new InjectedValue<>();
-    private final InjectedValue<TrustManager[]> injectedtrustManagers = new InjectedValue<TrustManager[]>();
+    private final Consumer<SSLContext> sslContextConsumer;
+    private final Supplier<AbstractKeyManagerService> keyManagersSupplier;
+    private final Supplier<TrustManager[]> trustManagersSupplier;
 
     private volatile String protocol;
     private volatile Set<String> enabledCipherSuites;
     private volatile Set<String> enabledProtocols;
     private volatile SSLContext theSSLContext;
 
-    SSLContextService(final String protocol, final Set<String> enabledCipherSuites, final Set<String> enabledProtocols) {
+    SSLContextService(final Consumer<SSLContext> sslContextConsumer,
+                      final Supplier<AbstractKeyManagerService> keyManagersSupplier,
+                      final Supplier<TrustManager[]> trustManagersSupplier,
+                      final String protocol, final Set<String> enabledCipherSuites, final Set<String> enabledProtocols) {
+        this.sslContextConsumer = sslContextConsumer;
+        this.keyManagersSupplier = keyManagersSupplier;
+        this.trustManagersSupplier = trustManagersSupplier;
         this.protocol = protocol;
         this.enabledCipherSuites = enabledCipherSuites;
         this.enabledProtocols = enabledProtocols;
@@ -90,20 +98,20 @@ public class SSLContextService implements Service<SSLContext> {
 
     @Override
     public void start(final StartContext context) throws StartException {
-        AbstractKeyManagerService keyManagers = injectedKeyManagers.getOptionalValue();
-        TrustManager[] trustManagers = injectedtrustManagers.getOptionalValue();
+        AbstractKeyManagerService keyManagers = keyManagersSupplier != null ? keyManagersSupplier.get() : null;
+        TrustManager[] trustManagers = trustManagersSupplier != null ? trustManagersSupplier.get() : null;
 
         try {
             SSLContext sslContext = SSLContext.getInstance(protocol);
-            if(keyManagers != null && keyManagers.isLazy()) {
-                sslContext = new LazyInitSSLContext(sslContext, injectedKeyManagers, injectedtrustManagers, enabledCipherSuites, enabledProtocols);
+            if (keyManagers != null && keyManagers.isLazy()) {
+                sslContext = new LazyInitSSLContext(sslContext, keyManagersSupplier, trustManagersSupplier, enabledCipherSuites, enabledProtocols);
             } else {
                 sslContext.init(keyManagers != null ? keyManagers.getKeyManagers() : null, trustManagers, null);
                 sslContext = wrapSslContext(sslContext, enabledCipherSuites, enabledProtocols);
             }
 
             this.theSSLContext = sslContext;
-
+            sslContextConsumer.accept(theSSLContext);
         } catch (NoSuchAlgorithmException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         } catch (KeyManagementException e) {
@@ -158,28 +166,8 @@ public class SSLContextService implements Service<SSLContext> {
 
     @Override
     public void stop(final StopContext context) {
+        sslContextConsumer.accept(null);
         theSSLContext = null;
-    }
-
-    /*
-     * Value factory method.
-     */
-
-    @Override
-    public SSLContext getValue() throws IllegalStateException, IllegalArgumentException {
-        return theSSLContext;
-    }
-
-    /*
-     * Injector Accessor Methods
-     */
-
-    public InjectedValue<AbstractKeyManagerService> getKeyManagerInjector() {
-        return injectedKeyManagers;
-    }
-
-    public InjectedValue<TrustManager[]> getTrustManagerInjector() {
-        return injectedtrustManagers;
     }
 
     public static final class ServiceUtil {
@@ -191,19 +179,16 @@ public class SSLContextService implements Service<SSLContext> {
             return parentService.append(trustOnly ? TRUST_ONLY_SERVICE_SUFFIX : SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<SSLContext> injector, final ServiceName parentService, final boolean trustOnly) {
-            sb.addDependency(createServiceName(parentService, trustOnly), SSLContext.class, injector);
-
-            return sb;
+        public static Supplier<SSLContext> requires(final ServiceBuilder<?> sb, final ServiceName parentService, final boolean trustOnly) {
+            return sb.requires(createServiceName(parentService, trustOnly));
         }
-
     }
 
 
     static final class LazyInitSSLContext extends SSLContext {
 
-        LazyInitSSLContext(final SSLContext toWrap, InjectedValue<AbstractKeyManagerService> injectedKeyManagers, InjectedValue<TrustManager[]> injectedtrustManagers, Set<String> enabledCipherSuites, Set<String> enabledProtocols) {
-            super(new LazyInitSpi(toWrap, injectedKeyManagers, injectedtrustManagers, enabledCipherSuites, enabledProtocols), toWrap.getProvider(), toWrap.getProtocol());
+        LazyInitSSLContext(final SSLContext toWrap, final Supplier<AbstractKeyManagerService> keyManagersSupplier, final Supplier<TrustManager[]> trustManagersSupplier, Set<String> enabledCipherSuites, Set<String> enabledProtocols) {
+            super(new LazyInitSpi(toWrap, keyManagersSupplier, trustManagersSupplier, enabledCipherSuites, enabledProtocols), toWrap.getProvider(), toWrap.getProtocol());
         }
 
         private static class LazyInitSpi extends SSLContextSpi {
@@ -213,8 +198,8 @@ public class SSLContextService implements Service<SSLContext> {
             private volatile SSLServerSocketFactory serverSocketFactory;
             private volatile SSLSocketFactory socketFactory;
 
-            final InjectedValue<AbstractKeyManagerService> injectedKeyManagers;
-            final InjectedValue<TrustManager[]> injectedtrustManagers;
+            final Supplier<AbstractKeyManagerService> keyManagersSupplier;
+            final Supplier<TrustManager[]> trustManagersSupplier;
             private final Set<String> enabledCipherSuites;
             private final Set<String> enabledProtocols;
 
@@ -223,8 +208,8 @@ public class SSLContextService implements Service<SSLContext> {
                     synchronized (this) {
                         if(!init) {
                             try {
-                                AbstractKeyManagerService keyManagers = injectedKeyManagers.getOptionalValue();
-                                TrustManager[] trustManagers = injectedtrustManagers.getOptionalValue();
+                                AbstractKeyManagerService keyManagers = keyManagersSupplier != null ? keyManagersSupplier.get() : null;
+                                TrustManager[] trustManagers = trustManagersSupplier != null ? trustManagersSupplier.get() : null;
                                 wrapped.init(keyManagers.getKeyManagers(), trustManagers, null);
                                 wrapped = wrapSslContext(wrapped, enabledCipherSuites, enabledProtocols);
                             } catch (Exception e) {
@@ -238,10 +223,11 @@ public class SSLContextService implements Service<SSLContext> {
 
             }
 
-            private LazyInitSpi(final SSLContext wrapped, InjectedValue<AbstractKeyManagerService> injectedKeyManagers, InjectedValue<TrustManager[]> injectedtrustManagers, Set<String> enabledCipherSuites, Set<String> enabledProtocols) {
+            private LazyInitSpi(final SSLContext wrapped, final Supplier<AbstractKeyManagerService> keyManagersSupplier,
+                                final Supplier<TrustManager[]> trustManagersSupplier, Set<String> enabledCipherSuites, Set<String> enabledProtocols) {
                 this.wrapped = wrapped;
-                this.injectedKeyManagers = injectedKeyManagers;
-                this.injectedtrustManagers = injectedtrustManagers;
+                this.keyManagersSupplier = keyManagersSupplier;
+                this.trustManagersSupplier = trustManagersSupplier;
                 this.enabledCipherSuites = enabledCipherSuites;
                 this.enabledProtocols = enabledProtocols;
             }

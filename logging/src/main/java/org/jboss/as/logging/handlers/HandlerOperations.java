@@ -847,9 +847,9 @@ final class HandlerOperations {
         } else {
             if (attribute instanceof ConfigurationProperty) {
                 final ConfigurationProperty<?> propAttribute = ((ConfigurationProperty<?>) attribute);
-                final String resolvedValue = String.valueOf(propAttribute.resolvePropertyValue(context, model));
+                final Object resolvedValue = propAttribute.resolvePropertyValue(context, model);
                 final String currentValue = configuration.getPropertyValueString(propAttribute.getPropertyName());
-                result = (resolvedValue == null ? currentValue == null : resolvedValue.equals(currentValue));
+                result = (resolvedValue == null ? currentValue == null : String.valueOf(resolvedValue).equals(currentValue));
             } else {
                 result = false;
             }

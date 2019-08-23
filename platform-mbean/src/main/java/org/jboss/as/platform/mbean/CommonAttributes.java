@@ -62,19 +62,19 @@ class CommonAttributes {
 
     static final SimpleAttributeDefinition MAX_DEPTH = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.MAX_DEPTH, ModelType.INT)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setMinSize(1)
             .build();
 
 
     static final SimpleAttributeDefinition LOCKED_MONITORS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_MONITORS, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     static final SimpleAttributeDefinition LOCKED_SYNCHRONIZERS_FLAG = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.LOCKED_SYNCHRONIZERS, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     static final SimpleAttributeDefinition THREAD_ID = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.THREAD_ID, ModelType.LONG, true)

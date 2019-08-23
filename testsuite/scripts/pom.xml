@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-testsuite</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>9.0.2.Final-SNAPSHOT</version>
+        <version>10.0.0.Beta4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -120,8 +120,8 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
                             <systemPropertyVariables>
-                                <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <org.jboss.logging.provider>jboss</org.jboss.logging.provider>
                                 <test.log.level>${test.log.level}</test.log.level>
                                 <test.log.file>${test.log.file}</test.log.file>

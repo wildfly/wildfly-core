@@ -178,7 +178,40 @@ public class ObjectMapAttributeDefinition extends MapAttributeDefinition {
                 acdSet.addAll(valueConstraints);
                 setAccessConstraints(acdSet.toArray(new AccessConstraintDefinition[acdSet.size()]));
             }
+
+            if (valueType.getCorrector() != null) {
+                // Need to be sure we call this corrector
+                setCorrector(new MapParameterCorrector(getCorrector(), valueType.getCorrector()));
+            }
             return new ObjectMapAttributeDefinition(this);
+        }
+    }
+
+    private static class MapParameterCorrector implements ParameterCorrector {
+        private final ParameterCorrector listCorrector;
+        private final ParameterCorrector valueCorrector;
+
+        private MapParameterCorrector(ParameterCorrector listCorrector, ParameterCorrector valueCorrector) {
+            this.listCorrector = listCorrector;
+            this.valueCorrector = valueCorrector;
+        }
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            ModelNode result = newValue;
+            if (newValue.isDefined()) {
+                for (String key : newValue.keys()) {
+                    ModelNode toCorrect = newValue.get(key);
+                    ModelNode corrected = valueCorrector.correct(toCorrect, currentValue.has(key) ? currentValue.get(key) : new ModelNode());
+                    if (!corrected.equals(toCorrect)) {
+                        toCorrect.set(corrected);
+                    }
+                }
+            }
+            if (listCorrector != null) {
+                result = listCorrector.correct(result, currentValue);
+            }
+            return result;
         }
     }
 

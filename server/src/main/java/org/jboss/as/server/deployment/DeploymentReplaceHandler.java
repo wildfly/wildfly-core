@@ -66,6 +66,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         return new DeploymentReplaceHandler(contentRepository, vaultReader);
     }
 
+    @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         for (AttributeDefinition def : DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.values()) {
             def.validateOperation(operation);
@@ -81,7 +82,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         final PathElement deployPath = PathElement.pathElement(DEPLOYMENT, name);
         final PathElement replacePath = PathElement.pathElement(DEPLOYMENT, toReplace);
 
-        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS);
+        final Resource root = context.readResource(PathAddress.EMPTY_ADDRESS, false);
         if (! root.hasChild(replacePath)) {
             throw ServerLogger.ROOT_LOGGER.noSuchDeployment(toReplace);
         }
@@ -122,7 +123,8 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
             if (ENABLED.resolveModelAttribute(context, deployNode).asBoolean()) {
                 throw ServerLogger.ROOT_LOGGER.deploymentAlreadyStarted(toReplace);
             }
-            runtimeName = deployNode.require(RUNTIME_NAME).asString();
+            runtimeName = operation.hasDefined(RUNTIME_NAME) ? DeploymentAttributes.REPLACE_DEPLOYMENT_ATTRIBUTES.get(RUNTIME_NAME).resolveModelAttribute(context, operation).asString() : deployNode.require(RUNTIME_NAME).asString();
+            deployNode.get(RUNTIME_NAME).set(runtimeName);
         }
 
         deployNode.get(ENABLED.getName()).set(true);

@@ -48,32 +48,32 @@ class GlobalOperationAttributes {
 
     static final SimpleAttributeDefinition PROXIES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROXIES, ModelType.BOOLEAN)
     .setRequired(false)
-    .setDefaultValue(new ModelNode(false))
+    .setDefaultValue(ModelNode.FALSE)
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_SINGLETONS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_SINGLETONS, ModelType.BOOLEAN)
     .setRequired(false)
-    .setDefaultValue(new ModelNode(false))
+    .setDefaultValue(ModelNode.FALSE)
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_RUNTIME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_RUNTIME, ModelType.BOOLEAN)
     .setRequired(false)
-    .setDefaultValue(new ModelNode(false))
+    .setDefaultValue(ModelNode.FALSE)
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_DEFAULTS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_DEFAULTS, ModelType.BOOLEAN)
     .setRequired(false)
-    .setDefaultValue(new ModelNode(true))
+    .setDefaultValue(ModelNode.TRUE)
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_ALIASES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_ALIASES, ModelType.BOOLEAN)
     .setRequired(false)
-    .setDefaultValue(new ModelNode(false))
+    .setDefaultValue(ModelNode.FALSE)
     .build();
 
     static final SimpleAttributeDefinition INCLUDE_UNDEFINED_METRIC_VALUES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INCLUDE_UNDEFINED_METRIC_VALUES, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING)

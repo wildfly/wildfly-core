@@ -30,6 +30,8 @@ import static org.jboss.as.server.services.net.OutboundSocketBindingResourceDefi
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.CapabilityServiceBuilder;
@@ -54,6 +56,7 @@ import org.jboss.msc.service.ServiceController;
  * Handles "add" operation for a local-destination outbound-socket-binding
  *
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAddStepHandler {
 
@@ -128,7 +131,6 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
 
     @Override
     protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-
         installOutboundSocketBindingService(context, model);
     }
 
@@ -146,18 +148,14 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         final boolean fixedSourcePort = OutboundSocketBindingResourceDefinition.FIXED_SOURCE_PORT.resolveModelAttribute(context, model).asBoolean();
 
         // create the service
-        final LocalDestinationOutboundSocketBindingService outboundSocketBindingService = new LocalDestinationOutboundSocketBindingService(outboundSocketName, sourcePort, fixedSourcePort);
-        final CapabilityServiceBuilder<?> serviceBuilder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
-        serviceBuilder.setInstance(outboundSocketBindingService);
-        // if a source interface has been specified then add a dependency on it
-        if (sourceInterfaceName != null) {
-            serviceBuilder.addCapabilityRequirement("org.wildfly.network.interface", NetworkInterfaceBinding.class, outboundSocketBindingService.getSourceNetworkInterfaceBindingInjector(), sourceInterfaceName);
-        }
-        serviceBuilder.addCapabilityRequirement(SOCKET_BINDING_CAPABILITY_NAME,
-                    SocketBinding.class, outboundSocketBindingService.getLocalDestinationSocketBindingInjector(), socketBindingRef)
-                .addCapabilityRequirement("org.wildfly.management.socket-binding-manager", SocketBindingManager.class, outboundSocketBindingService.getSocketBindingManagerInjector())
-                .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                .addAliases(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(outboundSocketName))
-                .install();
+        final CapabilityServiceBuilder<?> builder = serviceTarget.addCapability(OUTBOUND_SOCKET_BINDING_CAPABILITY);
+        final Consumer<OutboundSocketBinding> osbConsumer = builder.provides(OUTBOUND_SOCKET_BINDING_CAPABILITY);
+        final Supplier<SocketBindingManager> sbmSupplier = builder.requiresCapability("org.wildfly.management.socket-binding-manager", SocketBindingManager.class);
+        final Supplier<NetworkInterfaceBinding> nibSupplier = sourceInterfaceName != null ? builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, sourceInterfaceName) : null;
+        final Supplier<SocketBinding> sbSupplier = builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, socketBindingRef);
+        builder.setInstance(new LocalDestinationOutboundSocketBindingService(osbConsumer, sbmSupplier, nibSupplier, sbSupplier, outboundSocketName, sourcePort, fixedSourcePort));
+        builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+        builder.addAliases(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(outboundSocketName));
+        builder.install();
     }
 }

@@ -125,7 +125,7 @@ public class GlobalInstallationReportHandler extends GlobalOperationHandlers.Abs
 
     public static final SimpleAttributeDefinition CREATE_REPORT_DEFINITION =
             SimpleAttributeDefinitionBuilder.create(FILE, ModelType.BOOLEAN, true)
-                    .setDefaultValue(new ModelNode(false)).build();
+                    .setDefaultValue(ModelNode.FALSE).build();
 
     public static final SimpleAttributeDefinition FILE_FORMAT_DEFINITION =
             SimpleAttributeDefinitionBuilder.create(FORMAT, ModelType.STRING, true)

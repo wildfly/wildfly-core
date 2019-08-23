@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,17 +48,16 @@ import org.jboss.as.controller.services.path.PathManager.Callback;
 import org.jboss.as.controller.services.path.PathManager.Event;
 import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * The base class for services depending on loading a properties file, loads the properties on
  * start up and re-loads as required where updates to the file are detected.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class PropertiesFileLoader {
 
@@ -103,7 +103,7 @@ public class PropertiesFileLoader {
     public static final Pattern PROPERTY_PATTERN = Pattern.compile("#?+((?:[,.\\-@/a-zA-Z0-9]++|(?:\\\\[=\\\\])++)++)=(.*+)");
     public static final String DISABLE_SUFFIX_KEY = "!disable";
 
-    private final InjectedValue<PathManager> pathManager = new InjectedValue<PathManager>();
+    private final Supplier<PathManager> pathManagerSupplier;
 
     private final String path;
     private final String relativeTo;
@@ -120,19 +120,20 @@ public class PropertiesFileLoader {
      * End of state maintained during persistence.
      */
 
-    public PropertiesFileLoader(final String path, final String relativeTo) {
+    public PropertiesFileLoader(final Supplier<PathManager> pathManagerSupplier, final String path, final String relativeTo) {
+        this.pathManagerSupplier = pathManagerSupplier;
         this.path = path;
         this.relativeTo = relativeTo;
     }
 
-    public Injector<PathManager> getPathManagerInjectorInjector() {
-        return pathManager;
+    public PropertiesFileLoader(final String path) {
+        this(null, path, null);
     }
 
     public void start(StartContext context) throws StartException {
         String file = path;
         if (relativeTo != null) {
-            PathManager pm = pathManager.getValue();
+            PathManager pm = pathManagerSupplier.get();
 
             file = pm.resolveRelativePathEntry(file, relativeTo);
             pm.registerCallback(relativeTo, new Callback() {

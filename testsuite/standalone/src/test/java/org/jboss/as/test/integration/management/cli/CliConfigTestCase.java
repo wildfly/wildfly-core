@@ -32,7 +32,7 @@ import java.nio.file.Files;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import org.aesh.utils.Config;
+import org.aesh.terminal.utils.Config;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.Namespace;
 

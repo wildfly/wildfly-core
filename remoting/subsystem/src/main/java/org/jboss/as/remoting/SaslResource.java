@@ -71,13 +71,13 @@ class SaslResource extends ConnectorChildResource {
             .setElementValidator(EnumValidator.create(SaslStrength.class, SaslStrength.values()))
             .build();
     static final SimpleAttributeDefinition SERVER_AUTH_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(SERVER_AUTH, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setAllowExpression(true)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))
             .build();
     static final SimpleAttributeDefinition REUSE_SESSION_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create(REUSE_SESSION, ModelType.BOOLEAN)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequired(false)
             .setAllowExpression(true)
             .setAttributeMarshaller(new WrappedAttributeMarshaller(Attribute.VALUE))

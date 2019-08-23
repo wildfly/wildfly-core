@@ -57,7 +57,7 @@ public class LdapAuthenticationResourceDefinition extends LdapResourceDefinition
             .build();
 
     public static final SimpleAttributeDefinition RECURSIVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RECURSIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -70,7 +70,7 @@ public class LdapAuthenticationResourceDefinition extends LdapResourceDefinition
             .build();
 
     public static final SimpleAttributeDefinition ALLOW_EMPTY_PASSWORDS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ALLOW_EMPTY_PASSWORDS, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

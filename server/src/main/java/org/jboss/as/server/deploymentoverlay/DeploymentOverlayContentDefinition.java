@@ -67,8 +67,8 @@ public class DeploymentOverlayContentDefinition extends SimpleResourceDefinition
             new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.CONTENT,
                     new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.INPUT_STREAM_INDEX, ModelType.INT, true)
                             .setValidator(new StringLengthValidator(0, true))
-                            .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
-                            .addArbitraryDescriptor(ATTACHED_STREAMS, new ModelNode(true))
+                            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
+                            .addArbitraryDescriptor(ATTACHED_STREAMS, ModelNode.TRUE)
                             .build(),
                     new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HASH, ModelType.BYTES, true)
                             .setValidator(new HashValidator(true))

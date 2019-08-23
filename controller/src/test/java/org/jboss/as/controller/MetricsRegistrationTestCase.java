@@ -243,12 +243,12 @@ public class MetricsRegistrationTestCase {
         // metric is registered depending on the type of server for the MMR
         private static final SimpleAttributeDefinition METRIC = new SimpleAttributeDefinitionBuilder(TEST_METRIC, ModelType.INT)
                 .setStorageRuntime()
-                .setUndefinedMetricValue(new ModelNode(0))
+                .setUndefinedMetricValue(ModelNode.ZERO)
                 .build();
         // metric 2 does not require runtime service
         private static final SimpleAttributeDefinition METRIC_2 = new SimpleAttributeDefinitionBuilder(TEST_METRIC_2, ModelType.INT)
                 .setRuntimeServiceNotRequired()
-                .setUndefinedMetricValue(new ModelNode(0))
+                .setUndefinedMetricValue(ModelNode.ZERO)
                 .build();
         private static final SimpleAttributeDefinition RUNTIME_ATTRIBUTE = new SimpleAttributeDefinitionBuilder(TEST_RUNTIME_ATTRIBUTE, ModelType.INT)
                 .setStorageRuntime()

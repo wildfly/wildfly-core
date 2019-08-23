@@ -92,7 +92,7 @@ public class BasicResourceTestCase {
 
         builder.getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "test")
-                .setValueConverter(AttributeConverter.Factory.createHardCoded(new ModelNode(true)), "othertest")
+                .setValueConverter(AttributeConverter.Factory.createHardCoded(ModelNode.TRUE), "othertest")
                 .end();
 
         // Create a child resource based on an attribute
@@ -137,13 +137,13 @@ public class BasicResourceTestCase {
 
 
         builder.addOperationTransformationOverride("test-operation")
-                .setValueConverter(AttributeConverter.Factory.createHardCoded(new ModelNode(true)), "operation-test")
+                .setValueConverter(AttributeConverter.Factory.createHardCoded(ModelNode.TRUE), "operation-test")
                 .inheritResourceAttributeDefinitions()
                 .end();
 
         builder.addOperationTransformationOverride("rename-operation")
                 .rename("new-name-op")
-                .setValueConverter(AttributeConverter.Factory.createHardCoded(new ModelNode(true)), "operation-test")
+                .setValueConverter(AttributeConverter.Factory.createHardCoded(ModelNode.TRUE), "operation-test")
                 .end();
 
         builder.addOperationTransformationOverride("operation-with-transformer")

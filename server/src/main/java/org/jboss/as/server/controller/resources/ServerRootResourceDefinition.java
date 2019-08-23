@@ -246,7 +246,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
      */
     @Deprecated
     public static final SimpleAttributeDefinition TIMEOUT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TIMEOUT, ModelType.INT)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .setAlternatives(ModelDescriptionConstants.SUSPEND_TIMEOUT)
@@ -257,7 +257,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
      * The 'suspend-timeout' parameter for server lifecycle ops
      */
     public static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setRequired(false)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .setAlternatives(ModelDescriptionConstants.TIMEOUT)

@@ -25,19 +25,19 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -46,16 +46,24 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * Service to handle the creation of the KeyManager[].
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerService> {
+abstract class AbstractKeyManagerService implements Service {
 
     private volatile char[] keystorePassword;
     private volatile char[] keyPassword;
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> keyCredentialSourceSupplier = new InjectedValue<>();
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> keystoreCredentialSourceSupplier = new InjectedValue<>();
+    private final Consumer<AbstractKeyManagerService> keyManagerServiceConsumer;
+    private final ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier;
+    private final ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier;
 
 
-    AbstractKeyManagerService(final char[] keystorePassword, final char[] keyPassword) {
+    AbstractKeyManagerService(final Consumer<AbstractKeyManagerService> keyManagerServiceConsumer,
+                              final ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier,
+                              final ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier,
+                              final char[] keystorePassword, final char[] keyPassword) {
+        this.keyManagerServiceConsumer = keyManagerServiceConsumer;
+        this.keyCredentialSourceSupplier = keyCredentialSourceSupplier;
+        this.keystoreCredentialSourceSupplier = keystoreCredentialSourceSupplier;
         this.keystorePassword = keystorePassword;
         this.keyPassword = keyPassword;
     }
@@ -79,10 +87,6 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
         this.keyPassword = keyPassword;
     }
 
-    /*
-     * Service Lifecycle Methods
-     */
-
     @Override
     public void start(final StartContext context) throws StartException {
         try {
@@ -90,19 +94,12 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
         } catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         }
+        keyManagerServiceConsumer.accept(this);
     }
 
     @Override
     public void stop(final StopContext context) {
-    }
-
-    /*
-     * Value Method
-     */
-
-    @Override
-    public AbstractKeyManagerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
+        keyManagerServiceConsumer.accept(null);
     }
 
     public KeyManager[] getKeyManagers() {
@@ -152,28 +149,18 @@ abstract class AbstractKeyManagerService implements Service<AbstractKeyManagerSe
             return parentService.append(SERVICE_SUFFIX);
         }
 
-        public static ServiceBuilder<?> addDependency(final ServiceBuilder<?> sb, final Injector<AbstractKeyManagerService> injector, final ServiceName parentService) {
-            sb.addDependency(createServiceName(parentService), AbstractKeyManagerService.class, injector);
-
-            return sb;
+        public static Supplier<AbstractKeyManagerService> requires(final ServiceBuilder<?> sb, final ServiceName parentService) {
+            return sb.requires(createServiceName(parentService));
         }
 
     }
 
-    Injector<ExceptionSupplier<CredentialSource, Exception>> getKeyCredentialSourceSupplierInjector() {
-        return keyCredentialSourceSupplier;
-    }
-
-    Injector<ExceptionSupplier<CredentialSource, Exception>> getKeystoreCredentialSourceSupplierInjector() {
-        return keystoreCredentialSourceSupplier;
-    }
-
     protected char[] resolveKeyPassword() {
-        return resolvePassword(keyCredentialSourceSupplier.getOptionalValue(), keyPassword);
+        return resolvePassword(keyCredentialSourceSupplier, keyPassword);
     }
 
     protected char[] resolveKeystorePassword() {
-        return resolvePassword(keystoreCredentialSourceSupplier.getOptionalValue(), keystorePassword);
+        return resolvePassword(keystoreCredentialSourceSupplier, keystorePassword);
     }
 
     private char[] resolvePassword(ExceptionSupplier<CredentialSource, Exception> sourceSupplier, char[] legacyPassword) {

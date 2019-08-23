@@ -19,6 +19,7 @@
 package org.wildfly.extension.elytron;
 
 import static java.security.AccessController.doPrivileged;
+import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
@@ -84,6 +85,7 @@ import org.wildfly.extension.elytron.DomainService.RealmDependency;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
 import org.wildfly.security.auth.server.RealmUnavailableException;
@@ -147,6 +149,11 @@ class DomainDefinition extends SimpleResourceDefinition {
         .setCapabilityReference(ROLE_MAPPER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
+    static final SimpleAttributeDefinition EVIDENCE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.EVIDENCE_DECODER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(EVIDENCE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
+            .build();
+
     static final SimpleAttributeDefinition REALM_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REALM, ModelType.STRING, false)
         .setXmlName(ElytronDescriptionConstants.NAME)
         .setMinSize(1)
@@ -183,7 +190,7 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition OUTFLOW_ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OUTFLOW_ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequires(ElytronDescriptionConstants.OUTFLOW_SECURITY_DOMAINS)
             .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
@@ -203,7 +210,8 @@ class DomainDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, PRINCIPAL_DECODER,
-            REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER };
+            REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER,
+            EVIDENCE_DECODER};
 
     private static final DomainAddHandler ADD = new DomainAddHandler();
     private static final OperationStepHandler REMOVE = new DomainRemoveHandler(ADD);
@@ -244,6 +252,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         String permissionMapper = PERMISSION_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
         String realmMapper = REALM_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
         String roleMapper = ROLE_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
+        String evidenceDecoder = EVIDENCE_DECODER.resolveModelAttribute(context, model).asStringOrNull();
         String securityEventListener = SECURITY_EVENT_LISTENER.resolveModelAttribute(context, model).asStringOrNull();
 
         DomainService domain = new DomainService(defaultRealm, trustedSecurityDomain, identityOperator);
@@ -277,6 +286,12 @@ class DomainDefinition extends SimpleResourceDefinition {
         }
         if (roleMapper != null) {
             injectRoleMapper(roleMapper, context, domainBuilder, domain.createDomainRoleMapperInjector(roleMapper));
+        }
+
+        if (evidenceDecoder != null) {
+            String runtimeCapability = RuntimeCapability.buildDynamicCapabilityName(EVIDENCE_DECODER_CAPABILITY, evidenceDecoder);
+            ServiceName evidenceDecoderServiceName = context.getCapabilityServiceName(runtimeCapability, EvidenceDecoder.class);
+            domainBuilder.addDependency(evidenceDecoderServiceName, EvidenceDecoder.class, domain.getEvidenceDecoderInjector());
         }
 
         if (securityEventListener != null) {

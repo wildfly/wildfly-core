@@ -65,7 +65,6 @@ public class AuditLogBootingSyslogTest {
     @BeforeClass
     public static void noJDK12Plus() {
         Assume.assumeFalse("Avoiding JDK 12 due to https://bugs.openjdk.java.net/browse/JDK-8219658", "12".equals(System.getProperty("java.specification.version")));
-        Assume.assumeFalse("Avoiding JDK 13 due to https://bugs.openjdk.java.net/browse/JDK-8219658", "13".equals(System.getProperty("java.specification.version")));
     }
 
 
@@ -88,9 +87,9 @@ public class AuditLogBootingSyslogTest {
         compositeOp = Operations.CompositeOperationBuilder.create();
         configureAliases(compositeOp);
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(true)));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.TRUE));
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true)));
+                ModelNode.TRUE));
         executeForSuccess(client, compositeOp.build());
         final BlockingQueue<SyslogServerEventIF> queue = BlockedSyslogServerEventHandler.getQueue();
         queue.clear();
@@ -104,7 +103,7 @@ public class AuditLogBootingSyslogTest {
         final Operations.CompositeOperationBuilder compositeOp = Operations.CompositeOperationBuilder.create();
 
         compositeOp.addStep(Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.ENABLED.getName(), new ModelNode(false)));
+                AuditLogLoggerResourceDefinition.ENABLED.getName(), ModelNode.FALSE));
 
         resetElytron(compositeOp);
         resetServerName(compositeOp);
@@ -178,7 +177,7 @@ public class AuditLogBootingSyslogTest {
 
     private boolean makeOneLog() throws IOException {
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress,
-                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), new ModelNode(false));
+                AuditLogLoggerResourceDefinition.LOG_BOOT.getName(), ModelNode.FALSE);
         ModelNode result = container.getClient().getControllerClient().execute(op);
         return Operations.isSuccessfulOutcome(result);
     }

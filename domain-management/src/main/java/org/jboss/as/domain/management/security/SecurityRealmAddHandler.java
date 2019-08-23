@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -81,20 +82,18 @@ import org.jboss.as.core.security.ServerSecurityManager;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.CallbackHandlerFactory;
 import org.jboss.as.domain.management.SecurityRealm;
+import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService;
 import org.jboss.as.domain.management.security.BaseLdapGroupSearchResource.GroupName;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.InjectedSetValue;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 
@@ -103,6 +102,7 @@ import org.wildfly.security.credential.source.CredentialSource;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
@@ -163,11 +163,10 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         final ServiceTarget serviceTarget = context.getServiceTarget();
 
         final boolean mapGroupsToRoles = SecurityRealmResourceDefinition.MAP_GROUPS_TO_ROLES.resolveModelAttribute(context, model).asBoolean();
-        final SecurityRealmService securityRealmService = new SecurityRealmService(realmName, mapGroupsToRoles);
         final ServiceName realmServiceName = SecurityRealm.ServiceUtil.createServiceName(realmName);
-        ServiceBuilder<?> realmBuilder = serviceTarget
-                .addService(realmServiceName, securityRealmService)
-                .addAliases(SecurityRealm.ServiceUtil.createLegacyServiceName(realmName));
+        final ServiceBuilder<?> realmBuilder = serviceTarget.addService(realmServiceName);
+        final Set<Supplier<CallbackHandlerService>> callbackHandlerServices = new HashSet<>();
+        final Consumer<SecurityRealm> securityRealmConsumer = realmBuilder.provides(realmServiceName, SecurityRealm.ServiceUtil.createLegacyServiceName(realmName));
         final ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
         final boolean shareLdapConnections = shareLdapConnection(context, authentication, authorization);
@@ -175,10 +174,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         if (plugIns != null) {
             addPlugInLoaderService(realmName, plugIns, serviceTarget);
         }
-        InjectedSetValue<CallbackHandlerService> injectorSet = securityRealmService.getCallbackHandlerService();
 
         if (! context.getProcessType().isServer()) {
-            addDomainManagedServersService(context, realmName, serviceTarget, realmBuilder, injectorSet.injector());
+            final Supplier<CallbackHandlerService> chsSupplier = addDomainManagedServersService(context, realmBuilder);
+            if (chsSupplier != null) {
+                callbackHandlerServices.add(chsSupplier);
+            }
         }
 
         if (authentication != null) {
@@ -189,56 +190,64 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
             if (authentication.hasDefined(TRUSTSTORE)) {
                 authTruststore = authentication.require(TRUSTSTORE);
-                addClientCertService(realmName, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addClientCertService(realmName, serviceTarget, realmBuilder));
             }
             if (authentication.hasDefined(LOCAL)) {
-                addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addLocalService(context, authentication.require(LOCAL), realmName, serviceTarget, realmBuilder));
             }
             if (authentication.hasDefined(KERBEROS)) {
-                addKerberosService(context, authentication.require(KERBEROS), realmName, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addKerberosService(context, authentication.require(KERBEROS), realmName, serviceTarget, realmBuilder));
             }
 
             if (authentication.hasDefined(JAAS)) {
-                addJaasService(context, authentication.require(JAAS), realmName, serviceTarget, context.isNormalServer(), realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addJaasService(context, authentication.require(JAAS), realmName, serviceTarget, context.isNormalServer(), realmBuilder));
             } else if (authentication.hasDefined(LDAP)) {
-                addLdapService(context, authentication.require(LDAP), realmName, serviceTarget, realmBuilder, injectorSet.injector(), shareLdapConnections);
+                callbackHandlerServices.add(addLdapService(context, authentication.require(LDAP), realmName, serviceTarget, realmBuilder, shareLdapConnections));
             } else if (authentication.hasDefined(PLUG_IN)) {
-                addPlugInAuthenticationService(context, authentication.require(PLUG_IN), realmName, securityRealmService, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addPlugInAuthenticationService(context, authentication.require(PLUG_IN), realmName, realmName, serviceTarget, realmBuilder));
             } else if (authentication.hasDefined(PROPERTIES)) {
-                addPropertiesAuthenticationService(context, authentication.require(PROPERTIES), realmName, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addPropertiesAuthenticationService(context, authentication.require(PROPERTIES), realmName, serviceTarget, realmBuilder));
             } else if (authentication.hasDefined(USERS)) {
-                addUsersService(context, authentication.require(USERS), realmName, serviceTarget, realmBuilder, injectorSet.injector());
+                callbackHandlerServices.add(addUsersService(context, authentication.require(USERS), realmName, serviceTarget, realmBuilder));
             }
         }
+        Supplier<SubjectSupplementalService> subjectSupplementalSupplier = null;
         if (authorization != null) {
             if (authorization.hasDefined(PROPERTIES)) {
-                addPropertiesAuthorizationService(context, authorization.require(PROPERTIES), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
+                subjectSupplementalSupplier = addPropertiesAuthorizationService(context, authorization.require(PROPERTIES), realmName, serviceTarget, realmBuilder);
             } else if (authorization.hasDefined(PLUG_IN)) {
-                addPlugInAuthorizationService(context, authorization.require(PLUG_IN), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector());
+                subjectSupplementalSupplier = addPlugInAuthorizationService(context, authorization.require(PLUG_IN), realmName, serviceTarget, realmBuilder);
             } else if (authorization.hasDefined(LDAP)) {
-                addLdapAuthorizationService(context, authorization.require(LDAP), realmName, serviceTarget, realmBuilder, securityRealmService.getSubjectSupplementalInjector(), shareLdapConnections);
+                subjectSupplementalSupplier = addLdapAuthorizationService(context, authorization.require(LDAP), realmName, serviceTarget, realmBuilder, shareLdapConnections);
             }
         }
 
         ModelNode ssl = null;
+        Supplier<CallbackHandlerFactory> secretCallbackFactorySupplier = null;
+        Supplier<KeytabIdentityFactoryService> keytabFactorySupplier = null;
         if (serverIdentities != null) {
             if (serverIdentities.hasDefined(SSL)) {
                 ssl = serverIdentities.require(SSL);
             }
             if (serverIdentities.hasDefined(SECRET)) {
-                addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget, realmBuilder, securityRealmService.getSecretCallbackFactory());
+                secretCallbackFactorySupplier = addSecretService(context, serverIdentities.require(SECRET), realmName,serviceTarget, realmBuilder);
             }
             if (serverIdentities.hasDefined(KERBEROS)) {
-                addKerberosIdentityServices(context, serverIdentities.require(KERBEROS), realmName, serviceTarget, realmBuilder, securityRealmService.getKeytabIdentityFactoryInjector());
+                keytabFactorySupplier = addKerberosIdentityServices(context, serverIdentities.require(KERBEROS), realmName, serviceTarget, realmBuilder);
             }
         }
 
+        Supplier<SSLContext> sslContextSupplier = null;
         if (ssl != null || authTruststore != null) {
-            addSSLServices(context, ssl, authTruststore, realmName, serviceTarget, realmBuilder, securityRealmService.getSSLContextInjector());
+            sslContextSupplier = addSSLServices(context, ssl, authTruststore, realmName, serviceTarget, realmBuilder);
         }
 
-        realmBuilder.addDependency(tmpDirPath, String.class, securityRealmService.getTmpDirPathInjector());
-        realmBuilder.setInitialMode(Mode.ACTIVE);
+        final Supplier<String> tmpDirPathSupplier = realmBuilder.requires(tmpDirPath);
+
+        final SecurityRealmService securityRealmService = new SecurityRealmService(
+                securityRealmConsumer, subjectSupplementalSupplier, secretCallbackFactorySupplier,
+                keytabFactorySupplier, sslContextSupplier, tmpDirPathSupplier, callbackHandlerServices, realmName, mapGroupsToRoles);
+        realmBuilder.setInstance(securityRealmService);
         realmBuilder.install();
     }
 
@@ -257,67 +266,61 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         return authConnectionManager.equals(authzConnectionManager);
     }
 
-    private ServiceName addPlugInLoaderService(String realmName, ModelNode plugInModel,
-                                               ServiceTarget serviceTarget) {
-        ServiceName plugInLoaderName = PlugInLoaderService.ServiceUtil.createServiceName(realmName);
-
-        List<Property> plugIns = plugInModel.asPropertyList();
-        ArrayList<String> knownNames = new ArrayList<String>(plugIns.size());
+    private void addPlugInLoaderService(String realmName, ModelNode plugInModel, ServiceTarget serviceTarget) {
+        final ServiceName plugInLoaderName = PlugInLoaderService.ServiceUtil.createServiceName(realmName);
+        final List<Property> plugIns = plugInModel.asPropertyList();
+        final ArrayList<String> knownNames = new ArrayList<String>(plugIns.size());
         for (Property current : plugIns) {
             knownNames.add(current.getName());
         }
-        PlugInLoaderService loaderService = new PlugInLoaderService(Collections.unmodifiableList(knownNames));
-        serviceTarget.addService(plugInLoaderName, loaderService)
-                .setInitialMode(Mode.ON_DEMAND)
-                .install();
-
-        return plugInLoaderName;
+        final ServiceBuilder<?> builder = serviceTarget.addService(plugInLoaderName);
+        final Consumer<PlugInLoaderService> pilsConsumer = builder.provides(plugInLoaderName);
+        builder.setInstance(new PlugInLoaderService(pilsConsumer, Collections.unmodifiableList(knownNames)));
+        builder.setInitialMode(Mode.ON_DEMAND);
+        builder.install();
     }
 
-    private void addClientCertService(String realmName, ServiceTarget serviceTarget,
-                                      ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) {
-        ServiceName clientCertServiceName = ClientCertCallbackHandler.ServiceUtil.createServiceName(realmName);
-        ClientCertCallbackHandler clientCertCallbackHandler = new ClientCertCallbackHandler();
+    private Supplier<CallbackHandlerService> addClientCertService(String realmName, ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder) {
+        final ServiceName clientCertServiceName = ClientCertCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(clientCertServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(clientCertServiceName);
+        builder.setInstance(new ClientCertCallbackHandler(chsConsumer));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        serviceTarget.addService(clientCertServiceName, clientCertCallbackHandler)
-                .setInitialMode(ON_DEMAND)
-                .install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, clientCertServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, clientCertServiceName);
     }
 
-    private void addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
-            ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
-        boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
-        KerberosCallbackHandler kerberosCallbackHandler = new KerberosCallbackHandler(removeRealm);
+    private Supplier<CallbackHandlerService> addKerberosService(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
+            ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName kerberosServiceName = KerberosCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final boolean removeRealm = KerberosAuthenticationResourceDefinition.REMOVE_REALM.resolveModelAttribute(context, kerberos).asBoolean();
+        final ServiceBuilder<?> builder = serviceTarget.addService(kerberosServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(kerberosServiceName);
+        builder.setInstance(new KerberosCallbackHandler(chsConsumer, removeRealm));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        ServiceBuilder<?> ccBuilder = serviceTarget.addService(kerberosServiceName, kerberosCallbackHandler);
-        ccBuilder.setInitialMode(ON_DEMAND).install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, kerberosServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, kerberosServiceName);
     }
 
-    private void addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,
-                                boolean injectServerManager, ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName jaasServiceName = JaasCallbackHandler.ServiceUtil.createServiceName(realmName);
-        String name = JaasAuthenticationResourceDefinition.NAME.resolveModelAttribute(context, jaas).asString();
-        boolean assignGroups = JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.resolveModelAttribute(context, jaas).asBoolean();
-        JaasCallbackHandler jaasCallbackHandler = new JaasCallbackHandler(realmName, name, assignGroups);
+    private Supplier<CallbackHandlerService> addJaasService(OperationContext context, ModelNode jaas, String realmName, ServiceTarget serviceTarget,
+                                boolean injectServerManager, ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName jaasServiceName = JaasCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final String name = JaasAuthenticationResourceDefinition.NAME.resolveModelAttribute(context, jaas).asString();
+        final boolean assignGroups = JaasAuthenticationResourceDefinition.ASSIGN_GROUPS.resolveModelAttribute(context, jaas).asBoolean();
+        final ServiceBuilder<?> builder = serviceTarget.addService(jaasServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(jaasServiceName);
+        final Supplier<ServerSecurityManager> smSupplier = injectServerManager ? builder.requires(ServiceName.JBOSS.append("security", "simple-security-manager")) : null;
+        builder.setInstance(new JaasCallbackHandler(chsConsumer, smSupplier, realmName, name, assignGroups));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        ServiceBuilder<?> jaasBuilder = serviceTarget.addService(jaasServiceName, jaasCallbackHandler);
-        if (injectServerManager) {
-            jaasBuilder.addDependency(ServiceName.JBOSS.append("security", "simple-security-manager"),
-                    ServerSecurityManager.class, jaasCallbackHandler.getSecurityManagerValue());
-        }
-
-        jaasBuilder.setInitialMode(ON_DEMAND).install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, jaasServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, jaasServiceName);
     }
 
-    private <R, K> LdapCacheService<R, K> createCacheService(OperationContext context, LdapSearcher<R, K> searcher,
-            ModelNode cache) throws OperationFailedException {
+    private <R, K> LdapCacheService<R, K> createCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer,
+            final OperationContext context, final LdapSearcher<R, K> searcher, final ModelNode cache) throws OperationFailedException {
         if (cache != null && cache.isDefined()) {
             ModelNode cacheDefinition = null;
             boolean byAccessTime = false;
@@ -333,16 +336,16 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
                         .asBoolean();
                 int maxSize = LdapCacheResourceDefinition.MAX_CACHE_SIZE.resolveModelAttribute(context, cacheDefinition).asInt();
 
-                return byAccessTime ? LdapCacheService.createByAccessCacheService(searcher, evictionTime, cacheFailures,
-                        maxSize) : LdapCacheService.createBySearchCacheService(searcher, evictionTime, cacheFailures, maxSize);
+                return byAccessTime ? LdapCacheService.createByAccessCacheService(ldapSearchCacheConsumer, searcher, evictionTime, cacheFailures,
+                        maxSize) : LdapCacheService.createBySearchCacheService(ldapSearchCacheConsumer, searcher, evictionTime, cacheFailures, maxSize);
             }
         }
 
-        return LdapCacheService.createNoCacheService(searcher);
+        return LdapCacheService.createNoCacheService(ldapSearchCacheConsumer, searcher);
     }
 
-    private void addLdapService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
-                                ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector, boolean shareConnection) throws OperationFailedException {
+    private Supplier<CallbackHandlerService> addLdapService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
+                                ServiceBuilder<?> realmBuilder, boolean shareConnection) throws OperationFailedException {
         ServiceName ldapServiceName = UserLdapCallbackHandler.ServiceUtil.createServiceName(realmName);
 
         final String baseDn = LdapAuthenticationResourceDefinition.BASE_DN.resolveModelAttribute(context, ldap).asString();
@@ -355,7 +358,6 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         final boolean recursive = LdapAuthenticationResourceDefinition.RECURSIVE.resolveModelAttribute(context, ldap).asBoolean();
         final boolean allowEmptyPasswords = LdapAuthenticationResourceDefinition.ALLOW_EMPTY_PASSWORDS.resolveModelAttribute(context, ldap).asBoolean();
         final String userDn = LdapAuthenticationResourceDefinition.USER_DN.resolveModelAttribute(context, ldap).asString();
-        UserLdapCallbackHandler ldapCallbackHandler = new UserLdapCallbackHandler(allowEmptyPasswords, shareConnection);
 
         final LdapSearcher<LdapEntry, String> userSearcher;
         if (usernameAttribute != null) {
@@ -363,139 +365,136 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         } else {
             userSearcher = LdapUserSearcherFactory.createForAdvancedFilter(baseDn, recursive, userDn, advancedFilter, usernameLoad);
         }
-        final LdapCacheService<LdapEntry, String> cacheService = createCacheService(context, userSearcher, ldap.get(CACHE));
 
-        ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
-        serviceTarget.addService(userSearcherCacheName, cacheService).setInitialMode(ON_DEMAND).install();
+        final ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(true, true, realmName);
+        final ServiceBuilder<?> userSearchCacheBuilder = serviceTarget.addService(userSearcherCacheName);
+        final Consumer<LdapSearcherCache<LdapEntry, String>> lscConsumer = userSearchCacheBuilder.provides(userSearcherCacheName);
+        userSearchCacheBuilder.setInstance(createCacheService(lscConsumer, context, userSearcher, ldap.get(CACHE)));
+        userSearchCacheBuilder.setInitialMode(ON_DEMAND);
+        userSearchCacheBuilder.install();
 
-        ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapServiceName, ldapCallbackHandler);
-        String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, ldapCallbackHandler.getConnectionManagerInjector(), connectionManager);
-        LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, ldapCallbackHandler.getLdapUserSearcherInjector(), true, true, realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(ldapServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(ldapServiceName);
+        final String connectionManager = LdapAuthenticationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
+        final Supplier<LdapConnectionManager> lcmSupplier = LdapConnectionManagerService.ServiceUtil.requires(builder, connectionManager);
+        final Supplier<LdapSearcherCache<LdapEntry, String>> uscSupplier = LdapSearcherCache.ServiceUtil.requires(builder, true, true, realmName);
+        builder.setInstance(new UserLdapCallbackHandler(chsConsumer, lcmSupplier, uscSupplier, allowEmptyPasswords, shareConnection));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        ldapBuilder.setInitialMode(ON_DEMAND).install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, ldapServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, ldapServiceName);
     }
 
-    private void addLocalService(OperationContext context, ModelNode local, String realmName, ServiceTarget serviceTarget,
-                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+    private Supplier<CallbackHandlerService> addLocalService(OperationContext context, ModelNode local, String realmName, ServiceTarget serviceTarget,
+                                 ServiceBuilder<?> realmBuilder) throws OperationFailedException {
         ServiceName localServiceName = LocalCallbackHandlerService.ServiceUtil.createServiceName(realmName);
-
         ModelNode node = LocalAuthenticationResourceDefinition.DEFAULT_USER.resolveModelAttribute(context, local);
         String defaultUser = node.isDefined() ? node.asString() : null;
         node = LocalAuthenticationResourceDefinition.ALLOWED_USERS.resolveModelAttribute(context, local);
         String allowedUsers = node.isDefined() ? node.asString() : null;
         node = LocalAuthenticationResourceDefinition.SKIP_GROUP_LOADING.resolveModelAttribute(context, local);
         boolean skipGroupLoading = node.asBoolean();
-        LocalCallbackHandlerService localCallbackHandler = new LocalCallbackHandlerService(defaultUser, allowedUsers, skipGroupLoading);
 
-        serviceTarget.addService(localServiceName, localCallbackHandler)
-                .setInitialMode(ON_DEMAND)
-                .install();
+        final ServiceBuilder<?> builder = serviceTarget.addService(localServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(localServiceName);
+        builder.setInstance(new LocalCallbackHandlerService(chsConsumer, defaultUser, allowedUsers, skipGroupLoading));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, localServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, localServiceName);
     }
 
-    private void addDomainManagedServersService(OperationContext context, String realmName, ServiceTarget serviceTarget,
-                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
+    private Supplier<CallbackHandlerService> addDomainManagedServersService(final OperationContext context, final ServiceBuilder<?> realmBuilder) {
         final ServiceRegistry registry = context.getServiceRegistry(false);
         ServiceController serviceController = registry.getService(DomainManagedServerCallbackHandler.SERVICE_NAME);
         if (serviceController != null) {
-            CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, DomainManagedServerCallbackHandler.SERVICE_NAME);
+            return CallbackHandlerService.ServiceUtil.requires(realmBuilder, DomainManagedServerCallbackHandler.SERVICE_NAME);
+        } else {
+            return null;
         }
     }
 
-    private void addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
-                                                SecurityRealmService registry, ServiceTarget serviceTarget,
-                                                ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName plugInServiceName = PlugInAuthenticationCallbackHandler.ServiceUtil.createServiceName(realmName);
-
+    private Supplier<CallbackHandlerService> addPlugInAuthenticationService(OperationContext context, ModelNode model, String realmName,
+                                                String registryName, ServiceTarget serviceTarget,
+                                                ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName plugInServiceName = PlugInAuthenticationCallbackHandler.ServiceUtil.createServiceName(realmName);
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
         final Map<String, String> properties = resolveProperties(context, model);
-        String mechanismName = PlugInAuthenticationResourceDefinition.MECHANISM.resolveModelAttribute(context, model).asString();
-        AuthMechanism mechanism = AuthMechanism.valueOf(mechanismName);
-        PlugInAuthenticationCallbackHandler plugInService = new PlugInAuthenticationCallbackHandler(registry.getName(),
-                pluginName, properties, mechanism);
+        final String mechanismName = PlugInAuthenticationResourceDefinition.MECHANISM.resolveModelAttribute(context, model).asString();
+        final AuthMechanism mechanism = AuthMechanism.valueOf(mechanismName);
 
-        ServiceBuilder<CallbackHandlerService> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInService);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInService.getPlugInLoaderServiceValue(), realmName);
+        final ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = plugInBuilder.provides(plugInServiceName);
+        final Supplier<PlugInLoaderService> pilSupplier = PlugInLoaderService.ServiceUtil.requires(plugInBuilder, realmName);
+        plugInBuilder.setInstance(new PlugInAuthenticationCallbackHandler(chsConsumer, pilSupplier, registryName, pluginName, properties, mechanism));
+        plugInBuilder.setInitialMode(ON_DEMAND);
+        plugInBuilder.install();
 
-        plugInBuilder.setInitialMode(ON_DEMAND).install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, plugInServiceName);
     }
 
-    private void addPropertiesAuthenticationService(OperationContext context, ModelNode properties, String realmName,
-                                                    ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
-                                                    Injector<CallbackHandlerService> injector) throws OperationFailedException {
+    private Supplier<CallbackHandlerService> addPropertiesAuthenticationService(OperationContext context, ModelNode properties, String realmName,
+                                                    ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder) throws OperationFailedException {
 
-        ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
-
+        final ServiceName propsServiceName = PropertiesCallbackHandler.ServiceUtil.createServiceName(realmName);
         final String path = PropertiesAuthenticationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
         final ModelNode relativeToNode = PropertiesAuthenticationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
         final boolean plainText = PropertiesAuthenticationResourceDefinition.PLAIN_TEXT.resolveModelAttribute(context, properties).asBoolean();
-        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+        final String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-        PropertiesCallbackHandler propsCallbackHandler = new PropertiesCallbackHandler(realmName, path, relativeTo, plainText);
-
-        ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsCallbackHandler);
-
+        final ServiceBuilder<?> builder = serviceTarget.addService(propsServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(propsServiceName);
+        Supplier<PathManager> pmSupplier = null;
         if (relativeTo != null) {
-            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                    PathManager.class, propsCallbackHandler.getPathManagerInjectorInjector());
-            propsBuilder.requires(pathName(relativeTo));
+            pmSupplier = builder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+            builder.requires(pathName(relativeTo));
         }
+        builder.setInstance(new PropertiesCallbackHandler(chsConsumer, pmSupplier, realmName, path, relativeTo, plainText));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        propsBuilder.setInitialMode(ON_DEMAND)
-                .install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, propsServiceName);
     }
 
-    private void addPropertiesAuthorizationService(OperationContext context, ModelNode properties,
-                                                   String realmName, ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
-                                                   InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
-        ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
-
+    private Supplier<SubjectSupplementalService> addPropertiesAuthorizationService(OperationContext context, ModelNode properties,
+                                                   String realmName, ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName propsServiceName = PropertiesSubjectSupplemental.ServiceUtil.createServiceName(realmName);
         final String path = PropertiesAuthorizationResourceDefinition.PATH.resolveModelAttribute(context, properties).asString();
         final ModelNode relativeToNode = PropertiesAuthorizationResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, properties);
-        String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+        final String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-        PropertiesSubjectSupplemental propsSubjectSupplemental = new PropertiesSubjectSupplemental(realmName, path, relativeTo);
-
-        ServiceBuilder<?> propsBuilder = serviceTarget.addService(propsServiceName, propsSubjectSupplemental);
+        final ServiceBuilder<?> builder = serviceTarget.addService(propsServiceName);
+        final Consumer<SubjectSupplementalService> sssConsumer = builder.provides(propsServiceName);
+        Supplier<PathManager> pmSupplier = null;
         if (relativeTo != null) {
-            propsBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                    PathManager.class, propsSubjectSupplemental.getPathManagerInjectorInjector());
-            propsBuilder.requires(pathName(relativeTo));
+            pmSupplier = builder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+            builder.requires(pathName(relativeTo));
         }
+        builder.setInstance(new PropertiesSubjectSupplemental(sssConsumer, pmSupplier, realmName, path, relativeTo));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        propsBuilder.setInitialMode(ON_DEMAND).install();
-
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, propsServiceName);
+        return SubjectSupplementalService.ServiceUtil.requires(realmBuilder, propsServiceName);
     }
 
-    private void addPlugInAuthorizationService(OperationContext context, ModelNode model, String realmName,
-                                               ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
-                                               InjectedValue<SubjectSupplementalService> injector) throws OperationFailedException {
-
-        ServiceName plugInServiceName = PlugInSubjectSupplemental.ServiceUtil.createServiceName(realmName);
+    private Supplier<SubjectSupplementalService> addPlugInAuthorizationService(OperationContext context, ModelNode model, String realmName,
+                                               ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName plugInServiceName = PlugInSubjectSupplemental.ServiceUtil.createServiceName(realmName);
         final String pluginName = PlugInAuthorizationResourceDefinition.NAME.resolveModelAttribute(context, model).asString();
         final Map<String, String> properties = resolveProperties(context, model);
-        PlugInSubjectSupplemental plugInSubjectSupplemental = new PlugInSubjectSupplemental(realmName, pluginName, properties);
 
-        ServiceBuilder<?> plugInBuilder = serviceTarget.addService(plugInServiceName, plugInSubjectSupplemental);
-        PlugInLoaderService.ServiceUtil.addDependency(plugInBuilder, plugInSubjectSupplemental.getPlugInLoaderServiceValue(), realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(plugInServiceName);
+        final Consumer<SubjectSupplementalService> sssConsumer = builder.provides(plugInServiceName);
+        final Supplier<PlugInLoaderService> pilSupplier = PlugInLoaderService.ServiceUtil.requires(builder, realmName);
+        builder.setInstance(new PlugInSubjectSupplemental(sssConsumer, pilSupplier, realmName, pluginName, properties));
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
 
-        plugInBuilder.setInitialMode(ON_DEMAND).install();
-
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, plugInServiceName);
+        return SubjectSupplementalService.ServiceUtil.requires(realmBuilder, plugInServiceName);
     }
 
-    private void addLdapAuthorizationService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
-                                             ServiceBuilder<?> realmBuilder,
-                                             InjectedValue<SubjectSupplementalService> injector, boolean shareConnection) throws OperationFailedException {
+    private Supplier<SubjectSupplementalService> addLdapAuthorizationService(OperationContext context, ModelNode ldap, String realmName, ServiceTarget serviceTarget,
+                                             ServiceBuilder<?> realmBuilder, boolean shareConnection) throws OperationFailedException {
 
         ServiceName ldapName = LdapSubjectSupplementalService.ServiceUtil.createServiceName(realmName);
 
@@ -535,10 +534,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         }
 
         if (userSearcher != null) {
-            LdapCacheService<LdapEntry, String> userSearcherCache = createCacheService(context, userSearcher, userCache);
-
-            ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(false, true, realmName);
-            serviceTarget.addService(userSearcherCacheName, userSearcherCache).setInitialMode(ON_DEMAND).install();
+            final ServiceName userSearcherCacheName = LdapSearcherCache.ServiceUtil.createServiceName(false, true, realmName);
+            final ServiceBuilder<?> userSearchCacheBuilder = serviceTarget.addService(userSearcherCacheName);
+            final Consumer<LdapSearcherCache<LdapEntry, String>> lscConsumer = userSearchCacheBuilder.provides(userSearcherCacheName);
+            userSearchCacheBuilder.setInstance(createCacheService(lscConsumer, context, userSearcher, userCache));
+            userSearchCacheBuilder.setInitialMode(ON_DEMAND);
+            userSearchCacheBuilder.install();
         }
 
         ModelNode groupSearch = ldap.require(GROUP_SEARCH);
@@ -575,30 +576,32 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             groupSearcher = LdapGroupSearcherFactory.createForPrincipalToGroup(groupAttribute, groupNameAttribute, preferOriginalConnection, skipMissingGroups, GroupName.SIMPLE == groupName, shouldParseGroupFromDN);
         }
 
-        LdapCacheService<LdapEntry[], LdapEntry> groupCacheService = createCacheService(context, groupSearcher, groupCache);
-
-        ServiceName groupCacheServiceName = LdapSearcherCache.ServiceUtil.createServiceName(false, false, realmName);
-        serviceTarget.addService(groupCacheServiceName, groupCacheService).setInitialMode(ON_DEMAND).install();
+        final ServiceName groupCacheServiceName = LdapSearcherCache.ServiceUtil.createServiceName(false, false, realmName);
+        final ServiceBuilder<?> groupCacheBuilder = serviceTarget.addService(groupCacheServiceName);
+        final Consumer<LdapSearcherCache<LdapEntry[], LdapEntry>> lscConsumer = groupCacheBuilder.provides(groupCacheServiceName);
+        groupCacheBuilder.setInstance(createCacheService(lscConsumer, context, groupSearcher, groupCache));
+        groupCacheBuilder.setInitialMode(ON_DEMAND);
+        groupCacheBuilder.install();
 
         String connectionName = LdapAuthorizationResourceDefinition.CONNECTION.resolveModelAttribute(context, ldap).asString();
 
-        LdapSubjectSupplementalService service = new LdapSubjectSupplementalService(realmName, shareConnection, forceUserDnSearch, iterative, groupName);
-        ServiceBuilder<SubjectSupplementalService> ldapBuilder = serviceTarget.addService(ldapName, service)
-                .setInitialMode(ON_DEMAND);
-        LdapConnectionManagerService.ServiceUtil.addDependency(ldapBuilder, service.getConnectionManagerInjector(), connectionName);
+        final ServiceBuilder<?> ldapBuilder = serviceTarget.addService(ldapName);
+        final Consumer<SubjectSupplementalService> sssConsumer = ldapBuilder.provides(ldapName);
+        final Supplier<LdapConnectionManager> lcmSupplier = LdapConnectionManagerService.ServiceUtil.requires(ldapBuilder, connectionName);
+        Supplier<LdapSearcherCache<LdapEntry, String>> usSupplier = null;
         if (userSearcher != null) {
-            LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapUserSearcherInjector(), false, true, realmName);
+            usSupplier = LdapSearcherCache.ServiceUtil.requires(ldapBuilder, false, true, realmName);
         }
-        LdapSearcherCache.ServiceUtil.addDependency(ldapBuilder, LdapSearcherCache.class, service.getLdapGroupSearcherInjector(), false, false, realmName);
-
+        final Supplier<LdapSearcherCache<LdapEntry[], LdapEntry>> gsSupplier = LdapSearcherCache.ServiceUtil.requires(ldapBuilder, false, false, realmName);
+        ldapBuilder.setInstance(new LdapSubjectSupplementalService(sssConsumer, lcmSupplier, usSupplier, gsSupplier, realmName, shareConnection, forceUserDnSearch, iterative, groupName));
+        ldapBuilder.setInitialMode(ON_DEMAND);
         ldapBuilder.install();
 
-        SubjectSupplementalService.ServiceUtil.addDependency(realmBuilder, injector, ldapName);
+        return SubjectSupplementalService.ServiceUtil.requires(realmBuilder, ldapName);
     }
 
-    private void addSSLServices(OperationContext context, ModelNode ssl, ModelNode trustStore, String realmName,
-                                ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder,
-                                InjectedValue<SSLContext> injector) throws OperationFailedException {
+    private Supplier<SSLContext> addSSLServices(OperationContext context, ModelNode ssl, ModelNode trustStore, String realmName,
+                                ServiceTarget serviceTarget, ServiceBuilder<?> realmBuilder) throws OperationFailedException {
 
         // Use undefined structures for null ssl model
         ssl = (ssl == null) ? new ModelNode() : ssl;
@@ -654,37 +657,36 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
 
         if (keyManagerServiceName != null) {
             // An alias will not be set on the trust based SSLContext.
-            SSLContextService fullSSLContextService = new SSLContextService(protocol, enabledCipherSuites, enabledProtocols);
-            ServiceBuilder<SSLContext> fullBuilder = serviceTarget.addService(fullServiceName, fullSSLContextService);
-            AbstractKeyManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getKeyManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-            if (trustManagerServiceName != null) {
-                AbstractTrustManagerService.ServiceUtil.addDependency(fullBuilder, fullSSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-            }
+            final ServiceBuilder<?> fullBuilder = serviceTarget.addService(fullServiceName);
+            final Consumer<SSLContext> sslContextConsumer = fullBuilder.provides(fullServiceName);
+            final Supplier<AbstractKeyManagerService> keyManagersSupplier = AbstractKeyManagerService.ServiceUtil.requires(fullBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName));
+            final Supplier<TrustManager[]> trustManagersSupplier = trustManagerServiceName != null ? AbstractTrustManagerService.ServiceUtil.requires(fullBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName)) : null;
+            fullBuilder.setInstance(new SSLContextService(sslContextConsumer, keyManagersSupplier, trustManagersSupplier, protocol, enabledCipherSuites, enabledProtocols));
             serviceBuilderConsumer.accept(fullBuilder);
-
-            fullBuilder.setInitialMode(ON_DEMAND).install();
+            fullBuilder.setInitialMode(ON_DEMAND);
+            fullBuilder.install();
         }
 
         // Always register this one - if no KeyStore is defined we can add an alias to this.
-        SSLContextService trustOnlySSLContextService = new SSLContextService(protocol, enabledCipherSuites, enabledProtocols);
-        ServiceBuilder<SSLContext> trustBuilder = serviceTarget.addService(trustOnlyServiceName, trustOnlySSLContextService);
-        if (keyManagerServiceName == null) {
+        final ServiceBuilder<?> trustBuilder = serviceTarget.addService(trustOnlyServiceName);
+        final Consumer<SSLContext> sslContextConsumer;
+        if (keyManagerServiceName != null) {
+            sslContextConsumer = trustBuilder.provides(trustOnlyServiceName);
+        } else {
             // No KeyStore so just alias to this.
-            trustBuilder.addAliases(fullServiceName);
+            sslContextConsumer = trustBuilder.provides(trustOnlyServiceName, fullServiceName);
         }
-        if (trustManagerServiceName != null) {
-            AbstractTrustManagerService.ServiceUtil.addDependency(trustBuilder, trustOnlySSLContextService.getTrustManagerInjector(), SecurityRealm.ServiceUtil.createServiceName(realmName));
-        }
+        final Supplier<TrustManager[]> trustManagersSupplier = trustManagerServiceName != null ? AbstractTrustManagerService.ServiceUtil.requires(trustBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName)) : null;
+        trustBuilder.setInstance(new SSLContextService(sslContextConsumer, null, trustManagersSupplier, protocol, enabledCipherSuites, enabledProtocols));
         serviceBuilderConsumer.accept(trustBuilder);
-        trustBuilder.setInitialMode(ON_DEMAND).install();
+        trustBuilder.setInitialMode(ON_DEMAND);
+        trustBuilder.install();
 
-        SSLContextService.ServiceUtil.addDependency(realmBuilder, injector, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
+        return SSLContextService.ServiceUtil.requires(realmBuilder, SecurityRealm.ServiceUtil.createServiceName(realmName), false);
     }
 
     private void addKeyManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
                                       ServiceTarget serviceTarget) throws OperationFailedException {
-        final ServiceBuilder<AbstractKeyManagerService> serviceBuilder;
-
         ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
 
@@ -698,10 +700,11 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         }
 
         ModelNode pathNode = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl);
+        final ServiceBuilder<?> serviceBuilder;
         if (pathNode.isDefined() == false) {
-            ProviderKeyManagerService keyManagerService = new ProviderKeyManagerService(provider, keystorePassword);
-
-            serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<AbstractKeyManagerService> kmsConsumer = serviceBuilder.provides(serviceName);
+            serviceBuilder.setInstance(new ProviderKeyManagerService(kmsConsumer, null, null, provider, keystorePassword));
         } else {
             String path = pathNode.asString();
 
@@ -714,149 +717,154 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             ModelNode aliasNode = KeystoreAttributes.ALIAS.resolveModelAttribute(context, ssl);
             String alias = aliasNode.isDefined() ? aliasNode.asString() : null;
 
-            FileKeyManagerService keyManagerService = new FileKeyManagerService(provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName);
-
-            serviceBuilder = serviceTarget.addService(serviceName, keyManagerService);
-
-            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyManagerService.getKeystoreCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
-            if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyManagerService.getKeyCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<AbstractKeyManagerService> kmsConsumer = serviceBuilder.provides(serviceName);
+            Supplier<PathManager> pathManagerSupplier = null;
             if (relativeTo != null) {
-                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                        PathManager.class, keyManagerService.getPathManagerInjector());
+                pathManagerSupplier = serviceBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
                 serviceBuilder.requires(pathName(relativeTo));
             }
+            ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier = null;
+            ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier = null;
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            serviceBuilder.setInstance(new FileKeyManagerService(kmsConsumer, pathManagerSupplier, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName));
         }
 
-        serviceBuilder.setInitialMode(ON_DEMAND).install();
+        serviceBuilder.setInitialMode(ON_DEMAND);
+        serviceBuilder.install();
     }
 
     private void addTrustManagerService(OperationContext context, ModelNode ssl, ServiceName serviceName,
                                         ServiceTarget serviceTarget) throws OperationFailedException {
 
-        final ServiceBuilder<TrustManager[]> serviceBuilder;
+        final ServiceBuilder<?> serviceBuilder;
 
         ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
         final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
 
         if (!JKS.equalsIgnoreCase(provider)) {
-            final ProviderTrustManagerService trustManagerService = new ProviderTrustManagerService(provider, keystorePassword);
-            serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                trustManagerService.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
             }
+            serviceBuilder.setInstance(new ProviderTrustManagerService(trustManagersConsumer, credentialSourceSupplier, provider, keystorePassword));
         } else {
             String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();
             ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
             String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 
-            FileTrustManagerService trustManagerService = new FileTrustManagerService(provider, path, relativeTo, keystorePassword);
-
-            serviceBuilder = serviceTarget.addService(serviceName, trustManagerService);
-            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                trustManagerService.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder));
-            }
+            serviceBuilder = serviceTarget.addService(serviceName);
+            final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
+            Supplier<PathManager> pathManagerSupplier = null;
             if (relativeTo != null) {
-                serviceBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                        PathManager.class, trustManagerService.getPathManagerInjector());
+                pathManagerSupplier = serviceBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
                 serviceBuilder.requires(pathName(relativeTo));
             }
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+            if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+            }
+            serviceBuilder.setInstance(new FileTrustManagerService(trustManagersConsumer, pathManagerSupplier, credentialSourceSupplier, provider, path, relativeTo, keystorePassword));
         }
 
-        serviceBuilder.setInitialMode(ON_DEMAND).install();
+        serviceBuilder.setInitialMode(ON_DEMAND);
+        serviceBuilder.install();
     }
 
-    private void addSecretService(OperationContext context, ModelNode secret, String realmName, ServiceTarget serviceTarget,
-                                  ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerFactory> injector) throws OperationFailedException {
-        ServiceName secretServiceName = SecretIdentityService.ServiceUtil.createServiceName(realmName);
-
-        ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
+    private Supplier<CallbackHandlerFactory> addSecretService(OperationContext context, ModelNode secret, String realmName, ServiceTarget serviceTarget,
+                                  ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName secretServiceName = SecretIdentityService.ServiceUtil.createServiceName(realmName);
+        final ModelNode resolvedValueNode = SecretServerIdentityResourceDefinition.VALUE.resolveModelAttribute(context, secret);
         boolean base64 = secret.get(SecretServerIdentityResourceDefinition.VALUE.getName()).getType() != ModelType.EXPRESSION;
+        final ServiceBuilder<?> builder = serviceTarget.addService(secretServiceName);
+        final Consumer<CallbackHandlerFactory> chfConsumer = builder.provides(secretServiceName);
+        ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
+        if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
+            credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, builder);
+        }
         SecretIdentityService sis;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-            sis = new SecretIdentityService(resolvedValueNode.asString(), false);
+            sis = new SecretIdentityService(chfConsumer, credentialSourceSupplier, resolvedValueNode.asString(), false);
         } else {
-            sis = new SecretIdentityService(resolvedValueNode.asString(), base64);
+            sis = new SecretIdentityService(chfConsumer, credentialSourceSupplier, resolvedValueNode.asString(), base64);
         }
-        final ServiceBuilder<CallbackHandlerFactory> serviceBuilder = serviceTarget.addService(secretServiceName, sis)
-                .setInitialMode(ON_DEMAND);
-        if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-                sis.getCredentialSourceSupplierInjector()
-                        .inject(CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, serviceBuilder));
-            }
-        serviceBuilder.install();
-        CallbackHandlerFactory.ServiceUtil.addDependency(realmBuilder, injector, secretServiceName);
+        builder.setInstance(sis);
+        builder.setInitialMode(ON_DEMAND);
+        builder.install();
+
+        return CallbackHandlerFactory.ServiceUtil.requires(realmBuilder, secretServiceName);
     }
 
-    private void addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
-            ServiceBuilder<?> realmBuilder, Injector<KeytabIdentityFactoryService> injector) throws OperationFailedException {
-         ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
-         KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService();
-         ServiceBuilder<KeytabIdentityFactoryService> kifsBuilder = serviceTarget.addService(keyIdentityName, kifs)
-                 .setInitialMode(ON_DEMAND);
+    private Supplier<KeytabIdentityFactoryService> addKerberosIdentityServices(OperationContext context, ModelNode kerberos, String realmName, ServiceTarget serviceTarget,
+        ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        ServiceName keyIdentityName = KeytabIdentityFactoryService.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> kifsBuilder = serviceTarget.addService(keyIdentityName);
+        final Consumer<KeytabIdentityFactoryService> kifsConsumer = kifsBuilder.provides(keyIdentityName);
+        final KeytabIdentityFactoryService kifs = new KeytabIdentityFactoryService(kifsConsumer);
+        kifsBuilder.setInstance(kifs);
+        kifsBuilder.setInitialMode(ON_DEMAND);
 
-         if (kerberos.hasDefined(KEYTAB)) {
-             List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
-             for (Property current : keytabList) {
-                 String principal = current.getName();
-                 ModelNode keytab = current.getValue();
-                 String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
-                 ModelNode relativeToNode = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
-                 String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
-                 boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
-                 final String[] forHostsValues;
-                 ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
-                 if (forHosts.isDefined()) {
-                     List<ModelNode> list = forHosts.asList();
-                     forHostsValues = new String[list.size()];
-                     for (int i=0;i<list.size();i++) {
-                         forHostsValues[i] = list.get(i).asString();
-                     }
-                 } else {
-                     forHostsValues = new String[0];
-                 }
-
-                 ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
-                 KeytabService ks = new KeytabService(principal, path, relativeTo, forHostsValues, debug);
-
-                 ServiceBuilder<KeytabService> keytabBuilder = serviceTarget.addService(keytabName, ks).setInitialMode(ON_DEMAND);
-
-                if (relativeTo != null) {
-                    keytabBuilder.addDependency(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class),
-                            PathManager.class, ks.getPathManagerInjector());
-                    keytabBuilder.requires(pathName(relativeTo));
+        if (kerberos.hasDefined(KEYTAB)) {
+            List<Property> keytabList = kerberos.get(KEYTAB).asPropertyList();
+            for (Property current : keytabList) {
+                String principal = current.getName();
+                ModelNode keytab = current.getValue();
+                String path = KeytabResourceDefinition.PATH.resolveModelAttribute(context, keytab).asString();
+                ModelNode relativeToNode = KeytabResourceDefinition.RELATIVE_TO.resolveModelAttribute(context, keytab);
+                String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
+                boolean debug = KeytabResourceDefinition.DEBUG.resolveModelAttribute(context, keytab).asBoolean();
+                final String[] forHostsValues;
+                ModelNode forHosts = KeytabResourceDefinition.FOR_HOSTS.resolveModelAttribute(context, keytab);
+                if (forHosts.isDefined()) {
+                    List<ModelNode> list = forHosts.asList();
+                    forHostsValues = new String[list.size()];
+                    for (int i=0;i<list.size();i++) {
+                        forHostsValues[i] = list.get(i).asString();
+                    }
+                } else {
+                    forHostsValues = new String[0];
                 }
 
-                 keytabBuilder.install();
-                 KeytabService.ServiceUtil.addDependency(kifsBuilder, kifs.getKeytabInjector(), realmName, principal);
+                ServiceName keytabName = KeytabService.ServiceUtil.createServiceName(realmName, principal);
+
+                final ServiceBuilder<?> keytabBuilder = serviceTarget.addService(keytabName);
+                final Consumer<KeytabService> ksConsumer = keytabBuilder.provides(keytabName);
+                Supplier<PathManager> pathManagerSupplier = null;
+
+                if (relativeTo != null) {
+                    pathManagerSupplier = keytabBuilder.requires(context.getCapabilityServiceName(PATH_MANAGER_CAPABILITY, PathManager.class));
+                    keytabBuilder.requires(pathName(relativeTo));
+                }
+                keytabBuilder.setInstance(new KeytabService(ksConsumer, pathManagerSupplier, principal, path, relativeTo, forHostsValues, debug));
+                keytabBuilder.setInitialMode(ON_DEMAND);
+                keytabBuilder.install();
+                kifs.addKeytabSupplier(KeytabService.ServiceUtil.requires(kifsBuilder, realmName, principal));
              }
          }
 
          kifsBuilder.install();
 
-         KeytabIdentityFactoryService.ServiceUtil.addDependency(realmBuilder, injector, realmName);
+         return KeytabIdentityFactoryService.ServiceUtil.requires(realmBuilder, realmName);
     }
 
-    private void addUsersService(OperationContext context, ModelNode users, String realmName, ServiceTarget serviceTarget,
-                                 ServiceBuilder<?> realmBuilder, Injector<CallbackHandlerService> injector) throws OperationFailedException {
-        ServiceName usersServiceName = UserDomainCallbackHandler.ServiceUtil.createServiceName(realmName);
+    private Supplier<CallbackHandlerService> addUsersService(OperationContext context, ModelNode users, String realmName, ServiceTarget serviceTarget,
+                                 ServiceBuilder<?> realmBuilder) throws OperationFailedException {
+        final ServiceName usersServiceName = UserDomainCallbackHandler.ServiceUtil.createServiceName(realmName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(usersServiceName);
+        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(usersServiceName);
+        builder.setInstance(new UserDomainCallbackHandler(chsConsumer, unmaskUsersCredentials(context, builder, users.clone()), realmName, unmaskUsersPasswords(context, users)));
+        builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+        builder.install();
 
-        UserDomainCallbackHandler usersCallbackHandler = new UserDomainCallbackHandler(realmName, unmaskUsersPasswords(context, users));
-
-        ServiceBuilder<CallbackHandlerService> serviceBuilder = serviceTarget.addService(usersServiceName, usersCallbackHandler)
-                .setInitialMode(ServiceController.Mode.ON_DEMAND);
-        usersCallbackHandler.getCredentialSourceSupplierInjector().inject(unmaskUsersCredentials(context, serviceBuilder, users.clone()));
-        serviceBuilder.install();
-
-        CallbackHandlerService.ServiceUtil.addDependency(realmBuilder, injector, usersServiceName);
+        return CallbackHandlerService.ServiceUtil.requires(realmBuilder, usersServiceName);
     }
 
     private static ServiceName pathName(String relativeTo) {
@@ -876,7 +884,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         return users;
     }
 
-    private Map<String, ExceptionSupplier<CredentialSource, Exception>> unmaskUsersCredentials(OperationContext context, ServiceBuilder<CallbackHandlerService> serviceBuilder, ModelNode users) throws OperationFailedException {
+    private Map<String, ExceptionSupplier<CredentialSource, Exception>> unmaskUsersCredentials(OperationContext context, ServiceBuilder<?> serviceBuilder, ModelNode users) throws OperationFailedException {
         Map<String, ExceptionSupplier<CredentialSource, Exception>> suppliers = new HashMap<>();
         for (Property property : users.get(USER).asPropertyList()) {
             // Don't use the value from property as it is a clone and does not update the returned users ModelNode.

@@ -1,7 +1,7 @@
 package org.jboss.as.test.integration.management.cli;
 
 import org.aesh.readline.terminal.Key;
-import org.aesh.utils.Config;
+import org.aesh.terminal.utils.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.plexus.util.IOUtil;
 import org.jboss.as.cli.CommandContext;

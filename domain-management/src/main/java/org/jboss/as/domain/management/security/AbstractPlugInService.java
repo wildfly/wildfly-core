@@ -23,38 +23,27 @@
 package org.jboss.as.domain.management.security;
 
 import java.util.Map;
-
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
+import java.util.function.Supplier;
 
 /**
  * Base service to be extended by the plug-in services.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 abstract class AbstractPlugInService {
 
-    private final InjectedValue<PlugInLoaderService> plugInLoader = new InjectedValue<PlugInLoaderService>();
+    private final Supplier<PlugInLoaderService> plugInLoaderSupplier;
     private final String realmName;
     private final String pluginName;
     private final Map<String, String> configurationProperties;
 
-    AbstractPlugInService(final String realmName, final String pluginName, final Map<String, String> properties) {
+    AbstractPlugInService(final Supplier<PlugInLoaderService> plugInLoaderSupplier,
+                          final String realmName, final String pluginName, final Map<String, String> properties) {
+        this.plugInLoaderSupplier = plugInLoaderSupplier;
         this.realmName = realmName;
         this.pluginName = pluginName;
         this.configurationProperties = properties;
-    }
-
-    public InjectedValue<PlugInLoaderService> getPlugInLoaderServiceValue() {
-        return plugInLoader;
-    }
-
-    public void start(final StartContext context) throws StartException {
-    }
-
-    public void stop(final StopContext context) {
     }
 
     protected String getRealmName() {
@@ -70,7 +59,7 @@ abstract class AbstractPlugInService {
     }
 
     protected PlugInLoaderService getPlugInLoader() {
-        return plugInLoader.getValue();
+        return plugInLoaderSupplier.get();
     }
 
 }

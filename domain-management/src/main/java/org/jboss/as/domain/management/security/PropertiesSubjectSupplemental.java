@@ -33,13 +33,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.security.auth.Subject;
 
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.core.security.RealmGroup;
 import org.jboss.as.core.security.RealmUser;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -53,35 +56,33 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
 
 /**
- *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PropertiesSubjectSupplemental extends PropertiesFileLoader implements Service<SubjectSupplementalService>, SubjectSupplementalService,
+public class PropertiesSubjectSupplemental extends PropertiesFileLoader implements Service, SubjectSupplementalService,
         SubjectSupplemental {
 
     private static final String SERVICE_SUFFIX = "properties_authorization";
     private static final String COMMA = ",";
 
+    private final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer;
     private final String realmName;
 
-    public PropertiesSubjectSupplemental(final String realmName, final String path, final String relativeTo) {
-        super(path, relativeTo);
+    PropertiesSubjectSupplemental(final Consumer<SubjectSupplementalService> subjectSupplementalServiceConsumer, final Supplier<PathManager> pathManagerSupplier, final String realmName, final String path, final String relativeTo) {
+        super(pathManagerSupplier, path, relativeTo);
+        this.subjectSupplementalServiceConsumer = subjectSupplementalServiceConsumer;
         this.realmName = realmName;
     }
 
-    /*
-     * Service Methods
-     */
-
-    public SubjectSupplementalService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    public void start(StartContext context) throws StartException {
+    @Override
+    public void start(final StartContext context) throws StartException {
         super.start(context);
+        subjectSupplementalServiceConsumer.accept(this);
     }
 
-    public void stop(StopContext context) {
+    @Override
+    public void stop(final StopContext context) {
+        subjectSupplementalServiceConsumer.accept(null);
         super.stop(context);
     }
 

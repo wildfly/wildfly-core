@@ -21,6 +21,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PERMISSION_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_DECODER_RUNTIME_CAPABILITY;
@@ -88,8 +89,10 @@ import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.Version;
+import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
 import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
+import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
@@ -149,7 +152,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleAttributeDefinition REGISTER_JASPI_FACTORY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REGISTER_JASPI_FACTORY, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();
@@ -254,6 +257,12 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getLogicalRoleMapperDefinition());
         resourceRegistration.registerSubModel(RoleMapperDefinitions.getMappedRoleMapperDefinition());
 
+        // Evidence Decoders
+        resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getX500SubjectEvidenceDecoderDefinition());
+        resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getX509SubjectAltNameEvidenceDecoderDefinition());
+        resourceRegistration.registerSubModel(new CustomComponentDefinition<>(EvidenceDecoder.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_EVIDENCE_DECODER, EVIDENCE_DECODER_RUNTIME_CAPABILITY));
+        resourceRegistration.registerSubModel(EvidenceDecoderDefinitions.getAggregateEvidenceDecoderDefinition());
+
         // HTTP Mechanisms
         resourceRegistration.registerSubModel(HttpServerDefinitions.getAggregateHttpServerFactoryDefinition());
         resourceRegistration.registerSubModel(HttpServerDefinitions.getConfigurableHttpServerMechanismFactoryDefinition());
@@ -279,6 +288,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SSLDefinitions.getServerSSLContextDefinition(serverOrHostController));
         resourceRegistration.registerSubModel(SSLDefinitions.getClientSSLContextDefinition(serverOrHostController));
         resourceRegistration.registerSubModel(SSLDefinitions.getServerSNISSLContextDefinition());
+        resourceRegistration.registerSubModel(new CertificateAuthorityDefinition());
         resourceRegistration.registerSubModel(new CertificateAuthorityAccountDefinition());
 
         // Credential Store Block
@@ -427,9 +437,16 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+            //the normal default context manager will attempt to look up wildfly-config.xml on the class path
+            //parse it and store the result in a static. The means that the default can essentially be
+            //random of there are multiple deployments with different configurations
+            //to make sure there is no random behaviour we set the global default to an empty context
+            AuthenticationContext.getContextManager().setGlobalDefault(AuthenticationContext.empty());
+
+
             ModelNode model = resource.getModel();
-            ModelNode defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model);
-            AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(defaultAuthenticationContext.isDefined() ? defaultAuthenticationContext.asString() : null);
+            final String defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
+            AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(defaultAuthenticationContext);
             Map<String,String> securityProperties = SECURITY_PROPERTIES.unwrap(context, model);
             final String defaultSSLContext = DEFAULT_SSL_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
 
@@ -456,6 +473,18 @@ class ElytronDefinition extends SimpleResourceDefinition {
                         Provider[].class, prs.getFinalProviders());
             }
             builder.install();
+
+            if (defaultAuthenticationContext != null) {
+                ServiceBuilder<?> serviceBuilder = target
+                        .addService(DefaultAuthenticationContextService.SERVICE_NAME)
+                        .setInitialMode(Mode.ACTIVE);
+                Supplier<AuthenticationContext> defaultAuthenticationContextSupplier = serviceBuilder.requires(context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, defaultAuthenticationContext, AuthenticationContext.class));
+                Consumer<AuthenticationContext> valueConsumer = serviceBuilder.provides(DefaultAuthenticationContextService.SERVICE_NAME);
+
+                DefaultAuthenticationContextService defaultAuthenticationContextService = new DefaultAuthenticationContextService(defaultAuthenticationContextSupplier, valueConsumer);
+                serviceBuilder.setInstance(defaultAuthenticationContextService)
+                        .install();
+            }
 
             if (defaultSSLContext != null) {
                 ServiceBuilder<?> serviceBuilder = target

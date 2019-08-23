@@ -286,7 +286,7 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
         validateOperation(client, readAttribute(address, ENABLED), auditLogExpectation);
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(ACCESS, AUDIT).add(LOGGER, AUDIT_LOG);
-        validateOperation(client, writeAttribute(address, ENABLED, new ModelNode(true)), auditLogExpectation);
+        validateOperation(client, writeAttribute(address, ENABLED, ModelNode.TRUE), auditLogExpectation);
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
         validateOperation(client, readResource(address), securityRealmExpectation);
@@ -295,7 +295,7 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
         validateOperation(client, readAttribute(address, MAP_GROUPS_TO_ROLES), securityRealmExpectation);
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
-        validateOperation(client, writeAttribute(address, MAP_GROUPS_TO_ROLES, new ModelNode(true)), securityRealmExpectation);
+        validateOperation(client, writeAttribute(address, MAP_GROUPS_TO_ROLES, ModelNode.TRUE), securityRealmExpectation);
 
         address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "default");
         validateOperation(client, readResource(address), datasourceWithPlainPasswordExpectation);

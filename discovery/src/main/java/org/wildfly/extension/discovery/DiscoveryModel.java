@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2016, Red Hat, Inc., and individual contributors
+ * Copyright 2019, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -22,23 +22,38 @@
 
 package org.wildfly.extension.discovery;
 
-import java.util.Set;
-
-import org.jboss.as.controller.AbstractRemoveStepHandler;
-import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.ModelVersion;
 
 /**
- * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * Enumeration of discovery subsystem model versions.
+ * @author Paul Ferraro
  */
-final class TrivialRemoveStepHandler extends AbstractRemoveStepHandler {
-    TrivialRemoveStepHandler() {
+enum DiscoveryModel {
+    VERSION_1_0_0(1, 0, 0),
+    VERSION_2_0_0(2, 0, 0),
+    ;
+    static final DiscoveryModel CURRENT = VERSION_2_0_0;
+
+    private final ModelVersion version;
+
+    DiscoveryModel(int major, int minor, int micro) {
+        this.version = ModelVersion.create(major, minor, micro);
     }
 
-    TrivialRemoveStepHandler(final RuntimeCapability... capabilities) {
-        super(capabilities);
+    /**
+     * Returns the version of this model.
+     * @return a model version
+     */
+    ModelVersion getVersion() {
+        return this.version;
     }
 
-    TrivialRemoveStepHandler(final Set<RuntimeCapability> capabilities) {
-        super(capabilities);
+    /**
+     * Indicates whether this model is more recent than the specified version and thus requires transformation
+     * @param version a model version
+     * @return true this this model is more recent than the specified version, false otherwise
+     */
+    boolean requiresTransformation(ModelVersion version) {
+        return ModelVersion.compare(this.getVersion(), version) < 0;
     }
 }

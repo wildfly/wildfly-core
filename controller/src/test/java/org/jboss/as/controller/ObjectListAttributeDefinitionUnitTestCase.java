@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
@@ -86,6 +89,75 @@ public class ObjectListAttributeDefinitionUnitTestCase {
             org.junit.Assert.fail("Did not reject " + op);
         } catch (OperationFailedException good) {
             //
+        }
+    }
+
+    /**
+     * WFCORE-3255
+     */
+    @Test
+    public void testParameterCorrector() throws OperationFailedException {
+        final AttributeDefinition aBoolean = SimpleAttributeDefinitionBuilder.create("a-boolean", ModelType.BOOLEAN)
+                .setCorrector(new FalseTrueCorrector())
+                .build();
+        final AttributeDefinition anInt = SimpleAttributeDefinitionBuilder.create("an-int", ModelType.INT)
+                .setRequired(false)
+                .build();
+        final ObjectTypeAttributeDefinition anObject = ObjectTypeAttributeDefinition.Builder.of("an-object", aBoolean, anInt)
+                .setCorrector(new ObjectCorrectionCorrector())
+                .build();
+        final AttributeDefinition anObjectList = ObjectListAttributeDefinition.Builder.of("an-object-list", anObject)
+                .setCorrector(new ListDuplicationCorrector())
+                .build();
+
+        ModelNode testOperation = new ModelNode();
+        ModelNode testList = testOperation.get("an-object-list");
+        testList.add().get("a-boolean").set(false);
+
+        ModelNode aModel = new ModelNode();
+        anObjectList.validateAndSet(testOperation, aModel);
+
+        ModelNode aList = aModel.get("an-object-list");
+        // Check that the overall list corrector ran (duplicating the list elements from 1 provided to 2)
+        assertEquals(aModel.toString(), 2, aList.asInt());
+        for (ModelNode anElement : aList.asList()) {
+            // Field must be corrected
+            assertTrue(aModel.toString(), anElement.get("a-boolean").asBoolean());
+            // Overall object corrector must execute as well
+            assertEquals(aModel.toString(), 5, anElement.get("an-int").asInt());
+        }
+    }
+
+    /** Corrector for a field in an object */
+    private static class FalseTrueCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.set(true);
+            return newValue;
+        }
+    }
+
+    /** Corrector for the overall object */
+    private static class ObjectCorrectionCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            newValue.get("an-int").set(5);
+            return newValue;
+        }
+    }
+
+    /** Corrector for the overall list */
+    private static class ListDuplicationCorrector implements ParameterCorrector {
+
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            int size = newValue.asInt();
+            for (int i = 0; i < size; i++) {
+                newValue.add(newValue.get(i));
+            }
+            return newValue;
         }
     }
 }

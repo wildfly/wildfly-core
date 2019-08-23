@@ -15,6 +15,11 @@
         <size-rotating-file-audit-log name="audit5" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="true" autoflush="false" />
         <size-rotating-file-audit-log name="audit6" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" synchronized="false" autoflush="true" />
     </audit-logging>
+    <security-domains>
+        <security-domain name="X500Domain" default-realm="FileRealm" evidence-decoder="aggregateEvidenceDecoder">
+            <realm name="FileRealm"/>
+        </security-domain>
+    </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
         <jdbc-realm name="JdbcBcryptHashHex">
@@ -65,7 +70,19 @@
                 <key kid="1" public-key="-----BEGIN PUBLIC KEY-----MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgF1mQenACcf3tWRJ8nugSIXXdlgaAh3xf6K1ak8r4fI7vigfzYa/+OfvJeKgWL/fO1PTkYAqyDfxi+k3AORQRE3I0zqQoZBhtm99ZPluZGRU9+COLlbIK3Uac0K/t1dEjo9Cb2EMHyHBaaX3mwmS296zHyDFVDEm7Sw1G98TLnz9AgMBAAE=-----END PUBLIC KEY-----"/>
             </jwt>
         </token-realm>
+        <filesystem-realm name="FileRealm" levels="2" encoded="false">
+            <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
     </security-realms>
+    <mappers>
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <custom-evidence-decoder name="customEvidenceDecoder" class-name="org.wildfly.elytron.CustomEvidenceDecoder" module="l.m" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
+    </mappers>
     <tls>
         <key-stores>
             <key-store name="accounts.keystore">
@@ -93,5 +110,25 @@
         <client-ssl-contexts>
             <client-ssl-context name="ClientContext"/>
         </client-ssl-contexts>
+        <certificate-authorities>
+            <certificate-authority name="testCA" url="http://www.test.com"/>
+        </certificate-authorities>
+        <certificate-authority-accounts>
+            <certificate-authority-account name="validCAA">
+                <account-key key-store="accounts.keystore" alias="alias">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+            <certificate-authority-account name="invalidCAA" certificate-authority="testCA">
+                <account-key key-store="accounts.keystore" alias="alias">
+                    <credential-reference clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
+        </certificate-authority-accounts>
+        <trust-managers>
+            <trust-manager name="TestingTrustManager" key-store="accounts.keystore">
+                <ocsp/>
+            </trust-manager>
+        </trust-managers>
     </tls>
 </subsystem>

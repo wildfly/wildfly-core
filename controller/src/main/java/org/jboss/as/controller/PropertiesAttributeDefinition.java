@@ -77,7 +77,7 @@ public final class PropertiesAttributeDefinition extends MapAttributeDefinition 
     void setValueType(ModelNode node) {
         node.get(ModelDescriptionConstants.VALUE_TYPE).set(ModelType.STRING);
         if (isAllowExpression()) {
-            node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(new ModelNode(true));
+            node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(ModelNode.TRUE);
         }
     }
 

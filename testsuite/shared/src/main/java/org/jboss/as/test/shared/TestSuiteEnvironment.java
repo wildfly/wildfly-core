@@ -20,10 +20,12 @@ import org.wildfly.test.api.Authentication;
  */
 public class TestSuiteEnvironment {
     private static final boolean IS_WINDOWS;
+    private static final boolean IS_IBM_JVM;
 
     static {
         final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         IS_WINDOWS = os.contains("win");
+        IS_IBM_JVM = System.getProperty("java.vendor").startsWith("IBM");
     }
 
     public static ModelControllerClient getModelControllerClient() {
@@ -267,5 +269,14 @@ public class TestSuiteEnvironment {
      */
     public static boolean isWindows() {
         return IS_WINDOWS;
+    }
+
+    /**
+     * Indicates whether or not this is a IBM JVM.
+     *
+     * @return {@code true} if this is a IBM JVM, otherwise {@code false}
+     */
+    public static boolean isIbmJvm() {
+        return IS_IBM_JVM;
     }
 }

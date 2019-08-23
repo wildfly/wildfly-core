@@ -71,7 +71,7 @@ public class PropertyPatternTestCase {
         } finally {
             writer.close();
         }
-        UserPropertiesFileLoader propertiesLoad = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
+        UserPropertiesFileLoader propertiesLoad = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
         propertiesLoad.start(null);
         assertEquals(1, propertiesLoad.getEnabledUserNames().size());
         assertEquals(2, propertiesLoad.getDisabledUserNames().size());
@@ -103,7 +103,7 @@ public class PropertyPatternTestCase {
         }
 
         // make some updates
-        UserPropertiesFileLoader loader = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
+        UserPropertiesFileLoader loader = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
         loader.start(null);
         Properties props = loader.getProperties();
         props.put("newUser", "newPassword");
@@ -112,7 +112,7 @@ public class PropertyPatternTestCase {
         loader.stop(null);
 
         // reload the file and make sure everything is there
-        UserPropertiesFileLoader loader2 = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath(), null);
+        UserPropertiesFileLoader loader2 = new UserPropertiesFileLoader(usersPropertyFile.getAbsolutePath());
         loader2.start(null);
         assertEquals(2, loader2.getEnabledUserNames().size());
         assertEquals(2, loader2.getDisabledUserNames().size());

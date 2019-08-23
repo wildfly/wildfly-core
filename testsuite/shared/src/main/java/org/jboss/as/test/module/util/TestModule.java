@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,6 +53,9 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 public class TestModule {
 
     private static final Logger log  = Logger.getLogger(TestModule.class);
+    private static final String VALID_TARGET_DIR = File.separator + "target" + File.separator;
+    private static final String ILLEGAL_BUILD_DIR = "build" + VALID_TARGET_DIR;
+    private static final String ILLEGAL_DIST_DIR = "dist" + VALID_TARGET_DIR;
 
     private final String moduleName;
     private final File moduleXml;
@@ -80,7 +84,7 @@ public class TestModule {
      * <p>Creates a new module with the given name and module dependencies. The module.xml will be generated</p>
      *
      * @param moduleName The name of the module.
-     * @param moduleXml The module definition file.
+     * @param dependencies Names of modules to add as dependencies of the module.
      */
     public TestModule(String moduleName, String...dependencies) {
         this.moduleName = moduleName;
@@ -117,7 +121,7 @@ public class TestModule {
      * @throws java.io.IOException
      */
     public void create(boolean deleteFirst) throws IOException {
-        File moduleDirectory = getModuleDirectory();
+        File moduleDirectory = getModuleDirectory(true);
         if (moduleDirectory.exists()) {
             if (!deleteFirst) {
                 throw new IllegalArgumentException(moduleDirectory + " already exists.");
@@ -195,13 +199,13 @@ public class TestModule {
      * <p>Removes the module from the modules directory. This operation can not be reverted.</p>
      */
     public void remove() {
-        File moduleDir = getModuleDirectory();
+        File moduleDir = getModuleDirectory(false);
         File dir = moduleDir.getParentFile();
         remove(moduleDir);
 
-        File modulesDirectory = getModulesDirectory();
         // move up through the filesystem and prune anything empty directories up to modulesDirectory
         if (dir != null) {
+            File modulesDirectory = getModulesDirectory(false);
             File parent;
             while ((parent = dir.getParentFile()) != null) {
                 // check we haven't somehow wandered outside modulesDirectory, or reached the top level modulesDirectory.
@@ -261,11 +265,11 @@ public class TestModule {
         }
     }
 
-    private File getModuleDirectory() {
-        return new File(getModulesDirectory(), this.moduleName.replace('.', File.separatorChar));
+    private File getModuleDirectory(boolean createParent) {
+        return new File(getModulesDirectory(createParent), this.moduleName.replace('.', File.separatorChar));
     }
 
-    private File getModulesDirectory() {
+    private File getModulesDirectory(boolean create) {
         String modulePath = System.getProperty("module.path", null);
 
         if (modulePath == null) {
@@ -275,15 +279,37 @@ public class TestModule {
                 throw new IllegalStateException("Neither -Dmodule.path nor -Djboss.home were set");
             }
 
+            if (isImmutableModulePath(jbossHome)) {
+                throw new IllegalStateException(String.format("Writing test modules in jboss.home directory %s is not allowed", jbossHome));
+            }
+
             modulePath = jbossHome + File.separatorChar + "modules";
         } else {
-            modulePath = modulePath.split(File.pathSeparator)[0];
+            String pathElement = null;
+            for (String candidate : modulePath.split(File.pathSeparator)) {
+                if (!isImmutableModulePath(candidate)) {
+                    pathElement = candidate;
+                    break;
+                }
+            }
+            if (pathElement == null) {
+                throw new IllegalStateException(String.format("Writing test modules in module.path directories %s is not allowed", modulePath));
+            }
+            modulePath = pathElement;
         }
 
         File moduleDir = new File(modulePath);
 
         if (!moduleDir.exists()) {
-            throw new IllegalStateException("Determined module path does not exist");
+            if (create && isUnderCurrentProjectBuildDir(moduleDir)) {
+                // Test has configured a module path item under the current project build dir but it hasn't been created.
+                // Try and create it.
+                if (!moduleDir.mkdirs() && !moduleDir.exists()) {
+                    throw new IllegalStateException("Cannot create module directory " + moduleDir.getAbsolutePath());
+                }
+            } else {
+                throw new IllegalStateException("Determined module path does not exist");
+            }
         }
 
         if (!moduleDir.isDirectory()) {
@@ -291,6 +317,28 @@ public class TestModule {
         }
 
         return moduleDir;
+    }
+
+    private static boolean isImmutableModulePath(String path) {
+        return path.contains(ILLEGAL_BUILD_DIR) || path.contains(ILLEGAL_DIST_DIR);
+    }
+
+    private static boolean isUnderCurrentProjectBuildDir(File moduleRoot) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null && System.getProperty("basedir") != null) {
+            buildDir = Paths.get(System.getProperty("basedir"), "target").toString();
+        }
+        if (buildDir != null) {
+            File target = new File(buildDir);
+            File parent = moduleRoot.getParentFile();
+            while (parent != null) {
+                if (target.equals(parent)) {
+                    return true;
+                }
+                parent = parent.getParentFile();
+            }
+        }
+        return false;
     }
 
     private static void copyFile(File target, InputStream src) throws IOException {

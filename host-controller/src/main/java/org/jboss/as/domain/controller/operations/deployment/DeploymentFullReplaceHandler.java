@@ -30,6 +30,8 @@ import static org.jboss.as.server.controller.resources.DeploymentAttributes.ENAB
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.HashUtil;
@@ -60,21 +62,17 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
 
     private final ContentRepository contentRepository;
     private final HostFileRepository fileRepository;
+    private final boolean isMaster;
+    private final boolean isBackup;
 
     /**
-     * Constructor for a master Host Controller
+     * Constructor for a master and slave Host Controllers
      */
-    public DeploymentFullReplaceHandler(final ContentRepository contentRepository) {
+    public DeploymentFullReplaceHandler(final ContentRepository contentRepository, final HostFileRepository fileRepository, final boolean isMaster, final boolean isBackup) {
         this.contentRepository = contentRepository;
-        this.fileRepository = null;
-    }
-
-    /**
-     * Constructor for a slave Host Controller
-     */
-    public DeploymentFullReplaceHandler(final HostFileRepository fileRepository) {
-        this.contentRepository = null;
         this.fileRepository = fileRepository;
+        this.isMaster = isMaster;
+        this.isBackup = isBackup;
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -115,7 +113,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         ModelNode contentItemNode = content.require(0);
         if (contentItemNode.hasDefined(HASH)) {
             newHash = contentItemNode.require(HASH).asBytes();
-            if (contentRepository != null) {
+            if (isMaster) {
                 // We are the master DC. Validate that we actually have this content.
                 if (!contentRepository.hasContent(newHash)) {
                     throw createFailureException(DomainControllerLogger.ROOT_LOGGER.noDeploymentContentWithHash(HashUtil.bytesToHexString(newHash)));
@@ -126,7 +124,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
                 fileRepository.getDeploymentFiles(ModelContentReference.fromModelAddress(address, newHash));
             }
         } else if (DeploymentHandlerUtils.hasValidContentAdditionParameterDefined(contentItemNode)) {
-            if (contentRepository == null) {
+            if (!isMaster) {
                 // This is a slave DC. We can't handle this operation; it should have been fixed up on the master DC
                 throw createFailureException(DomainControllerLogger.ROOT_LOGGER.slaveCannotAcceptUploads());
             }
@@ -153,6 +151,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         deploymentModel.get(CONTENT).set(content);
 
         // Update server groups
+        final Set<PathAddress> affectedServerGroups = new HashSet<>();
         final Resource root = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         if (root.hasChild(PathElement.pathElement(SERVER_GROUP))) {
             ModelNode enabled = correctedOperation.get(ENABLED.getName());
@@ -164,6 +163,7 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
                     if (enabled.isDefined()) {
                         groupDeploymentModel.get(ENABLED.getName()).set(enabled);
                     }
+                    affectedServerGroups.add(PathAddress.pathAddress(serverGroupResource.getPathElement(), deploymentPath));
                 }
             }
         }
@@ -175,25 +175,38 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
                     if (replacedHash != null  && (newHash == null || !Arrays.equals(replacedHash, newHash))) {
                         // The old content is no longer used; clean from repos
                         ContentReference reference = ModelContentReference.fromModelAddress(address, replacedHash);
-                        if (contentRepository != null) {
-                            contentRepository.removeContent(reference);
-                        } else {
-                            fileRepository.deleteDeployment(reference);
+                        cleanRepositoryRef(reference);
+                        for (PathAddress serverGroupAddress : affectedServerGroups) {
+                            reference = ModelContentReference.fromModelAddress(serverGroupAddress, replacedHash);
+                            cleanRepositoryRef(reference);
                         }
                     }
-                    if (newHash != null && contentRepository != null) {
-                        contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+                    if (newHash != null) {
+                        if (isMaster || isBackup) {
+                            contentRepository.addContentReference(ModelContentReference.fromModelAddress(address, newHash));
+                        }
+                        for (PathAddress serverGroupAddress : affectedServerGroups) {
+                            contentRepository.addContentReference(ModelContentReference.fromModelAddress(serverGroupAddress, newHash));
+                        }
                     }
                 } else if (newHash != null && (replacedHash == null || !Arrays.equals(replacedHash, newHash))) {
                     // Due to rollback, the new content isn't used; clean from repos
                     ContentReference reference = ModelContentReference.fromModelAddress(address, newHash);
-                    if (contentRepository != null) {
-                        contentRepository.removeContent(reference);
-                    } else {
-                        fileRepository.deleteDeployment(reference);
+                    cleanRepositoryRef(reference);
+                    for (PathAddress serverGroupAddress : affectedServerGroups) {
+                        reference = ModelContentReference.fromModelAddress(serverGroupAddress, newHash);
+                        cleanRepositoryRef(reference);
                     }
                 }
             }
         });
+    }
+
+    private void cleanRepositoryRef(ContentReference reference){
+        if (isMaster || isBackup) {
+            contentRepository.removeContent(reference);
+        } else {
+            fileRepository.deleteDeployment(reference);
+        }
     }
 }

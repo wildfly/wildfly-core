@@ -54,7 +54,7 @@ public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
     @Test
     public void testWriteDebugEnabled() throws Exception {
         KernelServices kernelServices = doEmptyJvmAdd();
-        ModelNode value = new ModelNode(true);
+        ModelNode value = ModelNode.TRUE;
         Assert.assertEquals(value, writeTest(kernelServices, "debug-enabled", value));
     }
 

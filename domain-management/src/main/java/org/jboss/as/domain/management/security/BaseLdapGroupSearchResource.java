@@ -53,7 +53,7 @@ public abstract class BaseLdapGroupSearchResource extends SimpleResourceDefiniti
             .build();
 
     public static final SimpleAttributeDefinition ITERATIVE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ITERATIVE, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
@@ -74,7 +74,7 @@ public abstract class BaseLdapGroupSearchResource extends SimpleResourceDefiniti
 
     public static final SimpleAttributeDefinition PREFER_ORIGINAL_CONNECTION =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PREFER_ORIGINAL_CONNECTION, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

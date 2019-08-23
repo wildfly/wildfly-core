@@ -45,7 +45,6 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
 
-import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -91,7 +90,7 @@ public abstract class AbstractMgmtTestBase {
         return executeOperation(createOpNode(address, operation));
     }
 
-    protected ModelNode executeAndRollbackOperation(final ModelNode op) throws IOException, OperationFormatException {
+    protected ModelNode executeAndRollbackOperation(final ModelNode op) throws IOException {
 
         ModelNode broken = Util.createOperation("read-attribute", PathAddress.EMPTY_ADDRESS);
         broken.get("no-such-attribute").set("fail");

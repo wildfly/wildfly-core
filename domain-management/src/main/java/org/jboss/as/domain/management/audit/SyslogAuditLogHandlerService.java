@@ -22,6 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRU
 
 import java.util.Locale;
 import java.util.Set;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.audit.SyslogAuditLogHandler;
@@ -32,61 +33,59 @@ import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.audit.SyslogAuditLogProtocolResourceDefinition.TlsKeyStore;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 
 /**
  * Dummy service to access credential  suppliers
  * @author Emmanuel Hugonnet (c) 2017 Red Hat, inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class SyslogAuditLogHandlerService implements Service<SyslogAuditLogHandlerService>, SyslogCredentialReferenceSupplier {
+public class SyslogAuditLogHandlerService implements Service, SyslogCredentialReferenceSupplier {
 
-    public static final ServiceName SYSLOG_AUDIT_HANDLER = ServiceName.of("org", "wildfly", "management", "audit", "syslog-handler");
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> tlsClientCertStoreCredentialSourceSupplier = new InjectedValue<>();
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> tlsClientCertStoreKeyCredentialSourceSupplier = new InjectedValue<>();
-    private final InjectedValue<ExceptionSupplier<CredentialSource, Exception>> tlsTrustStoreSupplier = new InjectedValue<>();
+    static final ServiceName SYSLOG_AUDIT_HANDLER = ServiceName.of("org", "wildfly", "management", "audit", "syslog-handler");
+    private final ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreKeyCredentialSourceSupplier;
+    private final ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreCredentialSourceSupplier;
+    private final ExceptionSupplier<CredentialSource, Exception> tlsTrustStoreSupplier;
 
-    public SyslogAuditLogHandlerService() {
+    SyslogAuditLogHandlerService(final ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreKeyCredentialSourceSupplier,
+                                 final ExceptionSupplier<CredentialSource, Exception> tlsClientCertStoreCredentialSourceSupplier,
+                                 final ExceptionSupplier<CredentialSource, Exception> tlsTrustStoreSupplier) {
+        this.tlsClientCertStoreKeyCredentialSourceSupplier = tlsClientCertStoreKeyCredentialSourceSupplier;
+        this.tlsClientCertStoreCredentialSourceSupplier = tlsClientCertStoreCredentialSourceSupplier;
+        this.tlsTrustStoreSupplier = tlsTrustStoreSupplier;
     }
 
     @Override
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) throws StartException {
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
     }
 
     @Override
-    public SyslogAuditLogHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    @Override
-     public ExceptionSupplier<CredentialSource, Exception> getTlsClientCertStoreSupplier() {
-        return tlsClientCertStoreCredentialSourceSupplier.getOptionalValue();
+    public ExceptionSupplier<CredentialSource, Exception> getTlsClientCertStoreSupplier() {
+        return tlsClientCertStoreCredentialSourceSupplier;
     }
 
     @Override
     public ExceptionSupplier<CredentialSource, Exception> getTlsClientCertStoreKeySupplier() {
-        return tlsClientCertStoreKeyCredentialSourceSupplier.getOptionalValue();
+        return tlsClientCertStoreKeyCredentialSourceSupplier;
     }
 
     @Override
     public ExceptionSupplier<CredentialSource, Exception> getTlsTrustStoreSupplier() {
-        return tlsTrustStoreSupplier.getOptionalValue();
+        return tlsTrustStoreSupplier;
     }
 
     public static final SyslogAuditLogHandlerService installService(OperationContext context, ServiceName serviceName, final Resource handlerResource) throws OperationFailedException {
-        SyslogAuditLogHandlerService service = new SyslogAuditLogHandlerService();
-        ServiceBuilder<SyslogAuditLogHandlerService> serviceBuilder = context.getServiceTarget().addService(serviceName, service);
         final Set<ResourceEntry> protocols = handlerResource.getChildren(PROTOCOL);
         if (protocols.isEmpty()) {
             //We already check in SyslogAuditLogProtocolResourceDefinition that there is only one protocol
@@ -94,6 +93,10 @@ public class SyslogAuditLogHandlerService implements Service<SyslogAuditLogHandl
         }
         final ResourceEntry protocol = protocols.iterator().next();
         final SyslogAuditLogHandler.Transport transport = SyslogAuditLogHandler.Transport.valueOf(protocol.getPathElement().getValue().toUpperCase(Locale.ENGLISH));
+        final ServiceBuilder<?> serviceBuilder = context.getServiceTarget().addService(serviceName);
+        ExceptionSupplier<CredentialSource, Exception> tccskcsSupplier = null;
+        ExceptionSupplier<CredentialSource, Exception> tccscsSupplier = null;
+        ExceptionSupplier<CredentialSource, Exception> ttsSupplier = null;
         if (transport == SyslogAuditLogHandler.Transport.TLS) {
             final Set<ResourceEntry> tlsStores = protocol.getChildren(AUTHENTICATION);
             for (ResourceEntry storeEntry : tlsStores) {
@@ -101,21 +104,20 @@ public class SyslogAuditLogHandlerService implements Service<SyslogAuditLogHandl
                 String type = storeEntry.getPathElement().getValue();
                 if (type.equals(CLIENT_CERT_STORE)) {
                     if (storeModel.hasDefined(TlsKeyStore.KEY_PASSWORD_CREDENTIAL_REFERENCE.getName())) {
-                        service.tlsClientCertStoreKeyCredentialSourceSupplier
-                                .inject(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEY_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder));
+                        tccskcsSupplier = CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEY_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder);
                     }
                     if (storeModel.hasDefined(TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE.getName())) {
-                        service.tlsClientCertStoreCredentialSourceSupplier
-                                .inject(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder));
+                        tccscsSupplier = CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder);
                     }
                 } else if (type.equals(TRUSTSTORE)) {
                     if (storeModel.hasDefined(TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE.getName())) {
-                        service.tlsTrustStoreSupplier
-                                .inject(CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder));
+                        ttsSupplier = CredentialReference.getCredentialSourceSupplier(context, TlsKeyStore.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, storeModel, serviceBuilder);
                     }
                 }
             }
         }
+        final SyslogAuditLogHandlerService service = new SyslogAuditLogHandlerService(tccskcsSupplier, tccscsSupplier, ttsSupplier);
+        serviceBuilder.setInstance(service);
         serviceBuilder.install();
         return service;
     }

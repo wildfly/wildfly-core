@@ -21,9 +21,14 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
             targetNamespace="urn:wildfly:elytron:8.0"
             xmlns="urn:wildfly:elytron:8.0"
+            xmlns:credential-reference="urn:wildfly:credential-reference:1.0"
             elementFormDefault="qualified"
             attributeFormDefault="unqualified"
             version="1.0">
+
+    <!-- Need to include the path to the schema location here in order for the xml-validation that's defined in
+         elytron/pom.xml to succeed. -->
+    <xs:import namespace="urn:wildfly:credential-reference:1.0" schemaLocation="../controller/src/main/resources/schema/wildfly-credential-reference_1_0.xsd"/>
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystemType"/>
@@ -164,7 +169,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used by the configuration.
@@ -827,6 +832,13 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to the PrincipalDecoder to be used by this domain.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="evidence-decoder" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to an EvidenceDecoder to be used by the domain.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1823,7 +1835,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0" maxOccurs="1">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         The credential reference to credential store or clear text (password)
@@ -2455,6 +2467,10 @@
             <xs:element name="custom-role-mapper" type="customRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="logical-role-mapper" type="logicalRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="mapped-role-mapper" type="mappedRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="x500-subject-evidence-decoder" type="x500SubjectEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="x509-subject-alt-name-evidence-decoder" type="x509SubjectAltNameEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="custom-evidence-decoder" type="customEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="aggregate-evidence-decoder" type="aggregateEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -3490,6 +3506,121 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="x500SubjectEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder that derives the principal associated with the given evidence from the subject from
+                the first certificate in the certificate chain.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="x509SubjectAltNameEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder that derives the principal associated with the given evidence from an X.509 subject
+                alternative name from the first certificate in the given evidence.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:attribute name="alt-name-type" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The subject alternative name type to decode from the given evidence.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="rfc822Name" />
+                            <xs:enumeration value="dNSName" />
+                            <xs:enumeration value="directoryName" />
+                            <xs:enumeration value="uniformResourceIdentifier" />
+                            <xs:enumeration value="iPAddress" />
+                            <xs:enumeration value="registeredID" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="segment" type="xs:int" default="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The 0-based occurrence of the subject alternative name to map. This attribute is optional and only
+                            used when there is more than one subject alternative name of the given alt-name-type
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="aggregateEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                An EvidenceDecoder definition that is an aggregation of other EvidenceDecoders.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:sequence>
+                    <xs:element name="evidence-decoder" type="evidenceDecoderRefType" minOccurs="2" maxOccurs="unbounded" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="customEvidenceDecoderType">
+        <xs:annotation>
+            <xs:documentation>
+                Generic definition for a custom EvidenceDecoder implementation.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="evidenceDecoderType">
+                <xs:sequence>
+                    <xs:element name="configuration"
+                                type="customComponentConfiguration" minOccurs="0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The configuration to apply to the EvidenceDecoder implementation.
+
+                                Note: If configuration is supplied the EvidenceDecoder MUST implement the initialize(Map&lt;String, String&gt;) method.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attributeGroup ref="customComponentAttributes" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="evidenceDecoderRefType">
+        <xs:annotation>
+            <xs:documentation>
+                A reference to an EvidenceDecoder
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+
+    <xs:complexType name="evidenceDecoderType" abstract="true">
+        <xs:annotation>
+            <xs:documentation>
+                Base type for all EvidenceDecoder definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name for the EvidenceDecoder, note names used for EvidenceDecoder must be unique
+                    across the whole context.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <!--
         Mechanism Configuration
     -->
@@ -4236,6 +4367,7 @@
             <xs:element name="trust-managers" type="trustManagersType" minOccurs="0"/>
             <xs:element name="server-ssl-contexts" type="serverSSLContextsType" minOccurs="0" />
             <xs:element name="client-ssl-contexts" type="clientSSLContextsType" minOccurs="0" />
+            <xs:element name="certificate-authorities" type="certificateAuthoritiesType" minOccurs="0" />
             <xs:element name="certificate-authority-accounts" type="certificateAuthorityAccountsType" minOccurs="0" />
             <xs:element name="server-ssl-sni-contexts" type="serverSSLSNIContextsType" minOccurs="0" />
         </xs:all>
@@ -4259,7 +4391,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="credential-reference" type="credentialReferenceType">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType">
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used by the underlying KeyManager when accessing the entries in the underlying KeyStore.
@@ -4339,6 +4471,7 @@
         </xs:annotation>
         <xs:all>
             <xs:element name="certificate-revocation-list" type="certificateRevocationListType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="ocsp" type="ocspType" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
@@ -4391,6 +4524,27 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="maximum-cert-path" type="xs:int" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum number of non-self-issued intermediate certificates that may exist in a certification path for OCSP and CRL checks. If neither OCSP and CRL is configured, this attribute has no effect.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="only-leaf-cert" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Check revocation status only of leaf certificates.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="soft-fail" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Accept certificate if revocation status is unknown.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="certificateRevocationListType">
@@ -4417,6 +4571,28 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="ocspType">
+        <xs:annotation>
+            <xs:documentation>
+                Enables online certificate status protocol checks to a trust manager.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="responder" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    OCSP responder URI to override those extracted from certificate.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefer-crls" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Prefer certificate revocation list revocation over OCSP if certificate-revocation-list is defined.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -4772,7 +4948,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="credential-reference" type="credentialReferenceType" minOccurs="0" maxOccurs="1">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         The credential reference to credential store or clear text (password)
@@ -5051,22 +5227,57 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="certificate-authority" default="LetsEncrypt">
+        <xs:attribute name="certificate-authority" type="xs:string" default="LetsEncrypt">
             <xs:annotation>
                 <xs:documentation>
-                    The certificate authority to use.
+                    The reference to certificate authority to use.
                 </xs:documentation>
             </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="LetsEncrypt"/>
-                </xs:restriction>
-            </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="contact-urls" type="stringListType" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     A list of URLs that the certificate authority can contact about any issues related to this account.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthoritiesType">
+        <xs:annotation>
+            <xs:documentation>
+                Container for certificate authority definitions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="certificate-authority" type="certificateAuthorityType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="certificateAuthorityType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single certificate authority.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this certificate authority.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="url" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    URL of the certificate authority.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="staging-url" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    URL of the certificate authority to use in pre-production.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -5079,7 +5290,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="credential-reference" type="credentialReferenceType">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType">
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used when accessing the certificate authority account key.
@@ -5137,7 +5348,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="credential-reference" type="credentialReferenceType">
+            <xs:element name="credential-reference" type="credential-reference:credentialReferenceType">
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used by as protection parameter for the Credential Store.
@@ -5306,49 +5517,6 @@
         </xs:annotation>
         <xs:list itemType="xs:string"/>
     </xs:simpleType>
-
-    <!-- Credential Reference Types -->
-    <xs:attributeGroup name="credentialReferenceStoreBased">
-        <xs:annotation>
-            <xs:documentation>
-                Group of attributes used when referencing credential through credential store.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="store" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Credential store name used to fetch credential with given 'alias' from.
-                    Credential store name has to be defined elsewhere.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="alias" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Alias of credential in the credential store.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="type" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Type of credential to be fetched from credential store.
-                    It is usually fully qualified class name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-    <xs:complexType name="credentialReferenceType">
-        <xs:attributeGroup ref="credentialReferenceStoreBased"/>
-        <xs:attribute name="clear-text" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Credential/password in clear text. Use just for testing purpose.
-                    Otherwise use credential store to mask the actual credential from your configuration.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
 
     <xs:complexType name="policyType">
         <xs:annotation>

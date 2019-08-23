@@ -36,26 +36,28 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import javax.naming.NamingException;
 
 import org.jboss.as.domain.management.security.LdapSearcherCache.AttachmentKey;
 import org.jboss.as.domain.management.security.LdapSearcherCache.SearchResult;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 
 /**
  * The {@link Service} that handles caching results of LDAP searches.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
+class LdapCacheService<R, K> implements Service {
 
     private static volatile int THREAD_COUNT = 1;
 
     private final LdapSearcher<R, K> searcher;
+    private final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer;
     private volatile CacheMode mode;
     private volatile int evictionTime;
     private volatile boolean cacheFailures;
@@ -64,10 +66,11 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
     /*
      * Controlled by the service lifecycle.
      */
-    private volatile ExtendedLdapSearcherCache<R, K> cacheImplementation;
+    volatile ExtendedLdapSearcherCache<R, K> cacheImplementation;
     private ScheduledExecutorService executorService;
 
-    private LdapCacheService(final LdapSearcher<R, K> searcher, final CacheMode mode, final int evictionTime, final boolean cacheFailures, final int maxCacheSize) {
+    private LdapCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer, final LdapSearcher<R, K> searcher, final CacheMode mode, final int evictionTime, final boolean cacheFailures, final int maxCacheSize) {
+        this.ldapSearchCacheConsumer = ldapSearchCacheConsumer;
         this.searcher = searcher;
         this.mode = mode;
         this.evictionTime = evictionTime;
@@ -79,16 +82,19 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
      * Factory Methods
      */
 
-    static <R, K> LdapCacheService<R, K> createNoCacheService(final LdapSearcher<R, K> searcher) {
-        return new LdapCacheService<R, K>(searcher, CacheMode.OFF, 0, false, 0);
+    static <R, K> LdapCacheService<R, K> createNoCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer,
+                                                              final LdapSearcher<R, K> searcher) {
+        return new LdapCacheService<R, K>(ldapSearchCacheConsumer, searcher, CacheMode.OFF, 0, false, 0);
     }
 
-    static <R, K> LdapCacheService<R, K> createBySearchCacheService(final LdapSearcher<R, K> searcher, final int evictionTime, final boolean cacheFailure, final int maxSize) {
-        return new LdapCacheService<R, K>(searcher, CacheMode.BY_SEARCH, evictionTime, cacheFailure, maxSize);
+    static <R, K> LdapCacheService<R, K> createBySearchCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer,
+                                                                    final LdapSearcher<R, K> searcher, final int evictionTime, final boolean cacheFailure, final int maxSize) {
+        return new LdapCacheService<R, K>(ldapSearchCacheConsumer, searcher, CacheMode.BY_SEARCH, evictionTime, cacheFailure, maxSize);
     }
 
-    static <R, K> LdapCacheService<R, K> createByAccessCacheService(final LdapSearcher<R, K> searcher, final int evictionTime, final boolean cacheFailure, final int maxSize) {
-        return new LdapCacheService<R, K>(searcher, CacheMode.BY_ACCESS, evictionTime, cacheFailure, maxSize);
+    static <R, K> LdapCacheService<R, K> createByAccessCacheService(final Consumer<LdapSearcherCache<R, K>> ldapSearchCacheConsumer,
+                                                                    final LdapSearcher<R, K> searcher, final int evictionTime, final boolean cacheFailure, final int maxSize) {
+        return new LdapCacheService<R, K>(ldapSearchCacheConsumer, searcher, CacheMode.BY_ACCESS, evictionTime, cacheFailure, maxSize);
     }
 
     /*
@@ -96,12 +102,7 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
      */
 
     @Override
-    public LdapSearcherCache<R, K> getValue() throws IllegalStateException, IllegalArgumentException {
-        return cacheImplementation;
-    }
-
-    @Override
-    public void start(final StartContext context) throws StartException {
+    public void start(final StartContext context) {
         switch (mode) {
             case OFF:
                 cacheImplementation = new NoCacheCache();
@@ -129,6 +130,7 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
                 }
             });
         }
+        ldapSearchCacheConsumer.accept(cacheImplementation);
     }
 
     @Override
@@ -139,6 +141,7 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
                 @Override
                 public void run() {
                     try {
+                        ldapSearchCacheConsumer.accept(null);
                         cacheImplementation.clearAll();
                         cacheImplementation = null;
                         if (executorService != null) {

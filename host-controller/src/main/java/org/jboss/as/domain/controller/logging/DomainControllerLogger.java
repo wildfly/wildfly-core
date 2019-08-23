@@ -802,4 +802,7 @@ public interface DomainControllerLogger extends BasicLogger {
 
     @Message(id = 97, value = "Cannot explode a subdeployment of an unexploded deployment")
     OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
+
+    @Message(id = 98, value = "The following servers %s are starting; execution of remote management operations is not currently available")
+    OperationFailedException serverManagementUnavailableDuringBoot(String serverNames);
 }

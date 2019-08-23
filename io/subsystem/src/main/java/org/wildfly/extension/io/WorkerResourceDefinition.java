@@ -95,7 +95,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             .build();
     static final OptionAttributeDefinition STACK_SIZE = new OptionAttributeDefinition.Builder(Constants.STACK_SIZE, Options.STACK_SIZE)
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
-            .setDefaultValue(new ModelNode(0L))
+            .setDefaultValue(ModelNode.ZERO_LONG)
             .setValidator(new LongRangeValidator(0L))
             .setAllowExpression(true)
             .build();
@@ -244,7 +244,7 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
         @Override
         protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode value, ModelNode currentValue, HandbackHolder handbackHolder) throws OperationFailedException {
             XnioWorker worker = getXnioWorker(context);
-            if (worker == null) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
+            if (worker == null || !value.isDefined()) { //worker can be null if it is not started yet, it can happen when there are no dependencies to it.
                 return true;
             }
             try {

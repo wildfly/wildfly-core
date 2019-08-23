@@ -108,13 +108,13 @@ class RoleMapperDefinitions {
 
     static final SimpleAttributeDefinition KEEP_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_MAPPED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 
     static final SimpleAttributeDefinition KEEP_NON_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_NON_MAPPED, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
             .build();
 

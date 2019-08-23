@@ -209,7 +209,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             setAllowExpression(true).
             build();
     public static final SimpleAttributeDefinition MASTER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MASTER, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setResourceOnly()

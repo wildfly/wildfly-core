@@ -144,5 +144,17 @@ interface ThreadsLogger extends BasicLogger {
     @Message(id = 30, value = "Failed to parse '%s', allowed values are: %s")
     OperationFailedException failedToParseUnit(String unit, List<TimeUnit> allowed);
 
-    // id = 31; redundant parameter null check message
+    @Message(id = 31, value = "Unsupported attribute '%s'")
+    IllegalStateException unsupportedEnhancedQueueExecutorAttribute(String attributeName);
+
+    @Message(id = 32, value = "Service '%s' not found.")
+    OperationFailedException enhancedQueueExecutorServiceNotFound(ServiceName serviceName);
+
+    @Message(id = 33, value = "The executor service hasn't been initialized.")
+    IllegalStateException enhancedQueueExecutorUninitialized();
+
+    @Message(id = 34, value = "Unsupported metric '%s'")
+    IllegalStateException unsupportedEnhancedQueueExecutorMetric(String attributeName);
+
+    // id = 35; redundant parameter null check message
 }

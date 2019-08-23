@@ -72,7 +72,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
                     .setXmlName(CommonAttributes.PATH)
                     .setAllowExpression(true)
                     .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, false, true))
-                    .addArbitraryDescriptor(FILESYSTEM_PATH, new ModelNode(true))
+                    .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
                     .build();
     protected static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RELATIVE_TO, ModelType.STRING, true)
@@ -84,32 +84,32 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_ENABLED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.SCAN_ENABLED)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .build();
     protected static final SimpleAttributeDefinition SCAN_INTERVAL =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.SCAN_INTERVAL, ModelType.INT, true)
                     .setXmlName(CommonAttributes.SCAN_INTERVAL)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(0))
+                    .setDefaultValue(ModelNode.ZERO)
                     .build();
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_ZIPPED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_ZIPPED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_ZIPPED)
-                    .setDefaultValue(new ModelNode().set(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .setAllowExpression(true)
                     .build();
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_EXPLODED =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_EXPLODED, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_EXPLODED)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .build();
 
     protected static final SimpleAttributeDefinition AUTO_DEPLOY_XML =
             new SimpleAttributeDefinitionBuilder(CommonAttributes.AUTO_DEPLOY_XML, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.AUTO_DEPLOY_XML)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(true))
+                    .setDefaultValue(ModelNode.TRUE)
                     .build();
 
     protected static final SimpleAttributeDefinition DEPLOYMENT_TIMEOUT =
@@ -123,7 +123,7 @@ public class DeploymentScannerDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK, ModelType.BOOLEAN, true)
                     .setXmlName(CommonAttributes.RUNTIME_FAILURE_CAUSES_ROLLBACK)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode().set(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .build();
 
     protected static final SimpleAttributeDefinition[] ALL_ATTRIBUTES = {PATH,RELATIVE_TO,SCAN_ENABLED,SCAN_INTERVAL,AUTO_DEPLOY_EXPLODED,AUTO_DEPLOY_XML,AUTO_DEPLOY_ZIPPED,DEPLOYMENT_TIMEOUT,RUNTIME_FAILURE_CAUSES_ROLLBACK};

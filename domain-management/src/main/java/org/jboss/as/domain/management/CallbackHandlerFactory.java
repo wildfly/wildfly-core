@@ -22,9 +22,9 @@
 
 package org.jboss.as.domain.management;
 
+import java.util.function.Supplier;
 import javax.security.auth.callback.CallbackHandler;
 
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 
@@ -32,6 +32,7 @@ import org.jboss.msc.service.ServiceName;
  *  Interface to represent a CallbackHandlerFactory
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CallbackHandlerFactory {
 
@@ -48,8 +49,8 @@ public interface CallbackHandlerFactory {
         private ServiceUtil() {
         }
 
-        public static ServiceBuilder<?> addDependency(ServiceBuilder<?> sb, Injector<CallbackHandlerFactory> injector, ServiceName serviceName) {
-            return sb.addDependency(serviceName, CallbackHandlerFactory.class, injector);
+        public static Supplier<CallbackHandlerFactory> requires(final ServiceBuilder<?> sb, final ServiceName serviceName) {
+            return sb.requires(serviceName);
         }
 
     }

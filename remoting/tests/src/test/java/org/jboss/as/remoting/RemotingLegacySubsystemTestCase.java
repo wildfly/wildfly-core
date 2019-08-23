@@ -51,6 +51,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -64,6 +66,7 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
@@ -317,9 +320,10 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                 //Needed for initialization of the RealmAuthenticationProviderService
                 AbsolutePathService.addService(ServerEnvironment.CONTROLLER_TEMP_DIR, new File("target/temp" + System.currentTimeMillis()).getAbsolutePath(), target);
                 if (!legacyParser) {
-                    target.addService(IOServices.WORKER.append("default"), new WorkerService(Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)))
-                            .setInitialMode(ServiceController.Mode.ACTIVE)
-                            .install();
+                    ServiceBuilder<?> builder = target.addService(IOServices.WORKER.append("default"));
+                    Consumer<XnioWorker> workerConsumer = builder.provides(IOServices.WORKER.append("default"));
+                    builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
+                    builder.install();
                 }
             }
 

@@ -50,7 +50,7 @@ To stop the server, press Ctrl + C, or use the admin console:
 > $ ./jboss-cli.sh --connect command=:shutdown
 
 Note that there is not very much that you can do with the core server, without first adding some extensions to it.
-If you are trying to deployment Java EE application then you likely want the full Wildfly distribution, which is located
+If you are trying to deploy Java EE application then you likely want the full Wildfly distribution, which is located
 at:
 https://github.com/wildfly/wildfly
 

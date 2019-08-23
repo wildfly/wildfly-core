@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -43,10 +44,9 @@ import javax.security.sasl.AuthorizeCallback;
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.SecurityRealm;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.server.RealmIdentity;
@@ -58,18 +58,22 @@ import org.wildfly.security.evidence.Evidence;
  * The Service providing the LocalCallbackHandler implementation.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class LocalCallbackHandlerService implements Service<CallbackHandlerService>, CallbackHandlerService {
+class LocalCallbackHandlerService implements Service, CallbackHandlerService {
 
     private static final String SERVICE_SUFFIX = "local";
 
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
     private final String defaultUser;
     private final String allowedUsers;
     private boolean allowAll;
     private final Set<String> allowedUsersSet = new HashSet<String>();
     private final boolean skipGroupLoading;
 
-    LocalCallbackHandlerService(final String defaultUser, final String allowedUsers, final boolean skipGroupLoading) {
+    LocalCallbackHandlerService(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                                final String defaultUser, final String allowedUsers, final boolean skipGroupLoading) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
         this.defaultUser = defaultUser;
         this.allowedUsers = allowedUsers;
         this.skipGroupLoading = skipGroupLoading;
@@ -192,15 +196,7 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
 
     }
 
-    /*
-     * Service Methods
-     */
-
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    public void start(StartContext context) throws StartException {
+    public void start(final StartContext context) {
         if (defaultUser != null) {
             allowedUsersSet.add(defaultUser);
         }
@@ -214,9 +210,11 @@ class LocalCallbackHandlerService implements Service<CallbackHandlerService>, Ca
                 }
             }
         }
+        callbackHandlerServiceConsumer.accept(this);
     }
 
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
         allowAll = false;
         allowedUsersSet.clear(); // Effectively disables this CBH
     }

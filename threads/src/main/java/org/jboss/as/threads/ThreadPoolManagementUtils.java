@@ -176,6 +176,15 @@ class ThreadPoolManagementUtils {
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
     }
 
+    static EnhancedQueueThreadPoolParameters parseEnhancedQueueThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
+        parseBaseThreadPoolOperationParameters(context, operation, model, params);
+
+        ModelNode coreTh = PoolAttributeDefinitions.CORE_THREADS.resolveModelAttribute(context, model);
+        params.coreThreads = coreTh.isDefined() ? coreTh.asInt() : params.maxThreads;
+        return params;
+    }
+
     static BaseThreadPoolParameters parseScheduledThreadPoolParameters(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
         ThreadPoolParametersImpl params = new ThreadPoolParametersImpl();
         return parseBaseThreadPoolOperationParameters(context, operation, model, params);
@@ -259,7 +268,11 @@ class ThreadPoolManagementUtils {
         int getQueueLength();
     }
 
-    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters {
+    interface EnhancedQueueThreadPoolParameters extends BaseThreadPoolParameters {
+        int getCoreThreads();
+    }
+
+    private static class ThreadPoolParametersImpl implements QueuelessThreadPoolParameters, BoundedThreadPoolParameters, EnhancedQueueThreadPoolParameters {
         ModelNode address;
         String name;
         String threadFactory;

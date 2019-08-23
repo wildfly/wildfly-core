@@ -89,7 +89,7 @@ class ProviderAttributeDefinition {
         .setAttributeGroup(ElytronDescriptionConstants.CLASS_LOADING)
         .setAllowExpression(true)
         .setRequired(false)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .build();
 
     private static final SimpleAttributeDefinition PROPERTY_NAME = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.NAME, ModelType.STRING, false)

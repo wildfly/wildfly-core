@@ -35,6 +35,7 @@ interface ElytronDescriptionConstants {
     String ADD_PREFIX_ROLE_MAPPER = "add-prefix-role-mapper";
     String ADD_SUFFIX_ROLE_MAPPER = "add-suffix-role-mapper";
     String AGREE_TO_TERMS_OF_SERVICE = "agree-to-terms-of-service";
+    String AGGREGATE_EVIDENCE_DECODER = "aggregate-evidence-decoder";
     String AGGREGATE_HTTP_SERVER_MECHANISM_FACTORY = "aggregate-http-server-mechanism-factory";
     String AGGREGATE_PRINCIPAL_DECODER = "aggregate-principal-decoder";
     String AGGREGATE_PRINCIPAL_TRANSFORMER = "aggregate-principal-transformer";
@@ -49,6 +50,7 @@ interface ElytronDescriptionConstants {
     String ALGORITHM = "algorithm";
     String ALGORITHM_FROM = "algorithm-from";
     String ALLOW_BLANK_PASSWORD = "allow-blank-password";
+    String ALT_NAME_TYPE = "alt-name-type";
     String AND = "and";
     String ANONYMOUS = "anonymous";
     String APPLICATION_BUFFER_SIZE = "application-buffer-size";
@@ -65,6 +67,7 @@ interface ElytronDescriptionConstants {
     String AUTHENTICATION_CLIENT = "authentication-client";
     String AUTHENTICATION_CONFIGURATION = "authentication-configuration";
     String AUTHENTICATION_CONTEXT = "authentication-context";
+    String AUTHENTICATION_CONTEXT_REGISTRATION = "authentication-context-registration";
     String AUTHENTICATION_LEVEL = "authentication-level";
     String AUTHENTICATION_NAME = "authentication-name";
     String AUTHENTICATION_OPTIONAL = "authentication-optional";
@@ -85,6 +88,7 @@ interface ElytronDescriptionConstants {
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_AUTHORITY = "certificate-authority";
+    String CERTIFICATE_AUTHORITIES = "certificate-authorities";
     String CERTIFICATE_AUTHORITY_ACCOUNT = "certificate-authority-account";
     String CERTIFICATE_AUTHORITY_ACCOUNTS = "certificate-authority-accounts";
     String CERTIFICATE_CHAIN = "certificate-chain";
@@ -137,6 +141,7 @@ interface ElytronDescriptionConstants {
     String CRITICAL = "critical";
 
     String CUSTOM_CREDENTIAL_SECURITY_FACTORY = "custom-credential-security-factory";
+    String CUSTOM_EVIDENCE_DECODER = "custom-evidence-decoder";
     String CUSTOM_PERMISSION_MAPPER = "custom-permission-mapper";
     String CUSTOM_POLICY = "custom-policy";
     String CUSTOM_PRINCIPAL_DECODER = "custom-principal-decoder";
@@ -174,6 +179,8 @@ interface ElytronDescriptionConstants {
     String ENABLING = "enabling";
     String ENCODED = "encoded";
     String ENTRY_TYPE = "entry-type";
+    String EVIDENCE_DECODER = "evidence-decoder";
+    String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
@@ -340,7 +347,9 @@ interface ElytronDescriptionConstants {
     String OAUTH2_INTROSPECTION = "oauth2-introspection";
     String OBTAIN_CERTIFICATE = "obtain-certificate";
     String OBTAIN_KERBEROS_TICKET = "obtain-kerberos-ticket";
+    String OCSP = "ocsp";
     String OID = "oid";
+    String ONLY_LEAF_CERT = "only-leaf-cert";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
@@ -376,6 +385,7 @@ interface ElytronDescriptionConstants {
     String POST_REALM_PRINCIPAL_TRANSFORMER = "post-realm-principal-transformer";
     String PRE_REALM_PRINCIPAL_TRANSFORMER = "pre-realm-principal-transformer";
     String PREDEFINED_FILTER = "predefined-filter";
+    String PREFER_CRLS = "prefer-crls";
     String PREFIX = "prefix";
     String PRINCIPAL = "principal";
     String PRINCIPALS = "principals";
@@ -429,6 +439,9 @@ interface ElytronDescriptionConstants {
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
     String REQUISITE = "requisite";
+    String RESPONDER = "responder";
+    String RESPONDER_CERTIFICATE = "responder-certificate";
+    String RESPONDER_KEYSTORE = "responder-keystore";
     String REVERSE = "reverse";
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";
@@ -471,6 +484,7 @@ interface ElytronDescriptionConstants {
     String SELECTION_CRITERIA = "selection-criteria";
     String SEED = "seed";
     String SEED_FROM = "seed-from";
+    String SEGMENT = "segment";
     String SERVER_NAME = "server-name";
     String SERIAL_NUMBER = "serial-number";
     String SERIAL_NUMBER_FROM = "serial-number-from";
@@ -508,7 +522,9 @@ interface ElytronDescriptionConstants {
     String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
     String SNI_MAPPING = "sni-mapping";
+    String SOFT_FAIL = "soft-fail";
     String STAGING = "staging";
+    String STAGING_URL = "staging-url";
     String START_SEGMENT = "start-segment";
     String STATE = "state";
     String STORE = "store";
@@ -556,7 +572,9 @@ interface ElytronDescriptionConstants {
     String WRITABLE = "writable";
 
     String X500_ATTRIBUTE_PRINCIPAL_DECODER = "x500-attribute-principal-decoder";
+    String X500_SUBJECT_EVIDENCE_DECODER = "x500-subject-evidence-decoder";
     String X509_CREDENTIAL_MAPPER = "x509-credential-mapper";
+    String X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER = "x509-subject-alt-name-evidence-decoder";
     String XOR = "xor";
 
 }

@@ -25,14 +25,18 @@ package org.wildfly.extension.io;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.undertow.connector.ByteBufferPool;
 import io.undertow.server.XnioByteBufferPool;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -50,13 +54,12 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.xnio.Pool;
 
 /**
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2013 Red Hat Inc.
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 class BufferPoolResourceDefinition extends PersistentResourceDefinition {
 
@@ -154,37 +157,41 @@ class BufferPoolResourceDefinition extends PersistentResourceDefinition {
             final int bufferPerSlice = bufferPerSliceModel.isDefined() ? bufferPerSliceModel.asInt() : defaultBuffersPerRegion;
             final boolean direct = directModel.isDefined() ? directModel.asBoolean() : defaultDirectBuffers;
 
-            final BufferPoolService service = new BufferPoolService(bufferSize, bufferPerSlice, direct);
-            context.getCapabilityServiceTarget().addCapability(IO_POOL_RUNTIME_CAPABILITY)
-                    .setInstance(service)
-                    .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                    .install();
+            CapabilityServiceBuilder<?> builder = context.getCapabilityServiceTarget().addCapability(IO_POOL_RUNTIME_CAPABILITY);
+            final Consumer<Pool<ByteBuffer>> byteBufferConsumer = builder.provides(IO_POOL_RUNTIME_CAPABILITY);
+            builder.setInstance(new BufferPoolService(byteBufferConsumer, bufferSize, bufferPerSlice, direct));
+            builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+            builder.install();
 
-            ByteBufferPoolService poolService = new ByteBufferPoolService();
-
-            context.getCapabilityServiceTarget().addCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY)
-                    .setInstance(poolService)
-                    .addCapabilityRequirement(IO_POOL_RUNTIME_CAPABILITY.getDynamicName(address), Pool.class, poolService.bufferPool)
-                    .setInitialMode(ServiceController.Mode.ON_DEMAND)
-                    .install();
-
+            builder = context.getCapabilityServiceTarget().addCapability(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY);
+            final Consumer<ByteBufferPool> poolConsumer = builder.provides(IO_BYTE_BUFFER_POOL_RUNTIME_CAPABILITY);
+            final Supplier<Pool> poolSupplier = builder.requiresCapability(IO_POOL_RUNTIME_CAPABILITY.getDynamicName(address), Pool.class);
+            builder.setInstance(new ByteBufferPoolService(poolConsumer, poolSupplier));
+            builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
+            builder.install();
         }
     }
 
     private static final class ByteBufferPoolService implements Service<ByteBufferPool> {
-
-        final InjectedValue<Pool> bufferPool = new InjectedValue<>();
+        private final Consumer<ByteBufferPool> poolConsumer;
+        private final Supplier<Pool> poolSupplier;
         private volatile ByteBufferPool byteBufferPool;
 
-        @Override
-        public void start(StartContext startContext) throws StartException {
-            byteBufferPool = new XnioByteBufferPool(bufferPool.getValue());
+        private ByteBufferPoolService(final Consumer<ByteBufferPool> poolConsumer, final Supplier<Pool> poolSupplier) {
+            this.poolConsumer = poolConsumer;
+            this.poolSupplier = poolSupplier;
         }
 
         @Override
-        public void stop(StopContext stopContext) {
+        public void start(final StartContext startContext) {
+            poolConsumer.accept(byteBufferPool = new XnioByteBufferPool(poolSupplier.get()));
+        }
+
+        @Override
+        public void stop(final StopContext stopContext) {
             byteBufferPool.close();
             byteBufferPool = null;
+            poolConsumer.accept(null);
         }
 
         @Override

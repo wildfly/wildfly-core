@@ -51,7 +51,7 @@ public class JaasAuthenticationResourceDefinition extends SimpleResourceDefiniti
             .build();
 
     public static final SimpleAttributeDefinition ASSIGN_GROUPS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ASSIGN_GROUPS, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();

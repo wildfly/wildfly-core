@@ -54,7 +54,7 @@ public class ProfileDescribeHandler extends GenericModelDescribeOperationHandler
 
     public static final AttributeDefinition SERVER_LAUNCH = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SERVER_LAUNCH, ModelType.BOOLEAN)
             .setRequired(false)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final Set<Action.ActionEffect> DESCRIBE_EFFECTS =

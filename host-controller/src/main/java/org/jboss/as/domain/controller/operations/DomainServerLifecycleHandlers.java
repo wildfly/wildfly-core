@@ -83,7 +83,7 @@ import org.jboss.dmr.Property;
 public class DomainServerLifecycleHandlers {
 
     private static final AttributeDefinition BLOCKING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.BLOCKING, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     private static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)
@@ -94,7 +94,7 @@ public class DomainServerLifecycleHandlers {
     @Deprecated
     private static final AttributeDefinition TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .setAlternatives(ModelDescriptionConstants.SUSPEND_TIMEOUT)
             .setDeprecated(ModelVersion.create(9, 0))
             .build();
@@ -102,12 +102,12 @@ public class DomainServerLifecycleHandlers {
     private static final AttributeDefinition SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
             .setAlternatives(ModelDescriptionConstants.TIMEOUT)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .build();
 
     private static final AttributeDefinition HOST_SUSPEND_TIMEOUT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_TIMEOUT, ModelType.INT, true)
             .setMeasurementUnit(MeasurementUnit.SECONDS)
-            .setDefaultValue(new ModelNode(0))
+            .setDefaultValue(ModelNode.ZERO)
             .build();
 
     public static final String RESTART_SERVERS_NAME = RESTART_SERVERS;

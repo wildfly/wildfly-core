@@ -79,7 +79,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
 
         final PathElement deploymentPath = PathElement.pathElement(DEPLOYMENT, name);
         final PathElement replacePath = PathElement.pathElement(DEPLOYMENT, toReplace);
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+        final PathAddress referenceAddress = PathAddress.pathAddress(operation.get(OP_ADDR)).append(deploymentPath);
         Resource domainDeployment;
         try {
             // check if the domain deployment exists
@@ -92,7 +92,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
         final List<ContentReference> locallyAddedReferences = new LinkedList<ContentReference>();
         for (ModelNode content : deployment.require(CONTENT).asList()) {
             if ((content.hasDefined(HASH))) {
-                ContentReference reference = ModelContentReference.fromModelAddress(address, content.require(HASH).asBytes());
+                ContentReference reference = ModelContentReference.fromModelAddress(referenceAddress, content.require(HASH).asBytes());
                 // Ensure the local repo has the files
                 fileRepository.getDeploymentFiles(reference);
                 locallyAddedReferences.add(reference);
@@ -115,7 +115,7 @@ public class ServerGroupDeploymentReplaceHandler implements OperationStepHandler
             deployNode.get(ENABLED).set(true); // Enable
         } else {
             deploymentResource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS.append(deploymentPath));
-            ModelNode enabled = deploymentResource.getModel().hasDefined(ENABLED) ? deploymentResource.getModel().get(ENABLED) : new ModelNode(false);
+            ModelNode enabled = deploymentResource.getModel().hasDefined(ENABLED) ? deploymentResource.getModel().get(ENABLED) : ModelNode.FALSE;
             if (enabled.getType() == ModelType.BOOLEAN && enabled.asBoolean()) {
                 throw operationFailed(DomainControllerLogger.ROOT_LOGGER.deploymentAlreadyStarted(toReplace));
             }

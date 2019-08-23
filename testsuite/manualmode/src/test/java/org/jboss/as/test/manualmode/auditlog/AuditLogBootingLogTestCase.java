@@ -115,12 +115,12 @@ public class AuditLogBootingLogTestCase {
         ModelNode op;
         ModelNode result;
         op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.LOG_BOOT.getName(),
-                new ModelNode(false));
+                ModelNode.FALSE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
         op = Util.getWriteAttributeOperation(jmxLogConfigAddress, AuditLogLoggerResourceDefinition.LOG_BOOT.getName(),
-                new ModelNode(false));
+                ModelNode.FALSE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
     }
@@ -155,12 +155,12 @@ public class AuditLogBootingLogTestCase {
 
         // Enable audit logging and boot operations
         op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.LOG_BOOT.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
         op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
@@ -185,12 +185,12 @@ public class AuditLogBootingLogTestCase {
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
         op = Util.getWriteAttributeOperation(jmxLogConfigAddress, AuditLogLoggerResourceDefinition.LOG_BOOT.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
         op = Util.getWriteAttributeOperation(jmxLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 
@@ -202,7 +202,7 @@ public class AuditLogBootingLogTestCase {
         final ModelControllerClient client = container.getClient().getControllerClient();
         ModelNode result;
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(false));
+                ModelNode.FALSE);
         result = client.execute(op);
         Assert.assertEquals(result.get("failure-description").asString(), SUCCESS, result.get(OUTCOME).asString());
 

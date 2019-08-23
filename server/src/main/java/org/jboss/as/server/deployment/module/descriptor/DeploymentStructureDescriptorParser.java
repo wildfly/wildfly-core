@@ -30,12 +30,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
@@ -57,6 +55,7 @@ import org.jboss.as.server.deployment.SubDeploymentMarker;
 import org.jboss.as.server.deployment.annotation.ResourceRootIndexer;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXmlParserRegisteringProcessor;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
+import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.deployment.module.ResourceRoot;
@@ -131,9 +130,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             //if the parent has already attached parsed data for this sub deployment we need to process it
             if (deploymentRoot.hasAttachment(SUB_DEPLOYMENT_STRUCTURE)) {
                 final ModuleSpecification subModuleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-                Set<ModuleIdentifier> additionalModules = new HashSet<>();
+                Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
                 for(AdditionalModuleSpecification i : deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-                    additionalModules.add(i.getModuleIdentifier());
+                    additionalModules.put(i.getModuleIdentifier(), i);
                 }
                 handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
             }
@@ -166,7 +165,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 result = parse(deploymentFile.getPhysicalFile(), deploymentUnit, moduleLoader);
             }
             // handle additional modules
-            Set<ModuleIdentifier> additionalModuleSet = new HashSet<>();
+            Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
             for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
                 for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
                     //additional modules don't support annotation imports
@@ -182,10 +181,10 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                         itr.remove();
                     }
                 }
-                additionalModuleSet.add(additionalModule.getModuleIdentifier());
                 final AdditionalModuleSpecification additional = new AdditionalModuleSpecification(additionalModule.getModuleIdentifier(), additionalModuleResourceRoots);
                 additional.addAliases(additionalModule.getAliases());
                 additional.addSystemDependencies(additionalModule.getModuleDependencies());
+                additionalModules.put(additional.getModuleIdentifier(), additional);
                 deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
                 for (final ResourceRoot root : additionalModuleResourceRoots) {
                     ResourceRootIndexer.indexResourceRoot(root);
@@ -204,7 +203,7 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             // handle the the root deployment
             final ModuleStructureSpec rootDeploymentSpecification = result.getRootDeploymentSpecification();
             if (rootDeploymentSpecification != null) {
-                handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification, additionalModuleSet);
+                handleDeployment(phaseContext, deploymentUnit, moduleSpec, rootDeploymentSpecification, additionalModules);
             }
             // handle sub deployments
             final Map<String, ResourceRoot> subDeploymentMap = new HashMap<String, ResourceRoot>();
@@ -238,9 +237,30 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         }
     }
 
-    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification, Set<ModuleIdentifier> additionalModules) throws DeploymentUnitProcessingException {
+    private void handleDeployment(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final ModuleSpecification moduleSpec, final ModuleStructureSpec rootDeploymentSpecification, final Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules) throws DeploymentUnitProcessingException {
         final Map<VirtualFile, ResourceRoot> resourceRoots = resourceRoots(deploymentUnit);
-        moduleSpec.addUserDependencies(rootDeploymentSpecification.getModuleDependencies());
+        // handle unmodifiable module dependencies with alias
+        List<ModuleDependency> moduleDependencies = rootDeploymentSpecification.getModuleDependencies();
+        List<ModuleDependency> aliasDependencies = new ArrayList<>();
+
+        // Pre-index additionalmodules
+        Map<ModuleIdentifier, AdditionalModuleSpecification> index = new HashMap<>();
+
+        // Only iterate additionalModules once, instead of once per dependency
+        for (AdditionalModuleSpecification module : additionalModules.values()) {
+            for (ModuleIdentifier alias : module.getAliases()) {
+                index.put(alias, module);
+            }
+        }
+        // No more nested loop
+        for (ModuleDependency dependency : moduleDependencies) {
+            ModuleIdentifier identifier = dependency.getIdentifier();
+            if (index.containsKey(identifier)) {
+                aliasDependencies.add(new ModuleDependency(dependency.getModuleLoader(), index.get(identifier).getModuleIdentifier(), dependency.isOptional(), dependency.isExport(), dependency.isImportServices(), dependency.isUserSpecified()));
+            }
+        }
+
+        moduleSpec.addUserDependencies(moduleDependencies);
         moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
         moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());
@@ -263,12 +283,19 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         for (final String classFileTransformer : rootDeploymentSpecification.getClassFileTransformers()) {
             moduleSpec.addClassFileTransformer(classFileTransformer);
         }
-        //handle annotations
+        // handle annotations
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {
-            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, dependency);
-            //additional modules will not be created till much later, a dep on them would fail
-            if(dependency.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) && !additionalModules.contains(dependency)) {
-                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(dependency));
+            ModuleIdentifier identifier = dependency;
+            for (AdditionalModuleSpecification module : additionalModules.values()) {
+                if (module.getAliases().contains(dependency)) {
+                    identifier = module.getModuleIdentifier();
+                    break;
+                }
+            }
+            deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, identifier);
+            // additional modules will not be created till much later, a dep on them would fail
+            if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) && !additionalModules.keySet().contains(identifier)) {
+                phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier));
             }
         }
         moduleSpec.setLocalLast(rootDeploymentSpecification.isLocalLast());

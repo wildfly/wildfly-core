@@ -173,7 +173,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                             Util.getWriteAttributeOperation(
                                     PathAddress.pathAddress(PROFILE, CLONED_PROFILE).append(SUBSYSTEM, "jmx"),
                                     "non-core-mbean-sensitivity",
-                                    new ModelNode(true)),
+                                    ModelNode.TRUE),
                             masterClient);
 
                 } finally {
@@ -199,7 +199,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                             Util.getWriteAttributeOperation(
                                     PathAddress.pathAddress(PROFILE, CLONED_PROFILE).append(SUBSYSTEM, "jmx"),
                                     "non-core-mbean-sensitivity",
-                                    new ModelNode(true)),
+                                    ModelNode.TRUE),
                             masterClient);
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, CLONED_PROFILE)), masterClient);
@@ -224,7 +224,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                             Util.getWriteAttributeOperation(
                                     PathAddress.pathAddress(PROFILE, CLONED_PROFILE).append(SUBSYSTEM, "jmx"),
                                     "non-core-mbean-sensitivity",
-                                    new ModelNode(true)),
+                                    ModelNode.TRUE),
                             masterClient);
 
                 } finally {
@@ -248,7 +248,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                             Util.getWriteAttributeOperation(
                                     PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE).append(SUBSYSTEM, "jmx"),
                                     "non-core-mbean-sensitivity",
-                                    new ModelNode(true)),
+                                    ModelNode.TRUE),
                             masterClient);
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE)), masterClient);
@@ -270,7 +270,7 @@ public class IgnoredResourcesProfileCloneTestCase {
                             Util.getWriteAttributeOperation(
                                     PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE).append(SUBSYSTEM, "jmx"),
                                     "non-core-mbean-sensitivity",
-                                    new ModelNode(true)),
+                                    ModelNode.TRUE),
                             masterClient);
                 } finally {
                     DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, IGNORE_TO_PROFILE)), masterClient);

@@ -180,17 +180,18 @@ class PermissionMapperDefinitions {
 
     static class MatchAllCorrector implements ParameterCorrector {
         @Override
-        // HACK until corrections chain into nested attribute
-
         public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            // Remove any 'undefined' match-all field. An alternative would be to ensure
+            // the field is always present (defined or not). We need to do one
+            // or the other to allow SubsystemParsingTestCase to pass, otherwise models
+            // from xml with this set to 'false' will have an undefined match-all, while
+            // models read from the persisted form of the first kind of model will not
+            // have the field at all, leading to comparison failures.
+            // Before WFCORE-3255, this corrector would remove the field if the op had
+            // set it to false, so to be consistent with previous behavior we go down
+            // the path of removing the field.
             String name = MATCH_ALL.getName();
-            if (!newValue.isDefined() || !newValue.hasDefined(name)) {
-                return newValue;
-            }
-
-            ModelNode updated = newValue.get(name);
-            MATCH_ALL.getCorrector().correct(updated, new ModelNode());
-            if (!updated.isDefined()) {
+            if (newValue.isDefined() && !newValue.hasDefined(name) && newValue.has(name)) {
                 newValue.remove(name);
             }
             return newValue;

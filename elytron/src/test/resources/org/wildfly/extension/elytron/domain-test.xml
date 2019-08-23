@@ -18,6 +18,18 @@
         <security-domain name="AnotherDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-security-domains="MyDomain">
             <realm name="PropRealm"/>
         </security-domain>
+        <security-domain name="AggregateEvidenceDecoderDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" principal-decoder="MyCn0Decoder"
+                         pre-realm-principal-transformer="MyChainedTransformer" evidence-decoder="aggregateEvidenceDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="SubjectAltNameEvidenceDecoderDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" principal-decoder="MyCn0Decoder"
+                         pre-realm-principal-transformer="MyChainedTransformer" evidence-decoder="rfc822Decoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="SubjectEvidenceDecoderDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" principal-decoder="MyCn0Decoder"
+                         pre-realm-principal-transformer="MyChainedTransformer" evidence-decoder="subjectDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
     </security-domains>
     <security-realms>
         <properties-realm name="PropRealm">
@@ -71,10 +83,17 @@
         <x500-attribute-principal-decoder joiner="," maximum-segments="1" name="MyX500PrincipalDecoderTwo" oid="2.5.4.3" required-oids="2.5.4.3 2.5.4.11" required-attributes="cN" reverse="true"
                                           start-segment="2"/>
         <x500-attribute-principal-decoder maximum-segments="1" name="MyCnDecoder" attribute-name="Cn" start-segment="1"/>
+        <x500-attribute-principal-decoder maximum-segments="1" name="MyCn0Decoder" attribute-name="Cn"/>
         <x500-attribute-principal-decoder name="MyDcDecoder" oid="0.9.2342.19200300.100.1.25"/>
+        <chained-principal-transformer name="MyChainedTransformer">
+            <principal-transformer name="CnRegex"/>
+            <principal-transformer name="DnsRegex"/>
+        </chained-principal-transformer>
         <regex-principal-transformer name="NameRewriterXY" pattern="x(.*)" replacement="y$1"/>
         <regex-principal-transformer name="NameRewriterYU" pattern="y(.*)" replacement="u$1"/>
         <regex-principal-transformer name="NameRewriterRealmRemover" pattern="(.*)@.*" replacement="$1"/>
+        <regex-principal-transformer name="CnRegex" pattern=".*([0-9]+)$" replacement="$1"/>
+        <regex-principal-transformer name="DnsRegex" pattern="(.*)@.*.com" replacement="$1"/>
         <simple-regex-realm-mapper name="MyRealmMapper" pattern=".*@(.*)"/>
         <simple-role-decoder attribute="roles" name="MyRoleDecoder"/>
         <add-prefix-role-mapper name="RolePrefixer" prefix="prefix"/>
@@ -83,6 +102,13 @@
             <role-mapper name="RolePrefixer"/>
             <role-mapper name="RoleSuffixer"/>
         </aggregate-role-mapper>
+        <x500-subject-evidence-decoder name="subjectDecoder" />
+        <x509-subject-alt-name-evidence-decoder name="rfc822Decoder" alt-name-type="rfc822Name" segment="1" />
+        <custom-evidence-decoder name="customEvidenceDecoder" class-name="org.wildfly.elytron.CustomEvidenceDecoder" module="l.m" />
+        <aggregate-evidence-decoder name="aggregateEvidenceDecoder">
+            <evidence-decoder name="rfc822Decoder"/>
+            <evidence-decoder name="subjectDecoder"/>
+        </aggregate-evidence-decoder>
     </mappers>
     <permission-sets>
         <permission-set name="login-permission">

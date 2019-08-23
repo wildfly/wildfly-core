@@ -106,13 +106,13 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final SimpleAttributeDefinition RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SEARCH_RECURSIVE, ModelType.BOOLEAN, true)
                 .setRequires(ElytronDescriptionConstants.FILTER)
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final SimpleAttributeDefinition ROLE_RECURSION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_RECURSION, ModelType.INT, true)
-                .setDefaultValue(new ModelNode(0))
+                .setDefaultValue(ModelNode.ZERO)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -147,13 +147,13 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         static final SimpleAttributeDefinition WRITABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WRITABLE, ModelType.BOOLEAN, true)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
         static final SimpleAttributeDefinition VERIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.VERIFIABLE, ModelType.BOOLEAN, true)
-                .setDefaultValue(new ModelNode(true))
+                .setDefaultValue(ModelNode.TRUE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -317,7 +317,7 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
 
         static final SimpleAttributeDefinition USE_RECURSIVE_SEARCH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.USE_RECURSIVE_SEARCH, ModelType.BOOLEAN, true)
                 .setRequires(ElytronDescriptionConstants.SEARCH_BASE_DN)
-                .setDefaultValue(new ModelNode(false))
+                .setDefaultValue(ModelNode.FALSE)
                 .setAllowExpression(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
@@ -381,13 +381,13 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleAttributeDefinition DIRECT_VERIFICATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.DIRECT_VERIFICATION, ModelType.BOOLEAN, true)
-        .setDefaultValue(new ModelNode(false))
+        .setDefaultValue(ModelNode.FALSE)
         .setAllowExpression(true)
         .setRestartAllServices()
         .build();
 
     static final SimpleAttributeDefinition ALLOW_BLANK_PASSWORD = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALLOW_BLANK_PASSWORD, ModelType.BOOLEAN, true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setRequires(ElytronDescriptionConstants.DIRECT_VERIFICATION)
             .setAllowExpression(true)
             .setRestartAllServices()

@@ -44,6 +44,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 
 /**
@@ -146,18 +147,34 @@ public class LdapCacheServiceMockTest {
         return startService(mode,cacheFailures, size, 30);
     }
 
-    private LdapSearcherCache<LdapEntry, String> startService(CacheMode mode, boolean cacheFailures, int size, int evictionTimeout) throws StartException {
+    private LdapSearcherCache<LdapEntry, String> startService(CacheMode mode, boolean cacheFailures, int size, int evictionTimeout) {
         LdapCacheService<LdapEntry, String> service;
         switch (mode) {
             case BY_ACCESS:
-                service = LdapCacheService.createByAccessCacheService(userSearcher, evictionTimeout, cacheFailures, size);
+                service = LdapCacheService.createByAccessCacheService(NullConsumer.INSTANCE, userSearcher, evictionTimeout, cacheFailures, size);
                 break;
             default:
-                service = LdapCacheService.createBySearchCacheService(userSearcher, evictionTimeout, cacheFailures, size);
+                service = LdapCacheService.createBySearchCacheService(NullConsumer.INSTANCE, userSearcher, evictionTimeout, cacheFailures, size);
                 break;
         }
         service.start(null);
-        return service.getValue();
+        return service.cacheImplementation;
+    }
+
+    private static final class NullConsumer implements Consumer<LdapSearcherCache<LdapEntry, String>> {
+
+        private static final NullConsumer INSTANCE = new NullConsumer();
+
+        @Override
+        public Consumer<LdapSearcherCache<LdapEntry, String>> andThen(final Consumer<? super LdapSearcherCache<LdapEntry, String>> after) {
+            // ignored
+            return null;
+        }
+
+        @Override
+        public void accept(final LdapSearcherCache<LdapEntry, String> o) {
+            // ignored
+        }
     }
 
     private void testCacheFailures(CacheMode mode, boolean cacheFailure, int calls) throws StartException, IOException, NamingException {

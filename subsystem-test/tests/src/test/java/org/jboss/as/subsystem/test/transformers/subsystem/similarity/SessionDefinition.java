@@ -58,7 +58,7 @@ public class SessionDefinition extends SimpleResourceDefinition {
     protected static final SimpleAttributeDefinition DEBUG =
             new SimpleAttributeDefinitionBuilder("debug", ModelType.BOOLEAN, true)
                     .setAllowExpression(true)
-                    .setDefaultValue(new ModelNode(false))
+                    .setDefaultValue(ModelNode.FALSE)
                     .setRestartAllServices()
                     .build();
     private static final AttributeDefinition[] ATTRIBUTES = {DEBUG, JNDI_NAME, FROM};

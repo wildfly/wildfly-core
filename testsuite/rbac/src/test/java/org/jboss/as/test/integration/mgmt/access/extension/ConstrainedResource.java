@@ -70,7 +70,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
     static final SimpleAttributeDefinition AUTHENTICATION_INFLOW = new SimpleAttributeDefinitionBuilder("authentication-inflow", ModelType.BOOLEAN)
             .setRequired(false)
             .setAllowExpression(true)
-            .setDefaultValue(new ModelNode(false))
+            .setDefaultValue(ModelNode.FALSE)
             .setNullSignificant(false)
             .addAccessConstraint(DS_SECURITY_DEF)
             .build();

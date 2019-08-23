@@ -56,16 +56,16 @@ import org.jboss.msc.service.ServiceName;
 public class HostProcessReloadHandler extends ProcessReloadHandler<HostRunningModeControl>{
 
     private static final AttributeDefinition RESTART_SERVERS = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RESTART_SERVERS, ModelType.BOOLEAN, true)
-    .setDefaultValue(new ModelNode(true)).build();
+    .setDefaultValue(ModelNode.TRUE).build();
 
     private static final AttributeDefinition USE_CURRENT_DOMAIN_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_DOMAIN_CONFIG, ModelType.BOOLEAN, true)
             .setAlternatives(ModelDescriptionConstants.DOMAIN_CONFIG)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private static final AttributeDefinition USE_CURRENT_HOST_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_CURRENT_HOST_CONFIG, ModelType.BOOLEAN, true)
             .setAlternatives(ModelDescriptionConstants.HOST_CONFIG)
-            .setDefaultValue(new ModelNode(true))
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     private static final AttributeDefinition HOST_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HOST_CONFIG, ModelType.STRING, true)

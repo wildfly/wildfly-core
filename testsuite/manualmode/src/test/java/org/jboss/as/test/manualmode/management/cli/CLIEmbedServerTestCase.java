@@ -71,6 +71,7 @@ import org.jboss.stdio.SimpleStdioContextSelector;
 import org.jboss.stdio.StdioContext;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -116,6 +117,8 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
+        Assume.assumeFalse("This test does not work with the IBM J9 JVM. There seems to be an issue with stdout" +
+                " logging.", TestSuiteEnvironment.isIbmJvm());
 
         // Initialize the log manager before the STDIO context is initialized. This ensures that any capturing of the
         // standard output streams in the log manager is done before they are replaced by the stdio context.
@@ -150,21 +153,23 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     @AfterClass
     public static void afterClass() throws IOException {
-        CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties.backup", "logging.properties", false);
-        try {
-            StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
-        } finally {
-            if (uninstallStdio) {
-                StdioContext.uninstall();
+        if (!TestSuiteEnvironment.isIbmJvm()) {
+            CLIEmbedUtil.copyConfig(ROOT, "standalone", "logging.properties.backup", "logging.properties", false);
+            try {
+                StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(initialStdioContext));
+            } finally {
+                if (uninstallStdio) {
+                    StdioContext.uninstall();
+                }
             }
-        }
 
-        if (serviceActivatorDeploymentFile != null) {
-            Files.deleteIfExists(serviceActivatorDeploymentFile.toPath());
-        }
+            if (serviceActivatorDeploymentFile != null) {
+                Files.deleteIfExists(serviceActivatorDeploymentFile.toPath());
+            }
 
-        ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
-        ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
+            ExtensionUtils.deleteExtensionModule(BlockerExtension.MODULE_NAME);
+            ExtensionUtils.deleteExtensionModule(OpTypesExtension.EXTENSION_NAME);
+        }
     }
 
     @Before

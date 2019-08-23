@@ -171,6 +171,7 @@ public class ModelDescriptionConstants {
     public static final String EMPTY = "empty";
     public static final String ENABLE = "enable";
     public static final String ENABLED = "enabled";
+    public static final String ENABLE_AUTO_START = "enabled-auto-start";
     public static final String ENABLED_CIPHER_SUITES = "enabled-cipher-suites";
     public static final String ENABLED_PROTOCOLS = "enabled-protocols";
     public static final String ENABLED_TIME = "enabled-time";

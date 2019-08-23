@@ -34,6 +34,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.Function;
 
 import javax.naming.CommunicationException;
@@ -52,13 +54,10 @@ import org.jboss.as.domain.management.connections.ldap.LdapConnectionManager;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.as.domain.management.security.LdapSearcherCache.AttachmentKey;
 import org.jboss.as.domain.management.security.LdapSearcherCache.SearchResult;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.callback.EvidenceVerifyCallback;
 import org.wildfly.security.auth.principal.NamePrincipal;
@@ -73,8 +72,9 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * A CallbackHandler for users within an LDAP directory.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:ropalka@redhat.com>Richard Opalka</a>
  */
-public class UserLdapCallbackHandler implements Service<CallbackHandlerService>, CallbackHandlerService {
+public class UserLdapCallbackHandler implements Service, CallbackHandlerService {
 
     private static final AttachmentKey<PasswordCredential> PASSWORD_KEY = AttachmentKey.create(PasswordCredential.class);
 
@@ -82,16 +82,31 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
 
     public static final String DEFAULT_USER_DN = "dn";
 
-    private final InjectedValue<LdapConnectionManager> connectionManager = new InjectedValue<LdapConnectionManager>();
-    private final InjectedValue<LdapSearcherCache<LdapEntry, String>> userSearcherInjector = new InjectedValue<LdapSearcherCache<LdapEntry, String>>();
+    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
+    private final Supplier<LdapConnectionManager> connectionManagerSupplier;
+    private final Supplier<LdapSearcherCache<LdapEntry, String>> userSearcherSupplier;
 
     private final boolean allowEmptyPassword;
     private final boolean shareConnection;
     protected final int searchTimeLimit = 10000; // TODO - Maybe make configurable.
 
-    public UserLdapCallbackHandler(boolean allowEmptyPassword, boolean shareConnection) {
+    UserLdapCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
+                            final Supplier<LdapConnectionManager> connectionManagerSupplier,
+                            final Supplier<LdapSearcherCache<LdapEntry, String>> userSearcherSupplier,
+                            boolean allowEmptyPassword, boolean shareConnection) {
+        this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
+        this.connectionManagerSupplier = connectionManagerSupplier;
+        this.userSearcherSupplier = userSearcherSupplier;
         this.allowEmptyPassword = allowEmptyPassword;
         this.shareConnection = shareConnection;
+    }
+
+    public void start(final StartContext context) {
+        callbackHandlerServiceConsumer.accept(this);
+    }
+
+    public void stop(final StopContext context) {
+        callbackHandlerServiceConsumer.accept(null);
     }
 
     /*
@@ -137,7 +152,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             LdapConnectionHandler ldapConnectionHandler = createLdapConnectionHandler();
             try {
                 try {
-                    SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, p.getName());
+                    SearchResult<LdapEntry> searchResult = userSearcherSupplier.get().search(ldapConnectionHandler, p.getName());
 
                     return p instanceof RealmUser ? new MappedPrincipal(((RealmUser) p).getRealm(), searchResult.getResult().getSimpleName(), p.getName())
                             : new MappedPrincipal(searchResult.getResult().getSimpleName(), p.getName());
@@ -152,30 +167,8 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
         };
     }
 
-    public void start(StartContext context) throws StartException {
-    }
-
-    public void stop(StopContext context) {
-    }
-
-    public CallbackHandlerService getValue() throws IllegalStateException, IllegalArgumentException {
-        return this;
-    }
-
-    /*
-     *  Access to Injectors
-     */
-
-    public InjectedValue<LdapConnectionManager> getConnectionManagerInjector() {
-        return connectionManager;
-    }
-
-    public Injector<LdapSearcherCache<LdapEntry, String>> getLdapUserSearcherInjector() {
-        return userSearcherInjector;
-    }
-
     private LdapConnectionHandler createLdapConnectionHandler() {
-        LdapConnectionManager connectionManager = this.connectionManager.getValue();
+        LdapConnectionManager connectionManager = this.connectionManagerSupplier.get();
 
         return LdapConnectionHandler.newInstance(connectionManager);
     }
@@ -251,7 +244,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             LdapConnectionHandler lch = createLdapConnectionHandler();
             try {
                 // 2 - Search to identify the DN of the user connecting
-                SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(lch, username);
+                SearchResult<LdapEntry> searchResult = userSearcherSupplier.get().search(lch, username);
 
                 evidenceVerifyCallback.setVerified(verifyPassword(lch, searchResult, username, password, sharedState));
             } catch (Exception e) {
@@ -342,7 +335,7 @@ public class UserLdapCallbackHandler implements Service<CallbackHandlerService>,
             LdapConnectionHandler ldapConnectionHandler = createLdapConnectionHandler();
 
             try {
-                SearchResult<LdapEntry> searchResult = userSearcherInjector.getValue().search(ldapConnectionHandler, name);
+                SearchResult<LdapEntry> searchResult = userSearcherSupplier.get().search(ldapConnectionHandler, name);
 
                 return new RealmIdentityImpl(new NamePrincipal(name), ldapConnectionHandler, searchResult, SecurityRealmService.SharedStateSecurityRealm.getSharedState());
             } catch (IOException | CommunicationException e) {

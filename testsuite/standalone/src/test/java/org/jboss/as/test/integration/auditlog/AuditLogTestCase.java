@@ -78,13 +78,13 @@ public class AuditLogTestCase {
         op = Util.getWriteAttributeOperation(
                 auditLogConfigAddress,
                 AuditLogLoggerResourceDefinition.LOG_READ_ONLY.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
         op = Util.getWriteAttributeOperation(
                 auditLogConfigAddress,
                 AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                new ModelNode(true));
+                ModelNode.TRUE);
         result = client.execute(op);
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
         Assert.assertTrue(file.exists());
@@ -102,7 +102,7 @@ public class AuditLogTestCase {
             op = Util.getWriteAttributeOperation(
                     auditLogConfigAddress,
                     AuditLogLoggerResourceDefinition.ENABLED.getName(),
-                    new ModelNode(false));
+                    ModelNode.FALSE);
             result = client.execute(op);
             Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
             Assert.assertTrue(file.exists());
