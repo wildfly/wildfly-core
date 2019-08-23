@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,7 +67,6 @@ public class CliLauncher {
             boolean connect = false;
             boolean version = false;
             int connectionTimeout = -1;
-            Charset propertiesEncoding = StandardCharsets.UTF_8;
 
             final CommandContextConfiguration.Builder ctxBuilder = new CommandContextConfiguration.Builder();
             ctxBuilder.setErrorOnInteract(errorOnInteract);
@@ -207,14 +205,6 @@ public class CliLauncher {
                 } else if (arg.equals("--help") || arg.equals("-h")) {
                     help = true;
                     break;
-                } else if(arg.startsWith("--properties-encoding=")) {
-                    final String value  = arg.substring(22);
-                    try {
-                        propertiesEncoding = Charset.forName(value);
-                    } catch (Exception ex) {
-                        argError = "Could not create charset by value: " + value;
-                        break;
-                    }
                 } else if (arg.startsWith("--properties=")) {
                     final String value  = arg.substring(13);
                     final File propertiesFile = new File(FilenameTabCompleter.expand(value));
@@ -225,7 +215,7 @@ public class CliLauncher {
                     final Properties props = new Properties();
                     InputStreamReader inputStreamReader = null;
                     try {
-                        inputStreamReader = new InputStreamReader(new FileInputStream(propertiesFile), propertiesEncoding);
+                        inputStreamReader = new InputStreamReader(new FileInputStream(propertiesFile), StandardCharsets.UTF_8);
                         props.load(inputStreamReader);
                     } catch(FileNotFoundException e) {
                         argError = e.getLocalizedMessage();
