@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="management" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature-group name="management-interface"/>
+    <feature-group name="management-sockets-group"/>
+    <!-- management layer comes with security -->
+    <feature-group name="access-control"/>    
+    <feature-group name="management-unsecure-interfaces"/>
+    <feature-group name="management-audit"/>
+</feature-group-spec>

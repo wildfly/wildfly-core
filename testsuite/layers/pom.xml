@@ -132,6 +132,42 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>core-security-realms-provisioning</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <install-dir>${project.build.directory}/layers-results/core-security-realms</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
+                            <plugin-options>
+                                <jboss-maven-dist/>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                <optional-packages>passive+</optional-packages>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <inherit-configs>false</inherit-configs>
+                                    <inherit-packages>false</inherit-packages>
+                                </feature-pack>
+                            </feature-packs>
+                            <configurations>
+                                <config>
+                                    <model>standalone</model>
+                                    <name>standalone.xml</name>
+                                    <layers>
+                                        <layer>core-security-realms</layer>
+                                    </layers>
+                                </config>
+                            </configurations>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>core-server-provisioning</id>
                         <goals>
                             <goal>provision</goal>
@@ -384,13 +420,49 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>legacy-management-provisioning</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <install-dir>${project.build.directory}/layers-results/legacy-management</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
+                            <plugin-options>
+                                <jboss-maven-dist/>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                <optional-packages>passive+</optional-packages>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <inherit-configs>false</inherit-configs>
+                                    <inherit-packages>false</inherit-packages>
+                                </feature-pack>
+                            </feature-packs>
+                            <configurations>
+                                <config>
+                                    <model>standalone</model>
+                                    <name>standalone.xml</name>
+                                    <layers>
+                                        <layer>legacy-management</layer>
+                                    </layers>
+                                </config>
+                            </configurations>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>secure-management-provisioning</id>
                         <goals>
                             <goal>provision</goal>
                         </goals>
                         <phase>compile</phase>
                         <configuration>
-                            <install-dir>${project.build.directory}/layers-results/secure-management-realms-security</install-dir>
+                            <install-dir>${project.build.directory}/layers-results/secure-management</install-dir>
                             <record-state>false</record-state>
                             <log-time>${galleon.log.time}</log-time>
                             <offline>true</offline>
@@ -667,6 +739,7 @@
                                     <layers>
                                         <layer>base-server</layer>
                                         <layer>core-management</layer>
+                                        <layer>core-security-realms</layer>
                                         <layer>core-server</layer>
                                         <layer>deployment-scanner</layer>
                                         <layer>discovery</layer>
@@ -674,6 +747,7 @@
                                         <layer>io</layer>
                                         <layer>jmx</layer>
                                         <layer>jmx-remoting</layer>
+                                        <layer>legacy-management</layer>
                                         <layer>logging</layer>
                                         <layer>management</layer>
                                         <layer>remoting</layer>
