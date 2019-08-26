@@ -297,6 +297,9 @@
             <trust-manager name="trust-with-crl-dp" algorithm="SunX509" key-store="jks_store">
                 <certificate-revocation-list/>
             </trust-manager>
+            <trust-manager name="trust-with-ocsp" algorithm="PKIX" key-store="jks_store">
+                <ocsp responder="http://localhost/ocsp" responder-keystore="jceks_store" responder-certificate="responder-alias"/>
+            </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true"
