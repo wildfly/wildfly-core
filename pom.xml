@@ -110,10 +110,10 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
-        <version.org.jboss.galleon>4.0.0.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>4.0.4.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.10.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>4.0.0.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>4.0.3.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
