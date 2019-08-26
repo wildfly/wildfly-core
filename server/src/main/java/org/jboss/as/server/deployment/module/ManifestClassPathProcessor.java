@@ -46,6 +46,7 @@ import org.jboss.as.server.deployment.annotation.ResourceRootIndexer;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.msc.service.ServiceTarget;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
@@ -88,6 +89,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         final VirtualFile topLevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
         final ExternalModuleService externalModuleService = topLevelDeployment.getAttachment(Attachments.EXTERNAL_MODULE_SERVICE);
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+        final ServiceTarget externalServiceTarget = deploymentUnit.getAttachment(Attachments.EXTERNAL_SERVICE_TARGET);
 
         //These are resource roots that are already accessible by default
         //such as ear/lib jars an web-inf/lib jars
@@ -155,7 +157,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                 final VirtualFile topLevelClassPathFile = deploymentRoot.getRoot().getParent().getChild(item);
                 if (item.startsWith("/")) {
                     if (externalModuleService.isValid(item)) {
-                        final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item, phaseContext.getServiceRegistry(), phaseContext.getServiceTarget());
+                        final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item, phaseContext.getServiceRegistry(), externalServiceTarget);
                         target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleIdentifier);
                         ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", classPathFile, resourceRoot.getRoot());
                     } else {
