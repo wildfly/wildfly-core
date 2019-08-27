@@ -22,9 +22,14 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.controller.security.CredentialReference.applyCredentialReferenceUpdateToRuntime;
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -39,13 +44,28 @@ public class UserWriteAttributeHandler extends AbstractWriteAttributeHandler<Voi
     }
 
     @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                    ModelNode oldValue, Resource resource) throws OperationFailedException {
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, resource);
+        if (attributeName.equals(UserResourceDefinition.CREDENTIAL_REFERENCE.getName())) {
+            handleCredentialReferenceUpdate(context, resource.getModel().get(attributeName), attributeName);
+        }
+    }
+
+    @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> handbackHolder) throws OperationFailedException {
         ManagementUtil.updateUserDomainCallbackHandler(context, operation, false);
+        if (attributeName.equals(UserResourceDefinition.CREDENTIAL_REFERENCE.getName())) {
+            return applyCredentialReferenceUpdateToRuntime(context, operation, resolvedValue, currentValue, attributeName);
+        }
         return false;
     }
 
     @Override
     protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode valueToRevert, Void handback) throws OperationFailedException {
+        if (attributeName.equals(UserResourceDefinition.CREDENTIAL_REFERENCE.getName())) {
+            rollbackCredentialStoreUpdate(UserResourceDefinition.CREDENTIAL_REFERENCE, context, valueToRevert);
+        }
         ManagementUtil.updateUserDomainCallbackHandler(context, operation, true);
     }
 }

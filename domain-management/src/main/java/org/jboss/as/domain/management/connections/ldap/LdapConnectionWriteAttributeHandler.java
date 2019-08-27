@@ -23,6 +23,10 @@
 package org.jboss.as.domain.management.connections.ldap;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.security.CredentialReference.applyCredentialReferenceUpdateToRuntime;
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -30,6 +34,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService.Config;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -54,6 +59,15 @@ public class LdapConnectionWriteAttributeHandler extends AbstractWriteAttributeH
     }
 
     @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                    ModelNode oldValue, Resource resource) throws OperationFailedException {
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, resource);
+        if (attributeName.equals(SEARCH_CREDENTIAL_REFERENCE.getName())) {
+            handleCredentialReferenceUpdate(context, resource.getModel().get(attributeName), attributeName);
+        }
+    }
+
+    @Override
     protected boolean requiresRuntime(OperationContext context) {
         return true;
     }
@@ -62,16 +76,23 @@ public class LdapConnectionWriteAttributeHandler extends AbstractWriteAttributeH
     protected boolean applyUpdateToRuntime(final OperationContext context, final ModelNode operation, final String attributeName,
                                            final ModelNode resolvedValue, final ModelNode currentValue,
                                            final HandbackHolder<Config> handbackHolder) throws OperationFailedException {
+        boolean requiresReload = false;
         final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+        if (attributeName.equals(SEARCH_CREDENTIAL_REFERENCE.getName())) {
+            requiresReload = applyCredentialReferenceUpdateToRuntime(context, operation, resolvedValue, currentValue, attributeName);
+        }
         handbackHolder.setHandback(updateLdapConnectionService(context, operation, model));
 
-        return false;
+        return requiresReload;
     }
 
     @Override
     protected void revertUpdateToRuntime(final OperationContext context, final ModelNode operation, final String attributeName,
                                          final ModelNode valueToRestore, final ModelNode valueToRevert,
                                          final Config handback) throws OperationFailedException {
+        if (attributeName.equals(SEARCH_CREDENTIAL_REFERENCE.getName())) {
+            rollbackCredentialStoreUpdate(SEARCH_CREDENTIAL_REFERENCE, context, valueToRevert);
+        }
         updateLdapConnectionService(context, operation, handback);
     }
 

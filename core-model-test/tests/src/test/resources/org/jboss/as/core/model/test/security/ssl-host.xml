@@ -40,7 +40,35 @@
                     <local default-user="$local" skip-group-loading="true"/>
                     <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
                 </authentication>                            
-            </security-realm>            
+            </security-realm>
+            <security-realm name="IdentityWithTruststoreCredentialReference">
+                <server-identities>
+                    <ssl>
+                        <keystore path="server.keystore" relative-to="jboss.server.config.dir" keystore-password="keystore_password" />
+                    </ssl>
+                </server-identities>
+                <authentication>
+                    <truststore path="server.truststore" relative-to="jboss.server.config.dir">
+                        <keystore-password-credential-reference clear-text="keystore_password"/>
+                    </truststore>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
+                </authentication>
+            </security-realm>
+            <security-realm name="IdentityWithSslCredentialReference">
+                <server-identities>
+                    <ssl>
+                        <keystore path="server.keystore" relative-to="jboss.server.config.dir">
+                            <keystore-password-credential-reference clear-text="keystore_password"/>
+                        </keystore>
+                    </ssl>
+                </server-identities>
+                <authentication>
+                    <truststore path="server.truststore" relative-to="jboss.server.config.dir" keystore-password="truststore_password" />
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
+                </authentication>
+            </security-realm>
 
             <!-- Protocol and Cipher Suite Selection -->
             <security-realm name="ProtocolSuite">

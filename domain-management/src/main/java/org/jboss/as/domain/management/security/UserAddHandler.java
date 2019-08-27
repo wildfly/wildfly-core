@@ -22,6 +22,9 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -42,6 +45,12 @@ public class UserAddHandler extends AbstractAddStepHandler {
     }
 
     @Override
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+        super.populateModel(context, operation, resource);
+        handleCredentialReferenceUpdate(context, resource.getModel());
+    }
+
+    @Override
     protected boolean requiresRuntime(OperationContext context) {
         return true;
     }
@@ -53,6 +62,7 @@ public class UserAddHandler extends AbstractAddStepHandler {
 
     @Override
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
+        rollbackCredentialStoreUpdate(UserResourceDefinition.CREDENTIAL_REFERENCE, context, resource);
         ManagementUtil.updateUserDomainCallbackHandler(context, operation, true);
     }
 }
