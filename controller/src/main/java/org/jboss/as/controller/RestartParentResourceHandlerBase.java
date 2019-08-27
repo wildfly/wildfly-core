@@ -81,6 +81,8 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
+                            Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
+                            rollbackRuntime(context, operation, resource);
                             if (reloadRequired) {
                                 context.revertReloadRequired();
                             } else if (invalidatedParentModel != null) {
@@ -141,6 +143,18 @@ public abstract class RestartParentResourceHandlerBase implements OperationStepH
      * @throws OperationFailedException if there is a problem updating the model
      */
     protected abstract void updateModel(final OperationContext context, final ModelNode operation) throws OperationFailedException;
+
+    /**
+     * Rollback the update.
+     *
+     * @param context the operation context
+     * @param operation  the operation
+     * @param resource the resource
+     */
+    protected void rollbackRuntime(final OperationContext context, final ModelNode operation, final Resource resource) {
+        // no-op
+    }
+
 
     /**
      * Recreate the parent service(s) using the given model.
