@@ -33,6 +33,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -165,6 +166,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      * Tests that the server does not attempt to resend the message
      */
     @Test
+    @Ignore("WFCORE-4631 - need to possibly move this or invoke a SecurityDomain authentication attempt which will invoke a log message")
     public void testZeroReconnectAttemptsBadHost() {
         // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
         Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
@@ -178,6 +180,7 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      * Tests that the server reattempts to send the message {@link SyslogAuditLogTestCase#RECONNECT_NUMBER} times
      */
     @Test
+    @Ignore("WFCORE-4631 - need to possibly move this or invoke a SecurityDomain authentication attempt which will invoke a log message")
     public void testNumberedReconnectAttemptsBadHost() {
         // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
         Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
