@@ -1,4 +1,25 @@
 <subsystem xmlns="urn:wildfly:elytron:10.0" default-ssl-context="ClientContext">
+    <authentication-client>
+        <authentication-configuration name="test">
+            <mechanism-properties>
+                <property name="test" value="test"/>
+            </mechanism-properties>
+            <webservices ws-security-type="UsernameToken" http-mechanism="BASIC" />
+        </authentication-configuration>
+        <authentication-configuration name="authWithCredentialReference"
+                                      security-domain="TestDomain"
+                                      forwarding-mode="authorization">
+            <credential-reference store="store1" clear-text="supersecret!"/>
+        </authentication-configuration>
+    </authentication-client>
+    <credential-stores>
+        <credential-store name="store1" location="path/to/store_file" >
+            <credential-reference clear-text="STOREPASSWORD"/>
+        </credential-store>
+        <credential-store name="store2" location="path/to/store_file2" >
+            <credential-reference store="store1" clear-text="STOREPASSWORD"/>
+        </credential-store>
+    </credential-stores>
     <jaspi>
         <jaspi-configuration name="minimal">
             <server-auth-modules>
@@ -20,6 +41,9 @@
     <security-domains>
         <security-domain name="X500Domain" default-realm="FileRealm" evidence-decoder="aggregateEvidenceDecoder">
             <realm name="FileRealm"/>
+        </security-domain>
+        <security-domain name="TestDomain" default-realm="FileRealm">
+            <realm name="FileRealm" />
         </security-domain>
     </security-domains>
     <security-realms>
@@ -99,10 +123,18 @@
                 <implementation/>
                 <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
             </key-store>
+            <key-store name="test.keystore">
+                <credential-reference store="store1" clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
         </key-stores>
         <key-managers>
             <key-manager name="key1" key-store="accounts.keystore">
                 <credential-reference clear-text="password"/>
+            </key-manager>
+            <key-manager name="key2" key-store="accounts.keystore">
+                <credential-reference store="store1" clear-text="supersecret!"/>
             </key-manager>
         </key-managers>
         <server-ssl-contexts>
@@ -130,6 +162,11 @@
                     <credential-reference clear-text="elytron"/>
                 </account-key>
             </certificate-authority-account>
+            <certificate-authority-account name="testCAA2" certificate-authority="testCA">
+                <account-key key-store="accounts.keystore" alias="alias">
+                    <credential-reference store="store1" clear-text="elytron"/>
+                </account-key>
+            </certificate-authority-account>
         </certificate-authority-accounts>
         <trust-managers>
             <trust-manager name="TestingTrustManager" key-store="accounts.keystore">
@@ -137,12 +174,9 @@
             </trust-manager>
         </trust-managers>
     </tls>
-    <authentication-client>
-        <authentication-configuration name="test">
-            <mechanism-properties>
-                <property name="test" value="test"/>
-            </mechanism-properties>
-            <webservices ws-security-type="UsernameToken" http-mechanism="BASIC" />
-        </authentication-configuration>
-    </authentication-client>
+    <dir-contexts>
+        <dir-context name="dirContext" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">
+            <credential-reference store="store1" clear-text="serverPassword"/>
+        </dir-context>
+    </dir-contexts>
 </subsystem>
