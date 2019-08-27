@@ -18,9 +18,15 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LDAP_CONNECTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -182,6 +188,8 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
         ModelNode model = new ModelNode();
         model.get(LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE.getName()).set(ref);
         OperationContext context = new OperationContext() {
+            private final Map<AttachmentKey<?>, Object> valueAttachments = new HashMap<AttachmentKey<?>, Object>();
+
             @Override
             public void addStep(OperationStepHandler step, OperationContext.Stage stage) throws IllegalArgumentException {
                 throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -364,7 +372,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
             @Override
             public PathAddress getCurrentAddress() {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                return PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(LDAP_CONNECTION, "myLdapConnection");
             }
 
             @Override
@@ -524,18 +532,19 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
 
             @Override
             public <T> T getAttachment(OperationContext.AttachmentKey<T> key) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                return key.cast(valueAttachments.get(key));
             }
 
             @Override
             public <T> T attach(OperationContext.AttachmentKey<T> key, T value) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                return key.cast(valueAttachments.put(key, value));
             }
 
             @Override
             public <T> T attachIfAbsent(OperationContext.AttachmentKey<T> key, T value) {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                return key.cast(valueAttachments.put(key, value));
             }
+
 
             @Override
             public <T> T detach(OperationContext.AttachmentKey<T> key) {

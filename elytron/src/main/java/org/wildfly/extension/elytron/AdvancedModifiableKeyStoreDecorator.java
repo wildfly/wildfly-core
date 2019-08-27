@@ -19,6 +19,7 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CERTIFICATE_AUTHORITY_ACCOUNT_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
@@ -250,7 +251,8 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             Long validity = VALIDITY.resolveModelAttribute(context, operation).asLong();
             ModelNode extensions = EXTENSIONS.resolveModelAttribute(context, operation);
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
-            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+            ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation);
+            if (credentialReference.isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
             }
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
@@ -292,10 +294,13 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 final X509Certificate[] certChain = new X509Certificate[1];
                 certChain[0] = certAndKey.getSelfSignedCertificate();
                 keyStore.setKeyEntry(alias, privateKey, keyPassword, certChain);
-            } catch (IllegalArgumentException e) {
-                throw new OperationFailedException(e);
-            } catch (KeyStoreException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, credentialReference);
+                if (e instanceof IllegalArgumentException) {
+                    throw new OperationFailedException(e);
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -327,7 +332,8 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             String distinguishedName = DISTINGUISHED_NAME.resolveModelAttribute(context, operation).asStringOrNull();
             ModelNode extensions = EXTENSIONS.resolveModelAttribute(context, operation);
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
-            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+            ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation);
+            if (credentialReference.isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
             }
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
@@ -380,6 +386,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                     fos.write(csr.getPem());
                 }
             } catch (Exception e) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, credentialReference);
                 if (e instanceof OperationFailedException) {
                     throw (OperationFailedException) e;
                 } else if (e instanceof IllegalArgumentException) {
@@ -419,7 +426,8 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
 
             String alias = ALIAS.resolveModelAttribute(context, operation).asString();
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
-            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+            ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation);
+            if (credentialReference.isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
             }
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
@@ -528,6 +536,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                     keyStore.setCertificateEntry(alias, trustedCertificate);
                 }
             } catch (Exception e) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, credentialReference);
                 if (e instanceof OperationFailedException) {
                     throw (OperationFailedException) e;
                 } else {
@@ -680,7 +689,8 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             String alias = ALIAS.resolveModelAttribute(context, operation).asString();
             String newAlias = NEW_ALIAS.resolveModelAttribute(context, operation).asString();
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
-            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+            ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation);
+            if (credentialReference.isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
             }
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
@@ -713,6 +723,7 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                     keyStore.deleteEntry(alias);
                 }
             } catch (Exception e) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, credentialReference);
                 if (e instanceof OperationFailedException) {
                     throw (OperationFailedException) e;
                 } else {
@@ -777,7 +788,8 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
             String algorithm = ALGORITHM.resolveModelAttribute(context, operation).asString();
             Integer keySize = KEY_SIZE.resolveModelAttribute(context, operation).asInt();
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
-            if (CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation).isDefined()) {
+            ModelNode credentialReference = CREDENTIAL_REFERENCE.resolveModelAttribute(context, operation);
+            if (credentialReference.isDefined()) {
                 credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, CREDENTIAL_REFERENCE, operation, null);
             }
             char[] keyPassword = resolveKeyPassword(((KeyStoreService) keyStoreService), credentialSourceSupplier);
@@ -798,10 +810,13 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                 X509CertificateChainAndSigningKey certificateChainAndSigningKey = acmeClient.obtainCertificateChain(acmeAccount, staging, algorithm, keySize, domainNames.toArray(new String[domainNames.size()]));
                 keyStore.setKeyEntry(alias, certificateChainAndSigningKey.getSigningKey(), keyPassword, certificateChainAndSigningKey.getCertificateChain());
                 ((KeyStoreService) keyStoreService).save();
-            } catch (IllegalArgumentException | AcmeException e) {
-                throw new OperationFailedException(e);
-            } catch (KeyStoreException e) {
-                throw new RuntimeException(e);
+            } catch (Exception e) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, credentialReference);
+                if (e instanceof IllegalArgumentException || e instanceof AcmeException) {
+                    throw new OperationFailedException(e);
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }

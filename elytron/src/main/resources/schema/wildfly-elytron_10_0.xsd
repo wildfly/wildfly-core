@@ -21,14 +21,14 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
             targetNamespace="urn:wildfly:elytron:10.0"
             xmlns="urn:wildfly:elytron:10.0"
-            xmlns:credential-reference="urn:wildfly:credential-reference:1.0"
+            xmlns:credential-reference="urn:wildfly:credential-reference:1.1"
             elementFormDefault="qualified"
             attributeFormDefault="unqualified"
             version="1.0">
 
     <!-- Need to include the path to the schema location here in order for the xml-validation that's defined in
          elytron/pom.xml to succeed. -->
-    <xs:import namespace="urn:wildfly:credential-reference:1.0" schemaLocation="../controller/src/main/resources/schema/wildfly-credential-reference_1_0.xsd"/>
+    <xs:import namespace="urn:wildfly:credential-reference:1.1" schemaLocation="../controller/src/main/resources/schema/wildfly-credential-reference_1_1.xsd"/>
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystemType"/>
