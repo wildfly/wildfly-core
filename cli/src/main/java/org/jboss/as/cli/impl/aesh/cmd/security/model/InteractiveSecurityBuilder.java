@@ -213,7 +213,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             }
 
             //then contactUrls / email
-            while (contactUrls == null || contactUrls.size() < 1) {
+            while (contactUrls == null) {
                 String emails = commandInvocation.inputLine(new Prompt("Contact email(s) [admin@example.com,info@example.com]: "));
                 contactUrls = parseEmails(emails);
             }
@@ -304,7 +304,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
             //then prompt for domainName
             while (domainNames == null || domainNames.size() < 1) {
                 String domains = commandInvocation.inputLine(new Prompt("Your domain name(s) (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com,second.example.com]: "));
-                domainNames = parseItemsFromString(domains, "example.com,second.example.com");
+                domainNames = parseItemsFromString(domains);
             }
 
             //then set validity to 90 - this is default Let's Encrypt setting
@@ -428,16 +428,16 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
                     ctx.printLine("\nLet's Encrypt options:" + "\n"
                             + "account key store name: " + accountKeyStoreName + "\n"
                             + "password: " + accountKeyStorePassword + "\n"
-                            + "Account keystore file " + accountKeyStoreFile + " will be generated in server configuration directory." + "\n"
-                            + "Let's Encrypt Certificate authority account name: " + certAuthorityAccountName + "\n"
-                            + "Contact urls: " + contactUrls + "\n"
+                            + "account keystore file " + accountKeyStoreFile + " will be generated in server configuration directory." + "\n"
+                            + "Let's Encrypt certificate authority account name: " + certAuthorityAccountName + "\n"
+                            + "contact urls: " + contactUrls + "\n"
                             + "password: " + certAuthorityAccountPassword + "\n"
                             + "alias: " + certAuthorityAccountAlias + "\n"
                             + "certificate authority URL: " + certificateAuthority.getUrl() + "\n"
                             + "You provided agreement to Let's Encrypt terms of service." + "\n"
                     );
                 } else if (caAccount != null) {
-                    ctx.printLine("Let's Encrypt Certificate authority account name: " + certAuthorityAccountName + "\n");
+                    ctx.printLine("Let's Encrypt certificate authority account name: " + certAuthorityAccountName + "\n");
                 }
 
                 ctx.printLine("\nSSL options:");
@@ -453,7 +453,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
                 }
                 if (useLetsEncrypt) {
                     ctx.printLine("Certificate will be obtained from Let's Encrypt server and will be valid for 90 days." + "\n"
-                            + "Server keystore file a will be generated in server configuration directory.");
+                            + "Server keystore file will be generated in server configuration directory.");
 
                 } else {
                     ctx.printLine("Server keystore file " + keyStoreFile
@@ -598,7 +598,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
     }
 
     private List<String> parseEmails(String emails) {
-        List<String> emailsList = parseItemsFromString(emails, "admin@example.com,info@example.com");
+        List<String> emailsList = parseItemsFromString(emails);
         List<String> urls = new ArrayList<>();
         if (emailsList != null) {
             for (String email : emailsList) {
@@ -610,12 +610,9 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         return urls;
     }
 
-    private List<String> parseItemsFromString(String items, String example) {
-        List<String> itemsList = null;
-        if (items != null) {
-            if (items.length() == 0) {
-                items = example;
-            }
+    private List<String> parseItemsFromString(String items) {
+        List<String> itemsList = new ArrayList<>();
+        if (items != null && items.length() > 0) {
             itemsList = Arrays.asList(items.split(","));
         }
 

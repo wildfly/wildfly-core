@@ -162,9 +162,9 @@ public class SecurityCommandsTestCase {
             Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(ACCOUNTS_KEYSTORE_FILE_NAME),
                     jbossStandaloneConfig.resolve(ACCOUNTS_KEYSTORE_FILE_NAME),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(KEYSTORE_FILE), KSFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            //Check that the key-store does not contain server certificate
-            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
+
+            //Check that the KSFile is not present
+            assertFalse(KSFile.toFile().exists());
 
             Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
                             + " --lets-encrypt"
@@ -177,8 +177,8 @@ public class SecurityCommandsTestCase {
             Assert.assertTrue(cli.pushLineAndWaitForResults("y", null));
             Assert.assertTrue(cli.getOutput().contains("FakeCaAccount not found"));
 
-            //Check that the security command failed and the keystore does not contain the new certificate alias
-            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
+            //Check that the security command failed and the the KSFile is still not present
+            assertFalse(KSFile.toFile().exists());
 
         } catch (Throwable ex) {
             throw new Exception(cli.getOutput(), ex);
@@ -222,11 +222,9 @@ public class SecurityCommandsTestCase {
             Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(ACCOUNTS_KEYSTORE_FILE_NAME),
                     jbossStandaloneConfig.resolve(ACCOUNTS_KEYSTORE_FILE_NAME),
                     java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(AcmeMockServerBuilder.class.getResourceAsStream(KEYSTORE_FILE), KSFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-            //Check that the key-store does not contain server certificate
-            assertFalse(loadKeyStore(KSFile.toString(), KEYSTORE_PASSWORD).containsAlias(certificateAlias));
-
+            //Check that the KSFile is not present
+            assertFalse(KSFile.toFile().exists());
 
             if (useCaAccount) {
                 //In this case the ACME Mock server will ignore, that the user did not accept TOS this is enforced only in test.

@@ -1239,7 +1239,9 @@ public abstract class ElytronUtil {
         builder.setOperationName(Util.ADD);
         builder.addNode(Util.SUBSYSTEM, Util.ELYTRON);
         builder.addNode(Util.CERTIFICATE_AUTHORITY_ACCOUNT, name);
-        builder.getModelNode().get(Util.CONTACT_URLS).set(createModelNodes(contactUrls));
+        if(contactUrls.size() > 0) {
+            builder.getModelNode().get(Util.CONTACT_URLS).set(createModelNodes(contactUrls));
+        }
         builder.addProperty(Util.KEY_STORE, keyStoreName);
         builder.addProperty(Util.ALIAS, alias);
         if (customCertificateAuthority != null) {
