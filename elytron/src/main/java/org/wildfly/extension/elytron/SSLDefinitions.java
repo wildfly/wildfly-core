@@ -341,7 +341,7 @@ class SSLDefinitions {
             .setRequires(ElytronDescriptionConstants.RESPONDER_CERTIFICATE)
             .build();
 
-    static final ObjectTypeAttributeDefinition OCSP = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.OCSP, RESPONDER, PREFER_CRLS)
+    static final ObjectTypeAttributeDefinition OCSP = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.OCSP, RESPONDER, PREFER_CRLS, RESPONDER_CERTIFICATE, RESPONDER_KEYSTORE)
             .setRequired(false)
             .setRestartAllServices()
             .build();

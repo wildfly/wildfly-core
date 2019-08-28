@@ -4596,6 +4596,20 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="responder-certificate" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The alias for OCSP Responder certificate. Keep undefined to use the issuer of certificate being validated.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="responder-keystore" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The keystore for responder-certificate. Keep undefined to use trust-manager keystore. Requires responder-certificate to be defined.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="serverSSLSNIContextsType">
