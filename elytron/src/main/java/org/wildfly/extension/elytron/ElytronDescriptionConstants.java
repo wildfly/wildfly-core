@@ -423,6 +423,7 @@ interface ElytronDescriptionConstants {
     String REALM_NAME = "realm-name";
     String REALMS = "realms";
     String REASON = "reason";
+    String RECONNECT_ATTEMPTS = "reconnect-attempts";
     String REFERENCE = "reference";
     String REFERRAL_MODE = "referral-mode";
     String REGISTER_JASPI_FACTORY = "register-jaspi-factory";
@@ -534,6 +535,7 @@ interface ElytronDescriptionConstants {
     String SUFFIX = "suffix";
     String SYNCHRONIZED = "synchronized";
     String SYSLOG_AUDIT_LOG = "syslog-audit-log";
+    String SYSLOG_FORMAT = "syslog-format";
 
     String TARGET_NAME = "target-name";
     String TERMS_OF_SERVICE = "terms-of-service";

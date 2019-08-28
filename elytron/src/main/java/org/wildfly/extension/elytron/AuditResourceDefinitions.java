@@ -56,6 +56,7 @@ import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.logmanager.handlers.SyslogHandler;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
@@ -163,6 +164,20 @@ class AuditResourceDefinitions {
             .setAllowExpression(false)
             .setRestartAllServices()
             .setCapabilityReference(SSL_CONTEXT_CAPABILITY, SECURITY_EVENT_LISTENER_CAPABILITY)
+            .build();
+
+    static final SimpleAttributeDefinition SYSLOG_FORMAT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SYSLOG_FORMAT, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode("RFC5424"))
+            .setAllowedValues(SyslogHandler.SyslogType.RFC3164.toString(), SyslogHandler.SyslogType.RFC5424.toString())
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition RECONNECT_ATTEMPTS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RECONNECT_ATTEMPTS, ModelType.INT, true)
+            .setAllowExpression(true)
+            .setDefaultValue(new ModelNode(0))
+            .setValidator(new IntRangeValidator(-1))
+            .setRestartAllServices()
             .build();
 
     private static final AggregateComponentDefinition<SecurityEventListener> AGGREGATE_SECURITY_EVENT_LISTENER = AggregateComponentDefinition.create(SecurityEventListener.class,
@@ -380,7 +395,7 @@ class AuditResourceDefinitions {
     }
 
     static ResourceDefinition getSyslogAuditLogResourceDefinition() {
-        AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT, SSL_CONTEXT };
+        AttributeDefinition[] attributes = new AttributeDefinition[] { SERVER_ADDRESS, PORT, TRANSPORT, HOST_NAME, FORMAT, SSL_CONTEXT, SYSLOG_FORMAT, RECONNECT_ATTEMPTS };
         AbstractAddStepHandler add = new TrivialAddHandler<SecurityEventListener>(SecurityEventListener.class, attributes, SECURITY_EVENT_LISTENER_RUNTIME_CAPABILITY) {
 
             @Override
@@ -399,6 +414,8 @@ class AuditResourceDefinitions {
                 final Transport transport = Transport.valueOf(TRANSPORT.resolveModelAttribute(context, model).asString());
                 final String hostName = HOST_NAME.resolveModelAttribute(context, model).asString();
                 final Format format = Format.valueOf(FORMAT.resolveModelAttribute(context, model).asString());
+                final SyslogHandler.SyslogType syslogFormat = SyslogHandler.SyslogType.valueOf(SYSLOG_FORMAT.resolveModelAttribute(context, model).asString());
+                final int reconnectAttempts = RECONNECT_ATTEMPTS.resolveModelAttribute(context, model).asInt();
 
                 final InjectedValue<SSLContext> sslContextInjector = new InjectedValue<>();
                 String sslContextName = SSL_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
@@ -422,6 +439,8 @@ class AuditResourceDefinitions {
                                     .setTcp(transport == Transport.TCP || transport == Transport.SSL_TCP)
                                     .setHostName(hostName)
                                     .setSocketFactory(transport == Transport.SSL_TCP && sslContext != null ? sslContext.getSocketFactory() : null)
+                                    .setFormat(syslogFormat)
+                                    .setMaxReconnectAttempts(reconnectAttempts)
                                     .build();
                         } catch (IOException e) {
                             throw ROOT_LOGGER.unableToStartService(e);

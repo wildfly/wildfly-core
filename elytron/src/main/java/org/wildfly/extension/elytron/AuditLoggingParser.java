@@ -73,6 +73,12 @@ class AuditLoggingParser {
             .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT)
             .build();
 
+    private final PersistentResourceXMLDescription syslogAuditLogParser_8_0 = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
+            .setUseElementsForGroups(false)
+            .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT, AuditResourceDefinitions.SYSLOG_FORMAT, AuditResourceDefinitions.RECONNECT_ATTEMPTS)
+            .build();
+
+
     private final PersistentResourceXMLDescription aggregateSecurityEventParser = builder(PathElement.pathElement(AGGREGATE_SECURITY_EVENT_LISTENER), null)
             .addAttribute(AuditResourceDefinitions.REFERENCES, new AttributeParsers.NamedStringListParser(SECURITY_EVENT_LISTENER), new AttributeMarshallers.NamedStringListMarshaller(SECURITY_EVENT_LISTENER))
             .build();
@@ -106,6 +112,15 @@ class AuditLoggingParser {
             .addChild(periodicRotatingFileAuditLogParser_5_0)
             .addChild(sizeRotatingFileAuditLogParser_5_0)
             .addChild(syslogAuditLogParser)
+            .build();
+
+    final PersistentResourceXMLDescription parser8_0 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+            .addChild(aggregateSecurityEventParser)
+            .addChild(customSecurityEventParser)
+            .addChild(fileAuditLogParser_5_0)
+            .addChild(periodicRotatingFileAuditLogParser_5_0)
+            .addChild(sizeRotatingFileAuditLogParser_5_0)
+            .addChild(syslogAuditLogParser_8_0)
             .build();
 
 }
