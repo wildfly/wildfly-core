@@ -16,7 +16,10 @@ limitations under the License.
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALMS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
@@ -45,6 +48,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
@@ -119,12 +123,16 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                         // only 'LetsEncrypt' was allowed in older versions
                         return value.isDefined() && !value.asString().equalsIgnoreCase(CertificateAuthority.LETS_ENCRYPT.getName());
                     }
-
                     @Override
                     public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
                         return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_AUTHORITY).getMessage();
                     }
                 }, ElytronDescriptionConstants.CERTIFICATE_AUTHORITY);
+        builder.addChildResource(PathElement.pathElement(AGGREGATE_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DISCARD_SINGLE_REALM, AUTHORIZATION_REALMS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, AUTHORIZATION_REALMS)
+                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALM);
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)
@@ -328,4 +336,30 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             return synced == attributeValue.asBoolean();
         }
     };
+
+    private static final DiscardAttributeChecker DISCARD_SINGLE_REALM = new DiscardAttributeChecker.DefaultDiscardAttributeChecker() {
+
+        @Override
+        protected boolean isValueDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.isDefined()) {
+                List<ModelNode> values = attributeValue.asList();
+                return (values.size() == 1);
+            }
+            return false;
+        }
+    };
+
+    private static final AttributeConverter ONE_AUTHORIZATION_REALMS = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (!attributeValue.isDefined()) {
+                /*
+                 * If we reach this point we know the attribute was not rejected to AUTHORIZATION_REALMS can only have one value.
+                 */
+                String authorizationRealm = context.readResourceFromRoot(address).getModel().get(AUTHORIZATION_REALMS).asList().get(0).asString();
+                attributeValue.set(authorizationRealm);
+            }
+        }
+    };
+
 }

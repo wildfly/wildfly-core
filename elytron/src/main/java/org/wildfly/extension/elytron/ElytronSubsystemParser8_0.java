@@ -54,6 +54,11 @@ public class ElytronSubsystemParser8_0 extends ElytronSubsystemParser7_0 {
         return ElytronExtension.NAMESPACE_8_0;
     }
 
+    @Override
+    PersistentResourceXMLDescription getRealmParser() {
+        return new RealmParser().realmParser_8_0;
+    }
+
     PersistentResourceXMLDescription getTlsParser() {
         return new TlsParser().tlsParser_8_0;
     }

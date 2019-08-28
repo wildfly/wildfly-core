@@ -21,6 +21,7 @@
         </security-domain>
     </security-domains>
     <security-realms>
+        <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
         <jdbc-realm name="JdbcBcryptHashHex">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>

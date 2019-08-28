@@ -21,6 +21,9 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILI
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -32,6 +35,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -63,11 +67,21 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
 
     static final SimpleAttributeDefinition AUTHORIZATION_REALM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.AUTHORIZATION_REALM, ModelType.STRING, false)
         .setMinSize(1)
+        .setAlternatives(ElytronDescriptionConstants.AUTHORIZATION_REALMS)
         .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
         .setRestartAllServices()
         .build();
 
+    static final StringListAttributeDefinition AUTHORIZATION_REALMS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.AUTHORIZATION_REALMS)
+            .setAlternatives(ElytronDescriptionConstants.AUTHORIZATION_REALM)
+            .setMinSize(1)
+            .setCapabilityReference(SECURITY_REALM_CAPABILITY, SECURITY_REALM_CAPABILITY)
+            .setRestartAllServices()
+            .build();
+
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { AUTHENTICATION_REALM, AUTHORIZATION_REALM };
+
+    static final AttributeDefinition[] ATTRIBUTES_8_0 = new AttributeDefinition[] { AUTHENTICATION_REALM, AUTHORIZATION_REALM, AUTHORIZATION_REALMS };
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -83,8 +97,8 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
-        for (AttributeDefinition current : ATTRIBUTES) {
+        AbstractWriteAttributeHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES_8_0);
+        for (AttributeDefinition current : ATTRIBUTES_8_0) {
             resourceRegistration.registerReadWriteAttribute(current, null, write);
         }
     }
@@ -92,7 +106,7 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
     private static class RealmAddHandler extends BaseAddHandler {
 
         private RealmAddHandler() {
-            super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);
+            super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES_8_0);
         }
 
         @Override
@@ -103,17 +117,36 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
             ServiceName realmName = runtimeCapability.getCapabilityServiceName(SecurityRealm.class);
 
             String authenticationRealm = AUTHENTICATION_REALM.resolveModelAttribute(context, model).asString();
-            String authorizationRealm = AUTHORIZATION_REALM.resolveModelAttribute(context, model).asString();
-
             final InjectedValue<SecurityRealm> authenticationRealmValue = new InjectedValue<SecurityRealm>();
-            final InjectedValue<SecurityRealm> authorizationRealmValue = new InjectedValue<SecurityRealm>();
 
-            TrivialService<SecurityRealm> aggregateRealmService = new TrivialService<SecurityRealm>( () -> new AggregateSecurityRealm(authenticationRealmValue.getValue(), authorizationRealmValue.getValue()));
+            final List<InjectedValue<SecurityRealm>> authorizationRealmValues = new ArrayList<>();
+            ModelNode authorizationRealmNode = AUTHORIZATION_REALM.resolveModelAttribute(context, model);
+
+            TrivialService<SecurityRealm> aggregateRealmService = new TrivialService<SecurityRealm>(() -> {
+                SecurityRealm[] authorizationRealms = new SecurityRealm[authorizationRealmValues.size()];
+                for (int i = 0; i < authorizationRealms.length; i++) {
+                    authorizationRealms[i] = authorizationRealmValues.get(i).getValue();
+                }
+
+                return new AggregateSecurityRealm(authenticationRealmValue.getValue(), authorizationRealms);
+            });
 
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, aggregateRealmService);
 
             addRealmDependency(context, serviceBuilder, authenticationRealm, authenticationRealmValue);
-            addRealmDependency(context, serviceBuilder, authorizationRealm, authorizationRealmValue);
+            if (authorizationRealmNode.isDefined()) {
+                String authorizationRealm = authorizationRealmNode.asString();
+                InjectedValue<SecurityRealm> authorizationRealmValue = new InjectedValue<SecurityRealm>();
+                addRealmDependency(context, serviceBuilder, authorizationRealm, authorizationRealmValue);
+                authorizationRealmValues.add(authorizationRealmValue);
+            } else {
+                List<String> authorizationRealms = AUTHORIZATION_REALMS.unwrap(context, model);
+                for (String authorizationRealm : authorizationRealms) {
+                    InjectedValue<SecurityRealm> authorizationRealmValue = new InjectedValue<SecurityRealm>();
+                    addRealmDependency(context, serviceBuilder, authorizationRealm, authorizationRealmValue);
+                    authorizationRealmValues.add(authorizationRealmValue);
+                }
+            }
 
             commonDependencies(serviceBuilder)
                 .setInitialMode(Mode.ACTIVE)

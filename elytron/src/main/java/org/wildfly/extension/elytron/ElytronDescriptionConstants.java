@@ -75,6 +75,7 @@ interface ElytronDescriptionConstants {
     String AUTHORIZATION = "authorization";
     String AUTHORIZATION_NAME = "authorization-name";
     String AUTHORIZATION_REALM = "authorization-realm";
+    String AUTHORIZATION_REALMS = "authorization-realms";
     String AUTOFLUSH = "autoflush";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
 
