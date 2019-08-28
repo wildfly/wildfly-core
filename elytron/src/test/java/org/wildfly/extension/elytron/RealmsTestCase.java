@@ -145,6 +145,50 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         Assert.assertNotNull(securityRealm);
     }
 
+    @Test
+    public void testAggregateRealm() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmOne");
+        SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityRealm);
+
+        RealmIdentity identity1 = securityRealm.getRealmIdentity(fromName("firstUser"));
+        Assert.assertTrue(identity1.exists());
+
+        Assert.assertEquals(3, identity1.getAuthorizationIdentity().getAttributes().size());
+        Assert.assertEquals("[Jane]", identity1.getAuthorizationIdentity().getAttributes().get("firstName").toString());
+        Assert.assertEquals("[Doe]", identity1.getAuthorizationIdentity().getAttributes().get("lastName").toString());
+        Assert.assertEquals("[Employee, Manager, Admin]", identity1.getAuthorizationIdentity().getAttributes().get("roles").toString());
+
+        identity1.dispose();
+    }
+
+    @Test
+    public void testAggregateRealmWithPrincipalTransformer() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmTwo");
+        SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityRealm);
+
+        RealmIdentity identity1 = securityRealm.getRealmIdentity(fromName("firstUser"));
+        Assert.assertTrue(identity1.exists());
+        //Assert that transformation was successful and the correct identity and attributes were loaded from filesystem-realm-2
+        Assert.assertEquals(3, identity1.getAuthorizationIdentity().getAttributes().size());
+        Assert.assertEquals("[Jane2]", identity1.getAuthorizationIdentity().getAttributes().get("firstName").toString());
+        Assert.assertEquals("[Doe2]", identity1.getAuthorizationIdentity().getAttributes().get("lastName").toString());
+        Assert.assertEquals("[Employee2, Manager2, Admin2]", identity1.getAuthorizationIdentity().getAttributes().get("roles").toString());
+
+        identity1.dispose();
+    }
+
     static void testModifiability(ModifiableSecurityRealm securityRealm) throws Exception {
 
         // obtain original count of identities

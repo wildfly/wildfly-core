@@ -2,6 +2,7 @@
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="RealmThree" authorization-realm="RealmFour" />
         <aggregate-realm name="AggregateTwo" authentication-realm="RealmThree" authorization-realms="AggregateOne RealmFour" />
+        <aggregate-realm name="AggregateThree" authentication-realm="RealmThree" authorization-realm="RealmFour" principal-transformer ="RegexOne"/>
         <custom-realm name="CustomOne" class-name="org.wildfly.security.ElytronRealm" module="a.b.c" />
         <custom-realm name="CustomTwo" module="a.b.c" class-name="org.wildfly.security.ElytronRealm">
             <configuration>
