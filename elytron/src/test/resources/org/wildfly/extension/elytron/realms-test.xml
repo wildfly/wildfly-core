@@ -4,6 +4,8 @@
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
     <security-realms>
+        <aggregate-realm name="AggregateRealmOne" authentication-realm="FilesystemRealm" authorization-realm="FilesystemRealm2"/>
+        <aggregate-realm name="AggregateRealmTwo" authentication-realm="FilesystemRealm" authorization-realm="FilesystemRealm2" principal-transformer ="RegexOne"/>
 
         <properties-realm name="HashedPropertyRealm">
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashed.properties" digest-realm-name="Hashed" />
@@ -16,6 +18,10 @@
 
         <filesystem-realm name="FilesystemRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealm2" levels="2" encoded="false">
+            <file path="filesystem-realm-2" relative-to="jboss.server.config.dir" />
         </filesystem-realm>
 
         <token-realm name="JwtRealm" principal-claim="sub">
@@ -34,6 +40,10 @@
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
         </token-realm>
     </security-realms>
+
+    <mappers>
+        <regex-principal-transformer name="RegexOne" pattern="first" replacement="second" />
+    </mappers>
 
     <tls><!-- required by OAuth2Realm when HTTPS in introspection-url used -->
         <key-stores>

@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
 import java.util.ArrayList;
@@ -47,6 +48,8 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
+
+import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.auth.realm.AggregateSecurityRealm;
 import org.wildfly.security.auth.server.SecurityRealm;
 
@@ -79,9 +82,16 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition PRINCIPAL_TRANSFORMER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(PRINCIPAL_TRANSFORMER_CAPABILITY, SECURITY_REALM_CAPABILITY)
+            .setRestartAllServices()
+            .setAllowExpression(true)
+            .build();
+
     static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { AUTHENTICATION_REALM, AUTHORIZATION_REALM };
 
-    static final AttributeDefinition[] ATTRIBUTES_8_0 = new AttributeDefinition[] { AUTHENTICATION_REALM, AUTHORIZATION_REALM, AUTHORIZATION_REALMS };
+    static final AttributeDefinition[] ATTRIBUTES_8_0 = new AttributeDefinition[] { AUTHENTICATION_REALM, AUTHORIZATION_REALM, AUTHORIZATION_REALMS, PRINCIPAL_TRANSFORMER };
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -122,18 +132,39 @@ class AggregateRealmDefinition extends SimpleResourceDefinition {
             final List<InjectedValue<SecurityRealm>> authorizationRealmValues = new ArrayList<>();
             ModelNode authorizationRealmNode = AUTHORIZATION_REALM.resolveModelAttribute(context, model);
 
+            String principalTransformer = PRINCIPAL_TRANSFORMER.resolveModelAttribute(context, model).asStringOrNull();
+
+            InjectedValue<PrincipalTransformer> principalTransformerValue = null;
+            String principalTransformerRuntimeCapability;
+            ServiceName principalTransformerServiceName = null;
+
+            if (principalTransformer != null) {
+                principalTransformerValue = new InjectedValue<PrincipalTransformer>();
+                principalTransformerRuntimeCapability = RuntimeCapability.buildDynamicCapabilityName(PRINCIPAL_TRANSFORMER_CAPABILITY, principalTransformer);
+                principalTransformerServiceName = context.getCapabilityServiceName(principalTransformerRuntimeCapability, PrincipalTransformer.class);
+            }
+
+            final InjectedValue<PrincipalTransformer> finalPrincipalTransformerValue = principalTransformerValue;
             TrivialService<SecurityRealm> aggregateRealmService = new TrivialService<SecurityRealm>(() -> {
                 SecurityRealm[] authorizationRealms = new SecurityRealm[authorizationRealmValues.size()];
                 for (int i = 0; i < authorizationRealms.length; i++) {
                     authorizationRealms[i] = authorizationRealmValues.get(i).getValue();
                 }
 
-                return new AggregateSecurityRealm(authenticationRealmValue.getValue(), authorizationRealms);
+                if (finalPrincipalTransformerValue != null) {
+                    return new AggregateSecurityRealm(authenticationRealmValue.getValue(), finalPrincipalTransformerValue.getValue(), authorizationRealms);
+                } else {
+                    return new AggregateSecurityRealm(authenticationRealmValue.getValue(), authorizationRealms);
+                }
             });
 
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, aggregateRealmService);
 
             addRealmDependency(context, serviceBuilder, authenticationRealm, authenticationRealmValue);
+            if (principalTransformer != null) {
+                serviceBuilder.addDependency(principalTransformerServiceName, PrincipalTransformer.class, principalTransformerValue);
+            }
+
             if (authorizationRealmNode.isDefined()) {
                 String authorizationRealm = authorizationRealmNode.asString();
                 InjectedValue<SecurityRealm> authorizationRealmValue = new InjectedValue<SecurityRealm>();
