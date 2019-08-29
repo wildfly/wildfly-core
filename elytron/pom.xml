@@ -35,6 +35,11 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-controller-client</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
@@ -87,6 +92,12 @@
             <artifactId>jboss-logging-processor</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -149,6 +160,12 @@
         <dependency>
             <groupId>org.jmockit</groupId>
             <artifactId>jmockit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
             <scope>test</scope>
         </dependency>
 
