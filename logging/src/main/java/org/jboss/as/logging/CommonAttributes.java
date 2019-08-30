@@ -37,7 +37,6 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
-import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.correctors.FileCorrector;
@@ -71,7 +70,7 @@ public interface CommonAttributes {
 
     SimpleAttributeDefinition CLASS = SimpleAttributeDefinitionBuilder.create("class", ModelType.STRING)
             .setAllowExpression(false)
-            .setFlags(Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     PropertyAttributeDefinition ENABLED = PropertyAttributeDefinition.Builder.of("enabled", ModelType.BOOLEAN, true)
@@ -148,7 +147,7 @@ public interface CommonAttributes {
 
     SimpleAttributeDefinition MODULE = SimpleAttributeDefinitionBuilder.create("module", ModelType.STRING)
             .setAllowExpression(false)
-            .setFlags(Flag.RESTART_RESOURCE_SERVICES)
+            .setRestartAllServices()
             .build();
 
     SimpleAttributeDefinition NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
