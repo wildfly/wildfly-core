@@ -127,7 +127,8 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
             final Path logDir = script.getContainerHome().resolve("standalone").resolve("log");
             Assert.assertTrue(Files.exists(logDir));
             final String fileName;
-            if (MODULAR_JVM) {
+            // The IBM J9 JVM does seems to just use the gc.log name format for the current file name.
+            if (MODULAR_JVM || TestSuiteEnvironment.isIbmJvm()) {
                 fileName = "gc.log";
             } else {
                 fileName = "gc.log.0.current";
