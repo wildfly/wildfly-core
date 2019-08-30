@@ -39,6 +39,7 @@ import static org.jboss.as.controller.parsing.WriteUtils.writeAttribute;
 
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -252,7 +253,7 @@ class InterfacesXml {
      */
     void writeInterfaces(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
         writer.writeStartElement(Element.INTERFACES.getLocalName());
-        final Set<String> interfaces = modelNode.keys();
+        final Set<String> interfaces = new TreeSet<>(modelNode.keys());
         for (String ifaceName : interfaces) {
             final ModelNode iface = modelNode.get(ifaceName);
             writer.writeStartElement(Element.INTERFACE.getLocalName());

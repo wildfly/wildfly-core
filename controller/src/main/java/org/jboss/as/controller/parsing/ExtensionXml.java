@@ -78,11 +78,8 @@ public class ExtensionXml {
     }
 
     public void writeExtensions(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
-        Set<String> keys = modelNode.keys();
+        Set<String> keys = new TreeSet<>(modelNode.keys());
         if (keys.size() > 0) {
-            if (isOrderExtensions()) {
-                keys = new TreeSet<>(keys);
-            }
             writer.writeStartElement(Element.EXTENSIONS.getLocalName());
             for (final String extension : keys) {
                 writer.writeEmptyElement(Element.EXTENSION.getLocalName());
@@ -140,6 +137,8 @@ public class ExtensionXml {
         list.add(add);
     }
 
+    /** @deprecated Has no effect; may be removed in any subsequent WildFly release */
+    @Deprecated
     public static boolean isOrderExtensions() {
         // TODO perhaps make this configurable
         return true;

@@ -1,9 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <server xmlns="urn:jboss:domain:10.0">
     <interfaces>
-        <interface name="loopback">
-            <inet-address value="127.0.0.1"/>
-        </interface>
         <interface name="external">
             <any-address/>
         </interface>
@@ -21,6 +18,9 @@
             <not>
                 <loopback/>
             </not>
+        </interface>
+        <interface name="loopback">
+            <inet-address value="127.0.0.1"/>
         </interface>
     </interfaces>
 </server>        

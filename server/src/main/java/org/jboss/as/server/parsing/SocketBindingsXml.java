@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -422,7 +423,7 @@ public abstract class SocketBindingsXml {
 
         if (bindingGroup.hasDefined(SOCKET_BINDING)) {
             ModelNode bindings = bindingGroup.get(SOCKET_BINDING);
-            for (String bindingName : bindings.keys()) {
+            for (String bindingName : new TreeSet<>(bindings.keys())) {
                 ModelNode binding = bindings.get(bindingName);
                 writer.writeStartElement(Element.SOCKET_BINDING.getLocalName());
                 writeAttribute(writer, Attribute.NAME, bindingName);
@@ -450,7 +451,7 @@ public abstract class SocketBindingsXml {
         // outbound-socket-binding (for local destination)
         if (bindingGroup.hasDefined(LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING)) {
             final ModelNode localDestinationOutboundSocketBindings = bindingGroup.get(LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING);
-            for (final String outboundSocketBindingName : localDestinationOutboundSocketBindings.keys()) {
+            for (final String outboundSocketBindingName : new TreeSet<>(localDestinationOutboundSocketBindings.keys())) {
                 final ModelNode outboundSocketBinding = localDestinationOutboundSocketBindings.get(outboundSocketBindingName);
                 // <outbound-socket-binding>
                 writer.writeStartElement(Element.OUTBOUND_SOCKET_BINDING.getLocalName());
@@ -473,7 +474,7 @@ public abstract class SocketBindingsXml {
         // outbound-socket-binding (for remote destination)
         if (bindingGroup.hasDefined(REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING)) {
             final ModelNode remoteDestinationOutboundSocketBindings = bindingGroup.get(REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING);
-            for (final String outboundSocketBindingName : remoteDestinationOutboundSocketBindings.keys()) {
+            for (final String outboundSocketBindingName : new TreeSet<>(remoteDestinationOutboundSocketBindings.keys())) {
                 final ModelNode outboundSocketBinding = remoteDestinationOutboundSocketBindings.get(outboundSocketBindingName);
                 // <outbound-socket-binding>
                 writer.writeStartElement(Element.OUTBOUND_SOCKET_BINDING.getLocalName());

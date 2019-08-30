@@ -11,9 +11,6 @@
     </management>
 
     <interfaces>
-        <interface name="loopback">
-            <inet-address value="127.0.0.1"/>
-        </interface>
         <interface name="external">
             <any-address/>
         </interface>
@@ -32,14 +29,14 @@
                 <loopback/>
             </not>
         </interface>
+        <interface name="loopback">
+            <inet-address value="127.0.0.1"/>
+        </interface>
     </interfaces>
     
     <servers>
         <server name="server-one" group="main-server-group">
 		    <interfaces>
-		        <interface name="loopback">
-		            <inet-address value="127.0.0.1"/>
-		        </interface>
 		        <interface name="external">
 		            <any-address/>
 		        </interface>
@@ -58,6 +55,9 @@
 		                <loopback/>
 		            </not>
 		        </interface>
+                <interface name="loopback">
+                    <inet-address value="127.0.0.1"/>
+                </interface>
 		    </interfaces>        
         </server>
     </servers>
