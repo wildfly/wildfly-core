@@ -94,6 +94,8 @@ class LoggingTestEnvironment extends AdditionalInitialization implements Seriali
     @Override
     protected void setupController(final ControllerInitializer controllerInitializer) {
         super.setupController(controllerInitializer);
+        System.setProperty("jboss.server.log.dir", logDir.toAbsolutePath().toString());
+        System.setProperty("jboss.server.config.dir", configDir.toAbsolutePath().toString());
         controllerInitializer.addPath("jboss.server.log.dir", logDir.toAbsolutePath().toString(), null);
         controllerInitializer.addPath("jboss.server.config.dir", configDir.toAbsolutePath().toString(), null);
         if (runningMode == RunningMode.NORMAL) {

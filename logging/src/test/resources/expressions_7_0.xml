@@ -1,0 +1,248 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright 2019 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<subsystem xmlns="urn:jboss:domain:logging:7.0">
+    <add-logging-api-dependencies value="${test.add.deps:true}"/>
+    <use-deployment-logging-config value="${test.use.dep.config:true}"/>
+
+    <async-handler name="async">
+        <queue-length value="${test.queue.length:10}"/>
+        <overflow-action value="${test.overflow.action:block}"/>
+        <subhandlers>
+            <handler name="sizeLogger"/>
+        </subhandlers>
+    </async-handler>
+
+    <console-handler name="CONSOLE" autoflush="${test.autoflush:true}">
+        <level name="${test.console.level:INFO}"/>
+        <encoding value="${test.encoding:UTF-8}"/>
+        <filter-spec value="${test.console.filter:levelRange(TRACE,WARN)}" />
+        <formatter>
+            <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+        </formatter>
+        <target name="${test.console.target:System.out}"/>
+    </console-handler>
+
+    <file-handler name="anotherFile" enabled="${test.file.enabled:false}" autoflush="${test.autoflush:true}">
+        <level name="${test.file.level:INFO}"/>
+        <encoding value="${test.encoding:UTF-8}"/>
+        <formatter>
+            <named-formatter name="PATTERN"/>
+        </formatter>
+        <file relative-to="jboss.server.log.dir" path="${test.another.filter:another.log}"/>
+        <append value="${test.file.append:true}"/>
+    </file-handler>
+
+    <periodic-rotating-file-handler name="FILE" autoflush="${test.autoflush:true}">
+        <level name="${test.file.level:INFO}"/>
+        <encoding value="${test.encoding:UTF-8}"/>
+        <filter-spec value="${test.file.filter:any(levels(INFO),not(levels(TRACE)))}"/>
+        <formatter>
+            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+        </formatter>
+        <file relative-to="jboss.server.log.dir" path="${test.server.log.file:server.log}"/>
+        <suffix value="${test.file.suffix:.yyyy-MM-dd}"/>
+    </periodic-rotating-file-handler>
+
+    <periodic-size-rotating-file-handler name="psHandler" autoflush="${test.autoflush:true}" rotate-on-boot="${test.rotate-on-boot:false}">
+        <level name="${test.file.level:INFO}"/>
+        <encoding value="${test.encoding:UTF-8}"/>
+        <formatter>
+            <pattern-formatter pattern="${test.file.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+        </formatter>
+        <file relative-to="jboss.server.log.dir" path="${test.periodic.size.log.file:ps.log}"/>
+        <rotate-size value="${test.rotate.size:64m}"/>
+        <max-backup-index value="${test.max.backup.index:1024}"/>
+        <suffix value="${test.file.suffix:.yyyy-MM-dd}"/>
+        <append value="${test.file.append:false}"/>
+    </periodic-size-rotating-file-handler>
+
+    <size-rotating-file-handler name="sizeLogger" autoflush="${test.autoflush:true}" rotate-on-boot="${test.rotate-on-boot:false}">
+        <level name="${test.file.level:INFO}"/>
+        <encoding value="${test.encoding:UTF-8}"/>
+        <formatter>
+            <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+        </formatter>
+        <file relative-to="jboss.server.log.dir" path="${test.size.log.file:sizeLogger.log}"/>
+        <rotate-size value="${test.rotate.size:64m}"/>
+        <max-backup-index value="${test.max.backup.index:1024}"/>
+        <append value="${test.file.append:false}"/>
+        <suffix value="${test.file.suffix:.yyyy-MM-dd'T'HH:mm:ssZ}"/>
+    </size-rotating-file-handler>
+
+    <socket-handler name="socket-handler" autoflush="${test.autoflush:true}" block-on-reconnect="${test.reconnect:true}"
+                    enabled="${test.enableddd:true}" outbound-socket-binding-ref="${test.socket-binding:true}">
+        <encoding value="${test.encoding:UTF-8}"/>
+        <filter-spec value="${test.pattern:match(&quot;.*&quot;)}"/>
+        <level name="${test.file.level:INFO}"/>
+        <named-formatter name="PATTERN"/>
+        <protocol value="${test.protocol:UDP}"/>
+    </socket-handler>
+
+    <syslog-handler name="syslog" enabled="${test.syslog.enabled:false}">
+        <level name="${test.default.level:INFO}"/>
+        <server-address value="${test.syslog.server-address:127.0.0.1}"/>
+        <hostname value="${test.syslog.hostname:jboss.org}"/>
+        <port value="${test.syslog.port:514}"/>
+        <app-name value="${test.syslog.appname:jboss-as7}"/>
+        <formatter>
+            <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+            <named-formatter name="PATTERN"/>
+        </formatter>
+        <facility value="${test.syslog.facility:user-level}"/>
+    </syslog-handler>
+
+    <logger category="com.example" use-parent-handlers="${test.logger.use.parent.handlers:false}">
+        <level name="${test.logger.level:INFO}"/>
+        <filter-spec value="${test.logger.filter:levelRange[TRACE,WARN)}"/>
+        <handlers>
+            <handler name="sizeLogger"/>
+            <handler name="CONSOLE"/>
+        </handlers>
+    </logger>
+
+    <root-logger>
+        <level name="${test.root.level:INFO}"/>
+        <handlers>
+            <handler name="CONSOLE"/>
+            <handler name="FILE"/>
+        </handlers>
+    </root-logger>
+
+    <formatter name="PATTERN">
+        <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
+    </formatter>
+
+    <formatter name="JSON">
+        <json-formatter date-format="${test.date.format:yyyy-MM-dd'T'HH:mm:ssSSS}"
+                pretty-print="${test.pretty.print:false}" print-details="${test.print.details:false}"
+                zone-id="${test.date.format.zoneId:GMT}">
+            <exception-output-type value="${test.exception.output.type:detailed}"/>
+            <record-delimiter value="${test.record.delimiter:\n}"/>
+            <key-overrides exception-caused-by="${test.cause.key:caused-by}" record="${test.record.key:record"/>
+            <meta-data>
+                <property name="test" value="value"/>
+            </meta-data>
+        </json-formatter>
+    </formatter>
+
+    <formatter name="XML">
+        <xml-formatter date-format="${test.date.format:yyyy-MM-dd'T'HH:mm:ssSSS}"
+                        pretty-print="${test.pretty.print:false}" print-details="${test.print.details:false}"
+                        zone-id="${test.date.format.zoneId:GMT}"
+                        print-namespace="${test.print.namespace:true}"
+                        namespace-uri="${test.namespace.uri}">
+            <exception-output-type value="${test.exception.output.type:detailed}"/>
+            <record-delimiter value="${test.record.delimiter:\n}"/>
+            <key-overrides exception-caused-by="${test.cause.key:caused-by}" record="${test.record.key:record"/>
+            <meta-data>
+                <property name="test-xml" value="value-xml"/>
+            </meta-data>
+        </xml-formatter>
+    </formatter>
+
+    <logging-profiles>
+        <logging-profile name="test-profile">
+
+            <console-handler name="CONSOLE" autoflush="${test.autoflush:true}">
+                <level name="${test.console.level:INFO}"/>
+                <encoding value="${test.encoding:UTF-8}"/>
+                <filter-spec value="${test.console.filter:levelRange(TRACE,WARN)}" />
+                <formatter>
+                    <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+                </formatter>
+                <target name="${test.console.target:System.out}"/>
+            </console-handler>
+
+            <file-handler name="anotherFile" enabled="${test.file.enabled:false}" autoflush="${test.autoflush:true}">
+                <level name="${test.file.level:INFO}"/>
+                <encoding value="${test.encoding:UTF-8}"/>
+                <formatter>
+                    <named-formatter name="PATTERN"/>
+                </formatter>
+                <file relative-to="jboss.server.log.dir" path="${test.another.filter:anotherProfile.log}"/>
+                <append value="${test.file.append:true}"/>
+            </file-handler>
+
+            <periodic-size-rotating-file-handler name="psHandler" autoflush="${test.autoflush:true}" rotate-on-boot="${test.rotate-on-boot:false}">
+                <level name="${test.file.level:INFO}"/>
+                <encoding value="${test.encoding:UTF-8}"/>
+                <formatter>
+                    <pattern-formatter pattern="${test.file.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+                </formatter>
+                <file relative-to="jboss.server.log.dir" path="${test.periodic.size.log.file:ps.log}"/>
+                <rotate-size value="${test.rotate.size:64m}"/>
+                <max-backup-index value="${test.max.backup.index:1024}"/>
+                <suffix value="${test.file.suffix:.yyyy-MM-dd}"/>
+                <append value="${test.file.append:false}"/>
+            </periodic-size-rotating-file-handler>
+
+            <size-rotating-file-handler name="sizeLogger" autoflush="${test.autoflush:true}" rotate-on-boot="${test.rotate-on-boot:false}">
+                <level name="${test.file.level:INFO}"/>
+                <encoding value="${test.encoding:UTF-8}"/>
+                <formatter>
+                    <pattern-formatter pattern="${test.console.pattern:%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}"/>
+                </formatter>
+                <file relative-to="jboss.server.log.dir" path="${test.size.log.file:sizeLogger.log}"/>
+                <rotate-size value="${test.rotate.size:64m}"/>
+                <max-backup-index value="${test.max.backup.index:1024}"/>
+                <append value="${test.file.append:false}"/>
+                <suffix value="${test.file.suffix:.yyyy-MM-dd'T'HH:mm:ssZ}"/>
+            </size-rotating-file-handler>
+
+            <socket-handler name="socket-handler" autoflush="${test.autoflush:true}" block-on-reconnect="${test.reconnect:true}"
+                            enabled="${test.enableddd:true}" outbound-socket-binding-ref="${test.socket-binding:true}">
+                <encoding value="${test.encoding:UTF-8}"/>
+                <filter-spec value="${test.pattern:match(&quot;.*&quot;)}"/>
+                <level name="${test.file.level:INFO}"/>
+                <named-formatter name="PATTERN"/>
+                <protocol value="${test.protocol:UDP}"/>
+            </socket-handler>
+
+            <syslog-handler name="syslog" enabled="${test.syslog.enabled:false}">
+                <level name="${test.default.level:INFO}"/>
+                <server-address value="${test.syslog.server-address:127.0.0.1}"/>
+                <hostname value="${test.syslog.hostname:jboss.org}"/>
+                <port value="${test.syslog.port:514}"/>
+                <app-name value="${test.syslog.appname:jboss-as7}"/>
+                <formatter>
+                    <syslog-format syslog-type="${test.syslog.format:RFC5424}"/>
+                    <named-formatter name="PATTERN"/>
+                </formatter>
+                <facility value="${test.syslog.facility:user-level}"/>
+            </syslog-handler>
+
+            <logger category="com.example" use-parent-handlers="${test.logger.use.parent.handlers:false}">
+                <level name="${test.logger.level:INFO}"/>
+                <filter-spec value="${test.logger.filter:levelRange[TRACE,WARN)}"/>
+            </logger>
+
+            <root-logger>
+                <level name="${test.root.level:INFO}"/>
+                <handlers>
+                    <handler name="CONSOLE"/>
+                </handlers>
+            </root-logger>
+
+            <formatter name="PATTERN">
+                <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
+            </formatter>
+        </logging-profile>
+    </logging-profiles>
+</subsystem>

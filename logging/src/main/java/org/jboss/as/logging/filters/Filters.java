@@ -1,32 +1,31 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2012, Red Hat, Inc., and individual contributors
- * as indicated by the @author tags. See the copyright.txt file in the
- * distribution for a full listing of individual contributors.
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Copyright 2019 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-package org.jboss.as.logging;
+package org.jboss.as.logging.filters;
 
 import static java.lang.Character.isJavaIdentifierPart;
 import static java.lang.Character.isJavaIdentifierStart;
 import static java.lang.Character.isWhitespace;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,27 +33,33 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 
 /**
- * Filter utilties and constants.
+ * Filter utilities and constants.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings("DuplicatedCode")
 public class Filters {
 
-    static final String ACCEPT = "accept";
-    static final String ALL = "all";
-    static final String ANY = "any";
-    static final String DENY = "deny";
-    static final String LEVELS = "levels";
-    static final String LEVEL_CHANGE = "levelChange";
-    static final String LEVEL_RANGE = "levelRange";
-    static final String MATCH = "match";
-    static final String NOT = "not";
-    static final String SUBSTITUTE = "substitute";
-    static final String SUBSTITUTE_ALL = "substituteAll";
+    public static final String ACCEPT = "accept";
+    public static final String ALL = "all";
+    public static final String ANY = "any";
+    public static final String DENY = "deny";
+    public static final String LEVELS = "levels";
+    public static final String LEVEL_CHANGE = "levelChange";
+    public static final String LEVEL_RANGE = "levelRange";
+    public static final String MATCH = "match";
+    public static final String NOT = "not";
+    public static final String SUBSTITUTE = "substitute";
+    public static final String SUBSTITUTE_ALL = "substituteAll";
+
+    private static final FilterReferenceRecorder REFERENCE_RECORDER = new FilterReferenceRecorder();
 
     /**
      * Converts the legacy {@link CommonAttributes#FILTER filter} to the new {@link CommonAttributes#FILTER_SPEC filter
@@ -87,19 +92,63 @@ public class Filters {
      *
      * @return the complex filter object
      */
-    static ModelNode filterSpecToFilter(final String value) {
+    public static ModelNode filterSpecToFilter(final String value) {
         final ModelNode filter = new ModelNode(CommonAttributes.FILTER.getName()).setEmptyObject();
         final Iterator<String> iterator = tokens(value).iterator();
-        parseFilterExpression(iterator, filter, true);
+        parseFilterExpression(iterator, filter);
         return filter;
     }
 
+    /**
+     * Returns the paths to the filter, if any, associated with the filters address.
+     *
+     * @param address the filters address
+     *
+     * @return the associated filter references or an empty collection
+     */
+    static Collection<String> getFilterReferences(final PathAddress address) {
+        return REFERENCE_RECORDER.getFilterReferences(address);
+    }
+
+    /**
+     * Registers any possible custom filters with the current handler or logger address.
+     *
+     * @param filterSpec     the filter expression
+     * @param currentAddress the current address
+     */
+    public static void registerFilter(final String filterSpec, final PathAddress currentAddress) {
+        for (String filterName : parseFilterExpression(filterSpec)) {
+            REFERENCE_RECORDER.registerFilter(filterName, currentAddress);
+        }
+    }
+
+    /**
+     * Unregisters any possible custom filters with the current handler or logger address.
+     *
+     * @param filterSpec     the filter expression
+     * @param currentAddress the current address
+     */
+    public static void unregisterFilter(final String filterSpec, final PathAddress currentAddress) {
+        for (String filterName : parseFilterExpression(filterSpec)) {
+            REFERENCE_RECORDER.unregisterFilter(filterName, currentAddress);
+        }
+    }
+
+    private static Collection<String> parseFilterExpression(final String value) {
+        return parseFilterExpression(tokens(value).iterator(), new ModelNode(), true, false);
+    }
+
+    private static void parseFilterExpression(final Iterator<String> iterator, final ModelNode model) {
+        parseFilterExpression(iterator, model, true, true);
+    }
+
     @SuppressWarnings("ConstantConditions")
-    private static void parseFilterExpression(final Iterator<String> iterator, final ModelNode model, final boolean outermost) {
+    private static Collection<String> parseFilterExpression(final Iterator<String> iterator, final ModelNode model, final boolean outermost, final boolean forFilter) {
+        final Collection<String> result = new ArrayList<>();
         if (!iterator.hasNext()) {
             if (outermost) {
                 model.setEmptyObject();
-                return;
+                return Collections.emptyList();
             }
             throw LoggingLogger.ROOT_LOGGER.unexpectedEnd();
         }
@@ -110,19 +159,19 @@ public class Filters {
             set(CommonAttributes.DENY, model, true);
         } else if (NOT.equals(token)) {
             expect("(", iterator);
-            parseFilterExpression(iterator, model.get(CommonAttributes.NOT.getName()), false);
+            result.addAll(parseFilterExpression(iterator, model.get(CommonAttributes.NOT.getName()), false, forFilter));
             expect(")", iterator);
         } else if (ALL.equals(token)) {
             expect("(", iterator);
             do {
                 final ModelNode m = model.get(CommonAttributes.ALL.getName());
-                parseFilterExpression(iterator, m, false);
+                result.addAll(parseFilterExpression(iterator, m, false, forFilter));
             } while (expect(",", ")", iterator));
         } else if (ANY.equals(token)) {
             expect("(", iterator);
             do {
                 final ModelNode m = model.get(CommonAttributes.ANY.getName());
-                parseFilterExpression(iterator, m, false);
+                result.addAll(parseFilterExpression(iterator, m, false, forFilter));
             } while (expect(",", ")", iterator));
         } else if (LEVEL_CHANGE.equals(token)) {
             expect("(", iterator);
@@ -174,9 +223,16 @@ public class Filters {
             set(CommonAttributes.REPLACEMENT, substitute, replacement);
             expect(")", iterator);
         } else {
-            final String name = expectName(iterator);
-            throw LoggingLogger.ROOT_LOGGER.filterNotFound(name);
+            if (forFilter) {
+                // Previously we threw an error here, however it would likely never be thrown. With the introduction of
+                // custom filters a named filter may be present. In this case we're just going to log a debug message
+                // indicating the named filter is not supported for the legacy filter.
+                LoggingLogger.ROOT_LOGGER.debugf("Only known filters are supported on the filter attribute. Ignoring " +
+                        "filter %s.", token);
+            }
+            result.add(token);
         }
+        return result;
     }
 
     private static String expectName(Iterator<String> iterator) {

@@ -55,6 +55,7 @@ import org.jboss.as.controller.transform.description.ResourceTransformationDescr
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.as.logging.LoggingProfileOperations.LoggingProfileAdd;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
+import org.jboss.as.logging.filters.FilterResourceDefinition;
 import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -98,7 +99,7 @@ public class LoggingExtension implements Extension {
 
     private static final GenericSubsystemDescribeHandler DESCRIBE_HANDLER = GenericSubsystemDescribeHandler.create(LoggingChildResourceComparator.INSTANCE);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 8;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 9;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -270,6 +271,7 @@ public class LoggingExtension implements Extension {
         setParser(context, Namespace.LOGGING_5_0, new LoggingSubsystemParser_5_0());
         setParser(context, Namespace.LOGGING_6_0, new LoggingSubsystemParser_6_0());
         setParser(context, Namespace.LOGGING_7_0, new LoggingSubsystemParser_7_0());
+        setParser(context, Namespace.LOGGING_8_0, new LoggingSubsystemParser_8_0());
 
         // Hack to ensure the Element and Attribute enums are loaded during this call which
         // is part of concurrent boot. These enums trigger a lot of classloading and static
@@ -334,6 +336,7 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(JsonFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(XmlFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(SocketHandlerResourceDefinition.INSTANCE);
+        registration.registerSubModel(FilterResourceDefinition.INSTANCE);
 
         if (registerTransformers) {
             registerTransformers(subsystem,
@@ -352,14 +355,16 @@ public class LoggingExtension implements Extension {
                     CustomFormatterResourceDefinition.INSTANCE,
                     JsonFormatterResourceDefinition.INSTANCE,
                     XmlFormatterResourceDefinition.INSTANCE,
-                    SocketHandlerResourceDefinition.INSTANCE);
+                    SocketHandlerResourceDefinition.INSTANCE,
+                    FilterResourceDefinition.INSTANCE);
         }
     }
 
     private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_7_0_0, defs);
+        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_8_0_0, defs);
+        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_8_0_0, KnownModelVersion.VERSION_7_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_7_0_0, KnownModelVersion.VERSION_6_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_6_0_0, KnownModelVersion.VERSION_5_0_0, defs);
         registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
@@ -371,6 +376,7 @@ public class LoggingExtension implements Extension {
                 KnownModelVersion.VERSION_2_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_7_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_8_0_0.getModelVersion(),
         }, new ModelVersion[] {
                 KnownModelVersion.VERSION_1_5_0.getModelVersion(),
                 KnownModelVersion.VERSION_3_0_0.getModelVersion(),
@@ -378,6 +384,7 @@ public class LoggingExtension implements Extension {
                 KnownModelVersion.VERSION_5_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_6_0_0.getModelVersion(),
                 KnownModelVersion.VERSION_7_0_0.getModelVersion(),
+                KnownModelVersion.VERSION_8_0_0.getModelVersion(),
         });
     }
 
@@ -435,6 +442,10 @@ public class LoggingExtension implements Extension {
                 } else if (CustomFormatterResourceDefinition.NAME.equals(key1)) {
                     result = LESS;
                 } else if (CustomFormatterResourceDefinition.NAME.equals(key2)) {
+                    result = GREATER;
+                } else if (FilterResourceDefinition.NAME.equals(key1)) {
+                    result = LESS;
+                } else if (FilterResourceDefinition.NAME.equals(key2)) {
                     result = GREATER;
                 } else if (RootLoggerResourceDefinition.NAME.equals(key1)) {
                     result = GREATER;

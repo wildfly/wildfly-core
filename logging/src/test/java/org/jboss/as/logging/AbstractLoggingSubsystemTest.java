@@ -45,6 +45,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
+import org.jboss.as.logging.filters.FilterResourceDefinition;
 import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
@@ -596,6 +597,10 @@ public abstract class AbstractLoggingSubsystemTest extends AbstractSubsystemBase
             } else if (CustomFormatterResourceDefinition.NAME.equals(key1)) {
                 result = LESS;
             } else if (CustomFormatterResourceDefinition.NAME.equals(key2)) {
+                result = GREATER;
+            } else if (FilterResourceDefinition.NAME.equals(key1)) {
+                result = LESS;
+            } else if (FilterResourceDefinition.NAME.equals(key2)) {
                 result = GREATER;
             } else if (RootLoggerResourceDefinition.NAME.equals(key1)) {
                 result = GREATER;

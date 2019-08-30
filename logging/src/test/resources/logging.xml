@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<subsystem xmlns="urn:jboss:domain:logging:7.0">
+<subsystem xmlns="urn:jboss:domain:logging:8.0">
     <add-logging-api-dependencies value="false"/>
     <use-deployment-logging-config value="false"/>
 
@@ -183,6 +183,15 @@
         </xml-formatter>
     </formatter>
 
+    <filter module="org.jboss.as.logging.test" class="org.jboss.as.logging.TestFilter" name="testFilter">
+        <constructor-properties>
+            <property name="constructorText" value=" | test constructor value"/>
+        </constructor-properties>
+        <properties>
+            <property name="propertyText" value=" | test property value"/>
+        </properties>
+    </filter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 
@@ -270,6 +279,15 @@
             <formatter name="PATTERN">
                 <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n" color-map="info:cyan"/>
             </formatter>
+
+            <filter module="org.jboss.as.logging.test" class="org.jboss.as.logging.TestFilter" name="testProfileFilter">
+                <constructor-properties>
+                    <property name="constructorText" value=" | test constructor value in profile"/>
+                </constructor-properties>
+                <properties>
+                    <property name="propertyText" value=" | test property value in profile"/>
+                </properties>
+            </filter>
         </logging-profile>
     </logging-profiles>
 </subsystem>

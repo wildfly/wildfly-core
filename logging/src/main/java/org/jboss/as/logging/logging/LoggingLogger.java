@@ -758,7 +758,7 @@ public interface LoggingLogger extends BasicLogger {
      * @return an {@link IllegalArgumentException} for the error
      */
     @Message(id = 72, value = "Filter '%s' is not found")
-    IllegalArgumentException filterNotFound(String name);
+    OperationFailedException filterNotFound(String name);
 
     /**
      * Creates an exception indicating an identifier was expected next in the filter expression.
@@ -985,4 +985,48 @@ public interface LoggingLogger extends BasicLogger {
      */
     @Message(id = 94, value = "Formatter name cannot end with '" + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX + "'")
     OperationFailedException illegalFormatterName();
+
+    /**
+     * Creates an exception indicating the name of the filter is a reserved filter name.
+     *
+     * @param name          the invalid name
+     * @param reservedNames the collection of reserved names
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 95, value = "The name %s cannot be used as a filter name as it is a reserved filter name. Reserved names are: %s")
+    OperationFailedException reservedFilterName(String name, Collection<String> reservedNames);
+
+    /**
+     * Creates an exception indicating the name of the filter is a reserved filter name.
+     *
+     * @param name        the invalid name
+     * @param invalidChar the invalid character
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 96, value = "The name %s cannot be used as a filter name as it starts with an invalid character %s")
+    OperationFailedException invalidFilterNameStart(String name, char invalidChar);
+
+    /**
+     * Creates an exception indicating the name of the filter is a reserved filter name.
+     *
+     * @param name        the invalid name
+     * @param invalidChar the invalid character
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 97, value = "The name %s cannot be used as a filter name as it contains an invalid character %s")
+    OperationFailedException invalidFilterName(String name, char invalidChar);
+
+    /**
+     * Creates an exception indicating the filter is assigned to either loggers or handlers.
+     *
+     * @param name       the name of the filter
+     * @param references the loggers and/or handlers the filter is assigned to
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 98, value = "Cannot remove filter %s as it's assigned to: %s")
+    OperationFailedException cannotRemoveFilter(String name, Collection<String> references);
 }

@@ -36,6 +36,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.logging.filters.Filters;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
