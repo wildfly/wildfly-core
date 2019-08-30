@@ -208,6 +208,10 @@ public class CliProcessWrapper extends CliProcessBuilder {
     private int resultTimeout = TimeoutUtil.adjust(20000);
     private int resultInterval = 100;
 
+    public void setResultTimeout(int resultTimeout) {
+        this.resultTimeout = resultTimeout;
+    }
+
     private boolean waitForPrompt(String prompt) {
         boolean success = false;
         boolean wait = true;
