@@ -21,6 +21,7 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -131,6 +132,19 @@ public class CliArgumentsTestCase {
         cli.executeNonInteractive();
 
         int exitCode = cli.getProcessExitValue();
+        assertTrue(exitCode != 0);
+    }
+
+    @Test
+    public void testMisspelledParameter() throws Exception {
+        CliProcessWrapper cli = new CliProcessWrapper()
+           .addCliArgument("--connect")
+           .addCliArgument("--controler=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1))
+           .addCliArgument("quit");
+        cli.executeNonInteractive();
+
+        int exitCode = cli.getProcessExitValue();
+        assertEquals("Unknown argument: --controler=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1), cli.getOutput().trim());
         assertTrue(exitCode != 0);
     }
 }

@@ -245,7 +245,12 @@ public class CliLauncher {
                         WildFlySecurityManager.setPropertyPrivileged(prop, "true");
                         systemPropertyKeys.add(prop);
                     }
-                } else if(!arg.equals("-XX:")) {// skip system properties and jvm options
+                } else if(!arg.startsWith("-XX")) {// skip system properties and jvm options
+                    if (arg.startsWith("-")) {
+                        // probably a misspelled argument
+                        argError = "Unknown argument: " + arg;
+                        break;
+                    }
                     // assume it's commands
                     if(file != null) {
                         argError = "Only one of '--file', '--commands' or '--command' can appear as the argument at a time: " + arg;
