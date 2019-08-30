@@ -51,15 +51,7 @@ public class DefaultAttributeMarshaller extends AttributeMarshaller {
     public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (isMarshallable(attribute, resourceModel, marshallDefault)) {
             writer.writeStartElement(attribute.getXmlName());
-            String content = this.asString(resourceModel.get(attribute.getName()));
-            if (content.indexOf('\n') > -1) {
-                // Multiline content. Use the overloaded variant that staxmapper will format
-                writer.writeCharacters(content);
-            } else {
-                // Staxmapper will just output the chars without adding newlines if this is used
-                char[] chars = content.toCharArray();
-                writer.writeCharacters(chars, 0, chars.length);
-            }
+            marshallElementContent(this.asString(resourceModel.get(attribute.getName())), writer);
             writer.writeEndElement();
         }
     }
