@@ -22,6 +22,7 @@ import org.jboss.as.cli.Util;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_INTERACTIVE;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_NAME;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_PATH;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_LETS_ENCRYPT;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_MANAGEMENT_INTERFACE;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_TRUSTED_CERTIFICATE_PATH;
 import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_TRUST_STORE_NAME;
@@ -248,4 +249,19 @@ public interface OptionActivators {
             return false;
         }
     }
+
+    public static class LetsEncryptActivator extends AbstractDependOptionActivator {
+
+        public LetsEncryptActivator() {
+            super(false, OPT_INTERACTIVE);
+        }
+    }
+
+    public static class CaAccountActivator extends AbstractDependOptionActivator {
+
+        public CaAccountActivator() {
+            super(false, OPT_INTERACTIVE, OPT_LETS_ENCRYPT);
+        }
+    }
+
 }

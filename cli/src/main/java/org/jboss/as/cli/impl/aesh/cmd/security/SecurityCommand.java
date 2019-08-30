@@ -89,6 +89,8 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
     public static final String OPT_MECHANISMS_ORDER = "mechanisms-order";
     public static final String OPT_MECHANISM = "mechanism";
     public static final String OPT_SUPER_USER = "super-user";
+    public static final String OPT_LETS_ENCRYPT = "lets-encrypt";
+    public static final String OPT_CA_ACCOUNT = "ca-account";
 
     public static final String OPT_ROLES = "roles";
 
@@ -294,6 +296,15 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
                 } catch (Exception ex) {
                     return Collections.emptyList();
                 }
+            }
+        }
+
+        public static class CaAccountNameCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return ElytronUtil.getCaAccountNames(completerInvocation.getCommandContext().
+                        getModelControllerClient());
             }
         }
     }
