@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.logging.filters.FilterResourceDefinition;
 import org.jboss.as.logging.formatters.CustomFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.JsonFormatterResourceDefinition;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -59,6 +60,7 @@ enum Element {
     ASYNC_HANDLER(AsyncHandlerResourceDefinition.NAME),
     CHANGE_LEVEL(CommonAttributes.CHANGE_LEVEL),
     CONSOLE_HANDLER(ConsoleHandlerResourceDefinition.NAME),
+    CONSTRUCTOR_PROPERTIES(FilterResourceDefinition.CONSTRUCTOR_PROPERTIES),
     CUSTOM_FORMATTER(CustomFormatterResourceDefinition.CUSTOM_FORMATTER),
     CUSTOM_HANDLER(CustomHandlerResourceDefinition.NAME),
     DENY(CommonAttributes.DENY),

@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<subsystem xmlns="urn:jboss:domain:logging:7.0">
+<subsystem xmlns="urn:jboss:domain:logging:8.0">
     <add-logging-api-dependencies value="${test.add.deps:true}"/>
     <use-deployment-logging-config value="${test.use.dep.config:true}"/>
 
@@ -160,6 +160,15 @@
         </xml-formatter>
     </formatter>
 
+    <filter module="org.jboss.as.logging.test" class="org.jboss.as.logging.TestFilter" name="testFilter">
+        <constructor-properties>
+            <property name="constructorText" value="${test.filter.constructor.value:cText}"/>
+        </constructor-properties>
+        <properties>
+            <property name="propertyText" value="${test.filter.property.value:text}"/>
+        </properties>
+    </filter>
+
     <logging-profiles>
         <logging-profile name="test-profile">
 
@@ -246,6 +255,15 @@
             <formatter name="PATTERN">
                 <pattern-formatter pattern="${test.console.pattern:%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n}" color-map="${test.console.color:info:cyan,warn:yellow,error:red}"/>
             </formatter>
+
+            <filter module="org.jboss.as.logging.test" class="org.jboss.as.logging.TestFilter" name="testProfileFilter">
+                <constructor-properties>
+                    <property name="constructorText" value="${test.filter.profile.constructor.value:pcText}"/>
+                </constructor-properties>
+                <properties>
+                    <property name="propertyText" value="${test.filter.profile.property.value:pText}"/>
+                </properties>
+            </filter>
         </logging-profile>
     </logging-profiles>
 </subsystem>

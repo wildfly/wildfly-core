@@ -158,21 +158,7 @@ public interface CommonAttributes {
 
     SimpleMapAttributeDefinition PROPERTIES = new SimpleMapAttributeDefinition.Builder("properties", true)
             .setAllowExpression(true)
-            .setAttributeMarshaller(new DefaultAttributeMarshaller() {
-                @Override
-                public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                    resourceModel = resourceModel.get(attribute.getName());
-                    if (resourceModel.isDefined()) {
-                        writer.writeStartElement(attribute.getName());
-                        for (ModelNode property : resourceModel.asList()) {
-                            writer.writeEmptyElement(Element.PROPERTY.getLocalName());
-                            writer.writeAttribute("name", property.asProperty().getName());
-                            writer.writeAttribute("value", property.asProperty().getValue().asString());
-                        }
-                        writer.writeEndElement();
-                    }
-                }
-            })
+            .setAttributeMarshaller(PropertyAttributeMarshaller.INSTANCE)
             .build();
 
     /**
