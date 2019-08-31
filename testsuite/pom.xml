@@ -402,6 +402,19 @@
             </modules>
         </profile>
 
+        <!-- -Dts.layers -->
+        <profile>
+            <id>ts.integ.group.layers</id>
+            <activation>
+                <property>
+                    <name>ts.layers</name>
+                </property>
+            </activation>
+            <modules>
+                <module>rbac</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>all-modules.module.profile</id>
             <activation>
