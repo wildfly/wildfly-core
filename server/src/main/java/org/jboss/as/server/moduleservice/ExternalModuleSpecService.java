@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.jar.JarFile;
@@ -145,7 +147,8 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
                 }
 
                 if (! processedPaths.isEmpty()) {
-                    final TreeSet<Path> jars = new TreeSet<>(processedPaths);
+                    final TreeSet<Path> jars = new TreeSet<>(new PathComparator());
+                    jars.addAll(processedPaths);
                     for (Path jar : jars) {
                         currentName = jar.toString();
                         JarFile jarFile = new JarFile(jar.toFile());
@@ -207,6 +210,72 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
             DependencySpec dependencySpec = new ModuleDependencySpecBuilder().setName(api).setOptional(true).build();
             specBuilder.addDependency(dependencySpec);
         }
+    }
+
+    /**
+     * Custom path comparator that will allow comparisons based on path names at same level of directory.
+     *
+     * e.g. give the following paths:
+     *
+     * /C/E/file.txt
+     * /A/B/F/file.txt
+     * /A/A/file.txt
+     * /Z/file.txt
+     * /
+     *
+     * The final sort will be:
+     *
+     * /
+     * /A/A/file.txt
+     * /A/B/F/file.txt
+     * /C/E/file.txt
+     * /Z/file.txt
+     *
+     */
+    static class PathComparator implements Comparator<Path> {
+
+        @Override
+        public int compare(Path path1, Path path2) {
+            if (path1 == null && path2 != null ) return -1;
+            if (path1 != null && path2 == null ) return 1;
+            if (path1 == null && path2 == null ) return 0;
+
+            Path parentPath1 = path1.getParent();
+            Path parentPath2 = path2.getParent();
+
+            if (parentPath1 == null && parentPath2 != null ) return -1;
+            if (parentPath1 != null && parentPath2 == null ) return 1;
+            if (parentPath1 == null && parentPath2 == null ) return 0;
+
+            int path1Count = parentPath1.getNameCount();
+            int path2Count = parentPath2.getNameCount();
+
+            if (path1Count < path2Count) {
+                if ( path1Count == 0 ) return -1;
+                Path sameLevel = parentPath2.getRoot().resolve(parentPath2.subpath(0, path1Count));
+                int comparison = ignoreSeparator(parentPath1).compareTo(ignoreSeparator(sameLevel));
+                return comparison == 0 ? -1 : comparison;
+            }
+
+            if (path2Count < path1Count) {
+                if ( path2Count == 0 ) return -1;
+                Path sameLevel = parentPath1.getRoot().resolve(parentPath1.subpath(0, path2Count));
+                int comparison = ignoreSeparator(sameLevel).compareTo(ignoreSeparator(parentPath2));
+                return comparison == 0 ? 1 : comparison;
+            }
+
+            return ignoreSeparator(path1).compareTo(ignoreSeparator(path2));
+        }
+
+        private String ignoreSeparator(Path path){
+            StringBuilder sb = new StringBuilder();
+            Iterator<Path> iterator = path.iterator();
+            while(iterator.hasNext()) {
+                sb.append(iterator.next());
+            }
+            return sb.toString();
+        }
+
     }
 
 }
