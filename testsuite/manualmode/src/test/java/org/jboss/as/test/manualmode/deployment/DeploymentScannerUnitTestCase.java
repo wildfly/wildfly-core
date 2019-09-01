@@ -30,18 +30,16 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
-import org.apache.commons.io.FileUtils;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -49,19 +47,14 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.protocol.StreamUtils;
-import org.jboss.as.repository.PathUtil;
+
 import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.Archive;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -73,7 +66,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCase {
+public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBasedTestCase {
 
     private static final String JAR_ONE = "deployment-startup-one.jar";
     private static final String JAR_TWO = "deployment-startup-two.jar";
@@ -86,55 +79,38 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     @Inject
     private ServerController container;
 
-    private ModelControllerClient client;
-
-    private static Path deployDir;
-
-    @Before
-    public void before() throws IOException {
-        deployDir = Files.createTempDirectory("deployment-test-" + UUID.randomUUID());
-        if (Files.exists(deployDir)) {
-            PathUtil.deleteRecursively(deployDir);
-        }
-        Files.createDirectories(deployDir);
-    }
-
-    @After
-    public void after() throws IOException {
-        FileUtils.deleteDirectory(deployDir.toFile());
-    }
-
     @Test
     public void testStartup() throws Exception {
+        Path deployDir = getDeployDirPath();
         final Path oneDeployed = deployDir.resolve(JAR_ONE + ".deployed");
         final Path twoFailed = deployDir.resolve(JAR_TWO + ".failed");
         container.start();
+        ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient();
         try {
-            client = TestSuiteEnvironment.getModelControllerClient();
             //set the logging to debug
-            addDebugDeploymentLogger();
+            addDebugDeploymentLogger(client);
             try {
                 final Path deploymentOne = deployDir.resolve(JAR_ONE);
                 final Path deploymentTwo = deployDir.resolve(JAR_TWO);
 
                 createDeployment(deploymentOne, "org.jboss.modules");
                 createDeployment(deploymentTwo, "non.existing.dependency");
-                addDeploymentScanner(0, false);
+                addDeploymentScanner(client, 0, false, true);
                 try {
                     // Wait until deployed ...
                     long timeout = System.currentTimeMillis() + TIMEOUT;
-                    while (!(exists(DEPLOYMENT_ONE) && exists(DEPLOYMENT_TWO)) && System.currentTimeMillis() < timeout) {
+                    while (!(exists(client, DEPLOYMENT_ONE) && exists(client, DEPLOYMENT_TWO)) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(100);
                     }
-                    Assert.assertTrue(exists(DEPLOYMENT_ONE));
-                    Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
-                    Assert.assertTrue(exists(DEPLOYMENT_TWO));
-                    Assert.assertEquals("FAILED", deploymentState(DEPLOYMENT_TWO));
+                    Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
+                    Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
+                    Assert.assertTrue(exists(client, DEPLOYMENT_TWO));
+                    Assert.assertEquals("FAILED", deploymentState(client, DEPLOYMENT_TWO));
                     Assert.assertTrue(Files.exists(oneDeployed));
                     Assert.assertTrue(Files.exists(twoFailed));
 
                     ModelNode rollBackOnBoot  = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "runtime-failure-causes-rollback", true);
-                    ModelNode result = executeOperation(rollBackOnBoot);
+                    ModelNode result = client.execute(rollBackOnBoot);
                     assertEquals("Unexpected outcome of rollbacking the test deployment scanner: " + rollBackOnBoot, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
                     // Restart ...
@@ -145,30 +121,30 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
 
                     // Wait until started ...
                     timeout = System.currentTimeMillis() + TIMEOUT;
-                    while (!isRunning() && System.currentTimeMillis() < timeout) {
+                    while (!isRunning(client) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }
 
                     Assert.assertTrue(Files.exists(oneDeployed));
                     Assert.assertTrue(Files.exists(twoFailed));
 
-                    Assert.assertTrue(exists(DEPLOYMENT_ONE));
-                    Assert.assertEquals("OK", deploymentState(DEPLOYMENT_ONE));
+                    Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
+                    Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
 
                     timeout = System.currentTimeMillis() + TIMEOUT;
-                    while (exists(DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
+                    while (exists(client, DEPLOYMENT_TWO) && System.currentTimeMillis() < timeout) {
                         Thread.sleep(10);
                     }
-                    Assert.assertFalse("Deployment two should exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(DEPLOYMENT_TWO));
+                    Assert.assertFalse("Deployment two should exist at " + TIME_FORMATTER.format(LocalDateTime.now()), exists(client, DEPLOYMENT_TWO));
                     ModelNode disableScanner = Util.getWriteAttributeOperation(PathAddress.parseCLIStyleAddress("/subsystem=deployment-scanner/scanner=testScanner"), "scan-interval", 300000);
-                    result = executeOperation(disableScanner);
+                    result = client.execute(disableScanner);
                     assertEquals("Unexpected outcome of disabling the test deployment scanner: " + disableScanner, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
 
                     final ModelNode undeployOp = Util.getEmptyOperation(DeploymentUndeployHandler.OPERATION_NAME, DEPLOYMENT_ONE.toModelNode());
-                    result = executeOperation(undeployOp);
+                    result = client.execute(undeployOp);
                     assertEquals("Unexpected outcome of undeploying deployment one: " + undeployOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
-                    Assert.assertTrue(exists(DEPLOYMENT_ONE));
-                    Assert.assertEquals("STOPPED", deploymentState(DEPLOYMENT_ONE));
+                    Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
+                    Assert.assertEquals("STOPPED", deploymentState(client, DEPLOYMENT_ONE));
 
                     timeout = System.currentTimeMillis() + TIMEOUT;
 
@@ -177,8 +153,8 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     }
                     Assert.assertFalse(Files.exists(oneDeployed));
                 } finally {
-                    removeDeploymentScanner();
-                    removeDebugDeploymentLogger();
+                    removeDeploymentScanner(client);
+                    removeDebugDeploymentLogger(client);
                 }
 
             } finally {
@@ -199,21 +175,23 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     public void testFailedDeploymentWithPersistentDeployment() throws Exception {
         container.start();
         try {
-            client = TestSuiteEnvironment.getModelControllerClient();
-            try {
+            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
+
+                Path deployDir = getDeployDirPath();
+
                 // deploy a persistent deployment
 
                 Path persistentDeploymentPath = deployDir.resolve(JAR_ONE);
                 PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
-                Archive<?> validDeployment = createDeploymentArchive();
-                deployPersistent(JAR_ONE, validDeployment);
+                Archive<?> validDeployment = createDeploymentArchive("org.jboss.modules");
+                deployPersistent(client, JAR_ONE, validDeployment);
                 Assert.assertTrue(String.format("%s not deployed", persistentDeploymentPath),
-                        exists(persistentDeploymentAddress));
+                        exists(client, persistentDeploymentAddress));
 
 
                 // deploy an invalid file-system deployment
 
-                addDeploymentScanner(0, true);
+                addDeploymentScanner(client, 0, true, true);
                 try {
                     container.stop();
                     createDeployment(deployDir.resolve(JAR_TWO), "not.existing.dependency");
@@ -223,22 +201,20 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     waitFor(String.format("Missing .failed marker for %s", JAR_TWO),
                             () -> Files.exists(failedMarker));
                     waitFor(String.format("%s should be deployed", JAR_ONE),
-                            () -> exists(persistentDeploymentAddress));
+                            () -> exists(client, persistentDeploymentAddress));
                     waitFor(String.format("%s should not be deployed", JAR_TWO),
-                            () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+                            () -> !exists(client, PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
                 } finally {
-                    removeDeploymentScanner();
+                    removeDeploymentScanner(client);
                     client.execute(Util.createRemoveOperation(persistentDeploymentAddress));
                 }
-            } finally {
-                StreamUtils.safeClose(client);
             }
         } finally {
             container.stop();
         }
     }
 
-/**
+    /**
      * https://issues.jboss.org/browse/WFCORE-1890
      *
      * When FS deployment is erplaced with a managed deployment with same name it is not marked as undeployed and reboot will fail.
@@ -247,11 +223,11 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     public void testReplaceDeploymentWithPersistentDeployment() throws Exception {
         container.start();
         try {
-            client = TestSuiteEnvironment.getModelControllerClient();
-            try {
+            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient())  {
                 final PathAddress persistentDeploymentAddress = PathAddress.pathAddress(DEPLOYMENT, JAR_ONE);
-                addDeploymentScanner(0, true);
+                addDeploymentScanner(client, 0, true, true);
                 try {
+                    Path deployDir = getDeployDirPath();
                     // deploy an file-system deployment
                     container.stop();
                     createDeployment(deployDir.resolve(JAR_ONE), "org.jboss.modules");
@@ -259,19 +235,17 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
                     Path deployedMarker = deployDir.resolve(JAR_ONE + ".deployed");
                     waitFor(String.format("Missing .deployed marker for %s", JAR_ONE),
                             () -> Files.exists(deployedMarker));
-                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(persistentDeploymentAddress));
+                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(client, persistentDeploymentAddress));
                     //Replace deployment
-                    Archive<?> validDeployment = createDeploymentArchive();
-                    replaceWithPersistent(JAR_ONE, validDeployment);
-                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(persistentDeploymentAddress));
+                    Archive<?> validDeployment = createDeploymentArchive("org.jboss.modules");
+                    replaceWithPersistent(client, JAR_ONE, validDeployment);
+                    Assert.assertTrue(String.format("%s should be deployed", JAR_ONE), exists(client, persistentDeploymentAddress));
                     waitFor(String.format("Missing .undeployed marker for %s", JAR_ONE),
                             () -> Files.exists(deployDir.resolve(JAR_ONE + ".undeployed")));
                 } finally {
-                    removeDeploymentScanner();
+                    removeDeploymentScanner(client);
                     client.execute(Util.createRemoveOperation(persistentDeploymentAddress));
                 }
-            } finally {
-                StreamUtils.safeClose(client);
             }
         } finally {
             container.stop();
@@ -287,23 +261,24 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     public void testFailedFileSystemDeploymentDuringBoot() throws Exception {
         container.start();
         try {
-            client = TestSuiteEnvironment.getModelControllerClient();
+            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
 
-            addDeploymentScanner(0, true);
-            try {
-                container.stop();
+                addDeploymentScanner(client, 0, true, true);
+                try {
+                    container.stop();
 
-                createDeployment(deployDir.resolve(JAR_ONE), "not.existing.dependency");
-                container.start();
-                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
-                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
-                waitFor(String.format("%s should not be deployed", JAR_ONE),
-                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
-            } finally {
-                removeDeploymentScanner();
+
+                    createDeployment(getDeployDirPath().resolve(JAR_ONE), "not.existing.dependency");
+                    container.start();
+                    waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                            () -> Files.exists(getDeployDirPath().resolve(JAR_ONE + ".failed")));
+                    waitFor(String.format("%s should not be deployed", JAR_ONE),
+                            () -> !exists(client, PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                } finally {
+                    removeDeploymentScanner(client);
+                }
             }
         } finally {
-            StreamUtils.safeClose(client);
             container.stop();
         }
     }
@@ -312,65 +287,58 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
     public void testFailedDeploymentWithCorrectDeploymentDuringBoot() throws Exception {
         container.start();
         try {
-            client = TestSuiteEnvironment.getModelControllerClient();
+            try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
 
-            addDeploymentScanner(0, true);
-            try {
-                container.stop();
+                addDeploymentScanner(client, 0, true, true);
+                try {
+                    container.stop();
 
-                createDeployment(deployDir.resolve(JAR_ONE), "not.existing.dependency");
-                createDeployment(deployDir.resolve(JAR_TWO), "org.jboss.modules");
+                    createDeployment(getDeployDirPath().resolve(JAR_ONE), "not.existing.dependency");
+                    createDeployment(getDeployDirPath().resolve(JAR_TWO), "org.jboss.modules");
 
-                container.start();
-                waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
-                        () -> Files.exists(deployDir.resolve(JAR_ONE + ".failed")));
-                waitFor(String.format("%s should not be deployed", JAR_ONE),
-                        () -> !exists(PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
-                waitFor(String.format("%s should be deployed", JAR_TWO),
-                        () -> exists(PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
-            } finally {
-                removeDeploymentScanner();
+                    container.start();
+                    waitFor(String.format("Failed marker was not created for %s", JAR_ONE),
+                            () -> Files.exists(getDeployDirPath().resolve(JAR_ONE + ".failed")));
+                    waitFor(String.format("%s should not be deployed", JAR_ONE),
+                            () -> !exists(client, PathAddress.pathAddress(DEPLOYMENT, JAR_ONE)));
+                    waitFor(String.format("%s should be deployed", JAR_TWO),
+                            () -> exists(client, PathAddress.pathAddress(DEPLOYMENT, JAR_TWO)));
+                } finally {
+                    removeDeploymentScanner(client);
+                }
             }
         } finally {
-            StreamUtils.safeClose(client);
             container.stop();
         }
     }
 
-    private void addDebugDeploymentLogger() throws Exception {
+    private void addDebugDeploymentLogger(ModelControllerClient client) throws Exception {
         boolean ok = false;
         try {
             final ModelNode op = Util.createAddOperation(getScannerLoggerResourcePath());
             op.get("category").set("org.jboss.as.server.deployment.scanner");
             op.get("level").set("TRACE");
             op.get("use-parent-handlers").set(true);
-            ModelNode result = executeOperation(op);
+            ModelNode result = client.execute(op);
             assertEquals("Unexpected outcome of setting the test deployment logger to debug: " + op, SUCCESS, result.get(OUTCOME).asString());
             ok = true;
         } finally {
             if (!ok) {
                 ModelNode removeOp = Util.createRemoveOperation(getScannerLoggerResourcePath());
-                ModelNode result = executeOperation(removeOp);
+                ModelNode result = client.execute(removeOp);
                 assertEquals("Unexpected outcome of removing the test deployment logger: " + removeOp, ModelDescriptionConstants.SUCCESS, result.get(OUTCOME).asString());
             }
         }
     }
 
-    private void removeDebugDeploymentLogger() throws Exception {
+    private void removeDebugDeploymentLogger(ModelControllerClient client) throws Exception {
         ModelNode removeOp = Util.createRemoveOperation(getScannerLoggerResourcePath());
-        ModelNode result = executeOperation(removeOp);
+        ModelNode result = client.execute(removeOp);
         assertEquals("Unexpected outcome of removing the test deployment logger: " + result, SUCCESS, result.get(OUTCOME).asString());
     }
 
     private PathAddress getScannerLoggerResourcePath() {
         return PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, "logging"), PathElement.pathElement("logger", "org.jboss.as.server.deployment.scanner"));
-    }
-
-    private Archive<?> createDeploymentArchive() {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
-        final String dependencies = "Dependencies: org.jboss.modules";
-        archive.add(new StringAsset(dependencies), "META-INF/MANIFEST.MF");
-        return archive;
     }
 
     private void waitFor(String message, ExceptionWrappingSupplier<Boolean> condition) throws Exception {
@@ -387,7 +355,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
      * @param name deployment runtime name
      * @param archive archive to deploy
      */
-    private void deployPersistent(String name, Archive archive) throws IOException {
+    private void deployPersistent(ModelControllerClient client, String name, Archive archive) throws IOException {
         PathAddress address = PathAddress.pathAddress(DEPLOYMENT, name);
 
         ModelNode operation = Util.createOperation(ADD, address);
@@ -402,7 +370,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         Assert.assertEquals(SUCCESS, result.get(OUTCOME).asString());
     }
 
-    private void replaceWithPersistent(String name, Archive archive) throws IOException {
+    private void replaceWithPersistent(ModelControllerClient client, String name, Archive archive) throws IOException {
         ModelNode operation = Util.createOperation(FULL_REPLACE_DEPLOYMENT, PathAddress.EMPTY_ADDRESS);
         operation.get(CONTENT).get(0).get(INPUT_STREAM_INDEX).set(0);
         operation.get(ENABLED).set(true);
@@ -411,16 +379,6 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentUnitTestCas
         ob.addInputStream(archive.as(ZipExporter.class).exportAsInputStream());
         ModelNode result = client.execute(ob.build());
         Assert.assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
-    }
-
-    @Override
-    protected ModelNode executeOperation(ModelNode op) throws IOException {
-        return client.execute(op);
-    }
-
-    @Override
-    protected File getDeployDir() {
-        return deployDir.toFile();
     }
 
 
