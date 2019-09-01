@@ -412,6 +412,8 @@
             </activation>
             <modules>
                 <module>rbac</module>
+                <module>manualmode</module>
+                <module>layers</module>
             </modules>
         </profile>
 
