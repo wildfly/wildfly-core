@@ -236,46 +236,56 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
 
         @Override
         public int compare(Path path1, Path path2) {
-            if (path1 == null && path2 != null ) return -1;
-            if (path1 != null && path2 == null ) return 1;
-            if (path1 == null && path2 == null ) return 0;
+            if (path1 == null && path2 != null) return -1;
+            if (path1 != null && path2 == null) return 1;
+            if (path1 == null && path2 == null) return 0;
 
             Path parentPath1 = path1.getParent();
             Path parentPath2 = path2.getParent();
 
-            if (parentPath1 == null && parentPath2 != null ) return -1;
-            if (parentPath1 != null && parentPath2 == null ) return 1;
-            if (parentPath1 == null && parentPath2 == null ) return 0;
+            if (parentPath1 == null && parentPath2 != null) return -1;
+            if (parentPath1 != null && parentPath2 == null) return 1;
+            if (parentPath1 == null && parentPath2 == null) return 0;
 
             int path1Count = parentPath1.getNameCount();
             int path2Count = parentPath2.getNameCount();
 
             if (path1Count < path2Count) {
-                if ( path1Count == 0 ) return -1;
+                if (path1Count == 0) return -1;
                 Path sameLevel = parentPath2.getRoot().resolve(parentPath2.subpath(0, path1Count));
-                int comparison = ignoreSeparator(parentPath1).compareTo(ignoreSeparator(sameLevel));
+                int comparison = compareBySameLevel(parentPath1, sameLevel);
                 return comparison == 0 ? -1 : comparison;
             }
 
             if (path2Count < path1Count) {
-                if ( path2Count == 0 ) return -1;
+                if (path2Count == 0) return 1;
                 Path sameLevel = parentPath1.getRoot().resolve(parentPath1.subpath(0, path2Count));
-                int comparison = ignoreSeparator(sameLevel).compareTo(ignoreSeparator(parentPath2));
+                int comparison = compareBySameLevel(sameLevel, parentPath2);
                 return comparison == 0 ? 1 : comparison;
             }
 
-            return ignoreSeparator(path1).compareTo(ignoreSeparator(path2));
-        }
-
-        private String ignoreSeparator(Path path){
-            StringBuilder sb = new StringBuilder();
-            Iterator<Path> iterator = path.iterator();
-            while(iterator.hasNext()) {
-                sb.append(iterator.next());
+            if (path2Count == path1Count) {
+                int comparison = compareBySameLevel(parentPath1, parentPath2);
+                if (comparison != 0) {
+                    return comparison;
+                }
             }
-            return sb.toString();
+
+            return path1.getFileName().compareTo(path2.getFileName());
         }
 
+        private int compareBySameLevel(Path path1, Path path2) {
+            int i = 0;
+            int comparison = 0;
+            for (Iterator<Path> iterPath1 = path1.iterator(); iterPath1.hasNext(); i++) {
+                Path levelPath1 = iterPath1.next();
+                Path levelPath2 = path2.getName(i);
+                comparison = levelPath1.compareTo(levelPath2);
+                if (comparison!=0) {
+                    break;
+                }
+            }
+            return comparison;
+        }
     }
-
 }
