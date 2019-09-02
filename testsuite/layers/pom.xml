@@ -766,6 +766,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <!-- Enable the default tests (which the parent pom turns off for the ts.layers profile) -->
+                    <execution>
+                        <id>default-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <phase>test</phase>
+                    </execution>
+                </executions>
                 <configuration>
                     <systemPropertyVariables>
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>
