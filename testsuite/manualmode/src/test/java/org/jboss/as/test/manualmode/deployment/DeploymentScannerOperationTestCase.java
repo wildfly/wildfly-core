@@ -18,21 +18,16 @@
 
 package org.jboss.as.test.manualmode.deployment;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATUS;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
-import java.io.IOException;
+
 
 import javax.inject.Inject;
 
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.server.deployment.scanner.FileSystemDeploymentScanHandler;
@@ -52,7 +47,10 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class DeploymentScannerOperationTestCase extends AbstractDeploymentScannerOperationTestCase {
+public class DeploymentScannerOperationTestCase extends AbstractDeploymentScannerBasedTestCase {
+
+    private static final int TIMEOUT = 30000;
+
     @Inject
     private ServerController container;
 
@@ -62,10 +60,10 @@ public class DeploymentScannerOperationTestCase extends AbstractDeploymentScanne
         container.start();
         try {
             try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
-                final File deploymentOne = new File(deployDir, "deployment-one.jar");
+                final File deploymentOne = new File(getDeployDir(), "deployment-one.jar");
                 createDeployment(deploymentOne, "org.jboss.modules");
                 // Add a new de
-                addDeploymentScanner(client);
+                addDeploymentScanner(client, 0, false, false);
                 try {
                     Assert.assertFalse(exists(client, DEPLOYMENT_ONE));
                     runScan(client);
@@ -77,7 +75,7 @@ public class DeploymentScannerOperationTestCase extends AbstractDeploymentScanne
                     Assert.assertTrue(exists(client, DEPLOYMENT_ONE));
                     Assert.assertEquals("OK", deploymentState(client, DEPLOYMENT_ONE));
 
-                    final File oneDeployed = new File(deployDir, "deployment-one.jar.deployed");
+                    final File oneDeployed = new File(getDeployDir(), "deployment-one.jar.deployed");
                     Assert.assertTrue(oneDeployed.exists());
                     deploymentOne.delete();
                     Thread.sleep(500);
@@ -101,18 +99,7 @@ public class DeploymentScannerOperationTestCase extends AbstractDeploymentScanne
 
     private void runScan(ModelControllerClient client) throws Exception {
         ModelNode runScanOp = Util.createEmptyOperation(FileSystemDeploymentScanHandler.OPERATION_NAME, getTestDeploymentScannerResourcePath());
-        ModelNode result = executeOperation(client, runScanOp);
+        ModelNode result = client.execute(runScanOp);
         assertEquals("Unexpected outcome of running the scanner: " + runScanOp, SUCCESS, result.get(OUTCOME).asString());
-    }
-
-    private String deploymentState(ModelControllerClient client, final PathAddress address) throws IOException {
-        final ModelNode operation = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, address);
-        operation.get(NAME).set(STATUS);
-
-        final ModelNode result = executeOperation(client, operation);
-        if (SUCCESS.equals(result.get(OUTCOME).asString())) {
-            return result.get(RESULT).asString();
-        }
-        return FAILED;
     }
 }

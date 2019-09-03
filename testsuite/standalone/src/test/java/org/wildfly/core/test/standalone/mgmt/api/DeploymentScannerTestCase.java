@@ -21,8 +21,6 @@
  */
 package org.wildfly.core.test.standalone.mgmt.api;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +33,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.test.deployment.DeploymentScannerSetupTask;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -43,6 +42,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
+import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 
@@ -53,6 +53,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Jaikiran Pai - Updated to fix intermittent failures as reported in https://issues.jboss.org/browse/WFLY-1554
  */
 @RunWith(WildflyTestRunner.class)
+@ServerSetup({DeploymentScannerSetupTask.class})
 public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
 
     private static final Logger logger = Logger.getLogger(DeploymentScannerTestCase.class);
@@ -67,32 +68,11 @@ public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
             FileUtils.deleteDirectory(deployDir);
         }
         assertTrue("Unable to create deployment scanner directory.", deployDir.mkdir());
-
-        ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(EXTENSION, "org.jboss.as.deployment-scanner"));
-        ModelNode resp = executeOperation(addOp, false);
-        assertEquals("Unexpected outcome " + resp + " of adding the test deployment scanner extension: " + addOp, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-
-        addOp = Util.createAddOperation(PathAddress.pathAddress(SUBSYSTEM, "deployment-scanner"));
-        resp = executeOperation(addOp, false);
-        assertEquals("Unexpected outcome " + resp + " of adding the test deployment scanner subsystem: " + addOp, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-
     }
 
     @After
     public void after() throws IOException, MgmtOperationException {
-        try {
-            final ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(SUBSYSTEM, "deployment-scanner"));
-            ModelNode resp = executeOperation(removeOp, false);
-            assertEquals("Unexpected outcome " + resp + " of removing the test deployment scanner: " + removeOp, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-        } finally {
-            try {
-                final ModelNode removeOp = Util.createRemoveOperation(PathAddress.pathAddress(EXTENSION, "org.jboss.as.deployment-scanner"));
-                ModelNode resp = executeOperation(removeOp, false);
-                assertEquals("Unexpected outcome " + resp + " of removing the test deployment scanner: " + removeOp, ModelDescriptionConstants.SUCCESS, resp.get("outcome").asString());
-            } finally {
-                FileUtils.deleteDirectory(deployDir);
-            }
-        }
+        FileUtils.deleteDirectory(deployDir);
     }
 
     /**

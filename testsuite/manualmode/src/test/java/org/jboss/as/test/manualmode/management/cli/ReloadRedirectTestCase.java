@@ -126,9 +126,11 @@ public class ReloadRedirectTestCase {
 
         // elytron or legacy
         try {
-            container.getClient().executeForResult(createOpNode("core-service=management/"
-                    + "security-realm=ManagementRealm/", "read-resource"));
-            elytron = false;
+            ModelNode op = createOpNode("core-service=management/"
+                    + "management-interface=http-interface/", "read-attribute");
+            op.get("name").set("http-authentication-factory");
+            ModelNode result = container.getClient().executeForResult(op);
+            elytron = result.isDefined();
         } catch (UnsuccessfulOperationException ignored) {
             elytron = true;
         }

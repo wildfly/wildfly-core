@@ -31,6 +31,7 @@ import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -63,6 +64,8 @@ public class CustomCredentialSecurityFactoryTestCase {
     private static final String USER = "user";
     private static final String CORRECT_PASSWORD = "password";
 
+    private static String existingHttpManagementFactory;
+
     @Inject
     private static ServerController CONTROLLER;
 
@@ -81,6 +84,12 @@ public class CustomCredentialSecurityFactoryTestCase {
                     + moduleJar.toAbsolutePath());
             } finally {
                 Files.deleteIfExists(moduleJar);
+            }
+
+            cli.sendLine("/core-service=management/management-interface=http-interface:read-attribute(name=http-authentication-factory)");
+            ModelNode res = cli.readAllAsOpResult().getResponseNode().get("result");
+            if (res.isDefined()) {
+                existingHttpManagementFactory = res.asString();
             }
 
             cli.sendLine(String.format(
@@ -109,9 +118,12 @@ public class CustomCredentialSecurityFactoryTestCase {
 
     public static void resetServerConfiguration() throws Exception {
         try (CLIWrapper cli = new CLIWrapper(true)) {
-            cli.sendLine(String.format(
-                    "/core-service=management/management-interface=http-interface:undefine-attribute(name=http-authentication-factory)",
-                    MANAGEMENT_FILESYSTEM_NAME), true);
+            String restoreMgmtAuth = existingHttpManagementFactory == null
+                    ? "/core-service=management/management-interface=http-interface:undefine-attribute(name=http-authentication-factory)"
+                    : String.format(
+                        "/core-service=management/management-interface=http-interface:write-attribute(name=http-authentication-factory,value=%s)",
+                        existingHttpManagementFactory);
+            cli.sendLine(restoreMgmtAuth);
             cli.sendLine(String.format(
                     "/subsystem=elytron/http-authentication-factory=%s:remove()",
                     MANAGEMENT_FILESYSTEM_NAME, PREDEFINED_HTTP_SERVER_MECHANISM_FACTORY), true);

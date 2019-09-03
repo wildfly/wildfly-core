@@ -114,7 +114,7 @@
                     <systemPropertyVariables>
                         <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
                         <jboss.home>${wildfly.home}</jboss.home>
-			<!-- This is required so JBoss Modules knows which repository to use -->
+                        <!-- This is required so JBoss Modules knows which repository to use -->
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
@@ -182,7 +182,107 @@
         </plugins>
     </build>
 
-     <profiles>
+    <profiles>
+
+        <!-- Test against slimmed servers provisioned by Galleon -->
+        <profile>
+            <id>layers.profile</id>
+            <activation>
+                <property>
+                    <name>ts.layers</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>galleon-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Disable the default provisioning -->
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>provisioning</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
+                            <execution>
+                                <id>slimmed-server-provisioning</id>
+                                <goals>
+                                    <goal>provision</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                                    <record-state>false</record-state>
+                                    <log-time>${galleon.log.time}</log-time>
+                                    <offline>true</offline>
+                                    <plugin-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                        <optional-packages>passive+</optional-packages>
+                                    </plugin-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <version>${project.version}</version>
+                                            <inherit-configs>false</inherit-configs>
+                                            <inherit-packages>false</inherit-packages>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <configurations>
+                                        <config>
+                                            <model>standalone</model>
+                                            <name>standalone.xml</name>
+                                            <layers>
+                                                <layer>core-server</layer>
+                                                <layer>core-tools</layer>
+                                                <layer>deployment-scanner</layer>
+                                            </layers>
+                                        </config>
+                                    </configurations>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <!-- Tests against the slimmed install -->
+                            <execution>
+                                <id>slimmed-server-surefire</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <excludes>
+                                        <!-- Manipulates the discovery subsystem, which isn't installed, and tries
+                                            to remove elytron capabilities that the installed config requires -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.java</exclude>
+                                        <!-- Manipulates the legacy security realm ManagementRealm.
+                                             TODO determine if we want that used for management in this installation -->
+                                        <exclude>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
          <!-- profile to configure WildFly to use Elytron instead of legacy security: -Delytron -->
          <profile>
              <id>elytron.profile</id>
@@ -225,6 +325,7 @@
                  </plugins>
              </build>
          </profile>
-      </profiles>
+
+     </profiles>
 
 </project>

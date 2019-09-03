@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.inject.Inject;
 import org.jboss.as.controller.PathAddress;
@@ -39,6 +40,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -51,7 +53,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class DeploymentScannerOperationRollbackTestCase extends AbstractDeploymentScannerOperationTestCase {
+public class DeploymentScannerOperationRollbackTestCase extends AbstractDeploymentScannerBasedTestCase {
     private static final int FAILING_TIMEOUT = 3000;
     @Inject
     private ServerController container;
@@ -61,9 +63,9 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
         container.start();
         try {
             try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()) {
-                final File deploymentOne = new File(deployDir, "deployment-one.jar");
+                final File deploymentOne = new File(getDeployDir(), "deployment-one.jar");
                 createDeployment(deploymentOne, "org.jboss.modules");
-                addDeploymentScanner(client);
+                addDeploymentScanner(client, 0, false, false);
                 prepareRollback(client);
                 try {
                     assertThat(exists(client, DEPLOYMENT_ONE), is(false));
@@ -74,7 +76,7 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
                         Thread.sleep(DELAY);
                     }
                     assertThat(exists(client, DEPLOYMENT_ONE), is(false));
-                    String[] files = deployDir.list();
+                    String[] files = getDeployDir().list();
                     assertThat(files.length, is(1));
                     assertThat(files[0], is("deployment-one.jar"));
                     deploymentOne.delete();
@@ -86,6 +88,10 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
         } finally {
             container.stop();
         }
+    }
+
+    protected void createDeployment(final File file, final String dependency) throws IOException {
+        createDeploymentArchive(dependency).as(ZipExporter.class).exportTo(file, true);
     }
 
     private void prepareRollback(ModelControllerClient client) throws Exception {
@@ -114,7 +120,7 @@ public class DeploymentScannerOperationRollbackTestCase extends AbstractDeployme
         builder.addStep(Operations.createWriteAttributeOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, "my.property").toModelNode(), "value", "test"));
         builder.addStep(Util.createEmptyOperation(FileSystemDeploymentScanHandler.OPERATION_NAME, getTestDeploymentScannerResourcePath()));
         builder.addStep(Operations.createRemoveOperation(PathAddress.pathAddress(PATH, "parent.path").toModelNode()));
-        final ModelNode result = executeOperation(client, builder.build().getOperation());
+        final ModelNode result = client.execute(builder.build().getOperation());
         assertThat(result.get(OUTCOME).asString(), is(FAILED));
     }
 }

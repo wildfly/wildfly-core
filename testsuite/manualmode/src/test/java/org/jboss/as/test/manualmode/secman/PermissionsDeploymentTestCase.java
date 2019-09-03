@@ -26,10 +26,9 @@ package org.jboss.as.test.manualmode.secman;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.test.manualmode.deployment.AbstractDeploymentUnitTestCase;
+import org.jboss.as.test.manualmode.deployment.AbstractDeploymentScannerBasedTestCase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
-import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -47,7 +46,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 
 import javax.inject.Inject;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Tests the processing of {@code permissions.xml} in deployments
@@ -56,7 +54,7 @@ import java.io.IOException;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
-public class PermissionsDeploymentTestCase extends AbstractDeploymentUnitTestCase {
+public class PermissionsDeploymentTestCase extends AbstractDeploymentScannerBasedTestCase {
 
     private static final String SYS_PROP_SERVER_BOOTSTRAP_MAX_THREADS = "-Dorg.jboss.server.bootstrap.maxThreads=1";
 
@@ -78,16 +76,11 @@ public class PermissionsDeploymentTestCase extends AbstractDeploymentUnitTestCas
         modelControllerClient.close();
     }
 
-
-    @Override
-    protected ModelNode executeOperation(final ModelNode op) throws IOException {
-        return this.modelControllerClient.execute(op);
-    }
-
     @Override
     protected File getDeployDir() {
         return this.tempDir.getRoot();
     }
+
 
     /**
      * Tests that when the server is booted with {@code org.jboss.server.bootstrap.maxThreads} system property
@@ -115,10 +108,10 @@ public class PermissionsDeploymentTestCase extends AbstractDeploymentUnitTestCas
         // start the container
         container.start();
         try {
-            addDeploymentScanner(1000, false);
+            addDeploymentScanner(modelControllerClient,1000, false, true);
             this.testInvalidPermissionsXmlDeployment("test-permissions-xml-with-configured-max-boot-threads.jar");
         } finally {
-            removeDeploymentScanner();
+            removeDeploymentScanner(modelControllerClient);
             container.stop();
             if (existingJvmArgs == null) {
                 System.clearProperty("jvm.args");
@@ -145,10 +138,10 @@ public class PermissionsDeploymentTestCase extends AbstractDeploymentUnitTestCas
     public void testWithoutConfiguredMaxBootThreads() throws Exception {
         container.start();
         try {
-            addDeploymentScanner(1000, false);
+            addDeploymentScanner(modelControllerClient,1000, false, true);
             this.testInvalidPermissionsXmlDeployment("test-permissions-xml-without-max-boot-threads.jar");
         } finally {
-            removeDeploymentScanner();
+            removeDeploymentScanner(modelControllerClient);
             container.stop();
         }
 
@@ -164,16 +157,16 @@ public class PermissionsDeploymentTestCase extends AbstractDeploymentUnitTestCas
         // wait for the deployment to be picked up and completed (either with success or failure)
         waitForDeploymentToFinish(deploymentPathAddr);
         // the deployment is expected to fail due to a parsing error in the permissions.xml
-        Assert.assertEquals("Deployment was expected to fail", "FAILED", deploymentState(deploymentPathAddr));
+        Assert.assertEquals("Deployment was expected to fail", "FAILED", deploymentState(modelControllerClient, deploymentPathAddr));
     }
 
     private void waitForDeploymentToFinish(final PathAddress deploymentPathAddr) throws Exception {
         // Wait until deployed ...
         long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(30000);
-        while (!exists(deploymentPathAddr) && System.currentTimeMillis() < timeout) {
+        while (!exists(modelControllerClient, deploymentPathAddr) && System.currentTimeMillis() < timeout) {
             Thread.sleep(100);
         }
-        Assert.assertTrue(exists(deploymentPathAddr));
+        Assert.assertTrue(exists(modelControllerClient, deploymentPathAddr));
     }
 
 }

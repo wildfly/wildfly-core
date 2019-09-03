@@ -338,6 +338,110 @@
             </build>
         </profile>
 
+        <!-- Test against slimmed servers provisioned by Galleon -->
+        <profile>
+            <id>layers.profile</id>
+            <activation>
+                <property>
+                    <name>ts.layers</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>galleon-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Disable the default provisioning -->
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>provisioning</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
+                            <execution>
+                                <id>slimmed-server-provisioning</id>
+                                <goals>
+                                    <goal>provision</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                                    <record-state>false</record-state>
+                                    <log-time>${galleon.log.time}</log-time>
+                                    <offline>true</offline>
+                                    <plugin-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                        <optional-packages>passive+</optional-packages>
+                                    </plugin-options>
+                                    <resolve-locals>
+                                        <resolve-local>
+                                            <groupId>${project.groupId}</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <version>${project.version}</version>
+                                        </resolve-local>
+                                    </resolve-locals>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <version>${project.version}</version>
+                                            <inherit-configs>false</inherit-configs>
+                                            <inherit-packages>false</inherit-packages>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                                <name>org.picketbox</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <configurations>
+                                        <config>
+                                            <model>standalone</model>
+                                            <name>standalone.xml</name>
+                                            <layers>
+                                                <layer>core-server</layer>
+                                                <layer>core-tools</layer>
+                                                <layer>deployment-scanner</layer>
+                                            </layers>
+                                        </config>
+                                    </configurations>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <!-- Tests against the slimmed install -->
+                            <execution>
+                                <id>slimmed-server-surefire</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <excludes>
+                                        <!-- No domain mode support -->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
 
     </profiles>
 </project>
