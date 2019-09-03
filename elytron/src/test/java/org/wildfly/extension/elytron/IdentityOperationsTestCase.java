@@ -30,6 +30,8 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLES;
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -60,6 +62,9 @@ import org.wildfly.security.permission.PermissionVerifier;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class IdentityOperationsTestCase extends AbstractSubsystemTest {
+
+    /** Work around WFCORE-4623 / JDK-8194653 */
+    public static final FileSystem defaultFS = FileSystems.getDefault();
 
     public IdentityOperationsTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
