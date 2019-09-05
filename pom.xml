@@ -149,7 +149,7 @@
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>2.0.26.Final</version.io.undertow>
-        <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
+        <version.jakarta.inject.jakarta.inject-api>1.0</version.jakarta.inject.jakarta.inject-api>
         <version.javax.json.javax-json-api>1.1.2</version.javax.json.javax-json-api>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.17</version.log4j>
@@ -409,6 +409,7 @@
                                             <exclude>concurrent:concurrent</exclude>
                                             <exclude>jacorb:jacorb</exclude>
                                             <exclude>javassist:javassist</exclude>
+                                            <exclude>javax.inject:javax.inject</exclude>
                                             <exclude>javax.xml:jaxrpc-api</exclude>
                                             <exclude>javax.xml.soap:saaj-api</exclude>
                                             <exclude>javax.xml.stream:stax-api</exclude>
@@ -741,9 +742,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>javax.inject</groupId>
-                <artifactId>javax.inject</artifactId>
-                <version>${version.javax.inject.javax.inject}</version>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>${version.jakarta.inject.jakarta.inject-api}</version>
             </dependency>
             <dependency>
                 <groupId>javax.json</groupId>
