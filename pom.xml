@@ -149,8 +149,8 @@
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>2.0.26.Final</version.io.undertow>
+        <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.inject.javax.inject>1</version.javax.inject.javax.inject>
-        <version.javax.json.javax-json-api>1.1.2</version.javax.json.javax-json-api>
         <version.junit>4.12</version.junit>
         <version.log4j>1.2.17</version.log4j>
         <version.org.aesh>2.4</version.org.aesh>
@@ -168,7 +168,7 @@
         <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
         <version.org.eclipse.jgit>5.0.2.201807311906-r</version.org.eclipse.jgit>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
-        <version.org.glassfish.javax.json>1.1.2</version.org.glassfish.javax.json>
+        <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.6</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.4.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.5.2.Final</version.org.jboss.invocation>
@@ -746,9 +746,9 @@
                 <version>${version.javax.inject.javax.inject}</version>
             </dependency>
             <dependency>
-                <groupId>javax.json</groupId>
-                <artifactId>javax.json-api</artifactId>
-                <version>${version.javax.json.javax-json-api}</version>
+                <groupId>jakarta.json</groupId>
+                <artifactId>jakarta.json-api</artifactId>
+                <version>${version.jakarta.json.jakarta-json-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.aesh</groupId>
@@ -877,8 +877,8 @@
             <!-- used by elytron audit logging -->
             <dependency>
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.json</artifactId>
-                <version>${version.org.glassfish.javax.json}</version>
+                <artifactId>jakarta.json</artifactId>
+                <version>${version.org.glassfish.jakarta.json}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>

@@ -19,21 +19,23 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="javax.json.api">
+<module xmlns="urn:jboss:module:1.9" name="org.glassfish.jakarta.json">
 
     <properties>
-        <property name="jboss.api" value="public"/>
+        <property name="jboss.api" value="private"/>
     </properties>
 
-    <resources>
-        <artifact name="jakarta.json:jakarta.json-api:${version.jakarta.json.jakarta-json-api}"/>
-    </resources>
     <dependencies>
-        <!--
-            This is required as a circular dependency because the RI does not include a META-INF/services provider file.
-            It must also be exported so that modules that depend on the API, e.g. deployments, will be able to see the
-            implementation.
-        -->
-        <module name="org.glassfish.jakarta.json" export="true"/>
+        <module name="javax.json.api" />
     </dependencies>
+    <resources>
+        <artifact name="${org.glassfish:jakarta.json}">
+            <filter>
+                <!-- This artifact packages both the API and the impl in the same jar,
+                     but we want to use our own API jar (see javax.json.api module).
+                     So suppress the API packages. -->
+                <exclude path="javax/*"/>
+            </filter>
+        </artifact>
+    </resources>
 </module>
