@@ -19,17 +19,24 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.glassfish.javax.json">
+<module xmlns="urn:jboss:module:1.9" name="org.glassfish.jakarta.json">
 
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <dependencies>
-        <module name="javax.json.api" />
+        <module name="jakarta.json.api" />
     </dependencies>
     <resources>
-        <artifact name="org.glassfish:jakarta.json:${version.org.jakarta.javax.json}"/>
+        <artifact name="${org.glassfish:jakarta.json}">
+            <filter>
+                <!-- This artifact packages both the API and the impl in the same jar,
+                     but we want to use our own API jar (see jakarta.json.api module).
+                     So suppress the API packages. -->
+                <exclude path="javax/*"/>
+            </filter>
+        </artifact>
     </resources>
 
 </module>

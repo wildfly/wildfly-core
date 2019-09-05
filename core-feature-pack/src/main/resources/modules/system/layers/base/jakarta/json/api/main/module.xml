@@ -19,17 +19,21 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.glassfish.javax.json">
+<module xmlns="urn:jboss:module:1.9" name="jakarta.json.api">
 
     <properties>
-        <property name="jboss.api" value="private"/>
+        <property name="jboss.api" value="public"/>
     </properties>
 
-    <dependencies>
-        <module name="javax.json.api" />
-    </dependencies>
     <resources>
-        <artifact name="org.glassfish:jakarta.json:${version.org.jakarta.javax.json}"/>
+        <artifact name="${jakarta.json:jakarta.json-api}"/>
     </resources>
-
+    <dependencies>
+        <!--
+            This is required as a circular dependency because the RI does not include a META-INF/services provider file.
+            It must also be exported so that modules that depend on the API, e.g. deployments, will be able to see the
+            implementation.
+        -->
+        <module name="org.glassfish.jakarta.json" export="true"/>
+    </dependencies>
 </module>
