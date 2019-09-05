@@ -152,6 +152,14 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.ONLY_LEAF_CERT)
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.SOFT_FAIL)
                 .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
+                .addOperationTransformationOverride(ElytronDescriptionConstants.READ_ALIAS)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ModifiableKeyStoreDecorator.ReadAliasHandler.VERBOSE).end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
+                .addOperationTransformationOverride(ElytronDescriptionConstants.READ_ALIASES)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ModifiableKeyStoreDecorator.ReadAliasesHandler.VERBOSE)
+                .setDiscard(DiscardAttributeChecker.ALWAYS, ModifiableKeyStoreDecorator.ReadAliasesHandler.RECURSIVE).end();
+
     }
 
     private static void from7(ChainedTransformationDescriptionBuilder chainedBuilder) {
