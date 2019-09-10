@@ -437,12 +437,6 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            //the normal default context manager will attempt to look up wildfly-config.xml on the class path
-            //parse it and store the result in a static. The means that the default can essentially be
-            //random of there are multiple deployments with different configurations
-            //to make sure there is no random behaviour we set the global default to an empty context
-            AuthenticationContext.getContextManager().setGlobalDefault(AuthenticationContext.empty());
-
 
             ModelNode model = resource.getModel();
             final String defaultAuthenticationContext = DEFAULT_AUTHENTICATION_CONTEXT.resolveModelAttribute(context, model).asStringOrNull();
