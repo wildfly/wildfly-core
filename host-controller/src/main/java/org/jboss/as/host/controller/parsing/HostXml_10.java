@@ -423,9 +423,7 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case ALLOWED_ORIGINS: {
-                        for (String origin : reader.getListAttributeValue(i)) {
-                            HttpManagementResourceDefinition.ALLOWED_ORIGINS.parseAndAddParameterElement(origin, addOp, reader);
-                        }
+                        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getParser().parseAndSetParameter(HttpManagementResourceDefinition.ALLOWED_ORIGINS, value, addOp, reader);
                         break;
                     }
                     default:
