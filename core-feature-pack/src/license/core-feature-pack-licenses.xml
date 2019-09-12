@@ -421,7 +421,7 @@
       <artifactId>jboss-jaspi-api_1.1_spec</artifactId>
       <licenses>
         <license>
-          <name>Eclipse Public License, Version 2.0</name>
+          <name>Eclipse Public License 2.0</name>
           <url>http://www.eclipse.org/legal/epl-2.0</url>
           <distribution>repo</distribution>
         </license>
