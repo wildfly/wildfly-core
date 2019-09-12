@@ -22,14 +22,14 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="javax.json.api">
+<module xmlns="urn:jboss:module:1.9" name="javax.json.api">
 
     <properties>
         <property name="jboss.api" value="public"/>
     </properties>
 
     <resources>
-        <artifact name="${javax.json:javax.json-api}"/>
+        <artifact name="${jakarta.json:jakarta.json-api}"/>
     </resources>
     <dependencies>
         <!--
@@ -37,6 +37,6 @@
             It must also be exported so that modules that depend on the API, e.g. deployments, will be able to see the
             implementation.
         -->
-        <module name="org.glassfish.javax.json" export="true"/>
+        <module name="org.glassfish.jakarta.json" export="true"/>
     </dependencies>
 </module>

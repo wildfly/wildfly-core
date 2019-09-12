@@ -19,7 +19,7 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.glassfish.javax.json">
+<module xmlns="urn:jboss:module:1.6" name="org.glassfish.jakarta.json">
 
     <properties>
         <property name="jboss.api" value="private"/>
@@ -29,7 +29,7 @@
         <module name="javax.json.api" />
     </dependencies>
     <resources>
-        <artifact name="org.glassfish:javax.json:${version.org.glassfish.javax.json}"/>
+        <artifact name="org.glassfish:jakarta.json:${version.org.jakarta.javax.json}"/>
     </resources>
 
 </module>
