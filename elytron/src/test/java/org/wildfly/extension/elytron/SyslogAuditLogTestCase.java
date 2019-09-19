@@ -33,7 +33,6 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -166,7 +165,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
      * Tests that the server does not attempt to resend the message
      */
     @Test
-    @Ignore("WFCORE-4631 - need to possibly move this or invoke a SecurityDomain authentication attempt which will invoke a log message")
     public void testZeroReconnectAttemptsBadHost() {
         // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
         Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
@@ -174,46 +172,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
         ModelNode response = services.executeOperation(badHostUdpOperation);
         assertCorrectError(response, new String[] {"ELY12001", "0"});
         assertFailed(response);
-    }
-
-    /**
-     * Tests that the server reattempts to send the message {@link SyslogAuditLogTestCase#RECONNECT_NUMBER} times
-     */
-    @Test
-    @Ignore("WFCORE-4631 - need to possibly move this or invoke a SecurityDomain authentication attempt which will invoke a log message")
-    public void testNumberedReconnectAttemptsBadHost() {
-        // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
-        Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
-        badHostUdpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(RECONNECT_NUMBER);
-        ModelNode response = services.executeOperation(badHostUdpOperation);
-        assertCorrectError(response, new String[] {"ELY12001", Integer.toString(RECONNECT_NUMBER)});
-        assertFailed(response);
-    }
-
-    /**
-     * Tests that the server continuously attempts to resend the message for {@link SyslogAuditLogTestCase#RECONNECT_TIMEOUT} milliseconds
-     */
-    @Test
-    public void testInfiniteReconnectAttemptsBadHost() throws Exception {
-        // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
-        Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
-        Thread t = new Thread(() -> {
-            try {
-                badHostUdpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(-1);
-                ModelNode response = services.executeOperation(badHostUdpOperation);
-                // Since the test is that it tries forever to resend, can only check for the operation being cancelled
-                assertCancelled(response);
-            } catch (Exception e) {
-                this.failString = "An unexpected error has occurred: " + e.getMessage();
-            }
-        });
-        t.start();
-        Thread.sleep(RECONNECT_TIMEOUT);
-        t.interrupt();
-        t.join();
-        if (!failString.isEmpty()) {
-            Assert.fail(failString);
-        }
     }
 
     /**
