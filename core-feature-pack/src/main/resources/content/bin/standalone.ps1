@@ -17,7 +17,9 @@ $STANDALONE_CONF_FILE = Get-Env RUN_CONF $STANDALONE_CONF_FILE
 Write-Debug "debug is: $global:DEBUG_MODE"
 Write-Debug "debug port: $global:DEBUG_PORT"
 Write-Debug "sec mgr: $SECMGR"
-
+if ($MODULE_OPTS -contains "-javaagent:") {
+    $JAVA_OPTS += "-javaagent:`\`"$JBOSS_HOME\jboss-modules.jar`\`""
+}
 if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }

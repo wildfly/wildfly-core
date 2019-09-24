@@ -247,7 +247,7 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
             ) else if "!MODULAR_JDK!" == "true" (
                 set TMP_PARAM=-Xlog:gc*:file="\"!JBOSS_LOG_DIR!\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
             ) else (
-                set TMP_PARAM=-verbose:gc -Xloggc:"!JBOSS_LOG_DIR!\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
+                set TMP_PARAM=-verbose:gc -Xloggc:"\"!JBOSS_LOG_DIR!\gc.log\"" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
             )
             "!JAVA!" !TMP_PARAM! -version > nul 2>&1
             if not errorlevel == 1 (
@@ -270,10 +270,18 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
 
 
 rem Set the module options
-set "MODULE_OPTS="
+set "MODULE_OPTS=%MODULE_OPTS%"
 if "%SECMGR%" == "true" (
-    set "MODULE_OPTS=-secmgr"
+    set "MODULE_OPTS=%MODULE_OPTS% -secmgr"
 )
+setlocal EnableDelayedExpansion
+rem Add -client to the JVM options, if supported (32 bit VM), and not overriden
+echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
+if not errorlevel == 1 (
+    set TMP_PARAM=-javaagent:"!JBOSS_HOME!\jboss-modules.jar"
+    set "JAVA_OPTS=!TMP_PARAM! %JAVA_OPTS%"
+)
+setlocal DisableDelayedExpansion
 
 echo ===============================================================================
 echo.

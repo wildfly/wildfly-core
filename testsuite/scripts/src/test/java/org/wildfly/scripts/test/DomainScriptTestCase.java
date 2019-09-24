@@ -37,6 +37,7 @@ import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
+import org.wildfly.common.test.ServerHelper;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -90,7 +91,7 @@ public class DomainScriptTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        script.start(DEFAULT_SERVER_JAVA_OPTS);
+        script.start(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
 
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
@@ -110,7 +111,7 @@ public class DomainScriptTestCase extends ScriptTestCase {
     }
 
     private static ModelNode determineHostAddress(final ModelControllerClient client) throws IOException {
-        final ModelNode op = Operations.createReadAttributeOperation(EMPTY_ADDRESS, "local-host-name");
+        final ModelNode op = Operations.createReadAttributeOperation(ServerHelper.EMPTY_ADDRESS, "local-host-name");
         ModelNode response = client.execute(op);
         if (Operations.isSuccessfulOutcome(response)) {
             return Operations.createAddress("host", Operations.readResult(response).asString());

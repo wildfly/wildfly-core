@@ -25,7 +25,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -50,7 +49,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
@@ -58,17 +56,12 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.wildfly.common.test.ServerHelper;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public abstract class ScriptTestCase {
-
-    static final ModelNode EMPTY_ADDRESS = new ModelNode().addEmptyList();
-    static final String[] DEFAULT_SERVER_JAVA_OPTS = {
-            "-Djboss.management.http.port=" + TestSuiteEnvironment.getServerPort(),
-            "-Djboss.bind.address.management=" + TestSuiteEnvironment.getServerAddress(),
-    };
 
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
 
@@ -79,35 +72,23 @@ public abstract class ScriptTestCase {
             "-NonInteractive",
             "-File"
     };
-    private static final Path JBOSS_HOME;
 
     private static final Collection<Path> PATHS;
-    private static final long TIMEOUT;
 
     static {
-        EMPTY_ADDRESS.protect();
-        final String jbossHome = System.getProperty("jboss.home");
-
-        if (isNullOrEmpty(jbossHome)) {
-            throw new RuntimeException("Failed to configure environment. No jboss.home system property or JBOSS_HOME " +
-                    "environment variable set.");
-        }
-        JBOSS_HOME = Paths.get(jbossHome).toAbsolutePath();
-        final String timeoutString = System.getProperty("jboss.test.start.timeout", "120");
-        TIMEOUT = TimeoutUtil.adjust(Integer.parseInt(timeoutString));
 
         // Always update the JBOSS_HOME/bin/*.conf.* files
         try {
-            appendConf(JBOSS_HOME, "domain", "PROCESS_CONTROLLER_JAVA_OPTS");
-            appendConf(JBOSS_HOME, "domain", "HOST_CONTROLLER_JAVA_OPTS");
-            appendConf(JBOSS_HOME, "standalone", "JAVA_OPTS");
+            appendConf(ServerHelper.JBOSS_HOME, "domain", "PROCESS_CONTROLLER_JAVA_OPTS");
+            appendConf(ServerHelper.JBOSS_HOME, "domain", "HOST_CONTROLLER_JAVA_OPTS");
+            appendConf(ServerHelper.JBOSS_HOME, "standalone", "JAVA_OPTS");
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to update the script config files.", e);
         }
 
         // Always add the default path
         final Set<Path> paths = new LinkedHashSet<>(16);
-        paths.add(JBOSS_HOME);
+        paths.add(ServerHelper.JBOSS_HOME);
 
         final String serverName = System.getProperty("server.name");
 
@@ -190,14 +171,14 @@ public abstract class ScriptTestCase {
     }
 
     void validateProcess(final ScriptProcess script) throws InterruptedException {
-        if (script.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
+        if (script.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
             // The script has exited, validate the exit code is valid
             final int exitValue = script.exitValue();
             if (exitValue != 0) {
                 Assert.fail(script.getErrorMessage(String.format("Expected an exit value 0f 0 got %d", exitValue)));
             }
         } else {
-            Assert.fail(script.getErrorMessage("The script process did not exit within " + TIMEOUT + " seconds."));
+            Assert.fail(script.getErrorMessage("The script process did not exit within " + ServerHelper.TIMEOUT + " seconds."));
         }
     }
 
@@ -253,7 +234,7 @@ public abstract class ScriptTestCase {
 
     private void executeTests(final String scriptExtension, final String... prefixCmds) throws InterruptedException, IOException, TimeoutException {
         for (Path path : PATHS) {
-            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName + scriptExtension, TIMEOUT, check, prefixCmds)) {
+            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName + scriptExtension, ServerHelper.TIMEOUT, check, prefixCmds)) {
                 testScript(script);
             }
         }
@@ -280,7 +261,7 @@ public abstract class ScriptTestCase {
         Process process = null;
         try {
             process = builder.start();
-            if (!process.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
+            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
                 return false;
             }
             return process.exitValue() == 0;
@@ -295,7 +276,7 @@ public abstract class ScriptTestCase {
     }
 
     private static Path copy(final String targetName) {
-        final Path source = JBOSS_HOME;
+        final Path source = ServerHelper.JBOSS_HOME;
         try {
             final Path target = source.getParent().resolve(targetName);
             deleteDirectory(target);
@@ -344,9 +325,5 @@ public abstract class ScriptTestCase {
                 }
             });
         }
-    }
-
-    private static boolean isNullOrEmpty(final String value) {
-        return value == null || value.trim().isEmpty();
     }
 }

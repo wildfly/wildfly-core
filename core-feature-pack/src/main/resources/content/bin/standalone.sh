@@ -309,9 +309,13 @@ if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
 fi
 
 # Set up the module arguments
-MODULE_OPTS=""
+MODULE_OPTS="$MODULE_OPTS"
 if [ "$SECMGR" = "true" ]; then
     MODULE_OPTS="$MODULE_OPTS -secmgr";
+fi
+AGENT_SET=$(echo "$MODULE_OPTS" | $GREP "\-javaagent:")
+if [ "x$AGENT_SET" != "x" ]; then
+  JAVA_OPTS="-javaagent:\"${JBOSS_HOME}/jboss-modules.jar\" ${JAVA_OPTS}"
 fi
 
 # Display our environment

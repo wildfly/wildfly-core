@@ -82,3 +82,6 @@ if (-Not $JAVA_OPTS) {
 
 # Uncomment this out to control garbage collection logging
 # $GC_LOG=$true
+
+# Uncomment to add a Java agent
+# $MODULE_OPTS="-javaagent:agent.jar"

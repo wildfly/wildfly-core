@@ -82,3 +82,6 @@ rem # Uncomment and edit to use a custom java.security file to override all the 
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djava.security.properties==C:\path\to\custom\java.security"
 
 :JAVA_OPTS_SET
+
+rem # Uncomment to add a Java agent
+rem set "MODULE_OPTS=-javaagent:agent.jar"

@@ -40,14 +40,43 @@
         <wildfly.home>${project.basedir}${file.separator}target${file.separator}${server.name}</wildfly.home>
         <test.log.level>INFO</test.log.level>
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
+        <maven.test.skip>false</maven.test.skip>
+        <skipTests>${maven.test.skip}</skipTests>
     </properties>
 
     <build>
         <plugins>
+            <!-- Create a test agent for the BootWithAgentTestCase -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-agent</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <phase>process-test-classes</phase>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <finalName>logging-agent</finalName>
+                            <includes>
+                                <include>**/LoggingAgent.class</include>
+                            </includes>
+                            <archive>
+                                <manifestEntries>
+                                    <Premain-Class>org.wildfly.common.test.LoggingAgent</Premain-Class>
+                                </manifestEntries>
+                            </archive>
+                            <outputDirectory>${wildfly.home}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skip>${skipTests}</skip>
                     <failIfNoTests>false</failIfNoTests>
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
@@ -76,6 +105,37 @@
                         <configuration>
                             <config-file>server-provisioning.xml</config-file>
                             <server-name>${server.name}</server-name>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <version>${version.wildfly.plugin}</version>
+                <configuration>
+                    <skip>${skipTests}</skip>
+                    <jboss-home>${wildfly.home}</jboss-home>
+                    <system-properties>
+                        <maven.repo.local>${settings.localRepository}</maven.repo.local>
+                    </system-properties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>configure-standalone</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                            <goal>shutdown</goal>
+                        </goals>
+                        <configuration>
+                            <stdout>${project.build.directory}${file.separator}standalone-config.log</stdout>
+                            <commands>
+                                <command>/subsystem=logging/custom-formatter=json-formatter:add(module=org.jboss.logmanager, class=org.jboss.logmanager.formatters.JsonFormatter, properties={exceptionOutputType=FORMATTED, prettyPrint=false})</command>
+                                <command>/subsystem=logging/file-handler=json:add(file={relative-to=jboss.server.log.dir, path=json.log}, append=false, level=DEBUG, autoflush=true, named-formatter=json-formatter)</command>
+                                <command>/subsystem=logging/logger=org.wildfly.common.test.LoggingAgent:add(handlers=[json], level=DEBUG)</command>
+                            </commands>
                         </configuration>
                     </execution>
                 </executions>
