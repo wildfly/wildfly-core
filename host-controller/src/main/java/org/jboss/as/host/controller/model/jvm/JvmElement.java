@@ -63,6 +63,7 @@ public class JvmElement {
     private String stack;
     private String launchCommand;
     private final JvmOptionsElement jvmOptionsElement = new JvmOptionsElement();
+    private final JvmOptionsElement moduleOptionsElement = new JvmOptionsElement();
     private Map<String, String> environmentVariables = new HashMap<String, String>();
 
     public JvmElement(final String name) {
@@ -103,6 +104,11 @@ public class JvmElement {
             }
             if(node.hasDefined(JvmAttributes.JVM_LAUNCH_COMMAND)) {
                 launchCommand = node.get(JvmAttributes.JVM_LAUNCH_COMMAND).asString();
+            }
+            if(node.hasDefined(JvmAttributes.MODULE_OPTIONS.getName())) {
+                for(final ModelNode option : node.get(JvmAttributes.MODULE_OPTIONS.getName()).asList()) {
+                    moduleOptionsElement.addOption(option.asString());
+                }
             }
             if(node.hasDefined(JvmAttributes.JVM_HEAP)) {
                 heapSize = node.get(JvmAttributes.JVM_HEAP).asString();
@@ -220,6 +226,10 @@ public class JvmElement {
 
     public JvmOptionsElement getJvmOptions() {
         return jvmOptionsElement;
+    }
+
+    public JvmOptionsElement getModuleOptions() {
+        return moduleOptionsElement;
     }
 
     public Map<String, String> getEnvironmentVariables() {

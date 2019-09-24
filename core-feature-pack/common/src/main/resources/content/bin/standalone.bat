@@ -270,10 +270,18 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
 
 
 rem Set the module options
-set "MODULE_OPTS="
+set "MODULE_OPTS=%MODULE_OPTS%"
 if "%SECMGR%" == "true" (
-    set "MODULE_OPTS=-secmgr"
+    set "MODULE_OPTS=%MODULE_OPTS% -secmgr"
 )
+setlocal EnableDelayedExpansion
+rem Add -client to the JVM options, if supported (32 bit VM), and not overridden
+echo "!MODULE_OPTS!" | findstr /I \-javaagent: > nul
+if not errorlevel == 1 (
+    set AGENT_PARAM=-javaagent:"!JBOSS_HOME!\jboss-modules.jar"
+    set "JAVA_OPTS=!AGENT_PARAM! !JAVA_OPTS!"
+)
+setlocal DisableDelayedExpansion
 
 echo ===============================================================================
 echo.

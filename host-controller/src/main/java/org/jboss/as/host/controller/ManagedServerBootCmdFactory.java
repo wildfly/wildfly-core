@@ -292,6 +292,8 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.addAll(commandPrefix);
         }
 
+        final String jbossModulesJar = getAbsolutePath(environment.getHomeDir(), "jboss-modules.jar");
+
         JvmType localJvmType = getJvmType(forLaunch);
 
         command.add(localJvmType.getJavaExecutable());
@@ -302,6 +304,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
         if (includeProcessId) {
             command.add("-D[" + ManagedServer.getServerProcessId(processId) + "]");
+        }
+
+        // If the module options include a Java agent we'll add jboss-modules.jar by default
+        if (jvmElement.getModuleOptions().contains("\\-javaagent:.+")) {
+            command.add("-javaagent:" + jbossModulesJar);
         }
 
         JvmOptionsBuilderFactory.getInstance(localJvmType).addOptions(jvmElement, command);
@@ -375,13 +382,14 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         }
 
         command.add("-jar");
-        command.add(getAbsolutePath(environment.getHomeDir(), "jboss-modules.jar"));
+        command.add(jbossModulesJar);
         command.add("-mp");
         command.add(environment.getModulePath());
         // Enable the security manager if required
         if (environment.isSecurityManagerEnabled()){
             command.add("-secmgr");
         }
+        command.addAll(jvmElement.getModuleOptions().getOptions());
         command.add("org.jboss.as.server");
 
         if(suspend) {

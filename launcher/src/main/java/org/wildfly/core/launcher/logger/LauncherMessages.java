@@ -59,4 +59,7 @@ public interface LauncherMessages {
 
     @Message(id = 6, value = "Invalid hostname: %s")
     IllegalArgumentException invalidHostname(CharSequence hostname);
+
+    @Message(id = 7, value = "The argument %s is not allowed for %s.")
+    IllegalArgumentException invalidArgument(String argument, String methodName);
 }
