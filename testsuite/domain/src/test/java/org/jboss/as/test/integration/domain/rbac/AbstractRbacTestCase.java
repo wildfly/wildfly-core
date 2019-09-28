@@ -22,31 +22,7 @@
 
 package org.jboss.as.test.integration.domain.rbac;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BYTES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DESCRIBE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PASSWORD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CONFIG_AS_XML_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertEquals;
 
@@ -308,6 +284,53 @@ public abstract class AbstractRbacTestCase {
                                  Outcome expectedOutcome, String... roles) throws IOException {
         String fullAddress = String.format("host=%s/server-config=%s", host, server);
         ModelNode op = createOpNode(fullAddress, RESTART);
+        op.get(BLOCKING).set(true);
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+    }
+
+    protected void stopServer(ModelControllerClient client, String host, String server,
+                                 Outcome expectedOutcome, String... roles) throws IOException {
+        String fullAddress = String.format("host=%s/server-config=%s", host, server);
+        ModelNode op = createOpNode(fullAddress, STOP);
+        op.get(BLOCKING).set(true);
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+    }
+
+    protected void killServer(ModelControllerClient client, String host, String server,
+                              Outcome expectedOutcome, String... roles) throws IOException {
+        String fullAddress = String.format("host=%s/server-config=%s", host, server);
+        ModelNode op = createOpNode(fullAddress, KILL);
+        op.get(BLOCKING).set(true);
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+    }
+
+    protected void destroyServer(ModelControllerClient client, String host, String server,
+                              Outcome expectedOutcome, String... roles) throws IOException {
+        String fullAddress = String.format("host=%s/server-config=%s", host, server);
+        ModelNode op = createOpNode(fullAddress, DESTROY);
+        op.get(BLOCKING).set(true);
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+    }
+
+    protected void killServersInGroup(ModelControllerClient client, Outcome expectedOutcome, String... roles)
+            throws IOException {
+        final String serverGroupAddress = String.format("server-group=%s", SERVER_GROUP_A);
+        // check
+        ModelNode op = createOpNode(serverGroupAddress, KILL_SERVERS);
+        op.get(BLOCKING).set(true);
+        configureRoles(op, roles);
+        RbacUtil.executeOperation(client, op, expectedOutcome);
+    }
+
+    protected void destroyServersInGroup(ModelControllerClient client, Outcome expectedOutcome, String... roles)
+            throws IOException {
+        final String serverGroupAddress = String.format("server-group=%s", SERVER_GROUP_A);
+        // check
+        ModelNode op = createOpNode(serverGroupAddress, DESTROY_SERVERS);
         op.get(BLOCKING).set(true);
         configureRoles(op, roles);
         RbacUtil.executeOperation(client, op, expectedOutcome);
