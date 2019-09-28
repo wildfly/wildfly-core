@@ -98,6 +98,12 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
         // Monitor can't shutdown
         testWCORE1067(client, MONITOR_USER);
+
+        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        killServersInGroup(client, Outcome.UNAUTHORIZED, MONITOR_USER);
+        destroyServersInGroup(client, Outcome.UNAUTHORIZED, MONITOR_USER);
     }
 
     @Test
@@ -169,6 +175,12 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
         // Deployer can't shutdown
         testWCORE1067(client, DEPLOYER_USER);
+
+        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        killServersInGroup(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        destroyServersInGroup(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
     }
 
     @Test
@@ -218,6 +230,12 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
         // Auditor can't shutdown
         testWCORE1067(client, AUDITOR_USER);
+
+        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        killServersInGroup(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        destroyServersInGroup(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
     }
 
     @Test
