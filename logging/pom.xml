@@ -296,6 +296,18 @@
                 <surefire.argLine>-Xbootclasspath/a:${org.jboss.logmanager:jboss-logmanager} -Djava.util.logging.manager=org.jboss.logmanager.LogManager ${surefire.system.args}</surefire.argLine>
             </properties>
         </profile>
+        <profile>
+            <id>openj9</id>
+            <activation>
+                <property>
+                    <name>java.vendor</name>
+                    <value>Eclipse OpenJ9</value>
+                </property>
+            </activation>
+            <properties>
+                <surefire.argLine>-Xbootclasspath/a:${org.jboss.logmanager:jboss-logmanager} -Djava.util.logging.manager=org.jboss.logmanager.LogManager ${surefire.system.args}</surefire.argLine>
+            </properties>
+        </profile>
     </profiles>
 
 </project>
