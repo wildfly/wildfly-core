@@ -21,11 +21,13 @@ import org.wildfly.test.api.Authentication;
 public class TestSuiteEnvironment {
     private static final boolean IS_WINDOWS;
     private static final boolean IS_IBM_JVM;
+    private static final boolean IS_J9_JVM;
 
     static {
         final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         IS_WINDOWS = os.contains("win");
         IS_IBM_JVM = System.getProperty("java.vendor").startsWith("IBM");
+        IS_J9_JVM = System.getProperty("java.vendor").contains("OpenJ9") || IS_IBM_JVM;
     }
 
     public static ModelControllerClient getModelControllerClient() {
@@ -275,8 +277,19 @@ public class TestSuiteEnvironment {
      * Indicates whether or not this is a IBM JVM.
      *
      * @return {@code true} if this is a IBM JVM, otherwise {@code false}
+     *
+     * @see #isJ9Jvm()
      */
     public static boolean isIbmJvm() {
         return IS_IBM_JVM;
+    }
+
+    /**
+     * Indicates whether or not this is an Eclipse OpenJ9 or IBM J9 JVM.
+     *
+     * @return {@code true} if this is an Eclipse OpenJ9 or IBM J9 JVM, otherwise {@code false}
+     */
+    public static boolean isJ9Jvm() {
+        return IS_J9_JVM;
     }
 }
