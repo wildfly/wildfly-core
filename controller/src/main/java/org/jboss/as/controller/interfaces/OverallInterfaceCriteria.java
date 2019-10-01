@@ -118,20 +118,18 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
     private Map<NetworkInterface, Set<InetAddress>> pruneIPTypes(Map<NetworkInterface, Set<InetAddress>> candidates) {
 
         Boolean preferIPv4Stack = getBoolean(PREFER_IPV4_STACK);
-        Boolean preferIPv6Stack = (preferIPv4Stack != null && !preferIPv4Stack) ? Boolean.TRUE : getBoolean(PREFER_IPV6_ADDRESSES);
-
-        if (preferIPv4Stack == null && preferIPv6Stack == null) {
-            // No meaningful user input
-            return candidates;
-        }
+        Boolean preferIPv6Stack = getBoolean(PREFER_IPV6_ADDRESSES);
 
         final Map<NetworkInterface, Set<InetAddress>> result = new HashMap<NetworkInterface, Set<InetAddress>>();
 
         for (Map.Entry<NetworkInterface, Set<InetAddress>> entry : candidates.entrySet()) {
             Set<InetAddress> good = null;
             for (InetAddress address : entry.getValue()) {
-                if ((preferIPv4Stack != null && preferIPv4Stack && address instanceof Inet4Address)
-                        || (preferIPv6Stack != null && preferIPv6Stack && address instanceof Inet6Address)) {
+                if ((preferIPv4Stack && address instanceof Inet4Address)
+                        || (!preferIPv4Stack && !preferIPv6Stack && address instanceof Inet4Address)
+                        || (!preferIPv4Stack && !preferIPv6Stack && address instanceof Inet6Address && InetAddress.getLoopbackAddress() instanceof Inet6Address)
+                        || (preferIPv6Stack && address instanceof Inet4Address && InetAddress.getLoopbackAddress() instanceof Inet4Address)
+                        || (preferIPv6Stack && address instanceof Inet6Address && InetAddress.getLoopbackAddress() instanceof Inet6Address)) {
                     if (good == null) {
                         good = new HashSet<InetAddress>();
                         result.put(entry.getKey(), good);
@@ -168,8 +166,9 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
     }
 
     private static Boolean getBoolean(final String property) {
+        //default value for ipv4 and ipv6 is false
         final String value = WildFlySecurityManager.getPropertyPrivileged(property, null);
-        return value == null ? null : value.equalsIgnoreCase("true");
+        return value == null ? false : value.equalsIgnoreCase("true");
     }
 
     private static Map<NetworkInterface, Set<InetAddress>> selectInterfaceAndAddress(Map<NetworkInterface, Set<InetAddress>> acceptable) throws SocketException {

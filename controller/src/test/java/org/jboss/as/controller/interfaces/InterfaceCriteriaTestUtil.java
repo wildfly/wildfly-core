@@ -49,9 +49,6 @@ public class InterfaceCriteriaTestUtil {
     static final Set<NetworkInterface> allInterfaces;
     static final Map<NetworkInterface, Set<InetAddress>> allCandidates;
 
-    private static final boolean preferIPv4Stack = Boolean.getBoolean(PREFER_IPV4_STACK);
-    private static final boolean preferIPv6Stack = Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
-
     static {
 
         Set<NetworkInterface> loop = new HashSet<NetworkInterface>();
@@ -116,12 +113,19 @@ public class InterfaceCriteriaTestUtil {
     }
 
     static Set<InetAddress> getRightTypeAddresses(Set<InetAddress> all) {
+        //Local so we can override the value later
+        final boolean preferIPv4Stack = Boolean.getBoolean(PREFER_IPV4_STACK);
+        final boolean preferIPv6Stack = Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
+
         Set<InetAddress> result = new HashSet<InetAddress>();
         for (InetAddress address : all) {
 
             if (preferIPv4Stack && !preferIPv6Stack && !(address instanceof Inet4Address)) {
                 continue;
             } else if (preferIPv6Stack && !preferIPv4Stack && !(address instanceof Inet6Address)) {
+                continue;
+            } else if (!preferIPv6Stack && !preferIPv4Stack && address instanceof Inet6Address && InetAddress.getLoopbackAddress() instanceof Inet4Address) {
+                //checking it does not support ipv6
                 continue;
             }
             result.add(address);

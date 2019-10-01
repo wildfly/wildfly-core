@@ -22,6 +22,9 @@
 
 package org.jboss.as.controller.interfaces;
 
+import static org.jboss.as.controller.interfaces.OverallInterfaceCriteria.PREFER_IPV4_STACK;
+import static org.jboss.as.controller.interfaces.OverallInterfaceCriteria.PREFER_IPV6_ADDRESSES;
+
 import static org.jboss.as.controller.interfaces.InterfaceCriteriaTestUtil.allCandidates;
 import static org.jboss.as.controller.interfaces.InterfaceCriteriaTestUtil.allInterfaces;
 import static org.jboss.as.controller.interfaces.InterfaceCriteriaTestUtil.getRightTypeAddresses;
@@ -201,5 +204,20 @@ public class OverallInterfaceCriteriaUnitTestCase {
         assertEquals(1, result.size());
         assertTrue(result.containsKey(up));
         assertEquals(Collections.singleton(toMatch), result.get(up));
+    }
+
+    @Test
+    public void testMultipleMatchesNoIPVPreference() throws Exception {
+
+        boolean preferIPv4Stack = Boolean.getBoolean(PREFER_IPV4_STACK);
+        boolean preferIPv6Stack = Boolean.getBoolean(PREFER_IPV6_ADDRESSES);
+
+        System.setProperty(PREFER_IPV4_STACK, "false");
+        System.setProperty(PREFER_IPV6_ADDRESSES, "false");
+
+        testMultipleMatches();
+
+        System.setProperty(PREFER_IPV4_STACK, Boolean.toString(preferIPv4Stack));
+        System.setProperty(PREFER_IPV6_ADDRESSES, Boolean.toString(preferIPv6Stack));
     }
 }
