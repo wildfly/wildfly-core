@@ -59,6 +59,7 @@
         <dir name="domain/tmp/auth"/>
         <dir name="standalone/tmp/auth"/>
         <dir name=".installation"/>
+        <dir name=".well-known/acme-challenge"/>
     </mkdirs>
     <file-permissions>
         <permission value="755">
