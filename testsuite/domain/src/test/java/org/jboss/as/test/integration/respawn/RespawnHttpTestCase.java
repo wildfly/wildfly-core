@@ -677,7 +677,7 @@ public class RespawnHttpTestCase {
         String[] getJpsCommand() {
             final File jreHome = new File(System.getProperty("java.home"));
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
-            if (System.getProperty("java.vendor.url","whatever").contains("ibm.com")) {
+            if (TestSuiteEnvironment.isIbmJvm()) {
                 return new String[] { "sh", "-c", "ps -ef | awk '{$1=\"\"; print $0}'" };
             } else {
                 File jpsExe = new File(jreHome, "bin/jps");
@@ -685,7 +685,7 @@ public class RespawnHttpTestCase {
                     jpsExe = new File(jreHome, "../bin/jps");
                 }
                 Assert.assertTrue("JPS executable not found. File: " + jpsExe, jpsExe.exists());
-                return new String[] { jpsExe.getAbsolutePath(), "-lv" };
+                return new String[] { jpsExe.getAbsolutePath(), "-l", "-v" };
             }
         }
 
@@ -711,7 +711,7 @@ public class RespawnHttpTestCase {
                 jpsExe = new File(jreHome, "../bin/jps.exe");
             }
             Assert.assertTrue("JPS executable not found. File: " + jpsExe, jpsExe.exists());
-            return new String[] { jpsExe.getAbsolutePath(), "-lv" };
+            return new String[] { jpsExe.getAbsolutePath(), "-l", "-v" };
         }
 
         @Override

@@ -41,6 +41,7 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.integration.management.rbac.Outcome;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
@@ -66,7 +67,7 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
         deploy(managementClient.getControllerClient(), file);
     }
 
-    public void setup(ModelControllerClient client, String serverGroupName, boolean ibm) throws IOException {
+    public void setup(ModelControllerClient client, String serverGroupName) throws IOException {
         final File dir = new File("target/archives");
         if(dir.exists()) {
             cleanFile(dir);
@@ -75,7 +76,7 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
         file = new File(dir, DEPLOYMENT);
 
         Set<Permission> additionalPermissions = new HashSet();
-        if(ibm) {
+        if(TestSuiteEnvironment.isJ9Jvm()) {
             //fix of WFCORE-3417
             additionalPermissions.add(new FilePermission(file.getAbsolutePath()
                     .replace("archives", "domains/JmxControlledStateNotificationsTestCase/master")

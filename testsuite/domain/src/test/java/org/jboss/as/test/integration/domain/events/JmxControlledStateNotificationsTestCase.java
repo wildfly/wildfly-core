@@ -26,11 +26,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -44,6 +41,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.suites.DomainTestSuite;
 
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -64,10 +62,8 @@ public class JmxControlledStateNotificationsTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static final boolean IS_IBM = AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
-            -> System.getProperty("java.vendor.url", "whatever").toLowerCase(Locale.ENGLISH).contains("ibm.com"));
 
-    static final Path DATA = IS_IBM ? Paths.get("target/domains/JmxControlledStateNotificationsTestCase/master/target/notifications/data") : Paths.get("target/wildfly-core/target/notifications/data");
+    static final Path DATA = TestSuiteEnvironment.isJ9Jvm() ? Paths.get("target/domains/JmxControlledStateNotificationsTestCase/master/target/notifications/data") : Paths.get("target/wildfly-core/target/notifications/data");
 
     private static JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
     static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME).toAbsolutePath().toFile();
@@ -83,7 +79,7 @@ public class JmxControlledStateNotificationsTestCase {
                         "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
         testSupport.start();
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group", IS_IBM);
+        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
     }
 
     @AfterClass
