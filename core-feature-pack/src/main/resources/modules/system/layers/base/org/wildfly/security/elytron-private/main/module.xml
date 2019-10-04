@@ -65,6 +65,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-jacc}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-jaspi}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-json-util}"/>
+        <!-- <artifact name="${org.wildfly.security:wildfly-elytron-jwt}"/> To be added as independent module in WildFly -->
         <artifact name="${org.wildfly.security:wildfly-elytron-keystore}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-mechanism}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-digest}"/>
