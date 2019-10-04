@@ -405,17 +405,19 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
                 @Override
                 public void propertyChange(PropertyChangeEvent evt) {
                     if (ControlledProcessState.State.RUNNING == evt.getNewValue()) {
-                        synchronized (this) {
+                        synchronized (FileSystemDeploymentService.this) {
                             if (scanEnabled) {
                                 undeployScanTask = scheduledExecutor.submit(new UndeployScanRunnable());
                             }
                         }
                     } else if (ControlledProcessState.State.STOPPING == evt.getNewValue()) {
                         //let's prevent the starting of a new scan
-                        scanEnabled = false;
-                        if(undeployScanTask != null) {
-                            undeployScanTask.cancel(true);
-                            undeployScanTask = null;
+                        synchronized (FileSystemDeploymentService.this) {
+                            scanEnabled = false;
+                            if (undeployScanTask != null) {
+                                undeployScanTask.cancel(true);
+                                undeployScanTask = null;
+                            }
                         }
                         processStateNotifier.removePropertyChangeListener(this);
                     }
