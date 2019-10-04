@@ -238,11 +238,11 @@ public class SecurityCommandsTestCase {
                 Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
                                 + " --lets-encrypt"
                                 + " --ca-account=" + CA_ACCOUNT_NAME,
-                        (useCaAccount ? "Key-store file name (default management.keystore):" : "File name (default accounts.keystore.jks)")));
+                        ("Key-store file name (default management.keystore):")));
             } else {
                 Assert.assertTrue(cli.pushLineAndWaitForResults("security enable-ssl-management --interactive --no-reload"
                                 + " --lets-encrypt",
-                        (useCaAccount ? "Key-store file name (default management.keystore):" : "File name (default accounts.keystore.jks)")));
+                        ("File name (default accounts.keystore.jks)")));
 
                 //skip this when ca Account already created
                 Assert.assertTrue(cli.pushLineAndWaitForResults(ACCOUNTS_KEYSTORE_FILE_NAME, "Password (blank generated):"));
