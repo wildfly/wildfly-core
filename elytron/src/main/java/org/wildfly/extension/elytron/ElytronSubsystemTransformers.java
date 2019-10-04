@@ -146,15 +146,15 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 }, ElytronDescriptionConstants.CERTIFICATE_AUTHORITY);
         builder.addChildResource(PathElement.pathElement(AGGREGATE_REALM))
                 .getAttributeBuilder()
-                .setDiscard(DISCARD_SINGLE_REALM, AUTHORIZATION_REALMS)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, AUTHORIZATION_REALMS)
-                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALM)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, PRINCIPAL_TRANSFORMER);
+                .addRejectCheck(REJECT_IF_MULTIPLE_AUTHORIZATION_REALMS, AUTHORIZATION_REALMS)
+                .setValueConverter(ONE_AUTHORIZATION_REALMS, AUTHORIZATION_REALMS)
+                .addRename(AUTHORIZATION_REALMS, AUTHORIZATION_REALM)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, PRINCIPAL_TRANSFORMER)
+                .end();
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.OCSP)
-                .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
-                .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.MAXIMUM_CERT_PATH)
+                .setValueConverter(MAXIMUM_CERT_PATH_CONVERTER, ElytronDescriptionConstants.MAXIMUM_CERT_PATH, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
                 .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.ONLY_LEAF_CERT)
                 .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.SOFT_FAIL)
                 .setDiscard(DiscardAttributeChecker.ALWAYS, ElytronDescriptionConstants.ONLY_LEAF_CERT)
@@ -315,16 +315,20 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     // Moves maximum-cert-path from trust-manager back to certificate-revocation-list
     private static final AttributeConverter MAXIMUM_CERT_PATH_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
+        Integer maxCertPath;
+
         @Override
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            if (attributeValue.isDefined()) {
-                ModelNode trustManager = context.readResourceFromRoot(address).getModel();
-                Integer maxCertPath = trustManager.get(ElytronDescriptionConstants.MAXIMUM_CERT_PATH).asIntOrNull();
-
-                if (maxCertPath != null) {
-                    attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(maxCertPath));
-                } else {
-                    attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(5));
+            if (attributeName.equals(ElytronDescriptionConstants.MAXIMUM_CERT_PATH)) {
+                maxCertPath = attributeValue.asIntOrNull();
+                attributeValue.clear();
+            } else {
+                if (attributeValue.isDefined()) {
+                    if (maxCertPath != null) {
+                        attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(maxCertPath));
+                    } else {
+                        attributeValue.set(ElytronDescriptionConstants.MAXIMUM_CERT_PATH, new ModelNode(5));
+                    }
                 }
             }
         }
@@ -354,24 +358,29 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
-    private static final DiscardAttributeChecker DISCARD_SINGLE_REALM = new DiscardAttributeChecker.DefaultDiscardAttributeChecker() {
+    private static final RejectAttributeChecker REJECT_IF_MULTIPLE_AUTHORIZATION_REALMS = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
 
         @Override
-        protected boolean isValueDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            if (attributeValue.isDefined()) {
-                List<ModelNode> values = attributeValue.asList();
-                return (values.size() == 1);
+        protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+            // reject if there is more than one authorization realm specified
+            if (value.isDefined()) {
+                List<ModelNode> values = value.asList();
+                return (values.size() > 1);
             }
             return false;
+        }
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return ROOT_LOGGER.invalidAttributeValue(AUTHORIZATION_REALMS).getMessage();
         }
     };
 
     private static final AttributeConverter ONE_AUTHORIZATION_REALMS = new AttributeConverter.DefaultAttributeConverter() {
         @Override
         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            if (!attributeValue.isDefined()) {
+            if (attributeValue.isDefined()) {
                 /*
-                 * If we reach this point we know the attribute was not rejected to AUTHORIZATION_REALMS can only have one value.
+                 * If we reach this point we know the attribute was not rejected so AUTHORIZATION_REALMS can only have one value.
                  */
                 String authorizationRealm = context.readResourceFromRoot(address).getModel().get(AUTHORIZATION_REALMS).asList().get(0).asString();
                 attributeValue.set(authorizationRealm);
