@@ -447,6 +447,7 @@ public enum Phase {
     public static final int DEPENDENCIES_MICROPROFILE_HEALTH            = 0x1870;
     public static final int DEPENDENCIES_MICROPROFILE_OPENTRACING       = 0x1880;
     public static final int DEPENDENCIES_MICROPROFILE_OPENAPI           = 0x1890;
+    public static final int DEPENDENCIES_MICROPROFILE_FAULT_TOLERANCE   = 0x1900;
 
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
@@ -612,6 +613,7 @@ public enum Phase {
     public static final int POST_MODULE_MICROPROFILE_HEALTH             = 0x3770;
     public static final int POST_MODULE_MICROPROFILE_OPENTRACING        = 0x3780;
     public static final int POST_MODULE_MICROPROFILE_OPENAPI            = 0x3790;
+    public static final int POST_MODULE_MICROPROFILE_FAULT_TOLERANCE    = 0x3800;
 
 
     // INSTALL
