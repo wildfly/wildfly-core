@@ -29,6 +29,8 @@
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
 
         <ts.elytron.cli>enable-elytron.cli</ts.elytron.cli>
+
+        <exclude.tests>nothing-to-exclude</exclude.tests>
     </properties>
 
     <dependencies>
@@ -100,6 +102,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <excludes>
+                        <exclude>${exclude.tests}</exclude>
+                    </excludes>
                     <failIfNoTests>false</failIfNoTests>
                     <!-- parallel>none</parallel -->
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
@@ -294,6 +299,9 @@
                      <exists>${ts.elytron.cli}</exists>
                  </file>
              </activation>
+             <properties>
+                 <exclude.tests>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java,org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.java</exclude.tests>
+             </properties>
              <build>
                  <plugins>
                      <plugin>
