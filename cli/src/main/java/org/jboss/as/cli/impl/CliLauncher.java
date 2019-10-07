@@ -22,10 +22,12 @@
 package org.jboss.as.cli.impl;
 
 import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -211,10 +213,10 @@ public class CliLauncher {
                         break;
                     }
                     final Properties props = new Properties();
-                    FileInputStream fis = null;
+                    InputStreamReader inputStreamReader = null;
                     try {
-                        fis = new FileInputStream(propertiesFile);
-                        props.load(fis);
+                        inputStreamReader = new InputStreamReader(new FileInputStream(propertiesFile), StandardCharsets.UTF_8);
+                        props.load(inputStreamReader);
                     } catch(FileNotFoundException e) {
                         argError = e.getLocalizedMessage();
                         break;
@@ -222,9 +224,9 @@ public class CliLauncher {
                         argError = "Failed to load properties from " + propertiesFile.getAbsolutePath() + ": " + e.getLocalizedMessage();
                         break;
                     } finally {
-                        if(fis != null) {
+                        if(inputStreamReader != null) {
                             try {
-                                fis.close();
+                                inputStreamReader.close();
                             } catch(java.io.IOException e) {
                             }
                         }
