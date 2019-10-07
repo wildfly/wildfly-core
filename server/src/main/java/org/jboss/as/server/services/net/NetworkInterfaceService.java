@@ -21,8 +21,10 @@
  */
 package org.jboss.as.server.services.net;
 
+import static org.jboss.as.process.CommandLineConstants.PREFER_IPV6_ADDRESSES;
 import static org.jboss.as.process.CommandLineConstants.PREFER_IPV4_STACK;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -105,7 +107,7 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
 
     static NetworkInterfaceBinding createBinding(final boolean anyLocal, final OverallInterfaceCriteria criteria) throws SocketException, UnknownHostException {
         if (anyLocal) {
-            return getNetworkInterfaceBinding(isPreferIPv4Stack() ? IPV4_ANYLOCAL : IPV6_ANYLOCAL);
+            return getNetworkInterfaceBinding(isUseIPv4Stack() ? IPV4_ANYLOCAL : IPV6_ANYLOCAL);
         } else {
             return resolveInterface(criteria);
         }
@@ -164,7 +166,12 @@ public class NetworkInterfaceService implements Service<NetworkInterfaceBinding>
         return new NetworkInterfaceBinding(interfaces, address);
     }
 
-    private static boolean isPreferIPv4Stack() {
-        return Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(PREFER_IPV4_STACK, "false"));
+    private static boolean isUseIPv4Stack() {
+        boolean isPreferIPv6Stack = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(PREFER_IPV6_ADDRESSES, "false"));
+        boolean isPreferIPv4Stack = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(PREFER_IPV4_STACK, "false"));
+        if(InetAddress.getLoopbackAddress() instanceof Inet6Address && (isPreferIPv6Stack || !isPreferIPv4Stack)) {
+            return false;
+        }
+        return true;
     }
 }
