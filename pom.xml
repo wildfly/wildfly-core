@@ -143,6 +143,8 @@
         <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
         <version.com.fasterxml.jackson.core.jackson-databind>2.9.9.3</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.6</version.com.googlecode.javaewah>
+        <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
+        <version.com.google.guava>25.0-jre</version.com.google.guava>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.com.jcraft.jsch>0.1.54</version.com.jcraft.jsch>
         <version.com.jcraft.jzlib>1.1.1</version.com.jcraft.jzlib>
@@ -677,6 +679,22 @@
                         <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <!-- guava and jmockit specify different versions of findbugs:jsr305
+                     which our maven-enforcer-plugin usage will reject.
+                     So lock the version down -->
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${version.com.google.code.findbugs}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- This is a transitive dep of the model-test and subsystem-test frameworks
+                     where we want to fix the version to something more recent -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.com.google.guava}</version>
             </dependency>
             <dependency>
                 <groupId>com.io7m.xom</groupId>
