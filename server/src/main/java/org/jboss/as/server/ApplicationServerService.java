@@ -32,6 +32,8 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.RunningModeControl;
@@ -108,7 +110,19 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
             final StringBuilder b = new StringBuilder(8192);
             b.append(ServerLogger.ROOT_LOGGER.configuredSystemPropertiesLabel());
             for (String property : new TreeSet<String>(properties.stringPropertyNames())) {
-                String propVal = property.toLowerCase(Locale.getDefault()).contains("password") ? "<redacted>" : properties.getProperty(property, "<undefined>");
+                String propVal = property.toLowerCase(Locale.ROOT).contains("password") ? "<redacted>" : properties.getProperty(property, "<undefined>");
+                if (property.toLowerCase(Locale.ROOT).equals("sun.java.command") && !propVal.isEmpty()) {
+                    Pattern pattern = Pattern.compile("(-D(?:[^ ])+=)((?:[^ ])+)");
+                    Matcher matcher = pattern.matcher(propVal);
+                    StringBuffer sb = new StringBuffer(propVal.length());
+                    while (matcher.find()) {
+                        if (matcher.group(1).contains("password")) {
+                            matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(1) + "<redacted>"));
+                        }
+                    }
+                    matcher.appendTail(sb);
+                    propVal = sb.toString();
+                }
                 b.append("\n\t").append(property).append(" = ").append(propVal);
             }
             ServerLogger.CONFIG_LOGGER.debug(b);
@@ -118,7 +132,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
                 final Map<String,String> env = System.getenv();
                 b.append(ServerLogger.ROOT_LOGGER.configuredSystemEnvironmentLabel());
                 for (String key : new TreeSet<String>(env.keySet())) {
-                    String envVal = key.toLowerCase(Locale.getDefault()).contains("password") ? "<redacted>" : env.get(key);
+                    String envVal = key.toLowerCase(Locale.ROOT).contains("password") ? "<redacted>" : env.get(key);
                     b.append("\n\t").append(key).append(" = ").append(envVal);
                 }
                 ServerLogger.CONFIG_LOGGER.trace(b);
