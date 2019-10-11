@@ -15,7 +15,6 @@ limitations under the License.
  */
 package org.wildfly.extension.elytron;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CANCELLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -56,7 +55,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
     private final String RFC5424_STRING = "RFC5424";
     private final String RFC5424_SYSLOG_MESSAGE = BASE_SYSLOG_MESSAGE + RFC5424_STRING;
     private final String BAD_RFC_STRING = "RFC1";
-    private String failString = "";
 
     private KernelServices services = null;
     private static SimpleSyslogServer udpServer = null;
@@ -253,16 +251,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
     private ModelNode assertFailed(ModelNode response) {
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
             Assert.fail(response.toJSONString(false));
-        }
-        return response;
-    }
-
-    /**
-     * Verifies the operation cancelled before completion
-     */
-    private ModelNode assertCancelled(ModelNode response) {
-        if (! response.get(OUTCOME).asString().equals(CANCELLED)) {
-            this.failString = response.toJSONString(false);
         }
         return response;
     }
