@@ -149,7 +149,7 @@ public class ShutdownFileSystemDeploymentServiceUnitTestCase {
         final DiscardTaskExecutor myExecutor = new DiscardTaskExecutor();
         MockServerController sc = new MockServerController(myExecutor);
         final BlockingDeploymentOperations ops = new BlockingDeploymentOperations(sc.create());
-        final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, myExecutor, null);
+        final FileSystemDeploymentService testee = new FileSystemDeploymentService(resourceAddress, null, tmpDir, null, sc, myExecutor);
         testee.setAutoDeployZippedContent(true);
         sc.addCompositeSuccessResponse(1);
         testSupport.createZip(deployment, 0, false, false, true, true);

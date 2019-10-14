@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.jboss.as.controller.ControlledProcessState;
-import org.jboss.as.controller.ControlledProcessStateService;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.domain.http.server.cors.CorsUtil;
 
@@ -50,15 +50,15 @@ class DomainApiCheckHandler implements HttpHandler {
     static final String GENERIC_CONTENT_REQUEST = PATH + "-upload";
     private static final String ADD_CONTENT_REQUEST = PATH + "/add-content";
 
-    private final ControlledProcessStateService controlledProcessStateService;
+    private final ProcessStateNotifier processStateNotifier;
     private final HttpHandler domainApiHandler;
     private final HttpHandler addContentHandler;
     private final HttpHandler genericOperationHandler;
     private final Collection<String> allowedOrigins = new ArrayList<String>();
 
 
-    DomainApiCheckHandler(final ModelController modelController, final ControlledProcessStateService controlledProcessStateService, final Collection<String> allowedOrigins) {
-        this.controlledProcessStateService = controlledProcessStateService;
+    DomainApiCheckHandler(final ModelController modelController, final ProcessStateNotifier processStateNotifier, final Collection<String> allowedOrigins) {
+        this.processStateNotifier = processStateNotifier;
         domainApiHandler = new EncodingHandler.Builder().build(Collections.<String,Object>emptyMap()).wrap(new DomainApiHandler(modelController));
         addContentHandler = new DomainApiUploadHandler(modelController);
         genericOperationHandler = new EncodingHandler.Builder().build(Collections.<String,Object>emptyMap()).wrap(new DomainApiGenericOperationHandler(modelController));
@@ -121,7 +121,7 @@ class DomainApiCheckHandler implements HttpHandler {
         // later. If "stopping" it's either a reload, in which case trying again will eventually succeed,
         // or it's a true process stop eventually the server will have stopped.
         @SuppressWarnings("deprecation")
-        ControlledProcessState.State currentState = controlledProcessStateService.getCurrentState();
+        ControlledProcessState.State currentState = processStateNotifier.getCurrentState();
         if (currentState == ControlledProcessState.State.STARTING
                 || currentState == ControlledProcessState.State.STOPPING) {
             exchange.getResponseHeaders().add(Headers.RETRY_AFTER, "2"); //  2 secs is just a guesstimate

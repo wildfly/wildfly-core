@@ -147,6 +147,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
             RuntimeCapability.Builder.of("org.wildfly.management.executor", ExecutorService.class)
                     .build();
 
+    /**
+     * Capability users of the controller use to read process state and get notification of state changes.
+     * This capability isn't necessarily directly related to this class but we declare it
+     * here as it's as good a place as any at this time.
+     */
+    protected static final RuntimeCapability<Void> PROCESS_STATE_NOTIFIER_CAPABILITY =
+            RuntimeCapability.Builder.of("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class)
+                    .build();
+
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
         .setPrivateEntry()
         .build();

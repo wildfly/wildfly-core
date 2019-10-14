@@ -467,6 +467,8 @@ public final class ServerService extends AbstractControllerService {
                 new RuntimeCapabilityRegistration(EXECUTOR_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(SUSPEND_CONTROLLER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(PROCESS_STATE_NOTIFIER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
@@ -474,6 +476,7 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
         rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
         rootRegistration.registerCapability(SUSPEND_CONTROLLER_CAPABILITY);
+        rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
     }
 
     @Override

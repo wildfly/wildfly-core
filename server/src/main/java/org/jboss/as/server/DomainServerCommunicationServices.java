@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ControlledProcessStateService;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
@@ -105,8 +106,8 @@ public class DomainServerCommunicationServices  implements ServiceActivator, Ser
             final Supplier<ExecutorService> esSupplier = Services.requireServerExecutor(sb);
             final Supplier<ScheduledExecutorService> sesSupplier = sb.requires(ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
             final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
-            final Supplier<ControlledProcessStateService> cpssSupplier = sb.requires(ControlledProcessStateService.SERVICE_NAME);
-            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpssSupplier));
+            final Supplier<ProcessStateNotifier> cpsnSupplier = sb.requires(ControlledProcessStateService.INTERNAL_SERVICE_NAME);
+            sb.setInstance(new HostControllerConnectionService(managementURI, serverName, serverProcessName, authKey, initialOperationID, managementSubsystemEndpoint, sslContextSupplier, esSupplier, sesSupplier, eSupplier, cpsnSupplier));
             sb.install();
         } catch (OperationFailedException e) {
             throw new ServiceRegistryException(e);
