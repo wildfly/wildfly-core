@@ -49,7 +49,7 @@ public abstract class ServerProcessHandlers implements OperationStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME)).failIfDenied(operation);
                 context.completeStep(new OperationContext.ResultHandler() {
                     @Override
                     public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {

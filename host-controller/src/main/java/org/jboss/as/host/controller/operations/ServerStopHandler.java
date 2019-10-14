@@ -71,7 +71,7 @@ public class ServerStopHandler implements OperationStepHandler {
                 // If another op that is a step in a composite step with this op needs to modify the container
                 // it will have to wait for container stability, so skipping this only matters for the case
                 // where this step is the only runtime change.
-                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME));
+                context.authorize(operation, EnumSet.of(Action.ActionEffect.WRITE_RUNTIME)).failIfDenied(operation);
 
                 final ServerStatus status = serverInventory.stopServer(serverName, timeout, blocking);
                 try {
