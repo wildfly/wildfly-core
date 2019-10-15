@@ -58,7 +58,7 @@ public interface PlatformMBeanLogger extends BasicLogger {
     @Message(id = 4, value = "Removing child resources is not supported")
     UnsupportedOperationException removingChildrenNotSupported();
 
-    @Message(id = 5, value = "No BufferPoolMXBean with name %s currently exists")
+    @Message(id = 5, value = "No BufferPoolMXBean with name '%s' currently exists")
     OperationFailedException unknownBufferPool(String poolName);
 
     @Message(id = 6, value = "Read support for attribute %s was not properly implemented")

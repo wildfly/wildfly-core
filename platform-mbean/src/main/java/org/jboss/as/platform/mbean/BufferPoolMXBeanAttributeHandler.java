@@ -28,7 +28,6 @@ import javax.management.ObjectName;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.platform.mbean.logging.PlatformMBeanLogger;
 import org.jboss.dmr.ModelNode;
@@ -48,11 +47,11 @@ class BufferPoolMXBeanAttributeHandler extends AbstractPlatformMBeanAttributeHan
     @Override
     protected void executeReadAttribute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
-        final String bpName = PathAddress.pathAddress(operation.require(ModelDescriptionConstants.OP_ADDR)).getLastElement().getValue();
+        final String bpName = context.getCurrentAddressValue();
 
-        final ObjectName objectName = PlatformMBeanUtil.getObjectNameWithNameKey(PlatformMBeanConstants.BUFFER_POOL_MXBEAN_DOMAIN_TYPE, bpName);
+        ObjectName objectName = PlatformMBeanUtil.getObjectNameWithNameKey(PlatformMBeanConstants.BUFFER_POOL_MXBEAN_DOMAIN_TYPE, bpName);
         if (!ManagementFactory.getPlatformMBeanServer().isRegistered(objectName)) {
-            throw PlatformMBeanLogger.ROOT_LOGGER.unknownBufferPool(bpName);
+            throw PlatformMBeanLogger.ROOT_LOGGER.unknownBufferPool(objectName.getKeyProperty(ModelDescriptionConstants.NAME));
         }
 
         final String name = operation.require(ModelDescriptionConstants.NAME).asString();
