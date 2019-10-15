@@ -74,6 +74,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ControlledProcessState;
@@ -106,7 +107,6 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.InjectedValue;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -132,12 +132,12 @@ public abstract class AbstractProxyControllerTest {
         ControlledProcessState processState = new ControlledProcessState(true);
 
         ProxyModelControllerService proxyService = new ProxyModelControllerService(processState);
-        ServiceBuilder<ModelController> proxyBuilder = target.addService(ServiceName.of("ProxyModelController"), proxyService);
-        proxyBuilder.install();
+        target.addService(ServiceName.of("ProxyModelController")).setInstance(proxyService).install();
 
-        MainModelControllerService mainService = new MainModelControllerService(processState);
-        ServiceBuilder<ModelController> mainBuilder = target.addService(ServiceName.of("MainModelController"), mainService);
-        mainBuilder.addDependency(ServiceName.of("ProxyModelController"), ModelController.class, mainService.proxy);
+        ServiceBuilder<?> mainBuilder = target.addService(ServiceName.of("MainModelController"));
+        Supplier<ModelController> proxy = mainBuilder.requires(ServiceName.of("ProxyModelController"));
+        MainModelControllerService mainService = new MainModelControllerService(proxy, processState);
+        mainBuilder.setInstance(mainService);
         mainBuilder.install();
 
         proxyService.awaitStartup(30, TimeUnit.SECONDS);
@@ -628,11 +628,12 @@ public abstract class AbstractProxyControllerTest {
 
     public class MainModelControllerService extends TestModelControllerService {
 
-        private final InjectedValue<ModelController> proxy = new InjectedValue<ModelController>();
+        final Supplier<ModelController> proxy;
 
-        MainModelControllerService(final ControlledProcessState processState) {
+        MainModelControllerService(final Supplier<ModelController> proxy, ControlledProcessState processState) {
             super(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), processState,
                     ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+            this.proxy = proxy;
         }
 
         protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
@@ -657,7 +658,7 @@ public abstract class AbstractProxyControllerTest {
                     .build());
 
             PathElement serverAElement = PathElement.pathElement(SERVER, "serverA");
-            rootRegistration.registerProxyController(serverAElement, createProxyController(proxy.getValue(), PathAddress.pathAddress(serverAElement)));
+            rootRegistration.registerProxyController(serverAElement, createProxyController(proxy.get(), PathAddress.pathAddress(serverAElement)));
         }
 
     }

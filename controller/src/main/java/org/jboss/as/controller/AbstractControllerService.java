@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -57,22 +59,22 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * A base class for controller services.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class AbstractControllerService implements Service<ModelController> {
 
@@ -167,8 +169,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final ResourceDefinition rootResourceDefinition;
     private final ControlledProcessState processState;
     private final OperationStepHandler prepareStep;
-    private final InjectedValue<ExecutorService> injectedExecutorService = new InjectedValue<ExecutorService>();
-    private final InjectedValue<ControllerInstabilityListener> injectedInstabilityListener = new InjectedValue<ControllerInstabilityListener>();
+    private final Supplier<ExecutorService> executorService;
+    private final Supplier<ControllerInstabilityListener> instabilityListener;
     private final ExpressionResolver expressionResolver;
     private volatile ModelControllerImpl controller;
     private volatile StabilityMonitor stabilityMonitor;
@@ -195,7 +197,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer, ManagementSecurityIdentitySupplier securityIdentitySupplier) {
-        this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
+        this(null, null, processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, new CapabilityRegistry(processType.isServer()));
 
     }
@@ -214,13 +216,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @param authorizer              handles authorization
      * @param capabilityRegistry      the capability registry
      */
+    @Deprecated
     protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
-        this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
     }
 
@@ -243,7 +246,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
-        this(processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
+        this(null, null, processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
                 prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
                 new CapabilityRegistry(processType.isServer()));
 
@@ -267,7 +270,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ConfigurationPersister configurationPersister,
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
-        this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
                 new CapabilityRegistry(processType.isServer()));
     }
@@ -290,13 +293,41 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ResourceDefinition rootResourceDefinition, final OperationStepHandler prepareStep,
                                         final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                         final DelegatingConfigurableAuthorizer authorizer) {
-        this(processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+        this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, new ManagementSecurityIdentitySupplier(),
                 new CapabilityRegistry(processType.isServer()));
 
     }
 
-    private AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
+    /**
+     * Construct a new instance.
+     *
+     * @param processType             the type of process being controlled
+     * @param runningModeControl      the controller of the process' running mode
+     * @param configurationPersister  the configuration persister
+     * @param processState            the controlled process state
+     * @param rootResourceDefinition  the root resource definition
+     * @param prepareStep             the prepare step to prepend to operation execution
+     * @param expressionResolver      the expression resolver
+     * @param auditLogger             the audit logger
+     * @param authorizer              handles authorization
+     * @param capabilityRegistry      the capability registry
+     */
+    protected AbstractControllerService(final Supplier<ExecutorService> executorService,
+                                        final Supplier<ControllerInstabilityListener> instabilityListener,
+                                        final ProcessType processType, final RunningModeControl runningModeControl,
+                                        final ConfigurationPersister configurationPersister,
+                                        final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
+                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
+                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
+        this(executorService, instabilityListener, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+    }
+
+    private AbstractControllerService(final Supplier<ExecutorService> executorService,
+                                      final Supplier<ControllerInstabilityListener> instabilityListener,
+                                      final ProcessType processType, final RunningModeControl runningModeControl,
                                       final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
@@ -309,6 +340,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
         assert authorizer != null : "Null authorizer";
         assert securityIdentitySupplier != null : "Null securityIdentitySupplier";
         assert capabilityRegistry!=null : "Null capabilityRegistry";
+        this.executorService = executorService;
+        this.instabilityListener = instabilityListener;
         this.processType = processType;
         this.runningModeControl = runningModeControl;
         this.configurationPersister = configurationPersister;
@@ -333,7 +366,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         final ServiceController<?> serviceController = context.getController();
         final ServiceContainer container = serviceController.getServiceContainer();
         final ServiceTarget target = context.getChildTarget();
-        final ExecutorService executorService = injectedExecutorService.getOptionalValue();
+        final ExecutorService executorService = this.executorService != null ? this.executorService.get() : null;
 
         final NotificationSupport notificationSupport = NotificationSupport.Factory.create(executorService);
         WritableAuthorizerConfiguration authorizerConfig = authorizer.getWritableAuthorizerConfiguration();
@@ -345,7 +378,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
-                injectedInstabilityListener.getOptionalValue());
+                instabilityListener != null ? instabilityListener.get() : null);
 
         // Initialize the model
         initModel(controller.getManagementModel(), controller.getModelControllerResource());
@@ -361,12 +394,14 @@ public abstract class AbstractControllerService implements Service<ModelControll
             rootResourceRegistration.registerCapability(CLIENT_FACTORY_CAPABILITY);
             rootResourceRegistration.registerCapability(NOTIFICATION_REGISTRY_CAPABILITY);
             ModelControllerClientFactory clientFactory = new ModelControllerClientFactoryImpl(controller, securityIdentitySupplier);
-            target.addService(CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName(),
-                    new ValueService<ModelControllerClientFactory>(new ImmediateValue<ModelControllerClientFactory>(clientFactory)))
-                    .install();
-            target.addService(NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName(),
-                    new ValueService<NotificationHandlerRegistry>(new ImmediateValue<NotificationHandlerRegistry>(controller.getNotificationRegistry())))
-                    .install();
+            final ServiceName clientFactorySN = CLIENT_FACTORY_CAPABILITY.getCapabilityServiceName();
+            final ServiceBuilder<?> clientFactorySB = target.addService(clientFactorySN);
+            clientFactorySB.setInstance(new SimpleService(clientFactorySB.provides(clientFactorySN), clientFactory));
+            clientFactorySB.install();
+            final ServiceName notifyRegistrySN = NOTIFICATION_REGISTRY_CAPABILITY.getCapabilityServiceName();
+            final ServiceBuilder<?> notifyRegistrySB = target.addService(notifyRegistrySN);
+            notifyRegistrySB.setInstance(new SimpleService(notifyRegistrySB.provides(notifyRegistrySN), controller.getNotificationRegistry()));
+            notifyRegistrySB.install();
         }
         capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
                                        // We publish even if we didn't register anything in case parent services did
@@ -591,7 +626,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                 }
             }
         };
-        final ExecutorService executorService = injectedExecutorService.getOptionalValue();
+        final ExecutorService executorService = this.executorService != null ? this.executorService.get() : null;
         try {
             if (executorService != null) {
                 try {
@@ -636,12 +671,8 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return controller;
     }
 
-    public InjectedValue<ExecutorService> getExecutorServiceInjector() {
-        return injectedExecutorService;
-    }
-
-    protected InjectedValue<ControllerInstabilityListener> getContainerInstabilityInjector() {
-        return injectedInstabilityListener;
+    protected ExecutorService getExecutorService() {
+        return executorService != null ? executorService.get() : null;
     }
 
     protected void setConfigurationPersister(final ConfigurationPersister persister) {
@@ -807,5 +838,30 @@ public abstract class AbstractControllerService implements Service<ModelControll
         void controllerUnstable();
     }
 
-}
+    private static final class SimpleService<V> implements Service {
 
+        private final Consumer<V> injector;
+        private final V value;
+
+        private SimpleService(final Consumer<V> injector, final V value) {
+            this.injector = injector;
+            this.value = value;
+        }
+
+        @Override
+        public void start(final StartContext context) {
+            injector.accept(value);
+        }
+
+        @Override
+        public void stop(final StopContext context) {
+            injector.accept(null);
+        }
+
+        @Override
+        public Object getValue() {
+            return value;
+        }
+    }
+
+}

@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -58,8 +57,7 @@ public class CompositeOperationHandlerUnitTestCase {
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
         TestModelControllerService svc = new ModelControllerImplUnitTestCase.ModelControllerService();
-        ServiceBuilder<ModelController> builder = target.addService(ServiceName.of("ModelController"), svc);
-        builder.install();
+        target.addService(ServiceName.of("ModelController")).setInstance(svc).install();
         sharedState = svc.getSharedState();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();

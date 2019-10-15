@@ -56,7 +56,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -162,8 +161,7 @@ public abstract class AbstractControllerTestBase {
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
         ModelControllerService svc = createModelControllerService(processType);
-        ServiceBuilder<ModelController> builder = target.addService(ServiceName.of("ModelController"), svc);
-        builder.install();
+        target.addService(ServiceName.of("ModelController")).setInstance(svc).install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
         capabilityRegistry = svc.getCapabilityRegistry();

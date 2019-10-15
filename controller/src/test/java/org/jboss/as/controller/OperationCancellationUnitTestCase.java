@@ -58,7 +58,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
@@ -103,8 +102,7 @@ public class OperationCancellationUnitTestCase {
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
         ModelControllerService svc = new ModelControllerService();
-        ServiceBuilder<ModelController> builder = target.addService(ServiceName.of("ModelController"), svc);
-        builder.install();
+        target.addService(ServiceName.of("ModelController")).setInstance(svc).install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
         ModelNode setup = Util.getEmptyOperation("setup", new ModelNode());
@@ -473,7 +471,7 @@ public class OperationCancellationUnitTestCase {
                 public void execute(final OperationContext context, ModelNode operation) {
 
                     final ServiceName svcName = ServiceName.JBOSS.append("good-service");
-                    context.getServiceTarget().addService(svcName, Service.NULL).install();
+                    context.getServiceTarget().addService(svcName).install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
@@ -518,7 +516,7 @@ public class OperationCancellationUnitTestCase {
 
                     };
                     final ServiceName svcName = ServiceName.JBOSS.append("bad-service");
-                    context.getServiceTarget().addService(svcName, bad).install();
+                    context.getServiceTarget().addService(svcName).setInstance(bad).install();
 
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override

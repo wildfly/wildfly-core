@@ -42,6 +42,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.BootContext;
@@ -147,6 +148,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * Service for the {@link org.jboss.as.controller.ModelController} for an AS server instance.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public final class ServerService extends AbstractControllerService {
 
@@ -186,12 +188,14 @@ public final class ServerService extends AbstractControllerService {
      * @param configuration the bootstrap configuration
      * @param prepareStep the prepare step to use
      */
-    private ServerService(final Bootstrap.Configuration configuration, final ControlledProcessState processState,
+    private ServerService(final Supplier<ExecutorService> executorService,
+                          final Supplier<ControllerInstabilityListener> instabilityListener,
+                          final Bootstrap.Configuration configuration, final ControlledProcessState processState,
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry,
                           final SuspendController suspendController) {
-        super(getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
+        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.configuration = configuration;
         this.bootstrapListener = bootstrapListener;
@@ -243,39 +247,37 @@ public final class ServerService extends AbstractControllerService {
                 .install();
 
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
-        ServerService service = new ServerService(configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
+
+        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER);
+        final boolean allowMCE = configuration.getServerEnvironment().isAllowModelControllerExecutor();
+        final Supplier<ExecutorService> esSupplier = allowMCE ? serviceBuilder.requires(MANAGEMENT_EXECUTOR) : null;
+        final boolean isDomainEnv = configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN;
+        final Supplier<ControllerInstabilityListener> cilSupplier = isDomainEnv ? serviceBuilder.requires(HostControllerConnectionService.SERVICE_NAME) : null;
+        ServerService service = new ServerService(esSupplier, cilSupplier, configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
                 runningModeControl, vaultReader, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
-
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
-
-        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER, service);
+        serviceBuilder.setInstance(service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
         serviceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.injectedModuleLoader);
         serviceBuilder.addDependency(Services.JBOSS_EXTERNAL_MODULE_SERVICE, ExternalModuleService.class,
                 service.injectedExternalModuleService);
         serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
-        if (configuration.getServerEnvironment().isAllowModelControllerExecutor()) {
-            serviceBuilder.addDependency(MANAGEMENT_EXECUTOR, ExecutorService.class, service.getExecutorServiceInjector());
-        }
-        if (configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN) {
-            serviceBuilder.addDependency(HostControllerConnectionService.SERVICE_NAME, ControllerInstabilityListener.class,
-                    service.getContainerInstabilityInjector());
-        }
-
         serviceBuilder.install();
+
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
+
     }
 
     public synchronized void start(final StartContext context) throws StartException {
         ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
         Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = configuration.getConfigurationPersisterFactory();
-        extensibleConfigurationPersister = configurationPersisterFactory.createConfigurationPersister(serverEnvironment, getExecutorServiceInjector().getOptionalValue());
+        extensibleConfigurationPersister = configurationPersisterFactory.createConfigurationPersister(serverEnvironment, getExecutorService());
         setConfigurationPersister(extensibleConfigurationPersister);
         rootResourceDefinition.setDelegate(
                 new ServerRootResourceDefinition(injectedContentRepository.getValue(),
                         extensibleConfigurationPersister, configuration.getServerEnvironment(), processState,
                         runningModeControl, vaultReader, configuration.getExtensionRegistry(),
-                        getExecutorServiceInjector().getOptionalValue() != null,
+                        getExecutorService() != null,
                         (PathManagerService)injectedPathManagerService.getValue(),
                         new DomainServerCommunicationServices.OperationIDUpdater() {
                             @Override
