@@ -70,7 +70,7 @@ public class PlatformMBeanUtil {
 
     public static String unescapeMBeanValue(final String toUnescape) {
         String unescaped = toUnescape.replace('_', ' ');
-        return unescaped.equals(toUnescape) ? toUnescape : "\"" + unescaped + "\"";
+        return unescaped.equals(toUnescape) ? toUnescape : unescaped;
     }
 
     public static String getObjectNameStringWithNameKey(final String base, final String escapedValue) {
