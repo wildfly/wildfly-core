@@ -336,6 +336,7 @@ public enum Phase {
     public static final int PARSE_MANAGED_BEAN_ANNOTATION               = 0x2900;
     public static final int PARSE_EE_ANNOTATIONS                        = 0x2901;
     public static final int PARSE_JAXRS_ANNOTATIONS                     = 0x2A00;
+    public static final int PARSE_EE_SECURITY_ANNOTATIONS               = 0x2A0A;
     public static final int PARSE_CDI_ANNOTATIONS                       = 0x2A10;
     public static final int PARSE_CDI_BEAN_DEFINING_ANNOTATIONS         = 0x2A80;
     public static final int PARSE_WELD_DEPLOYMENT                       = 0x2B00;
@@ -428,6 +429,7 @@ public enum Phase {
     public static final int DEPENDENCIES_ELYTRON                        = 0x0C51;
     public static final int DEPENDENCIES_ELYTRON_EE_SECURITY            = 0x0C52;
     public static final int DEPENDENCIES_JAXRS                          = 0x0D00;
+    public static final int DEPENDENCIES_EE_SECURITY                    = 0x0D0A;
     public static final int DEPENDENCIES_JAXRS_SPRING                   = 0x0D80;
     public static final int DEPENDENCIES_SUB_DEPLOYMENTS                = 0x0E00;
     public static final int DEPENDENCIES_PERSISTENCE_ANNOTATION         = 0x0F00;
