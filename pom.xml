@@ -163,10 +163,10 @@
         <!-- TODO Elytron - Bump to M17 -->
         <version.org.apache.httpcomponents.httpclient>4.5.4</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.5</version.org.apache.httpcomponents.httpcore>
-        <version.org.apache.maven>3.5.0</version.org.apache.maven>
-        <version.org.apache.maven.resolver>1.1.0</version.org.apache.maven.resolver>
+        <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
+        <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.xerces>2.12.0.SP02</version.org.apache.xerces>
-        <version.org.codehaus.plexus.plexus-utils>3.1.0</version.org.codehaus.plexus.plexus-utils>
+        <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core>5.0.3</version.org.codehaus.woodstox.woodstox-core>
         <version.org.eclipse.jgit>5.0.2.201807311906-r</version.org.eclipse.jgit>
@@ -833,7 +833,7 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>${version.org.apache.maven}</version>
+                <version>${version.org.apache.maven.provider}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven.resolver</groupId>
