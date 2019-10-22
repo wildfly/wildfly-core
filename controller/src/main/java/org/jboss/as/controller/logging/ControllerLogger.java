@@ -1226,35 +1226,35 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 106, value = "Invalid value '%s' for attribute '%s'")
     XMLStreamException invalidAttributeValue(String value, QName name, @Param Location location);
 
-    /**
-     * Creates an exception indicating an invalid value, represented by the {@code value} parameter, was found for the
-     * attribute, represented by the {@code name} parameter. The value must be between the {@code minInclusive} and
-     * {@code maxInclusive} values.
-     *
-     * @param value        the invalid value.
-     * @param name         the attribute name.
-     * @param minInclusive the minimum value allowed.
-     * @param maxInclusive the maximum value allowed.
-     * @param location     the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 107, value = "Illegal value %d for attribute '%s' must be between %d and %d (inclusive)")
-    XMLStreamException invalidAttributeValue(int value, QName name, int minInclusive, int maxInclusive, @Param Location location);
+//    /**
+//     * Creates an exception indicating an invalid value, represented by the {@code value} parameter, was found for the
+//     * attribute, represented by the {@code name} parameter. The value must be between the {@code minInclusive} and
+//     * {@code maxInclusive} values.
+//     *
+//     * @param value        the invalid value.
+//     * @param name         the attribute name.
+//     * @param minInclusive the minimum value allowed.
+//     * @param maxInclusive the maximum value allowed.
+//     * @param location     the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 107, value = "Illegal value %d for attribute '%s' must be between %d and %d (inclusive)")
+//    XMLStreamException invalidAttributeValue(int value, QName name, int minInclusive, int maxInclusive, @Param Location location);
 
-    /**
-     * Creates an exception indicating an invalid integer value, represented by the {@code value} parameter, was found
-     * for the attribute, represented by the {@code name} parameter.
-     *
-     * @param cause    the cause of the error.
-     * @param value    the invalid value.
-     * @param name     the attribute name.
-     * @param location the location of the error.
-     *
-     * @return a {@link XMLStreamException} for the error.
-     */
-    @Message(id = 108, value = "Illegal value '%s' for attribute '%s' must be an integer")
-    XMLStreamException invalidAttributeValueInt(@Cause Throwable cause, String value, QName name, @Param Location location);
+//    /**
+//     * Creates an exception indicating an invalid integer value, represented by the {@code value} parameter, was found
+//     * for the attribute, represented by the {@code name} parameter.
+//     *
+//     * @param cause    the cause of the error.
+//     * @param value    the invalid value.
+//     * @param name     the attribute name.
+//     * @param location the location of the error.
+//     *
+//     * @return a {@link XMLStreamException} for the error.
+//     */
+//    @Message(id = 108, value = "Illegal value '%s' for attribute '%s' must be an integer")
+//    XMLStreamException invalidAttributeValueInt(@Cause Throwable cause, String value, QName name, @Param Location location);
 
     /**
      * A message indicating the pattern, represented by the {@code pattern} parameter, for the interface criteria,
@@ -1868,17 +1868,17 @@ public interface ControllerLogger extends BasicLogger {
 //    @Message(id = 163, value = "An operation reply value type description is required but was not implemented for operation %s")
 //    IllegalStateException operationReplyValueTypeRequired(String operationName);
 
-    /**
-     * A message indicating there was a parsing problem.
-     *
-     * @param row the row the problem occurred at.
-     * @param col the column the problem occurred at.
-     * @param msg a message to concatenate.
-     *
-     * @return the message.
-     */
-    @Message(id = 164, value = "Parsing problem at [row,col]:[%d ,%d]%nMessage: %s")
-    String parsingProblem(int row, int col, String msg);
+//    /**
+//     * A message indicating there was a parsing problem.
+//     *
+//     * @param row the row the problem occurred at.
+//     * @param col the column the problem occurred at.
+//     * @param msg a message to concatenate.
+//     *
+//     * @return the message.
+//     */
+//    @Message(id = 164, value = "Parsing problem at [row,col]:[%d ,%d]%nMessage: %s")
+//    String parsingProblem(int row, int col, String msg);
 
     /**
      * Creates an exception indicating no configuration persister was injected.

@@ -36,7 +36,6 @@ import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -539,28 +538,6 @@ public final class ParseUtils {
         }
     }
 
-    /** @deprecated Use an {@code AttributeDefinition} for this kind of parsing. Will be removed -- https://issues.jboss.org/browse/WFCORE-4419 */
-    @Deprecated
-    public static ModelNode parseBoundedIntegerAttribute(final XMLExtendedStreamReader reader, final int index,
-            final int minInclusive, final int maxInclusive, boolean allowExpression) throws XMLStreamException {
-        final String stringValue = reader.getAttributeValue(index);
-        if (allowExpression) {
-            ModelNode expression = parsePossibleExpression(stringValue);
-            if (expression.getType() == ModelType.EXPRESSION) {
-                return expression;
-            }
-        }
-        try {
-            final int value = Integer.parseInt(stringValue);
-            if (value < minInclusive || value > maxInclusive) {
-                throw ControllerLogger.ROOT_LOGGER.invalidAttributeValue(value, reader.getAttributeName(index), minInclusive, maxInclusive, reader.getLocation());
-            }
-            return new ModelNode().set(value);
-        } catch (NumberFormatException nfe) {
-            throw ControllerLogger.ROOT_LOGGER.invalidAttributeValueInt(nfe, stringValue, reader.getAttributeName(index), reader.getLocation());
-        }
-    }
-
     public static ModelNode parseAttributeValue(final String value, final boolean isExpressionAllowed, final ModelType attributeType) {
         final String trimmed = value == null ? null : value.trim();
         ModelNode node;
@@ -627,12 +604,6 @@ public final class ParseUtils {
             result.set(value);
         }
         return result;
-    }
-
-    /** @deprecated Will be removed -- https://issues.jboss.org/browse/WFCORE-4419 */
-    @Deprecated
-    public static String getWarningMessage(final String msg, final Location location) {
-        return ControllerLogger.ROOT_LOGGER.parsingProblem(location.getLineNumber(), location.getColumnNumber(), msg);
     }
 
     /**
