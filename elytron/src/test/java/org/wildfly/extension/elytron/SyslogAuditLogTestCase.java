@@ -21,7 +21,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.commons.lang3.SystemUtils;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -29,7 +28,6 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,7 +45,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
     private final int RECONNECT_TIMEOUT = 1;
     private final String HOST_NAME = "localhost";
     private final String SERVER_ADDRESS = "127.0.0.1";
-    private final String BAD_SERVER_ADDRESS = "0.0.0.1";
     private final String UDP_TRANSPORT = "UDP";
     private final String BASE_SYSLOG_MESSAGE = "Elytron audit logging enabled with RFC format: ";
     private final String RFC3164_STRING = "RFC3164";
@@ -75,7 +72,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
             Assert.fail(services.getBootError().toString());
         }
         udpOperation = createUdpSyslogOperation(SERVER_ADDRESS);
-        badHostUdpOperation = createUdpSyslogOperation(BAD_SERVER_ADDRESS);
     }
 
     /**
@@ -156,19 +152,6 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
         udpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(BAD_RECONNECT_NUMBER);
         ModelNode response = services.executeOperation(udpOperation);
         assertCorrectError(response, new String[] {"WFLYCTL0117", Integer.toString(BAD_RECONNECT_NUMBER)});
-        assertFailed(response);
-    }
-
-    /**
-     * Tests that the server does not attempt to resend the message
-     */
-    @Test
-    public void testZeroReconnectAttemptsBadHost() {
-        // Windows Server can have an issue echoing back an error, causing the test to fail by not seeing a failure sending
-        Assume.assumeFalse("Test does not run on Windows Server", SystemUtils.OS_NAME.contains("Windows Server"));
-        badHostUdpOperation.get(ElytronDescriptionConstants.RECONNECT_ATTEMPTS).set(0);
-        ModelNode response = services.executeOperation(badHostUdpOperation);
-        assertCorrectError(response, new String[] {"ELY12001", "0"});
         assertFailed(response);
     }
 
