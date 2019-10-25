@@ -241,7 +241,10 @@ if not "%PRESERVE_JAVA_OPT%" == "true" (
         move /y "%JBOSS_LOG_DIR%\gc.log.*.current" "%JBOSS_LOG_DIR%\backupgc.log.current" > nul 2>&1
 
             setlocal EnableDelayedExpansion
-            if "!MODULAR_JDK!" == "true" (
+            "!JAVA!" -Xverbosegclog:"!JBOSS_LOG_DIR!\gc.log" -version >nul 2>&1 && (set OPEN_J9_JDK=true) || (set OPEN_J9_JDK=false)
+            if "!OPEN_J9_JDK!" == "true" (
+                set TMP_PARAM=-Xverbosegclog:"!JBOSS_LOG_DIR!\gc.log"
+            ) else if "!MODULAR_JDK!" == "true" (
                 set TMP_PARAM=-Xlog:gc*:file="\"!JBOSS_LOG_DIR!\gc.log\"":time,uptimemillis:filecount=5,filesize=3M
             ) else (
                 set TMP_PARAM=-verbose:gc -Xloggc:"!JBOSS_LOG_DIR!\gc.log" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading
