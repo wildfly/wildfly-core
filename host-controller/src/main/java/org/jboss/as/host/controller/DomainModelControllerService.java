@@ -74,6 +74,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -285,24 +286,25 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final ExpressionResolver expressionResolver = new RuntimeExpressionResolver(vaultReader);
         final DomainHostExcludeRegistry domainHostExcludeRegistry = new DomainHostExcludeRegistry();
-        final DomainModelControllerService service = new DomainModelControllerService(environment, runningModeControl, processState,
+        HostControllerEnvironmentService.addService(environment, serviceTarget);
+
+        final ServiceBuilder<?> sb = serviceTarget.addService(SERVICE_NAME);
+        final Supplier<ExecutorService> esSupplier = sb.requires(HC_EXECUTOR_SERVICE_NAME);
+        final DomainModelControllerService service = new DomainModelControllerService(esSupplier, environment, runningModeControl, processState,
                 hostControllerInfo, contentRepository, hostProxies, serverProxies, prepareStepHandler, vaultReader,
                 ignoredRegistry, bootstrapListener, pathManager, expressionResolver, new DomainDelegatingResourceDefinition(),
                 hostExtensionRegistry, extensionRegistry, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, domainHostExcludeRegistry);
-
-        HostControllerEnvironmentService.addService(environment, serviceTarget);
-
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup,
-                EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
-
-        final ServiceBuilder sb = serviceTarget.addService(SERVICE_NAME, service);
-        sb.addDependency(HC_EXECUTOR_SERVICE_NAME, ExecutorService.class, service.getExecutorServiceInjector());
+        sb.setInstance(service);
         sb.addDependency(ProcessControllerConnectionService.SERVICE_NAME, ProcessControllerConnectionService.class, service.injectedProcessControllerConnection);
         sb.requires(PATH_MANAGER_CAPABILITY.getCapabilityServiceName()); // ensure this is up
         sb.install();
+
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup,
+                EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
     }
 
-    private DomainModelControllerService(final HostControllerEnvironment environment,
+    private DomainModelControllerService(final Supplier<ExecutorService> executorService,
+                                         final HostControllerEnvironment environment,
                                          final HostRunningModeControl runningModeControl,
                                          final ControlledProcessState processState,
                                          final LocalHostControllerInfoImpl hostControllerInfo,
@@ -323,7 +325,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
-        super(environment.getProcessType(), runningModeControl, null, processState,
+        super(executorService, null, environment.getProcessType(), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
@@ -523,7 +525,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
     @Override
     public void start(StartContext context) throws StartException {
-        final ExecutorService executorService = getExecutorServiceInjector().getValue();
+        final ExecutorService executorService = getExecutorService();
         this.hostControllerConfigurationPersister = new HostControllerConfigurationPersister(environment, hostControllerInfo, executorService, hostExtensionRegistry, extensionRegistry);
         setConfigurationPersister(hostControllerConfigurationPersister);
         prepareStepHandler.setExecutorService(executorService);
@@ -829,7 +831,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
             if (ok && processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
                 // Install the server > host operation handler
                 ServerToHostOperationHandlerFactoryService.install(serviceTarget, ServerInventoryService.SERVICE_NAME,
-                        getExecutorServiceInjector().getValue(), new InternalExecutor(), this, expressionResolver, environment.getDomainTempDir());
+                        getExecutorService(), new InternalExecutor(), this, expressionResolver, environment.getDomainTempDir());
 
                 // demand native mgmt services
                 final ServiceBuilder nativeSB = serviceTarget.addService(ServiceName.JBOSS.append("native-mgmt-startup"), Service.NULL);
@@ -957,7 +959,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 new DomainModelControllerService.InternalExecutor(),
                 this,
                 environment,
-                getExecutorServiceInjector().getValue(),
+                getExecutorService(),
                 currentRunningMode,
                 serverProxies,
                 domainConfigAvailable);

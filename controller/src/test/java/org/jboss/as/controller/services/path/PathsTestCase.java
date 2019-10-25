@@ -802,7 +802,7 @@ public class PathsTestCase extends AbstractControllerTestBase {
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         StabilityMonitor monitor = new StabilityMonitor();
-        getContainer().addService(PATH_MANAGER_SVC, pathManagerService)
+        getContainer().addService(PATH_MANAGER_SVC).setInstance(pathManagerService)
                 .addMonitor(monitor)
                 .install();
 
