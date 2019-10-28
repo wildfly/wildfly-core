@@ -62,6 +62,7 @@ class DomainService implements Service<SecurityDomain> {
     private String preRealmPrincipalTransformer;
     private String postRealmPrincipalTransformer;
     private String roleMapper;
+    private String roleDecoder;
 
     private final Map<String, RealmDependency> realms = new HashMap<>();
     private final Map<String, InjectedValue<PrincipalTransformer>> principalTransformers = new HashMap<>();
@@ -157,6 +158,11 @@ class DomainService implements Service<SecurityDomain> {
         return securityEventListenerInjector;
     }
 
+    Injector<RoleDecoder> createDomainRoleDecoderInjector(final String name) {
+        this.roleDecoder = name;
+        return createRoleDecoderInjector(name);
+    }
+
     @Override
     public void start(StartContext context) throws StartException {
         SecurityDomain.Builder builder = SecurityDomain.builder();
@@ -185,6 +191,9 @@ class DomainService implements Service<SecurityDomain> {
         EvidenceDecoder evidenceDecoder = evidenceDecoderInjector.getOptionalValue();
         if (evidenceDecoder != null) {
             builder.setEvidenceDecoder(evidenceDecoder);
+        }
+        if (roleDecoder != null) {
+            builder.setRoleDecoder(roleDecoders.get(roleDecoder).getValue());
         }
         if (defaultRealm != null) {
             builder.setDefaultRealmName(defaultRealm);

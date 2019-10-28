@@ -170,6 +170,11 @@ class DomainDefinition extends SimpleResourceDefinition {
         .setCapabilityReference(ROLE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
         .build();
 
+    static final SimpleAttributeDefinition ROLE_DECODER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ROLE_DECODER, ModelType.STRING, true)
+            .setMinSize(1)
+            .setCapabilityReference(ROLE_DECODER_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
+            .build();
+
     static final ObjectTypeAttributeDefinition REALM = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.REALM, REALM_NAME, REALM_PRINCIPAL_TRANSFORMER, REALM_ROLE_DECODER, ROLE_MAPPER)
         .setRequired(true)
         .build();
@@ -211,7 +216,7 @@ class DomainDefinition extends SimpleResourceDefinition {
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, PRINCIPAL_DECODER,
             REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER,
-            EVIDENCE_DECODER};
+            EVIDENCE_DECODER, ROLE_DECODER};
 
     private static final DomainAddHandler ADD = new DomainAddHandler();
     private static final OperationStepHandler REMOVE = new DomainRemoveHandler(ADD);
@@ -254,6 +259,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         String roleMapper = ROLE_MAPPER.resolveModelAttribute(context, model).asStringOrNull();
         String evidenceDecoder = EVIDENCE_DECODER.resolveModelAttribute(context, model).asStringOrNull();
         String securityEventListener = SECURITY_EVENT_LISTENER.resolveModelAttribute(context, model).asStringOrNull();
+        String roleDecoder = ROLE_DECODER.resolveModelAttribute(context, model).asStringOrNull();
 
         DomainService domain = new DomainService(defaultRealm, trustedSecurityDomain, identityOperator);
 
@@ -298,6 +304,10 @@ class DomainDefinition extends SimpleResourceDefinition {
             domainBuilder.addDependency(
                     context.getCapabilityServiceName(SECURITY_EVENT_LISTENER_CAPABILITY, securityEventListener, SecurityEventListener.class),
                     SecurityEventListener.class, domain.getSecurityEventListenerInjector());
+        }
+
+        if (roleDecoder != null) {
+            injectRoleDecoder(roleDecoder, context, domainBuilder, domain.createDomainRoleDecoderInjector(roleDecoder));
         }
 
         if (realms.isDefined()) {

@@ -20,6 +20,8 @@ embed-server --admin-only=true
 /subsystem=elytron/filesystem-realm=ManagementFsRealm:add-identity(identity=guest)
 /subsystem=elytron/filesystem-realm=ManagementFsRealm:add-identity(identity=jwt)
 /subsystem=elytron/filesystem-realm=ManagementFsRealm:add-identity(identity=client)
+/subsystem=elytron/filesystem-realm=ManagementFsRealm:add-identity(identity=alice)
+/subsystem=elytron/filesystem-realm=ManagementFsRealm:add-identity(identity=bob)
 
 /subsystem=elytron/filesystem-realm=ApplicationFsRealm:add-identity(identity=user1)
 /subsystem=elytron/filesystem-realm=ApplicationFsRealm:set-password(identity=user1, clear={password="password1"})

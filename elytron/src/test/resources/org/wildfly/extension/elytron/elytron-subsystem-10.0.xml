@@ -39,6 +39,9 @@
         <security-domain name="AnotherDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-security-domains="MyDomain">
             <realm name="PropRealm"/>
         </security-domain>
+        <security-domain name="AggregateRealm" default-realm="PropRealm" role-decoder="aggregateRoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="PropRealm" authorization-realm="FileRealm" />
@@ -191,6 +194,12 @@
             <evidence-decoder name="rfc822Decoder"/>
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
+        <source-address-role-decoder name="ipRoleDecoder" source-address="10.12.14.16" roles="admin user"/>
+        <source-address-role-decoder name="regexRoleDecoder" pattern="10\.12\.14\.\d+$" roles="employee"/>
+        <aggregate-role-decoder name="aggregateRoleDecoder">
+            <role-decoder name="ipRoleDecoder"/>
+            <role-decoder name="regexRoleDecoder"/>
+        </aggregate-role-decoder>
     </mappers>
     <permission-sets>
         <permission-set name="my-permissions">
