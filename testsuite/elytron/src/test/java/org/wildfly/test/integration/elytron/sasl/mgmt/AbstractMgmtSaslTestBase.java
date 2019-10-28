@@ -219,9 +219,13 @@ public abstract class AbstractMgmtSaslTestBase {
      * Executes :whoami operation and returns the result ModelNode.
      */
     protected static ModelNode executeWhoAmI() throws IOException {
+        return executeWhoAmI(null);
+    }
+
+    protected static ModelNode executeWhoAmI(String clientBindAddress) throws IOException {
         try (ModelControllerClient client = ModelControllerClient.Factory
                 .create(new ModelControllerClientConfiguration.Builder().setHostName(TestSuiteEnvironment.getServerAddress())
-                        .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS).build())) {
+                        .setPort(PORT_NATIVE).setProtocol("remote").setConnectionTimeout(CONNECTION_TIMEOUT_IN_MS).setClientBindAddress(clientBindAddress).build())) {
 
             ModelNode operation = new ModelNode();
             operation.get("operation").set("whoami");
@@ -235,8 +239,12 @@ public abstract class AbstractMgmtSaslTestBase {
      * Asserts that :whoami operation execution finishes successfully and returned identity (username) is the expected one.
      */
     protected static void assertWhoAmI(String expected) {
+        assertWhoAmI(expected, null);
+    }
+
+    protected static void assertWhoAmI(String expected, String clientBindAddress) {
         try {
-            ModelNode result = executeWhoAmI();
+            ModelNode result = clientBindAddress != null ? executeWhoAmI(clientBindAddress) : executeWhoAmI();
             assertTrue("The whoami operation should finish with success", Operations.isSuccessfulOutcome(result));
             assertEquals("The whoami operation returned unexpected value", expected,
                     Operations.readResult(result).get("identity").get("username").asString());

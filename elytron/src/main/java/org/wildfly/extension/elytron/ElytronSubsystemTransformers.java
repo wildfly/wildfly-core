@@ -137,6 +137,13 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .getAttributeBuilder()
                 .addRejectCheck(REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT, CREDENTIAL_REFERENCE)
                 .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ROLE_DECODER)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, DomainDefinition.ROLE_DECODER)
+                .end();
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER));
 
     }
 

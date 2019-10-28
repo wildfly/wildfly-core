@@ -30,6 +30,9 @@
                          pre-realm-principal-transformer="MyChainedTransformer" evidence-decoder="subjectDecoder">
             <realm name="PropRealm"/>
         </security-domain>
+        <security-domain name="SourceAddressRoleDecoderDomain" default-realm="TestRealm" permission-mapper="ipPermissionMapper" role-decoder="ipRoleDecoder1">
+            <realm name="TestRealm" role-decoder="groups-to-roles"/>
+        </security-domain>
     </security-domains>
     <security-realms>
         <properties-realm name="PropRealm">
@@ -37,6 +40,10 @@
         </properties-realm>
         <properties-realm name="NonDomainRealm">
             <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
+        </properties-realm>
+        <properties-realm name="TestRealm">
+            <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
+            <groups-properties path="users-roles.properties" relative-to="jboss.server.config.dir"/>
         </properties-realm>
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
@@ -69,6 +76,12 @@
                 <permission-set name="login-permission"/>
             </permission-mapping>
         </simple-permission-mapper>
+        <simple-permission-mapper name="ipPermissionMapper">
+            <permission-mapping>
+                <role name="admin"/>
+                <permission-set name="login-permission"/>
+            </permission-mapping>
+        </simple-permission-mapper>
         <constant-permission-mapper name="ConstantPermissionMapperLegacy">
             <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
         </constant-permission-mapper>
@@ -96,6 +109,7 @@
         <regex-principal-transformer name="DnsRegex" pattern="(.*)@.*.com" replacement="$1"/>
         <simple-regex-realm-mapper name="MyRealmMapper" pattern=".*@(.*)"/>
         <simple-role-decoder attribute="roles" name="MyRoleDecoder"/>
+        <simple-role-decoder name="groups-to-roles" attribute="groups"/>
         <add-prefix-role-mapper name="RolePrefixer" prefix="prefix"/>
         <add-suffix-role-mapper name="RoleSuffixer" suffix="suffix"/>
         <aggregate-role-mapper name="MyRoleMapper">
@@ -109,6 +123,7 @@
             <evidence-decoder name="rfc822Decoder"/>
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
+        <source-address-role-decoder name="ipRoleDecoder1" source-address="10.12.14.16" roles="admin user"/>
     </mappers>
     <permission-sets>
         <permission-set name="login-permission">

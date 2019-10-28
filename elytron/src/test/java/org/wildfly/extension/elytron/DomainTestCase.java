@@ -46,6 +46,8 @@ import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
+import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.authz.PermissionMappable;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.Roles;
@@ -62,6 +64,7 @@ import mockit.integration.junit4.JMockit;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.wildfly.security.authz.RoleDecoder.KEY_SOURCE_ADDRESS;
 
 
 /**
@@ -105,6 +108,7 @@ public class DomainTestCase extends AbstractSubsystemTest {
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "AggregateEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SourceAddressRoleDecoderDomain");
     }
 
     @Test
@@ -356,6 +360,74 @@ public class DomainTestCase extends AbstractSubsystemTest {
         Assert.assertEquals("0", sac.getAuthenticationPrincipal().getName());
     }
 
+    @Test
+    public void testSourceAddressRoleDecoderWithMatch() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
+        SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityDomain);
+
+        ServerAuthenticationContext sac = securityDomain.createNewAuthenticationContext();
+        sac.setAuthenticationName("user2");
+        Assert.assertFalse(sac.authorize()); // based on the security realm alone, user2 does not have "admin" role
+
+        // make use of the runtime source IP address attribute
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes("10.12.14.16"));
+        sac.setAuthenticationName("user2");
+        Assert.assertTrue(sac.authorize());
+
+        // runtime source IP address attribute not specified
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes(null));
+        sac.setAuthenticationName("user2");
+        Assert.assertFalse(sac.authorize());
+
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.setAuthenticationName("user1");
+        Assert.assertTrue(sac.authorize()); // based on the security realm alone, user1 already has "admin" role
+
+        // make use of the runtime source IP address attribute, make sure user1 still has "admin" role
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes("10.12.14.16"));
+        sac.setAuthenticationName("user1");
+        Assert.assertTrue(sac.authorize());
+
+        // make use of the runtime source IP address attribute, make sure user1 still has "admin" role
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes(null));
+        sac.setAuthenticationName("user1");
+        Assert.assertTrue(sac.authorize());
+    }
+
+    @Test
+    public void testSourceAddressRoleDecoderWithMismatch() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("SourceAddressRoleDecoderDomain");
+        SecurityDomain securityDomain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityDomain);
+
+        ServerAuthenticationContext sac = securityDomain.createNewAuthenticationContext();
+        sac.setAuthenticationName("user2");
+        Assert.assertFalse(sac.authorize()); // based on the security realm alone, user2 does not have "admin" role
+
+        // make use of the runtime source IP address attribute
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes("10.12.16.16"));
+        sac.setAuthenticationName("user2");
+        Assert.assertFalse(sac.authorize());
+
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.setAuthenticationName("user1");
+        Assert.assertTrue(sac.authorize()); // based on the security realm alone, user1 already has "admin" role
+
+        // make use of the runtime source IP address attribute, make sure user1 still has "admin" role
+        sac = securityDomain.createNewAuthenticationContext();
+        sac.addRuntimeAttributes(createRuntimeAttributes("10.12.16.16"));
+        sac.setAuthenticationName("user1");
+        Assert.assertTrue(sac.authorize());
+    }
+
     public static class MyPermissionMapper implements PermissionMapper {
         @Override
         public PermissionVerifier mapPermissions(PermissionMappable permissionMappable, Roles roles) {
@@ -422,5 +494,13 @@ public class DomainTestCase extends AbstractSubsystemTest {
             orderedCertificates[i] = builder.build();
         }
         return orderedCertificates;
+    }
+
+    private Attributes createRuntimeAttributes(String actualSourceAddress) {
+        MapAttributes runtimeAttributes = new MapAttributes();
+        if (actualSourceAddress != null) {
+            runtimeAttributes.addFirst(KEY_SOURCE_ADDRESS, actualSourceAddress);
+        }
+        return runtimeAttributes;
     }
 }

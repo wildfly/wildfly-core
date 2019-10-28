@@ -44,6 +44,7 @@ public class SimpleSecurityDomain extends AbstractConfigurableElement {
     private final String roleMapper;
     private final String securityEventListener;
     private final String[] trustedSecurityDomains;
+    private final String roleDecoder;
 
     private SimpleSecurityDomain(Builder builder) {
         super(builder);
@@ -59,6 +60,7 @@ public class SimpleSecurityDomain extends AbstractConfigurableElement {
         this.roleMapper = builder.roleMapper;
         this.securityEventListener = builder.securityEventListener;
         this.trustedSecurityDomains = builder.trustedSecurityDomains;
+        this.roleDecoder = builder.roleDecoder;
     }
 
     @Override
@@ -89,6 +91,7 @@ public class SimpleSecurityDomain extends AbstractConfigurableElement {
         setIfNotNull(op, "role-mapper", roleMapper);
         setIfNotNull(op, "security-event-listener", securityEventListener);
         setIfNotNull(op, "trusted-security-domains", trustedSecurityDomains);
+        setIfNotNull(op, "role-decoder", roleDecoder);
         CoreUtils.applyUpdate(op, client);
     }
 
@@ -123,6 +126,7 @@ public class SimpleSecurityDomain extends AbstractConfigurableElement {
         private String roleMapper;
         private String securityEventListener;
         private String[] trustedSecurityDomains;
+        private String roleDecoder;
 
         private Builder() {
         }
@@ -184,6 +188,11 @@ public class SimpleSecurityDomain extends AbstractConfigurableElement {
 
         public Builder withTrustedSecurityDomains(String[] trustedSecurityDomains) {
             this.trustedSecurityDomains = trustedSecurityDomains;
+            return this;
+        }
+
+        public Builder withRoleDecoder(String roleDecoder) {
+            this.roleDecoder = roleDecoder;
             return this;
         }
 

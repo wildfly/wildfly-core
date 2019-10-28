@@ -31,6 +31,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM_MAPPING;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAPPING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
@@ -62,7 +63,8 @@ class MapperParser {
         VERSION_1_1,
         VERSION_3_0, // permission-sets in permission-mappings and constant-permission-mappers
         VERSION_4_0, // mapped-role-mappers
-        CURRENT // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
+        VERSION_5_0, // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
+        CURRENT // source-address-role-decoder, aggregate-role-decoder
     }
 
     private final Version version;
@@ -172,6 +174,16 @@ class MapperParser {
 
     private PersistentResourceXMLDescription simpleRoleDecoderParser = PersistentResourceXMLDescription.builder(RoleDecoderDefinitions.getSimpleRoleDecoderDefinition().getPathElement())
             .addAttribute(RoleDecoderDefinitions.ATTRIBUTE)
+            .build();
+
+    private PersistentResourceXMLDescription sourceAddressRoleDecoderParser = PersistentResourceXMLDescription.builder(RoleDecoderDefinitions.getSourceAddressRoleDecoderDefinition().getPathElement())
+            .addAttribute(RoleDecoderDefinitions.SOURCE_ADDRESS)
+            .addAttribute(RoleDecoderDefinitions.PATTERN)
+            .addAttribute(RoleDecoderDefinitions.ROLES)
+            .build();
+
+    private PersistentResourceXMLDescription aggregateRoleDecoderParser = PersistentResourceXMLDescription.builder(RoleDecoderDefinitions.getAggregateRoleDecoderDefinition().getPathElement())
+            .addAttribute(RoleDecoderDefinitions.getAggregateRoleDecoderDefinition().getReferencesAttribute(), new AttributeParsers.NamedStringListParser(ROLE_DECODER), new AttributeMarshallers.NamedStringListMarshaller(ROLE_DECODER))
             .build();
 
     private PersistentResourceXMLDescription mappedRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getMappedRoleMapperDefinition().getPathElement())
@@ -340,13 +352,7 @@ class MapperParser {
                 .build();
     }
 
-    public PersistentResourceXMLDescription getParser() {
-        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
-            return getParser_1_0_to_3_0();
-        }
-        if (version.equals(Version.VERSION_4_0)) {
-            return getParser_4_0();
-        }
+    private PersistentResourceXMLDescription getParser_5_0() {
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
@@ -380,6 +386,54 @@ class MapperParser {
                 .addChild(x509SubjectAltNameEvidenceDecoder) // new
                 .addChild(getCustomComponentParser(CUSTOM_EVIDENCE_DECODER)) // new
                 .addChild(aggregateEvidenceDecoderParser) // new
+                .build();
+    }
+
+    public PersistentResourceXMLDescription getParser() {
+        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
+            return getParser_1_0_to_3_0();
+        }
+        if (version.equals(Version.VERSION_4_0)) {
+            return getParser_4_0();
+        }
+        if (version.equals(Version.VERSION_5_0)) {
+            return getParser_5_0();
+        }
+        return decorator(ElytronDescriptionConstants.MAPPERS)
+                .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
+                .addChild(logicalPermissionMapper)
+                .addChild(getSimpleMapperParser())
+                .addChild(getConstantPermissionMapperParser())
+                .addChild(aggregatePrincipalDecoderParser)
+                .addChild(concatenatingPrincipalDecoderParser)
+                .addChild(constantPrincipalDecoderParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_DECODER))
+                .addChild(x500AttributePrincipalDecoderParser)
+                .addChild(aggregatePrincipalTransformerParser)
+                .addChild(chainedPrincipalTransformersParser)
+                .addChild(constantPrincipalTransformersParser)
+                .addChild(getCustomComponentParser(CUSTOM_PRINCIPAL_TRANSFORMER))
+                .addChild(regexPrincipalTransformerParser)
+                .addChild(regexValidatingTransformerParser)
+                .addChild(constantRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_REALM_MAPPER))
+                .addChild(simpleRegexRealmMapperParser)
+                .addChild(mappedRegexRealmMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_DECODER))
+                .addChild(simpleRoleDecoderParser)
+                .addChild(addPrefixRoleMapperParser)
+                .addChild(addSuffixRoleMapperParser)
+                .addChild(aggregateRoleMapperParser)
+                .addChild(constantRoleMapperParser)
+                .addChild(getCustomComponentParser(CUSTOM_ROLE_MAPPER))
+                .addChild(logicalRoleMapperParser)
+                .addChild(mappedRoleMapperParser)
+                .addChild(x500SubjectEvidenceDecoderParser)
+                .addChild(x509SubjectAltNameEvidenceDecoder)
+                .addChild(getCustomComponentParser(CUSTOM_EVIDENCE_DECODER))
+                .addChild(aggregateEvidenceDecoderParser)
+                .addChild(sourceAddressRoleDecoderParser) // new
+                .addChild(aggregateRoleDecoderParser) // new
                 .build();
     }
 }
