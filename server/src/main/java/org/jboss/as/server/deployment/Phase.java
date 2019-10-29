@@ -401,6 +401,7 @@ public enum Phase {
     public static final int PARSE_ORIENT_DRIVER                         = 0x4C01;
     public static final int PARSE_CASSANDRA_DRIVER                      = 0x4C02;
     public static final int PARSE_MONGO_DRIVER                          = 0x4C03;
+    public static final int PARSE_MICROPROFILE_JWT_DETECTION            = 0x4C0D;
 
     // REGISTER
     /**
@@ -450,7 +451,9 @@ public enum Phase {
     public static final int DEPENDENCIES_MICROPROFILE_HEALTH            = 0x1870;
     public static final int DEPENDENCIES_MICROPROFILE_OPENTRACING       = 0x1880;
     public static final int DEPENDENCIES_MICROPROFILE_OPENAPI           = 0x1890;
+    public static final int DEPENDENCIES_MICROPROFILE_JWT               = 0x18A0;
     public static final int DEPENDENCIES_MICROPROFILE_FAULT_TOLERANCE   = 0x1900;
+
 
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
