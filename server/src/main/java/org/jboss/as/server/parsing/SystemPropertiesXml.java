@@ -42,11 +42,13 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.VaultReader;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.server.controller.resources.SystemPropertyResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.operations.SystemPropertyAddHandler;
@@ -68,6 +70,35 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class SystemPropertiesXml {
+
+    /**
+     * Helper vault reader to detect the presence of vaults in the properties.
+     */
+    private static class PresentVaultReader implements VaultReader {
+
+        private boolean vaultPresent;
+
+        public PresentVaultReader() {
+            vaultPresent = false;
+        }
+
+        @Override
+        public boolean isVaultFormat(String toCheck) {
+            return toCheck != null && VaultReader.STANDARD_VAULT_PATTERN.matcher(toCheck).matches();
+        }
+
+        @Override
+        public String retrieveFromVault(String vaultedData) {
+            if (isVaultFormat(vaultedData)) {
+                vaultPresent = true;
+            }
+            return vaultedData;
+        }
+
+        public boolean isVaultPresent() {
+            return vaultPresent;
+        }
+    };
 
     void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address,
             final Namespace expectedNs, final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
@@ -137,10 +168,12 @@ class SystemPropertiesXml {
             }
 
             try {
-                String newPropertyValue = SystemPropertyResourceDefinition.VALUE.resolveValue(ExpressionResolver.SIMPLE, op.get(VALUE)).asString();
+                PresentVaultReader vaultReader = new PresentVaultReader();
+                ExpressionResolver resolver = new RuntimeExpressionResolver(vaultReader);
+                String newPropertyValue = SystemPropertyResourceDefinition.VALUE.resolveValue(resolver, op.get(VALUE)).asString();
                 String oldPropertyValue = properties.getProperty(name);
-                if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue)) {
-                    ControllerLogger.ROOT_LOGGER.systemPropertyAlreadyExist(name, oldPropertyValue, newPropertyValue);
+                if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue) && !vaultReader.isVaultPresent()) {
+                    ControllerLogger.ROOT_LOGGER.systemPropertyAlreadyExist(name);
                 }
             } catch (OperationFailedException e) {
                 ServerLogger.AS_ROOT_LOGGER.tracef(e, "Failed to resolve value for system property %s at parse time.", name);
