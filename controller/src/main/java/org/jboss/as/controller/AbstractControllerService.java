@@ -186,29 +186,6 @@ public abstract class AbstractControllerService implements Service<ModelControll
      * @param runningModeControl      the controller of the process' running mode
      * @param configurationPersister  the configuration persister
      * @param processState            the controlled process state
-     * @param rootDescriptionProvider the root description provider
-     * @param prepareStep             the prepare step to prepend to operation execution
-     * @param expressionResolver      the expression resolver
-     * @param auditLogger             the audit logger
-     */
-    @Deprecated
-    protected AbstractControllerService(final ProcessType processType, final RunningModeControl runningModeControl,
-                                        final ConfigurationPersister configurationPersister,
-                                        final ControlledProcessState processState, final DescriptionProvider rootDescriptionProvider,
-                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
-                                        final ManagedAuditLogger auditLogger, DelegatingConfigurableAuthorizer authorizer, ManagementSecurityIdentitySupplier securityIdentitySupplier) {
-        this(null, null, processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, new CapabilityRegistry(processType.isServer()));
-
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param processType             the type of process being controlled
-     * @param runningModeControl      the controller of the process' running mode
-     * @param configurationPersister  the configuration persister
-     * @param processState            the controlled process state
      * @param rootResourceDefinition  the root resource definition
      * @param prepareStep             the prepare step to prepend to operation execution
      * @param expressionResolver      the expression resolver
