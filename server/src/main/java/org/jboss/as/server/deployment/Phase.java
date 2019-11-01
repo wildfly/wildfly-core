@@ -628,6 +628,7 @@ public enum Phase {
     // INSTALL
     public static final int INSTALL_SHARED_SESSION_MANAGER              = 0x0100;
     public static final int INSTALL_JACC_POLICY                         = 0x0350;
+    public static final int INSTALL_VIRTUAL_SECURITY_DOMAIN             = 0x0360;
     public static final int INSTALL_COMPONENT_AGGREGATION               = 0x0400;
     public static final int INSTALL_RESOLVE_MESSAGE_DESTINATIONS        = 0x0403;
     public static final int INSTALL_EJB_CLIENT_CONTEXT                  = 0x0404;

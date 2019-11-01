@@ -514,6 +514,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
                             processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.CONFIGURE_MODULE, Phase.CONFIGURE_DEFAULT_SSL_CONTEXT, new SSLContextDependencyProcessor());
                         }
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.FIRST_MODULE_USE, Phase.FIRST_MODULE_USE_AUTHENTICATION_CONTEXT, new AuthenticationContextAssociationProcessor());
+                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.INSTALL, Phase.INSTALL_VIRTUAL_SECURITY_DOMAIN, new VirtualSecurityDomainProcessor());
                     }
                 }, Stage.RUNTIME);
             }
