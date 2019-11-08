@@ -29,7 +29,7 @@
         <module name="javax.json.api" />
     </dependencies>
     <resources>
-        <artifact name="org.glassfish:jakarta.json:${version.org.jakarta.javax.json}"/>
+        <artifact name="org.glassfish:jakarta.json:${version.org.glassfish.jakarta.json}"/>
     </resources>
 
 </module>
