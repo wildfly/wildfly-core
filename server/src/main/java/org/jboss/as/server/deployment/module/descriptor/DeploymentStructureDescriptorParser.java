@@ -294,7 +294,8 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             }
             deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_ANNOTATION_INDEXES, identifier);
             // additional modules will not be created till much later, a dep on them would fail
-            if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) && !additionalModules.keySet().contains(identifier)) {
+            if (identifier.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX) &&
+                !(additionalModules.keySet().contains(identifier) || isSubdeployment(identifier, deploymentUnit))) {
                 phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, ServiceModuleLoader.moduleServiceName(identifier));
             }
         }
@@ -303,6 +304,11 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
         if(rootDeploymentSpecification.getExcludedSubsystems() != null) {
             deploymentUnit.putAttachment(Attachments.EXCLUDED_SUBSYSTEMS, rootDeploymentSpecification.getExcludedSubsystems());
         }
+    }
+
+    private boolean isSubdeployment(ModuleIdentifier dependency, DeploymentUnit deploymentUnit) {
+        DeploymentUnit top = deploymentUnit.getParent()==null?deploymentUnit:deploymentUnit.getParent();
+        return dependency.getName().startsWith(ServiceModuleLoader.MODULE_PREFIX.concat(top.getName()));
     }
 
     private Map<VirtualFile, ResourceRoot> resourceRoots(final DeploymentUnit deploymentUnit) {
