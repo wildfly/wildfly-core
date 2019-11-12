@@ -38,7 +38,7 @@
     <name>WildFly: Logging Subsystem</name>
     <properties>
         <surefire.argLine>${surefire.system.args}</surefire.argLine>
-        <jboss.modules.dir>${project.build.testOutputDirectory}/modules</jboss.modules.dir>
+        <jboss.modules.dir>${project.build.directory}${file.separator}modules</jboss.modules.dir>
         <test.class.path>${project.build.testOutputDirectory}</test.class.path>
     </properties>
 
@@ -55,7 +55,7 @@
             <testResource>
                 <directory>src/test/modules</directory>
                 <filtering>true</filtering>
-                <targetPath>${project.build.testOutputDirectory}/modules</targetPath>
+                <targetPath>${jboss.modules.dir}</targetPath>
             </testResource>
         </testResources>
         <plugins>
@@ -83,6 +83,7 @@
                         -->
                         <jboss.modules.dir>${jboss.modules.dir}</jboss.modules.dir>
                         <module.path>${jboss.modules.dir}</module.path>
+                        <maven.repo.local>${settings.localRepository}</maven.repo.local>
                         <jboss.server.log.dir>${project.build.directory}${file.separator}logs</jboss.server.log.dir>
                         <jboss.server.config.dir>${project.build.directory}${file.separator}config</jboss.server.config.dir>
                         <org.jboss.byteman.contrib.bmunit.agent.inhibit>true</org.jboss.byteman.contrib.bmunit.agent.inhibit>
