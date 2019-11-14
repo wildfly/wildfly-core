@@ -81,7 +81,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parser and marshaller for domain-wide configuration xml documents (e.g. domain.xml) that use the urn:jboss:domain:9.0 schema.
@@ -678,13 +677,6 @@ final class DomainXml_9 extends CommonXml implements ManagementXmlDelegate {
                 }
             }
         }
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
-        accessControlXml.writeAccessControl(writer, accessAuthorization);
 
         return true;
     }
