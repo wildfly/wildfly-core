@@ -93,7 +93,7 @@ public enum Namespace {
     DOMAIN_10_0(10, "urn:jboss:domain:10.0"),
 
     // WF 19 / EAP 7.3
-    DOMAIN_11_0(10, "urn:jboss:domain:11.0");
+    DOMAIN_11_0(11, "urn:jboss:domain:11.0");
 
     /**
      * The current namespace version.
