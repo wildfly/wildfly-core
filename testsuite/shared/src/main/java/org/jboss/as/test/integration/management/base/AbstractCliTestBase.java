@@ -21,12 +21,19 @@
  */
 package org.jboss.as.test.integration.management.base;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.test.integration.common.HttpRequest;
+import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
+import org.jboss.dmr.ModelNode;
 
 
 /**
@@ -95,5 +102,30 @@ public class AbstractCliTestBase {
         } catch (Exception e) {
         }
         return true;
+    }
+
+    protected void assertState(String expected, int timeout, String readOperation) throws IOException, InterruptedException {
+        long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
+        StringBuilder history = new StringBuilder();
+        String state = null;
+        do {
+            try {
+                cli.sendLine(readOperation, true);
+                CLIOpResult result = cli.readAllAsOpResult();
+                ModelNode resp = result.getResponseNode();
+                ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
+                state = stateNode.asString();
+                history.append(state).append("\n");
+            } catch (Exception ignored) {
+                //
+                history.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
+            }
+            if (expected.equals(state)) {
+                return;
+            } else {
+                Thread.sleep(20);
+            }
+        } while (timeout > 0 && System.currentTimeMillis() < done);
+        assertEquals(history.toString(), expected, state);
     }
 }
