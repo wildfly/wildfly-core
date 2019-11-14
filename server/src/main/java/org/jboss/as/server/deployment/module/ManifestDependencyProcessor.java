@@ -69,6 +69,9 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
         final List<ResourceRoot> allResourceRoots = DeploymentUtils.allResourceRoots(deploymentUnit);
         DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
 
+        // Block until top level deployment and all subdeployments have finished registering additional modules
+        phaseContext.getAttachment(Attachments.ADDITIONAL_MODULES_COORDINATOR).awaitManifestClassPathAdditionalModules();
+
         Set<ModuleIdentifier> additionalModules = new HashSet<>();
         for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
             additionalModules.add(i.getModuleIdentifier());

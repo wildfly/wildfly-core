@@ -25,8 +25,10 @@ package org.jboss.as.server.deployment.module;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -81,6 +83,18 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
      * with the same external module, and do not both create an external module with the same name.
      */
     public synchronized void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+        final AdditionalModuleCoordinator additionalModuleCoordinator = phaseContext.getAttachment(Attachments.ADDITIONAL_MODULES_COORDINATOR);
+        // New additional modules we identify.
+        final List<AdditionalModuleSpecification> newAdditionalModules = new ArrayList<>();
+        try {
+            deploy(phaseContext, additionalModuleCoordinator, newAdditionalModules);
+        } finally {
+            // Invoke this even if an exception occurs to prevent the exception causing a hang as other parts
+            // of the deployment block waiting for this invocation.
+            additionalModuleCoordinator.registerClassPathAdditionalModules(newAdditionalModules);
+        }
+    }
+    private void deploy(final DeploymentPhaseContext phaseContext, final AdditionalModuleCoordinator additionalModuleCoordinator, final List<AdditionalModuleSpecification> newAdditionalModules) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
 
 
@@ -129,7 +143,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         // note that if a resource root has been added to two different additional modules
         // and is then referenced via a Class-Path entry the behaviour is undefined
         final Map<VirtualFile, AdditionalModuleSpecification> additionalModules = new HashMap<VirtualFile, AdditionalModuleSpecification>();
-        for (AdditionalModuleSpecification module : topLevelDeployment.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
+        for (AdditionalModuleSpecification module : additionalModuleCoordinator.getAdditionalModules()) {
             for (ResourceRoot additionalModuleResourceRoot : module.getResourceRoots()) {
                 additionalModules.put(additionalModuleResourceRoot.getRoot(), module);
             }
@@ -177,7 +191,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                         if (!found) {
                             ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
                         } else {
-                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, topLevelRoot, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, classPathFile);
+                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, topLevelRoot, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, classPathFile, newAdditionalModules);
                         }
                     } else if (topLevelClassPathFile.exists()) {
                         boolean found = false;
@@ -191,7 +205,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                         if (!found) {
                             ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
                         } else {
-                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, topLevelRoot, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, topLevelClassPathFile);
+                            handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, topLevelRoot, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, topLevelClassPathFile, newAdditionalModules);
                         }
                     } else {
                         ServerLogger.DEPLOYMENT_LOGGER.classPathEntryNotValid(item, resourceRoot.getRoot().getPathName());
@@ -201,7 +215,12 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         }
     }
 
-    private void handlingExistingClassPathEntry(final ArrayDeque<RootEntry> resourceRoots, final DeploymentUnit topLevelDeployment, final VirtualFile topLevelRoot, final Map<VirtualFile, ResourceRoot> subDeployments, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final Set<VirtualFile> existingAccessibleRoots, final ResourceRoot resourceRoot, final Attachable target, final VirtualFile classPathFile) throws DeploymentUnitProcessingException {
+    private void handlingExistingClassPathEntry(final ArrayDeque<RootEntry> resourceRoots, final DeploymentUnit topLevelDeployment,
+                                                final VirtualFile topLevelRoot, final Map<VirtualFile, ResourceRoot> subDeployments,
+                                                final Map<VirtualFile, AdditionalModuleSpecification> additionalModules,
+                                                final Set<VirtualFile> existingAccessibleRoots, final ResourceRoot resourceRoot,
+                                                final Attachable target, final VirtualFile classPathFile,
+                                                final List<AdditionalModuleSpecification> newAdditionalModules) throws DeploymentUnitProcessingException {
         if (existingAccessibleRoots.contains(classPathFile)) {
             ServerLogger.DEPLOYMENT_LOGGER.debugf("Class-Path entry %s in %s ignored, as target is already accessible", classPathFile, resourceRoot.getRoot());
         } else if (additionalModules.containsKey(classPathFile)) {
@@ -215,17 +234,20 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             final ResourceRoot otherRoot = subDeployments.get(classPathFile);
             target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, ModuleIdentifierProcessor.createModuleIdentifier(otherRoot.getRootName(), otherRoot, topLevelDeployment, topLevelRoot, false));
         } else {
-            ModuleIdentifier identifier = createAdditionalModule(resourceRoot, topLevelDeployment, topLevelRoot, additionalModules, classPathFile, resourceRoots);
+            ModuleIdentifier identifier = createAdditionalModule(resourceRoot, topLevelDeployment, topLevelRoot, additionalModules, classPathFile, resourceRoots, newAdditionalModules);
             target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, identifier);
         }
     }
 
-    private ModuleIdentifier createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment, final VirtualFile topLevelRoot, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules, final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots) throws DeploymentUnitProcessingException {
+    private ModuleIdentifier createAdditionalModule(final ResourceRoot resourceRoot, final DeploymentUnit topLevelDeployment,
+                                                    final VirtualFile topLevelRoot, final Map<VirtualFile, AdditionalModuleSpecification> additionalModules,
+                                                    final VirtualFile classPathFile, final ArrayDeque<RootEntry> resourceRoots,
+                                                    final List<AdditionalModuleSpecification> newAdditionalModules) throws DeploymentUnitProcessingException {
         final ResourceRoot root = createResourceRoot(classPathFile, topLevelDeployment, topLevelRoot);
         final String pathName = root.getRoot().getPathNameRelativeTo(topLevelRoot);
         ModuleIdentifier identifier = ModuleIdentifier.create(ServiceModuleLoader.MODULE_PREFIX + topLevelDeployment.getName() + "." + pathName);
         AdditionalModuleSpecification module = new AdditionalModuleSpecification(identifier, root);
-        topLevelDeployment.addToAttachmentList(Attachments.ADDITIONAL_MODULES, module);
+        newAdditionalModules.add(module);
         additionalModules.put(classPathFile, module);
         resourceRoot.addToAttachmentList(Attachments.CLASS_PATH_RESOURCE_ROOTS, root);
 

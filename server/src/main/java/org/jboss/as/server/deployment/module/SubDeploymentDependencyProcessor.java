@@ -63,8 +63,10 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
         }
 
         // make the deployment content available to any additional modules
-        for (AdditionalModuleSpecification module : deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-            module.addLocalDependency(new ModuleDependency(moduleLoader, moduleIdentifier, false, false, true, false));
+        if (deploymentUnit.getParent() == null) { // only a top level deployment has additional modules attached
+            for (AdditionalModuleSpecification module : deploymentUnit.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
+                module.addLocalDependency(new ModuleDependency(moduleLoader, moduleIdentifier, false, false, true, false));
+            }
         }
 
         final List<DeploymentUnit> subDeployments = parent.getAttachmentList(Attachments.SUB_DEPLOYMENTS);

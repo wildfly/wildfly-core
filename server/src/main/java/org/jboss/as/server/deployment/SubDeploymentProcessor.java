@@ -29,6 +29,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.server.deployment.module.AdditionalModuleCoordinator;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.service.ServiceController;
@@ -54,12 +55,21 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             }
         }
 
+        final AdditionalModuleCoordinator additionalModuleCoordinator;
+        if (deploymentUnit.getParent() == null) {
+            additionalModuleCoordinator = new AdditionalModuleCoordinator(deploymentUnit);
+            phaseContext.putAttachment(Attachments.ADDITIONAL_MODULES_COORDINATOR, additionalModuleCoordinator);
+        } else {
+            additionalModuleCoordinator = phaseContext.getAttachment(Attachments.ADDITIONAL_MODULES_COORDINATOR);
+        }
+
         final ServiceTarget serviceTarget = phaseContext.getServiceTarget();
         final List<ResourceRoot> childRoots = deploymentUnit.getAttachmentList(Attachments.RESOURCE_ROOTS);
         for (final ResourceRoot childRoot : childRoots) {
             if (childRoot == deploymentResourceRoot || !SubDeploymentMarker.isSubDeployment(childRoot)) {
                 continue;
             }
+
             final Resource resource = DeploymentResourceSupport.getOrCreateSubDeployment(childRoot.getRootName(), deploymentUnit);
             final ImmutableManagementResourceRegistration registration = deploymentUnit.getAttachment(DeploymentResourceSupport.REGISTRATION_ATTACHMENT);
             final ManagementResourceRegistration mutableRegistration =  deploymentUnit.getAttachment(DeploymentResourceSupport.MUTABLE_REGISTRATION_ATTACHMENT);
@@ -78,6 +88,8 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             phaseContext.addDeploymentDependency(serviceName, Attachments.SUB_DEPLOYMENTS);
             //we also need a dep on the first phase of the sub deployments
             phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, serviceName.append(ServiceName.of(Phase.STRUCTURE.name())));
+
+            additionalModuleCoordinator.recordSubdeployment();
         }
     }
 

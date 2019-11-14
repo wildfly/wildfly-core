@@ -41,6 +41,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.server.DeployerChainAddHandler;
+import org.jboss.as.server.deployment.module.AdditionalModuleCoordinator;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.deployment.AttachmentKey;
@@ -123,6 +124,24 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
+        final AdditionalModuleCoordinator additionalModuleCoordinator = phaseContext.getAttachment(Attachments.ADDITIONAL_MODULES_COORDINATOR);
+
+        if (deploymentUnit.getParent() != null) {
+            deploy(phaseContext, deploymentUnit, additionalModuleCoordinator, null);
+        } else {
+            final Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
+            try {
+                deploy(phaseContext, deploymentUnit, additionalModuleCoordinator, additionalModules);
+            } finally {
+                // Invoke this even if an exception occurs to prevent the exception causing a hang as other parts
+                // of the deployment block waiting for this invocation.
+                additionalModuleCoordinator.registerRootAdditionalModules(additionalModules.values());
+            }
+        }
+    }
+
+    private void deploy(final DeploymentPhaseContext phaseContext, final DeploymentUnit deploymentUnit, final AdditionalModuleCoordinator additionalModuleCoordinator, final Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules) throws DeploymentUnitProcessingException {
+
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
         final ServiceModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
 
@@ -130,11 +149,11 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             //if the parent has already attached parsed data for this sub deployment we need to process it
             if (deploymentRoot.hasAttachment(SUB_DEPLOYMENT_STRUCTURE)) {
                 final ModuleSpecification subModuleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-                Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
-                for(AdditionalModuleSpecification i : deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-                    additionalModules.put(i.getModuleIdentifier(), i);
+                Map<ModuleIdentifier, AdditionalModuleSpecification> parentAdditionalModules = new HashMap<>();
+                for(AdditionalModuleSpecification i : additionalModuleCoordinator.getAdditionalModules()) {
+                    parentAdditionalModules.put(i.getModuleIdentifier(), i);
                 }
-                handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
+                handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), parentAdditionalModules);
             }
         }
 
@@ -165,7 +184,6 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 result = parse(deploymentFile.getPhysicalFile(), deploymentUnit, moduleLoader);
             }
             // handle additional modules
-            Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
             for (final ModuleStructureSpec additionalModule : result.getAdditionalModules()) {
                 for (final ModuleIdentifier identifier : additionalModule.getAnnotationModules()) {
                     //additional modules don't support annotation imports
@@ -185,7 +203,6 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 additional.addAliases(additionalModule.getAliases());
                 additional.addSystemDependencies(additionalModule.getModuleDependencies());
                 additionalModules.put(additional.getModuleIdentifier(), additional);
-                deploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, additional);
                 for (final ResourceRoot root : additionalModuleResourceRoots) {
                     ResourceRootIndexer.indexResourceRoot(root);
                 }

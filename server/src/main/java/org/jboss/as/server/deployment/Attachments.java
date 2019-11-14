@@ -31,6 +31,7 @@ import java.util.jar.Manifest;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
+import org.jboss.as.server.deployment.module.AdditionalModuleCoordinator;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
 import org.jboss.as.server.deployment.module.ExtensionInfo;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
@@ -201,6 +202,11 @@ public final class Attachments {
      * Additional modules attached to the top level deployment
      */
     public static final AttachmentKey<AttachmentList<AdditionalModuleSpecification>> ADDITIONAL_MODULES = AttachmentKey.createList(AdditionalModuleSpecification.class);
+
+    /**
+     * Coordinates populating the {@link #ADDITIONAL_MODULES} attachment list.
+     */
+    public static final AttachmentKey<AdditionalModuleCoordinator> ADDITIONAL_MODULES_COORDINATOR = AttachmentKey.create(AdditionalModuleCoordinator.class);
 
     public static final AttachmentKey<AttachmentList<ModuleIdentifier>> ADDITIONAL_ANNOTATION_INDEXES = AttachmentKey.createList(ModuleIdentifier.class);
 
