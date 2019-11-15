@@ -23,6 +23,7 @@
 package org.jboss.as.controller.management;
 
 import java.util.List;
+import java.util.Map;
 
 import org.xnio.OptionMap;
 
@@ -90,6 +91,34 @@ public interface HttpInterfaceCommonPolicy {
      * @return The list of origins that the server should accept requests from.
      */
     List<String> getAllowedOrigins();
+
+    /**
+     * A set of HTTP headers that should be set on each response based on matching the key of the map as being a prefix of the requested path.
+     *
+     * A prefix is inclusive of an exact match.
+     *
+     * @return A {@link Map} of the constant headers to be set on each response with the key being used as the prefix.
+     */
+    Map<String, List<Header>> getConstantHeaders();
+
+    static class Header {
+        final String name;
+        final String value;
+
+        Header(String name, String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+    }
 
 }
 

@@ -118,6 +118,7 @@ public class ModelDescriptionConstants {
     public static final String CONNECTION = "connection";
     public static final String CONNECTIONS = "connections";
     public static final String CONSOLE_ENABLED = "console-enabled";
+    public static final String CONSTANT_HEADERS = "constant-headers";
     public static final String CONTENT = "content";
     public static final String CORE = "core";
     public static final String CORE_SERVICE = "core-service";
@@ -225,6 +226,10 @@ public class ModelDescriptionConstants {
     public static final String HANDLER = "handler";
     public static final String HASH = "hash";
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
+    public static final String HEADER = "header";
+    public static final String HEADER_MAPPING = "header-mapping";
+    public static final String HEADER_PAIR = "header-pair";
+    public static final String HEADERS = "headers";
     public static final String HOST = "host";
     public static final String HOSTS = "hosts";
     public static final String HOST_CONFIG = "host-config";

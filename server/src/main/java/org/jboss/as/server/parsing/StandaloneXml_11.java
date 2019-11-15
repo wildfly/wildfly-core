@@ -49,6 +49,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.nextElement;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
+import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER;
@@ -67,6 +68,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
@@ -394,12 +396,72 @@ final class StandaloneXml_11 extends CommonXml implements ManagementXmlDelegate 
                 case HTTP_UPGRADE:
                     parseHttpUpgrade(reader, addOp);
                     break;
+                case CONSTANT_HEADERS:
+                    parseConstantHeaders(reader, addOp);
+                    break;
                 default:
                     throw unexpectedElement(reader);
             }
         }
 
         list.add(addOp);
+    }
+
+    private void parseConstantHeaders(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
+        // Attributes
+        requireNoAttributes(reader);
+
+        ModelNode constantHeaders= new ModelNode();
+        // Content
+        while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+            requireNamespace(reader, namespace);
+            if (Element.forName(reader.getLocalName()) != Element.HEADER_MAPPING) {
+                throw unexpectedElement(reader);
+            }
+
+            ModelNode headerMapping = new ModelNode();
+            requireSingleAttribute(reader, Attribute.PATH.getLocalName());
+            // After double checking the name of the only attribute we can retrieve it.
+            HttpManagementResourceDefinition.PATH.parseAndSetParameter(reader.getAttributeValue(0), headerMapping, reader);
+            ModelNode headers = new ModelNode();
+            while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
+                requireNamespace(reader, namespace);
+                if (Element.forName(reader.getLocalName()) != Element.HEADER) {
+                    throw unexpectedElement(reader);
+                }
+
+                ModelNode header= new ModelNode();
+                final int count = reader.getAttributeCount();
+                for (int i = 0; i < count; i++) {
+                    final String value = reader.getAttributeValue(i);
+                    if (!isNoNamespaceAttribute(reader, i)) {
+                        throw unexpectedAttribute(reader, i);
+                    } else {
+                        final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
+                        switch (attribute) {
+                            case HEADER: {
+                                HttpManagementResourceDefinition.HEADER_NAME.parseAndSetParameter(value, header, reader);
+                                break;
+                            }
+                            case VALUE: {
+                                HttpManagementResourceDefinition.HEADER_VALUE.parseAndSetParameter(value, header, reader);
+                                break;
+                            }
+                            default:
+                                throw unexpectedAttribute(reader, i);
+                        }
+                    }
+                }
+                headers.add(header);
+
+                requireNoContent(reader);
+            }
+
+            headerMapping.get(ModelDescriptionConstants.HEADERS).set(headers);
+            constantHeaders.add(headerMapping);
+        }
+
+        addOp.get(ModelDescriptionConstants.CONSTANT_HEADERS).set(constantHeaders);
     }
 
     private void parseHttpManagementSocketBinding(XMLExtendedStreamReader reader, ModelNode addOp) throws XMLStreamException {
@@ -923,6 +985,23 @@ final class StandaloneXml_11 extends CommonXml implements ManagementXmlDelegate 
             writer.writeEmptyElement(Element.SOCKET_BINDING.getLocalName());
             HttpManagementResourceDefinition.SOCKET_BINDING.marshallAsAttribute(protocol, writer);
             HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.marshallAsAttribute(protocol, writer);
+        }
+
+        if (HttpManagementResourceDefinition.CONSTANT_HEADERS.isMarshallable(protocol)) {
+            writer.writeStartElement(Element.CONSTANT_HEADERS.getLocalName());
+
+            for (ModelNode headerMapping : protocol.require(ModelDescriptionConstants.CONSTANT_HEADERS).asList()) {
+                writer.writeStartElement(Element.HEADER_MAPPING.getLocalName());
+                BaseHttpInterfaceResourceDefinition.PATH.marshallAsAttribute(headerMapping, writer);
+                for (ModelNode header : headerMapping.require(ModelDescriptionConstants.HEADERS).asList()) {
+                    writer.writeEmptyElement(Element.HEADER.getLocalName());
+                    BaseHttpInterfaceResourceDefinition.HEADER_NAME.marshallAsAttribute(header, writer);
+                    BaseHttpInterfaceResourceDefinition.HEADER_VALUE.marshallAsAttribute(header, writer);
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement();
         }
 
         writer.writeEndElement();

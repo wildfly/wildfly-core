@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -42,6 +43,7 @@ import io.undertow.server.handlers.resource.ResourceManager;
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
@@ -107,6 +109,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Supplier<SSLContext> sslContextSupplier;
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
+    private final Map<String, List<Header>> constantHeaders;
     private ManagementHttpServer serverManagement;
     private SocketBindingManager socketBindingManager;
     private boolean useUnmanagedBindings = false;
@@ -217,7 +220,8 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Integer securePort,
                                          final Collection<String> allowedOrigins,
                                          final ConsoleMode consoleMode,
-                                         final String consoleSlot) {
+                                         final String consoleSlot,
+                                         final Map<String, List<Header>> constantHeaders) {
         this.httpManagementConsumer = httpManagementConsumer;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.modelControllerSupplier = modelControllerSupplier;
@@ -238,6 +242,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.allowedOrigins = allowedOrigins;
         this.consoleMode = consoleMode;
         this.consoleSlot = consoleSlot;
+        this.constantHeaders = constantHeaders;
     }
 
     /**
@@ -342,6 +347,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setAllowedOrigins(allowedOrigins)
                     .setWorker(workerSupplier.get())
                     .setExecutor(executorSupplier.get())
+                    .setConstantHeaders(constantHeaders)
                     .build();
 
             serverManagement.start();

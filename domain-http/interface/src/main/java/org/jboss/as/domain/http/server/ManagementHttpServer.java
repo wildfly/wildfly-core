@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
@@ -48,6 +49,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
 import org.jboss.as.domain.http.server.security.DmrFailureReadinessHandler;
@@ -358,6 +360,19 @@ public class ManagementHttpServer {
 
         PathHandler pathHandler = new PathHandler();
         HttpHandler current = pathHandler;
+
+        Map<String, List<Header>> constantHeaders = builder.constantHeaders;
+        if (constantHeaders != null) {
+            StaticHeadersHandler headerHandler = new StaticHeadersHandler(current);
+            for (Entry<String, List<Header>> entry : constantHeaders.entrySet()) {
+                for (Header header : entry.getValue()) {
+                    headerHandler.addHeader(entry.getKey(), header.getName(), header.getValue());
+                }
+            }
+
+            current = headerHandler;
+        }
+
         if (builder.upgradeHandler != null) {
             builder.upgradeHandler.setNonUpgradeHandler(current);
             current = builder.upgradeHandler;
@@ -506,6 +521,7 @@ public class ManagementHttpServer {
         private Collection<String> allowedOrigins;
         private XnioWorker worker;
         private Executor executor;
+        private Map<String, List<Header>> constantHeaders;
 
         private Builder() {
         }
@@ -625,6 +641,21 @@ public class ManagementHttpServer {
         public Builder setExecutor(Executor executor) {
             assertNotBuilt();
             this.executor = executor;
+
+            return this;
+        }
+
+        /**
+         * Set a map of constant headers that should be set on each response by matching the path of the incoming request.
+         *
+         * The key is the path prefix that will be matched against the canonicalised path of the incoming request. The value is
+         * a {@link List} or {@link Header} instances.
+         *
+         * The entry set and list interated so if the Map implementation supports ordering the ordering will be preserved.
+         */
+        public Builder setConstantHeaders(Map<String, List<Header>> constantHeaders) {
+            assertNotBuilt();
+            this.constantHeaders = constantHeaders;
 
             return this;
         }

@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -50,6 +51,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -140,8 +142,44 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setRestartAllServices()
         .build();
 
+    public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.HEADER, ModelType.STRING, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    public static final SimpleAttributeDefinition HEADER_VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE, ModelType.STRING, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectTypeAttributeDefinition HEADER_PAIR = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HEADER_PAIR, HEADER_NAME, HEADER_VALUE)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectListAttributeDefinition HEADERS = new ObjectListAttributeDefinition.Builder(ModelDescriptionConstants.HEADERS, HEADER_PAIR)
+            .setRequired(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PATH, ModelType.STRING, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    public static final ObjectTypeAttributeDefinition HEADER_MAPPING = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HEADER_MAPPING, PATH, HEADERS)
+            .setRestartAllServices()
+            .build();
+
+    public static final ObjectListAttributeDefinition CONSTANT_HEADERS = new ObjectListAttributeDefinition.Builder(ModelDescriptionConstants.CONSTANT_HEADERS, HEADER_MAPPING)
+            .setRequired(false)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
-                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS, CONSTANT_HEADERS};
 
     /**
      * @param parameters

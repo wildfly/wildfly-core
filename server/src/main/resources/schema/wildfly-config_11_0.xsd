@@ -2149,6 +2149,7 @@
                             </xs:attribute>
                         </xs:complexType>
                     </xs:element>
+                    <xs:element name="constant-headers" type="constant-headersType" minOccurs="0" />
                 </xs:sequence>
                 <xs:attribute name="http-authentication-factory" type="xs:string" use="optional">
                     <xs:annotation>
@@ -2159,6 +2160,47 @@
                 </xs:attribute>
             </xs:extension>
         </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="constant-headersType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition to HTTP headers to be added to responses based on the path of the request.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="header-mapping" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="header" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:attribute name="header" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The name of the header to set.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="value" type="xs:string" use="required">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The value to set the header to.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                    <xs:attribute name="path" type="xs:string" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The path prefix this header mapping applies to.
+                            </xs:documentation>
+                       </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="native-management-interfaceType" abstract="true">
