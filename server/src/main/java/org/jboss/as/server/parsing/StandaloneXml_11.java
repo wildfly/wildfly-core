@@ -439,7 +439,7 @@ final class StandaloneXml_11 extends CommonXml implements ManagementXmlDelegate 
                     } else {
                         final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                         switch (attribute) {
-                            case HEADER: {
+                            case NAME: {
                                 HttpManagementResourceDefinition.HEADER_NAME.parseAndSetParameter(value, header, reader);
                                 break;
                             }

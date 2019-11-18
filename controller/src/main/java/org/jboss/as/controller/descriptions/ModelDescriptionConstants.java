@@ -226,7 +226,6 @@ public class ModelDescriptionConstants {
     public static final String HANDLER = "handler";
     public static final String HASH = "hash";
     public static final String HEAD_COMMENT_ALLOWED = "head-comment-allowed";
-    public static final String HEADER = "header";
     public static final String HEADER_MAPPING = "header-mapping";
     public static final String HEADER_PAIR = "header-pair";
     public static final String HEADERS = "headers";

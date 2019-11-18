@@ -40,7 +40,7 @@ public class Version11StabilityTestCase {
      * Cosmetic changes / bug fixes can result this expected digest being updated but all further
      * changes should be to version 12.  Once version 12 is in place this test can also be removed.
      */
-    private static final String EXPECTED_DIGEST = "40oZ+CDNsFcOzxEBaRg1Lg==";
+    private static final String EXPECTED_DIGEST = "iRnalVOyeqIUeorOh3kZCA==";
 
     @Test
     public void testVersion11Modifications() throws Exception {
@@ -60,7 +60,7 @@ public class Version11StabilityTestCase {
         byte[] digest = md.digest();
         String encoded = new String(Base64.getEncoder().encode(digest), StandardCharsets.UTF_8);
 
-        System.out.println("Current Digest = " + EXPECTED_DIGEST);
+        System.out.println("Current Digest = " + encoded);
         assertEquals("Version 11 has already been included in a release.", EXPECTED_DIGEST, encoded);
     }
 

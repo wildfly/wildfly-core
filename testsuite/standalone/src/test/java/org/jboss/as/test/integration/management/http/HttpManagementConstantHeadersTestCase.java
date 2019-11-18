@@ -49,12 +49,12 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
- * Test case to test custom headers are applied to existing contexts.
+ * Test case to test custom / constant headers are applied to existing contexts.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 @RunWith(WildflyTestRunner.class)
-public class HttpManagementCustomHeadersTestCase {
+public class HttpManagementConstantHeadersTestCase {
 
     private static final int MGMT_PORT = 9990;
     private static final String MGMT_CTX = "/management";
@@ -119,7 +119,7 @@ public class HttpManagementCustomHeadersTestCase {
         headerMapping.get("path").set(path);
         ModelNode headers = new ModelNode();
         ModelNode singleMapping = new ModelNode();
-        singleMapping.get("header").set(headerName);
+        singleMapping.get("name").set(headerName);
         singleMapping.get("value").set(headerValue);
         headers.add(singleMapping);
         headerMapping.get("headers").set(headers);
