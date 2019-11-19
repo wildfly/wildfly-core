@@ -40,6 +40,7 @@ import org.jboss.msc.service.ServiceController;
  * @author Alexey Loubyansky
  */
 abstract class PatchStreamResourceOperationStepHandler implements OperationStepHandler {
+    boolean acquireWriteLock = true;
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -51,7 +52,9 @@ abstract class PatchStreamResourceOperationStepHandler implements OperationStepH
     }
 
     private void executeRuntime(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.acquireControllerLock();
+        if (acquireWriteLock) {
+            context.acquireControllerLock();
+        }
         execute(context, operation, getInstallationManager(context), getPatchStreamName(context));
     }
 

@@ -92,6 +92,10 @@ abstract class ElementProviderAttributeReadHandler extends PatchStreamResourceOp
      */
     abstract static class LayerAttributeReadHandler extends ElementProviderAttributeReadHandler {
 
+        LayerAttributeReadHandler() {
+            this.acquireWriteLock = false;
+        }
+
         @Override
         protected Layer getProvider(final String name, final InstalledIdentity identity) throws OperationFailedException {
             final Layer target = identity.getLayer(name);
