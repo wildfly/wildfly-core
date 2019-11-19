@@ -185,7 +185,7 @@
         <version.org.jboss.logmanager.jboss-logmanager>2.1.14.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>2.0.9.Final</version.org.jboss.marshalling.jboss-marshalling>
-        <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.modules.jboss-modules>1.9.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.4.11.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.16.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.3.Final</version.org.jboss.remotingjmx.remoting-jmx>
