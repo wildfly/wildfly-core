@@ -578,4 +578,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1066, value = "Invalid value for cipher-suite-names. %s")
     OperationFailedException invalidCipherSuiteNames(@Cause Throwable cause, String causeMessage);
 
+    @Message(id = 1067, value = "Value '%s' is not valid regex.")
+    OperationFailedException invalidRegex(String regex);
+
 }

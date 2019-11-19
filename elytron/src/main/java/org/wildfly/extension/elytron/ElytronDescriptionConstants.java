@@ -431,6 +431,7 @@ interface ElytronDescriptionConstants {
     String REFERRAL_MODE = "referral-mode";
     String REGISTER_JASPI_FACTORY = "register-jaspi-factory";
     String REGEX_PRINCIPAL_TRANSFORMER = "regex-principal-transformer";
+    String REGEX_ROLE_MAPPER = "regex-role-mapper";
     String REGEX_VALIDATING_PRINCIPAL_TRANSFORMER = "regex-validating-principal-transformer";
     String RELATIVE_TO = "relative-to";
     String REMOVE_ALIAS = "remove-alias";
