@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0" disallowed-providers="a b c">
+<subsystem xmlns="urn:wildfly:elytron:10.0" disallowed-providers="a b c">
     <providers>
         <aggregate-providers name="AggregateProviders">
             <providers name="ModelConfigured" />

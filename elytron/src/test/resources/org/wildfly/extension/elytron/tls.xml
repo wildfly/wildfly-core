@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0" default-ssl-context="client">
+<subsystem xmlns="urn:wildfly:elytron:10.0" default-ssl-context="client">
     <providers>
         <provider-loader name="custom-loader" />
     </providers>

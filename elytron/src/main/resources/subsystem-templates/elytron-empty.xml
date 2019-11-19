@@ -17,4 +17,4 @@
   ~ limitations under the License.
   -->
 <!-- Empty Elytron subsystem definition to be included in standalone.xml while using wildfly-extension plugin -->
-<subsystem xmlns="urn:wildfly:elytron:9.0"/>
+<subsystem xmlns="urn:wildfly:elytron:10.0"/>

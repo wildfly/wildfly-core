@@ -26,15 +26,15 @@ import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem90TestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem100TestCase extends AbstractSubsystemBaseTest {
 
-    public ElytronSubsystem90TestCase() {
+    public ElytronSubsystem100TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-elytron_9_0.xsd";
+        return "schema/wildfly-elytron_10_0.xsd";
     }
 
     @Override
@@ -52,12 +52,8 @@ public class ElytronSubsystem90TestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-9.0.xml");
+        return readResource("elytron-subsystem-10.0.xml");
     }
 
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
-    }
 }
 
