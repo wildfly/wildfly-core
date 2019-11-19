@@ -126,7 +126,7 @@ import org.jboss.as.server.deployment.service.ServiceActivatorProcessor;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
-import org.jboss.as.server.moduleservice.ExternalModuleService;
+import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
@@ -164,7 +164,7 @@ public final class ServerService extends AbstractControllerService {
     private final InjectedValue<ContentRepository> injectedContentRepository = new InjectedValue<ContentRepository>();
     private final InjectedValue<ServiceModuleLoader> injectedModuleLoader = new InjectedValue<ServiceModuleLoader>();
 
-    private final InjectedValue<ExternalModuleService> injectedExternalModuleService = new InjectedValue<ExternalModuleService>();
+    private final InjectedValue<ExternalModule> injectedExternalModule = new InjectedValue<>();
     private final InjectedValue<PathManager> injectedPathManagerService = new InjectedValue<PathManager>();
 
     private final Bootstrap.Configuration configuration;
@@ -178,9 +178,14 @@ public final class ServerService extends AbstractControllerService {
     public static final String SERVER_NAME = "server";
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
+    static final String EXTERNAL_MODULE_CAPABILITY_NAME = "org.wildfly.management.external-module";
 
     static final RuntimeCapability<Void> SUSPEND_CONTROLLER_CAPABILITY =
             RuntimeCapability.Builder.of(SUSPEND_CONTROLLER_CAPABILITY_NAME, SuspendController.class)
+                    .build();
+
+    static final RuntimeCapability<Void> EXTERNAL_MODULE_CAPABILITY =
+            RuntimeCapability.Builder.of(EXTERNAL_MODULE_CAPABILITY_NAME, ExternalModule.class)
                     .build();
 
     /**
@@ -259,8 +264,8 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
         serviceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER, ServiceModuleLoader.class, service.injectedModuleLoader);
-        serviceBuilder.addDependency(Services.JBOSS_EXTERNAL_MODULE_SERVICE, ExternalModuleService.class,
-                service.injectedExternalModuleService);
+        serviceBuilder.addDependency(EXTERNAL_MODULE_CAPABILITY.getCapabilityServiceName(), ExternalModule.class,
+                service.injectedExternalModule);
         serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
         serviceBuilder.install();
 
@@ -322,7 +327,7 @@ public final class ServerService extends AbstractControllerService {
                 @Override
                 public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
                     phaseContext.getDeploymentUnit().putAttachment(Attachments.SERVICE_MODULE_LOADER, injectedModuleLoader.getValue());
-                    phaseContext.getDeploymentUnit().putAttachment(Attachments.EXTERNAL_MODULE_SERVICE, injectedExternalModuleService.getValue());
+                    phaseContext.getDeploymentUnit().putAttachment(Attachments.EXTERNAL_MODULE_SERVICE, injectedExternalModule.getValue());
                     phaseContext.getDeploymentUnit().putAttachment(Attachments.EXTERNAL_SERVICE_TARGET, serviceTarget);
                 }
 
@@ -471,6 +476,8 @@ public final class ServerService extends AbstractControllerService {
                 new RuntimeCapabilityRegistration(SUSPEND_CONTROLLER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(PROCESS_STATE_NOTIFIER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(EXTERNAL_MODULE_CAPABILITY, CapabilityScope.GLOBAL,new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
@@ -479,6 +486,7 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
         rootRegistration.registerCapability(SUSPEND_CONTROLLER_CAPABILITY);
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
+        rootRegistration.registerCapability(EXTERNAL_MODULE_CAPABILITY);
     }
 
     @Override
