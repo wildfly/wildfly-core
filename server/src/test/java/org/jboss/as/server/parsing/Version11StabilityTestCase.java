@@ -40,7 +40,7 @@ public class Version11StabilityTestCase {
      * Cosmetic changes / bug fixes can result this expected digest being updated but all further
      * changes should be to version 12.  Once version 12 is in place this test can also be removed.
      */
-    private static final String EXPECTED_DIGEST = "iRnalVOyeqIUeorOh3kZCA==";
+    private static final String EXPECTED_DIGEST = "q6esEQUOg1N+q3gfOXEEWg==";
 
     @Test
     public void testVersion11Modifications() throws Exception {

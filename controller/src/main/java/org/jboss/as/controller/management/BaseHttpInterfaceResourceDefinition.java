@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller.management;
 
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
@@ -30,6 +31,8 @@ import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATIO
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
@@ -49,6 +52,7 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -144,6 +148,19 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setMinSize(1)
+            .setValidator(new ParameterValidator() {
+
+                private static final String NAME_PATTERN = "^([\\p{ASCII}&&[^\\(\\)\\<\\>\\@\\,\\;\\:\\\\/\\[\\]\\?\\=\\{\\}\\p{Cntrl}\\x{20}]])+$";
+                private final Predicate<String> VALID_NAME = Pattern.compile(NAME_PATTERN).asPredicate();
+
+                @Override
+                public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+                    String name = value.asString();
+                    if (!VALID_NAME.test(name)) {
+                        throw ROOT_LOGGER.invalidHeaderName(name);
+                    }
+                }
+            })
             .setAllowExpression(true)
             .setRestartAllServices()
             .build();

@@ -212,4 +212,26 @@ public class HttpManagementConstantHeadersTestCase {
         }
     }
 
+    /**
+     * Test attempts to use invalid header names correctly fail.
+     */
+    @Test
+    public void testInvalidHeaderNames() {
+        testInvalidHeaderName("X:Header");
+        testInvalidHeaderName("X Header");
+        testInvalidHeaderName("X\nHeader");
+    }
+
+    public void testInvalidHeaderName(String headerName) {
+        Map<String, Map<String, String>> headersMap = new HashMap<>();
+        headersMap.put("/", Collections.singletonMap(headerName, "TestValue"));
+
+        try {
+            managementClient.executeForResult(createConstantHeadersOperation(headersMap));
+            fail("Operation was expected to fail.");
+        } catch (UnsuccessfulOperationException e) {
+            assertTrue(e.getMessage().contains("WFLYCTL0457"));
+        }
+    }
+
 }

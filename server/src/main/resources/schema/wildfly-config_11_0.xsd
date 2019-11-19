@@ -2178,6 +2178,8 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             The name of the header to set.
+
+                                            Must be a valid HTTP Header name.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
