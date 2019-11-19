@@ -553,11 +553,13 @@ final class HostXml_11 extends CommonXml implements ManagementXmlDelegate {
             // After double checking the name of the only attribute we can retrieve it.
             HttpManagementResourceDefinition.PATH.parseAndSetParameter(reader.getAttributeValue(0), headerMapping, reader);
             ModelNode headers = new ModelNode();
+            boolean headerFound = false;
             while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
                 requireNamespace(reader, namespace);
                 if (Element.forName(reader.getLocalName()) != Element.HEADER) {
                     throw unexpectedElement(reader);
                 }
+                headerFound = true;
 
                 ModelNode header= new ModelNode();
                 final int count = reader.getAttributeCount();
@@ -584,6 +586,9 @@ final class HostXml_11 extends CommonXml implements ManagementXmlDelegate {
                 headers.add(header);
 
                 requireNoContent(reader);
+            }
+            if (headerFound == false) {
+                throw missingRequiredElement(reader, Collections.singleton(Element.HEADER.getLocalName()));
             }
 
             headerMapping.get(ModelDescriptionConstants.HEADERS).set(headers);

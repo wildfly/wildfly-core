@@ -160,6 +160,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
 
     static final ObjectListAttributeDefinition HEADERS = new ObjectListAttributeDefinition.Builder(ModelDescriptionConstants.HEADERS, HEADER_PAIR)
             .setRequired(true)
+            .setMinSize(1)
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 

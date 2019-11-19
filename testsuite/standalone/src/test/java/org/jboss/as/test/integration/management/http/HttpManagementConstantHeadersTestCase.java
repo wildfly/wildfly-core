@@ -19,10 +19,15 @@ package org.jboss.as.test.integration.management.http;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
@@ -46,6 +51,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -97,31 +103,44 @@ public class HttpManagementConstantHeadersTestCase {
 
     @Before
     public void activateHeaders() throws Exception {
+        Map<String, Map<String, String>> headersMap = new HashMap<>();
+        headersMap.put("/", Collections.singletonMap("X-All", "All"));
+        headersMap.put("/management", Collections.singletonMap("X-Management", "Management"));
+        headersMap.put("/error", Collections.singletonMap("X-Error", "Error"));
+
+        managementClient.executeForResult(createConstantHeadersOperation(headersMap));
+
+        ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
+    }
+
+    private static ModelNode createConstantHeadersOperation(final Map<String, Map<String, String>> constantHeadersValues) {
         ModelNode writeAttribute = new ModelNode();
         writeAttribute.get("address").set(INTERFACE_ADDRESS.toModelNode());
         writeAttribute.get("operation").set("write-attribute");
         writeAttribute.get("name").set("constant-headers");
 
         ModelNode constantHeaders = new ModelNode();
-        constantHeaders.add(createHeaderMapping("/", "X-All", "All"));
-        constantHeaders.add(createHeaderMapping("/management", "X-Management", "Management"));
-        constantHeaders.add(createHeaderMapping("/error", "X-Error", "Error"));
+        for (Entry<String, Map<String, String>> entry : constantHeadersValues.entrySet()) {
+            constantHeaders.add(createHeaderMapping(entry.getKey(), entry.getValue()));
+        }
 
         writeAttribute.get("value").set(constantHeaders);
 
-        managementClient.executeForResult(writeAttribute);
-
-        ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
+        return writeAttribute;
     }
 
-    private ModelNode createHeaderMapping(final String path, final String headerName, final String headerValue) {
+    private static ModelNode createHeaderMapping(final String path, final Map<String, String> headerValues) {
         ModelNode headerMapping = new ModelNode();
         headerMapping.get("path").set(path);
         ModelNode headers = new ModelNode();
-        ModelNode singleMapping = new ModelNode();
-        singleMapping.get("name").set(headerName);
-        singleMapping.get("value").set(headerValue);
-        headers.add(singleMapping);
+        headers.add();     // Ensure the type of 'headers' is List even if no content is added.
+        headers.remove(0);
+        for (Entry<String, String> entry : headerValues.entrySet()) {
+            ModelNode singleMapping = new ModelNode();
+            singleMapping.get("name").set(entry.getKey());
+            singleMapping.get("value").set(entry.getValue());
+            headers.add(singleMapping);
+        }
         headerMapping.get("headers").set(headers);
 
         return headerMapping;
@@ -139,6 +158,9 @@ public class HttpManagementConstantHeadersTestCase {
         ServerReload.executeReloadAndWaitForCompletion(managementClient.getControllerClient());
     }
 
+    /**
+     * Test that a call to the '/management' endpoint returns the expected headers.
+     */
     @Test
     public void testManagement() throws Exception {
         HttpGet get = new HttpGet(managementUrl.toURI().toString());
@@ -155,6 +177,9 @@ public class HttpManagementConstantHeadersTestCase {
         assertNull("Header X-Error Unexpected", header);
     }
 
+    /**
+     * Test that a call to the '/error' endpoint returns the expected headers.
+     */
     @Test
     public void testError() throws Exception {
         HttpGet get = new HttpGet(errorUrl.toURI().toString());
@@ -169,6 +194,22 @@ public class HttpManagementConstantHeadersTestCase {
 
         header = response.getFirstHeader("X-Management");
         assertNull("Header X-Management Unexpected", header);
+    }
+
+    /**
+     * Test that attempting to define a constant-headers attribute with an empty headers list is correctly rejected.
+     */
+    @Test
+    public void testEmptyHeadersList() {
+        Map<String, Map<String, String>> headersMap = new HashMap<>();
+        headersMap.put("/", Collections.emptyMap());
+
+        try {
+            managementClient.executeForResult(createConstantHeadersOperation(headersMap));
+            fail("Operation was expected to fail.");
+        } catch (UnsuccessfulOperationException e) {
+            assertTrue(e.getMessage().contains("WFLYCTL0115"));
+        }
     }
 
 }
