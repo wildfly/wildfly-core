@@ -22,14 +22,18 @@
 
 package org.jboss.as.controller.management;
 
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -146,6 +150,8 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setRestartAllServices()
         .build();
 
+    private static final Set<String> disallowedValues = new HashSet<>(Arrays.asList(new String[] {ModelDescriptionConstants.CONNECTION, ModelDescriptionConstants.DATE}));
+
     public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setMinSize(1)
             .setValidator(new ParameterValidator() {
@@ -156,6 +162,9 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
                 @Override
                 public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
                     String name = value.asString();
+                    if (disallowedValues.contains(name.toLowerCase(Locale.ENGLISH))) {
+                        throw ROOT_LOGGER.disallowedHeaderName(name);
+                    }
                     if (!VALID_NAME.test(name)) {
                         throw ROOT_LOGGER.invalidHeaderName(name);
                     }

@@ -217,12 +217,21 @@ public class HttpManagementConstantHeadersTestCase {
      */
     @Test
     public void testInvalidHeaderNames() {
-        testInvalidHeaderName("X:Header");
-        testInvalidHeaderName("X Header");
-        testInvalidHeaderName("X\nHeader");
+        testBadHeaderName("X:Header", "WFLYCTL0457");
+        testBadHeaderName("X Header", "WFLYCTL0457");
+        testBadHeaderName("X\nHeader", "WFLYCTL0457");
     }
 
-    public void testInvalidHeaderName(String headerName) {
+    /**
+     * Test attempts to use disallowed header names correctly fail.
+     */
+    @Test
+    public void testDisallowedHeaderNames() {
+        testBadHeaderName("Connection", "WFLYCTL0458");
+        testBadHeaderName("Date", "WFLYCTL0458");
+    }
+
+    public void testBadHeaderName(String headerName, String errorCode) {
         Map<String, Map<String, String>> headersMap = new HashMap<>();
         headersMap.put("/", Collections.singletonMap(headerName, "TestValue"));
 
@@ -230,7 +239,7 @@ public class HttpManagementConstantHeadersTestCase {
             managementClient.executeForResult(createConstantHeadersOperation(headersMap));
             fail("Operation was expected to fail.");
         } catch (UnsuccessfulOperationException e) {
-            assertTrue(e.getMessage().contains("WFLYCTL0457"));
+            assertTrue(e.getMessage().contains(errorCode));
         }
     }
 

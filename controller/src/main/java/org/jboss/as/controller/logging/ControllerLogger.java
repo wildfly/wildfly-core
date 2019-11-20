@@ -3559,4 +3559,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 457, value = "Invalid HTTP Header name '%s'")
     OperationFailedException invalidHeaderName(String value);
 
+    @Message(id = 458, value = "Disallowed HTTP Header name '%s'")
+    OperationFailedException disallowedHeaderName(String value);
+
 }
