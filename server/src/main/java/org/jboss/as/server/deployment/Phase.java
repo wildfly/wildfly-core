@@ -294,7 +294,6 @@ public enum Phase {
     public static final int PARSE_ANNOTATION_WAR                        = 0x0D00;
     public static final int PARSE_ANNOTATION_EJB                        = 0x0D10;
     public static final int PARSE_JBOSS_WEB_DEPLOYMENT                  = 0x0E00;
-    public static final int PARSE_TLD_DEPLOYMENT                        = 0x0F00;
     public static final int PARSE_EAR_CONTEXT_ROOT                      = 0x1000;
     // create and attach EJB metadata for EJB deployments
     public static final int PARSE_EJB_DEPLOYMENT                        = 0x1100;
@@ -307,8 +306,10 @@ public enum Phase {
     // create and attach the component description out of EJB annotations
     public static final int PARSE_EJB_APPLICATION_EXCEPTION_ANNOTATION  = 0x1901;
     public static final int PARSE_WELD_CONFIGURATION                    = 0x1C01;
-    public static final int PARSE_WEB_COMPONENTS                        = 0x1F00;
     public static final int PARSE_WEB_MERGE_METADATA                    = 0x2000;
+    public static final int PARSE_TLD_DEPLOYMENT                        = 0x2004;
+    public static final int PARSE_WEB_COMPONENTS                        = 0x2008;
+    public static final int PARSE_UNDERTOW_DEFAULT_SECURITY_DOMAIN      = 0x200C;
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
      */
@@ -603,6 +604,9 @@ public enum Phase {
     public static final int POST_MODULE_SAR_SERVICE_COMPONENT           = 0x2D00;
     public static final int POST_MODULE_UNDERTOW_WEBSOCKETS             = 0x2E00;
     public static final int POST_MODULE_UNDERTOW_HANDLERS               = 0x2F00;
+    public static final int POST_MODULE_EXTERNAL_TAGLIB                 = 0x2F10;
+    public static final int POST_MODULE_UNDERTOW_SERVLET_CONTAINER_DEPENDENCY       = 0x2F1A;
+
     public static final int POST_MODULE_EE_CONCURRENT_CONTEXT           = 0x3000;
     public static final int POST_MODULE_BATCH_ENVIRONMENT               = 0x3100;
     public static final int POST_MODULE_RAR_SERVICES_DEPS               = 0x3300;
