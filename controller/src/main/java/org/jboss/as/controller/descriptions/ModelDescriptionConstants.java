@@ -120,6 +120,8 @@ public class ModelDescriptionConstants {
     public static final String CONSOLE_ENABLED = "console-enabled";
     public static final String CONSTANT_HEADERS = "constant-headers";
     public static final String CONTENT = "content";
+    public static final String CONTENT_LENGTH = "content-length";
+    public static final String CONTENT_TYPE = "content-type";
     public static final String CORE = "core";
     public static final String CORE_SERVICE = "core-service";
     public static final String CPU_AFFINITY = "cpu-affinity";

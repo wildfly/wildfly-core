@@ -150,7 +150,8 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setRestartAllServices()
         .build();
 
-    private static final Set<String> disallowedValues = new HashSet<>(Arrays.asList(new String[] {ModelDescriptionConstants.CONNECTION, ModelDescriptionConstants.DATE}));
+    private static final Set<String> disallowedValues = new HashSet<>(Arrays.asList(new String[] {ModelDescriptionConstants.CONNECTION, ModelDescriptionConstants.CONTENT_TYPE,
+            ModelDescriptionConstants.CONTENT_LENGTH, ModelDescriptionConstants.DATE}));
 
     public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setMinSize(1)

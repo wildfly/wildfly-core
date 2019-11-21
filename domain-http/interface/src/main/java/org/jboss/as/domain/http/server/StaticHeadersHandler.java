@@ -17,13 +17,18 @@
 package org.jboss.as.domain.http.server;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.ResponseCommitListener;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.HttpString;
 
 /**
@@ -43,14 +48,34 @@ class StaticHeadersHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        String requestPath = exchange.getRelativePath();
-        for (Entry<String, List<HeaderConstant>> entry : headersMap.entrySet()) {
-            if (requestPath.startsWith(entry.getKey())) {
-                for (HeaderConstant constant : entry.getValue()) {
-                    constant.apply(exchange);
+        final String requestPath = exchange.getRelativePath();
+
+        exchange.addResponseCommitListener(new ResponseCommitListener() {
+
+            @Override
+            public void beforeCommit(HttpServerExchange exchange) {
+                Predicate<String> putHeadersTest = new Predicate<String>() {
+                    Set<String> putHeaders = new HashSet<>();
+
+                    @Override
+                    public boolean test(String t) {
+                        if (putHeaders.contains(t)) {
+                            return false;
+                        }
+                        putHeaders.add(t);
+                        return true;
+                    }
+                };
+
+                for (Entry<String, List<HeaderConstant>> entry : headersMap.entrySet()) {
+                    if (requestPath.startsWith(entry.getKey())) {
+                        for (HeaderConstant constant : entry.getValue()) {
+                            constant.apply(exchange, putHeadersTest);
+                        }
+                    }
                 }
             }
-        }
+        });
 
         next.handleRequest(exchange);
     }
@@ -71,8 +96,13 @@ class StaticHeadersHandler implements HttpHandler {
             this.value = value;
         }
 
-        void apply(HttpServerExchange exchange) {
-            exchange.getResponseHeaders().add(headerName, value);
+        void apply(HttpServerExchange exchange, Predicate<String> putHeader) {
+            HeaderMap headers = exchange.getResponseHeaders();
+            if (putHeader.test(headerName.toString())) {
+                headers.put(headerName, value);
+            } else {
+                headers.add(headerName, value);
+            }
         }
     }
 

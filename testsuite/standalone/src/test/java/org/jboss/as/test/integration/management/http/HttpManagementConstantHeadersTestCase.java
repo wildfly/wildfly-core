@@ -229,6 +229,8 @@ public class HttpManagementConstantHeadersTestCase {
     public void testDisallowedHeaderNames() {
         testBadHeaderName("Connection", "WFLYCTL0458");
         testBadHeaderName("Date", "WFLYCTL0458");
+        testBadHeaderName("Content-Length", "WFLYCTL0458");
+        testBadHeaderName("Content-Type", "WFLYCTL0458");
     }
 
     public void testBadHeaderName(String headerName, String errorCode) {
