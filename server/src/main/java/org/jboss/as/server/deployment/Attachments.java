@@ -40,7 +40,7 @@ import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.deployment.reflect.DeploymentReflectionIndex;
 import org.jboss.as.server.deployment.reflect.ProxyMetadataSource;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
-import org.jboss.as.server.moduleservice.ExternalModuleService;
+import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.jandex.Index;
@@ -288,7 +288,7 @@ public final class Attachments {
     /**
      * The external module service
      */
-    public static final AttachmentKey<ExternalModuleService> EXTERNAL_MODULE_SERVICE  = AttachmentKey.create(ExternalModuleService.class);
+    public static final AttachmentKey<ExternalModule> EXTERNAL_MODULE_SERVICE  = AttachmentKey.create(ExternalModule.class);
 
     /**
      * An index of {@link java.util.ServiceLoader}-type services in this deployment unit

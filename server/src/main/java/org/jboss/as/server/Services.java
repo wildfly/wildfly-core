@@ -65,7 +65,10 @@ public final class Services {
 
     /**
      * The service corresponding to the {@link org.jboss.as.server.moduleservice.ExternalModuleService} for this instance.
+     *
+     * @deprecated use capability org.wildfly.management.external-module
      */
+    @Deprecated
     public static final ServiceName JBOSS_EXTERNAL_MODULE_SERVICE = JBOSS_AS.append("external-module-service");
 
     public static final ServiceName JBOSS_PRODUCT_CONFIG_SERVICE = JBOSS_AS.append("product-config");

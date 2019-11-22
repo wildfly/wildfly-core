@@ -22,6 +22,8 @@
 
 package org.jboss.as.server;
 
+import static org.jboss.as.server.ServerService.EXTERNAL_MODULE_CAPABILITY;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.Iterator;
@@ -168,7 +170,8 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         ContentCleanerService.addService(serviceTarget, ServerService.JBOSS_SERVER_CLIENT_FACTORY, ServerService.JBOSS_SERVER_SCHEDULED_EXECUTOR);
         DeploymentMountProvider.Factory.addService(serviceTarget);
         ServiceModuleLoader.addService(serviceTarget, configuration);
-        ExternalModuleService.addService(serviceTarget);
+        ExternalModuleService.addService(serviceTarget, EXTERNAL_MODULE_CAPABILITY.getCapabilityServiceName());
+
         //Add server path manager service
         ServerPathManagerService.addService(serviceTarget, new ServerPathManagerService(configuration.getCapabilityRegistry()), serverEnvironment);
         final AbstractVaultReader vaultReader = loadVaultReaderService();
