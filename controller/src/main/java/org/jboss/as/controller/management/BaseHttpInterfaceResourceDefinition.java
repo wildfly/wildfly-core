@@ -151,7 +151,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .build();
 
     private static final Set<String> disallowedValues = new HashSet<>(Arrays.asList(new String[] {ModelDescriptionConstants.CONNECTION, ModelDescriptionConstants.CONTENT_TYPE,
-            ModelDescriptionConstants.CONTENT_LENGTH, ModelDescriptionConstants.DATE}));
+            ModelDescriptionConstants.CONTENT_LENGTH, ModelDescriptionConstants.DATE, ModelDescriptionConstants.TRANSFER_ENCODING}));
 
     public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
             .setMinSize(1)

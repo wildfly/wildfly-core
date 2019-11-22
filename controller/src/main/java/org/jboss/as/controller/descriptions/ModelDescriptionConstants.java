@@ -573,6 +573,7 @@ public class ModelDescriptionConstants {
     public static final String TLS = "tls";
     public static final String TO_PROFILE = "to-profile";
     public static final String TO_REPLACE = "to-replace";
+    public static final String TRANSFER_ENCODING = "transfer-encoding";
     public static final String TRUNCATE = "truncate";
     public static final String TRUST_MANAGER_ALGORITHM = "trust-manager-algorithm";
     public static final String TRUSTSTORE = "truststore";

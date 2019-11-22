@@ -231,6 +231,7 @@ public class HttpManagementConstantHeadersTestCase {
         testBadHeaderName("Date", "WFLYCTL0458");
         testBadHeaderName("Content-Length", "WFLYCTL0458");
         testBadHeaderName("Content-Type", "WFLYCTL0458");
+        testBadHeaderName("Transfer-Encoding", "WFLYCTL0458");
     }
 
     public void testBadHeaderName(String headerName, String errorCode) {
