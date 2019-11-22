@@ -220,6 +220,7 @@ public class HttpManagementConstantHeadersTestCase {
         testBadHeaderName("X:Header", "WFLYCTL0457");
         testBadHeaderName("X Header", "WFLYCTL0457");
         testBadHeaderName("X\nHeader", "WFLYCTL0457");
+        testBadHeaderName("X\nHeader\n", "WFLYCTL0457");
     }
 
     /**

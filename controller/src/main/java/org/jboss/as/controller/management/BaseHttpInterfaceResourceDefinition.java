@@ -157,7 +157,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
             .setMinSize(1)
             .setValidator(new ParameterValidator() {
 
-                private static final String NAME_PATTERN = "^([\\p{ASCII}&&[^\\(\\)\\<\\>\\@\\,\\;\\:\\\\/\\[\\]\\?\\=\\{\\}\\p{Cntrl}\\x{20}]])+$";
+                private static final String NAME_PATTERN = "^([\\p{ASCII}&&[^\\(\\)\\<\\>\\@\\,\\;\\:\\\\/\\[\\]\\?\\=\\{\\}\\p{Cntrl}\\x{20}]])+\\z";
                 private final Predicate<String> VALID_NAME = Pattern.compile(NAME_PATTERN).asPredicate();
 
                 @Override
