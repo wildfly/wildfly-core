@@ -214,7 +214,7 @@ public abstract class ProcessEnvironment {
         return result;
     }
 
-    private class ProcessNameWriteAttributeHandler implements OperationStepHandler {
+    protected class ProcessNameWriteAttributeHandler implements OperationStepHandler {
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

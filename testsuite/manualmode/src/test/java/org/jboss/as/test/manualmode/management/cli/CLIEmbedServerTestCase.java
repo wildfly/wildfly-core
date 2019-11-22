@@ -726,28 +726,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     }
 
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
-        long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
-        StringBuilder history = new StringBuilder();
-        String state = null;
-        do {
-            try {
-                cli.sendLine(":read-attribute(name=server-state)", true);
-                CLIOpResult result = cli.readAllAsOpResult();
-                ModelNode resp = result.getResponseNode();
-                ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
-                state = stateNode.asString();
-                history.append(state).append("\n");
-            } catch (Exception ignored) {
-                //
-                history.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
-            }
-            if (expected.equals(state)) {
-                return;
-            } else {
-                Thread.sleep(20);
-            }
-        } while (timeout > 0 && System.currentTimeMillis() < done);
-        assertEquals(history.toString(), expected, state);
+        assertState(expected,timeout, ":read-attribute(name=server-state)");
     }
 
     private void checkNoLogging(String line) throws IOException {

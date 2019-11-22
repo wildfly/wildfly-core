@@ -88,6 +88,10 @@ public class LocalHostControllerInfoImpl implements LocalHostControllerInfo {
         this.localHostName = hostName;
     }
 
+    public void clearOverrideLocalHostName() {
+        this.overrideLocalHostName = false;
+    }
+
     @Override
     public ControlledProcessState.State getProcessState() {
         return processState.getState();
