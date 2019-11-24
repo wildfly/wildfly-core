@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
+import org.jboss.as.server.logging.ServerLogger;
 
 /**
  * Coordinates handling of {@link org.jboss.as.server.deployment.Attachments#ADDITIONAL_MODULES} updates
@@ -56,7 +57,8 @@ public final class AdditionalModuleCoordinator {
      * thus ensuring that the count of expected registerClassPathAdditionalModules calls is not subject to races.
      */
     public void recordSubdeployment() {
-        deploymentServiceCount.incrementAndGet();
+        int count = deploymentServiceCount.incrementAndGet();
+        ServerLogger.AS_ROOT_LOGGER.infof("Recorded subdeployment; count is %d", count);
     }
 
     /**
@@ -66,6 +68,7 @@ public final class AdditionalModuleCoordinator {
      */
     public void registerRootAdditionalModules(Collection<AdditionalModuleSpecification> additionalModules) {
         this.additionalModules.addAll(additionalModules);
+        ServerLogger.AS_ROOT_LOGGER.info("Root additional modules registered");
         rootStructureLatch.countDown();
     }
 
@@ -78,6 +81,7 @@ public final class AdditionalModuleCoordinator {
      */
     public List<AdditionalModuleSpecification> getAdditionalModules() throws DeploymentUnitProcessingException {
         try {
+            ServerLogger.AS_ROOT_LOGGER.info("Awaiting registration of root additional modules");
             rootStructureLatch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -97,12 +101,15 @@ public final class AdditionalModuleCoordinator {
     void registerClassPathAdditionalModules(List<AdditionalModuleSpecification> newAdditionalModules) {
         additionalModules.addAll(newAdditionalModules);
 
-        if (deploymentServiceCount.decrementAndGet() == 0) {
+        int count = deploymentServiceCount.decrementAndGet();
+        ServerLogger.AS_ROOT_LOGGER.infof("Recorded classpath additional modules; count is %d", count);
+        if (count == 0) {
             // Parent and all child deployments have completed additional module registration;
             // record the result with the root deployment unit for use by subsequent DUPs.
             for (AdditionalModuleSpecification spec : additionalModules) {
                 rootDeploymentUnit.addToAttachmentList(Attachments.ADDITIONAL_MODULES, spec);
             }
+            ServerLogger.AS_ROOT_LOGGER.info("Attached AdditionalModuleSpecification objects");
             classPathLatch.countDown();
         }
     }
@@ -115,7 +122,9 @@ public final class AdditionalModuleCoordinator {
      */
     void awaitManifestClassPathAdditionalModules() throws DeploymentUnitProcessingException {
         try {
+            ServerLogger.AS_ROOT_LOGGER.info("Awaiting registration of classpath additional modules");
             classPathLatch.await();
+            ServerLogger.AS_ROOT_LOGGER.info("Proceeding following registration of classpath additional modules");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DeploymentUnitProcessingException(e);
