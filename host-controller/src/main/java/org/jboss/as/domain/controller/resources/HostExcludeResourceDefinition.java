@@ -48,8 +48,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
- * {@link org.jboss.as.host.controller.ignored.IgnoredDomainResourceRegistry.ResourceDefinition} for
- * the {@code host-ignores} resources in the domain wide model.
+ * {@link org.jboss.as.controller.ResourceDefinition} for
+ * the {@code host-exclude} resources in the domain wide model.
  *
  * @author Brian Stansberry
  */
@@ -70,7 +70,10 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         WILDFLY12("WildFly12.0", KernelAPIVersion.VERSION_6_0),
         WILDFLY13("WildFly13.0", KernelAPIVersion.VERSION_7_0),
         WILDFLY14("WildFly14.0", KernelAPIVersion.VERSION_8_0),
-        WILDFLY15("WildFly15.0", KernelAPIVersion.VERSION_9_0);
+        WILDFLY15("WildFly15.0", KernelAPIVersion.VERSION_9_0),
+        WILDFLY16("WildFly16.0", KernelAPIVersion.VERSION_10_0),
+        WILDFLY17("WildFly17.0", KernelAPIVersion.VERSION_10_0),
+        WILDFLY18("WildFly18.0", KernelAPIVersion.VERSION_10_0);
 
 
         private static final Map<String, KnownRelease> map = new HashMap<>();
