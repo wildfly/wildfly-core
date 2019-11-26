@@ -67,7 +67,6 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
 import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
@@ -77,7 +76,6 @@ import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefiniti
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
-import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -602,23 +600,6 @@ final class DomainXml_8 extends CommonXml implements ManagementXmlDelegate {
         ModelNode addAddress = address.clone().add(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
         ModelNode addOp = Util.getEmptyOperation(ADD, addAddress);
         list.add(addOp);
-    }
-
-    private void writeServerGroupDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
-
-        final Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
-            writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
-            for (String uniqueName : deploymentNames) {
-                final ModelNode deployment = modelNode.get(uniqueName);
-                writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                WriteUtils.writeAttribute(writer, Attribute.NAME, uniqueName);
-                DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
-                DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
-                writer.writeEndElement();
-            }
-            writer.writeEndElement();
-        }
     }
 
     /*

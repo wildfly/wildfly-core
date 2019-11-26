@@ -3555,4 +3555,11 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 456, value = "System property %s=%s already set. It's being overridden by new value %s")
     void systemPropertyAlreadyExist(String name, String value, String value2);
+
+    @Message(id = 457, value = "Invalid HTTP Header name '%s'")
+    OperationFailedException invalidHeaderName(String value);
+
+    @Message(id = 458, value = "Disallowed HTTP Header name '%s'")
+    OperationFailedException disallowedHeaderName(String value);
+
 }

@@ -162,7 +162,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
         final Supplier<SecurityRealm> srSupplier = securityRealm != null ? SecurityRealm.ServiceUtil.requires(builder, securityRealm) : null;
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
-        final UndertowHttpManagementService service = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, null, null, null, ibSupplier, sibSupplier, cpsnSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, srSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode, environment.getProductConfig().getConsoleSlot());
+        final UndertowHttpManagementService service = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, null, null, null, ibSupplier, sibSupplier,
+                cpsnSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, srSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode,
+                environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders());
         builder.setInstance(service);
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE).install();
 

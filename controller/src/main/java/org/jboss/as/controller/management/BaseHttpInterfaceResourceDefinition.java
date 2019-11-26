@@ -24,16 +24,24 @@ package org.jboss.as.controller.management;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.management.Capabilities.HTTP_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.HTTP_MANAGEMENT_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.controller.management.Capabilities.SSL_CONTEXT_CAPABILITY;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -48,8 +56,10 @@ import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -140,8 +150,64 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setRestartAllServices()
         .build();
 
+    private static final Set<String> disallowedValues = new HashSet<>(Arrays.asList(new String[] {ModelDescriptionConstants.CONNECTION, ModelDescriptionConstants.CONTENT_TYPE,
+            ModelDescriptionConstants.CONTENT_LENGTH, ModelDescriptionConstants.DATE, ModelDescriptionConstants.TRANSFER_ENCODING}));
+
+    public static final SimpleAttributeDefinition HEADER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.NAME, ModelType.STRING, false)
+            .setMinSize(1)
+            .setValidator(new ParameterValidator() {
+
+                private static final String NAME_PATTERN = "^([\\p{ASCII}&&[^\\(\\)\\<\\>\\@\\,\\;\\:\\\\/\\[\\]\\?\\=\\{\\}\\p{Cntrl}\\x{20}]])+\\z";
+                private final Predicate<String> VALID_NAME = Pattern.compile(NAME_PATTERN).asPredicate();
+
+                @Override
+                public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+                    String name = value.asString();
+                    if (disallowedValues.contains(name.toLowerCase(Locale.ENGLISH))) {
+                        throw ROOT_LOGGER.disallowedHeaderName(name);
+                    }
+                    if (!VALID_NAME.test(name)) {
+                        throw ROOT_LOGGER.invalidHeaderName(name);
+                    }
+                }
+            })
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    public static final SimpleAttributeDefinition HEADER_VALUE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.VALUE, ModelType.STRING, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectTypeAttributeDefinition HEADER_PAIR = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HEADER_PAIR, HEADER_NAME, HEADER_VALUE)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectListAttributeDefinition HEADERS = new ObjectListAttributeDefinition.Builder(ModelDescriptionConstants.HEADERS, HEADER_PAIR)
+            .setRequired(true)
+            .setMinSize(1)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    public static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PATH, ModelType.STRING, false)
+            .setMinSize(1)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
+    public static final ObjectTypeAttributeDefinition HEADER_MAPPING = new ObjectTypeAttributeDefinition.Builder(ModelDescriptionConstants.HEADER_MAPPING, PATH, HEADERS)
+            .setRestartAllServices()
+            .build();
+
+    public static final ObjectListAttributeDefinition CONSTANT_HEADERS = new ObjectListAttributeDefinition.Builder(ModelDescriptionConstants.CONSTANT_HEADERS, HEADER_MAPPING)
+            .setRequired(false)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
     protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
-                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS};
+                                                                                                     HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS, CONSTANT_HEADERS};
 
     /**
      * @param parameters
