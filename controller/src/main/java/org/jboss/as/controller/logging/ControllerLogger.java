@@ -3562,4 +3562,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 458, value = "Disallowed HTTP Header name '%s'")
     OperationFailedException disallowedHeaderName(String value);
 
+    @LogMessage(level = ERROR)
+    @Message(id = 459, value = "Triggering roll back due to missing management services.")
+    void missingManagementServices();
+
 }
