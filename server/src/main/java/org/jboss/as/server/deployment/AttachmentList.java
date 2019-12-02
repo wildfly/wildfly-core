@@ -22,39 +22,64 @@
 
 package org.jboss.as.server.deployment;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * A {@link List} meant for use with an {@link Attachable} object.  The list is thread safe and performs
+ * {@link Collections#checkedList(List, Class) run time type checking of all insertions}. Iterators do not
+ * support modifications.
+ *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class AttachmentList<T> implements List<T>, RandomAccess {
+public final class AttachmentList<E> implements List<E>, RandomAccess {
 
-    private final Class<T> valueClass;
-    private final List<T> delegate;
+    private final Class<E> valueClass;
+    private final List<E> delegate;
 
-    public AttachmentList(final int initialCapacity, final Class<T> valueClass) {
-        delegate = Collections.checkedList(new ArrayList<T>(initialCapacity), valueClass);
+    /**
+     * Creates a new {@code AttachmentList}.
+     *
+     * @param initialCapacity ignored
+     * @param valueClass the type of element the list is permitted to hold
+     * @deprecated use {@code new AttachmentList<>(valueClass)}
+     */
+    @SuppressWarnings("unused")
+    @Deprecated
+    public AttachmentList(final int initialCapacity, final Class<E> valueClass) {
+        // Ignore the initial capacity. CopyOnWriteArrayList is going to create a new array for any
+        // update so there is no point creating an initial array of any size other than zero.
+        this(valueClass);
+    }
+
+    /**
+     * Creates a new {@code AttachmentList}.
+     *
+     * @param valueClass the type of element the list is permitted to hold
+     */
+    public AttachmentList(final Class<E> valueClass) {
+        delegate = Collections.checkedList(new CopyOnWriteArrayList<>(), valueClass);
         this.valueClass = valueClass;
     }
 
-    public AttachmentList(final Class<T> valueClass) {
-        delegate = Collections.checkedList(new ArrayList<T>(), valueClass);
+    /**
+     * Creates a new {@code AttachmentList}.
+     *
+     * @param c initial contents of the list. Cannot be {@code null}
+     * @param valueClass the type of element the list is permitted to hold
+     */
+    public AttachmentList(final Collection<? extends E> c, final Class<E> valueClass) {
+        delegate = Collections.checkedList(new CopyOnWriteArrayList<>(c), valueClass);
         this.valueClass = valueClass;
     }
 
-    public AttachmentList(final Collection<? extends T> c, final Class<T> valueClass) {
-        delegate = Collections.checkedList(new ArrayList<T>(c.size()), valueClass);
-        delegate.addAll(c);
-        this.valueClass = valueClass;
-    }
-
-    public Class<T> getValueClass() {
+    @SuppressWarnings("WeakerAccess")
+    public Class<E> getValueClass() {
         return valueClass;
     }
 
@@ -70,7 +95,12 @@ public final class AttachmentList<T> implements List<T>, RandomAccess {
         return delegate.contains(o);
     }
 
-    public Iterator<T> iterator() {
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Modifications (i.e. {@code remove} calls) throw {@link UnsupportedOperationException}.
+     */
+    public Iterator<E> iterator() {
         return delegate.iterator();
     }
 
@@ -82,8 +112,8 @@ public final class AttachmentList<T> implements List<T>, RandomAccess {
         return delegate.toArray(a);
     }
 
-    public boolean add(final T t) {
-        return delegate.add(t);
+    public boolean add(final E e) {
+        return delegate.add(e);
     }
 
     public boolean remove(final Object o) {
@@ -94,11 +124,11 @@ public final class AttachmentList<T> implements List<T>, RandomAccess {
         return delegate.containsAll(c);
     }
 
-    public boolean addAll(final Collection<? extends T> c) {
+    public boolean addAll(final Collection<? extends E> c) {
         return delegate.addAll(c);
     }
 
-    public boolean addAll(final int index, final Collection<? extends T> c) {
+    public boolean addAll(final int index, final Collection<? extends E> c) {
         return delegate.addAll(index, c);
     }
 
@@ -122,19 +152,19 @@ public final class AttachmentList<T> implements List<T>, RandomAccess {
         return delegate.hashCode();
     }
 
-    public T get(final int index) {
+    public E get(final int index) {
         return delegate.get(index);
     }
 
-    public T set(final int index, final T element) {
+    public E set(final int index, final E element) {
         return delegate.set(index, element);
     }
 
-    public void add(final int index, final T element) {
+    public void add(final int index, final E element) {
         delegate.add(index, element);
     }
 
-    public T remove(final int index) {
+    public E remove(final int index) {
         return delegate.remove(index);
     }
 
@@ -146,15 +176,25 @@ public final class AttachmentList<T> implements List<T>, RandomAccess {
         return delegate.lastIndexOf(o);
     }
 
-    public ListIterator<T> listIterator() {
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Modifications (i.e. {@code remove}, @{code set} and {@code add} calls) throw {@link UnsupportedOperationException}.
+     */
+    public ListIterator<E> listIterator() {
         return delegate.listIterator();
     }
 
-    public ListIterator<T> listIterator(final int index) {
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Modifications (i.e. {@code remove}, @{code set} and {@code add} calls) throw {@link UnsupportedOperationException}.
+     */
+    public ListIterator<E> listIterator(final int index) {
         return delegate.listIterator(index);
     }
 
-    public List<T> subList(final int fromIndex, final int toIndex) {
+    public List<E> subList(final int fromIndex, final int toIndex) {
         return delegate.subList(fromIndex, toIndex);
     }
 }
