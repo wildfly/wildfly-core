@@ -154,11 +154,29 @@ class AuthenticationClientDefinitions {
             .setCapabilityReference(SECURITY_FACTORY_CREDENTIAL_CAPABILITY, AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY)
             .build();
 
+
+    static final SimpleAttributeDefinition HTTP_MECHANISM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HTTP_MECHANISM, ModelType.STRING, true)
+            .setAllowedValues(new ModelNode("BASIC"))
+            .setValidator(new StringAllowedValuesValidator("BASIC"))
+            .setRequired(false)
+            .build();
+
+    static final SimpleAttributeDefinition WS_SECURITY_TYPE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.WS_SECURITY_TYPE, ModelType.STRING, true)
+            .setValidator(new StringAllowedValuesValidator("UsernameToken"))
+            .setRequired(false)
+            .build();
+
+    static final ObjectTypeAttributeDefinition WEBSERVICES = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.WEBSERVICES, HTTP_MECHANISM, WS_SECURITY_TYPE)
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setRestartAllServices()
+            .build();
+
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
             PORT, REALM, SECURITY_DOMAIN, FORWARDING_MODE, SASL_MECHANISM_SELECTOR, KERBEROS_SECURITY_FACTORY };
 
     static final AttributeDefinition[] AUTHENTICATION_CONFIGURATION_ALL_ATTRIBUTES = new AttributeDefinition[] { CONFIGURATION_EXTENDS, ANONYMOUS, AUTHENTICATION_NAME, AUTHORIZATION_NAME, HOST, PROTOCOL,
-            PORT, REALM, SECURITY_DOMAIN, FORWARDING_MODE, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE };
+            PORT, REALM, SECURITY_DOMAIN, FORWARDING_MODE, KERBEROS_SECURITY_FACTORY, SASL_MECHANISM_SELECTOR, MECHANISM_PROPERTIES, CREDENTIAL_REFERENCE, WEBSERVICES };
 
     /* *************************************** */
     /* Authentication Context Attributes */
@@ -348,6 +366,15 @@ class AuthenticationClientDefinitions {
                             throw new IllegalStateException(e);
                         }
                     });
+                }
+
+                ModelNode webServices = WEBSERVICES.resolveModelAttribute(context, model);
+                if (webServices.isDefined()) {
+                    Map<String, Object> wsMap = new HashMap<String, Object>();
+                    for (String s : webServices.keys()) {
+                        wsMap.put(s, webServices.require(s));
+                    }
+                    configuration = wsMap.isEmpty() ? configuration : configuration.andThen(c -> c.useWebServices(wsMap));
                 }
 
                 final Function<AuthenticationConfiguration, AuthenticationConfiguration> finalConfiguration = configuration;
