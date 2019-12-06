@@ -348,7 +348,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assume.assumeTrue("Skipping testSslServiceAuthTLS13, test is not being run on JDK 11.",
                 System.getProperty("java.specification.version").equals("11"));
         testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
-                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384");
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
     }
 
     @Test
@@ -493,6 +493,10 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite) throws Throwable {
+        testCommunication(serverContextName, clientContextName, defaultClient, expectedServerPrincipal, expectedClientPrincipal, expectedCipherSuite, false);
+    }
+
+    private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test) throws Throwable {
         boolean testSessions = ! System.getProperty("java.specification.version").equals("11"); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
@@ -545,6 +549,13 @@ public class TlsTestCase extends AbstractSubsystemTest {
             if (expectedCipherSuite != null) {
                 Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
                 Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());
+            }
+            if (tls13Test) {
+                Assert.assertEquals("TLSv1.3", serverSocket.getSession().getProtocol());
+                Assert.assertEquals("TLSv1.3", clientSocket.getSession().getProtocol());
+            } else {
+                Assert.assertFalse(serverSocket.getSession().getProtocol().equals("TLSv1.3")); // since TLS 1.3 is not enabled by default (WFCORE-4789)
+                Assert.assertFalse(clientSocket.getSession().getProtocol().equals("TLSv1.3")); // since TLS 1.3 is not enabled by default
             }
         } catch (ExecutionException e) {
             if (e.getCause() != null && e.getCause() instanceof RuntimeException && e.getCause().getCause() != null) {

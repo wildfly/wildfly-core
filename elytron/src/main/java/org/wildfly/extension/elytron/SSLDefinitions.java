@@ -218,7 +218,8 @@ class SSLDefinitions {
             .setMinSize(1)
             .setRestartAllServices()
             .setValidator(new CipherSuiteNamesValidator())
-            .setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
+            // WFCORE-4789: Add the following line back when we are ready to enable TLS 1.3 by default
+            //.setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
             .build();
 
     private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
@@ -1128,7 +1129,7 @@ class SSLDefinitions {
                 final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
                 final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
-                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asString();
+                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
                 final boolean wantClientAuth = WANT_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean needClientAuth = NEED_CLIENT_AUTH.resolveModelAttribute(context, model).asBoolean();
                 final boolean authenticationOptional = AUTHENTICATION_OPTIONAL.resolveModelAttribute(context, model).asBoolean();
@@ -1156,7 +1157,7 @@ class SSLDefinitions {
                         builder.setTrustManager(trustManager);
                     if (providers != null)
                         builder.setProviderSupplier(() -> providers);
-                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(CipherSuiteSelector.fromNamesString(cipherSuiteNames), CipherSuiteSelector.fromString(cipherSuiteFilter)));
+                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null, CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
                         for (String protocol : protocols) {
@@ -1294,7 +1295,7 @@ class SSLDefinitions {
                 final String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
                 final List<String> protocols = PROTOCOLS.unwrap(context, model);
                 final String cipherSuiteFilter = CIPHER_SUITE_FILTER.resolveModelAttribute(context, model).asString(); // has default value, can't be null
-                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asString(); // has default value, can't be null
+                final String cipherSuiteNames = CIPHER_SUITE_NAMES.resolveModelAttribute(context, model).asStringOrNull(); // doesn't have a default value yet since we are disabling TLS 1.3 by default
                 return () -> {
                     X509ExtendedKeyManager keyManager = getX509KeyManager(keyManagerInjector.getOptionalValue());
                     X509ExtendedTrustManager trustManager = getX509TrustManager(trustManagerInjector.getOptionalValue());
@@ -1304,7 +1305,7 @@ class SSLDefinitions {
                     if (keyManager != null) builder.setKeyManager(keyManager);
                     if (trustManager != null) builder.setTrustManager(trustManager);
                     if (providers != null) builder.setProviderSupplier(() -> providers);
-                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(CipherSuiteSelector.fromNamesString(cipherSuiteNames), CipherSuiteSelector.fromString(cipherSuiteFilter)));
+                    builder.setCipherSuiteSelector(CipherSuiteSelector.aggregate(cipherSuiteNames != null ? CipherSuiteSelector.fromNamesString(cipherSuiteNames) : null, CipherSuiteSelector.fromString(cipherSuiteFilter)));
                     if (!protocols.isEmpty()) {
                         List<Protocol> list = new ArrayList<>();
                         for (String protocol : protocols) {

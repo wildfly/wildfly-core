@@ -18,7 +18,6 @@ package org.jboss.as.cli.impl.aesh.cmd.security.model;
 import java.util.List;
 import org.jboss.as.cli.Util;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.security.ssl.CipherSuiteSelector;
 
 /**
  * Server SSLContext model class.
@@ -35,7 +34,9 @@ public class ServerSSLContext {
     private List<String> protocols;
     private boolean authenticationOptional;
     private String cipherSuiteFilter = "DEFAULT";
-    private String cipherSuiteNames = CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES;
+    // WFCORE-4789: Set cipherSuiteNames to CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES once we are ready to enable
+    // TLS 1.3 by default
+    private String cipherSuiteNames;
     private String finalPrincipalTransformer;
     private String postRealmPrincipalTransformer;
     private String preRealmPrincipalTransformer;
