@@ -2162,7 +2162,7 @@ public interface ControllerLogger extends BasicLogger {
 //    String stepHandlerFailed(OperationStepHandler handler);
 
     /**
-     * A message indicating the step handler for the operation failed handling operation rollback.
+     * A message indicating the step handler for the operation failed.
      *
      * @param handler the handler that failed.
      * @param op      the operation.
@@ -2171,8 +2171,8 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 190, value = "Step handler %s for operation %s at address %s failed handling operation rollback -- %s")
-    String stepHandlerFailedRollback(OperationStepHandler handler, String op, PathAddress address, Throwable cause);
+    @Message(id = 190, value = "Step handler %s for operation %s at address %s failed -- %s")
+    String stepHandlerFailed(OperationStepHandler handler, String op, PathAddress address, Throwable cause);
 
     /**
      * A message indicating an interruption awaiting subsystem boot operation execution.
