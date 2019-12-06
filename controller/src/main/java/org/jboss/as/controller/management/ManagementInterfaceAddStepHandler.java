@@ -15,6 +15,7 @@
  */
 package org.jboss.as.controller.management;
 
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,6 +109,7 @@ public abstract class ManagementInterfaceAddStepHandler extends AbstractAddStepH
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             Boolean attachment = context.getAttachment(MANAGEMENT_INTERFACE_KEY);
             if (attachment == null ||!context.getAttachment(MANAGEMENT_INTERFACE_KEY)) {
+                ROOT_LOGGER.missingManagementServices();
                 context.setRollbackOnly();
             }
         }
