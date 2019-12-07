@@ -69,9 +69,14 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
         final List<ResourceRoot> allResourceRoots = DeploymentUtils.allResourceRoots(deploymentUnit);
         DeploymentUnit top = deploymentUnit.getParent() == null ? deploymentUnit : deploymentUnit.getParent();
 
-        Set<ModuleIdentifier> additionalModules = new HashSet<>();
-        for(AdditionalModuleSpecification i : top.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-            additionalModules.add(i.getModuleIdentifier());
+        final Set<ModuleIdentifier> additionalModules = new HashSet<>();
+        final List<AdditionalModuleSpecification> additionalModuleList = top.getAttachmentList(Attachments.ADDITIONAL_MODULES);
+        // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (additionalModuleList) {
+            for (AdditionalModuleSpecification i : additionalModuleList) {
+                additionalModules.add(i.getModuleIdentifier());
+            }
         }
         for (final ResourceRoot resourceRoot : allResourceRoots) {
             final Manifest manifest = resourceRoot.getAttachment(Attachments.MANIFEST);

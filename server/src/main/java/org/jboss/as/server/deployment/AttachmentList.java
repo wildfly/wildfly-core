@@ -22,18 +22,34 @@
 
 package org.jboss.as.server.deployment;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
 /**
- * A {@link List} meant for use with an {@link Attachable} object.  The list is thread safe and performs
- * {@link Collections#checkedList(List, Class) run time type checking of all insertions}. Iterators do not
- * support modifications.
+ * A {@link List} meant for use with an {@link Attachable} object. The list has concurrency semantics equivalent to
+ * {@code Collections.synchronizedList}; i.e. it is thread safe for reads and writes not involving an iterator or stream
+ * but if reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+ * when iterating over it:
+ * <pre>
+ * AttachmentList<String></String> list = new AttachmentList<>()</>;
+ * ...
+ * synchronized (list) {
+ *      Iterator i = list.iterator(); // Must be in synchronized block
+ *      while (i.hasNext())
+ *          foo(i.next());
+ * }
+ * </pre>
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
@@ -41,20 +57,18 @@ public final class AttachmentList<E> implements List<E>, RandomAccess {
 
     private final Class<E> valueClass;
     private final List<E> delegate;
+    private final Object mutex;
 
     /**
      * Creates a new {@code AttachmentList}.
      *
-     * @param initialCapacity ignored
+     * @param initialCapacity the initial capacity of the list
      * @param valueClass the type of element the list is permitted to hold
-     * @deprecated use {@code new AttachmentList<>(valueClass)}
      */
-    @SuppressWarnings("unused")
-    @Deprecated
     public AttachmentList(final int initialCapacity, final Class<E> valueClass) {
-        // Ignore the initial capacity. CopyOnWriteArrayList is going to create a new array for any
-        // update so there is no point creating an initial array of any size other than zero.
-        this(valueClass);
+        delegate = Collections.checkedList(new ArrayList<>(initialCapacity), valueClass);
+        this.valueClass = valueClass;
+        mutex = this;
     }
 
     /**
@@ -63,8 +77,7 @@ public final class AttachmentList<E> implements List<E>, RandomAccess {
      * @param valueClass the type of element the list is permitted to hold
      */
     public AttachmentList(final Class<E> valueClass) {
-        delegate = Collections.checkedList(new CopyOnWriteArrayList<>(), valueClass);
-        this.valueClass = valueClass;
+        this(10, valueClass); // Use default ArrayList initial capacity
     }
 
     /**
@@ -74,8 +87,17 @@ public final class AttachmentList<E> implements List<E>, RandomAccess {
      * @param valueClass the type of element the list is permitted to hold
      */
     public AttachmentList(final Collection<? extends E> c, final Class<E> valueClass) {
-        delegate = Collections.checkedList(new CopyOnWriteArrayList<>(c), valueClass);
+        delegate = Collections.checkedList(new ArrayList<>(), valueClass);
+        delegate.addAll(c);
         this.valueClass = valueClass;
+        mutex = this;
+    }
+
+    /** For use by {@link #subList(int, int)} */
+    private AttachmentList(final List<E> sublist, final Class<E> valueClass, Object mutex) {
+        delegate = sublist;
+        this.valueClass = valueClass;
+        this.mutex = mutex;
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -83,104 +105,174 @@ public final class AttachmentList<E> implements List<E>, RandomAccess {
         return valueClass;
     }
 
+    @Override
     public int size() {
-        return delegate.size();
+        synchronized (mutex) {
+            return delegate.size();
+        }
     }
 
+    @Override
     public boolean isEmpty() {
-        return delegate.isEmpty();
+        synchronized (mutex) {
+            return delegate.isEmpty();
+        }
     }
 
+    @Override
     public boolean contains(final Object o) {
-        return delegate.contains(o);
+        synchronized (mutex) {
+            return delegate.contains(o);
+        }
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Modifications (i.e. {@code remove} calls) throw {@link UnsupportedOperationException}.
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when iterating over it.
      */
+    @Override
     public Iterator<E> iterator() {
         return delegate.iterator();
     }
 
+    @Override
     public Object[] toArray() {
-        return delegate.toArray();
+        synchronized (mutex) {
+            return delegate.toArray();
+        }
     }
 
+    @Override
     public <T> T[] toArray(final T[] a) {
-        return delegate.toArray(a);
+        synchronized (mutex) {
+            return delegate.toArray(a);
+        }
     }
 
+    @Override
     public boolean add(final E e) {
-        return delegate.add(e);
+        synchronized (mutex) {
+            return delegate.add(e);
+        }
     }
 
+    @Override
     public boolean remove(final Object o) {
-        return delegate.remove(o);
+        synchronized (mutex) {
+            return delegate.remove(o);
+        }
     }
 
+    @Override
     public boolean containsAll(final Collection<?> c) {
-        return delegate.containsAll(c);
+        synchronized (mutex) {
+            return delegate.containsAll(c);
+        }
     }
 
+    @Override
     public boolean addAll(final Collection<? extends E> c) {
-        return delegate.addAll(c);
+        synchronized (mutex) {
+            return delegate.addAll(c);
+        }
     }
 
+    @Override
     public boolean addAll(final int index, final Collection<? extends E> c) {
-        return delegate.addAll(index, c);
+        synchronized (mutex) {
+            return delegate.addAll(index, c);
+        }
     }
 
+    @Override
     public boolean removeAll(final Collection<?> c) {
-        return delegate.removeAll(c);
+        synchronized (mutex) {
+            return delegate.removeAll(c);
+        }
     }
 
+    @Override
     public boolean retainAll(final Collection<?> c) {
-        return delegate.retainAll(c);
+        synchronized (mutex) {
+            return delegate.retainAll(c);
+        }
     }
 
+    @Override
     public void clear() {
-        delegate.clear();
+        synchronized (mutex) {
+            delegate.clear();
+        }
     }
 
+    @Override
     public boolean equals(final Object o) {
-        return delegate.equals(o);
+        if (this == o) {
+            return true;
+        }
+        synchronized (mutex) {
+            return delegate.equals(o);
+        }
     }
 
+    @Override
     public int hashCode() {
-        return delegate.hashCode();
+        synchronized (mutex) {
+            return delegate.hashCode();
+        }
     }
 
+    @Override
     public E get(final int index) {
-        return delegate.get(index);
+        synchronized (mutex) {
+            return delegate.get(index);
+        }
     }
 
+    @Override
     public E set(final int index, final E element) {
-        return delegate.set(index, element);
+        synchronized (mutex) {
+            return delegate.set(index, element);
+        }
     }
 
     public void add(final int index, final E element) {
-        delegate.add(index, element);
+        synchronized (mutex) {
+            delegate.add(index, element);
+        }
     }
 
+    @Override
     public E remove(final int index) {
-        return delegate.remove(index);
+        synchronized (mutex) {
+            return delegate.remove(index);
+        }
     }
 
+    @Override
     public int indexOf(final Object o) {
-        return delegate.indexOf(o);
+        synchronized (mutex) {
+            return delegate.indexOf(o);
+        }
     }
 
+    @Override
     public int lastIndexOf(final Object o) {
-        return delegate.lastIndexOf(o);
+        synchronized (mutex) {
+            return delegate.lastIndexOf(o);
+        }
     }
 
     /**
      * {@inheritDoc}
      * <p>
-     * Modifications (i.e. {@code remove}, @{code set} and {@code add} calls) throw {@link UnsupportedOperationException}.
+     * <p>
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when iterating over it.
      */
+    @Override
     public ListIterator<E> listIterator() {
         return delegate.listIterator();
     }
@@ -188,13 +280,80 @@ public final class AttachmentList<E> implements List<E>, RandomAccess {
     /**
      * {@inheritDoc}
      * <p>
-     * Modifications (i.e. {@code remove}, @{code set} and {@code add} calls) throw {@link UnsupportedOperationException}.
+     * <p>
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when iterating over it.
      */
+    @Override
     public ListIterator<E> listIterator(final int index) {
         return delegate.listIterator(index);
     }
 
+    @Override
     public List<E> subList(final int fromIndex, final int toIndex) {
-        return delegate.subList(fromIndex, toIndex);
+        synchronized (mutex) {
+            return new AttachmentList<>(delegate.subList(fromIndex, toIndex), valueClass, mutex);
+        }
+    }
+
+    @Override
+    public void forEach(Consumer<? super E> action) {
+        synchronized (mutex) {
+            delegate.forEach(action);
+        }
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        synchronized (mutex) {
+            return delegate.removeIf(filter);
+        }
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<E> operator) {
+        synchronized (mutex) {
+            delegate.replaceAll(operator);
+        }
+    }
+
+    @Override
+    public void sort(Comparator<? super E> c) {
+        synchronized (mutex) {
+            delegate.sort(c);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when using the {@code Spliterator}.
+     */
+    @Override
+    public Spliterator<E> spliterator() {
+        return delegate.spliterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when using the {@code Stream}.
+     */
+    @Override
+    public Stream<E> stream() {
+        return delegate.stream();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If reads can occur concurrently with writes it is imperative that the user manually synchronize on the list
+     * when using the {@code Stream}.
+     */
+    @Override
+    public Stream<E> parallelStream() {
+        return delegate.parallelStream();
     }
 }
