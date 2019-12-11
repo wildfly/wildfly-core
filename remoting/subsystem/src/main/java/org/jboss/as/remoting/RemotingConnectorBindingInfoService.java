@@ -23,25 +23,30 @@
 package org.jboss.as.remoting;
 
 import org.jboss.as.network.SocketBinding;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
+
+import java.util.function.Consumer;
 
 /**
  * Service that publishes socket binding information for remoting connectors
  *
  * @author Stuart Douglas
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class RemotingConnectorBindingInfoService implements Service<RemotingConnectorBindingInfoService.RemotingConnectorInfo> {
+public final class RemotingConnectorBindingInfoService implements Service {
 
     private static final ServiceName SERVICE_NAME = RemotingServices.REMOTING_BASE.append("remotingConnectorInfoService");
 
+    private final Consumer<RemotingConnectorInfo> serviceConsumer;
     private final RemotingConnectorInfo binding;
 
-    public RemotingConnectorBindingInfoService(RemotingConnectorInfo binding) {
+    private RemotingConnectorBindingInfoService(final Consumer<RemotingConnectorInfo> serviceConsumer, final RemotingConnectorInfo binding) {
+        this.serviceConsumer = serviceConsumer;
         this.binding = binding;
     }
 
@@ -49,26 +54,21 @@ public class RemotingConnectorBindingInfoService implements Service<RemotingConn
         return SERVICE_NAME.append(connectorName);
     }
 
-    @Deprecated
-    public static void install(final ServiceTarget target, final String connectorName, final SocketBinding binding, final String protocol) {
-        target.addService(serviceName(connectorName), new RemotingConnectorBindingInfoService(new RemotingConnectorInfo(binding, Protocol.forName(protocol)))).install();
-    }
-
     public static void install(final ServiceTarget target, final String connectorName, final SocketBinding binding, final Protocol protocol) {
-        target.addService(serviceName(connectorName), new RemotingConnectorBindingInfoService(new RemotingConnectorInfo(binding, protocol))).install();
+        final ServiceBuilder<?> sb = target.addService(serviceName(connectorName));
+        final Consumer<RemotingConnectorInfo> serviceConsumer = sb.provides(serviceName(connectorName));
+        sb.setInstance(new RemotingConnectorBindingInfoService(serviceConsumer, new RemotingConnectorInfo(binding, protocol)));
+        sb.install();
     }
 
     @Override
-    public void start(StartContext startContext) throws StartException {
+    public void start(final StartContext startContext) {
+        serviceConsumer.accept(binding);
     }
 
     @Override
-    public void stop(StopContext stopContext) {
-    }
-
-    @Override
-    public RemotingConnectorInfo getValue() throws IllegalStateException, IllegalArgumentException {
-        return binding;
+    public void stop(final StopContext stopContext) {
+        serviceConsumer.accept(null);
     }
 
     public static final class RemotingConnectorInfo {
@@ -88,4 +88,5 @@ public class RemotingConnectorBindingInfoService implements Service<RemotingConn
             return protocol.toString();
         }
     }
+
 }

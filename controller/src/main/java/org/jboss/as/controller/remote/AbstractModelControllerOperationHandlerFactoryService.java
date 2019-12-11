@@ -32,6 +32,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelInitialization;
@@ -40,7 +42,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
 
@@ -48,6 +49,7 @@ import org.jboss.threads.JBossThreadFactory;
  * Service used to create operation handlers per incoming channel
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public abstract class AbstractModelControllerOperationHandlerFactoryService implements Service<AbstractModelControllerOperationHandlerFactoryService>, ManagementChannelInitialization {
 
@@ -58,36 +60,31 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     private static final int POOL_CORE_SIZE = 4;
     private static final int POOL_MAX_SIZE = 4;
 
-
-    private final InjectedValue<ModelController> modelControllerValue = new InjectedValue<ModelController>();
-    private final InjectedValue<ExecutorService> executor = new InjectedValue<ExecutorService>();
-    private final InjectedValue<ScheduledExecutorService> scheduledExecutor = new InjectedValue<>();
+    private final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer;
+    private final Supplier<ModelController> modelControllerSupplier;
+    private final Supplier<ExecutorService> executorSupplier;
+    private final Supplier<ScheduledExecutorService> scheduledExecutorSupplier;
 
     private ResponseAttachmentInputStreamSupport responseAttachmentSupport;
     private ExecutorService clientRequestExecutor;
 
-    /**
-     * Use to inject the model controller that will be the target of the operations
-     *
-     * @return the injected value holder
-     */
-    public InjectedValue<ModelController> getModelControllerInjector() {
-        return modelControllerValue;
-    }
-
-    public InjectedValue<ExecutorService> getExecutorInjector() {
-        return executor;
-    }
-
-    public InjectedValue<ScheduledExecutorService> getScheduledExecutorInjector() {
-        return scheduledExecutor;
+    protected AbstractModelControllerOperationHandlerFactoryService(
+            final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer,
+            final Supplier<ModelController> modelControllerSupplier,
+            final Supplier<ExecutorService> executorSupplier,
+            final Supplier<ScheduledExecutorService> scheduledExecutorSupplier
+    ) {
+        this.serviceConsumer = serviceConsumer;
+        this.modelControllerSupplier = modelControllerSupplier;
+        this.executorSupplier = executorSupplier;
+        this.scheduledExecutorSupplier = scheduledExecutorSupplier;
     }
 
     /** {@inheritDoc} */
     @Override
     public synchronized void start(StartContext context) throws StartException {
         MGMT_OP_LOGGER.debugf("Starting operation handler service %s", context.getController().getName());
-        responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutor.getValue());
+        responseAttachmentSupport = new ResponseAttachmentInputStreamSupport(scheduledExecutorSupplier.get());
 
         final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
             public JBossThreadFactory run() {
@@ -111,13 +108,14 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
             .allowCoreThreadTimeOut(true)
             .build();
         }
-
+        serviceConsumer.accept(this);
     }
 
     /** {@inheritDoc} */
     @Override
     public synchronized void stop(final StopContext stopContext) {
-        final ExecutorService executorService = executor.getValue();
+        serviceConsumer.accept(null);
+        final ExecutorService executorService = executorSupplier.get();
         final Runnable task = new Runnable() {
             @Override
             public void run() {
@@ -148,11 +146,11 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     }
 
     protected ModelController getController() {
-        return modelControllerValue.getValue();
+        return modelControllerSupplier.get();
     }
 
     protected ExecutorService getExecutor() {
-        return executor.getValue();
+        return executorSupplier.get();
     }
 
     protected ResponseAttachmentInputStreamSupport getResponseAttachmentSupport() {
@@ -162,4 +160,5 @@ public abstract class AbstractModelControllerOperationHandlerFactoryService impl
     protected final ExecutorService getClientRequestExecutor() {
         return clientRequestExecutor;
     }
+
 }

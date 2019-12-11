@@ -1,7 +1,10 @@
 package org.jboss.as.server.operations;
 
 
+import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.remote.AbstractModelControllerOperationHandlerFactoryService;
 import org.jboss.as.controller.remote.ModelControllerClientOperationHandlerFactoryService;
+import org.jboss.as.controller.remote.ModelControllerOperationHandlerFactory;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.management.ManagementChannelRegistryService;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -11,6 +14,11 @@ import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
 import org.xnio.OptionMap;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Utility class that installs remoting services needed by both the native and HTTP upgrade
@@ -43,7 +51,16 @@ class NativeManagementServices {
 
             ManagementRemotingServices.installManagementChannelServices(serviceTarget,
                     ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                    new ModelControllerClientOperationHandlerFactoryService(),
+                    new ModelControllerOperationHandlerFactory() {
+                        @Override
+                        public AbstractModelControllerOperationHandlerFactoryService newInstance(
+                                final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer,
+                                final Supplier<ModelController> modelControllerSupplier,
+                                final Supplier<ExecutorService> executorSupplier,
+                                final Supplier<ScheduledExecutorService> scheduledExecutorSupplier) {
+                            return new ModelControllerClientOperationHandlerFactoryService(serviceConsumer, modelControllerSupplier, executorSupplier, scheduledExecutorSupplier);
+                        }
+                    },
                     Services.JBOSS_SERVER_CONTROLLER,
                     ManagementRemotingServices.MANAGEMENT_CHANNEL,
                     ServerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(),

@@ -26,31 +26,42 @@ import java.net.URI;
 
 import javax.net.ssl.SSLContext;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.jboss.as.network.OutboundSocketBinding;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.value.InjectedValue;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
-import org.xnio.OptionMap;
 
 /**
  * A {@link LocalOutboundConnectionService} manages a local remoting connection (i.e. a connection created with local:// URI scheme).
  *
  * @author Jaikiran Pai
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class LocalOutboundConnectionService extends AbstractOutboundConnectionService implements Service<LocalOutboundConnectionService> {
+final class LocalOutboundConnectionService extends AbstractOutboundConnectionService implements Service<LocalOutboundConnectionService> {
 
-    public static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
+    static final ServiceName LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("local-outbound-connection");
 
-    private final InjectedValue<OutboundSocketBinding> destinationOutboundSocketBindingInjectedValue = new InjectedValue<OutboundSocketBinding>();
+    private final Consumer<LocalOutboundConnectionService> serviceConsumer;
+    private final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier;
 
-    public LocalOutboundConnectionService(final String connectionName, final OptionMap connectionCreationOptions) {
-        super();
+    LocalOutboundConnectionService(final Consumer<LocalOutboundConnectionService> serviceConsumer, final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier) {
+        this.serviceConsumer = serviceConsumer;
+        this.outboundSocketBindingSupplier = outboundSocketBindingSupplier;
     }
 
-    Injector<OutboundSocketBinding> getDestinationOutboundSocketBindingInjector() {
-        return this.destinationOutboundSocketBindingInjectedValue;
+    @Override
+    public void start(final StartContext context) {
+        serviceConsumer.accept(this);
+    }
+
+    @Override
+    public void stop(final StopContext context) {
+        serviceConsumer.accept(null);
     }
 
     @Override
@@ -69,4 +80,5 @@ public class LocalOutboundConnectionService extends AbstractOutboundConnectionSe
     public SSLContext getSSLContext() {
         return null;
     }
+
 }
