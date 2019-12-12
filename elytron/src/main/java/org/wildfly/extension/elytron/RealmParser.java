@@ -86,6 +86,9 @@ class RealmParser {
     private final PersistentResourceXMLDescription distributedRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM), null)
             .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
             .build();
+    private final PersistentResourceXMLDescription failoverRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM), null)
+            .addAttributes(FailoverRealmDefinition.ATTRIBUTES)
+            .build();
 
     final PersistentResourceXMLDescription realmParser = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
             .addChild(aggregateRealmParser)
@@ -142,6 +145,7 @@ class RealmParser {
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
             .addChild(distributedRealmParser)
+            .addChild(failoverRealmParser)
             .build();
 
     RealmParser() {

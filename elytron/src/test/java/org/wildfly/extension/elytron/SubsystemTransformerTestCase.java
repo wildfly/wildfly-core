@@ -20,7 +20,9 @@ import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECT
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
 import static org.junit.Assert.assertTrue;
+
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FAILOVER_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 
@@ -181,6 +183,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, "RegexRoleMapper")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(DISTRIBUTED_REALM, "DistributedRealm")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(FAILOVER_REALM, "FailoverRealm")), REJECTED_RESOURCE)
                 );
     }
 

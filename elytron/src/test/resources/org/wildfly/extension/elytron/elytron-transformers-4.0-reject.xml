@@ -52,6 +52,7 @@
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
         <aggregate-realm name="AggregateTwo" authentication-realm="JdbcBcryptHashHex" authorization-realm="JdbcBcryptSaltHex" principal-transformer ="RegexOne"/>
+        <failover-realm name="FailoverRealm" delegate-realm="JdbcBcryptHashHex" failover-realm="JdbcBcryptSaltHex"/>
         <jdbc-realm name="JdbcBcryptHashHex">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>
