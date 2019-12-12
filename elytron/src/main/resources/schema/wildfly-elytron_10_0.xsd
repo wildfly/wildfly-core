@@ -138,6 +138,28 @@
         Authentication Client
      -->
 
+    <xs:complexType name="webservicesType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a Web Services configuration.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="http-mechanism" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    HTTP mechanism web services client will use when connecting to the server.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ws-security-type" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    WS-security method web services client will use when connecting to the server.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="authenticationClientType">
         <xs:annotation>
             <xs:documentation>
@@ -173,6 +195,13 @@
                 <xs:annotation>
                     <xs:documentation>
                         Credential to be used by the configuration.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="webservices" type="webservicesType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Web Services client configuration definition.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
