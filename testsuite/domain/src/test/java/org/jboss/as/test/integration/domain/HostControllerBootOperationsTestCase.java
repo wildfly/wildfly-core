@@ -63,6 +63,7 @@ public class HostControllerBootOperationsTestCase {
     protected static final PathAddress SERVER_CONFIG_MAIN_THREE = PathAddress.pathAddress(SERVER_CONFIG, "main-three");
     protected static final PathAddress SERVER_MAIN_THREE = PathAddress.pathAddress(SERVER, "main-three");
     protected static final PathAddress CORE_SERVICE_MANAGEMENT = PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT);
+    protected static final PathAddress CORE_SERVICE_PATCHING = PathAddress.pathAddress(CORE_SERVICE, "patching");
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
     protected static final PathAddress JVM_DEFAULT = PathAddress.pathAddress(JVM, "default");
     protected static final PathAddress JVM_BYTEMAN = PathAddress.pathAddress(JVM, "byteman");
@@ -166,6 +167,12 @@ public class HostControllerBootOperationsTestCase {
 
         // assert we are also able to read the HC slave model recursively
         op = Util.createEmptyOperation("read-resource", SLAVE_ADDR);
+        op.get("recursive").set(true);
+        DomainTestUtils.executeForResult(op, masterClient);
+
+        // WFCORE-4596. assert we are able to read patching resource using include-runtime
+        op = Util.createEmptyOperation("read-resource", SLAVE_ADDR.append(CORE_SERVICE_PATCHING));
+        op.get("include-runtime").set(true);
         op.get("recursive").set(true);
         DomainTestUtils.executeForResult(op, masterClient);
 

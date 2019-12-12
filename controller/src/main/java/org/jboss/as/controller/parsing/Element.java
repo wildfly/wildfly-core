@@ -54,6 +54,7 @@ public enum Element {
     CLIENT_CERT_STORE("client-certificate-store"),
     CLIENT_MAPPING("client-mapping"),
     CONFIGURATION_CHANGES("configuration-changes"),
+    CONSTANT_HEADERS("constant-headers"),
     CONSTRAINTS("constraints"),
     CONTENT("content"),
     CREDENTIAL_REFERENCE("credential-reference"),
@@ -88,6 +89,8 @@ public enum Element {
 
     HANDLER("handler"),
     HANDLERS("handlers"),
+    HEADER("header"),
+    HEADER_MAPPING("header-mapping"),
     HEAP("heap"),
     HOST("host"),
     HOSTS("hosts"),

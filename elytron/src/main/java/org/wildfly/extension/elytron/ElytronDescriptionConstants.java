@@ -226,6 +226,7 @@ interface ElytronDescriptionConstants {
     String HEX = "hex";
     String HTTP = "http";
     String HTTP_AUTHENTICATION_FACTORY = "http-authentication-factory";
+    String HTTP_MECHANISM = "http-mechanism";
     String HTTP_SERVER_MECHANISM_FACTORY = "http-server-mechanism-factory";
     String HTTP_SERVER_MECHANISM_FACTORIES = "http-server-mechanism-factories";
 
@@ -572,6 +573,8 @@ interface ElytronDescriptionConstants {
     String WRAP = "wrap";
     String WRAP_GSS_CREDENTIAL = "wrap-gss-credential";
     String WRITABLE = "writable";
+    String WEBSERVICES = "webservices";
+    String WS_SECURITY_TYPE = "ws-security-type";
 
     String X500_ATTRIBUTE_PRINCIPAL_DECODER = "x500-attribute-principal-decoder";
     String X500_SUBJECT_EVIDENCE_DECODER = "x500-subject-evidence-decoder";

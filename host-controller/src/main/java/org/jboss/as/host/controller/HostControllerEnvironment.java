@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -31,14 +33,19 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.jvm.JvmType;
+import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.version.ProductConfig;
+import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -852,5 +859,39 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     @Override
     public UUID getInstanceUuid() {
         return this.hostControllerUUID;
+    }
+
+    /**
+     * Gets an {@link OperationStepHandler} that can write the {@code name} attribute for a host controller.
+     *
+     * @return the handler
+     */
+    public OperationStepHandler getHostNameWriteHandler(LocalHostControllerInfoImpl hostControllerInfo) {
+        return new HostNameWriteAttributeHandler(hostControllerInfo);
+    }
+
+    protected class HostNameWriteAttributeHandler extends ProcessNameWriteAttributeHandler {
+        private final LocalHostControllerInfoImpl hostControllerInfo;
+
+        private HostNameWriteAttributeHandler(LocalHostControllerInfoImpl hostControllerInfo) {
+            this.hostControllerInfo = hostControllerInfo;
+        }
+
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final boolean booting = context.isBooting();
+            if (booting) {
+                final ModelNode newValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
+                if (newValue.isDefined()) {
+                    context.addStep(new OperationStepHandler() {
+                        @Override
+                        public void execute(OperationContext context, ModelNode operation) {
+                            hostControllerInfo.clearOverrideLocalHostName();
+                        }
+                    }, OperationContext.Stage.RUNTIME);
+                }
+            }
+            super.execute(context, operation);
+        }
     }
 }

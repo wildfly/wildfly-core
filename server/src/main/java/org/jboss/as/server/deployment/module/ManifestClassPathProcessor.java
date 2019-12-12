@@ -43,7 +43,7 @@ import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.MountedDeploymentOverlay;
 import org.jboss.as.server.deployment.SubDeploymentMarker;
 import org.jboss.as.server.deployment.annotation.ResourceRootIndexer;
-import org.jboss.as.server.moduleservice.ExternalModuleService;
+import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.ServiceTarget;
@@ -87,7 +87,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         final DeploymentUnit parent = deploymentUnit.getParent();
         final DeploymentUnit topLevelDeployment = parent == null ? deploymentUnit : parent;
         final VirtualFile topLevelRoot = topLevelDeployment.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
-        final ExternalModuleService externalModuleService = topLevelDeployment.getAttachment(Attachments.EXTERNAL_MODULE_SERVICE);
+        final ExternalModule externalModuleService = topLevelDeployment.getAttachment(Attachments.EXTERNAL_MODULE_SERVICE);
         final ResourceRoot deploymentRoot = deploymentUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
         final ServiceTarget externalServiceTarget = deploymentUnit.getAttachment(Attachments.EXTERNAL_SERVICE_TARGET);
 
@@ -156,7 +156,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                 //then resolve relative to the deployment root
                 final VirtualFile topLevelClassPathFile = deploymentRoot.getRoot().getParent().getChild(item);
                 if (item.startsWith("/")) {
-                    if (externalModuleService.isValid(item)) {
+                    if (externalModuleService.isValidFile(item)) {
                         final ModuleIdentifier moduleIdentifier = externalModuleService.addExternalModule(item, phaseContext.getServiceRegistry(), externalServiceTarget);
                         target.addToAttachmentList(Attachments.CLASS_PATH_ENTRIES, moduleIdentifier);
                         ServerLogger.DEPLOYMENT_LOGGER.debugf("Resource %s added as external jar %s", classPathFile, resourceRoot.getRoot());

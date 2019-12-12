@@ -99,6 +99,7 @@ public enum Attribute {
     GROUP_NAME_ATTRIBUTE("group-name-attribute"),
     GROUP_NAME("group-name"),
     HANDLES_REFERRALS_FOR("handles-referrals-for"),
+    HEADER("header"),
     HOST("host"),
     HTTP("http"),
     HTTP_AUTHENTICATION_FACTORY("http-authentication-factory"),

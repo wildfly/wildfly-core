@@ -548,6 +548,41 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
         cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
         cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+        cli.sendLine(":read-attribute(name=local-host-name)");
+        final CLIOpResult result = cli.readAllAsOpResult();
+        final ModelNode response = result.getResponseNode();
+        assertTrue(response.has(OUTCOME));
+        assertEquals(SUCCESS, response.get(OUTCOME).asString());
+        assertEquals("foo", response.get(RESULT).asString());
+    }
+
+    @Test
+    public void testEmptyHostConfigConfigureWithReloadAndHostRename() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("/host=foo:add()");
+        assertTrue(cli.isConnected());
+
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
+        cli.sendLine("/host=foo:reload(admin-only=true)");
+        assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
+
+        assertTrue(cli.isConnected());
+
+        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+        cli.sendLine(":read-attribute(name=local-host-name)");
+
+        final CLIOpResult result = cli.readAllAsOpResult();
+        final ModelNode response = result.getResponseNode();
+        assertTrue(response.has(OUTCOME));
+        assertEquals(SUCCESS, response.get(OUTCOME).asString());
+        assertEquals("renamed-foo", response.get(RESULT).asString());
     }
 
     @Test
@@ -570,8 +605,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("embed-host-controller --std-out=echo --host-config=host-empty-cli.xml " + JBOSS_HOME);
         assertTrue(cli.isConnected());
         cli.sendLine(":read-children-names(child-type=host)");
-        final CLIOpResult result = cli.readAllAsOpResult();
-        final ModelNode response = result.getResponseNode();
+        CLIOpResult result = cli.readAllAsOpResult();
+        ModelNode response = result.getResponseNode();
         assertTrue(response.has(OUTCOME));
         assertEquals(SUCCESS, response.get(OUTCOME).asString());
         assertEquals("foo", response.get(RESULT).asList().get(0).asString());
@@ -579,6 +614,54 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
         cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
         assertTrue(cli.isConnected());
+
+        cli.sendLine(":read-attribute(name=local-host-name)");
+        result = cli.readAllAsOpResult();
+        response = result.getResponseNode();
+        assertTrue(response.has(OUTCOME));
+        assertEquals(SUCCESS, response.get(OUTCOME).asString());
+        assertEquals("foo", response.get(RESULT).asString());
+    }
+
+    @Test
+    public void testEmptyHostConfigConfigureWithReloadNamePersistAndHostRename() throws Exception {
+        final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --domain-config=domain-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
+        cli.sendLine(line);
+        cli.sendLine("/host=foo:add(persist-name=true)");
+        assertTrue(cli.isConnected());
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
+        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
+        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+
+        cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
+        cli.sendLine("/host=foo:reload(admin-only=true)");
+        assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
+
+        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+
+        cli.sendLine("stop-embedded-host-controller");
+        cli.sendLine("embed-host-controller --std-out=echo --host-config=host-empty-cli.xml " + JBOSS_HOME);
+        assertTrue(cli.isConnected());
+        cli.sendLine(":read-children-names(child-type=host)");
+        CLIOpResult result = cli.readAllAsOpResult();
+        ModelNode response = result.getResponseNode();
+        assertTrue(response.has(OUTCOME));
+        assertEquals(SUCCESS, response.get(OUTCOME).asString());
+        assertEquals("renamed-foo", response.get(RESULT).asList().get(0).asString());
+        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
+        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
+        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+        assertTrue(cli.isConnected());
+
+        cli.sendLine(":read-attribute(name=local-host-name)");
+        result = cli.readAllAsOpResult();
+        response = result.getResponseNode();
+        assertTrue(response.has(OUTCOME));
+        assertEquals(SUCCESS, response.get(OUTCOME).asString());
+        assertEquals("renamed-foo", response.get(RESULT).asString());
     }
 
     @Test
@@ -707,28 +790,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     }
 
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
-        long done = timeout < 1 ? 0 : System.currentTimeMillis() + timeout;
-        StringBuilder history = new StringBuilder();
-        String state = null;
-        do {
-            try {
-                cli.sendLine("/host=master:read-attribute(name=host-state)", true);
-                CLIOpResult result = cli.readAllAsOpResult();
-                ModelNode resp = result.getResponseNode();
-                ModelNode stateNode = result.isIsOutcomeSuccess() ? resp.get(RESULT) : resp.get(FAILURE_DESCRIPTION);
-                state = stateNode.asString();
-                history.append(state).append("\n");
-            } catch (Exception ignored) {
-                //
-                history.append(ignored.toString()).append("--").append(cli.readOutput()).append("\n");
-            }
-            if (expected.equals(state)) {
-                return;
-            } else {
-                Thread.sleep(20);
-            }
-        } while (timeout > 0 && System.currentTimeMillis() < done);
-        assertEquals(history.toString(), expected, state);
+        assertState(expected, timeout, "/host=master:read-attribute(name=host-state)");
     }
 
     private void checkNoLogging(String line) throws IOException {

@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>11.0.0.Beta3-SNAPSHOT</version>
+        <version>11.0.0.Beta5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-galleon-pack</artifactId>
@@ -1064,6 +1064,8 @@
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                             <licensesConfigFile>${feature-pack.license.directory}/core-feature-pack-licenses.xml</licensesConfigFile>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
+                            <excludedGroups>org.wildfly.galleon-plugins</excludedGroups>
+                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-elytron\z</excludedArtifacts>
                             <excludedScopes>system</excludedScopes>
                         </configuration>
                     </execution>

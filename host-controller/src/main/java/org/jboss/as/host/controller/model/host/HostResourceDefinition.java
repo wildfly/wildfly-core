@@ -339,7 +339,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
         hostRegistration.registerReadOnlyAttribute(MASTER, IsMasterHandler.INSTANCE);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.NAMESPACES, null);
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.SCHEMA_LOCATIONS, null);
-        hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getProcessNameWriteHandler());
+        hostRegistration.registerReadWriteAttribute(HostResourceDefinition.NAME, environment.getProcessNameReadHandler(), environment.getHostNameWriteHandler(hostControllerInfo));
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.RUNTIME_CONFIGURATION_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(HostResourceDefinition.HOST_STATE, new ProcessStateAttributeHandler(processState));
         hostRegistration.registerReadOnlyAttribute(ServerRootResourceDefinition.RUNNING_MODE, new RunningModeReadHandler(runningModeControl));

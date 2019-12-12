@@ -2162,7 +2162,7 @@ public interface ControllerLogger extends BasicLogger {
 //    String stepHandlerFailed(OperationStepHandler handler);
 
     /**
-     * A message indicating the step handler for the operation failed handling operation rollback.
+     * A message indicating the step handler for the operation failed.
      *
      * @param handler the handler that failed.
      * @param op      the operation.
@@ -2171,8 +2171,8 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 190, value = "Step handler %s for operation %s at address %s failed handling operation rollback -- %s")
-    String stepHandlerFailedRollback(OperationStepHandler handler, String op, PathAddress address, Throwable cause);
+    @Message(id = 190, value = "Step handler %s for operation %s at address %s failed -- %s")
+    String stepHandlerFailed(OperationStepHandler handler, String op, PathAddress address, Throwable cause);
 
     /**
      * A message indicating an interruption awaiting subsystem boot operation execution.
@@ -3555,4 +3555,15 @@ public interface ControllerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 456, value = "System property %s=%s already set. It's being overridden by new value %s")
     void systemPropertyAlreadyExist(String name, String value, String value2);
+
+    @Message(id = 457, value = "Invalid HTTP Header name '%s'")
+    OperationFailedException invalidHeaderName(String value);
+
+    @Message(id = 458, value = "Disallowed HTTP Header name '%s'")
+    OperationFailedException disallowedHeaderName(String value);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 459, value = "Triggering roll back due to missing management services.")
+    void missingManagementServices();
+
 }

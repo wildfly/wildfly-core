@@ -33,6 +33,10 @@ import org.jboss.dmr.ModelNode;
 
 abstract class PatchAttributeReadHandler extends PatchStreamResourceOperationStepHandler {
 
+    PatchAttributeReadHandler() {
+        this.acquireWriteLock = false;
+    }
+
     @Override
     protected void execute(final OperationContext context, final ModelNode operation, final InstalledIdentity installedIdentity) throws OperationFailedException {
 

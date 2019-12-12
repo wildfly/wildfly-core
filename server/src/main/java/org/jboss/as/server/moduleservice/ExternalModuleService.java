@@ -22,11 +22,13 @@
 package org.jboss.as.server.moduleservice;
 
 import java.io.File;
+import java.util.function.Consumer;
 
 import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
@@ -48,29 +50,28 @@ import org.jboss.msc.service.StopContext;
  * @author Ales Justin
  *
  */
-public class ExternalModuleService implements Service<ExternalModuleService> {
-
-    public static final String EXTERNAL_MODULE_PREFIX = ServiceModuleLoader.MODULE_PREFIX + "external.";
+public class ExternalModuleService implements Service<ExternalModuleService>, ExternalModule {
 
     private boolean started;
+    private final Consumer<ExternalModuleService> externalModuleServiceConsumer;
 
-    /**
-     * Is external module item valid.
-     * Keep the File impl detail in this class.
-     *
-     * @param externalModule the external module class path item
-     * @return true if valid, false otherwise
-     */
-    public boolean isValid(String externalModule) {
-        File f = new File(externalModule);
+    private ExternalModuleService(final Consumer<ExternalModuleService> externalModuleServiceConsumer) {
+        this.externalModuleServiceConsumer = externalModuleServiceConsumer;
+    }
+
+    @Override
+    public boolean isValidFile(String path) {
+        File f = new File(path);
         return f.exists() && !f.isDirectory();
     }
 
+    @Override
     public ModuleIdentifier addExternalModule(String moduleName, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
-        return addExternalModule(moduleName, serviceRegistry, serviceTarget, moduleName);
+        return addExternalModule(moduleName, moduleName, serviceRegistry, serviceTarget);
     }
 
-    public ModuleIdentifier addExternalModule(String moduleName, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget, String path) {
+    @Override
+    public ModuleIdentifier addExternalModule(String moduleName, String path, ServiceRegistry serviceRegistry, ServiceTarget serviceTarget) {
         ModuleIdentifier identifier = ModuleIdentifier.create(EXTERNAL_MODULE_PREFIX + moduleName);
         ServiceName serviceName = ServiceModuleLoader.moduleSpecServiceName(identifier);
         ServiceController<?> controller = serviceRegistry.getService(serviceName);
@@ -89,6 +90,7 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
         if (started) {
             throw ServerLogger.ROOT_LOGGER.externalModuleServiceAlreadyStarted();
         }
+        this.externalModuleServiceConsumer.accept(this);
         started = true;
     }
 
@@ -100,9 +102,11 @@ public class ExternalModuleService implements Service<ExternalModuleService> {
         return this;
     }
 
-    public static void addService(final ServiceTarget serviceTarget) {
-        serviceTarget.addService(Services.JBOSS_EXTERNAL_MODULE_SERVICE)
-                .setInstance(new ExternalModuleService())
+    public static void addService(final ServiceTarget serviceTarget, final ServiceName externalModuleServiceName) {
+        final ServiceBuilder<?> serviceBuilder = serviceTarget.addService(externalModuleServiceName);
+        final Consumer<ExternalModuleService> provides = serviceBuilder.provides(Services.JBOSS_EXTERNAL_MODULE_SERVICE);
+
+        serviceBuilder.setInstance(new ExternalModuleService(provides))
                 .install();
     }
 }

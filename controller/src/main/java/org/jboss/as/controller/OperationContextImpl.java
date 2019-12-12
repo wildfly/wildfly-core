@@ -2649,14 +2649,62 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public <V> Consumer<V> provides(final RuntimeCapability<?>... capabilities) {
-            if (capabilities == null || capabilities.length == 0) return null;
-            final ServiceName[] serviceNames = new ServiceName[capabilities.length];
+            if (capabilities == null || capabilities.length == 0)  throw new IllegalArgumentException();
+            return provides(capabilities, null);
+        }
+
+        @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?> capability, final ServiceName alias, final ServiceName... aliases) {
+            if (capability == null || alias == null) throw new IllegalArgumentException();
+            final int aliasesLength = aliases == null ? 0 : aliases.length;
+            final ServiceName[] serviceNames = new ServiceName[2 + aliasesLength];
+            if (capability.isDynamicallyNamed()) {
+                serviceNames[0] = capability.getCapabilityServiceName(targetAddress);
+            } else {
+                serviceNames[0] = capability.getCapabilityServiceName();
+            }
+            serviceNames[1] = alias;
+            for (int i = 0; i < aliasesLength; i++) {
+                serviceNames[i + 2] = aliases[i];
+            }
+            return super.provides(serviceNames);
+        }
+
+        @Override
+        public <V> Consumer<V> provides(final RuntimeCapability<?>[] capabilities, final ServiceName[] aliases) {
+            if (capabilities == null || capabilities.length == 0) {
+                if (aliases == null || aliases.length == 0) throw new IllegalArgumentException();
+            }
+
+            if (capabilities == null || capabilities.length == 0) {
+                return super.provides(aliases);
+            }
+
+            if (aliases == null || aliases.length == 0) {
+                final ServiceName[] serviceNames = new ServiceName[capabilities.length];
+                for (int i = 0; i < capabilities.length; i++) {
+                    if (capabilities[i] == null) throw new IllegalArgumentException();
+                    if (capabilities[i].isDynamicallyNamed()) {
+                        serviceNames[i] = capabilities[i].getCapabilityServiceName(targetAddress);
+                    } else {
+                        serviceNames[i] = capabilities[i].getCapabilityServiceName();
+                    }
+                }
+                return super.provides(serviceNames);
+            }
+
+            final ServiceName[] serviceNames = new ServiceName[capabilities.length + aliases.length];
             for (int i = 0; i < capabilities.length; i++) {
+                if (capabilities[i] == null) throw new IllegalArgumentException();
                 if (capabilities[i].isDynamicallyNamed()) {
                     serviceNames[i] = capabilities[i].getCapabilityServiceName(targetAddress);
                 } else {
                     serviceNames[i] = capabilities[i].getCapabilityServiceName();
                 }
+            }
+            for (int i = 0; i < aliases.length; i++) {
+                if (aliases[i] == null) throw new IllegalArgumentException();
+                serviceNames[i + capabilities.length] = aliases[i];
             }
             return super.provides(serviceNames);
         }
