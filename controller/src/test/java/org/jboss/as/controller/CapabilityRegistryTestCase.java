@@ -21,6 +21,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
@@ -33,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.jboss.as.controller.capability.Capability;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityId;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
@@ -113,6 +113,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static PathAddress TEST_ADDRESS5 = PathAddress.pathAddress("subsystem", "broken");
 
     private static PathElement RELOAD_ELEMENT = PathElement.pathElement("subsystem", "reload");
+    private static PathElement CIRCULAR_CAP_ELEMENT = PathElement.pathElement("subsystem", "circular");
     private static PathElement CHILD_ELEMENT = PathElement.pathElement("child", "test");
     private static PathElement GRANDCHILD_ELEMENT = PathElement.pathElement("grandchild", "test");
     private static PathElement INFANT_ELEMENT = PathElement.pathElement("infant", "test");
@@ -125,6 +126,31 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static PathElement NO_CAP_ELEMENT = PathElement.pathElement("subsystem", "no-cap");
     private static PathElement DEP_CAP_ELEMENT = PathElement.pathElement("subsystem", "dep-cap");
     private static PathElement DEP_CAP_ELEMENT_2 = PathElement.pathElement("subsystem", "dep-cap-2");
+
+
+    private static final RuntimeCapability<Void> CIRCULAR_PARENT_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.circular-parent-capability", false, Void.class)
+            .addRequirements("org.wildfly.test.circular-child-capability")
+            .build();
+
+    private static final RuntimeCapability<Void> CIRCULAR_CHILD_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.circular-child-capability", false, Void.class)
+            .addRequirements(CIRCULAR_PARENT_CAPABILITY.getName())
+            .build();
+
+    private static final OperationStepHandler RESTART_HANDLER = new OperationStepHandler() {
+        @Override
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+            context.restartRequired();
+            context.completeStep(new OperationContext.RollbackHandler() {
+
+                @Override
+                public void handleRollback(OperationContext context, ModelNode operation) {
+                    context.revertRestartRequired();
+                }
+            });
+        }
+    };
+
+    private static final OperationDefinition RESTART_DEFINITION = SimpleOperationDefinitionBuilder.of(RESTART, NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
     private static ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
@@ -207,7 +233,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         }
     }
 
-    private static class RuntimeReportRemoveHandler extends  AbstractRemoveStepHandler {
+    private static class RuntimeReportRemoveHandler extends AbstractRemoveStepHandler {
         private RuntimeReportRemoveHandler(Set<RuntimeCapability> caps) {
             super(caps);
         }
@@ -216,13 +242,19 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             if (operation.get(RELOAD).asBoolean(false)) {
                 context.reloadRequired();
                 context.getResult().set(true);
+            } else if (operation.get(RESTART).asBoolean(false)) {
+                context.restartRequired();
+                context.getResult().set(true);
             }
         }
 
         @Override
         protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             if (operation.get(RELOAD).asBoolean(false)) {
-                context.reloadRequired();
+                context.revertReloadRequired();
+                context.getResult().set(false);
+            } else if (operation.get(RESTART).asBoolean(false)) {
+                context.revertRestartRequired();
                 context.getResult().set(false);
             }
         }
@@ -255,62 +287,77 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .setRuntimeOnly()
             .build();
 
-    private static ResourceBuilder createReloadTestResourceBuilder(PathElement address, RuntimeCapability... caps) {
-        return addReloadTestOps(ResourceBuilder.Factory.create(address, NonResolvingResourceDescriptionResolver.INSTANCE), caps);
+    private static ResourceBuilder createReloadRestartTestResourceBuilder(PathElement address, RuntimeCapability... caps) {
+        return addReloadRestartTestOps(ResourceBuilder.Factory.create(address, NonResolvingResourceDescriptionResolver.INSTANCE), caps);
     }
 
-    private static ResourceBuilder addReloadTestOps(ResourceBuilder builder, RuntimeCapability... caps) {
+    private static ResourceBuilder addReloadRestartTestOps(ResourceBuilder builder, RuntimeCapability... caps) {
         ResourceBuilder result = builder
                 .addOperation(RELOAD_DEFINITION, RELOAD_HANDLER)
+                .addOperation(RESTART_DEFINITION, RESTART_HANDLER)
                 .addOperation(RUNTIME_MOD_DEFINITION, RUNTIME_MOD_HANDLER)
                 .addOperation(RUNTIME_ONLY_DEFINITION, RUNTIME_MOD_HANDLER);
+
         if (caps != null && caps.length > 0) {
-            Set<RuntimeCapability> capsSet = new HashSet<RuntimeCapability>(Arrays.asList(caps));
-            result = result.addCapabilities((Capability[]) caps)
+            Set<RuntimeCapability> capsSet = new HashSet<>(Arrays.asList(caps));
+            result = result.addCapabilities(caps)
                     .setAddOperation(new RuntimeReportAddHandler(capsSet))
                     .setRemoveOperation(new RuntimeReportRemoveHandler(capsSet));
         }
+        else {
+            result = result.setAddOperation(new RuntimeReportAddHandler(Collections.emptySet()))
+                    .setRemoveOperation(new RuntimeReportRemoveHandler(Collections.emptySet()));
+        }
+
         return result;
     }
 
-    private static ResourceDefinition RELOAD_PARENT = createReloadTestResourceBuilder(RELOAD_ELEMENT, RELOADED_CAPABILITY)
-            .pushChild(createReloadTestResourceBuilder(INDEPENDENT_ELEMENT, INDEPENDENT_CAPABILITY))
-                .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT)).pop()
+    private static ResourceDefinition RELOAD_PARENT = createReloadRestartTestResourceBuilder(RELOAD_ELEMENT, RELOADED_CAPABILITY)
+            .pushChild(createReloadRestartTestResourceBuilder(INDEPENDENT_ELEMENT, INDEPENDENT_CAPABILITY))
+                .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .pop()
-            .pushChild(createReloadTestResourceBuilder(UNINCORPORATED_ELEMENT))
+            .pushChild(createReloadRestartTestResourceBuilder(UNINCORPORATED_ELEMENT))
                 .setIncorporatingCapabilities(Collections.emptySet())
-                .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT)).pop()
+                .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .pop()
-            .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT))
-                .pushChild(createReloadTestResourceBuilder(GRANDCHILD_ELEMENT))
-                    .pushChild(createReloadTestResourceBuilder(INFANT_ELEMENT))
+            .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT))
+                .pushChild(createReloadRestartTestResourceBuilder(GRANDCHILD_ELEMENT))
+                    .pushChild(createReloadRestartTestResourceBuilder(INFANT_ELEMENT))
                     .pop()
                 .pop()
-                .pushChild(createReloadTestResourceBuilder(UNINCORPORATED_ELEMENT))
+                .pushChild(createReloadRestartTestResourceBuilder(UNINCORPORATED_ELEMENT))
                     .setIncorporatingCapabilities(Collections.emptySet())
-                    .pushChild(createReloadTestResourceBuilder(INFANT_ELEMENT)).pop()
+                    .pushChild(createReloadRestartTestResourceBuilder(INFANT_ELEMENT)).pop()
                 .pop()
             .pop()
+
             .build();
 
-    private static ResourceDefinition HOST_RESOURCE = createReloadTestResourceBuilder(HOST_ELEMENT, HOST_CAPABILITY)
-            .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT)).pop()
-            .build();
-
-    private static ResourceDefinition PROFILE_RESOURCE = createReloadTestResourceBuilder(PROFILE_ELEMENT, PROFILE_CAPABILITY)
-            .pushChild(createReloadTestResourceBuilder(NO_CAP_ELEMENT))
-                .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT)).pop()
+    private static ResourceDefinition CIRCULAR_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CIRCULAR_CAP_ELEMENT)
+            .pushChild(createReloadRestartTestResourceBuilder(INDEPENDENT_ELEMENT, INDEPENDENT_CAPABILITY)).pop()
+            .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT, CIRCULAR_PARENT_CAPABILITY))
+                .pushChild(createReloadRestartTestResourceBuilder(GRANDCHILD_ELEMENT, CIRCULAR_CHILD_CAPABILITY)).pop()
             .pop()
             .build();
 
-    private static ResourceDefinition NO_CAP_RESOURCE = createReloadTestResourceBuilder(CHILD_ELEMENT)
+    private static ResourceDefinition HOST_RESOURCE = createReloadRestartTestResourceBuilder(HOST_ELEMENT, HOST_CAPABILITY)
+            .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .build();
 
-    private static ResourceDefinition DEP_CAP_RESOURCE = createReloadTestResourceBuilder(DEP_CAP_ELEMENT, DEPENDENT_CAPABILITY)
-            .pushChild(createReloadTestResourceBuilder(CHILD_ELEMENT, TRANS_DEP_CAPABILITY)).pop()
+    private static ResourceDefinition PROFILE_RESOURCE = createReloadRestartTestResourceBuilder(PROFILE_ELEMENT, PROFILE_CAPABILITY)
+            .pushChild(createReloadRestartTestResourceBuilder(NO_CAP_ELEMENT))
+                .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
+            .pop()
             .build();
 
-    private static ResourceDefinition DEP_CAP_RESOURCE_2 = createReloadTestResourceBuilder(DEP_CAP_ELEMENT_2, TRANS_DEP_CAPABILITY)
+    private static ResourceDefinition NO_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CHILD_ELEMENT)
+            .build();
+
+    private static ResourceDefinition DEP_CAP_RESOURCE = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT, DEPENDENT_CAPABILITY)
+            .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT, TRANS_DEP_CAPABILITY)).pop()
+            .build();
+
+    private static ResourceDefinition DEP_CAP_RESOURCE_2 = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT_2, TRANS_DEP_CAPABILITY)
             .build();
 
     private static final AtomicReference<CountDownLatch> readLatchHolder = new AtomicReference<>();
@@ -343,7 +390,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                     ((context, operation) -> context.getResult().set(true)))
             .build();
 
-    private static final int RELOAD_CAP_COUNT = 6;
+    private static final int RELOAD_CAP_COUNT = 8;
 
     private ManagementModel managementModel;
 
@@ -368,6 +415,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.unregisterSubModel(NO_CAP_RESOURCE.getPathElement());
             mrr.unregisterSubModel(DEP_CAP_RESOURCE.getPathElement());
             mrr.unregisterSubModel(DEP_CAP_RESOURCE_2.getPathElement());
+            mrr.unregisterSubModel(CIRCULAR_CAP_RESOURCE.getPathElement());
         });
 
         rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("create", NonResolvingResourceDescriptionResolver.INSTANCE).build(), (context, operation) -> {
@@ -382,6 +430,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             mrr.registerSubModel(NO_CAP_RESOURCE);
             mrr.registerSubModel(DEP_CAP_RESOURCE);
             mrr.registerSubModel(DEP_CAP_RESOURCE_2);
+            mrr.registerSubModel(CIRCULAR_CAP_RESOURCE);
         });
         rootRegistration.registerOperationHandler(SimpleOperationDefinitionBuilder.of("root-cap", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 new OperationStepHandler() {
@@ -400,6 +449,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         rootRegistration.registerOperationHandler(RELOAD_DEFINITION, RELOAD_HANDLER);
         rootRegistration.registerOperationHandler(RUNTIME_MOD_DEFINITION, RUNTIME_MOD_HANDLER);
         rootRegistration.registerOperationHandler(RUNTIME_ONLY_DEFINITION, RUNTIME_MOD_HANDLER);
+        rootRegistration.registerOperationHandler(RESTART_DEFINITION, RESTART_HANDLER);
     }
 
     @Before
@@ -417,7 +467,6 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertEquals(expectedCaps(0), capabilityRegistry.getCapabilities().size());
         Assert.assertEquals(expectedCaps(0), capabilityRegistry.getPossibleCapabilities().size());
     }
-
 
     @Test
     public void testCapabilityPossibleProviders() throws OperationFailedException {
@@ -934,6 +983,56 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         Assert.assertTrue(result.contains("dyn"));
     }
 
+    /**
+     * Tests that a runtime operation can be done when there is a circular requirements between two capabilities
+     * and the server is in restart-required state by an independent capability
+     * @throws OperationFailedException
+     */
+    @Test
+    public void testRuntimeCircularCapabilitiesInRequiredState() throws OperationFailedException {
+        runtimeCircularCapabilities(p -> requireRestart(p));
+    }
+
+    /**
+     * Tests that a runtime operation can be done when there is a circular requirements between two capabilities
+     * and the server is in reload-required state by an independent capability
+     * @throws OperationFailedException
+     */
+    @Test
+    public void testRuntimeCircularCapabilitiesInReloadState() throws OperationFailedException {
+        runtimeCircularCapabilities(p -> requireReload(p));
+    }
+
+    private void runtimeCircularCapabilities(ReloadRestartAction<PathAddress, OperationFailedException> action) throws OperationFailedException {
+        add(CIRCULAR_CAP_ELEMENT);
+        add(CIRCULAR_CAP_ELEMENT, INDEPENDENT_ELEMENT);
+
+        ModelNode addOp1 = Util.createEmptyOperation("add", PathAddress.pathAddress(CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT));
+        ModelNode addOp2 = Util.createEmptyOperation("add", PathAddress.pathAddress(CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT, GRANDCHILD_ELEMENT));
+
+        ModelNode composite = createOperation(ModelDescriptionConstants.COMPOSITE);
+        composite.get(STEPS).add(addOp1);
+        composite.get(STEPS).add(addOp2);
+        executeCheckNoFailure(composite);
+
+        try {
+            action.accept(PathAddress.pathAddress(CIRCULAR_CAP_ELEMENT, INDEPENDENT_ELEMENT));
+            runtimeCheck(true, CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT, GRANDCHILD_ELEMENT);
+            runtimeOnlyCheck(true, CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT, GRANDCHILD_ELEMENT);
+        } finally {
+            addOp1 = Util.createEmptyOperation("remove", PathAddress.pathAddress(CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT, GRANDCHILD_ELEMENT));
+            addOp2 = Util.createEmptyOperation("remove", PathAddress.pathAddress(CIRCULAR_CAP_ELEMENT, CHILD_ELEMENT));
+
+            composite = createOperation(ModelDescriptionConstants.COMPOSITE);
+            composite.get(STEPS).add(addOp1);
+            composite.get(STEPS).add(addOp2);
+            executeCheckNoFailure(composite);
+
+            remove(CIRCULAR_CAP_ELEMENT, INDEPENDENT_ELEMENT);
+            remove(CIRCULAR_CAP_ELEMENT);
+        }
+    }
+
     private void addRemoveAddTest() throws OperationFailedException {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration().getSubModel(PathAddress.pathAddress(DEP_CAP_ELEMENT));
         Assert.assertEquals(1, registration.getCapabilities().size());
@@ -968,6 +1067,14 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         executeCheckNoFailure(Util.createEmptyOperation(RELOAD_DEFINITION.getName(), address));
     }
 
+    private void requireReload(PathAddress address) throws OperationFailedException {
+        executeCheckNoFailure(Util.createEmptyOperation(RELOAD_DEFINITION.getName(), address));
+    }
+
+    private void requireRestart(PathAddress address) throws OperationFailedException {
+        executeCheckNoFailure(Util.createEmptyOperation(RESTART_DEFINITION.getName(), address));
+    }
+
     private void runtimeCheck(boolean expectResult, PathElement... elements) throws OperationFailedException {
         runtimeCheck(false, expectResult, elements);
     }
@@ -987,5 +1094,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
         } else {
             Assert.assertFalse(result.toString(), result.isDefined());
         }
+    }
+
+    @FunctionalInterface
+    public interface ReloadRestartAction<T, E extends Exception> {
+        void accept(T t) throws E;
     }
 }
