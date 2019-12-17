@@ -352,14 +352,14 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             if (size == 0) {
                 result = Collections.emptyMap();
             } else {
-                Set<CapabilityId> examined = new HashSet<>();
+                Set<CapabilityId> visited = new HashSet<>();
                 if (size == 1) {
                     CapabilityId id = ids.iterator().next();
-                    result = Collections.singletonMap(id, getCapabilityStatus(id, examined));
+                    result = Collections.singletonMap(id, getCapabilityStatus(id, visited));
                 } else {
                     result = new HashMap<>(size);
                     for (CapabilityId id : ids) {
-                        result.put(id, getCapabilityStatus(id, examined));
+                        result.put(id, getCapabilityStatus(id, visited));
                     }
                 }
             }
@@ -369,7 +369,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         }
     }
 
-    private RuntimeStatus getCapabilityStatus(CapabilityId id, Set<CapabilityId> examined) {
+    private RuntimeStatus getCapabilityStatus(CapabilityId id, Set<CapabilityId> visited) {
         // This is meant for checking runtime stuff, which should only be for servers or
         // HC runtime stuff, both of which use CapabilityScope.GLOBAL or HostCapabilityScope. So this assert
         // is to check that assumption is valid, as further thought is needed if not (e.g. see WFCORE-1710).
@@ -385,11 +385,12 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
             if (reloadCapabilities.contains(id)) {
                 return RuntimeStatus.RELOAD_REQUIRED;
             }
-            examined.add(id);
         } // else defer reload-required check until after we search requirements for restart-required
 
+        visited.add(id);
+
         Map<String, RuntimeRequirementRegistration> dependents = requirements.get(id);
-        RuntimeStatus result = getDependentCapabilityStatus(dependents, id, examined);
+        RuntimeStatus result = getDependentCapabilityStatus(dependents, id, visited);
         // TODO we could also check runtimeOnlyRequirements but it's not clear that's meaningful
         // If the non-normal runtime-only req has had its cap removed, a RUNTIME step for the dependent
         // will not see it any more and won't try and integrate. If the req is reload-required but
@@ -399,7 +400,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         if (result != RuntimeStatus.RESTART_REQUIRED) {
             // Check pending remove requirements
             dependents = pendingRemoveRequirements.get(id);
-            RuntimeStatus pending = getDependentCapabilityStatus(dependents, id, examined);
+            RuntimeStatus pending = getDependentCapabilityStatus(dependents, id, visited);
             if (pending != RuntimeStatus.NORMAL) {
                 result = pending;
             }
@@ -412,7 +413,7 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         return result;
     }
 
-    private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, CapabilityId requiror, Set<CapabilityId> examined) {
+    private RuntimeStatus getDependentCapabilityStatus(Map<String, RuntimeRequirementRegistration> dependents, CapabilityId requiror, Set<CapabilityId> visited) {
         RuntimeStatus result = RuntimeStatus.NORMAL;
         if (dependents != null) {
             for (String dependent : dependents.keySet()) {
@@ -422,8 +423,8 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                         : Arrays.asList(requirorScope, CapabilityScope.GLOBAL);
                 for (CapabilityScope scope : toCheck) {
                     CapabilityId dependentId = new CapabilityId(dependent, scope);
-                    if (!examined.contains(dependentId)) {
-                        RuntimeStatus status = getCapabilityStatus(dependentId, examined);
+                    if (!visited.contains(dependentId)) {
+                        RuntimeStatus status = getCapabilityStatus(dependentId, visited);
                         if (status == RuntimeStatus.RESTART_REQUIRED) {
                             return status; // no need to check anything else
                         } else if (status == RuntimeStatus.RELOAD_REQUIRED) {
