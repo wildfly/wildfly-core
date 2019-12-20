@@ -278,8 +278,8 @@ public class HttpManagementConstantHeadersTestCase {
         List<Header> headerList = Arrays.asList(headerArray);
 
         assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE)));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2)));
     }
 
     /**
@@ -307,7 +307,7 @@ public class HttpManagementConstantHeadersTestCase {
         List<Header> headerList = Arrays.asList(headerArray);
 
         assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE)));
     }
 
     /**
@@ -415,8 +415,8 @@ public class HttpManagementConstantHeadersTestCase {
         List<Header> headerList = Arrays.asList(headerArray);
 
         assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE)));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2)));
 
         get = new HttpGet(errorUrl.toURI().toString());
         response = httpClient.execute(get);
@@ -427,7 +427,7 @@ public class HttpManagementConstantHeadersTestCase {
         headerList = Arrays.asList(headerArray);
 
         assertEquals(1, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
+        assertTrue(headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE)));
     }
 
     /**
