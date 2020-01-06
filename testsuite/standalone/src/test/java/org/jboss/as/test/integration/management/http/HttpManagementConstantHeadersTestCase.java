@@ -19,7 +19,9 @@ package org.jboss.as.test.integration.management.http;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -39,7 +41,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
 import org.apache.log4j.Logger;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -273,13 +274,7 @@ public class HttpManagementConstantHeadersTestCase {
         HttpResponse response = httpClient.execute(get);
         assertEquals(200, response.getStatusLine().getStatusCode());
 
-        Header[] headerArray = response.getHeaders(TEST_HEADER);
-
-        List<Header> headerList = Arrays.asList(headerArray);
-
-        assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2));
+        validateExpectedValues(response.getHeaders(TEST_HEADER), TEST_VALUE, TEST_VALUE_2);
     }
 
     /**
@@ -302,12 +297,7 @@ public class HttpManagementConstantHeadersTestCase {
         HttpResponse response = httpClient.execute(get);
         assertEquals(200, response.getStatusLine().getStatusCode());
 
-        Header[] headerArray = response.getHeaders(TEST_HEADER);
-
-        List<Header> headerList = Arrays.asList(headerArray);
-
-        assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
+        validateExpectedValues(response.getHeaders(TEST_HEADER), TEST_VALUE, TEST_VALUE);
     }
 
     /**
@@ -410,24 +400,14 @@ public class HttpManagementConstantHeadersTestCase {
         HttpResponse response = httpClient.execute(get);
         assertEquals(200, response.getStatusLine().getStatusCode());
 
-        Header[] headerArray = response.getHeaders(TEST_HEADER);
-
-        List<Header> headerList = Arrays.asList(headerArray);
-
-        assertEquals(2, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE_2));
+        validateExpectedValues(response.getHeaders(TEST_HEADER), TEST_VALUE, TEST_VALUE_2);
 
         get = new HttpGet(errorUrl.toURI().toString());
         response = httpClient.execute(get);
         assertEquals(200, response.getStatusLine().getStatusCode());
 
-        headerArray = response.getHeaders(TEST_HEADER);
 
-        headerList = Arrays.asList(headerArray);
-
-        assertEquals(1, headerList.size());
-        headerList.contains(new BasicHeader(TEST_HEADER, TEST_VALUE));
+        validateExpectedValues(response.getHeaders(TEST_HEADER), TEST_VALUE);
     }
 
     /**
@@ -612,4 +592,14 @@ public class HttpManagementConstantHeadersTestCase {
             assertTrue(e.getMessage().contains(errorCode));
         }
     }
+
+    private static void validateExpectedValues(Header[] headers, String... values) {
+        Collection<String> expectedValues = new ArrayList<>(Arrays.asList(values));
+        assertEquals("Header Count", values.length, headers.length);
+        for (Header header : headers) {
+            assertTrue("Unique header value.", expectedValues.remove(header.getValue()));
+        }
+        assertTrue("All expected values received", expectedValues.isEmpty());
+    }
+
 }
