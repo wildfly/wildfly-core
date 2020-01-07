@@ -34,12 +34,15 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.notification.Notification;
 import org.jboss.as.controller.notification.NotificationFilter;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
@@ -49,12 +52,10 @@ import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 
 /**
  * Service responsible creating a {@code DeploymentScanner}
@@ -97,11 +98,12 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      */
     private FileSystemDeploymentService scanner;
 
-    private final InjectedValue<PathManager> pathManagerValue = new InjectedValue<PathManager>();
-    private final InjectedValue<NotificationHandlerRegistry> notificationRegistryValue = new InjectedValue<NotificationHandlerRegistry>();
-    private final InjectedValue<ModelControllerClientFactory> clientFactoryValue = new InjectedValue<ModelControllerClientFactory>();
-    private final InjectedValue<ScheduledExecutorService> scheduledExecutorValue = new InjectedValue<ScheduledExecutorService>();
-    private final InjectedValue<ProcessStateNotifier> processStateNotifierValue = new InjectedValue<>();
+    private final Consumer<DeploymentScanner> serviceConsumer;
+    private final Supplier<PathManager> pathManager;
+    private final Supplier<NotificationHandlerRegistry> notificationRegistry;
+    private final Supplier<ModelControllerClientFactory> clientFactory;
+    private final Supplier<ProcessStateNotifier> processStateNotifier;
+    private final ScheduledExecutorService scheduledExecutor;
     private volatile PathManager.Callback.Handle callbackHandle;
 
     public static ServiceName getServiceName(String repositoryName) {
@@ -127,27 +129,38 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      * @param scheduledExecutorService executor to use for asynchronous tasks
      * @return the controller for the deployment scanner service
      */
-    public static ServiceController<DeploymentScanner> addService(final OperationContext context, final PathAddress resourceAddress, final String relativeTo, final String path,
+    public static void addService(final OperationContext context, final PathAddress resourceAddress, final String relativeTo, final String path,
                                                                   final int scanInterval, TimeUnit unit, final boolean autoDeployZip,
                                                                   final boolean autoDeployExploded, final boolean autoDeployXml, final boolean scanEnabled, final long deploymentTimeout, boolean rollbackOnRuntimeFailure,
                                                                   final FileSystemDeploymentService bootTimeService, final ScheduledExecutorService scheduledExecutorService) {
-        final DeploymentScannerService service = new DeploymentScannerService(resourceAddress, relativeTo, path, scanInterval, unit, autoDeployZip,
-                autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
-        service.scheduledExecutorValue.inject(scheduledExecutorService);
-        CapabilityServiceBuilder<DeploymentScanner> sb = context.getCapabilityServiceTarget().addCapability(SCANNER_CAPABILITY.fromBaseCapability(resourceAddress.getLastElement().getValue()), service);
+        final RuntimeCapability<Void> capName =  SCANNER_CAPABILITY.fromBaseCapability(resourceAddress.getLastElement().getValue());
+        final CapabilityServiceBuilder<?> sb = context.getCapabilityServiceTarget().addCapability(capName);
+        final Consumer<DeploymentScanner> serviceConsumer = sb.provides(capName);
+        final Supplier<PathManager> pathManager = sb.requiresCapability(PATH_MANAGER_CAPABILITY, PathManager.class);
+        final Supplier<NotificationHandlerRegistry> notificationRegistry = sb.requiresCapability("org.wildfly.management.notification-handler-registry", NotificationHandlerRegistry.class);
+        final Supplier<ModelControllerClientFactory> clientFactory = sb.requiresCapability("org.wildfly.management.model-controller-client-factory", ModelControllerClientFactory.class);
+        final Supplier<ProcessStateNotifier> processStateNotifier = sb.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
         sb.requires(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_CHAINS);
-        return sb.addCapabilityRequirement(PATH_MANAGER_CAPABILITY, PathManager.class, service.pathManagerValue)
-                .addCapabilityRequirement("org.wildfly.management.notification-handler-registry",
-                        NotificationHandlerRegistry.class, service.notificationRegistryValue)
-                .addCapabilityRequirement("org.wildfly.management.model-controller-client-factory",
-                        ModelControllerClientFactory.class, service.clientFactoryValue)
-                .addCapabilityRequirement("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class, service.processStateNotifierValue)
-                .install();
+        final DeploymentScannerService service = new DeploymentScannerService(
+                serviceConsumer, pathManager, notificationRegistry, clientFactory, processStateNotifier, scheduledExecutorService,
+                resourceAddress, relativeTo, path, scanInterval, unit, autoDeployZip,
+                autoDeployExploded, autoDeployXml, scanEnabled, deploymentTimeout, rollbackOnRuntimeFailure, bootTimeService);
+        sb.setInstance(service);
+        sb.install();
     }
 
-    private DeploymentScannerService(PathAddress resourceAddress, final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
+    private DeploymentScannerService(final Consumer<DeploymentScanner> serviceConsumer, final Supplier<PathManager> pathManager,
+                                     final Supplier<NotificationHandlerRegistry> notificationRegistry, final Supplier<ModelControllerClientFactory> clientFactory,
+                                     final Supplier<ProcessStateNotifier> processStateNotifier, final ScheduledExecutorService scheduledExecutor,
+                                     final PathAddress resourceAddress, final String relativeTo, final String path, final int interval, final TimeUnit unit, final boolean autoDeployZipped,
                                      final boolean autoDeployExploded, final boolean autoDeployXml, final boolean enabled, final long deploymentTimeout,
                                      final boolean rollbackOnRuntimeFailure, final FileSystemDeploymentService bootTimeService) {
+        this.serviceConsumer = serviceConsumer;
+        this.pathManager = pathManager;
+        this.notificationRegistry = notificationRegistry;
+        this.clientFactory = clientFactory;
+        this.scheduledExecutor = scheduledExecutor;
+        this.processStateNotifier = processStateNotifier;
         this.resourceAddress = resourceAddress;
         this.relativeTo = relativeTo;
         this.path = path;
@@ -173,13 +186,13 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
             final DeploymentOperations.Factory factory = new DeploymentOperations.Factory() {
                 @Override
                 public DeploymentOperations create() {
-                    return new DefaultDeploymentOperations(clientFactoryValue.getValue(), scheduledExecutorValue.getValue());
+                    return new DefaultDeploymentOperations(clientFactory.get(), scheduledExecutor);
                 }
             };
 
             //if this is the first start we want to use the same scanner that was used at boot time
             if (scanner == null) {
-                final PathManager pathManager = pathManagerValue.getValue();
+                final PathManager pathManager = this.pathManager.get();
                 final String pathName = pathManager.resolveRelativePathEntry(path, relativeTo);
                 File relativePath = null;
                 if (relativeTo != null) {
@@ -188,7 +201,7 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
                 }
 
                 final FileSystemDeploymentService scanner = new FileSystemDeploymentService(resourceAddress, relativeTo, new File(pathName),
-                        relativePath, factory, scheduledExecutorValue.getValue());
+                        relativePath, factory, scheduledExecutor);
 
                 scanner.setScanInterval(unit.toMillis(interval));
                 scanner.setAutoDeployExplodedContent(autoDeployExploded);
@@ -203,11 +216,12 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
             }
             // Provide the scanner a ProcessStateNotifier so it can do cleanup work when boot completes.
             // We do this for both a boot-time scanner or one we constructed ourselves above
-            this.scanner.setProcessStateNotifier(processStateNotifierValue.getValue());
-            notificationRegistryValue.getValue().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
+            this.scanner.setProcessStateNotifier(processStateNotifier.get());
+            notificationRegistry.get().registerNotificationHandler(ANY_ADDRESS, scanner, DEPLOYMENT_FILTER);
             if (enabled) {
                 scanner.startScanner();
             }
+            serviceConsumer.accept(scanner);
         } catch (Exception e) {
             throw new StartException(e);
         }
@@ -218,11 +232,12 @@ public class DeploymentScannerService implements Service<DeploymentScanner> {
      */
     @Override
     public synchronized void stop(StopContext context) {
+        serviceConsumer.accept(null);
         final DeploymentScanner scanner = this.scanner;
-        notificationRegistryValue.getValue().unregisterNotificationHandler(ANY_ADDRESS, this.scanner, DEPLOYMENT_FILTER);
+        notificationRegistry.get().unregisterNotificationHandler(ANY_ADDRESS, this.scanner, DEPLOYMENT_FILTER);
         this.scanner = null;
         scanner.stopScanner();
-        scheduledExecutorValue.getValue().shutdown();
+        scheduledExecutor.shutdown();
         if (callbackHandle != null) {
             callbackHandle.remove();
         }
