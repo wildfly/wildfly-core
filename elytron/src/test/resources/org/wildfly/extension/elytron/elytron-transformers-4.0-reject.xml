@@ -107,12 +107,14 @@
         </key-managers>
         <server-ssl-contexts>
             <server-ssl-context name="ctx" key-manager="key1"/>
+            <server-ssl-context name="ctxTLS13" key-manager="key1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"/>
         </server-ssl-contexts>
         <server-ssl-sni-contexts>
             <server-ssl-sni-context name="test" default-ssl-context="ctx"></server-ssl-sni-context>
         </server-ssl-sni-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="ClientContext"/>
+            <client-ssl-context name="ClientContextTLS13" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"/>
         </client-ssl-contexts>
         <certificate-authorities>
             <certificate-authority name="testCA" url="http://www.test.com"/>

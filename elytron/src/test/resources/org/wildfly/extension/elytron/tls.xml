@@ -55,9 +55,16 @@
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false" maximum-session-cache-size="10"
                 session-timeout="120" wrap="false" key-manager="serverKey" trust-manager="serverTrust" pre-realm-principal-transformer="a" post-realm-principal-transformer="b" final-principal-transformer="c" realm-mapper="d" providers="custom-loader" provider-name="first" />
+            <server-ssl-context name="serverTLS13" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false"
+                                maximum-session-cache-size="10" session-timeout="120" wrap="false" key-manager="serverKey" trust-manager="serverTrust"
+                                pre-realm-principal-transformer="a" post-realm-principal-transformer="b" final-principal-transformer="c"
+                                realm-mapper="d" providers="custom-loader" provider-name="first" />
         </server-ssl-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="client" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader" provider-name="first" />
+            <client-ssl-context name="clientTLS13" protocols="TLSv1.3 TLSv1.2" key-manager="clientKey" trust-manager="serverTrust" providers="custom-loader"
+                                provider-name="first" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"/>
         </client-ssl-contexts>
     </tls>
     <credential-stores>
