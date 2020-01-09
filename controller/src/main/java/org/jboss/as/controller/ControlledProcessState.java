@@ -222,4 +222,7 @@ public class ControlledProcessState {
         return service;
     }
 
+    boolean checkRestartRequired() {
+        return restartRequiredFlag;
+    }
 }

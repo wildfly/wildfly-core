@@ -399,6 +399,7 @@ public final class ServerService extends AbstractControllerService {
                 }
 
                 ok = boot(bootOps, failOnRuntime);
+
                 if (ok) {
                     finishBoot(suspend);
                 }
@@ -434,6 +435,11 @@ public final class ServerService extends AbstractControllerService {
         if (!suspend) {
             suspendController.resume();
         }
+    }
+
+    @Override
+    protected void postBoot() {
+        executeAdditionalCliBootScript();
     }
 
     protected boolean boot(List<ModelNode> bootOperations, boolean rollbackOnRuntimeFailure) throws ConfigurationPersistenceException {

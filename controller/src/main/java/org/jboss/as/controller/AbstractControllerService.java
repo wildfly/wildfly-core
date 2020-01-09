@@ -22,9 +22,25 @@
 
 package org.jboss.as.controller;
 
+import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.CLI_SCRIPT_PROPERTY;
+import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.MARKER_DIRECTORY_PROPERTY;
+import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.SKIP_RELOAD_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RELOAD;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
+import java.io.BufferedWriter;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
@@ -42,10 +58,12 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistration;
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationAttachments;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
+import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -58,6 +76,9 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.dmr.ModelNode;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.filter.PathFilter;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -400,6 +421,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     } finally {
                         processState.setRunning();
                     }
+                    postBoot();
                 } catch (Throwable t) {
                     container.shutdown();
                     if (t instanceof StackOverflowError) {
@@ -563,6 +585,9 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
     }
 
+    protected void postBoot() {
+    }
+
     protected NotificationSupport getNotificationSupport() {
         return controller.getNotificationSupport();
     }
@@ -717,6 +742,21 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return null;
     }
 
+    protected void executeAdditionalCliBootScript() {
+        // Do this check here so we don't need to load the additional class for the normal use-cases
+        final String additionalBootCliScriptPath =
+                WildFlySecurityManager.getPropertyPrivileged(CLI_SCRIPT_PROPERTY, null);
+
+        ROOT_LOGGER.debug("Checking -D" + CLI_SCRIPT_PROPERTY + " to see if additional CLI operations are needed");
+        if (additionalBootCliScriptPath == null) {
+            ROOT_LOGGER.debug("No additional CLI operations are needed");
+            return;
+        }
+
+        AdditionalBootCliScriptInvocation invocation = AdditionalBootCliScriptInvocation.create(additionalBootCliScriptPath,this);
+        invocation.invoke();
+    }
+
     /**
      * Operation step handler performing initialisation of the {@link ModelControllerServiceInitialization} instances.
      *
@@ -838,6 +878,258 @@ public abstract class AbstractControllerService implements Service<ModelControll
         @Override
         public Object getValue() {
             return value;
+        }
+    }
+
+    private static class AdditionalBootCliScriptInvocation {
+        private final AbstractControllerService controllerService;
+        private final File additionalBootCliScript;
+        private final boolean keepAlive;
+        // Will be null if keepAlive=true
+        private final File doneMarker;
+        // Will be null if keepAlive=true
+        private final File restartInitiated;
+        // Will be null if keepAlive=true
+        private final File embeddedServerNeedsRestart;
+
+        public AdditionalBootCliScriptInvocation(AbstractControllerService controllerService, File additionalBootCliScript, boolean keepAlive, File markerDirectory) {
+            this.controllerService = controllerService;
+            this.additionalBootCliScript = additionalBootCliScript;
+            this.keepAlive = keepAlive;
+            this.doneMarker = markerDirectory == null ? null : new File(markerDirectory, "wf-cli-invoker-result");
+            this.restartInitiated = markerDirectory == null ? null : new File(markerDirectory, "wf-cli-shutdown-initiated");
+            this.embeddedServerNeedsRestart = markerDirectory == null ? null : new File(markerDirectory, "wf-restart-embedded-server");
+        }
+
+        static AdditionalBootCliScriptInvocation create(String additionalBootCliScriptPath, AbstractControllerService controllerService) {
+
+            boolean keepAlive = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged(SKIP_RELOAD_PROPERTY, "false"));
+            final String markerDirectoryProperty =
+                    WildFlySecurityManager.getPropertyPrivileged(MARKER_DIRECTORY_PROPERTY, null);
+            if (keepAlive && markerDirectoryProperty == null) {
+                throw ROOT_LOGGER.cliScriptPropertyDefinedWithoutMarkerDirectoryWhenNotSkippingReload(SKIP_RELOAD_PROPERTY, CLI_SCRIPT_PROPERTY, MARKER_DIRECTORY_PROPERTY);
+            }
+
+            if (controllerService.processType != ProcessType.STANDALONE_SERVER &&
+                    controllerService.processType != ProcessType.EMBEDDED_SERVER) {
+                throw ROOT_LOGGER.propertyCanOnlyBeUsedWithStandaloneOrEmbeddedServer(CLI_SCRIPT_PROPERTY);
+            }
+            if (controllerService.runningModeControl.getRunningMode() != RunningMode.ADMIN_ONLY) {
+                throw ROOT_LOGGER.propertyCanOnlyBeUsedWithAdminOnlyModeServer(CLI_SCRIPT_PROPERTY);
+            }
+            File additionalBootCliScriptFile = new File(additionalBootCliScriptPath);
+            if (!additionalBootCliScriptFile.exists()) {
+                throw ROOT_LOGGER.couldNotFindDirectorySpecifiedByProperty(additionalBootCliScriptPath, CLI_SCRIPT_PROPERTY);
+            }
+
+            File markerDirectory = null;
+            if (markerDirectoryProperty != null) {
+                markerDirectory = new File(markerDirectoryProperty);
+                if (!markerDirectory.exists()) {
+                    throw ROOT_LOGGER.couldNotFindDirectorySpecifiedByProperty(markerDirectoryProperty, MARKER_DIRECTORY_PROPERTY);
+                }
+            }
+
+            return new AdditionalBootCliScriptInvocation(controllerService, additionalBootCliScriptFile, keepAlive, markerDirectory);
+        }
+
+        void invoke() {
+            ROOT_LOGGER.checkingForPresenceOfRestartMarkerFile();
+            if (restartInitiated != null && restartInitiated.exists()) {
+                ROOT_LOGGER.foundRestartMarkerFile(restartInitiated);
+                try (ModelControllerClient client = controllerService.controller.createClient(controllerService.executorService.get())) {
+                    // The shutdown takes us back to admin-only mode, we now need to reload into normal mode
+                    // remove the marker first
+                    deleteFile(restartInitiated);
+
+                    executeReload(client, true);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                ROOT_LOGGER.noRestartMarkerFile();
+                if (keepAlive) {
+                    ROOT_LOGGER.initialisedAdditionalBootCliScriptSystemKeepingAlive(additionalBootCliScript, doneMarker);
+                } else {
+                    ROOT_LOGGER.initialisedAdditionalBootCliScriptSystemNotKeepingAlive(additionalBootCliScript);
+                }
+                executeAdditionalCliScript();
+            }
+        }
+
+        private void executeAdditionalCliScript() {
+            boolean success = false;
+            try {
+                deleteFile(doneMarker);
+                deleteFile(embeddedServerNeedsRestart);
+
+                try ( InvokerLoader loader = new InvokerLoader()) {
+
+                    assert loader.getInvoker() != null : "No invoker found";
+
+                    try ( ModelControllerClient client = controllerService.controller.createClient(controllerService.executorService.get())) {
+
+                        ROOT_LOGGER.executingBootCliScript(additionalBootCliScript);
+
+                        loader.getInvoker().runCliScript(client, additionalBootCliScript);
+
+                        ROOT_LOGGER.completedRunningBootCliScript();
+
+                        if (!keepAlive) {
+                            boolean restart = controllerService.processState.checkRestartRequired();
+                            if (restart) {
+                                executeRestart(client);
+                            } else {
+                                executeReload(client, false);
+                            }
+                        }
+                        success = true;
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                clearProperties();
+                try {
+                    if (doneMarker != null) {
+                        doneMarker.createNewFile();
+                        try (BufferedWriter writer = new BufferedWriter(new FileWriter(doneMarker))) {
+                            writer.write(success ? SUCCESS : FAILED);
+                            writer.write('\n');
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        private void executeRestart(ModelControllerClient client) {
+            if (controllerService.processType == ProcessType.STANDALONE_SERVER) {
+                executeRestartNormalServer(client);
+            } else {
+                recordRestartEmbeddedServer();
+            }
+        }
+
+        private void executeRestartNormalServer(ModelControllerClient client) {
+            try {
+                ModelNode shutdown = Util.createOperation(SHUTDOWN, PathAddress.EMPTY_ADDRESS);
+                shutdown.get(RESTART).set(true);
+                // Since we cannot clear system properties for a shutdown, we write a marker here to
+                // skip running the cli script again
+                Files.createFile(restartInitiated.toPath());
+
+                ROOT_LOGGER.restartingServerAfterBootCliScript(restartInitiated, CLI_SCRIPT_PROPERTY, SKIP_RELOAD_PROPERTY, MARKER_DIRECTORY_PROPERTY);
+
+                ModelNode result = client.execute(shutdown);
+                if (result.get(OUTCOME).asString().equals(FAILED)) {
+                    throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());
+                }
+            } catch (IOException e) {
+                try {
+                    deleteFile(restartInitiated);
+                } catch (IOException ex) {
+                    e = ex;
+                }
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void recordRestartEmbeddedServer() {
+            try {
+                Files.createFile(embeddedServerNeedsRestart.toPath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void executeReload(ModelControllerClient client, boolean afterRestart) {
+            try {
+                ModelNode reload = Util.createOperation(RELOAD, PathAddress.EMPTY_ADDRESS);
+                clearProperties();
+                if (!afterRestart) {
+                    ROOT_LOGGER.reloadingServerToNormalModeAfterAdditionalBootCliScript(CLI_SCRIPT_PROPERTY, SKIP_RELOAD_PROPERTY, MARKER_DIRECTORY_PROPERTY);
+                } else {
+                    ROOT_LOGGER.reloadingServerToNormalModeAfterRestartAfterAdditionalBootCliScript(CLI_SCRIPT_PROPERTY, SKIP_RELOAD_PROPERTY, MARKER_DIRECTORY_PROPERTY);
+                }
+                ModelNode result = client.execute(reload);
+                if (result.get(OUTCOME).asString().equals(FAILED)) {
+                    throw new RuntimeException(result.get(FAILURE_DESCRIPTION).asString());
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                clearProperties();
+            }
+        }
+
+        private void clearProperties() {
+            WildFlySecurityManager.clearPropertyPrivileged(CLI_SCRIPT_PROPERTY);
+            WildFlySecurityManager.clearPropertyPrivileged(SKIP_RELOAD_PROPERTY);
+            WildFlySecurityManager.clearPropertyPrivileged(MARKER_DIRECTORY_PROPERTY);
+        }
+
+        private void deleteFile(File file) throws IOException {
+            if (file != null) {
+                Path path = file.toPath();
+                if (Files.exists(path)) {
+                    Files.delete(path);
+                }
+            }
+        }
+
+        private static class InvokerLoader implements Closeable {
+
+            private final AdditionalBootCliScriptInvoker invoker;
+            private TemporaryModuleLayer tempModuleLayer;
+
+            private InvokerLoader() {
+                // Ability to override the invoker in unit tests where we don't have all the modules set up
+                String testInvoker = WildFlySecurityManager.getPropertyPrivileged("org.wildfly.test.override.cli.boot.invoker", null);
+                if (testInvoker != null) {
+                    try {
+                        invoker = (AdditionalBootCliScriptInvoker) Class.forName(testInvoker).newInstance();
+                        return;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                // We are running in a proper server, load the invoker normally
+                this.tempModuleLayer = TemporaryModuleLayer.create(new PathFilter() {
+                    @Override
+                    public boolean accept(String path) {
+                        return path.startsWith("org/jboss/as/cli/main") || path.startsWith("org/aesh/main");
+                    }
+                });
+
+                try {
+                    Module module = tempModuleLayer.getModuleLoader().loadModule("org.jboss.as.cli");
+                    ServiceLoader<AdditionalBootCliScriptInvoker> sl = module.loadService(AdditionalBootCliScriptInvoker.class);
+                    AdditionalBootCliScriptInvoker invoker = null;
+                    for (AdditionalBootCliScriptInvoker currentInvoker : sl) {
+                        if (invoker != null) {
+                            throw ROOT_LOGGER.moreThanOneInstanceOfAdditionalBootCliScriptInvokerFound(invoker.getClass().getName(), currentInvoker.getClass().getName());
+                        }
+                        invoker = currentInvoker;
+                    }
+                    this.invoker = invoker;
+                } catch (ModuleLoadException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            private AdditionalBootCliScriptInvoker getInvoker() {
+                return invoker;
+            }
+
+            @Override
+            public void close() throws IOException {
+                if (tempModuleLayer != null) {
+                    tempModuleLayer.close();
+                }
+            }
         }
     }
 

@@ -32,7 +32,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
@@ -45,6 +47,8 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.TestModelControllerService;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.Util;
@@ -74,7 +78,7 @@ public abstract class AbstractControllerTestBase {
 
     protected ServiceContainer container;
     protected ModelController controller;
-    protected final ProcessType processType;
+    protected volatile ProcessType processType;
     protected CapabilityRegistry capabilityRegistry;
 
     protected AbstractControllerTestBase(ProcessType processType) {
@@ -194,7 +198,15 @@ public abstract class AbstractControllerTestBase {
     public class ModelControllerService extends TestModelControllerService {
 
         public ModelControllerService(final ProcessType processType) {
-            super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
+            this(processType, new RunningModeControl(RunningMode.NORMAL));
+        }
+
+        public ModelControllerService(final ProcessType processType, RunningModeControl runningModeControl) {
+            this(processType, runningModeControl, null);
+        }
+
+        public ModelControllerService(final ProcessType processType, RunningModeControl runningModeControl, Supplier<ExecutorService> executorService) {
+            super(processType, runningModeControl, executorService, new EmptyConfigurationPersister(), new ControlledProcessState(true),
                     ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build()
             );
         }
