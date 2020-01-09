@@ -25,6 +25,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.jboss.as.cli.Util;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationMessageHandler;
@@ -199,9 +201,9 @@ public class BootScriptInvokerTestCase {
         String propError = "tests.errors";
         String propWarning = "tests.warnings";
 
-        props.append(propError + "=" + errorFile.toString() + "\n");
-        props.append(propWarning + "=" + warnFile.toString() + "\n");
-        props.append(propFoo + "=" + fooFile.toString() + "\n");
+        props.append(propError + "=" + escapePath(errorFile.toString()) + "\n");
+        props.append(propWarning + "=" + escapePath(warnFile.toString()) + "\n");
+        props.append(propFoo + "=" + escapePath(fooFile.toString()) + "\n");
         Files.write(propertiesFile, props.toString().getBytes());
         WildFlySecurityManager.setPropertyPrivileged("org.wildfly.internal.cli.boot.hook.script.output.file", output.toString());
         WildFlySecurityManager.setPropertyPrivileged("org.wildfly.internal.cli.boot.hook.script.warn.file", warnFile.toString());
@@ -274,6 +276,21 @@ public class BootScriptInvokerTestCase {
             if (error) {
                 throw new Exception(cmd + " should have failed");
             }
+        }
+    }
+
+    private static String escapePath(String filePath) {
+        if (Util.isWindows()) {
+            StringBuilder builder = new StringBuilder();
+            for (char c : filePath.toCharArray()) {
+                if (c == '\\') {
+                    builder.append('\\');
+                }
+                builder.append(c);
+            }
+            return builder.toString();
+        } else {
+            return filePath;
         }
     }
 }
