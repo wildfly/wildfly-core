@@ -225,22 +225,36 @@ public class CliBootOperationsTestCase {
     void waitForMarkerFile(String expected) throws Exception {
         File file = getMarkerFile();
         long end = System.currentTimeMillis() + TimeoutUtil.adjust(5000);
-        while (!Files.exists(file.toPath()) && System.currentTimeMillis() < end) {
+        String contents = null;
+        while (System.currentTimeMillis() < end) {
             Thread.sleep(100);
+            if (Files.exists(file.toPath())) {
+                contents = readFileContents(file);
+            }
+            if (contents != null) {
+                break;
+            }
         }
+
         if (!Files.exists(file.toPath())) {
             Assert.fail("Did not see marker file before timeout");
         }
+        Assert.assertEquals(expected, contents);
+    }
 
-        File marker = getMarkerFile();
-        try (BufferedReader reader = new BufferedReader(new FileReader(marker))) {
+    private String readFileContents(File file) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             StringBuilder sb = new StringBuilder();
             String line = reader.readLine();
             while (line != null) {
                 sb.append(line + "\n");
                 line = reader.readLine();
             }
-            Assert.assertEquals(expected, sb.toString());
+
+            if (sb.length() == 0) {
+                return null;
+            }
+            return sb.toString();
         }
     }
 
