@@ -624,6 +624,8 @@ public enum Phase {
     public static final int POST_MODULE_MICROPROFILE_OPENAPI            = 0x3790;
     public static final int POST_MODULE_MICROPROFILE_FAULT_TOLERANCE    = 0x3800;
 
+    public static final int POST_MODULE_EJB_HIBERNATE_VALIDATOR         = 0x3850;
+
 
     // INSTALL
     public static final int INSTALL_SHARED_SESSION_MANAGER              = 0x0100;
