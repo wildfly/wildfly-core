@@ -34,6 +34,10 @@
         <artifact name="${org.wildfly.core:wildfly-cli}"/>
     </resources>
 
+    <exports>
+        <exclude path="org/jboss/as/cli/impl/_private"/>
+    </exports>
+
     <dependencies>
         <module name="java.datatransfer"/>
         <!-- for java.beans -->

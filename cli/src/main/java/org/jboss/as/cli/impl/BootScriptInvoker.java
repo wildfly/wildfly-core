@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Red Hat, Inc.
+Copyright 2020 Red Hat, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,9 +30,9 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 import org.jboss.as.cli.CommandContext;
+import static org.jboss.as.cli.impl._private.BootScriptInvokerLogger.ROOT_LOGGER;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
-import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -43,14 +43,12 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
 
-    private static final Logger LOGGER = Logger.getLogger(BootScriptInvoker.class);
-
     private final Properties props = new Properties();
     private final Properties existingProps = new Properties();
 
     @Override
     public void runCliScript(ModelControllerClient client, File file) {
-        LOGGER.info("Executing CLI Script invoker for file " + file);
+        ROOT_LOGGER.processScript(file);
 
         String log = WildFlySecurityManager.getPropertyPrivileged("org.wildfly.internal.cli.boot.hook.script.logging", "false");
         final LogManager logManager = LogManager.getLogManager();
@@ -67,8 +65,7 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
         if (props != null) {
             File propsFile = new File(props);
             if (!propsFile.exists()) {
-                // TODO i18n
-                throw new RuntimeException("Could not find file " + propsFile.getAbsolutePath());
+                throw ROOT_LOGGER.propertiesFileNotFound(propsFile);
             }
             handleProperties(propsFile);
         }
@@ -89,15 +86,19 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
             processFile(file, ctx);
         } catch (Exception ex) {
             try {
-                LOGGER.error("Error applying " + file + " CLI script:");
+                ROOT_LOGGER.errorProcessingScript(file);
+                StringBuilder errBuilder = new StringBuilder();
                 for (String line : Files.readAllLines(file.toPath())) {
-                    LOGGER.error(line);
+                    errBuilder.append(line).append("\n");
                 }
+                ROOT_LOGGER.error(errBuilder.toString());
                 if (logFile != null) {
-                    LOGGER.error("CLI execution output:");
+                    ROOT_LOGGER.cliOutput();
+                    StringBuilder logBuilder = new StringBuilder();
                     for (String line : Files.readAllLines(logFile.toPath())) {
-                        LOGGER.error(line);
+                        logBuilder.append(line).append("\n");
                     }
+                    ROOT_LOGGER.error(logBuilder.toString());
                 }
             } catch (IOException ex1) {
                 RuntimeException rtex = new RuntimeException(ex1);
@@ -111,28 +112,29 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
             }
             clearProperties();
         }
-        LOGGER.info("Done executing CLI Script invoker for file " + file);
+        ROOT_LOGGER.doneProcessScript(file);
     }
 
     private static void processFile(File file, final CommandContext cmdCtx) throws IOException {
         try ( BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line = reader.readLine();
             while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
-                LOGGER.debug("Executing command " + line.trim());
+                ROOT_LOGGER.executeCommand(line.trim());
                 cmdCtx.handle(line.trim());
                 line = reader.readLine();
             }
         } catch (Throwable e) {
-            LOGGER.error("Unexpected exception processing commands ", e);
-            throw new IllegalStateException("Failed to process file '" + file.getAbsolutePath() + "'", e);
+            throw ROOT_LOGGER.unexpectedException(e, file);
         }
         String warnFile = WildFlySecurityManager.getPropertyPrivileged("org.wildfly.internal.cli.boot.hook.script.warn.file", null);
         if (warnFile != null) {
             File warns = new File(warnFile);
             if (warns.exists()) {
+                StringBuilder warnBuilder = new StringBuilder();
                 for (String line : Files.readAllLines(warns.toPath())) {
-                    LOGGER.warn(line);
+                    warnBuilder.append(line).append("\n");
                 }
+                ROOT_LOGGER.warn(warnBuilder.toString());
             }
 
         }
@@ -140,11 +142,12 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
         if (errorFile != null) {
             File errors = new File(errorFile);
             if (errors.exists()) {
-                LOGGER.error("Error applying " + file + " CLI script. The Operations were executed but "
-                        + "there were unexpected values. See list of errors in " + errors);
+                ROOT_LOGGER.unexpectedErrors(file, errors);
+                StringBuilder errorBuilder = new StringBuilder();
                 for (String line : Files.readAllLines(errors.toPath())) {
-                    LOGGER.error(line);
+                    errorBuilder.append(line).append("\n");
                 }
+                ROOT_LOGGER.error(errorBuilder.toString());
             }
 
         }
