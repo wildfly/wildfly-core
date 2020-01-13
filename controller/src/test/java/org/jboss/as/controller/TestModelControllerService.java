@@ -23,8 +23,10 @@
 package org.jboss.as.controller;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.ControlledProcessState.State;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -71,10 +73,22 @@ public abstract class TestModelControllerService extends AbstractControllerServi
         this(processType, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
     }
 
+    protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
+                                         final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+                                         final ResourceDefinition rootResourceDefinition) {
+        this(processType, runningModeControl,executorService, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
+    }
+
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
-        super(processType, new RunningModeControl(RunningMode.NORMAL), configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
-                        AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry);
+        this(processType, new RunningModeControl(RunningMode.NORMAL), null, configurationPersister, processState, rootResourceDefinition, capabilityRegistry);
+    }
+
+    protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
+                                         final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+                                         final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
+        super(executorService, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+                AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry);
         this.processState = processState;
         this.capabilityRegistry = capabilityRegistry;
     }

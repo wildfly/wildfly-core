@@ -21,6 +21,9 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import javax.inject.Inject;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.impl.CommandContextImpl;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -29,6 +32,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
@@ -37,6 +41,8 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  */
 @RunWith(WildflyTestRunner.class)
 public class BasicOpsTestCase {
+    @Inject
+    protected ManagementClient managementClient;
 
     @Test
     public void testConnect() throws Exception {
@@ -107,35 +113,45 @@ public class BasicOpsTestCase {
     }
 
     @Test
+    public void testImplicitValuesBoot() throws Exception {
+        CommandContext ctx = new CommandContextImpl(null);
+        ctx.bindClient(managementClient.getControllerClient());
+        doTestImplicitValues(ctx);
+    }
+
+    @Test
     public void testImplicitValues() throws Exception {
-        try (CLIWrapper cli = new CLIWrapper(true)) {
+        try ( CLIWrapper cli = new CLIWrapper(true)) {
+            doTestImplicitValues(cli.getCommandContext());
+        }
+    }
 
-            cli.sendLine(":read-resource(recursive)");
+    void doTestImplicitValues(CommandContext ctx) throws Exception {
+        ctx.handle(":read-resource(recursive)");
 
-            {
-                ModelNode mn
-                        = cli.getCommandContext().
-                        buildRequest(":read-resource(recursive)");
-                assertTrue(mn.get("recursive").asBoolean());
-            }
+        {
+            ModelNode mn
+                    = ctx.
+                            buildRequest(":read-resource(recursive)");
+            assertTrue(mn.get("recursive").asBoolean());
+        }
 
-            {
-                ModelNode mn
-                        = cli.getCommandContext().
-                        buildRequest(":reload(admin-only, server-config=toto, use-current-server-config)");
-                assertTrue(mn.get("admin-only").asBoolean());
-                assertTrue(mn.get("use-current-server-config").asBoolean());
-                assertTrue(mn.get("server-config").asString().equals("toto"));
-            }
+        {
+            ModelNode mn
+                    = ctx.
+                            buildRequest(":reload(admin-only, server-config=toto, use-current-server-config)");
+            assertTrue(mn.get("admin-only").asBoolean());
+            assertTrue(mn.get("use-current-server-config").asBoolean());
+            assertTrue(mn.get("server-config").asString().equals("toto"));
+        }
 
-            {
-                ModelNode mn
-                        = cli.getCommandContext().
-                        buildRequest(":reload(admin-only=false, server-config=toto, use-current-server-config=false)");
-                assertTrue(!mn.get("admin-only").asBoolean());
-                assertTrue(!mn.get("use-current-server-config").asBoolean());
-                assertTrue(mn.get("server-config").asString().equals("toto"));
-            }
+        {
+            ModelNode mn
+                    = ctx.
+                            buildRequest(":reload(admin-only=false, server-config=toto, use-current-server-config=false)");
+            assertTrue(!mn.get("admin-only").asBoolean());
+            assertTrue(!mn.get("use-current-server-config").asBoolean());
+            assertTrue(mn.get("server-config").asString().equals("toto"));
         }
     }
 

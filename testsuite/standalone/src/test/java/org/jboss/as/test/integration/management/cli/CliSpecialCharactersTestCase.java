@@ -18,7 +18,12 @@
 
 package org.jboss.as.test.integration.management.cli;
 
+import java.io.ByteArrayOutputStream;
+import java.util.function.Supplier;
+import javax.inject.Inject;
+import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.impl.CommandContextImpl;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +32,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 
 import static org.junit.Assert.assertTrue;
+import org.wildfly.core.testrunner.ManagementClient;
 
 /**
  * Tests for setting values containing special characters via CLI
@@ -39,19 +45,22 @@ public class CliSpecialCharactersTestCase {
     private static final String TEST_RESOURCE_NAME = "test_resource_special_chars";
     private CLIWrapper cli;
 
-    private void removeTestResources() {
-        cli.sendLine("/system-property=" + TEST_RESOURCE_NAME + ":remove", true);
+    @Inject
+    protected ManagementClient managementClient;
+
+    private void removeTestResources(CommandContext ctx) {
+        ctx.handleSafe("/system-property=" + TEST_RESOURCE_NAME + ":remove");
     }
 
     @Before
     public void setup() throws Exception {
         cli = new CLIWrapper(true);
-        removeTestResources();
+        removeTestResources(cli.getCommandContext());
     }
 
     @After
     public void cleanup() throws Exception {
-        removeTestResources();
+        removeTestResources(cli.getCommandContext());
         cli.close();
     }
 
@@ -63,9 +72,36 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testWhitespaceInMiddle() throws Exception {
-        testSetResourceValue("Hello World!", "Hello World!", Delimiters.DOUBLE_QUOTE);
-        testSetResourceValue("Hello World!", "Hello World!", Delimiters.CURLY_BRACE);
-        testSetResourceValue("Hello\\ World!", "Hello World!", Delimiters.NONE);
+        testSetResourceValue("Hello World!", "Hello World!", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("Hello World!", "Hello World!", Delimiters.CURLY_BRACE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("Hello\\ World!", "Hello World!", Delimiters.NONE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    /**
+     * Tests whitespace in the middle of words Regression test for
+     * https://issues.jboss.org/browse/JBEAP-4536
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testWhitespaceInMiddleBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("Hello World!", "Hello World!", Delimiters.DOUBLE_QUOTE, ctx, str);
+        testSetResourceValue("Hello World!", "Hello World!", Delimiters.CURLY_BRACE, ctx, str);
+        testSetResourceValue("Hello\\ World!", "Hello World!", Delimiters.NONE, ctx, str);
     }
 
     /**
@@ -76,9 +112,30 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testWhitespaceTrimming() throws Exception {
-        testSetResourceValue("   Hello World!   ", "   Hello World!   ", Delimiters.DOUBLE_QUOTE);
-        testSetResourceValue("   Hello World!   ", "Hello World!", Delimiters.CURLY_BRACE);
-        testSetResourceValue("   Hello\\ World!   ", "Hello World!", Delimiters.NONE);
+        testSetResourceValue("   Hello World!   ", "   Hello World!   ", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("   Hello World!   ", "Hello World!", Delimiters.CURLY_BRACE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("   Hello\\ World!   ", "Hello World!", Delimiters.NONE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    @Test
+    public void testWhitespaceTrimmingBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("   Hello World!   ", "   Hello World!   ", Delimiters.DOUBLE_QUOTE, ctx, str);
+        testSetResourceValue("   Hello World!   ", "Hello World!", Delimiters.CURLY_BRACE, ctx, str);
+        testSetResourceValue("   Hello\\ World!   ", "Hello World!", Delimiters.NONE, ctx, str);
     }
 
     /**
@@ -88,9 +145,30 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testSingleQuotes() throws Exception {
-        testSetResourceValue("It's", "It's", Delimiters.DOUBLE_QUOTE);
-        testSetResourceValue("It\\'s", "It's", Delimiters.NONE);
-        testSetResourceValue("''It's''", "''It's''", Delimiters.DOUBLE_QUOTE);
+        testSetResourceValue("It's", "It's", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("It\\'s", "It's", Delimiters.NONE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("''It's''", "''It's''", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    @Test
+    public void testSingleQuotesBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("It's", "It's", Delimiters.DOUBLE_QUOTE, ctx, str);
+        testSetResourceValue("It\\'s", "It's", Delimiters.NONE, ctx, str);
+        testSetResourceValue("''It's''", "''It's''", Delimiters.DOUBLE_QUOTE, ctx, str);
     }
 
     /**
@@ -100,8 +178,26 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testCommasInDoubleQuotes() throws Exception {
-        testSetResourceValue("Last,First", "Last,First", Delimiters.DOUBLE_QUOTE);
-        testSetResourceValue(",,,A,B,C,D,E,F,,,", ",,,A,B,C,D,E,F,,,", Delimiters.DOUBLE_QUOTE);
+        testSetResourceValue("Last,First", "Last,First", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue(",,,A,B,C,D,E,F,,,", ",,,A,B,C,D,E,F,,,", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    @Test
+    public void testCommasInDoubleQuotesBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("Last,First", "Last,First", Delimiters.DOUBLE_QUOTE, ctx, str);
+        testSetResourceValue(",,,A,B,C,D,E,F,,,", ",,,A,B,C,D,E,F,,,", Delimiters.DOUBLE_QUOTE, ctx, str);
     }
 
     /**
@@ -111,9 +207,30 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testParenthesis() throws Exception {
-        testSetResourceValue("one(1)", "one(1)", Delimiters.DOUBLE_QUOTE);
-        testSetResourceValue("one(1)", "one(1)", Delimiters.CURLY_BRACE);
-        testSetResourceValue("one\\(1\\)", "one(1)", Delimiters.NONE);
+        testSetResourceValue("one(1)", "one(1)", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("one(1)", "one(1)", Delimiters.CURLY_BRACE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+        testSetResourceValue("one\\(1\\)", "one(1)", Delimiters.NONE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    @Test
+    public void testParenthesisBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("one(1)", "one(1)", Delimiters.DOUBLE_QUOTE, ctx, str);
+        testSetResourceValue("one(1)", "one(1)", Delimiters.CURLY_BRACE, ctx, str);
+        testSetResourceValue("one\\(1\\)", "one(1)", Delimiters.NONE, ctx, str);
     }
 
     /**
@@ -123,7 +240,22 @@ public class CliSpecialCharactersTestCase {
      */
     @Test
     public void testBraces() throws Exception {
-        testSetResourceValue("{braces}", "{braces}", Delimiters.DOUBLE_QUOTE);
+        testSetResourceValue("{braces}", "{braces}", Delimiters.DOUBLE_QUOTE, cli.getCommandContext(), () -> {
+            return cli.readOutput();
+        });
+    }
+
+    @Test
+    public void testBracesBoot() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        CommandContext ctx = new CommandContextImpl(out);
+        ctx.bindClient(managementClient.getControllerClient());
+        Supplier<String> str = () -> {
+            String s = out.toString();
+            out.reset();
+            return s;
+        };
+        testSetResourceValue("{braces}", "{braces}", Delimiters.DOUBLE_QUOTE, ctx, str);
     }
 
     /**
@@ -134,18 +266,19 @@ public class CliSpecialCharactersTestCase {
      * @param delimiter type of delimiter to use for property name escaping
      * @throws CommandLineException
      */
-    private void testSetResourceValue(String input, String expected, Delimiters delimiter) throws CommandLineException {
-        removeTestResources();
-        cli.sendLine("/system-property=" + TEST_RESOURCE_NAME +
-                ":add(value=" + delimiter.getStartDelimiter() + input + delimiter.getEndDelimiter() + ")");
-        String setOutcome = cli.readOutput();
-        assertTrue("failed to add resource", setOutcome.contains("success"));
-        cli.sendLine("/system-property=" + TEST_RESOURCE_NAME + ":read-attribute(name=value)");
-        String readResult = cli.readOutput();
+    private void testSetResourceValue(String input, String expected, Delimiters delimiter,
+            CommandContext ctx, Supplier<String> provider) throws Exception {
+        removeTestResources(ctx);
+        ctx.handleSafe("/system-property=" + TEST_RESOURCE_NAME
+                +                ":add(value=" + delimiter.getStartDelimiter() + input + delimiter.getEndDelimiter() + ")");
+        String setOutcome = provider.get();
+        assertTrue("failed to add resource " + setOutcome, setOutcome.contains("success"));
+        ctx.handleSafe("/system-property=" + TEST_RESOURCE_NAME + ":read-attribute(name=value)");
+        String readResult = provider.get();
         assertTrue("expected value not found", readResult.contains(expected));
         assertTrue("failed to read attribute", readResult.contains("success"));
-        cli.sendLine("/system-property=" + TEST_RESOURCE_NAME + ":remove");
-        String removeResult = cli.readOutput();
+        ctx.handleSafe("/system-property=" + TEST_RESOURCE_NAME + ":remove");
+        String removeResult = provider.get();
         assertTrue("failed to remove resource", removeResult.contains("success"));
     }
 

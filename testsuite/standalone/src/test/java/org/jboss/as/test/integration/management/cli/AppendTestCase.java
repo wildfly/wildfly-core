@@ -29,11 +29,29 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.jboss.as.cli.impl.CommandContextImpl;
 
 /**
  * @author kanovotn@redhat.com
  */
 public class AppendTestCase {
+
+    @Test
+    public void testAppendNonExistingFileBoot() throws Exception {
+        CommandContext ctx = new CommandContextImpl(null);
+        String fileName = "non-existing-file-boot";
+        Path path = Paths.get(fileName);
+        try {
+            ctx.handle("echo foo >> " + fileName);
+            Assert.assertTrue("The file" + fileName + "doesn't contain expected content.",
+                    checkFileContains(path, "foo"));
+        } finally {
+            ctx.terminateSession();
+            Files.delete(path);
+        }
+
+    }
+
     @Test
     public void testAppendNonExistingFile() throws Exception {
         CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
@@ -53,14 +71,27 @@ public class AppendTestCase {
 
     @Test
     public void testAppendExistingFile() throws Exception {
-        testAppend("tmpfile", "version", "Release:");
+        testAppend("tmpfile", "version", "Release:", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
+
+    @Test
+    public void testAppendExistingFileBoot() throws Exception {
+        testAppend("tmpfile", "echo foo", "foo", new CommandContextImpl(null));
+    }
+
+    @Test
+    public void testAppendTwiceExistingFileBoot() throws Exception {
+        doTestAppendTwiceExistingFile(new CommandContextImpl(null));
     }
 
     @Test
     public void testAppendTwiceExistingFile() throws Exception {
-        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        doTestAppendTwiceExistingFile(CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
 
+    void doTestAppendTwiceExistingFile(CommandContext ctx) throws Exception {
         Path tempFile = Files.createTempFile("tempFile", ".tmp");
         String tempFileStringPath = tempFile.toString();
 
@@ -83,9 +114,17 @@ public class AppendTestCase {
     }
 
     @Test
+    public void testAppendFileRelativePathBoot() throws Exception {
+        doTestAppendFileRelativePath(new CommandContextImpl(null));
+    }
+
+    @Test
     public void testAppendFileRelativePath() throws Exception {
-        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        doTestAppendFileRelativePath(CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
+
+    void doTestAppendFileRelativePath(CommandContext ctx) throws Exception {
         Path tempDir = Files.createTempDirectory("tempdir");
         Path tempFile = Files.createTempFile(tempDir, "tempFile", ".tmp");
         Path tempFilePath = tempDir.resolve(tempFile);
@@ -94,11 +133,11 @@ public class AppendTestCase {
         writeTestFile(tempFilePath, "some content");
 
         try {
-            ctx.handle("version >> " + tempFileStringPath);
+            ctx.handle("echo foo >> " + tempFileStringPath);
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(Paths.get(tempFileStringPath), "some content"));
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have expected content.",
-                    checkFileContains(Paths.get(tempFileStringPath), "Release: "));
+                    checkFileContains(Paths.get(tempFileStringPath), "foo"));
         } finally {
             ctx.terminateSession();
             tempFile.toFile().delete();
@@ -107,9 +146,17 @@ public class AppendTestCase {
     }
 
     @Test
+    public void testAppendFileAbsolutePathBoot() throws Exception {
+        doTestAppendFileAbsolutePath(new CommandContextImpl(null));
+    }
+
+    @Test
     public void testAppendFileAbsolutePath() throws Exception {
-        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        doTestAppendFileAbsolutePath(CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
+
+    void doTestAppendFileAbsolutePath(CommandContext ctx) throws Exception {
         Path tempDir = Files.createTempDirectory("tempdir");
         Path tempFile = Files.createTempFile(tempDir, "tempFile", ".tmp");
         Path tempFilePath = tempDir.resolve(tempFile);
@@ -118,11 +165,11 @@ public class AppendTestCase {
         writeTestFile(tempFilePath, "some content");
 
         try {
-            ctx.handle("version >> " + tempFileStringPath);
+            ctx.handle("echo foo >> " + tempFileStringPath);
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have the initial content.",
                     checkFileContains(Paths.get(tempFileStringPath), "some content"));
             Assert.assertTrue("The file " + tempFileStringPath + " doesn't have expected content.",
-                    checkFileContains(Paths.get(tempFileStringPath), "Release: "));
+                    checkFileContains(Paths.get(tempFileStringPath), "foo"));
         } finally {
             ctx.terminateSession();
             tempFile.toFile().delete();
@@ -131,20 +178,49 @@ public class AppendTestCase {
     }
 
     @Test
+    public void testAppendSpecialCharsInFileBoot() throws Exception {
+        testAppend("tmpfile", "echo üúö", "üúö", new CommandContextImpl(null));
+    }
+
+    @Test
     public void testAppendSpecialCharsInFile() throws Exception {
-        testAppend("tmpfile", "echo üúö", "üúö");
+        testAppend("tmpfile", "echo üúö", "üúö", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
+
+    @Test
+    public void testAppendFileNameSpecialCharsBoot() throws Exception {
+        testAppend("tmpüúö", "echo foo", "foo", new CommandContextImpl(null));
     }
 
     @Test
     public void testAppendFileNameSpecialChars() throws Exception {
-        testAppend("tmpüúö", "version", "Release:");
+        testAppend("tmpüúö", "version", "Release:", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out));
+    }
+
+    @Test
+    public void testAppendFileNameQuestionMarkBoot() throws Exception {
+        // '?' character is not supported in filename in windows
+        if (!Util.isWindows()) {
+            testAppend("tmp?file", "echo foo", "foo", new CommandContextImpl(null));
+        }
     }
 
     @Test
     public void testAppendFileNameQuestionMark() throws Exception {
         // '?' character is not supported in filename in windows
         if (!Util.isWindows()) {
-           testAppend("tmp?file", "version", "Release:");
+            testAppend("tmp?file", "version", "Release:", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                    TestSuiteEnvironment.getServerPort(), System.in, System.out));
+        }
+    }
+
+    @Test
+    public void testAppendFileNamePipeBoot() throws Exception {
+        // '|' character is not supported in filename in windows
+        if (!Util.isWindows()) {
+            testAppend("tmp\\|file", "echo foo", "foo", new CommandContextImpl(null));
         }
     }
 
@@ -152,7 +228,16 @@ public class AppendTestCase {
     public void testAppendFileNamePipe() throws Exception {
         // '|' character is not supported in filename in windows
         if (!Util.isWindows()) {
-            testAppend("tmp\\|file", "version", "Release:");
+            testAppend("tmp\\|file", "version", "Release:", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                    TestSuiteEnvironment.getServerPort(), System.in, System.out));
+        }
+    }
+
+    @Test
+    public void testAppendFileNameColonBoot() throws Exception {
+        // ':' character is not supported in filename in windows
+        if (!Util.isWindows()) {
+            testAppend("tmp:file", "echo foo", "foo", new CommandContextImpl(null));
         }
     }
 
@@ -160,13 +245,12 @@ public class AppendTestCase {
     public void testAppendFileNameColon() throws Exception {
         // ':' character is not supported in filename in windows
         if (!Util.isWindows()) {
-            testAppend("tmp:file", "version", "Release:");
+            testAppend("tmp:file", "version", "Release:", CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                    TestSuiteEnvironment.getServerPort(), System.in, System.out));
         }
     }
 
-    private void testAppend(String filename, String commandToAppend, String expectedContent) throws Exception {
-        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
-                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+    private void testAppend(String filename, String commandToAppend, String expectedContent, CommandContext ctx) throws Exception {
         // Do not create a file with escape character in its name.
         String filtered = filename.replaceAll("\\\\", "");
         Path tempFile = Files.createTempFile(filtered, ".tmp");
