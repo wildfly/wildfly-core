@@ -34,6 +34,9 @@ public class ServerSSLContext {
     private List<String> protocols;
     private boolean authenticationOptional;
     private String cipherSuiteFilter = "DEFAULT";
+    // WFCORE-4789: Set cipherSuiteNames to CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES once we are ready to enable
+    // TLS 1.3 by default
+    private String cipherSuiteNames;
     private String finalPrincipalTransformer;
     private String postRealmPrincipalTransformer;
     private String preRealmPrincipalTransformer;
@@ -110,6 +113,25 @@ public class ServerSSLContext {
     public void setCipherSuiteFilter(String cipherSuiteFilter) {
         this.cipherSuiteFilter = cipherSuiteFilter;
     }
+
+    /**
+     * Get the cipher suite names.
+     *
+     * @return the cipher suite names
+     */
+    public String getCipherSuiteNames() {
+        return cipherSuiteNames;
+    }
+
+    /**
+     * Set the cipher suite names.
+     *
+     * @param cipherSuiteNames the cipher suite names
+     */
+    public void setCipherSuiteNames(String cipherSuiteNames) {
+        this.cipherSuiteNames = cipherSuiteNames;
+    }
+
 
     /**
      * @return the finalPrincipalTransformer
@@ -276,6 +298,11 @@ public class ServerSSLContext {
             sslCtx.get(Util.CIPHER_SUITE_FILTER).set(cipherSuiteFilter);
         } else {
             sslCtx.get(Util.CIPHER_SUITE_FILTER);
+        }
+        if (cipherSuiteNames != null) {
+            sslCtx.get(Util.CIPHER_SUITE_NAMES).set(cipherSuiteNames);
+        } else {
+            sslCtx.get(Util.CIPHER_SUITE_NAMES);
         }
         if (finalPrincipalTransformer != null) {
             sslCtx.get(Util.FINAL_PRINCIPAL_TRANSFORMER).set(finalPrincipalTransformer);

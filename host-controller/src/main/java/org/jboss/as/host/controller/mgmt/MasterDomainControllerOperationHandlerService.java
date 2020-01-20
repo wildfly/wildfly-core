@@ -25,7 +25,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 
 import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.ModelController;
@@ -60,6 +64,7 @@ import org.jboss.remoting3.Channel;
  * Installs {@link MasterDomainControllerOperationHandlerImpl} which handles requests from slave DC to master DC.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class MasterDomainControllerOperationHandlerService extends AbstractModelControllerOperationHandlerFactoryService {
 
@@ -73,9 +78,15 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
     private final HostRegistrations slaveHostRegistrations;
     private final DomainHostExcludeRegistry domainHostExcludeRegistry;
 
-    public MasterDomainControllerOperationHandlerService(final DomainController domainController, final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
-                                                         TransactionalOperationExecutor txOperationExecutor,
-                                                         final File tempDir, final HostRegistrations slaveHostRegistrations, DomainHostExcludeRegistry domainHostExcludeRegistry) {
+    public MasterDomainControllerOperationHandlerService(
+            final Consumer<AbstractModelControllerOperationHandlerFactoryService> serviceConsumer,
+            final Supplier<ModelController> modelControllerSupplier,
+            final Supplier<ExecutorService> executorSupplier,
+            final Supplier<ScheduledExecutorService> scheduledExecutorSupplier,
+            final DomainController domainController, final HostControllerRegistrationHandler.OperationExecutor operationExecutor,
+            final TransactionalOperationExecutor txOperationExecutor,
+            final File tempDir, final HostRegistrations slaveHostRegistrations, DomainHostExcludeRegistry domainHostExcludeRegistry) {
+        super(serviceConsumer, modelControllerSupplier, executorSupplier, scheduledExecutorSupplier);
         this.domainController = domainController;
         this.operationExecutor = operationExecutor;
         this.txOperationExecutor = txOperationExecutor;

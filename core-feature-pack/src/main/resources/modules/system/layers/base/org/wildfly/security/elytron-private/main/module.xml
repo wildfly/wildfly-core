@@ -65,6 +65,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-jacc}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-jaspi}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-json-util}"/>
+        <!-- <artifact name="${org.wildfly.security:wildfly-elytron-jwt}"/> To be added as independent module in WildFly -->
         <artifact name="${org.wildfly.security:wildfly-elytron-keystore}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-mechanism}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-mechanism-digest}"/>
@@ -123,6 +124,8 @@
         <module name="javax.security.auth.message.api"/>
         <module name="javax.servlet.api" optional="true"/>
         <module name="org.wildfly.common"/>
+        <module name="javax.xml.ws.api" optional="true"/>
+        <module name="org.jboss.ws.spi" optional="true"/>
         <!--
         This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other
         modules use the parser, they need to have visibility to this module.

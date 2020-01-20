@@ -102,6 +102,7 @@ interface ElytronDescriptionConstants {
     String CHANGE_ALIAS = "change-alias";
     String CIPHER_SUITE = "cipher-suite";
     String CIPHER_SUITE_FILTER = "cipher-suite-filter";
+    String CIPHER_SUITE_NAMES = "cipher-suite-names";
     String CLASS_LOADING = "class-loading";
     String CLASS_NAME = "class-name";
     String CLASS_NAMES = "class-names";

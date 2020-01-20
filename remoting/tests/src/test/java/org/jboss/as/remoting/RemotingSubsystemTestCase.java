@@ -31,7 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
-import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +54,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.AbsolutePathService;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -75,8 +73,9 @@ import org.xnio.XnioWorker;
 
 /**
  * @author Tomaz Cerar
+ * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
  */
-public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
+public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest {
 
     private static final PathAddress ROOT_ADDRESS = PathAddress.pathAddress(SUBSYSTEM, RemotingExtension.SUBSYSTEM_NAME);
     private static final PathAddress ENDPOINT_CONFIG_ADDRESS = ROOT_ADDRESS.append("configuration", "endpoint");
@@ -103,15 +102,6 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         ENDPOINT_CONFIG_TEST_DATA = data;
     }
 
-    public RemotingSubsystemTestCase() {
-        super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
-    }
-
-    @Override
-    protected AdditionalInitialization createAdditionalInitialization() {
-        return DEFAULT_ADDITIONAL_INITIALIZATION;
-    }
-
     /**
      * Tests that the outbound connections configured in the remoting subsytem are processed and services
      * are created for them
@@ -124,23 +114,15 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
                 .setSubsystemXml(getSubsystemXml())
                 .build();
 
-        checkEndpointService(services);
-        // Endpoint demanded 'default-remoting' worker, not 'default'
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.UP);
+        ServiceName remotingEndpointSN = RemotingServices.SUBSYSTEM_ENDPOINT;
+        ServiceName remotingConnectorSN = RemotingServices.serverServiceName("remoting-connector");
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, remotingConnectorSN);
+        Endpoint endpointService = dependencies.getService(remotingEndpointSN);
+        assertNotNull("Endpoint service was null", endpointService);
+        assertNotNull(endpointService.getName());
 
-        ServiceName connectorServiceName = RemotingServices.serverServiceName("remoting-connector");
-        ServiceController<?> remotingConnectorController = services.getContainer().getRequiredService(connectorServiceName);
-        remotingConnectorController.setMode(ServiceController.Mode.ACTIVE);
-        assertNotNull("Connector was null", remotingConnectorController);
-        InjectedSocketBindingStreamServerService remotingConnector = (InjectedSocketBindingStreamServerService) remotingConnectorController.getService();
-        assertEquals("remote", remotingConnector.getEndpointInjector().getValue().getName());
-
-        ServiceController<?> httpConnectorController = services.getContainer().getRequiredService(RemotingHttpUpgradeService.UPGRADE_SERVICE_NAME.append("http-connector"));
-        assertNotNull("Http connector was null", httpConnectorController);
-        httpConnectorController.setMode(ServiceController.Mode.ACTIVE);
-        InjectedSocketBindingStreamServerService httpConnector = (InjectedSocketBindingStreamServerService) remotingConnectorController.getService();
-        assertEquals("remote", httpConnector.getEndpointInjector().getValue().getName());
+        Object remotingConnector = dependencies.getService(remotingConnectorSN);
+        assertNotNull("Remoting connector was null", remotingConnector);
     }
 
     @Override
@@ -173,22 +155,13 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     @Ignore("WFCORE-4518")
     @Test
     public void testEndpointConfigurationViaDeprecatedChild() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
                 .build();
-
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.DOWN);
 
         // First, just the root resource with the endpoint unconfigured
         ModelNode rootAdd = Util.createAddOperation(ROOT_ADDRESS);
         services.executeForResult(rootAdd);
         checkEndpointSettings(services, Collections.emptyMap(), true);
-
-        // Confirm the endpoint service is correct
-        checkEndpointService(services);
-        // Endpoint demanded 'default' worker, not 'default-remoting'
-        checkWorkerService(services, "default", ServiceController.State.UP);
-        checkWorkerService(services, "default-remoting", ServiceController.State.DOWN);
 
         // Now, add the child resource with no config.
         ModelNode childAdd = Util.createAddOperation(ENDPOINT_CONFIG_ADDRESS);
@@ -203,12 +176,8 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         services.executeForResult(childAdd);
         checkEndpointSettings(services, ENDPOINT_CONFIG_TEST_DATA, true);
 
-        // Create new KernelServices so we can start over with clean MSC
-        services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
-                .build();
-
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.DOWN);
+        // Remove all so we can start over
+        services.executeForResult(Util.createRemoveOperation(ROOT_ADDRESS));
 
         // Do the adds via a composite
         ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
@@ -216,12 +185,6 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         composite.get(STEPS).add(childAdd);
         services.executeForResult(composite);
         checkEndpointSettings(services, ENDPOINT_CONFIG_TEST_DATA, true);
-
-        // Confirm the endpoint service is correct
-        checkEndpointService(services);
-        // Endpoint demanded 'default-remoting' worker, not 'default'
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.UP);
 
         // Do an undefine-attribute for all children
         for (String attr : ENDPOINT_CONFIG_TEST_DATA.keySet()) {
@@ -250,11 +213,8 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
     @Ignore("WFCORE-4604")
     @Test
     public void testEndpointConfigurationViaSubsystemRoot() throws Exception {
-        KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
+        KernelServices services = createKernelServicesBuilder(createAdditionalInitialization())
                 .build();
-
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.DOWN);
 
         // Add the root resource with the endpoint configured
         ModelNode rootAdd = Util.createAddOperation(ROOT_ADDRESS);
@@ -263,12 +223,6 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         }
         services.executeForResult(rootAdd);
         checkEndpointSettings(services, ENDPOINT_CONFIG_TEST_DATA, true);
-
-        // Confirm the endpoint service is correct
-        checkEndpointService(services);
-        // Endpoint demanded 'default-remoting' worker, not 'default'
-        checkWorkerService(services, "default", ServiceController.State.DOWN);
-        checkWorkerService(services, "default-remoting", ServiceController.State.UP);
 
         // Do an undefine-attribute for all children
         for (String attr : ENDPOINT_CONFIG_TEST_DATA.keySet()) {
@@ -314,22 +268,6 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
             correct = correct == null ? new ModelNode() : correct;
             assertEquals(node.toString() + " wrong for " + ad.getName(), correct, node.get(ad.getName()));
         }
-    }
-
-    private static void checkEndpointService(KernelServices services) {
-        @SuppressWarnings("unchecked")
-        ServiceController<Endpoint> endPointServiceController = (ServiceController<Endpoint>) services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
-        endPointServiceController.setMode(ServiceController.Mode.ACTIVE);
-        Endpoint endpointService = endPointServiceController.getValue();
-        assertNotNull("Endpoint service was null", endpointService);
-        assertNotNull(endpointService.getName());
-    }
-
-    private static void checkWorkerService(KernelServices services, String workerName, ServiceController.State expectedState) {
-        ServiceName serviceName = IOServices.WORKER.append(workerName);
-        ServiceController<?> endPointServiceController = services.getContainer().getRequiredService(serviceName);
-        assertNotNull("Endpoint service was null", endPointServiceController);
-        assertEquals(expectedState, endPointServiceController.getState());
     }
 
     @Override
@@ -384,8 +322,7 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
                 workerConsumer = builder.provides(IOServices.WORKER.append("default-remoting"));
                 builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
                 builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
-                builder.install();
-            }
+                builder.install();            }
 
             @Override
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
@@ -406,12 +343,10 @@ public class RemotingSubsystemTestCase extends AbstractSubsystemBaseTest {
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization())
                 .setSubsystemXml(readResource("remoting-cli.xml")).build();
 
-        ServiceName connectorServiceName = RemotingServices.serverServiceName("remoting-connector");
-        ServiceController<?> remotingConnectorController = services.getContainer().getRequiredService(connectorServiceName);
-        remotingConnectorController.setMode(ServiceController.Mode.ACTIVE);
-        assertNotNull("Connector was null", remotingConnectorController);
-        InjectedSocketBindingStreamServerService remotingConnector = (InjectedSocketBindingStreamServerService) remotingConnectorController.getService();
-        assertEquals("remote", remotingConnector.getEndpointInjector().getValue().getName());
+        ServiceName connectorSN = RemotingServices.serverServiceName("remoting-connector");
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, connectorSN);
+        Object remotingConnector = dependencies.getService(connectorSN);
+        assertNotNull("Connector was null", remotingConnector);
 
         ModelNode validAdd = Util.createAddOperation(CONNECTOR_ADDRESS.append("property", "BROADCAST"));
         validAdd.get("value").set("aaa");

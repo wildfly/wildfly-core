@@ -42,7 +42,7 @@ import javax.naming.NamingException;
 
 import org.jboss.as.domain.management.security.LdapSearcherCache.AttachmentKey;
 import org.jboss.as.domain.management.security.LdapSearcherCache.SearchResult;
-import org.jboss.msc.Service;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 
@@ -52,7 +52,7 @@ import org.jboss.msc.service.StopContext;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-class LdapCacheService<R, K> implements Service {
+class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
 
     private static volatile int THREAD_COUNT = 1;
 
@@ -100,6 +100,10 @@ class LdapCacheService<R, K> implements Service {
     /*
      * MSC Service and Lifecycle Methods
      */
+    @Override
+    public LdapSearcherCache<R, K> getValue() throws IllegalStateException, IllegalArgumentException {
+        return cacheImplementation;
+    }
 
     @Override
     public void start(final StartContext context) {

@@ -26,6 +26,7 @@ import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.jar.Manifest;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -107,6 +108,16 @@ public final class Attachments {
      * A builder used to install a deployment phase
      */
     public static final AttachmentKey<DeploymentUnitPhaseBuilder> DEPLOYMENT_UNIT_PHASE_BUILDER = AttachmentKey.create(DeploymentUnitPhaseBuilder.class);
+
+    /**
+     * A function which will be used to expand expressions within spec descriptors
+     */
+    public static final AttachmentKey<Function<String, String>> SPEC_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(Function.class);
+
+    /**
+     * A function which will be used to expand expressions within JBoss/WildFly (vendor specific) descriptors
+     */
+    public static final AttachmentKey<Function<String, String>> WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(Function.class);
 
     //
     // STRUCTURE

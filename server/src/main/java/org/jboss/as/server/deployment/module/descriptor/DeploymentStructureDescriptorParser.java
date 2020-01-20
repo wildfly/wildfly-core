@@ -131,8 +131,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             if (deploymentRoot.hasAttachment(SUB_DEPLOYMENT_STRUCTURE)) {
                 final ModuleSpecification subModuleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
                 Map<ModuleIdentifier, AdditionalModuleSpecification> additionalModules = new HashMap<>();
-                for(AdditionalModuleSpecification i : deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-                    additionalModules.put(i.getModuleIdentifier(), i);
+                final List<AdditionalModuleSpecification> additionalModuleList = deploymentUnit.getParent().getAttachmentList(Attachments.ADDITIONAL_MODULES);
+                // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
+                synchronized (additionalModuleList) {
+                    for (AdditionalModuleSpecification i : additionalModuleList) {
+                        additionalModules.put(i.getModuleIdentifier(), i);
+                    }
                 }
                 handleDeployment(phaseContext, deploymentUnit, subModuleSpec, deploymentRoot.getAttachment(SUB_DEPLOYMENT_STRUCTURE), additionalModules);
             }

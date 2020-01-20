@@ -37,7 +37,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.remoting.Capabilities.IO_WORKER_CAPABILITY_NAME;
-import static org.jboss.as.remoting.RemotingSubsystemTestUtil.DEFAULT_ADDITIONAL_INITIALIZATION;
 import static org.jboss.as.remoting.RemotingSubsystemTestUtil.HC_ADDITIONAL_INITIALIZATION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,14 +60,12 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.AbsolutePathService;
 import org.jboss.as.server.ServerEnvironment;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceTarget;
 import org.junit.Test;
@@ -81,16 +78,7 @@ import org.xnio.XnioWorker;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="opalka.richard@gmail.com">Richard Opalka</a>
  */
-public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
-
-    public RemotingLegacySubsystemTestCase() {
-        super(RemotingExtension.SUBSYSTEM_NAME, new RemotingExtension());
-    }
-
-    @Override
-    protected AdditionalInitialization createAdditionalInitialization() {
-        return DEFAULT_ADDITIONAL_INITIALIZATION;
-    }
+public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBaseTest {
 
     @Override
     protected void compare(ModelNode node1, ModelNode node2) {
@@ -147,12 +135,12 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testSubsystem12WithConnector() throws Exception {
-
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
                 .setSubsystemXmlResource("remoting12-with-connector.xml").build();
 
         ServiceName connectorServiceName = RemotingServices.serverServiceName("test-connector");
-        ServiceController<?> connectorService = services.getContainer().getRequiredService(connectorServiceName);
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, connectorServiceName);
+        Object connectorService = dependencies.getService(connectorServiceName);
         assertNotNull(connectorService);
 
         ModelNode model = services.readWholeModel();
@@ -170,17 +158,18 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testSubsystemWithConnectorProperties() throws Exception {
-
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
                 .setSubsystemXmlResource("remoting-with-connector.xml")
                 .build();
 
+        ServiceName remotingEndpointSN = RemotingServices.SUBSYSTEM_ENDPOINT;
+        ServiceName connectorSN = RemotingServices.serverServiceName("test-connector");
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, connectorSN);
 
-        ServiceController<?> endPointService = services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
-        assertNotNull(endPointService);
+        Object remoingEndpointService = dependencies.getService(remotingEndpointSN);
+        assertNotNull(remoingEndpointService);
 
-        ServiceName connectorServiceName = RemotingServices.serverServiceName("test-connector");
-        ServiceController<?> connectorService = services.getContainer().getRequiredService(connectorServiceName);
+        Object connectorService = dependencies.getService(connectorSN);
         assertNotNull(connectorService);
 
         ModelNode model = services.readWholeModel();
@@ -201,7 +190,6 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testSubsystemWithConnectorPropertyChange() throws Exception {
-
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
                 .setSubsystemXmlResource("remoting-with-connector.xml")
                 .build();
@@ -245,7 +233,6 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testSubsystemWithBadConnectorProperty() throws Exception {
-
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(true))
                 .setSubsystemXmlResource("remoting-with-bad-connector-property.xml")
                 .build();
@@ -277,18 +264,19 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                 .setSubsystemXmlResource("remoting-with-outbound-connections.xml")
                 .build();
 
-        ServiceController<?> endPointService = services.getContainer().getRequiredService(RemotingServices.SUBSYSTEM_ENDPOINT);
-        assertNotNull("Endpoint service was null", endPointService);
+        ServiceName remotingEndpointSN = RemotingServices.SUBSYSTEM_ENDPOINT;
+        ServiceName remoteOutboundConnectionSN = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append("remote-conn1");
+        ServiceName localOutboundConnectionSN = LocalOutboundConnectionService.LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append("local-conn1");
+        DependenciesRetrievalService dependencies = DependenciesRetrievalService.create(services, remotingEndpointSN, remoteOutboundConnectionSN, localOutboundConnectionSN);
 
-        final String remoteOutboundConnectionName = "remote-conn1";
-        ServiceName remoteOutboundConnectionServiceName = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(remoteOutboundConnectionName);
-        ServiceController<?> remoteOutboundConnectionService = services.getContainer().getRequiredService(remoteOutboundConnectionServiceName);
-        assertNotNull("Remote outbound connection service for outbound connection:" + remoteOutboundConnectionName + " was null", remoteOutboundConnectionService);
+        Object remoingEndpointService = dependencies.getService(remotingEndpointSN);
+        assertNotNull(remoingEndpointService);
 
-        final String localOutboundConnectionName = "local-conn1";
-        ServiceName localOutboundConnectionServiceName = LocalOutboundConnectionService.LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(localOutboundConnectionName);
-        ServiceController<?> localOutboundConnectionService = services.getContainer().getRequiredService(localOutboundConnectionServiceName);
-        assertNotNull("Local outbound connection service for outbound connection:" + localOutboundConnectionName + " was null", localOutboundConnectionService);
+        Object remoteOutboundConnectionService = dependencies.getService(remoteOutboundConnectionSN);
+        assertNotNull(remoteOutboundConnectionService);
+
+        Object localOutboundConnectionService = dependencies.getService(localOutboundConnectionSN);
+        assertNotNull(localOutboundConnectionService);
     }
 
     @Override
@@ -323,8 +311,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
                     ServiceBuilder<?> builder = target.addService(IOServices.WORKER.append("default"));
                     Consumer<XnioWorker> workerConsumer = builder.provides(IOServices.WORKER.append("default"));
                     builder.setInstance(new WorkerService(workerConsumer, () -> Executors.newFixedThreadPool(1), Xnio.getInstance().createWorkerBuilder().setWorkerIoThreads(2)));
-                    builder.install();
-                }
+                    builder.install();                }
             }
 
             @Override
@@ -349,48 +336,44 @@ public class RemotingLegacySubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     private static class CurrentConnectorAndController {
-        final KernelServices services;
         final ServiceName endpointName;
         final ServiceName connectorName;
+        final DependenciesRetrievalService dependencies;
         Object currentEndpoint;
         Object currentConnector;
 
-        CurrentConnectorAndController(KernelServices services, ServiceName endpointName, ServiceName connectorName) {
-            this.services = services;
+        CurrentConnectorAndController(DependenciesRetrievalService dependencies, ServiceName endpointName, ServiceName connectorName) {
+            this.dependencies = dependencies;
             this.endpointName = endpointName;
             this.connectorName = connectorName;
-            this.currentEndpoint = loadCurrentEndpoint(services);
-            this.currentConnector = loadCurrentConnector(services);
+            this.currentEndpoint = loadCurrentEndpoint();
+            this.currentConnector = loadCurrentConnector();
         }
 
         static CurrentConnectorAndController create(KernelServices services, ServiceName endpointName, ServiceName connectorName) {
-            return new CurrentConnectorAndController(services, endpointName, connectorName);
+            DependenciesRetrievalService deps = DependenciesRetrievalService.create(services, endpointName, connectorName);
+            return new CurrentConnectorAndController(deps, endpointName, connectorName);
         }
 
-        final Object loadCurrentEndpoint(KernelServices services) {
-            ServiceController<?> endPointService = services.getContainer().getRequiredService(endpointName);
-            assertNotNull(endPointService);
-            Object endpoint = endPointService.getValue();
+        final Object loadCurrentEndpoint() {
+            Object endpoint = dependencies.getService(endpointName);
             assertNotNull(endpoint);
             return endpoint;
         }
 
-        final Object loadCurrentConnector(KernelServices services) {
-            ServiceController<?> connectorService = services.getContainer().getRequiredService(connectorName);
-            assertNotNull(connectorService);
-            Object connector = connectorService.getValue();
+        final Object loadCurrentConnector() {
+            Object connector = dependencies.getService(connectorName);
             assertNotNull(connector);
             return connector;
         }
 
-        void updateCurrentEndpoint(final boolean equals) throws Exception {
-            this.currentEndpoint = checkStatus(this.currentEndpoint, loadCurrentEndpoint(services), equals);
+        void updateCurrentEndpoint(final boolean equals) {
+            this.currentEndpoint = checkStatus(this.currentEndpoint, loadCurrentEndpoint(), equals);
         }
 
-        void updateCurrentConnector(final boolean equals) throws Exception {
-            this.currentConnector = checkStatus(this.currentConnector, loadCurrentConnector(services), equals);
+        void updateCurrentConnector(final boolean equals) {
+            this.currentConnector = checkStatus(this.currentConnector, loadCurrentConnector(), equals);
         }
-
 
         Object checkStatus(Object oldObject, Object newObject, boolean equals) {
             if (!equals) {

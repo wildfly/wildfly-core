@@ -113,7 +113,7 @@ public class RemotingServices {
     }
 
     @Deprecated
-    public static void installConnectorServicesForNetworkInterfaceBinding(ServiceTarget serviceTarget,
+    public static void installConnectorServicesForNetworkInterfaceBinding(final ServiceTarget serviceTarget,
                                                                           final ServiceName endpointName,
                                                                           final String connectorName,
                                                                           final ServiceName networkInterfaceBindingName,
@@ -123,17 +123,21 @@ public class RemotingServices {
                                                                           final ServiceName saslAuthenticationFactory,
                                                                           final ServiceName sslContext,
                                                                           final ServiceName socketBindingManager) {
-        final InjectedNetworkBindingStreamServerService streamServerService = new InjectedNetworkBindingStreamServerService(connectorPropertiesOptionMap, port);
-
-        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                    .addDependency(networkInterfaceBindingName, NetworkInterfaceBinding.class, streamServerService.getInterfaceBindingInjector());
-        if (socketBindingManager != null) {
-            serviceBuilder.addDependency(socketBindingManager, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
-        }
-        installConnectorServices(serviceBuilder, streamServerService, endpointName, securityRealm, saslAuthenticationFactory, sslContext);
+        final ServiceName serviceName= serverServiceName(connectorName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
+        final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer = builder.provides(serviceName);
+        final Supplier<Endpoint> eSupplier = builder.requires(endpointName);
+        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? builder.requires(securityRealm) : null;
+        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? builder.requires(saslAuthenticationFactory) : null;
+        final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requires(sslContext): null;
+        final Supplier<SocketBindingManager> sbmSupplier = socketBindingManager != null ? builder.requires(socketBindingManager) : null;
+        final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requires(networkInterfaceBindingName);
+        builder.setInstance(new InjectedNetworkBindingStreamServerService(streamServerConsumer,
+                eSupplier, srSupplier, safSupplier, scSupplier, sbmSupplier, ibSupplier, connectorPropertiesOptionMap, port));
+        builder.install();
     }
 
-    public static void installConnectorServicesForSocketBinding(ServiceTarget serviceTarget,
+    public static void installConnectorServicesForSocketBinding(final ServiceTarget serviceTarget,
                                                                 final ServiceName endpointName,
                                                                 final String connectorName,
                                                                 final ServiceName socketBindingName,
@@ -142,32 +146,18 @@ public class RemotingServices {
                                                                 final ServiceName saslAuthenticationFactory,
                                                                 final ServiceName sslContext,
                                                                 final ServiceName socketBindingManager) {
-        final InjectedSocketBindingStreamServerService streamServerService = new InjectedSocketBindingStreamServerService(connectorPropertiesOptionMap);
-        final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder = serviceTarget.addService(serverServiceName(connectorName), streamServerService)
-                .addDependency(socketBindingName, SocketBinding.class, streamServerService.getSocketBindingInjector())
-                .addDependency(socketBindingManager, SocketBindingManager.class, streamServerService.getSocketBindingManagerInjector());
-
-        installConnectorServices(serviceBuilder, streamServerService, endpointName, securityRealm, saslAuthenticationFactory, sslContext);
-    }
-
-    private static void installConnectorServices(final ServiceBuilder<AcceptingChannel<StreamConnection>> serviceBuilder,
-                                                 final AbstractStreamServerService service,
-                                                 final ServiceName endpointName,
-                                                 final ServiceName securityRealm,
-                                                 final ServiceName saslAuthenticationFactory,
-                                                 final ServiceName sslContext) {
-
-        serviceBuilder.addDependency(endpointName, Endpoint.class, service.getEndpointInjector());
-        if (securityRealm != null) {
-            serviceBuilder.addDependency(securityRealm, SecurityRealm.class, service.getSecurityRealmInjector());
-        }
-        if (saslAuthenticationFactory != null) {
-            serviceBuilder.addDependency(saslAuthenticationFactory, SaslAuthenticationFactory.class, service.getSaslAuthenticationFactoryInjector());
-        }
-        if (sslContext != null) {
-            serviceBuilder.addDependency(sslContext, SSLContext.class, service.getSSLContextInjector());
-        }
-        serviceBuilder.install();
+        final ServiceName serviceName = serverServiceName(connectorName);
+        final ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
+        final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer = builder.provides(serviceName);
+        final Supplier<Endpoint> eSupplier = builder.requires(endpointName);
+        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? builder.requires(securityRealm) : null;
+        final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? builder.requires(saslAuthenticationFactory) : null;
+        final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requires(sslContext) : null;
+        final Supplier<SocketBindingManager> sbmSupplier = builder.requires(socketBindingManager);
+        final Supplier<SocketBinding> sbSupplier = builder.requires(socketBindingName);
+        builder.setInstance(new InjectedSocketBindingStreamServerService(streamServerConsumer,
+                eSupplier, srSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap));
+        builder.install();
     }
 
     public static void removeConnectorServices(final OperationContext context, final String connectorName) {

@@ -26,18 +26,19 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLContext;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
 import org.jboss.as.domain.management.AuthMechanism;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.logging.RemotingLogger;
-import org.jboss.msc.inject.Injector;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.spi.NetworkServerProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
@@ -57,56 +58,45 @@ import org.xnio.channels.AcceptingChannel;
  * Contains the remoting stream server
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
- * @version $Revision: 1.1 $
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public abstract class AbstractStreamServerService implements Service<AcceptingChannel<StreamConnection>>{
+abstract class AbstractStreamServerService implements Service {
 
-    private final InjectedValue<SecurityRealm> securityRealm = new InjectedValue<>();
-    private final InjectedValue<SaslAuthenticationFactory> saslAuthenticationFactory = new InjectedValue<>();
-    private final InjectedValue<SSLContext> sslContext = new InjectedValue<>();
-    private final InjectedValue<Endpoint> endpointValue = new InjectedValue<Endpoint>();
-    private final InjectedValue<SocketBindingManager> socketBindingManagerValue = new InjectedValue<SocketBindingManager>();
+    private final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer;
+    /* not private due to testing purposes */ final Supplier<Endpoint> endpointSupplier;
+    private final Supplier<SecurityRealm> securityRealmSupplier;
+    private final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier;
+    private final Supplier<SSLContext> sslContextSupplier;
+    private final Supplier<SocketBindingManager> socketBindingManagerSupplier;
     private final OptionMap connectorPropertiesOptionMap;
 
     private volatile AcceptingChannel<StreamConnection> streamServer;
     private volatile ManagedBinding managedBinding;
 
-    AbstractStreamServerService(final OptionMap connectorPropertiesOptionMap) {
+    AbstractStreamServerService(
+            final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
+            final Supplier<Endpoint> endpointSupplier,
+            final Supplier<SecurityRealm> securityRealmSupplier,
+            final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
+            final Supplier<SSLContext> sslContextSupplier,
+            final Supplier<SocketBindingManager> socketBindingManagerSupplier,
+            final OptionMap connectorPropertiesOptionMap) {
+        this.streamServerConsumer = streamServerConsumer;
+        this.endpointSupplier = endpointSupplier;
+        this.securityRealmSupplier = securityRealmSupplier;
+        this.saslAuthenticationFactorySupplier = saslAuthenticationFactorySupplier;
+        this.sslContextSupplier = sslContextSupplier;
+        this.socketBindingManagerSupplier = socketBindingManagerSupplier;
         this.connectorPropertiesOptionMap = connectorPropertiesOptionMap;
-    }
-
-    @Override
-    public AcceptingChannel<StreamConnection> getValue() throws IllegalStateException, IllegalArgumentException {
-        return streamServer;
-    }
-
-    public Injector<SecurityRealm> getSecurityRealmInjector() {
-        return securityRealm;
-    }
-
-    public Injector<SaslAuthenticationFactory> getSaslAuthenticationFactoryInjector() {
-        return saslAuthenticationFactory;
-    }
-
-    public Injector<SSLContext> getSSLContextInjector() {
-        return sslContext;
-    }
-
-    public InjectedValue<Endpoint> getEndpointInjector() {
-        return endpointValue;
-    }
-
-    public InjectedValue<SocketBindingManager> getSocketBindingManagerInjector() {
-        return socketBindingManagerValue;
     }
 
     @Override
     public void start(final StartContext context) throws StartException {
         try {
-            NetworkServerProvider networkServerProvider = endpointValue.getValue().getConnectionProviderInterface("remoting", NetworkServerProvider.class);
+            NetworkServerProvider networkServerProvider = endpointSupplier.get().getConnectionProviderInterface("remoting", NetworkServerProvider.class);
 
-            SecurityRealm securityRealm = this.securityRealm.getOptionalValue();
-            SSLContext sslContext = this.sslContext.getOptionalValue();
+            SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
+            SSLContext sslContext = sslContextSupplier != null ? sslContextSupplier.get() : null;
             if (sslContext == null && securityRealm != null) {
                 sslContext = securityRealm.getSSLContext();
             }
@@ -117,8 +107,7 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                 builder.set(Options.SSL_STARTTLS, true);
             }
 
-            final InjectedValue<SaslAuthenticationFactory> saslFactoryValue = this.saslAuthenticationFactory;
-            SaslAuthenticationFactory factory = saslFactoryValue.getOptionalValue();
+            SaslAuthenticationFactory factory = saslAuthenticationFactorySupplier != null ? saslAuthenticationFactorySupplier.get() : null;
             if (factory == null && securityRealm != null) {
                 String[] mechanismNames = null;
                 if(connectorPropertiesOptionMap.contains(Options.SASL_MECHANISMS)) {
@@ -168,7 +157,8 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
                     .build();
             }
             streamServer = networkServerProvider.createServer(getSocketAddress(), resultingMap, factory, sslContext);
-            SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();
+            streamServerConsumer.accept(streamServer);
+            SocketBindingManager sbm = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
             if (sbm != null) {
                 managedBinding = registerSocketBinding(sbm);
             }
@@ -178,14 +168,14 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
             throw RemotingLogger.ROOT_LOGGER.couldNotBindToSocket(e.getMessage() + " " + NetworkUtils.formatAddress(getSocketAddress()), e);
         } catch (Exception e) {
             throw RemotingLogger.ROOT_LOGGER.couldNotStart(e);
-
         }
     }
 
     @Override
-    public void stop(StopContext context) {
+    public void stop(final StopContext context) {
+        streamServerConsumer.accept(null);
         IoUtils.safeClose(streamServer);
-        SocketBindingManager sbm = socketBindingManagerValue.getOptionalValue();
+        SocketBindingManager sbm = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
         if (sbm != null && managedBinding != null) {
             unregisterSocketBinding(managedBinding, sbm);
         }
@@ -196,4 +186,5 @@ public abstract class AbstractStreamServerService implements Service<AcceptingCh
     abstract ManagedBinding registerSocketBinding(SocketBindingManager socketBindingManager);
 
     abstract void unregisterSocketBinding(ManagedBinding managedBinding, SocketBindingManager socketBindingManager);
+
 }

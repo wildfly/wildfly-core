@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -129,9 +130,14 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         // note that if a resource root has been added to two different additional modules
         // and is then referenced via a Class-Path entry the behaviour is undefined
         final Map<VirtualFile, AdditionalModuleSpecification> additionalModules = new HashMap<VirtualFile, AdditionalModuleSpecification>();
-        for (AdditionalModuleSpecification module : topLevelDeployment.getAttachmentList(Attachments.ADDITIONAL_MODULES)) {
-            for (ResourceRoot additionalModuleResourceRoot : module.getResourceRoots()) {
-                additionalModules.put(additionalModuleResourceRoot.getRoot(), module);
+        final List<AdditionalModuleSpecification> additionalModuleList = topLevelDeployment.getAttachmentList(Attachments.ADDITIONAL_MODULES);
+        // Must synchronize on list as subdeployments executing Phase.STRUCTURE may be concurrently modifying it
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (additionalModuleList) {
+            for (AdditionalModuleSpecification module : additionalModuleList) {
+                for (ResourceRoot additionalModuleResourceRoot : module.getResourceRoots()) {
+                    additionalModules.put(additionalModuleResourceRoot.getRoot(), module);
+                }
             }
         }
 
