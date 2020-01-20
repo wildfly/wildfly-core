@@ -690,7 +690,10 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
                     String preferredMechanism;
                     if(authMechanism == AuthMechanism.PLAIN && !registeredServices.containsKey(AuthMechanism.PLAIN) && registeredServices.containsKey(AuthMechanism.DIGEST)) {
                         preferredMechanism = AuthMechanism.DIGEST.name();
+                    } else if (authMechanism != null) {
+                        preferredMechanism = authMechanism.name();
                     } else {
+                        // mechanismName is ANONYMOUS
                         preferredMechanism = mechanismName;
                     }
 
