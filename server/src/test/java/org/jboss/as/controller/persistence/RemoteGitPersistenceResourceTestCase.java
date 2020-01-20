@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -55,7 +56,9 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             }
         }
         remoteRepository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
+        remoteRepository.getConfig().setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
         repository = new FileRepositoryBuilder().setWorkTree(root.toAbsolutePath().toFile()).setGitDir(new File(root.toAbsolutePath().toFile(), Constants.DOT_GIT)).setup().build();
+        repository.getConfig().setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
     }
 
     @After
