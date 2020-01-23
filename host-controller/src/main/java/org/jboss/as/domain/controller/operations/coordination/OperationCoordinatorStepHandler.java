@@ -92,6 +92,7 @@ public class OperationCoordinatorStepHandler {
             // See if this is a composite; if so use the two step path to avoid breaking it locally into multiple
             // steps that get invoked piecemeal on the target host
             if (COMPOSITE.equals(operation.get(OP).asString()) && PathAddress.pathAddress(operation.get(OP_ADDR)).size() == 0) {
+                assert !routing.isMultiphase();
                 executeTwoPhaseOperation(context, operation, routing);
             } else {
                 executeDirect(context, operation, false); // don't need to check private as we are just going to forward this
@@ -105,6 +106,7 @@ public class OperationCoordinatorStepHandler {
             // Else we are responsible for coordinating a two-phase op
             // -- domain level op: apply to HostController models across domain and then push to servers
             // -- host level op: apply to our model  and then push to servers
+            assert routing.isMultiphase();
             executeTwoPhaseOperation(context, operation, routing);
         }
     }
@@ -179,9 +181,19 @@ public class OperationCoordinatorStepHandler {
             remoteHosts.remove(localHostName);
 
             if (remoteHosts.size() > 0 || global) {
-                // Lock the controller to ensure there are no topology changes mid-op.
-                // This assumes registering/unregistering a remote proxy will involve an op and hence will block
-                context.acquireControllerLock();
+
+                if (routing.isMultiphase()) {
+                    // Lock the controller to ensure there are no topology changes mid-op.
+                    // This assumes registering/unregistering a remote proxy will involve an op and hence will block
+                    //
+                    // Notes non-multiphase case
+                    // If the routing is non-multiphase we do not acquire the write lock here:
+                    // - We don't worry about serverProxies, since there won't any results affecting the servers managed by this host.
+                    // - The worst case here is if, in the middle of the operation, the target host is removed. In this case and if
+                    // a host is removed (user concurrently shutdown it or its process crashes), this operation could fail, however,
+                    // it is considered an expected failure.
+                    context.acquireControllerLock();
+                }
 
                 if (global) {
                     remoteHosts.addAll(hostProxies.keySet());
