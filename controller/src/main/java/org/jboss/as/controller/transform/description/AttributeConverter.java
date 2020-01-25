@@ -22,8 +22,11 @@
 package org.jboss.as.controller.transform.description;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.dmr.ModelNode;
 
@@ -88,22 +91,61 @@ public interface AttributeConverter {
     }
 
     /**
-     * Converter for an exist attribute whose default value has changed.
+     * Converter for an existing attribute whose default value has changed.
      * @author Paul Ferraro
      */
-    public class DefaultValueAttributeConverter extends DefaultAttributeConverter {
+    AttributeConverter DEFAULT_VALUE = new AttributeConverter() {
+        @Override
+        public void convertOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
+            if (!attributeValue.isDefined()) {
+                ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
+                AttributeDefinition definition = this.findOperationParameter(registration, operation, attributeName);
+                attributeValue.set(definition.getDefaultValue());
+            }
+        }
 
-        private final AttributeDefinition attribute;
-
-        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
-            this.attribute = attribute;
+        private AttributeDefinition findOperationParameter(ImmutableManagementResourceRegistration registration, ModelNode operation, String attributeName) {
+            String operationName = operation.get(ModelDescriptionConstants.OP).asString();
+            OperationDefinition definition = registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName).getOperationDefinition();
+            for (AttributeDefinition parameter : definition.getParameters()) {
+                if (parameter.getName().equals(attributeName)) {
+                    return parameter;
+                }
+            }
+            // Operation definitions created by SimpleResourceDefinition.registerAddOperation(...) have no parameters, so fetch attribute definition from resource definition instead
+            return registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
         }
 
         @Override
-        protected void convertAttribute(PathAddress address, String name, ModelNode value, TransformationContext context) {
-            if (!value.isDefined()) {
-                value.set(this.attribute.getDefaultValue());
+        public void convertResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (!attributeValue.isDefined()) {
+                ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
+                AttributeDefinition definition = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
+                attributeValue.set(definition.getDefaultValue());
             }
+        }
+    };
+
+    /**
+     * Converter for an existing attribute whose default value has changed.
+     * @author Paul Ferraro
+     * @deprecated Use {@link AttributeConverter#DEFAULT_VALUE} instead.
+     */
+    @Deprecated
+    public class DefaultValueAttributeConverter implements AttributeConverter {
+
+        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
+            // Do nothing
+        }
+
+        @Override
+        public void convertOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
+            DEFAULT_VALUE.convertOperationParameter(address, attributeName, attributeValue, operation, context);
+        }
+
+        @Override
+        public void convertResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            DEFAULT_VALUE.convertResourceAttribute(address, attributeName, attributeValue, context);
         }
     }
 
@@ -155,7 +197,7 @@ public interface AttributeConverter {
      * An attribute converter which converts the attribute value to be the value of the last {@link PathElement} in the {@link PathAddress}
      */
     AttributeConverter NAME_FROM_ADDRESS = new DefaultAttributeConverter() {
-        /** {@inheritDoc} */
+        @Override
         public void convertAttribute(PathAddress address, String name, ModelNode attributeValue, TransformationContext context) {
             PathElement element = address.getLastElement();
             attributeValue.set(element.getValue());
