@@ -88,22 +88,38 @@ public interface AttributeConverter {
     }
 
     /**
-     * Converter for an exist attribute whose default value has changed.
+     * Converter for an existing attribute whose default value has changed.
      * @author Paul Ferraro
      */
-    public class DefaultValueAttributeConverter extends DefaultAttributeConverter {
-
-        private final AttributeDefinition attribute;
-
-        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
-            this.attribute = attribute;
-        }
-
+    AttributeConverter DEFAULT_VALUE = new DefaultAttributeConverter() {
         @Override
         protected void convertAttribute(PathAddress address, String name, ModelNode value, TransformationContext context) {
             if (!value.isDefined()) {
-                value.set(this.attribute.getDefaultValue());
+                value.set(context.getResourceRegistrationFromRoot(address).getAttributeAccess(PathAddress.EMPTY_ADDRESS, name).getAttributeDefinition().getDefaultValue());
             }
+        }
+    };
+
+    /**
+     * Converter for an existing attribute whose default value has changed.
+     * @author Paul Ferraro
+     * @deprecated Use {@link AttributeConverter#DEFAULT_VALUE} instead.
+     */
+    @Deprecated
+    public class DefaultValueAttributeConverter implements AttributeConverter {
+
+        public DefaultValueAttributeConverter(AttributeDefinition attribute) {
+            // Do nothing
+        }
+
+        @Override
+        public void convertOperationParameter(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
+            DEFAULT_VALUE.convertOperationParameter(address, attributeName, attributeValue, operation, context);
+        }
+
+        @Override
+        public void convertResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            DEFAULT_VALUE.convertResourceAttribute(address, attributeName, attributeValue, context);
         }
     }
 
@@ -155,7 +171,7 @@ public interface AttributeConverter {
      * An attribute converter which converts the attribute value to be the value of the last {@link PathElement} in the {@link PathAddress}
      */
     AttributeConverter NAME_FROM_ADDRESS = new DefaultAttributeConverter() {
-        /** {@inheritDoc} */
+        @Override
         public void convertAttribute(PathAddress address, String name, ModelNode attributeValue, TransformationContext context) {
             PathElement element = address.getLastElement();
             attributeValue.set(element.getValue());
