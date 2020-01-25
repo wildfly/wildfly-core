@@ -198,7 +198,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
         switch (modelVersion) {
             case VERSION_1_5_0: {
                 rootResourceBuilder.getAttributeBuilder()
-                        .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(false, true, USE_DEPLOYMENT_LOGGING_CONFIG.getDefaultValue()), USE_DEPLOYMENT_LOGGING_CONFIG)
+                        .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, USE_DEPLOYMENT_LOGGING_CONFIG)
                         .addRejectCheck(RejectAttributeChecker.DEFINED, USE_DEPLOYMENT_LOGGING_CONFIG)
                         .end();
                 break;

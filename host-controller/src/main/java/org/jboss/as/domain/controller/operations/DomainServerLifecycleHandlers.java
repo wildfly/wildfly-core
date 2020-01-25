@@ -640,15 +640,15 @@ public class DomainServerLifecycleHandlers {
 
     public static void registerSuspendedStartTransformers(ResourceTransformationDescriptionBuilder builder) {
         builder.addOperationTransformationOverride(START_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, START_MODE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end()
                 .addOperationTransformationOverride(RELOAD_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, START_MODE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end()
                 .addOperationTransformationOverride(RESTART_SERVERS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode(StartMode.NORMAL.toString())), START_MODE)
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, START_MODE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, START_MODE)
                 .end();
 
