@@ -23,6 +23,7 @@
 package org.jboss.as.controller;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -415,22 +416,25 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     @Deprecated
     @SuppressWarnings("deprecation")
     protected void registerAddOperation(final ManagementResourceRegistration registration, final OperationStepHandler handler, OperationEntry.Flag... flags) {
+        Collection<? extends AttributeDefinition> parameters = (handler instanceof OperationDescriptor) ? ((OperationDescriptor) handler).getAttributes() : Collections.emptyList();
         if (handler instanceof DescriptionProvider) {
             registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
-                                (DescriptionProvider) handler, OperationEntry.EntryType.PUBLIC,flags)
+                                (DescriptionProvider) handler, parameters, OperationEntry.EntryType.PUBLIC,flags)
                                , handler);
 
         } else {
             registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
                     new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild),
+                    parameters,
                     OperationEntry.EntryType.PUBLIC,
                     flags)
                     , handler);
         }
     }
 
-    private OperationDefinition getOperationDefinition(String operationName, DescriptionProvider descriptionProvider, OperationEntry.EntryType entryType, OperationEntry.Flag... flags){
+    private OperationDefinition getOperationDefinition(String operationName, DescriptionProvider descriptionProvider, Collection<? extends AttributeDefinition> parameters, OperationEntry.EntryType entryType, OperationEntry.Flag... flags){
         return new SimpleOperationDefinitionBuilder(operationName, descriptionResolver)
+                .setParameters(parameters.toArray(new AttributeDefinition[parameters.size()]))
                 .withFlags(flags)
                 .setEntryType(entryType)
                 .setDescriptionProvider(descriptionProvider)
@@ -450,7 +454,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
     protected void registerAddOperation(final ManagementResourceRegistration registration, final AbstractAddStepHandler handler,
                                         OperationEntry.Flag... flags) {
         registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.ADD,
-                new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild), OperationEntry.EntryType.PUBLIC, flags)
+                new DefaultResourceAddDescriptionProvider(registration, descriptionResolver, orderedChild), handler.getAttributes(), OperationEntry.EntryType.PUBLIC, flags)
                 , handler);
     }
 
@@ -460,7 +464,7 @@ public class SimpleResourceDefinition implements ResourceDefinition {
                                            OperationEntry.Flag... flags) {
         if (handler instanceof DescriptionProvider) {
             registration.registerOperationHandler(getOperationDefinition(ModelDescriptionConstants.REMOVE,
-                                            (DescriptionProvider) handler, OperationEntry.EntryType.PUBLIC,flags)
+                                            (DescriptionProvider) handler, Collections.emptyList(), OperationEntry.EntryType.PUBLIC,flags)
                                            , handler);
         } else {
             OperationDefinition opDef = new SimpleOperationDefinitionBuilder(ModelDescriptionConstants.REMOVE, descriptionResolver)

@@ -43,7 +43,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  *
  * @author John Bailey
  */
-public class AbstractAddStepHandler implements OperationStepHandler {
+public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
     static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
     private static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
@@ -145,6 +145,11 @@ public class AbstractAddStepHandler implements OperationStepHandler {
         } else {
             attributes = Collections.unmodifiableSet(parameters.attributes);
         }
+    }
+
+    @Override
+    public Collection<? extends AttributeDefinition> getAttributes() {
+        return this.attributes;
     }
 
     /** {@inheritDoc */
