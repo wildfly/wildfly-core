@@ -4978,6 +4978,33 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:enumeration>
+                    <xs:enumeration value="WildFly16.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for kernel management API version 10.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="WildFly17.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for kernel management API version 10.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="WildFly18.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for kernel management API version 10.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
