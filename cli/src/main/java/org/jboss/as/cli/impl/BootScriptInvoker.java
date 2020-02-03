@@ -142,12 +142,12 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
         if (errorFile != null) {
             File errors = new File(errorFile);
             if (errors.exists()) {
-                ROOT_LOGGER.unexpectedErrors(file, errors);
                 StringBuilder errorBuilder = new StringBuilder();
                 for (String line : Files.readAllLines(errors.toPath())) {
                     errorBuilder.append(line).append("\n");
                 }
                 ROOT_LOGGER.error(errorBuilder.toString());
+                throw ROOT_LOGGER.unexpectedErrors(file, errors);
             }
 
         }
