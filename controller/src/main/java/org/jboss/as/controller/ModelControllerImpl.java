@@ -39,11 +39,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROCESS_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.operations.common.Util.validateOperation;
+import static org.jboss.as.controller.operations.global.GlobalOperationHandlers.STD_READ_OPS;
 
 import java.io.IOException;
 import java.security.PrivilegedAction;
@@ -122,6 +124,7 @@ class ModelControllerImpl implements ModelController {
     private final ProcessType processType;
     private final RunningModeControl runningModeControl;
     private final AtomicBoolean bootingFlag = new AtomicBoolean(true);
+    private final AtomicBoolean bootingReadOnlyFlag = new AtomicBoolean(false);
     private final OperationStepHandler prepareStep;
     private final ControlledProcessState processState;
     private final ExecutorService executorService;
@@ -390,7 +393,10 @@ class ModelControllerImpl implements ModelController {
         } // else its an internal caller as external callers always get an AccessAuditContext
 
         // WFCORE-184. Exclude external callers during boot. AccessMechanism is always set for external callers
-        if (accessMechanism != null && bootingFlag.get()) {
+        // If the booting flag was cleared, then check if we are in a booting read only mode and if the current
+        // operation is not an allowed as a readOnly Operation, then it gets rejected
+        if ( (accessMechanism != null && bootingFlag.get()) ||
+                (accessMechanism != null && !bootingFlag.get() && bootingReadOnlyFlag.get() && !isReadOnlyOperation(operation)) ) {
             return handleExternalRequestDuringBoot();
         }
 
@@ -673,7 +679,26 @@ class ModelControllerImpl implements ModelController {
     void finishBoot() {
         // Notify the audit logger that we're done booting
         auditLogger.bootDone();
+        bootingReadOnlyFlag.set(false);
         bootingFlag.set(false);
+    }
+
+    /**
+     * Finish boot using an specific value for booting read only flag
+     * @param readOnly
+     */
+    void finishBoot(boolean readOnly) {
+        // Notify the audit logger that we're done booting
+        auditLogger.bootDone();
+        bootingReadOnlyFlag.set(readOnly);
+        bootingFlag.set(false);
+    }
+
+    /**
+     * Clears the current booting read only flag
+     */
+    void clearBootingReadOnlyFlag() {
+        bootingReadOnlyFlag.set(false);
     }
 
     ManagementModel getManagementModel() {
@@ -980,6 +1005,27 @@ class ModelControllerImpl implements ModelController {
             }
         }
         return result;
+    }
+
+    private boolean isReadOnlyOperation(final ModelNode operation) {
+        if (operation.hasDefined(STEPS)) {
+            final List<ModelNode> steps = operation.get(STEPS).asList();
+            boolean readOnly = !steps.isEmpty();
+            for (ModelNode step : steps) {
+                readOnly = isReadOnlyOperation(step);
+                if (!readOnly) {
+                    break;
+                }
+            }
+            return readOnly;
+        } else {
+            final String operationName = operation.get(OP).asString();
+            return STD_READ_OPS.contains(operationName) ||
+                    "read-boot-errors".equals(operationName) ||
+                    "find-non-progressing-operation".equals(operationName) ||
+                    "whoami".equals(operationName) ||
+                    "read-log-file".equals(operationName);
+        }
     }
 
     private static final class BootOperations {

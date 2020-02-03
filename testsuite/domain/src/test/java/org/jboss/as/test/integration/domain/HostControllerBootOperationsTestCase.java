@@ -17,8 +17,11 @@
 package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_TYPES_OPERATION;
@@ -27,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
 import java.io.IOException;
@@ -72,6 +76,8 @@ public class HostControllerBootOperationsTestCase {
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
     protected static final PathAddress JVM_DEFAULT = PathAddress.pathAddress(JVM, "default");
     protected static final PathAddress JVM_BYTEMAN = PathAddress.pathAddress(JVM, "byteman");
+    protected static final PathAddress CORE_SERVICE_MANAGEMENT = PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT);
+    protected static final PathAddress SERVICE_MANAGEMENT_OPERATIONS = PathAddress.pathAddress(SERVICE, MANAGEMENT_OPERATIONS);
 
     private static DomainTestSupport testSupport;
     private static DomainClient masterClient;
@@ -84,7 +90,7 @@ public class HostControllerBootOperationsTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
 
-        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(OperationTimeoutTestCase.class.getSimpleName(),
+        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(HostControllerBootOperationsTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
                 "host-configs/host-master.xml",
                 "host-configs/host-slave-main-three-without-jvm.xml"
@@ -161,7 +167,7 @@ public class HostControllerBootOperationsTestCase {
 
         op = Util.getWriteAttributeOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(JVM_DEFAULT), "heap-size", "64m");
         ModelNode failureDescription = DomainTestUtils.executeForFailure(op, masterClient);
-        Assert.assertTrue("The slave host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("slave").asString().startsWith("WFLYDC0098"));
+        Assert.assertTrue("The slave host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("slave").asString().startsWith("WFLYCTL0379"));
 
         checkReadOperations(true);
 
@@ -237,6 +243,17 @@ public class HostControllerBootOperationsTestCase {
 
         // check if we can read the server status
         op = Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), "status");
+        DomainTestUtils.executeForResult(op, masterClient);
+
+        // WFCORE-4830
+        // Besides of standard read operations, the following ones are allowed when a HC is starting
+        op = Util.createEmptyOperation("read-boot-errors", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT));
+        DomainTestUtils.executeForResult(op, masterClient);
+
+        op = Util.createEmptyOperation("whoami", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT));
+        DomainTestUtils.executeForResult(op, masterClient);
+
+        op = Util.createEmptyOperation("find-non-progressing-operation", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT).append(SERVICE_MANAGEMENT_OPERATIONS));
         DomainTestUtils.executeForResult(op, masterClient);
     }
 

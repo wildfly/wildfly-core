@@ -115,7 +115,8 @@ public class GlobalOperationHandlers {
                     ReadOperationNamesHandler.DEFINITION.getName(),
                     QueryOperationHandler.DEFINITION.getName(),
                     MapOperations.MAP_GET_DEFINITION.getName(),
-                    ListOperations.LIST_GET_DEFINITION.getName())));
+                    ListOperations.LIST_GET_DEFINITION.getName(),
+                    ReadOperationDescriptionHandler.DEFINITION.getName())));
 
     public static void registerGlobalOperations(ManagementResourceRegistration root, ProcessType processType) {
         if( processType.isHostController()) {

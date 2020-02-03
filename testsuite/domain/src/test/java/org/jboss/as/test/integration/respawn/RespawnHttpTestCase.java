@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -297,8 +298,12 @@ public class RespawnHttpTestCase {
 
         //Execute reload w/ restart-servers=false, admin-only=false
         executeReloadOperation(false, false);
+
         //Wait for servers
         readHostControllerServer(SERVER_TWO);
+
+        // we need to wait for the master being in running state before execute this operation
+        awaitHostController(MASTER);
 
         manageServer("stop", SERVER_ONE);
         Thread.sleep(5000);
@@ -539,6 +544,31 @@ public class RespawnHttpTestCase {
     static TestControllerClient getControllerClient() throws IOException {
         client.connect(); // Ensure connected
         return client;
+    }
+
+    private void awaitHostController(String hostControllerName) throws Exception {
+        final long time = System.currentTimeMillis() + TIMEOUT;
+        do {
+            Thread.sleep(250);
+
+            final ModelNode operation = new ModelNode();
+            operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            PathAddress pathElements = PathAddress.pathAddress(PathElement.pathElement(HOST, hostControllerName));
+            operation.get(OP_ADDR).set(pathElements.toModelNode());
+            operation.get(NAME).set("host-state");
+
+            try {
+                final ModelNode result = getControllerClient().execute(operation);
+                if (result.get(OUTCOME).asString().equals(SUCCESS)) {
+                    if ("running".equals(result.require(RESULT).asString())) {
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                //
+            }
+
+        } while (System.currentTimeMillis() < time);
     }
 
     private abstract static class ProcessUtil {
