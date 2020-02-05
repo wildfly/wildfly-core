@@ -59,7 +59,6 @@ import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
@@ -386,7 +385,7 @@ class AuthenticationFactoryDefinitions {
                 serviceBuilder.setInstance(httpAuthenticationFactoryService);
 
                 commonDependencies(serviceBuilder, true, true)
-                        .setInitialMode(context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.LAZY : ServiceController.Mode.ACTIVE)
+                        .setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? ServiceController.Mode.PASSIVE : ServiceController.Mode.ACTIVE)
                         .install();
             }
 
@@ -472,7 +471,7 @@ class AuthenticationFactoryDefinitions {
 
         AttributeDefinition[] attributes = new AttributeDefinition[] { securityDomainAttribute, SASL_SERVER_FACTORY, mechanismConfigurationAttribute };
 
-        AbstractAddStepHandler add = new TrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.LAZY, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
+        AbstractAddStepHandler add = new TrivialAddHandler<SaslAuthenticationFactory>(SaslAuthenticationFactory.class, ServiceController.Mode.ACTIVE, ServiceController.Mode.PASSIVE, attributes, SASL_AUTHENTICATION_FACTORY_RUNTIME_CAPABILITY) {
 
             @Override
             protected ValueSupplier<SaslAuthenticationFactory> getValueSupplier(
