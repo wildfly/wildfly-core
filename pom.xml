@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>11.0.0.Beta8-SNAPSHOT</version>
+    <version>11.0.0.Beta9-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -110,10 +110,10 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
-        <version.org.jboss.galleon>4.2.3.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>4.2.4.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.13.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>4.2.3.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>4.2.4.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
@@ -165,8 +165,8 @@
              (the current workaround causes test failures in domain-management tests).
              Cannot bump to AM25 due to https://issues.apache.org/jira/browse/DIRSERVER-2247.
         -->
-        <version.org.apache.httpcomponents.httpclient>4.5.10</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.12</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpclient>4.5.11</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4.13</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.xerces>2.12.0.SP02</version.org.apache.xerces>
@@ -223,7 +223,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.11.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.11.2.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.7.0.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
         <version.xml-resolver>1.2</version.xml-resolver>

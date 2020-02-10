@@ -25,7 +25,10 @@ package org.jboss.as.test.integration.domain.suites;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIRECTORY_GROUPING;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCEPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION;
@@ -33,37 +36,61 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_TYPES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.test.shared.PermissionUtils.createPermissionsXmlAsset;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.PropertyPermission;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.ReadResourceDescriptionHandler;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jboss.msc.service.ServiceActivator;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,6 +101,9 @@ import org.junit.Test;
  * @author Brian Stansberry (c) 2015 Red Hat Inc.
  */
 public class CompositeOperationTestCase {
+    private static String DEPLOYMENT_NAME = "deployment.jar";
+    private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
+    protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
 
     private static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "master");
     private static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "slave");
@@ -86,13 +116,17 @@ public class CompositeOperationTestCase {
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainClient masterClient;
 
     private int sysPropVal = 0;
+    private static File tmpDir;
+    private static File deployment;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(CompositeOperationTestCase.class.getSimpleName());
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        masterClient = domainMasterLifecycleUtil.getDomainClient();
     }
 
     @AfterClass
@@ -531,5 +565,162 @@ public class CompositeOperationTestCase {
         operation.get(OP).set(READ_RESOURCE_OPERATION);
         operation.get(OP_ADDR).set(address);
         return operation;
+    }
+
+    /**
+     * Tests reads in composite operations when the DC exclusive lock is acquired by another operation.
+     */
+    @Test
+    public void testCompositeOperationsWriteLockAcquired() throws Exception {
+        ModelNode result, op;
+
+        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.pathAddress(HOST_SLAVE));
+        result = DomainTestUtils.executeForResult(op, masterClient);
+        final List<String> slaveChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
+
+        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.EMPTY_ADDRESS);
+        result = DomainTestUtils.executeForResult(op, masterClient);
+        final List<String> emptyAddressChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
+
+        createDeployment();
+
+        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        try {
+            Future<ModelNode> deploymentFuture = executorService.submit(new Callable<ModelNode>() {
+                @Override
+                public ModelNode call() throws Exception {
+                    // Take the DC write lock
+                    final ModelNode op = getDeploymentCompositeOp();
+                    DomainClient client = domainMasterLifecycleUtil.createDomainClient();
+                    return DomainTestUtils.executeForResult(op, client);
+                }
+            });
+
+            // verify reads in a composite operations
+            List<ModelNode> steps;
+
+            // it could ensure we have acquired the lock by the deployment operation executed before
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
+
+            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SLAVE), slaveChildrenTypes);
+            op = createComposite(steps);
+            DomainTestUtils.executeForResult(op, masterClient);
+
+            steps = prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes);
+            op = createComposite(steps);
+            DomainTestUtils.executeForResult(op, masterClient);
+
+            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SLAVE), slaveChildrenTypes);
+            steps.addAll(prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes));
+            op = createComposite(steps);
+            DomainTestUtils.executeForResult(op, masterClient);
+
+            Assert.assertEquals("It is expected deployment operation is still in progress", false, deploymentFuture.isDone());
+
+            // keep the timeout in sync with SlowServiceActivator timeout
+            deploymentFuture.get(TimeoutUtil.adjust(20), TimeUnit.SECONDS);
+
+        } finally {
+            try {
+                cleanDeploymentFromServerGroup();
+            } catch (MgmtOperationException e) {
+                // ignored
+            } finally {
+                try {
+                    cleanDeployment();
+                } catch (MgmtOperationException e) {
+                    // ignored
+                }
+            }
+            executorService.shutdown();
+        }
+    }
+
+    private ModelNode getDeploymentCompositeOp() throws Exception {
+        ModelNode op = new ModelNode();
+        op.get(OP).set(COMPOSITE);
+        ModelNode steps = op.get(STEPS);
+
+        ModelNode depAdd = Util.createAddOperation(PathAddress.pathAddress(DEPLOYMENT_PATH));
+        ModelNode content = new ModelNode();
+        content.get(URL).set(deployment.toURI().toURL().toString());
+        depAdd.get(CONTENT).add(content);
+
+        steps.add(depAdd);
+
+        ModelNode sgAdd = Util.createAddOperation(PathAddress.pathAddress(SERVER_GROUP_MAIN_SERVER_GROUP, DEPLOYMENT_PATH));
+        sgAdd.get(ENABLED).set(true);
+        steps.add(sgAdd);
+        return op;
+    }
+
+    private static void createDeployment() throws Exception {
+        File tmpRoot = new File(System.getProperty("java.io.tmpdir"));
+        tmpDir = new File(tmpRoot, CompositeOperationTestCase.class.getSimpleName() + System.currentTimeMillis());
+        Files.createDirectory(tmpDir.toPath());
+        deployment = new File(tmpDir, DEPLOYMENT_NAME);
+
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, DEPLOYMENT_NAME)
+                .addClasses(SlowServiceActivator.class, TimeoutUtil.class)
+                .addAsManifestResource(new StringAsset("Dependencies: org.wildfly.security.elytron-private\n"), "MANIFEST.MF")
+                .addAsServiceProvider(ServiceActivator.class, SlowServiceActivator.class)
+                .addAsManifestResource(createPermissionsXmlAsset(new PropertyPermission("ts.timeout.factor", "read")), "permissions.xml");
+
+        archive.as(ZipExporter.class).exportTo(deployment);
+    }
+
+    private void cleanDeploymentFromServerGroup() throws IOException, MgmtOperationException {
+        ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP_MAIN_SERVER_GROUP, DEPLOYMENT_PATH));
+        op.get(ENABLED).set(true);
+        DomainTestUtils.executeForResult(op, masterClient);
+    }
+
+    private void cleanDeployment() throws IOException, MgmtOperationException {
+        ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT_PATH));
+        DomainTestUtils.executeForResult(op, masterClient);
+    }
+
+    private ModelNode createComposite(List<ModelNode> steps) {
+        ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
+        ModelNode stepsNode = composite.get(STEPS);
+        for (ModelNode step : steps) {
+            stepsNode.add(step);
+        }
+        return composite;
+    }
+
+    private List<ModelNode> prepareReadCompositeOperations(PathAddress address, List<String> childTypes) {
+        final List<ModelNode> steps = new ArrayList<>();
+        ModelNode step;
+
+        step = Util.createEmptyOperation(READ_RESOURCE_OPERATION, address);
+        addCommonReadOperationAttributes(step);
+        steps.add(step);
+
+        for(String childType : childTypes) {
+            step = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, address);
+            addCommonReadOperationAttributes(step);
+            step.get("child-type").set(childType);
+            steps.add(step);
+        }
+
+        return steps;
+    }
+
+    private void addCommonReadOperationAttributes(ModelNode op) {
+        String operation = op.get(OP).asString();
+        switch (operation) {
+            case READ_RESOURCE_OPERATION: {
+                op.get("include-aliases").set(true);
+                op.get("include-undefined-metric-values").set(true);
+            }
+            case READ_CHILDREN_RESOURCES_OPERATION: {
+                op.get("include-runtime").set(true);
+                op.get("recursive").set(true);
+                op.get("include-defaults").set(true);
+                op.get("proxies").set(true);
+            }
+        }
     }
 }

@@ -20,32 +20,19 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_EXCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_CLIENT_CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLOUT_PLANS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
@@ -80,11 +67,8 @@ import org.jboss.as.controller.parsing.ExtensionXml;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.parsing.WriteUtils;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.SocketBindingGroupResourceDefinition;
-import org.jboss.as.domain.controller.resources.DomainRootDefinition;
 import org.jboss.as.domain.controller.resources.HostExcludeResourceDefinition;
 import org.jboss.as.domain.controller.resources.ProfileResourceDefinition;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
@@ -92,13 +76,11 @@ import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefiniti
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
-import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.parsing.CommonXml;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parser and marshaller for domain-wide configuration xml documents (e.g. domain.xml) that use the urn:jboss:domain:11.0 schema.
@@ -139,80 +121,6 @@ final class DomainXml_11 extends CommonXml implements ManagementXmlDelegate {
         throw unexpectedElement(reader);
     }
 
-    void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context) throws XMLStreamException {
-        ModelNode modelNode = context.getModelNode();
-
-        writer.writeStartDocument();
-        writer.writeStartElement(Element.DOMAIN.getLocalName());
-
-        writer.writeDefaultNamespace(CURRENT.getUriString());
-        writeNamespaces(writer, modelNode);
-        writeSchemaLocation(writer, modelNode);
-
-        DomainRootDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
-        if (modelNode.hasDefined(DOMAIN_ORGANIZATION)) {
-            DomainRootDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
-        }
-
-        if (modelNode.hasDefined(EXTENSION)) {
-            extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
-        }
-        if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
-            writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-        }
-        if (modelNode.hasDefined(PATH)) {
-            writePaths(writer, modelNode.get(PATH), true);
-        }
-
-        if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(MANAGEMENT)) {
-            // We use CURRENT here as we only support writing the most recent.
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, true);
-            managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-        }
-
-        if (modelNode.hasDefined(PROFILE)) {
-            writer.writeStartElement(Element.PROFILES.getLocalName());
-            ModelNode profiles = modelNode.get(PROFILE);
-            for (final String profile : profiles.keys()) {
-                writeProfile(writer, profile, profiles.get(profile), context);
-            }
-            writer.writeEndElement();
-        }
-        if (modelNode.hasDefined(INTERFACE)) {
-            writeInterfaces(writer, modelNode.get(INTERFACE));
-        }
-        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
-            writer.writeStartElement(Element.SOCKET_BINDING_GROUPS.getLocalName());
-            ModelNode sbgs = modelNode.get(SOCKET_BINDING_GROUP);
-            for (final String sbg : sbgs.keys()) {
-                writeSocketBindingGroup(writer, sbgs.get(sbg), sbg);
-            }
-            writer.writeEndElement();
-        }
-        if (modelNode.hasDefined(DEPLOYMENT)) {
-            writeDomainDeployments(writer, modelNode.get(DEPLOYMENT));
-        }
-        if (modelNode.hasDefined(DEPLOYMENT_OVERLAY)) {
-            writeDeploymentOverlays(writer, modelNode.get(DEPLOYMENT_OVERLAY));
-        }
-        if (modelNode.hasDefined(SERVER_GROUP)) {
-            writer.writeStartElement(Element.SERVER_GROUPS.getLocalName());
-            ModelNode sgs = modelNode.get(SERVER_GROUP);
-            for (final String sg : sgs.keys()) {
-                writeServerGroup(writer, sg, sgs.get(sg));
-            }
-            writer.writeEndElement();
-        }
-        if (modelNode.hasDefined(HOST_EXCLUDE)) {
-            writeHostExcludes(writer, modelNode.get(HOST_EXCLUDE));
-        }
-        if (modelNode.hasDefined(MANAGEMENT_CLIENT_CONTENT)) {
-            writeManagementClientContent(writer, modelNode.get(MANAGEMENT_CLIENT_CONTENT));
-        }
-
-        writer.writeEndElement();
-        writer.writeEndDocument();
-    }
 
     private void readDomainElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list) throws XMLStreamException {
 
@@ -694,106 +602,6 @@ final class DomainXml_11 extends CommonXml implements ManagementXmlDelegate {
         list.add(addOp);
     }
 
-    private void writeProfile(final XMLExtendedStreamWriter writer, final String profileName, final ModelNode profileNode, final ModelMarshallingContext context) throws XMLStreamException {
-
-        writer.writeStartElement(Element.PROFILE.getLocalName());
-        writer.writeAttribute(Attribute.NAME.getLocalName(), profileName);
-        ProfileResourceDefinition.INCLUDES.getMarshaller().marshallAsAttribute(ProfileResourceDefinition.INCLUDES, profileNode, false, writer);
-
-        writeSubsystems(profileNode, writer, context);
-
-        writer.writeEndElement();
-    }
-
-    private void writeDomainDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
-
-        final Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
-            writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
-            for (String uniqueName : deploymentNames) {
-                final ModelNode deployment = modelNode.get(uniqueName);
-                writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                WriteUtils.writeAttribute(writer, Attribute.NAME, uniqueName);
-                DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
-                final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
-                for (ModelNode contentItem : contentItems) {
-                    writeContentItem(writer, contentItem);
-                }
-                writer.writeEndElement();
-            }
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeServerGroupDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
-
-        final Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
-            writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
-            for (String uniqueName : deploymentNames) {
-                final ModelNode deployment = modelNode.get(uniqueName);
-                writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-                WriteUtils.writeAttribute(writer, Attribute.NAME, uniqueName);
-                DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
-                DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
-                writer.writeEndElement();
-            }
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeServerGroup(final XMLExtendedStreamWriter writer, final String groupName, final ModelNode group) throws XMLStreamException {
-        writer.writeStartElement(Element.SERVER_GROUP.getLocalName());
-        writer.writeAttribute(Attribute.NAME.getLocalName(), groupName);
-
-        ServerGroupResourceDefinition.PROFILE.marshallAsAttribute(group, writer);
-        ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT.marshallAsAttribute(group, writer);
-
-        // JVM
-        if (group.hasDefined(JVM)) {
-            for (final Property jvm : group.get(JVM).asPropertyList()) {
-                JvmXml.writeJVMElement(writer, jvm.getName(), jvm.getValue());
-                break; // TODO just write the first !?
-            }
-        }
-
-        // Socket binding ref
-        if (group.hasDefined(SOCKET_BINDING_GROUP) || group.hasDefined(SOCKET_BINDING_PORT_OFFSET)) {
-            writer.writeStartElement(Element.SOCKET_BINDING_GROUP.getLocalName());
-            ServerGroupResourceDefinition.SOCKET_BINDING_GROUP.marshallAsAttribute(group, writer);
-            ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET.marshallAsAttribute(group, writer);
-            ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE.marshallAsAttribute(group, writer);
-            writer.writeEndElement();
-        }
-
-        if (group.hasDefined(DEPLOYMENT)) {
-            writeServerGroupDeployments(writer, group.get(DEPLOYMENT));
-        }
-        if (group.hasDefined(DEPLOYMENT_OVERLAY)) {
-            writeDeploymentOverlays(writer, group.get(DEPLOYMENT_OVERLAY));
-            WriteUtils.writeNewLine(writer);
-        }
-        // System properties
-        if (group.hasDefined(SYSTEM_PROPERTY)) {
-            writeProperties(writer, group.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
-        }
-
-        writer.writeEndElement();
-    }
-
-    private void writeManagementClientContent(XMLExtendedStreamWriter writer, ModelNode modelNode) throws XMLStreamException {
-        boolean hasRolloutPlans = modelNode.hasDefined(ROLLOUT_PLANS) && modelNode.get(ROLLOUT_PLANS).hasDefined(HASH);
-        boolean mustWrite = hasRolloutPlans; // || other elements we may add later
-        if (mustWrite) {
-            writer.writeStartElement(Element.MANAGEMENT_CLIENT_CONTENT.getLocalName());
-            if (hasRolloutPlans) {
-                writer.writeEmptyElement(Element.ROLLOUT_PLANS.getLocalName());
-                writer.writeAttribute(Attribute.SHA1.getLocalName(), HashUtil.bytesToHexString(modelNode.get(ROLLOUT_PLANS).get(HASH).asBytes()));
-            }
-            writer.writeEndElement();
-        }
-    }
-
     /*
      * ManagamentXmlDelegate Methods
      */
@@ -870,13 +678,6 @@ final class DomainXml_11 extends CommonXml implements ManagementXmlDelegate {
                 }
             }
         }
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
-        accessControlXml.writeAccessControl(writer, accessAuthorization);
 
         return true;
     }
@@ -1052,42 +853,5 @@ final class DomainXml_11 extends CommonXml implements ManagementXmlDelegate {
         }
 
         requireNoContent(reader);
-    }
-
-    private void writeHostExcludes(XMLExtendedStreamWriter writer, ModelNode modelNode) throws XMLStreamException {
-        writer.writeStartElement(Element.HOST_EXCLUDES.getLocalName());
-        for (String exclude : modelNode.keys()) {
-            writer.writeStartElement(Element.HOST_EXCLUDE.getLocalName());
-            writer.writeAttribute(Attribute.NAME.getLocalName(), exclude);
-            ModelNode excludeNode = modelNode.get(exclude);
-            HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS.getMarshaller()
-                    .marshall(HostExcludeResourceDefinition.ACTIVE_SERVER_GROUPS, excludeNode, false, writer);
-            HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS.getMarshaller()
-                    .marshall(HostExcludeResourceDefinition.ACTIVE_SOCKET_BINDING_GROUPS, excludeNode, false, writer);
-            if (HostExcludeResourceDefinition.HOST_RELEASE.isMarshallable(excludeNode)) {
-                writer.writeEmptyElement(Element.HOST_RELEASE.getLocalName());
-                HostExcludeResourceDefinition.HOST_RELEASE.marshallAsAttribute(excludeNode, writer);
-            } else {
-                writer.writeStartElement(Element.HOST_API_VERSION.getLocalName());
-                HostExcludeResourceDefinition.MANAGEMENT_MAJOR_VERSION.marshallAsAttribute(excludeNode, writer);
-                HostExcludeResourceDefinition.MANAGEMENT_MINOR_VERSION.marshallAsAttribute(excludeNode, writer);
-                HostExcludeResourceDefinition.MANAGEMENT_MICRO_VERSION.marshallAsAttribute(excludeNode, writer);
-                writer.writeEndElement();
-            }
-
-            if (HostExcludeResourceDefinition.EXCLUDED_EXTENSIONS.isMarshallable(excludeNode)) {
-                writer.writeStartElement(Element.EXCLUDED_EXTENSIONS.getLocalName());
-                for (ModelNode ext : excludeNode.get(HostExcludeResourceDefinition.EXCLUDED_EXTENSIONS.getName()).asList()) {
-                    if (ext.isDefined()) {
-                        writer.writeEmptyElement(Element.EXTENSION.getLocalName());
-                        writer.writeAttribute(Attribute.MODULE.getLocalName(), ext.asString());
-                    }
-                }
-                writer.writeEndElement();
-            }
-
-            writer.writeEndElement();
-        }
-        writer.writeEndElement();
     }
 }

@@ -230,8 +230,17 @@ public class BootScriptInvokerTestCase {
         Files.write(file, builder.toString().getBytes());
         TestClient client = new TestClient();
         StringBuilder outContent = new StringBuilder();
+        boolean failure = false;
         try {
-            invoker.runCliScript(client, file.toFile());
+            try {
+                invoker.runCliScript(client, file.toFile());
+                failure = true;
+            } catch (Exception ex) {
+                // Expected.
+            }
+            if (failure) {
+                throw new Exception("Test should have failed");
+            }
         } finally {
             for (String l : Files.readAllLines(output)) {
                 outContent.append(l).append("\n");

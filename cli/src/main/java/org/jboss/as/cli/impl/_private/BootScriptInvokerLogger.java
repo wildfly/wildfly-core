@@ -109,9 +109,9 @@ public interface BootScriptInvokerLogger extends BasicLogger {
      *
      * @param script CLI script
      * @param errors File that contains error messages
+     * @return Exception to throw
      */
-    @LogMessage(level = ERROR)
     @Message(id = 8, value = "Error processing CLI script %s. The Operations were executed but "
             + "there were unexpected values. See list of errors in %s")
-    void unexpectedErrors(File script, File errors);
+    IllegalStateException unexpectedErrors(File script, File errors);
 }

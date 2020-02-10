@@ -216,11 +216,12 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
         if (callbackHandlerServices != null) {
             for (Supplier<CallbackHandlerService> current : callbackHandlerServices) {
                 // accept this, but don't actually install it in the map
-                if (current instanceof DomainManagedServerCallbackHandler) {
-                    domainManagedServersCallback = (DomainManagedServerCallbackHandler) current;
+                CallbackHandlerService currentCallbackHandlerService = current.get();
+                if (currentCallbackHandlerService instanceof DomainManagedServerCallbackHandler) {
+                    domainManagedServersCallback = (DomainManagedServerCallbackHandler) currentCallbackHandlerService;
                     continue;
                 }
-                AuthMechanism mechanism = current.get().getPreferredMechanism();
+                AuthMechanism mechanism = currentCallbackHandlerService.getPreferredMechanism();
                 if (registeredServices.containsKey(mechanism)) {
                     registeredServices.clear();
                     throw DomainManagementLogger.ROOT_LOGGER.multipleCallbackHandlerForMechanism(mechanism.name());
