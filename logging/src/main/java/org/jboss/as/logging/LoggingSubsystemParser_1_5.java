@@ -32,7 +32,6 @@ import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
 import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
@@ -213,7 +212,7 @@ class LoggingSubsystemParser_1_5 extends LoggingSubsystemParser_1_4 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    PeriodicSizeRotatingHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -309,7 +308,7 @@ class LoggingSubsystemParser_1_5 extends LoggingSubsystemParser_1_4 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    SizeRotatingHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {

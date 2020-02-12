@@ -43,7 +43,7 @@ import org.junit.BeforeClass;
  */
 public abstract class AbstractOperationsTestCase extends AbstractLoggingSubsystemTest {
 
-    static final String PROFILE = "testProfile";
+    protected static final String PROFILE = "testProfile";
 
     private static Path logDir;
 

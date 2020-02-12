@@ -43,6 +43,7 @@ import javax.xml.stream.XMLStreamException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
+import org.jboss.as.logging.handlers.CustomHandlerResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -176,7 +177,7 @@ class LoggingSubsystemParser_1_1 extends LoggingSubsystemParser_1_0 {
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, CustomHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {

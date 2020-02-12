@@ -29,6 +29,7 @@ import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuild
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
 import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
@@ -195,13 +196,13 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         operationBuilder.addStep(testLoggerOp);
 
         // add handler to logger
-        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(testLoggerAddress.toModelNode(), CommonAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
+        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(testLoggerAddress.toModelNode(), LoggerAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
 
         // remove the console handler
         operationBuilder.addStep(SubsystemOperations.createRemoveOperation(consoleHandler.toModelNode()));
 
         // add handler to existing logger - should force fail on this one
-        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(loggerAddress.toModelNode(), CommonAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
+        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(loggerAddress.toModelNode(), LoggerAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
 
         // verify the operation failed
         result = kernelServices.executeOperation(operationBuilder.build().getOperation());
@@ -261,7 +262,7 @@ public class LoggingSubsystemRollbackTestCase extends AbstractLoggingSubsystemTe
         operationBuilder.addStep(SubsystemOperations.createRemoveOperation(consoleHandler.toModelNode()));
 
         // add handler to existing logger - should force fail on this one
-        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(loggerAddress.toModelNode(), CommonAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
+        operationBuilder.addStep(SubsystemOperations.createWriteAttributeOperation(loggerAddress.toModelNode(), LoggerAttributes.HANDLERS, new ModelNode().setEmptyList().add("fail-fh")));
 
         // verify the operation failed
         result = kernelServices.executeOperation(operationBuilder.build().getOperation());

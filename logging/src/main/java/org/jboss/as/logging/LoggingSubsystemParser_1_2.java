@@ -37,14 +37,11 @@ import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
-import static org.jboss.as.logging.CommonAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
-import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.SUBHANDLERS;
 import static org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition.TARGET;
 import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
 import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
@@ -77,6 +74,7 @@ import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -218,11 +216,11 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case HANDLERS: {
-                    parseHandlersElement(operation.get(HANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    LoggerAttributes.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 default:
@@ -280,11 +278,11 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case SUBHANDLERS: {
-                    parseHandlersElement(operation.get(SUBHANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    AsyncHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -324,7 +322,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
             encountered.add(element);
             switch (element) {
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    LoggerAttributes.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case LEVEL: {
@@ -332,7 +330,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case HANDLERS: {
-                    parseHandlersElement(operation.get(HANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 default:
@@ -398,7 +396,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    ConsoleHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -476,7 +474,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    FileHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -561,7 +559,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    CustomHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -637,7 +635,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    PeriodicHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -724,7 +722,7 @@ class LoggingSubsystemParser_1_2 extends LoggingSubsystemParser_1_1 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    SizeRotatingHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case FORMATTER: {

@@ -37,6 +37,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.filters.Filters;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -138,7 +139,7 @@ public final class LoggingOperations {
         @Override
         public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-            final ModelNode filter = CommonAttributes.FILTER_SPEC.resolveModelAttribute(context, model);
+            final ModelNode filter = LoggerAttributes.FILTER_SPEC.resolveModelAttribute(context, model);
             if (filter.isDefined()) {
                 context.getResult().set(Filters.filterSpecToFilter(filter.asString()));
             }
@@ -286,7 +287,7 @@ public final class LoggingOperations {
                     final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
                     if (filter.isDefined()) {
                         final String value = Filters.filterToFilterSpec(filter);
-                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
+                        model.get(LoggerAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                     }
                 } else {
                     // Only update the model for attributes that are defined in the operation
@@ -451,7 +452,7 @@ public final class LoggingOperations {
             if (submodel.hasDefined(CommonAttributes.FILTER.getName())) {
                 final String filterSpec = Filters.filterToFilterSpec(CommonAttributes.FILTER.resolveModelAttribute(context, submodel));
                 submodel.remove(CommonAttributes.FILTER.getName());
-                submodel.get(CommonAttributes.FILTER_SPEC.getName()).set(filterSpec.isEmpty() ? new ModelNode() : new ModelNode(filterSpec));
+                submodel.get(LoggerAttributes.FILTER_SPEC.getName()).set(filterSpec.isEmpty() ? new ModelNode() : new ModelNode(filterSpec));
             }
         }
 

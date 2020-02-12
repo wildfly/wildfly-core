@@ -36,13 +36,11 @@ import static org.jboss.as.logging.CommonAttributes.APPEND;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
-import static org.jboss.as.logging.CommonAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.RELATIVE_TO;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.OVERFLOW_ACTION;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
-import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.SUBHANDLERS;
 import static org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition.TARGET;
 import static org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition.SUFFIX;
 import static org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition.MAX_BACKUP_INDEX;
@@ -59,7 +57,9 @@ import java.util.Set;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
@@ -68,6 +68,7 @@ import org.jboss.as.logging.handlers.ConsoleHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.PeriodicHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -196,11 +197,11 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case HANDLERS: {
-                    parseHandlersElement(operation.get(HANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, LoggerAttributes.FILTER_SPEC, reader);
                     break;
                 }
                 default:
@@ -253,11 +254,11 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case SUBHANDLERS: {
-                    parseHandlersElement(operation.get(SUBHANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, AsyncHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -296,7 +297,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
             encountered.add(element);
             switch (element) {
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, LoggerAttributes.FILTER_SPEC, reader);
                     break;
                 }
                 case LEVEL: {
@@ -304,7 +305,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case HANDLERS: {
-                    parseHandlersElement(operation.get(HANDLERS.getName()), reader);
+                    parseHandlersElement(element.getDefinition(), operation, reader);
                     break;
                 }
                 default:
@@ -365,7 +366,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, ConsoleHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -438,7 +439,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, FileHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -516,7 +517,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, PeriodicHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -598,7 +599,7 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
                     break;
                 }
                 case FILTER: {
-                    parseFilter(operation, reader);
+                    parseFilter(operation, SizeRotatingHandlerResourceDefinition.FILTER_SPEC, reader);
                     break;
                 }
                 case FORMATTER: {
@@ -678,22 +679,24 @@ class LoggingSubsystemParser_1_0 extends LoggingSubsystemParser implements XMLSt
         }
     }
 
-    void parseHandlersElement(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
+    void parseHandlersElement(final AttributeDefinition attribute, final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
         // No attributes
         if (reader.getAttributeCount() > 0) {
             throw unexpectedAttribute(reader, 0);
         }
 
+        final ModelNode handlers = operation.get(attribute.getName());
+        // This should never happen, but we should be safe before casting
+        assert (attribute instanceof SimpleListAttributeDefinition);
+        final AttributeDefinition valueType = ((SimpleListAttributeDefinition) attribute).getValueType();
+
         // Elements
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
-            final Element element = Element.forName(reader.getLocalName());
-            switch (element) {
-                case HANDLER: {
-                    operation.add(readNameAttribute(reader));
-                    break;
-                }
-                default:
-                    throw unexpectedElement(reader);
+            final String localName = reader.getLocalName();
+            if (localName.equals(valueType.getXmlName())) {
+                handlers.add(readNameAttribute(reader));
+            } else {
+                throw unexpectedElement(reader);
             }
         }
     }

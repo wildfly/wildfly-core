@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.logging.filters.FilterResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.SubsystemOperations;
 import org.jboss.dmr.ModelNode;
@@ -134,8 +135,8 @@ public class FilterOperationsTestCase extends AbstractOperationsTestCase {
 
         executeOperation(kernelServices, builder.build().getOperation());
 
-        testWrite(kernelServices, rootLoggerAddress, CommonAttributes.FILTER_SPEC, "all(accept, test)");
-        testWrite(kernelServices, loggerAddress, CommonAttributes.FILTER_SPEC, "test");
+        testWrite(kernelServices, rootLoggerAddress, LoggerAttributes.FILTER_SPEC, "all(accept, test)");
+        testWrite(kernelServices, loggerAddress, LoggerAttributes.FILTER_SPEC, "test");
 
         executeOperationForFailure(kernelServices, SubsystemOperations.createRemoveOperation(filterAddress));
 
@@ -165,7 +166,7 @@ public class FilterOperationsTestCase extends AbstractOperationsTestCase {
 
         executeOperation(kernelServices, builder.build().getOperation());
 
-        testWrite(kernelServices, handlerAddress, CommonAttributes.FILTER_SPEC, "all(levels(DEBUG, INFO, WARN, ERROR), test)");
+        testWrite(kernelServices, handlerAddress, LoggerAttributes.FILTER_SPEC, "all(levels(DEBUG, INFO, WARN, ERROR), test)");
 
         executeOperationForFailure(kernelServices, SubsystemOperations.createRemoveOperation(filterAddress));
 

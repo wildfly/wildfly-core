@@ -19,8 +19,9 @@
 
 package org.jboss.as.logging.capabilities;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.function.BiFunction;
 
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.OperationContext;
@@ -38,16 +39,23 @@ class LoggingProfileCapabilityRecorder implements CapabilityReferenceRecorder {
 
     private final String dependentName;
     private final String requirementName;
+    private final BiFunction<String[], String, Collection<String>> valueConverter;
 
     LoggingProfileCapabilityRecorder(final String dependentName, final String requirementName) {
+        this(dependentName, requirementName, (values, attributeName) -> Arrays.asList(values));
+    }
+
+    LoggingProfileCapabilityRecorder(final String dependentName, final String requirementName, final BiFunction<String[], String, Collection<String>> valueConverter) {
         this.dependentName = dependentName;
         this.requirementName = requirementName;
+        this.valueConverter = valueConverter;
     }
 
     @Override
     public void addCapabilityRequirements(final OperationContext context, final Resource resource, final String attributeName, final String... attributeValues) {
+        final Collection<String> values = valueConverter.apply(attributeValues, attributeName);
         String dependentName = getDependentName(context);
-        for (String value : attributeValues) {
+        for (String value : values) {
             if (value != null) {
                 context.registerAdditionalCapabilityRequirement(getRequirementName(context, value), dependentName, attributeName);
             }
@@ -56,15 +64,15 @@ class LoggingProfileCapabilityRecorder implements CapabilityReferenceRecorder {
 
     @Override
     public void removeCapabilityRequirements(final OperationContext context, final Resource resource, final String attributeName, final String... attributeValues) {
+        final Collection<String> values = valueConverter.apply(attributeValues, attributeName);
         String dependentName = getDependentName(context);
-        for (String value : attributeValues) {
+        for (String value : values) {
             if (value != null) {
                 context.deregisterCapabilityRequirement(getRequirementName(context, value), dependentName, attributeName);
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public String getBaseDependentName() {
         return dependentName;
@@ -83,16 +91,13 @@ class LoggingProfileCapabilityRecorder implements CapabilityReferenceRecorder {
 
     @Override
     public String[] getRequirementPatternSegments(final String name, final PathAddress address) {
-        final List<String> result = new ArrayList<>(2);
         // Find the logging profile if it exists and add the profile name to the capability name
         for (PathElement pathElement : address) {
             if (CommonAttributes.LOGGING_PROFILE.equals(pathElement.getKey())) {
-                result.add(pathElement.getValue());
-                break;
+                return new String[] {pathElement.getValue(), name};
             }
         }
-        result.add(name);
-        return result.toArray(new String[0]);
+        return new String[] {name};
     }
 
     private String getDependentName(final OperationContext context) {

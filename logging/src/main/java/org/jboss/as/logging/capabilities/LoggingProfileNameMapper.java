@@ -19,8 +19,6 @@
 
 package org.jboss.as.logging.capabilities;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 import org.jboss.as.controller.PathAddress;
@@ -41,16 +39,12 @@ class LoggingProfileNameMapper implements Function<PathAddress, String[]> {
 
     @Override
     public String[] apply(final PathAddress address) {
-        final List<String> result = new ArrayList<>(1);
         // Find the logging profile if it exists and add the profile name to the capability name
         for (PathElement pathElement : address) {
             if (CommonAttributes.LOGGING_PROFILE.equals(pathElement.getKey())) {
-                result.add(pathElement.getValue());
-                break;
+                return new String[] {pathElement.getValue(), address.getLastElement().getValue()};
             }
         }
-        // Always add the resource name as the last entry
-        result.add(address.getLastElement().getValue());
-        return result.toArray(new String[0]);
+        return new String[] {address.getLastElement().getValue()};
     }
 }

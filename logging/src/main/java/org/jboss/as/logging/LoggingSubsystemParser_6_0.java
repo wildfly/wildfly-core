@@ -27,7 +27,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.logging.CommonAttributes.AUTOFLUSH;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
 
@@ -327,7 +326,7 @@ class LoggingSubsystemParser_6_0 extends LoggingSubsystemParser_5_0 {
                     break;
                 }
                 case FILTER_SPEC: {
-                    FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
+                    SocketHandlerResourceDefinition.FILTER_SPEC.parseAndSetParameter(readValueAttribute(reader), operation, reader);
                     break;
                 }
                 case NAMED_FORMATTER: {
