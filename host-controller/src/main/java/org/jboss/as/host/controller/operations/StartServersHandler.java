@@ -97,10 +97,6 @@ public class StartServersHandler implements OperationStepHandler {
             throw new OperationFailedException(HostControllerLogger.ROOT_LOGGER.cannotStartServersInvalidMode(context.getRunningMode()));
         }
 
-        if (enabledAutoStart) {
-            context.acquireControllerLock();
-        }
-
         final ModelNode domainModel = Resource.Tools.readModel(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, true));
         context.addStep(new OperationStepHandler() {
             @Override

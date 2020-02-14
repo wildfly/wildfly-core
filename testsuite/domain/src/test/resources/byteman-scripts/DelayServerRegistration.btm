@@ -1,0 +1,7 @@
+RULE Delay Server Registration Request
+CLASS org.jboss.as.server.mgmt.domain.HostControllerConnection$ServerRegisterRequest
+METHOD sendRequest
+AT ENTRY
+IF NOT waiting($this)
+DO waitFor($this, 15*1000)
+ENDRULE

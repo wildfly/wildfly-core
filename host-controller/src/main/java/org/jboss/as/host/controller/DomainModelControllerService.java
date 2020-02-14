@@ -883,9 +883,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
         } finally {
             if (ok) {
                 try {
-                    finishBoot();
                     if (runningModeControl.getRunningMode() == RunningMode.NORMAL) {
+                        finishBoot(true);
                         startServers(true);
+                        clearBootingReadOnlyFlag();
+                    } else {
+                        finishBoot();
                     }
                 } finally {
                     // Trigger the started message

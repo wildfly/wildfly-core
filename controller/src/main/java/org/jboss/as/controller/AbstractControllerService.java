@@ -581,6 +581,16 @@ public abstract class AbstractControllerService implements Service<ModelControll
         capabilityRegistry.publish();
     }
 
+    protected void finishBoot(boolean readOnly) throws ConfigurationPersistenceException {
+        controller.finishBoot(readOnly);
+        configurationPersister.successfulBoot();
+        capabilityRegistry.publish();
+    }
+
+    protected void clearBootingReadOnlyFlag() {
+        controller.clearBootingReadOnlyFlag();
+    }
+
     protected void bootThreadDone() {
 
     }
