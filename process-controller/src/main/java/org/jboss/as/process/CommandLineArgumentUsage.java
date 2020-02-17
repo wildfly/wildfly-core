@@ -150,4 +150,18 @@ public abstract class CommandLineArgumentUsage {
 
     }
 
+    protected static String customUsage(String executableName) {
+        if (USAGE == null) {
+            final StringBuilder sb = new StringBuilder();
+            sb.append(NEW_LINE).append(ProcessLogger.ROOT_LOGGER.argUsage(executableName)).append(NEW_LINE);
+
+            for (int i = 0; i < arguments.size(); i++) {
+                sb.append(getCommand(i)).append(NEW_LINE);
+            }
+            USAGE = sb.toString();
+        }
+        return USAGE;
+
+    }
+
 }
