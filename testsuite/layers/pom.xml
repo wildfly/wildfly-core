@@ -60,6 +60,42 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>application-security-realm-provisioning</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <install-dir>${project.build.directory}/layers-results/application-security-realm</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
+                            <plugin-options>
+                                <jboss-maven-dist/>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                <optional-packages>passive+</optional-packages>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <inherit-configs>false</inherit-configs>
+                                    <inherit-packages>false</inherit-packages>
+                                </feature-pack>
+                            </feature-packs>
+                            <configurations>
+                                <config>
+                                    <model>standalone</model>
+                                    <name>standalone.xml</name>
+                                    <layers>
+                                        <layer>application-security-realm</layer>
+                                    </layers>
+                                </config>
+                            </configurations>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>base-server-provisioning</id>
                         <goals>
                             <goal>provision</goal>
@@ -564,6 +600,42 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>management-security-realm-provisioning</id>
+                        <goals>
+                            <goal>provision</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <install-dir>${project.build.directory}/layers-results/management-security-realm</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
+                            <plugin-options>
+                                <jboss-maven-dist/>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                <optional-packages>passive+</optional-packages>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <inherit-configs>false</inherit-configs>
+                                    <inherit-packages>false</inherit-packages>
+                                </feature-pack>
+                            </feature-packs>
+                            <configurations>
+                                <config>
+                                    <model>standalone</model>
+                                    <name>standalone.xml</name>
+                                    <layers>
+                                        <layer>management-security-realm</layer>
+                                    </layers>
+                                </config>
+                            </configurations>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>remoting-provisioning</id>
                         <goals>
                             <goal>provision</goal>
@@ -737,6 +809,7 @@
                                     <model>standalone</model>
                                     <name>standalone.xml</name>
                                     <layers>
+                                        <layer>application-security-realm</layer>
                                         <layer>base-server</layer>
                                         <layer>core-management</layer>
                                         <layer>core-security-realms</layer>
@@ -750,6 +823,7 @@
                                         <layer>legacy-management</layer>
                                         <layer>logging</layer>
                                         <layer>management</layer>
+                                        <layer>management-security-realm</layer>
                                         <layer>remoting</layer>
                                         <layer>request-controller</layer>
                                         <layer>secure-management</layer>

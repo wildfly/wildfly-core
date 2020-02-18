@@ -1,33 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature-group-spec name="base-security-realms" xmlns="urn:jboss:galleon:feature-group:1.0">
-    <feature spec="core-service.management">
-        <feature spec="core-service.management.security-realm">
-            <param name="security-realm" value="ManagementRealm"/>
-            <param name="map-groups-to-roles" value="false"/>
-            <feature spec="core-service.management.security-realm.authentication.local">
-                <param name="default-user" value="$local"/>
-                <param name="skip-group-loading" value="true"/>
-            </feature>
-            <feature spec="core-service.management.security-realm.authentication.properties">
-                <param name="path" value="mgmt-users.properties"/>
-            </feature>
-            <feature spec="core-service.management.security-realm.authorization.properties">
-                <param name="path" value="mgmt-groups.properties"/>
-            </feature>
-        </feature>
-        <feature spec="core-service.management.security-realm">
-            <param name="security-realm" value="ApplicationRealm"/>
-            <feature spec="core-service.management.security-realm.authentication.local">
-                <param name="default-user" value="$local"/>
-                <param name="allowed-users" value="*"/>
-                <param name="skip-group-loading" value="true"/>
-            </feature>
-            <feature spec="core-service.management.security-realm.authentication.properties">
-                <param name="path" value="application-users.properties"/>
-            </feature>
-            <feature spec="core-service.management.security-realm.authorization.properties">
-                <param name="path" value="application-roles.properties"/>
-            </feature>
-        </feature>
-    </feature>
+    <feature-group name="management-security-realm"/>
+    <feature-group name="application-security-realm"/>
 </feature-group-spec>
