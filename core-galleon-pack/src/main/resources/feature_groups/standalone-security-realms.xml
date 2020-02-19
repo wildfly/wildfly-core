@@ -1,29 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature-group-spec name="standalone-security-realms" xmlns="urn:jboss:galleon:feature-group:1.0">
-    <feature-group name="base-security-realms">
-        <include feature-id="core-service.management.security-realm:core-service=management,security-realm=ManagementRealm">
-            <feature spec="core-service.management.security-realm.authentication.properties">
-                <param name="relative-to" value="jboss.server.config.dir" />
-            </feature>
-            <feature spec="core-service.management.security-realm.authorization.properties">
-                <param name="relative-to" value="jboss.server.config.dir" />
-            </feature>
-        </include>
-        <include feature-id="core-service.management.security-realm:core-service=management,security-realm=ApplicationRealm">
-            <feature spec="core-service.management.security-realm.authentication.properties">
-                <param name="relative-to" value="jboss.server.config.dir" />
-            </feature>
-            <feature spec="core-service.management.security-realm.authorization.properties">
-                <param name="relative-to" value="jboss.server.config.dir" />
-            </feature>
-            <feature spec="core-service.management.security-realm.server-identity.ssl">
-                <param name="generate-self-signed-certificate-host" value="localhost" />
-                <param name="keystore-relative-to" value="jboss.server.config.dir" />
-                <param name="keystore-path" value="application.keystore"/>
-                <param name="keystore-password" value="password"/>
-                <param name="alias" value="server"/>
-                <param name="key-password" value="password"/>
-            </feature>
-        </include>
-    </feature-group>
+    <feature-group name="standalone-management-security-realm"/>
+    <feature-group name="standalone-application-security-realm"/>
 </feature-group-spec>

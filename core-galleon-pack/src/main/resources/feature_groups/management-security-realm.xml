@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="management-security-realm" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="core-service.management">
+        <feature spec="core-service.management.security-realm">
+            <param name="security-realm" value="ManagementRealm"/>
+            <param name="map-groups-to-roles" value="false"/>
+            <feature spec="core-service.management.security-realm.authentication.local">
+                <param name="default-user" value="$local"/>
+                <param name="skip-group-loading" value="true"/>
+            </feature>
+            <feature spec="core-service.management.security-realm.authentication.properties">
+                <param name="path" value="mgmt-users.properties"/>
+            </feature>
+            <feature spec="core-service.management.security-realm.authorization.properties">
+                <param name="path" value="mgmt-groups.properties"/>
+            </feature>
+        </feature>
+    </feature>
+</feature-group-spec>

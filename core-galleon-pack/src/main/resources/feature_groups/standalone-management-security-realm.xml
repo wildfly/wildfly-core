@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="standalone-management-security-realm" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature-group name="management-security-realm">
+        <include feature-id="core-service.management.security-realm:core-service=management,security-realm=ManagementRealm">
+            <feature spec="core-service.management.security-realm.authentication.properties">
+                <param name="relative-to" value="jboss.server.config.dir" />
+            </feature>
+            <feature spec="core-service.management.security-realm.authorization.properties">
+                <param name="relative-to" value="jboss.server.config.dir" />
+            </feature>
+        </include>
+    </feature-group>
+</feature-group-spec>
