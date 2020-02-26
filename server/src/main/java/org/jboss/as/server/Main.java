@@ -336,7 +336,7 @@ public final class Main {
                         } else {
                             STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                             usage();
-                            return null;
+                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
                         gitRepository = arg.substring(idx + 1, arg.length());
@@ -351,7 +351,7 @@ public final class Main {
                         } else {
                             STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                             usage();
-                            return null;
+                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
                         gitAuthConfiguration = arg.substring(idx + 1, arg.length());
@@ -366,7 +366,7 @@ public final class Main {
                         } else {
                             STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
                             usage();
-                            return null;
+                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
                         gitBranch = arg.substring(idx + 1, arg.length());
