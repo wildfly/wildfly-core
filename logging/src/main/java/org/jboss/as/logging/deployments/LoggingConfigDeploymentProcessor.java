@@ -66,7 +66,6 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
     private static final String JBOSS_LOG4J_XML = "jboss-log4j.xml";
     private static final String DEFAULT_PROPERTIES = "logging.properties";
     private static final String JBOSS_PROPERTIES = "jboss-logging.properties";
-    private static final Object CONTEXT_LOCK = new Object();
 
     private final String attributeName;
     private final boolean process;
@@ -229,7 +228,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
             // Check the type of the configuration file
             if (isLog4jConfiguration(fileName)) {
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
-                final LogContext old = logContextSelector.getAndSet(CONTEXT_LOCK, logContext);
+                final LogContext old = logContextSelector.setLocalContext(logContext);
                 try {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(classLoader);
                     if (LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName)) {
@@ -240,7 +239,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                         new org.apache.log4j.PropertyConfigurator().doConfigure(properties, org.apache.log4j.JBossLogManagerFacade.getLoggerRepository(logContext));
                     }
                 } finally {
-                    logContextSelector.getAndSet(CONTEXT_LOCK, old);
+                    logContextSelector.setLocalContext(old);
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
                 }
                 return new LoggingConfigurationService(null, resolveRelativePath(root, configFile));
