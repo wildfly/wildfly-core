@@ -142,6 +142,9 @@ import org.jboss.dmr.ModelType;
  */
 public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
+    public static final String IBM_JDK = "ibm.jdk";
+    public static final String WILDFLY_EE_API = "wildflyee.api";
+
     private static final ParameterValidator NOT_NULL_STRING_LENGTH_ONE_VALIDATOR = new StringLengthValidator(1, false, false);
 
     public static final AttributeDefinition NAMESPACES = new PropertiesAttributeDefinition.Builder(ModelDescriptionConstants.NAMESPACES, false)
@@ -625,6 +628,9 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.required("ibm.jdk"));
+        resourceRegistration.registerAdditionalRuntimePackages(
+                RuntimePackageDependency.required(IBM_JDK),
+                RuntimePackageDependency.optional(WILDFLY_EE_API)
+        );
     }
 }

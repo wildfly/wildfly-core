@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -35,7 +34,7 @@ import java.util.TreeSet;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 
-import org.jboss.as.server.deployment.module.ModuleDependency;
+import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.logging.Logger;
 import org.jboss.modules.DependencySpec;
@@ -59,48 +58,6 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     public static final int MAX_NUMBER_OF_JAR_RESOURCES = Integer.parseInt(WildFlySecurityManager.getPropertyPrivileged("org.jboss.as.server.max_number_of_jar_resources", "256"));
     private static final Logger log = Logger.getLogger(ExternalModuleSpecService.class);
-
-    private static final List<String> EE_API_MODULES;
-
-    static {
-        // CRITICAL! Update this if any new EE API is added
-        EE_API_MODULES = Arrays.asList(
-                "javax.activation.api",
-                "javax.annotation.api",
-                "javax.batch.api",
-                "javax.ejb.api",
-                "javax.enterprise.api",
-                "javax.enterprise.concurrent.api",
-                "javax.inject.api",
-                "javax.interceptor.api",
-                "javax.json.api",
-                "javax.jms.api",
-                "javax.jws.api",
-                "javax.mail.api",
-                "javax.management.j2ee.api",
-                "javax.persistence.api",
-                "javax.resource.api",
-                "javax.rmi.api",
-                "javax.security.auth.message.api",
-                "javax.security.jacc.api",
-                "javax.servlet.api",
-                "javax.servlet.jsp.api",
-                "javax.transaction.api",
-                "javax.validation.api",
-                "javax.ws.rs.api",
-                "javax.websocket.api",
-                "javax.xml.bind.api",
-                "javax.xml.soap.api",
-                "javax.xml.ws.api",
-                "org.glassfish.jakarta.el",
-                //TODO WFLY-5966 validate the need for these and remove if not needed.
-                // Prior to WFLY-5922 they were exported by javax.ejb.api
-                "javax.xml.rpc.api",
-                "org.omg.api",
-                // This one always goes last.
-                "javax.api"
-        );
-    }
 
     private final ModuleIdentifier moduleIdentifier;
 
@@ -169,7 +126,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
         specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
         // TODO: external resource need some kind of dependency mechanism
         ModuleSpec moduleSpec = specBuilder.create();
-        this.moduleDefinition = new ModuleDefinition(moduleIdentifier, Collections.<ModuleDependency>emptySet(), moduleSpec);
+        this.moduleDefinition = new ModuleDefinition(moduleIdentifier, Collections.emptySet(), moduleSpec);
 
 
         ServiceModuleLoader.installModuleResolvedService(context.getChildTarget(), moduleIdentifier);
@@ -200,16 +157,12 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     }
 
     private static void addEEDependencies(ModuleSpec.Builder specBuilder) {
-        /*
-            Legacy code that was replaced by the full list of EE API modules
-            DependencySpec javaee = new ModuleDependencySpecBuilder().setName("javaee.api").setOptional(true).build();
-            specBuilder.addDependency(javaee);
-         */
+        DependencySpec dependencySpec = new ModuleDependencySpecBuilder()
+                .setName(ServerRootResourceDefinition.WILDFLY_EE_API)
+                .setOptional(true)
+                .build();
 
-        for (String api : EE_API_MODULES) {
-            DependencySpec dependencySpec = new ModuleDependencySpecBuilder().setName(api).setOptional(true).build();
-            specBuilder.addDependency(dependencySpec);
-        }
+        specBuilder.addDependency(dependencySpec);
     }
 
     /**
