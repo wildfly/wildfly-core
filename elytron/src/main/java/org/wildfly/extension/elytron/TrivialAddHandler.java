@@ -28,7 +28,6 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
@@ -48,7 +47,7 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
 
     private final RuntimeCapability<?> runtimeCapability;
     private final Mode initialMode;
-    private final Mode embeddedInitialMode;
+    private final Mode adminOnlyInitialMode;
 
     TrivialAddHandler(Class<T> serviceType, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         this(serviceType, Mode.ACTIVE, attributes, runtimeCapability);
@@ -58,12 +57,12 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         this(serviceType, initialMode, initialMode, attributes, runtimeCapability);
     }
 
-    TrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode embeddedInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
+    TrivialAddHandler(Class<T> serviceType, Mode initialMode, Mode adminOnlyInitialMode, AttributeDefinition[] attributes, RuntimeCapability<?> runtimeCapability) {
         super(new HashSet<>(Collections.singletonList(checkNotNullParam("runtimeCapabilities", runtimeCapability))), attributes);
         this.runtimeCapability = runtimeCapability;
         checkNotNullParam("serviceType", serviceType);
         this.initialMode = checkNotNullParam("initialMode", initialMode);
-        this.embeddedInitialMode = checkNotNullParam("embeddedInitialMode", embeddedInitialMode);
+        this.adminOnlyInitialMode = checkNotNullParam("adminOnlyInitialMode", adminOnlyInitialMode);
     }
 
     @SuppressWarnings("unchecked")
@@ -76,9 +75,8 @@ abstract class TrivialAddHandler<T> extends BaseAddHandler {
         serviceBuilder.setInstance(trivialService);
 
         trivialService.setValueSupplier(getValueSupplier(serviceBuilder, context, resource.getModel()));
-
         installedForResource(commonDependencies(serviceBuilder, dependOnProperties(), dependOnProviderRegistration())
-                .setInitialMode(context.getProcessType() == ProcessType.EMBEDDED_SERVER && context.getRunningMode() == RunningMode.ADMIN_ONLY ? embeddedInitialMode : initialMode)
+                .setInitialMode(context.getRunningMode() == RunningMode.ADMIN_ONLY ? adminOnlyInitialMode : initialMode)
                 .install(), resource);
     }
 
