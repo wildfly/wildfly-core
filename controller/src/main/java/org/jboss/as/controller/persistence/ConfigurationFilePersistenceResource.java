@@ -54,8 +54,10 @@ public class ConfigurationFilePersistenceResource extends AbstractFilePersistenc
 
         if ( FilePersistenceUtils.isParentFolderWritable(fileName) ){
             tempFileName = FilePersistenceUtils.createTempFile(fileName);
-        }else{
+        } else if (configurationFile.getConfigurationDir().canWrite()) {
             tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationDir(), fileName.getName());
+        } else {
+            tempFileName = FilePersistenceUtils.createTempFile(configurationFile.getConfigurationTmpDir(), fileName.getName());
         }
 
         try {
