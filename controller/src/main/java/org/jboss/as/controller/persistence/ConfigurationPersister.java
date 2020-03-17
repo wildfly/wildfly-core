@@ -132,7 +132,7 @@ public interface ConfigurationPersister {
     /**
      * Publish the current configuration
      * @param target the target destination of the publication.
-     * @return the location of the published configuraiotn
+     * @return the location of the published configuration
      * @throws ConfigurationPersistenceException if a problem happened when publishing
      */
     default String publish(String target) throws ConfigurationPersistenceException {

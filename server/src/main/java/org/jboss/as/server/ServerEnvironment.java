@@ -533,7 +533,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             } else {
                 repository = null;
             }
-            serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy, repository != null) : null;
+            serverConfigurationFile = standalone ? new ConfigurationFile(serverConfigurationDir, defaultServerConfig, serverConfig, configInteractionPolicy, repository != null, serverTempDir) : null;
             // Adds a system property to indicate whether or not the server configuration should be persisted
             @SuppressWarnings("deprecation")
             final String propertyKey = JBOSS_PERSIST_SERVER_CONFIG;
