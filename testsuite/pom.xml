@@ -429,7 +429,6 @@
                 <module>domain</module>
                 <module>manualmode</module>
                 <module>patching</module>
-                <module>layers</module>
             </modules>
         </profile>
 
