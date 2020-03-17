@@ -53,6 +53,7 @@ public class ConnectorResource extends SimpleResourceDefinition {
     private static final String CONNECTOR_CAPABILITY_NAME = "org.wildfly.remoting.connector";
     static final RuntimeCapability<Void> CONNECTOR_CAPABILITY =
             RuntimeCapability.Builder.of(CONNECTOR_CAPABILITY_NAME, true)
+                    .setAllowMultipleRegistrations(true)
                     .build();
 
     //FIXME is this attribute still used?
