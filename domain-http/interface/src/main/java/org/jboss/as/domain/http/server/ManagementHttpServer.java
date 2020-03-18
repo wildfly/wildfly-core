@@ -408,8 +408,8 @@ public class ManagementHttpServer {
         HttpHandler domainApiHandler = StreamReadLimitHandler.wrap(CorrelationHandler.wrap(
                 InExecutorHandler.wrap(
                     builder.executor,
-                    associateIdentity(new DomainApiCheckHandler(builder.modelController, builder.processStateNotifier,
-                        builder.allowedOrigins), builder)
+                    associateIdentity(new DomainApiCheckHandler(builder.modelController,
+                        builder.allowedOrigins, builder.consoleAvailability), builder)
                 )));
 
         final Function<HttpServerExchange, Boolean> readyFunction = createReadyFunction(builder);
@@ -522,6 +522,7 @@ public class ManagementHttpServer {
         private XnioWorker worker;
         private Executor executor;
         private Map<String, List<Header>> constantHeaders;
+        private ConsoleAvailability consoleAvailability;
 
         private Builder() {
         }
@@ -583,6 +584,12 @@ public class ManagementHttpServer {
             return this;
         }
 
+        /**
+         * @deprecated The management Http Server no longer needs the processStateNotifier. This class was used to see if it was possible
+         * to process an Http Request to the server. If the process status was starting or stopping, those requests were rejected.
+         * Now its use has been replaced by using {@link ConsoleAvailability} which maintains this behavior.
+         */
+        @Deprecated
         public Builder setControlledProcessStateNotifier(ProcessStateNotifier processStateNotifier) {
             assertNotBuilt();
             this.processStateNotifier = processStateNotifier;
@@ -673,6 +680,13 @@ public class ManagementHttpServer {
             if (built) {
                 throw ROOT_LOGGER.managementHttpServerAlreadyBuild();
             }
+        }
+
+        public Builder setConsoleAvailability(ConsoleAvailability consoleAvailability) {
+            assertNotBuilt();
+            this.consoleAvailability = consoleAvailability;
+
+            return this;
         }
     }
 

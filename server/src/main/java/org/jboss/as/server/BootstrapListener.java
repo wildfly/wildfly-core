@@ -95,8 +95,6 @@ public final class BootstrapListener {
             return;
         }
 
-        logAdminConsole();
-
         final int active = statistics.getActiveCount();
         final int failed = statistics.getFailedCount();
         final int lazy = statistics.getLazyCount();
@@ -141,7 +139,7 @@ public final class BootstrapListener {
         }
     }
 
-    private void logAdminConsole() {
+    public void logAdminConsole() {
         ServiceController<?> controller = serviceContainer.getService(UndertowHttpManagementService.SERVICE_NAME);
         if (controller != null) {
             HttpManagement mgmt = (HttpManagement)controller.getValue();

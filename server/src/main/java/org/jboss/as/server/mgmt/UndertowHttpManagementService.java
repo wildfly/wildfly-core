@@ -40,10 +40,12 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import io.undertow.server.handlers.resource.ResourceManager;
+
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
+import org.jboss.as.domain.http.server.ConsoleAvailability;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
@@ -110,6 +112,8 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
     private final Map<String, List<Header>> constantHeaders;
+    private final Supplier<ConsoleAvailability> consoleAvailabilitySupplier;
+
     private ManagementHttpServer serverManagement;
     private SocketBindingManager socketBindingManager;
     private boolean useUnmanagedBindings = false;
@@ -221,7 +225,8 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Collection<String> allowedOrigins,
                                          final ConsoleMode consoleMode,
                                          final String consoleSlot,
-                                         final Map<String, List<Header>> constantHeaders) {
+                                         final Map<String, List<Header>> constantHeaders,
+                                         final Supplier<ConsoleAvailability> consoleAvailabilitySupplier) {
         this.httpManagementConsumer = httpManagementConsumer;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.modelControllerSupplier = modelControllerSupplier;
@@ -243,6 +248,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.consoleMode = consoleMode;
         this.consoleSlot = consoleSlot;
         this.constantHeaders = constantHeaders;
+        this.consoleAvailabilitySupplier = consoleAvailabilitySupplier;
     }
 
     /**
@@ -255,6 +261,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     public synchronized void start(final StartContext context) throws StartException {
         final ModelController modelController = modelControllerSupplier.get();
         final ProcessStateNotifier processStateNotifier = processStateNotifierSupplier.get();
+        final ConsoleAvailability consoleAvailability = consoleAvailabilitySupplier.get();
         socketBindingManager = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
 
         final SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
@@ -348,6 +355,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setWorker(workerSupplier.get())
                     .setExecutor(executorSupplier.get())
                     .setConstantHeaders(constantHeaders)
+                    .setConsoleAvailability(consoleAvailability)
                     .build();
 
             serverManagement.start();

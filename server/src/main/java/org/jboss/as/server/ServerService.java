@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
+import static org.jboss.as.domain.http.server.ConsoleAvailability.CONSOLE_AVAILABILITY_CAPABILITY;
 
 import java.io.File;
 import java.security.PrivilegedAction;
@@ -267,6 +268,8 @@ public final class ServerService extends AbstractControllerService {
         serviceBuilder.addDependency(EXTERNAL_MODULE_CAPABILITY.getCapabilityServiceName(), ExternalModule.class,
                 service.injectedExternalModule);
         serviceBuilder.addDependency(PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), PathManager.class, service.injectedPathManagerService);
+        serviceBuilder.requires(CONSOLE_AVAILABILITY_CAPABILITY.getCapabilityServiceName());
+
         serviceBuilder.install();
 
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
@@ -484,6 +487,8 @@ public final class ServerService extends AbstractControllerService {
                 new RuntimeCapabilityRegistration(PROCESS_STATE_NOTIFIER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(EXTERNAL_MODULE_CAPABILITY, CapabilityScope.GLOBAL,new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(CONSOLE_AVAILABILITY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
@@ -493,6 +498,7 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(SUSPEND_CONTROLLER_CAPABILITY);
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
         rootRegistration.registerCapability(EXTERNAL_MODULE_CAPABILITY);
+        rootRegistration.registerCapability(CONSOLE_AVAILABILITY_CAPABILITY);
     }
 
     @Override
