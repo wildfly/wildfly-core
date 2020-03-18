@@ -174,6 +174,7 @@ interface ElytronDescriptionConstants {
     String DIRECT_VERIFICATION = "direct-verification";
     String DISALLOWED_PROVIDERS = "disallowed-providers";
     String DISTINGUISHED_NAME = "distinguished-name";
+    String DISTRIBUTED_REALM = "distributed-realm";
     String DOMAIN_NAMES = "domain-names";
 
     String ELYTRON_SECURITY = "elytron-security";
