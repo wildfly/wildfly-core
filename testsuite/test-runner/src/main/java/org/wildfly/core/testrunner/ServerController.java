@@ -71,7 +71,7 @@ public class ServerController {
      * @param readOnly
      */
     public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out, boolean readOnly) {
-     start(serverConfig, authConfigUri, startMode, out, readOnly, null, null, null);
+     start(serverConfig, authConfigUri, startMode, out, readOnly, null, null, null, null);
     }
 
     /**
@@ -92,6 +92,28 @@ public class ServerController {
      */
     public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out,
                       boolean readOnly, final String gitRepository, final String gitBranch, final String gitAuthConfig) {
+        start(serverConfig, authConfigUri, startMode, out, readOnly, gitRepository, gitBranch, gitAuthConfig, null);
+    }
+
+    /**
+     * Stats the server.
+     * <p>
+     * If the {@code authConfigUri} is not {@code null} the resource will be used for authentication of the
+     * {@link org.jboss.as.controller.client.ModelControllerClient}.
+     * </p>
+     *
+     * @param serverConfig  the configuration file to use or {@code null} to use the default
+     * @param authConfigUri the path to the {@code wildfly-config.xml} or {@code null}
+     * @param startMode     the mode to start the server in
+     * @param out           the print stream used to consume the {@code stdout} and {@code stderr} streams
+     * @param readOnly
+     * @param gitRepository the git repository to clone to get the server configuration.
+     * @param gitBranch     the git branch to use to get the server configuration
+     * @param gitAuthConfig the path
+     * @param configDir     Server configuration directory
+     */
+    public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out,
+                      boolean readOnly, final String gitRepository, final String gitBranch, final String gitAuthConfig, Path configDir) {
         if (started.compareAndSet(false, true)) {
             server = new Server(authConfigUri, readOnly);
             if (serverConfig != null) {
@@ -99,6 +121,9 @@ public class ServerController {
             }
             if (gitRepository != null) {
                 server.setGitRepository(gitRepository, gitBranch, gitAuthConfig);
+            }
+            if (configDir != null) {
+                server.setConfigDir(configDir);
             }
             server.setStartMode(startMode);
             try {
@@ -126,6 +151,10 @@ public class ServerController {
 
     public void startReadOnly(){
         start(null, null, Server.StartMode.NORMAL, System.out, true);
+    }
+
+    public void startReadOnly(Path configDir){
+        start(null, null, Server.StartMode.NORMAL, System.out, true, null, null, null, configDir);
     }
 
     public void startSuspended() {
