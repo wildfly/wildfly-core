@@ -36,7 +36,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Jason T. Greene
  */
-public abstract class RestartParentResourceAddHandler extends RestartParentResourceHandlerBase {
+public abstract class RestartParentResourceAddHandler extends RestartParentResourceHandlerBase implements OperationDescriptor {
 
     static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
     static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
@@ -56,6 +56,11 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
         super(parentKeyName);
         this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
         this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
+    }
+
+    @Override
+    public Collection<? extends AttributeDefinition> getAttributes() {
+        return this.attributes;
     }
 
     @Override
@@ -91,5 +96,9 @@ public abstract class RestartParentResourceAddHandler extends RestartParentResou
      *
      * @throws OperationFailedException if {@code operation} is invalid or populating the model otherwise fails
      */
-    protected abstract void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException;
+    protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
+        for (AttributeDefinition attribute : this.attributes) {
+            attribute.validateAndSet(operation, model);
+        }
+    }
 }
