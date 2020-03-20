@@ -584,7 +584,7 @@ public class CompositeOperationTestCase {
 
         createDeployment();
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+        final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
         try {
             Future<ModelNode> deploymentFuture = executorService.submit(new Callable<ModelNode>() {
@@ -601,7 +601,7 @@ public class CompositeOperationTestCase {
             List<ModelNode> steps;
 
             // it could ensure we have acquired the lock by the deployment operation executed before
-            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
+            TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(5));
 
             steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SLAVE), slaveChildrenTypes);
             op = createComposite(steps);

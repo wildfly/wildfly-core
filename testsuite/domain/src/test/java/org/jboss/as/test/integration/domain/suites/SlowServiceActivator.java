@@ -17,6 +17,7 @@
 package org.jboss.as.test.integration.domain.suites;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.msc.service.ServiceActivator;
@@ -29,11 +30,16 @@ import org.jboss.msc.service.ServiceRegistryException;
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
 public class SlowServiceActivator implements ServiceActivator {
+    Logger logger = Logger.getAnonymousLogger();
+
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
         try {
+            logger.info(" SlowServiceActivator");
             long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(20)*1000;
+            int i = 0;
             while (System.currentTimeMillis() - timeout < 0) {
+                logger.info(" SlowServiceActivator Cycle: flag=" + i++);
                 TimeUnit.SECONDS.sleep(1);
             }
         } catch (InterruptedException e) {
