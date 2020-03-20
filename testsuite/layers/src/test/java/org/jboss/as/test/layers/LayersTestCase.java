@@ -66,7 +66,9 @@ public class LayersTestCase {
         // Brought by galleon FP config
         "org.jboss.as.product",
         // Brought by galleon FP config
-        "org.jboss.as.standalone"
+        "org.jboss.as.standalone",
+        // Brought by galleon ServerRootResourceDefinition
+        "wildflyee.api",
     };
 
     @Test

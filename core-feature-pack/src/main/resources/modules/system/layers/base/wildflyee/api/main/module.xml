@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright 2020 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<module xmlns="urn:jboss:module:1.9" name="wildflyee.api">
+    <dependencies>
+        <module name="javax.activation.api" export="true" optional="true" />
+        <module name="javax.annotation.api" export="true" optional="true" />
+        <module name="javax.batch.api" export="true" optional="true" />
+        <module name="javax.ejb.api" export="true" optional="true" />
+        <module name="javax.enterprise.api" export="true" optional="true" />
+        <module name="javax.enterprise.concurrent.api" export="true" optional="true" />
+        <module name="javax.inject.api" export="true" optional="true" />
+        <module name="javax.interceptor.api" export="true" optional="true" />
+        <module name="javax.json.api" export="true" optional="true" />
+        <module name="javax.jms.api" export="true" optional="true" />
+        <module name="javax.jws.api" export="true" optional="true" />
+        <module name="javax.mail.api" export="true" optional="true" />
+        <module name="javax.management.j2ee.api" export="true" optional="true" />
+        <module name="javax.persistence.api" export="true" optional="true" />
+        <module name="javax.resource.api" export="true" optional="true" />
+        <module name="javax.rmi.api" export="true" optional="true" />
+        <module name="javax.security.auth.message.api" export="true" optional="true" />
+        <module name="javax.security.jacc.api" export="true" optional="true" />
+        <module name="javax.servlet.api" export="true" optional="true" />
+        <module name="javax.servlet.jsp.api" export="true" optional="true" />
+        <module name="javax.transaction.api" export="true" optional="true" />
+        <module name="javax.validation.api" export="true" optional="true" />
+        <module name="javax.ws.rs.api" export="true" services="export" optional="true" />
+        <module name="javax.websocket.api" export="true" optional="true" />
+        <module name="javax.xml.bind.api" export="true" optional="true" />
+        <module name="javax.xml.soap.api" export="true" optional="true" />
+        <module name="javax.xml.ws.api" export="true" optional="true" />
+        <module name="org.glassfish.jakarta.el" export="true" optional="true" />
+        <module name="javax.xml.rpc.api" export="true" optional="true" />
+        <module name="org.omg.api" export="true" optional="true" />
+
+        <!-- This one always goes last. -->
+        <module name="javax.api" export="true" optional="true" />
+    </dependencies>
+</module>
