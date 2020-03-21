@@ -584,7 +584,7 @@ public class CompositeOperationTestCase {
 
         createDeployment();
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(2);
+        final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
         try {
             Future<ModelNode> deploymentFuture = executorService.submit(new Callable<ModelNode>() {
@@ -619,7 +619,7 @@ public class CompositeOperationTestCase {
             Assert.assertEquals("It is expected deployment operation is still in progress", false, deploymentFuture.isDone());
 
             // keep the timeout in sync with SlowServiceActivator timeout
-            deploymentFuture.get(TimeoutUtil.adjust(20), TimeUnit.SECONDS);
+            deploymentFuture.get(TimeoutUtil.adjust(60), TimeUnit.SECONDS);
 
         } finally {
             try {
