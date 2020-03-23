@@ -786,6 +786,16 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-launcher</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-jar-runtime</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-jar-boot</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.wildfly.client</groupId>

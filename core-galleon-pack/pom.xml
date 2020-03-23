@@ -955,6 +955,18 @@
             <artifactId>wildfly-launcher</artifactId>
             <scope>provided</scope>
         </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-jar-runtime</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-jar-boot</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.wildfly.client</groupId>

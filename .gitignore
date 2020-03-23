@@ -58,3 +58,7 @@ testsuite-core/standalone/cli_output
 
 # ignore the build metadata created by the build metadata plugin
 build.metadata
+
+# shaded jars
+**/dependency-reduced-pom.xml
+

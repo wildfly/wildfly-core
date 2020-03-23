@@ -232,6 +232,7 @@
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
+        <module>bootable-jar</module>
         <module>build</module>
         <module>build-legacy</module>
         <module>dist</module>
@@ -1365,6 +1366,16 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-launcher</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-jar-runtime</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-jar-boot</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
