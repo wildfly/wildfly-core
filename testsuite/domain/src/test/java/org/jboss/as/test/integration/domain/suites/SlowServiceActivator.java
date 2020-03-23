@@ -32,7 +32,7 @@ public class SlowServiceActivator implements ServiceActivator {
     @Override
     public void activate(ServiceActivatorContext serviceActivatorContext) throws ServiceRegistryException {
         try {
-            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(20)*1000;
+            long timeout = System.currentTimeMillis() + TimeoutUtil.adjust(60)*1000;
             while (System.currentTimeMillis() - timeout < 0) {
                 TimeUnit.SECONDS.sleep(1);
             }
