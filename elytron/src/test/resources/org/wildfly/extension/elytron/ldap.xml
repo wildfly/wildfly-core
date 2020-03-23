@@ -1,5 +1,5 @@
 <!-- for needs of LdapTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:9.0" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:10.0" initial-providers="elytron">
    <authentication-client>
       <authentication-configuration name="ldapAuthConfig" authentication-name="uid=server,dc=users,dc=elytron,dc=wildfly,dc=org">
          <credential-reference clear-text="serverPassword"/>

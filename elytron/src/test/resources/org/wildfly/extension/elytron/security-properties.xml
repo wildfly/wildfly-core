@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0">
+<subsystem xmlns="urn:wildfly:elytron:10.0">
     <security-properties>
         <security-property name="a" value="b" />
         <security-property name="c" value="d" />

@@ -19,7 +19,7 @@
 
 <config default-supplement="standalone" >
     <extension-module>org.wildfly.extension.elytron</extension-module>
-    <subsystem xmlns="urn:wildfly:elytron:9.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+    <subsystem xmlns="urn:wildfly:elytron:10.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
         <providers>
             <aggregate-providers name="combined-providers">
                 <providers name="elytron" />

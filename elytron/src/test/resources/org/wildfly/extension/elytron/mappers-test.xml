@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0">
+<subsystem xmlns="urn:wildfly:elytron:10.0">
     <security-domains>
         <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder">
             <realm name="PropRealm"/>

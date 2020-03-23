@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0" default-ssl-context="ClientContext">
+<subsystem xmlns="urn:wildfly:elytron:10.0" default-ssl-context="ClientContext">
     <jaspi>
         <jaspi-configuration name="minimal">
             <server-auth-modules>

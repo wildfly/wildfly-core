@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:9.0" register-jaspi-factory="false">
+<subsystem xmlns="urn:wildfly:elytron:10.0" register-jaspi-factory="false">
     <authentication-client>
         <authentication-configuration name="test">
             <mechanism-properties>
