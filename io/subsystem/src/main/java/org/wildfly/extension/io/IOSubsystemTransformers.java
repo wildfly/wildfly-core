@@ -65,10 +65,7 @@ public class IOSubsystemTransformers implements ExtensionTransformerRegistration
         final ResourceTransformationDescriptionBuilder worker = builder.addChildResource(WorkerResourceDefinition.INSTANCE.getPathElement());
         worker.rejectChildResource(PathElement.pathElement(OutboundBindAddressResourceDefinition.RESOURCE_NAME));
         worker.getAttributeBuilder()
-                .setValueConverter(
-                        new AttributeConverter.DefaultValueAttributeConverter(WorkerResourceDefinition.WORKER_TASK_KEEPALIVE),
-                        WorkerResourceDefinition.WORKER_TASK_KEEPALIVE
-                )
+                .setValueConverter(AttributeConverter.DEFAULT_VALUE, WorkerResourceDefinition.WORKER_TASK_KEEPALIVE)
                 .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS,
                         WorkerResourceDefinition.STACK_SIZE,
                         WorkerResourceDefinition.WORKER_IO_THREADS,
