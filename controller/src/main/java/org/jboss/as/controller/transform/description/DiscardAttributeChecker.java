@@ -21,7 +21,11 @@
  */
 package org.jboss.as.controller.transform.description;
 
+import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -101,23 +105,21 @@ public interface DiscardAttributeChecker {
             this(false, true);
         }
 
-        /** {@inheritDoc} */
+        @Override
         public boolean isDiscardExpressions() {
             return discardExpressions;
         }
 
-        /** {@inheritDoc} */
+        @Override
         public boolean isDiscardUndefined() {
             return discardUndefined;
         }
 
-        /** {@inheritDoc} */
         @Override
         public boolean isOperationParameterDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
             return isValueDiscardable(address, attributeName, attributeValue, context);
         }
 
-        /** {@inheritDoc} */
         @Override
         public boolean isResourceAttributeDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
             return isValueDiscardable(address, attributeName, attributeValue, context);
@@ -156,6 +158,44 @@ public interface DiscardAttributeChecker {
         @Override
         public boolean isValueDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
             return false;
+        }
+    };
+
+    /**
+     * A standard checker which will discard the attribute if set to its default value.
+     */
+    DiscardAttributeChecker DEFAULT_VALUE = new DiscardAttributeChecker() {
+        @Override
+        public boolean isDiscardExpressions() {
+            return false;
+        }
+
+        @Override
+        public boolean isDiscardUndefined() {
+            return true;
+        }
+
+        @Override
+        public boolean isOperationParameterDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, ModelNode operation, TransformationContext context) {
+            String operationName = operation.get(ModelDescriptionConstants.OP).asString();
+            if (operationName.equals(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION)) {
+                return this.isResourceAttributeDiscardable(address, attributeName, attributeValue, context);
+            }
+            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
+            OperationDefinition definition = registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName).getOperationDefinition();
+            for (AttributeDefinition parameter : definition.getParameters()) {
+                if (parameter.getName().equals(attributeName)) {
+                    return attributeValue.equals(parameter.getDefaultValue());
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isResourceAttributeDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
+            AttributeDefinition definition = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
+            return attributeValue.equals(definition.getDefaultValue());
         }
     };
 

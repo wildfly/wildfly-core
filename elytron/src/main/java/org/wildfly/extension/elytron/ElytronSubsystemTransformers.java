@@ -138,9 +138,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SYSLOG_AUDIT_LOG))
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.SYSLOG_FORMAT)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(new ModelNode("RFC5424")), ElytronDescriptionConstants.SYSLOG_FORMAT)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.RECONNECT_ATTEMPTS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(AuditResourceDefinitions.RECONNECT_ATTEMPTS.getDefaultValue()), ElytronDescriptionConstants.RECONNECT_ATTEMPTS)
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, ElytronDescriptionConstants.SYSLOG_FORMAT, ElytronDescriptionConstants.RECONNECT_ATTEMPTS)
                 .end();
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT))
                 .getAttributeBuilder()

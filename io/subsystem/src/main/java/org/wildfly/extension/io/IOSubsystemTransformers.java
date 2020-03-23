@@ -58,7 +58,7 @@ public class IOSubsystemTransformers implements ExtensionTransformerRegistration
         final ResourceTransformationDescriptionBuilder worker = builder.addChildResource(WorkerResourceDefinition.INSTANCE.getPathElement());
         worker.getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, WorkerResourceDefinition.WORKER_TASK_CORE_THREADS)
-                .setDiscard(new DiscardAttributeChecker.DiscardAttributeValueChecker(WorkerResourceDefinition.WORKER_TASK_CORE_THREADS.getDefaultValue()), WorkerResourceDefinition.WORKER_TASK_CORE_THREADS);
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, WorkerResourceDefinition.WORKER_TASK_CORE_THREADS);
     }
 
     private void buildTransformers_2_0(ResourceTransformationDescriptionBuilder builder) {
