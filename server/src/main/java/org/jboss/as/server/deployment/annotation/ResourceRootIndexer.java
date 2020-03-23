@@ -62,7 +62,7 @@ public class ResourceRootIndexer {
                 ServerLogger.DEPLOYMENT_LOGGER.tracef("Found and read index at: %s", indexFile);
                 return;
             } catch (Exception e) {
-                ServerLogger.DEPLOYMENT_LOGGER.cannotLoadAnnotationIndex(indexFile.getPathName());
+                ServerLogger.DEPLOYMENT_LOGGER.cannotLoadAnnotationIndex(indexFile.getPathName(), e.toString());
             }
         }
 

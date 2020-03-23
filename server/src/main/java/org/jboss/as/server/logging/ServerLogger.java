@@ -140,9 +140,9 @@ public interface ServerLogger extends BasicLogger {
      * Message for when a pre-computed annotation index cannot be loaded
      * @param index name of the annotation index
      */
-    @LogMessage(level = ERROR)
-    @Message(id = 2, value = "Could not read provided index: %s")
-    void cannotLoadAnnotationIndex(String index);
+    @LogMessage(level = WARN)
+    @Message(id = 2, value = "Loading failed for the annotation index \"%s\" with the following exception: %s")
+    void cannotLoadAnnotationIndex(String index, String message);
 
     @LogMessage(level = WARN)
     @Message(id = 3, value = "Could not index class %s at %s")
