@@ -112,7 +112,6 @@ public class LoggingExtension implements Extension {
             "org.jboss.logging.jul-to-slf4j-stub",
             "org.jboss.logmanager",
             "org.slf4j",
-            "org.slf4j.ext",
             "org.slf4j.impl",
     };
 

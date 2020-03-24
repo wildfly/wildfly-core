@@ -212,7 +212,6 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
                 RuntimePackageDependency.optional(SLF4J),
                 RuntimePackageDependency.optional(SLF4J_STUB),
                 // The next ones are Loaded by LoggingExtension
-                RuntimePackageDependency.optional("org.slf4j.ext"),
                 RuntimePackageDependency.optional("org.slf4j.impl"));
     }
 

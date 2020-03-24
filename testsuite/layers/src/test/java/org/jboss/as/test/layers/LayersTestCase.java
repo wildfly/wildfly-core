@@ -56,8 +56,6 @@ public class LayersTestCase {
         // injected by logging
         "org.jboss.logging.jul-to-slf4j-stub",
         // injected by logging
-        "org.slf4j.ext",
-        // injected by logging
         "ch.qos.cal10n",
         // tooling
         "org.jboss.as.domain-add-user",
