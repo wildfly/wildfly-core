@@ -165,7 +165,7 @@
              (the current workaround causes test failures in domain-management tests).
              Cannot bump to AM25 due to https://issues.apache.org/jira/browse/DIRSERVER-2247.
         -->
-        <version.org.apache.httpcomponents.httpclient>4.5.11</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpclient>4.5.12</version.org.apache.httpcomponents.httpclient>
         <version.org.apache.httpcomponents.httpcore>4.4.13</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
