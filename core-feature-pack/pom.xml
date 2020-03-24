@@ -63,11 +63,6 @@
         </dependency>
 
         <dependency>
-            <groupId>ch.qos.cal10n</groupId>
-            <artifactId>cal10n-api</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
         </dependency>

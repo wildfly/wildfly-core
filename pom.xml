@@ -140,7 +140,6 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
         <version.com.fasterxml.jackson.core.jackson-databind>2.10.1</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.6</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
@@ -670,11 +669,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>ch.qos.cal10n</groupId>
-                <artifactId>cal10n-api</artifactId>
-                <version>${version.ch.qos.cal10n}</version>
-            </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
