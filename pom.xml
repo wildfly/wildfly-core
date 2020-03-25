@@ -140,7 +140,6 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <version.ch.qos.cal10n>0.8.1</version.ch.qos.cal10n>
         <version.com.fasterxml.jackson.core.jackson-databind>2.10.1</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.6</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
@@ -209,7 +208,7 @@
         <version.org.mock-server.mockserver-netty>5.9.0</version.org.mock-server.mockserver-netty>
         <version.org.picketbox>5.0.3.Final</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.22.jbossorg-1</version.org.slf4j>
+        <version.org.slf4j>1.7.30</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
@@ -671,11 +670,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>ch.qos.cal10n</groupId>
-                <artifactId>cal10n-api</artifactId>
-                <version>${version.ch.qos.cal10n}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
                 <version>${version.org.codehaus.woodstox.woodstox-core}</version>
@@ -1128,11 +1122,6 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${version.org.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-ext</artifactId>
                 <version>${version.org.slf4j}</version>
             </dependency>
             <!-- git persistence -->
