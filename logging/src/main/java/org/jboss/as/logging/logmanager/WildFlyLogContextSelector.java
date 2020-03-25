@@ -44,14 +44,13 @@ public interface WildFlyLogContextSelector extends LogContextSelector {
     /**
      * Get and set the log context.
      *
-     * @param securityKey the security key to check (ignored if none was set on construction)
-     * @param newValue    the new log context value, or {@code null} to clear
+     * @param newValue the new log context value, or {@code null} to clear
      *
      * @return the previous log context value, or {@code null} if none was set
      *
      * @see org.jboss.logmanager.ThreadLocalLogContextSelector#getAndSet(Object, org.jboss.logmanager.LogContext)
      */
-    LogContext getAndSet(Object securityKey, LogContext newValue);
+    LogContext setLocalContext(LogContext newValue);
 
     /**
      * Register a class loader with a log context.

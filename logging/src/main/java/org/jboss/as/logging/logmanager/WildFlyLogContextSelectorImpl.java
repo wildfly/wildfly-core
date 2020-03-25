@@ -22,32 +22,24 @@
 
 package org.jboss.as.logging.logmanager;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.jboss.logmanager.ClassLoaderLogContextSelector;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.LogContextSelector;
-import org.jboss.logmanager.ThreadLocalLogContextSelector;
 
 /**
-* @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
-*/
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ */
 class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
 
     private final LogContextSelector defaultLogContextSelector;
     private final ClassLoaderLogContextSelector contextSelector;
 
-    private final ThreadLocalLogContextSelector threadLocalContextSelector;
-
-    private final AtomicInteger counter;
+    private final ThreadLocal<LogContext> localContext = new ThreadLocal<>();
+    private int counter;
+    private int dftCounter;
 
     WildFlyLogContextSelectorImpl(final LogContext defaultLogContext) {
-        this(new ClassLoaderLogContextSelector(new LogContextSelector() {
-            @Override
-            public LogContext getLogContext() {
-                return defaultLogContext;
-            }
-        }));
+        this(() -> defaultLogContext);
     }
 
     WildFlyLogContextSelectorImpl(final LogContextSelector defaultLogContextSelector) {
@@ -62,31 +54,69 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
             dft = defaultLogContextSelector;
         }
         this.defaultLogContextSelector = dft;
-        counter = new AtomicInteger(0);
+        counter = 0;
+        dftCounter = 0;
         contextSelector = new ClassLoaderLogContextSelector(dft, true);
-        threadLocalContextSelector = new ThreadLocalLogContextSelector(contextSelector);
     }
 
     @Override
     public LogContext getLogContext() {
-        return threadLocalContextSelector.getLogContext();
+        final LogContext localContext = this.localContext.get();
+        if (localContext != null) {
+            return localContext;
+        }
+        synchronized (this) {
+            // If we have no registered contexts we can just use the default selector. This should improve performance
+            // in most cases as the call stack will not be walked. This does depend on the on what was used for the
+            // default selector, however in most cases it should perform better.
+            return counter > 0 ? contextSelector.getLogContext() : defaultLogContextSelector.getLogContext();
+        }
     }
 
     @Override
-    public LogContext getAndSet(final Object securityKey, final LogContext newValue) {
-        return threadLocalContextSelector.getAndSet(securityKey, newValue);
+    public LogContext setLocalContext(final LogContext newValue) {
+        try {
+            return localContext.get();
+        } finally {
+            if (newValue == null) {
+                localContext.remove();
+            } else {
+                localContext.set(newValue);
+            }
+        }
     }
 
     @Override
     public void registerLogContext(final ClassLoader classLoader, final LogContext logContext) {
+        // We want to register regardless of the current counter for cases when a different log context is registered
+        // later.
         contextSelector.registerLogContext(classLoader, logContext);
-        counter.incrementAndGet();
+        synchronized (this) {
+            if (counter > 0) {
+                counter++;
+            } else if (logContext != defaultLogContextSelector.getLogContext()) {
+                // Move the dftCounter to the counter and add one for this specific log context
+                counter = dftCounter + 1;
+                dftCounter = 0;
+            } else {
+                // We're using the default log context at this point
+                dftCounter++;
+            }
+        }
     }
 
     @Override
     public boolean unregisterLogContext(final ClassLoader classLoader, final LogContext logContext) {
         if (contextSelector.unregisterLogContext(classLoader, logContext)) {
-            counter.decrementAndGet();
+            synchronized (this) {
+                if (counter > 0) {
+                    counter--;
+                } else if (dftCounter > 0) {
+                    // We don't test the log context here and just assume we're using the default. This is safe as the
+                    // registered log contexts must be the default log context.
+                    dftCounter--;
+                }
+            }
             return true;
         }
         return false;
@@ -104,6 +134,8 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
 
     @Override
     public int registeredCount() {
-        return counter.get();
+        synchronized (this) {
+            return counter;
+        }
     }
 }
