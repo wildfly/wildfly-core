@@ -215,7 +215,7 @@ public class EmbeddedStandaloneServerFactory {
         private final ModuleLoader moduleLoader;
         private final ClassLoader embeddedModuleCL;
         private ServiceContainer serviceContainer;
-        private ControlledProcessState.State currentProcessState;
+        private volatile ControlledProcessState.State currentProcessState;
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ProcessStateNotifier processStateNotifier;
@@ -232,7 +232,7 @@ public class EmbeddedStandaloneServerFactory {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if ("currentState".equals(evt.getPropertyName())) {
                         ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState, false);
+                        establishModelControllerClient(newState, true);
                     }
                 }
             };
@@ -337,6 +337,14 @@ public class EmbeddedStandaloneServerFactory {
             } finally {
                 EmbeddedManagedProcess.setTccl(tccl);
             }
+        }
+
+        @Override
+        public String getProcessState() {
+            if (currentProcessState == null) {
+                return null;
+            }
+            return currentProcessState.toString();
         }
 
         private void exit() {

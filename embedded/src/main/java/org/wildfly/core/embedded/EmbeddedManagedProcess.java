@@ -48,6 +48,15 @@ public interface EmbeddedManagedProcess {
      */
     void stop();
 
+    /**
+     * Returns the current process state of this managed process.
+     * <p>
+     * The returned value is a String representation of one of the possible {@code ControlledProcessState.State} values.
+     *
+     * @return The current process state, or {@code null} if currently the process state is unknown.
+     */
+    String getProcessState();
+
     static ClassLoader getTccl() {
         if (System.getSecurityManager() == null) {
             return Thread.currentThread().getContextClassLoader();
