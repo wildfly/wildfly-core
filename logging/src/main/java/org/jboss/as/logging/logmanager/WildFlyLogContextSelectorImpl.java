@@ -65,12 +65,14 @@ class WildFlyLogContextSelectorImpl implements WildFlyLogContextSelector {
         if (localContext != null) {
             return localContext;
         }
+        final int counter;
         synchronized (this) {
-            // If we have no registered contexts we can just use the default selector. This should improve performance
-            // in most cases as the call stack will not be walked. This does depend on the on what was used for the
-            // default selector, however in most cases it should perform better.
-            return counter > 0 ? contextSelector.getLogContext() : defaultLogContextSelector.getLogContext();
+            counter = this.counter;
         }
+        // If we have no registered contexts we can just use the default selector. This should improve performance
+        // in most cases as the call stack will not be walked. This does depend on the on what was used for the
+        // default selector, however in most cases it should perform better.
+        return counter > 0 ? contextSelector.getLogContext() : defaultLogContextSelector.getLogContext();
     }
 
     @Override
