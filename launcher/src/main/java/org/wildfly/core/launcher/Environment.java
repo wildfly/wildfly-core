@@ -240,4 +240,19 @@ class Environment {
         }
         return result;
     }
+
+    static Path validateBootableJar(final Path bootableJar) {
+        if (bootableJar == null || Files.notExists(bootableJar)) {
+            throw LauncherMessages.MESSAGES.pathDoesNotExist(bootableJar);
+        }
+        if (Files.isDirectory(bootableJar)) {
+            throw LauncherMessages.MESSAGES.pathNotAFile(bootableJar);
+        }
+        final Path result = bootableJar.toAbsolutePath().normalize();
+        return result;
+    }
+
+    static Path validateBootableJar(final String bootableJar) {
+        return validateBootableJar(Paths.get(bootableJar));
+    }
 }

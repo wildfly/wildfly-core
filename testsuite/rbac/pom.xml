@@ -125,7 +125,7 @@
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <directory>src/test/resources</directory>
+                                    <directory>src/test/resources/wildfly/standalone/configuration</directory>
                                     <includes>
                                         <include>mgmt-groups.properties</include>
                                         <include>mgmt-users.properties</include>
@@ -422,6 +422,182 @@
                         </executions>
                     </plugin>
 
+                </plugins>
+            </build>
+        </profile>
+         <!-- Test against bootable jar -->
+        <profile>
+            <id>bootablejar.profile</id>
+            <activation>
+                <property>
+                    <name>ts.bootable</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>galleon-maven-plugin</artifactId>   
+                        <executions>
+                            <!-- Disable the default provisioning, TODO, to provision multiple bootable-jars-->
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>provisioning</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>xml-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Disable the default provisioning, TODO, to provision multiple bootable-jars-->
+                            <execution>
+                                <id>adjust-default-server-configuration-for-basic-tests</id>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>ts.config-as.ip</id>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>ts.config-as.trace-logging</id>
+                                <goals>
+                                    <goal>transform</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>mgmt.config</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-jar-maven-plugin</artifactId>
+                        <version>${version.org.wildfly.jar.plugin}</version>
+                        <executions>
+                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
+                            <execution>
+                                <id>bootable-jar-packaging</id>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <output-file-name>test-wildfly.jar</output-file-name>
+                                    <hollowJar>true</hollowJar>
+                                    <record-state>false</record-state>
+                                    <log-time>${galleon.log.time}</log-time>
+                                    <offline>true</offline>
+                                    <cli-script-files>
+                                        <script>${project.basedir}/enable-rbac.cli</script>
+                                    </cli-script-files>
+                                    <extraServerContent>${project.basedir}/src/test/resources/wildfly</extraServerContent>
+                                    <plugin-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </plugin-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <version>${project.version}</version>
+                                            <inherit-configs>false</inherit-configs>
+                                            <inherit-packages>false</inherit-packages>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                                <name>org.picketbox</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemProperties>
+                                <property>
+                                    <name>wildfly.bootable.jar</name>
+                                    <value>true</value>
+                                </property>
+                                <property>
+                                    <name>wildfly.bootable.jar.jar</name>
+                                    <value>${project.build.directory}/test-wildfly.jar</value>
+                                </property>
+                                <property>
+                                    <name>wildfly.bootable.jar.install.dir</name>
+                                    <value>${project.build.directory}/${server.output.dir.prefix}</value>
+                                </property>
+                            </systemProperties>
+                            <excludes>
+                                <exclude>org.jboss.as.test.integration.mgmt.access.LegacyConfigurationChangesHistoryTestCase</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <!-- for now disable the alternative executions that would require multiple bootable jar packaging -->
+                            <execution>
+                                <id>access-properties-role-mapping</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>access-ldap-role-mapping-g2u</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>access-ldap-role-mapping-u2g</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>access-integration-jmx-sensitivity</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
                 </plugins>
             </build>
         </profile>

@@ -32,6 +32,8 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.wildfly.core.launcher.BootableJarCommandBuilder;
+import org.wildfly.core.launcher.CommandBuilder;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
@@ -43,6 +45,11 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  * @author Tomaz Cerar
  */
 public class Server {
+
+    // Bootable jar
+    private final String bootableJar = System.getProperty("wildfly.bootable.jar.jar");
+    private final String installDir = System.getProperty("wildfly.bootable.jar.install.dir");
+    private final Boolean isBootableJar = Boolean.getBoolean("wildfly.bootable.jar");
 
     public static final String LEGACY_JAVA_HOME = "legacy.java.home";
 
@@ -154,56 +161,83 @@ public class Server {
 
     protected void start(PrintStream out) {
         try {
-            final Path jbossHomeDir = Paths.get(jbossHome);
-            if (Files.notExists(jbossHomeDir) && !Files.isDirectory(jbossHomeDir)) {
-                throw new IllegalStateException("Cannot find: " + jbossHomeDir);
-            }
+            CommandBuilder cbuilder = null;
+            if (isBootableJar) {
+                final Path bootableJarPath = Paths.get(bootableJar);
+                if (Files.notExists(bootableJarPath) || Files.isDirectory(bootableJarPath)) {
+                    throw new IllegalStateException("Cannot find: " + bootableJar);
+                }
+                final BootableJarCommandBuilder commandBuilder = BootableJarCommandBuilder.of(bootableJarPath);
+                commandBuilder.setInstallDir(Paths.get(installDir));
+                cbuilder = commandBuilder;
 
-            final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(jbossHomeDir);
+                commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
+                if (jvmArgs != null) {
+                    commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
+                }
+                if (Boolean.getBoolean(serverDebug)) {
+                    commandBuilder.setDebug(true, serverDebugPort);
+                }
 
-            if (modulePath != null && !modulePath.isEmpty()) {
-                commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
-            }
+                //we are testing, of course we want assertions and set-up some other defaults
+                commandBuilder.addJavaOption("-ea")
+                        .setBindAddressHint("management", managementAddress);
 
-            commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
-            if (jvmArgs != null) {
-                commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
-            }
-            if(Boolean.getBoolean(serverDebug)) {
-                commandBuilder.setDebug(true, serverDebugPort);
-            }
-
-            if (this.startMode == StartMode.ADMIN_ONLY) {
-                commandBuilder.setAdminOnly();
-            } else if (this.startMode == StartMode.SUSPEND){
-                commandBuilder.setStartSuspended();
-            }
-
-            if(readOnly) {
-                commandBuilder.setServerReadOnlyConfiguration(serverConfig);
+                if (jbossArgs != null) {
+                    commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
+                }
+                commandBuilder.addServerArgument("-D[Standalone]");
             } else {
-                commandBuilder.setServerConfiguration(serverConfig);
+                final Path jbossHomeDir = Paths.get(jbossHome);
+                if (Files.notExists(jbossHomeDir) && !Files.isDirectory(jbossHomeDir)) {
+                    throw new IllegalStateException("Cannot find: " + jbossHomeDir);
+                }
+
+                final StandaloneCommandBuilder commandBuilder = StandaloneCommandBuilder.of(jbossHomeDir);
+                cbuilder = commandBuilder;
+                if (modulePath != null && !modulePath.isEmpty()) {
+                    commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
+                }
+
+                commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
+                if (jvmArgs != null) {
+                    commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
+                }
+                if (Boolean.getBoolean(serverDebug)) {
+                    commandBuilder.setDebug(true, serverDebugPort);
+                }
+
+                if (this.startMode == StartMode.ADMIN_ONLY) {
+                    commandBuilder.setAdminOnly();
+                } else if (this.startMode == StartMode.SUSPEND) {
+                    commandBuilder.setStartSuspended();
+                }
+
+                if (readOnly) {
+                    commandBuilder.setServerReadOnlyConfiguration(serverConfig);
+                } else {
+                    commandBuilder.setServerConfiguration(serverConfig);
+                }
+
+                if (gitRepository != null) {
+                    commandBuilder.setGitRepository(gitRepository, gitBranch, gitAuthConfiguration);
+                }
+
+                //we are testing, of course we want assertions and set-up some other defaults
+                commandBuilder.addJavaOption("-ea")
+                        .setBindAddressHint("management", managementAddress);
+
+                if (jbossArgs != null) {
+                    commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
+                }
+                commandBuilder.addServerArgument("-D[Standalone]");
             }
-
-            if (gitRepository != null) {
-                commandBuilder.setGitRepository(gitRepository, gitBranch, gitAuthConfiguration);
-            }
-
-            //we are testing, of course we want assertions and set-up some other defaults
-            commandBuilder.addJavaOption("-ea")
-                    .setBindAddressHint("management", managementAddress);
-
-            if (jbossArgs != null) {
-                commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
-            }
-            commandBuilder.addServerArgument("-D[Standalone]");
-
             StringBuilder builder = new StringBuilder("Starting container with: ");
-            for(String arg : commandBuilder.build()) {
+            for (String arg : cbuilder.build()) {
                 builder.append(arg).append(" ");
             }
             log.info(builder.toString());
-            process = Launcher.of(commandBuilder)
+            process = Launcher.of(cbuilder)
                     // Redirect the output and error stream to a file
                     .setRedirectErrorStream(true)
                     .launch();

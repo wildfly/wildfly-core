@@ -442,6 +442,166 @@
                 </plugins>
             </build>
         </profile>
+<!-- Test against bootable jar -->
+        <profile>
+            <id>bootablejar.profile</id>
+            <activation>
+                <property>
+                    <name>ts.bootable</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>galleon-maven-plugin</artifactId>   
+                        <executions>
+                            <!-- Disable the default provisioning -->
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>provisioning</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-jar-maven-plugin</artifactId>
+                        <version>${version.org.wildfly.jar.plugin}</version>
+                        <executions>
+                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
+                            <execution>
+                                <id>bootable-jar-packaging</id>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <output-file-name>test-wildfly.jar</output-file-name>
+                                    <hollowJar>true</hollowJar>
+                                    <record-state>false</record-state>
+                                    <log-time>${galleon.log.time}</log-time>
+                                    <offline>true</offline>
+                                    <plugin-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </plugin-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                            <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
+                                            <version>${project.version}</version>
+                                            <inherit-configs>false</inherit-configs>
+                                            <inherit-packages>false</inherit-packages>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                                <name>org.picketbox</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
 
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <!-- Tests against the bootable jar -->
+                            <execution>
+                                <id>bootable-server-surefire</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemProperties>
+                                        <property>
+                                            <name>wildfly.bootable.jar</name>
+                                            <value>true</value>
+                                        </property>
+                                        <property>
+                                            <name>wildfly.bootable.jar.jar</name>
+                                            <value>${project.build.directory}/test-wildfly.jar</value>
+                                        </property>
+                                        <property>
+                                            <name>wildfly.bootable.jar.install.dir</name>
+                                            <value>${project.build.directory}/${server.output.dir.prefix}</value>
+                                        </property>
+                                    </systemProperties>
+                                    <excludes>
+                                        <!-- No domain mode support -->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase.java</exclude>
+                                        <!-- multiple server start, admin mode, ... -->
+                                        <exclude>org.jboss.as.test.manualmode.auditlog.*TestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.auditlog.*Test.java</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.adminonly.auditlog.*TestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.cli.boot.ops.*TestCase.java</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.suspend.*TestCase.java</exclude>
+                                        <!-- restart the server -->
+                                        <exclude>org.jboss.as.test.manualmode.deployment.DeploymentScannerRedeploymentTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.deployment.DeploymentScannerUnitTestCase</exclude>
+                                        
+                                        <!-- restart the server -->
+                                        <exclude>org.jboss.as.test.manualmode.logging.Log4jAppenderTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.LoggingDependenciesTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.LoggingPreferencesTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.PerDeployLoggingTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.SizeAppenderRestartTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.SyslogIsNotAvailableDuringServerBootTestCase</exclude>
+                                        <!-- check that the server config exists before starting it -->
+                                        <exclude>org.jboss.as.test.manualmode.logging.capabilities.*TestCase</exclude>
+                                        <!-- restart the server -->
+                                        <exclude>org.jboss.as.test.manualmode.management.*TestCase</exclude>
+                                        
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.ManagementOpTimeoutTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.ShutdownTestCase</exclude>
+                                        <!-- access to module to cleanup but don't exist after stop -->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CustomVaultInCLITestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CommandTimeoutHandlerTestCase</exclude>
+                                        <!-- no proper JBOSS_HOME dir -->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CliEmbedServerInProcessTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedServerTestCase</exclude>
+                                        <!-- copy standalone.xml, stop/start...-->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.CLIScriptSupportTestCase</exclude>
+                                        <!-- remove some file after cleanup -->
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.RemoveManagementRealmTestCase</exclude>
+                                        <!-- no git support -->
+                                        <exclude>org.jboss.as.test.manualmode.management.persistence.*TestCase</exclude>
+                                        
+                                        <!-- replace config file -->
+                                        <exclude>org.jboss.as.test.manualmode.mgmt.elytron.ElytronModelControllerClientTestCase</exclude>
+                                        
+                                        <!--- remove a module after having closed the server -->
+                                        <exclude>org.jboss.as.test.manualmode.vault.CustomVaultInModuleTestCase</exclude>
+                                        
+                                        <!-- admin mode -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase</exclude>
+                                        <!-- start /stop, and install extension before start -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.PreparedResponseTestCase</exclude>
+                                        
+                                        <!-- start/stop/start the server -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.events.*TestCase</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
