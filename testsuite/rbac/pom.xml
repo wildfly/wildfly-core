@@ -82,13 +82,6 @@
                                 <jboss-maven-dist/>
                                 <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                             </plugin-options>
-                            <resolve-locals>
-                                <resolve-local>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>wildfly-core-galleon-pack</artifactId>
-                                    <version>${project.version}</version>
-                                </resolve-local>
-                            </resolve-locals>
                             <feature-packs>
                                 <feature-pack>
                                     <groupId>org.wildfly.core</groupId>
@@ -381,13 +374,6 @@
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                         <optional-packages>passive+</optional-packages>
                                     </plugin-options>
-                                    <resolve-locals>
-                                        <resolve-local>
-                                            <groupId>${project.groupId}</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>
-                                            <version>${project.version}</version>
-                                        </resolve-local>
-                                    </resolve-locals>
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
