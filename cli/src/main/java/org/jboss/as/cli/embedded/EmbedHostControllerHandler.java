@@ -34,7 +34,6 @@ import org.jboss.as.cli.CliEventListener;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
-import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
@@ -43,8 +42,6 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
@@ -271,37 +268,15 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
 
-            if (!emptyHost && (bootTimeout == null || bootTimeout > 0)) {
+            if (bootTimeout == null || bootTimeout > 0) {
                 long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                String status = "starting";
+                String status;
 
-                // read out the host controller name
-                final ModelNode getNameOp = new ModelNode();
-                getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
-
-                final ModelNode getStateOp = new ModelNode();
-                getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
-                ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
-                getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
                 do {
-                    try {
-                        final ModelNode nameResponse = mcc.execute(getNameOp);
-                        if (Util.isSuccess(nameResponse)) {
-                            // read out the connected HC name
-                            final String localName = nameResponse.get(ClientConstants.RESULT).asString();
-                            address.set(ClientConstants.HOST, localName);
-                            final ModelNode stateResponse = mcc.execute(getStateOp);
-                            if (Util.isSuccess(stateResponse)) {
-                                status = stateResponse.get(ClientConstants.RESULT).asString();
-                            }
-                        }
-                    } catch (Exception e) {
-                        // ignore and try again
-                    }
+                    status = hostController.getProcessState();
 
-                    if ("starting".equals(status)) {
+                    if (status == null || "starting".equals(status)) {
                         try {
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
@@ -313,7 +288,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
                     }
                 } while (System.nanoTime() < expired);
 
-                if ("starting".equals(status)) {
+                if (status == null || "starting".equals(status)) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
                     // Stop server and restore environment
                     StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
