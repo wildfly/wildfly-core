@@ -15,6 +15,9 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectMapAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -276,6 +279,9 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         } else if (subModel.hasDefined(attribute.getName())) {
             final ModelNode result = subModel.get(attribute.getName());
             context.getResult().set(result);
+            if (defaults) {
+                handleObjectAttributes(context.getResult(), attribute);
+            }
         } else if (defaults && attribute.getDefaultValue() != null) {
             // No defined value in the model. See if we should reply with a default from the metadata,
             // reply with undefined, or fail because it's a non-existent attribute name
@@ -284,6 +290,36 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             // model had no defined value, but we treat its existence in the model or the metadata
             // as proof that it's a legit attribute name
             context.getResult(); // this initializes the "result" to ModelType.UNDEFINED
+        }
+    }
+
+    private static void handleObjectAttributes(ModelNode model, AttributeDefinition attribute) {
+        if (attribute instanceof ObjectTypeAttributeDefinition) {
+            readNestedDefaults(model, (ObjectTypeAttributeDefinition) attribute);
+        } else if (attribute instanceof ObjectListAttributeDefinition) {
+            ObjectTypeAttributeDefinition valueType = ((ObjectListAttributeDefinition) attribute).getValueType();
+            for (int i = 0; i < model.asInt(); i++) {
+                readNestedDefaults(model.get(i), valueType);
+            }
+        } else if (attribute instanceof ObjectMapAttributeDefinition) {
+            ObjectTypeAttributeDefinition valueType = ((ObjectMapAttributeDefinition) attribute).getValueType();
+            for (String key : model.keys()) {
+                readNestedDefaults(model.get(key), valueType);
+            }
+        }
+    }
+
+    private static void readNestedDefaults(ModelNode model, ObjectTypeAttributeDefinition attribute) {
+        for (AttributeDefinition subAttribute : attribute.getValueTypes()) {
+            ModelNode defaultValue = subAttribute.getDefaultValue();
+            String subAttrName = subAttribute.getName();
+            if (defaultValue != null && !model.hasDefined(subAttrName)) {
+                model.get(subAttrName).set(defaultValue);
+            }
+
+            if (model.hasDefined(subAttrName)) {
+                handleObjectAttributes(model.get(subAttrName), subAttribute);
+            }
         }
     }
 

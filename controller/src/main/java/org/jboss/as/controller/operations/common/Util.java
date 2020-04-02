@@ -9,6 +9,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_DEFAULTS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -159,6 +160,12 @@ public class Util {
 
     public static ModelNode getReadAttributeOperation(final PathAddress address, String attributeName) {
         return createAttributeOperation(READ_ATTRIBUTE_OPERATION, address, attributeName);
+    }
+
+    public static ModelNode getReadAttributeOperation(final PathAddress address, String attributeName, boolean includeDefaults) {
+        ModelNode op = getReadAttributeOperation(address, attributeName);
+        op.get(INCLUDE_DEFAULTS).set(includeDefaults);
+        return op;
     }
 
     public static ModelNode getReadResourceDescriptionOperation(final PathAddress address) {

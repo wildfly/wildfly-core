@@ -99,7 +99,7 @@ abstract class AbstractCollectionHandler implements OperationStepHandler {
             }, OperationContext.Stage.MODEL, true);
 
             // 1. read current attribute value
-            ModelNode readAttributeOperation = Util.getReadAttributeOperation(address, useEnhancedSyntax ? attributeExpression : attributeName);
+            ModelNode readAttributeOperation = Util.getReadAttributeOperation(address, useEnhancedSyntax ? attributeExpression : attributeName, false);
             context.addStep(readResponse, readAttributeOperation, ReadAttributeHandler.INSTANCE, OperationContext.Stage.MODEL, true);
         } else {
             assert attributeAccess.getStorageType() == AttributeAccess.Storage.RUNTIME;
