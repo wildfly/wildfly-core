@@ -23,6 +23,8 @@
  */
 package org.jboss.as.test.integration.security.common;
 
+import static io.undertow.util.Headers.AUTHORIZATION;
+import static io.undertow.util.Headers.BASIC;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -58,15 +60,10 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.StatusLine;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -365,12 +362,10 @@ public class CoreUtils {
             if (entity != null)
                 EntityUtils.consume(entity);
 
-            CredentialsProvider credsProvider = new BasicCredentialsProvider();
-            credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort()), new UsernamePasswordCredentials(user, pass));
+            String rawHeader = user + ":" + pass;
+            httpGet.addHeader(AUTHORIZATION.toString(), BASIC + " " + Base64.getEncoder().encodeToString(rawHeader.getBytes(StandardCharsets.UTF_8)));
 
-            final HttpClientContext context = HttpClientContext.create();
-            context.setCredentialsProvider(credsProvider);
-            response = httpClient.execute(httpGet, context);
+            response = httpClient.execute(httpGet);
             statusCode = response.getStatusLine().getStatusCode();
             assertEquals("Unexpected status code returned after the authentication.", expectedStatusCode, statusCode);
             return EntityUtils.toString(response.getEntity());
