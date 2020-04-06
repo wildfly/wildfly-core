@@ -18,6 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY;
@@ -48,6 +50,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -265,6 +268,12 @@ class AuthenticationClientDefinitions {
                 AUTHENTICATION_CONFIGURATION_RUNTIME_CAPABILITY) {
 
             @Override
+            protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
+                super.populateModel(context, operation, resource);
+                handleCredentialReferenceUpdate(context, resource.getModel());
+            }
+
+            @Override
             protected ValueSupplier<AuthenticationConfiguration> getValueSupplier(
                     ServiceBuilder<AuthenticationConfiguration> serviceBuilder, OperationContext context, ModelNode model)
                     throws OperationFailedException {
@@ -388,6 +397,11 @@ class AuthenticationClientDefinitions {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
                 };
+            }
+
+            @Override
+            protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
+                rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, resource);
             }
 
             private InjectedValue<SecurityDomain> getSecurityDomain(ServiceBuilder<AuthenticationConfiguration> serviceBuilder, OperationContext context, String securityDomain) {

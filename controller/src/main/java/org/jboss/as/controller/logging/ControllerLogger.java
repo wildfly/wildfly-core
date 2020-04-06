@@ -3621,4 +3621,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 474, value = "No marker file found indicating that the server has been restarted following execution of the additional commands from the CLI script")
     void noRestartMarkerFile();
 
+    @Message(id = 475, value = "Value for attribute '%s' is invalid.")
+    OperationFailedException invalidAttributeValue(String attributeName);
 }

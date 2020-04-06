@@ -30,7 +30,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSLOG_HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.security.CredentialReference.applyCredentialReferenceUpdateToRuntime;
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.jboss.as.domain.management.audit.SyslogAuditLogHandlerService.SYSLOG_AUDIT_HANDLER;
+import static org.jboss.as.domain.management.security.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
+import static org.jboss.as.domain.management.security.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -374,6 +379,15 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         }
 
         @Override
+        protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                        ModelNode oldValue, Resource resource) throws OperationFailedException {
+            super.finishModelStage(context, operation, attributeName, newValue, oldValue, resource);
+            if (attributeName.equals(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) || attributeName.equals(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                handleCredentialReferenceUpdate(context, resource.getModel().get(attributeName), attributeName);
+            }
+        }
+
+        @Override
         protected boolean requiresRuntime(OperationContext context){
             return true;
         }
@@ -392,6 +406,8 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                 PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
                 addr = addr.subAddress(0, addr.size() - 1);
                 auditLogger.updateSyslogHandlerReconnectTimeout(Util.getNameFromAddress(addr), resolvedValue.asInt());
+            } else if (attributeName.equals(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) || attributeName.equals(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                return applyCredentialReferenceUpdateToRuntime(context, operation, resolvedValue, currentValue, attributeName);
             } else {
                 auditLogger.getUpdater().updateHandler(createHandler(pathManager, context, environmentReader));
             }
@@ -412,6 +428,8 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
                 PathAddress addr = PathAddress.pathAddress(operation.require(OP_ADDR));
                 addr = addr.subAddress(0, addr.size() - 1);
                 auditLogger.updateSyslogHandlerReconnectTimeout(Util.getNameFromAddress(addr), valueToRestore.asInt());
+            } else if (attributeName.equals(KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) || attributeName.equals(KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+                rollbackCredentialStoreUpdate(getAttributeDefinition(attributeName), context, valueToRevert);
             } else {
                 auditLogger.getUpdater().rollbackChanges();
             }
