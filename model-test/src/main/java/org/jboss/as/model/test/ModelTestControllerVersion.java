@@ -42,11 +42,11 @@ public enum ModelTestControllerVersion {
     EAP_6_3_0 ("7.4.0.Final-redhat-19", true, null, "6.3.0"),
     EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0", "6.4.0"), //EAP 6.4 is the earliest version we support for transformers
     EAP_6_4_7 ("7.5.7.Final-redhat-3", true, "7.5.0", "6.4.7"), //this one is special as it has model change in micro release
-    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", "2.1.0.Final", "7.0.0"),
-    EAP_7_1_0 ("7.1.0.GA-redhat-11", true, "11.0.0", "3.0.10.Final", "7.1.0"),
+    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", "2.1.2.Final-redhat-1", "7.0.0"),
+    EAP_7_1_0 ("7.1.0.GA-redhat-11", true, "11.0.0", "3.0.10.Final-redhat-1", "7.1.0"),
 
     // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
-    EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.1.Final", "7.2.0"),
+    EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.11.Final-redhat-00001", "7.2.0"),
     ;
 
     private final String mavenGavVersion;
