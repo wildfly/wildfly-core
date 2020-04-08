@@ -1,0 +1,24 @@
+name: Dependency Tree
+
+on:
+  pull_request:
+    # TODO figure out how to parameterise base-branch in the action and remove the branches
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR code
+        uses: kabir/dep-tree-diff-action@master
+        with:
+          org-and-repo: '$GITHUB_REPOSITORY'
+          base-branch: 'master'
+          pr-number: $(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          token: '100-TODO'
+          modules: 'servlet-feature-pack,feature-pack'
+          deps-ok-label: 'deps-ok'
+          deps-changed-label: 'deps-changed'
+          tool-change-mentions: '@wildfly/prod'
