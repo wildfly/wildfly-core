@@ -23,6 +23,7 @@ package org.jboss.as.subsystem.bridge.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -31,7 +32,6 @@ import java.io.ObjectOutputStream;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.subsystem.bridge.shared.ObjectSerializer;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -51,7 +51,7 @@ public class ObjectSerializerImpl implements ObjectSerializer {
             ((ModelNode)object).writeExternal(bout);
         } finally {
             bout.flush();
-            IoUtils.safeClose(bout);
+            safeClose(bout);
         }
         return bout.toByteArray();
     }
@@ -65,7 +65,7 @@ public class ObjectSerializerImpl implements ObjectSerializer {
             modelNode.readExternal(in);
             return modelNode;
         } finally {
-            IoUtils.safeClose(in);
+            safeClose(in);
         }
     }
 
@@ -89,8 +89,8 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         try {
             out.writeObject(object);
         } finally {
-            IoUtils.safeClose(out);
-            IoUtils.safeClose(bout);
+            safeClose(out);
+            safeClose(bout);
         }
         return bout.toByteArray();
     }
@@ -103,8 +103,8 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         try {
             read = in.readObject();
         } finally {
-            IoUtils.safeClose(in);
-            IoUtils.safeClose(bin);
+            safeClose(in);
+            safeClose(bin);
         }
         return read;
     }
@@ -116,8 +116,8 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         try {
             out.writeObject(object);
         } finally {
-            IoUtils.safeClose(out);
-            IoUtils.safeClose(bout);
+            safeClose(out);
+            safeClose(bout);
         }
         return bout.toByteArray();
     }
@@ -130,9 +130,19 @@ public class ObjectSerializerImpl implements ObjectSerializer {
         try {
             o = in.readObject();
         } finally {
-            IoUtils.safeClose(in);
-            IoUtils.safeClose(bin);
+            safeClose(in);
+            safeClose(bin);
         }
         return o;
+    }
+
+    private static void safeClose(final Closeable closeable) {
+        if(closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                //
+            }
+        }
     }
 }

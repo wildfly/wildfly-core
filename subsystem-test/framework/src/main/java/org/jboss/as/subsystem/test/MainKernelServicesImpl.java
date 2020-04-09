@@ -62,7 +62,6 @@ import org.jboss.as.server.mgmt.ManagementWorkerService;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -242,7 +241,11 @@ class MainKernelServicesImpl extends AbstractKernelServicesImpl {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            IoUtils.safeClose(in);
+            try {
+                in.close();
+            } catch (IOException e) {
+                //
+            }
         }
 
         String asVersion = (String)props.get(legacyModelVersion.toString());
