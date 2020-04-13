@@ -22,6 +22,9 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.as.controller.security.CredentialReference.applyCredentialReferenceUpdateToRuntime;
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.SECURITY_REALM;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -30,6 +33,8 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RestartParentWriteAttributeHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -53,6 +58,39 @@ public class SecurityRealmChildWriteAttributeHandler extends RestartParentWriteA
         for (AttributeDefinition attr : attributeDefinitions) {
             resourceRegistration.registerReadWriteAttribute(attr, null, this);
         }
+    }
+
+    @Override
+    protected void finishModelStage(OperationContext context, ModelNode operation, String attributeName, ModelNode newValue,
+                                    ModelNode oldValue, Resource resource) throws OperationFailedException {
+        super.finishModelStage(context, operation, attributeName, newValue, oldValue, resource);
+        if (attributeName.equals(CredentialReference.CREDENTIAL_REFERENCE) ||
+                attributeName.equals(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) ||
+                attributeName.equals(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+            handleCredentialReferenceUpdate(context, resource.getModel().get(attributeName), attributeName);
+        }
+    }
+
+    @Override
+    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue,
+                                           ModelNode currentValue, HandbackHolder<ModelNode> handbackHolder) throws OperationFailedException {
+        boolean requiresReload = false;
+        if (attributeName.equals(CredentialReference.CREDENTIAL_REFERENCE) ||
+                attributeName.equals(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) ||
+                attributeName.equals(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+            requiresReload = applyCredentialReferenceUpdateToRuntime(context, operation, resolvedValue, currentValue, attributeName);
+        }
+        return super.applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handbackHolder) || requiresReload;
+    }
+
+    @Override
+    protected void revertUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode valueToRestore, ModelNode resolvedValue, ModelNode invalidatedParentModel) throws OperationFailedException {
+        if (attributeName.equals(CredentialReference.CREDENTIAL_REFERENCE) ||
+                attributeName.equals(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME) ||
+                attributeName.equals(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
+            rollbackCredentialStoreUpdate(getAttributeDefinition(attributeName), context, resolvedValue);
+        }
+        super.revertUpdateToRuntime(context, operation, attributeName, valueToRestore, resolvedValue, invalidatedParentModel);
     }
 
     @Override

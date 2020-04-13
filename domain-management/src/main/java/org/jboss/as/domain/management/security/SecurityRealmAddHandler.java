@@ -41,6 +41,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_IS_DN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERNAME_TO_DN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USERS;
+import static org.jboss.as.controller.security.CredentialReference.KEY_DELIMITER;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_ACCESS_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.BY_SEARCH_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
@@ -726,11 +727,12 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             }
             ExceptionSupplier<CredentialSource, Exception> keyCredentialSourceSupplier = null;
             ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier = null;
+            final String keySuffix = SERVER_IDENTITY + KEY_DELIMITER + SSL;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             serviceBuilder.setInstance(new FileKeyManagerService(kmsConsumer, pathManagerSupplier, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName));
         }
@@ -747,13 +749,14 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         ModelNode keystorePasswordNode = KeystoreAttributes.KEYSTORE_PASSWORD.resolveModelAttribute(context, ssl);
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
         final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
+        String keySuffix = AUTHENTICATION + KEY_DELIMITER + TRUSTSTORE;
 
         if (!JKS.equalsIgnoreCase(provider)) {
             serviceBuilder = serviceTarget.addService(serviceName);
             final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             serviceBuilder.setInstance(new ProviderTrustManagerService(trustManagersConsumer, credentialSourceSupplier, provider, keystorePassword));
         } else {
@@ -770,7 +773,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             }
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder);
+                credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             serviceBuilder.setInstance(new FileTrustManagerService(trustManagersConsumer, pathManagerSupplier, credentialSourceSupplier, provider, path, relativeTo, keystorePassword));
         }
@@ -788,7 +791,8 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         final Consumer<CallbackHandlerFactory> chfConsumer = builder.provides(secretServiceName);
         ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-            credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, builder);
+            String keySuffix = SERVER_IDENTITY + KEY_DELIMITER + SECRET;
+            credentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, SecretServerIdentityResourceDefinition.CREDENTIAL_REFERENCE, secret, builder, keySuffix);
         }
         SecretIdentityService sis;
         if (secret.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
@@ -890,7 +894,8 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             // Don't use the value from property as it is a clone and does not update the returned users ModelNode.
             ModelNode user = users.get(USER, property.getName());
             if (user.hasDefined(CredentialReference.CREDENTIAL_REFERENCE)) {
-                suppliers.put(property.getName(), CredentialReference.getCredentialSourceSupplier(context, UserResourceDefinition.CREDENTIAL_REFERENCE, user, serviceBuilder));
+                String keySuffix = AUTHENTICATION + KEY_DELIMITER + USERS + KEY_DELIMITER + USER + KEY_DELIMITER + property.getName();
+                suppliers.put(property.getName(), CredentialReference.getCredentialSourceSupplier(context, UserResourceDefinition.CREDENTIAL_REFERENCE, user, serviceBuilder, keySuffix));
             }
         }
         return suppliers;

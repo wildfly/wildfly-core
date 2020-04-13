@@ -23,11 +23,14 @@
 package org.jboss.as.domain.management.connections.ldap;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
+import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.ALWAYS_SEND_CLIENT_CERT;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.HANDLES_REFERRALS_FOR;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.INITIAL_CONTEXT_FACTORY;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.REFERRALS;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.SEARCH_CREDENTIAL;
+import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.SEARCH_DN;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.SECURITY_REALM;
 import static org.jboss.as.domain.management.connections.ldap.LdapConnectionResourceDefinition.URL;
@@ -46,6 +49,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.connections.ldap.LdapConnectionManagerService.Config;
@@ -80,6 +84,12 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
         }
     }
 
+    protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws  OperationFailedException {
+        super.populateModel(context, operation, resource);
+        final ModelNode model = resource.getModel();
+        handleCredentialReferenceUpdate(context, model.get(SEARCH_CREDENTIAL_REFERENCE.getName()), SEARCH_CREDENTIAL_REFERENCE.getName());
+    }
+
     @Override
     protected boolean requiresRuntime(OperationContext context) {
         return true;
@@ -112,6 +122,11 @@ public class LdapConnectionAddHandler extends AbstractAddStepHandler {
         updateRuntime(context, model, connectionManagerService);
         sb.setInstance(connectionManagerService);
         sb.install();
+    }
+
+    @Override
+    protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
+        rollbackCredentialStoreUpdate(LdapConnectionResourceDefinition.SEARCH_CREDENTIAL_REFERENCE, context, resource);
     }
 
 
