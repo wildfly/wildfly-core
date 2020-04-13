@@ -1330,11 +1330,11 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                     public void handleNotification(Notification notification, Object handback) {
                         ClassLoader previous = null;
                         try {
-                            previous = Thread.currentThread().getContextClassLoader();
-                            Thread.currentThread().setContextClassLoader(listener.getClass().getClassLoader());
+                            previous = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass().getClassLoader());
                             listener.handleNotification(notification, handback);
                         } finally {
-                            Thread.currentThread().setContextClassLoader(previous);
+                            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(previous);
                         }
                     }
                 };
