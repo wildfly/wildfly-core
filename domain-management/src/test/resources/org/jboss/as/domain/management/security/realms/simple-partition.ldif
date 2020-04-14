@@ -47,6 +47,30 @@ uid: user_two
 departmentNumber: 2
 userPassword: two_password
 
+dn: uid=User/Name,dc=simple,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: uidObject
+objectClass: person
+objectClass: organizationalPerson
+cn: User Name With Slash
+sn: User Name With Slash
+uid: User/Name
+departmentNumber: 1
+userPassword: user_/password
+
+dn: uid=User\\Name,dc=simple,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: uidObject
+objectClass: person
+objectClass: organizationalPerson
+cn: User Name With Back Slash
+sn: User Name With Back Slash
+uid: User\\Name
+departmentNumber: 1
+userPassword: user_\password
+
 dn: uid=ReferralUserThree,dc=simple,dc=wildfly,dc=org
 objectClass: top
 objectClass: referral
