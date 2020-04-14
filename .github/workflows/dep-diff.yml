@@ -12,7 +12,7 @@ jobs:
       - name: Check versions
         uses: wildfly/dep-tree-diff-action@debug
         with:
-          token: '${{ secrets.GITHUB_TOKEN }}'
+          token: '${{ secrets.WILDFLY_LABELLER_TOKEN }}'
           modules: 'core-feature-pack'
           deps-ok-label: 'deps-ok'
           deps-changed-label: 'deps-changed'
