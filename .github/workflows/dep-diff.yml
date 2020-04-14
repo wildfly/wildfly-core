@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Check versions
-        uses: wildfly/dep-tree-diff-action@v1
+        uses: wildfly/dep-tree-diff-action@debug
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
           modules: 'core-feature-pack'
