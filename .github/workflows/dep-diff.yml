@@ -12,8 +12,8 @@ jobs:
       - name: Check versions
         uses: wildfly/dep-tree-diff-action@debug
         with:
-          token: '${{ secrets.WILDFLY_LABELLER_TOKEN }}'
-          modules: 'core-feature-pack'
-          deps-ok-label: 'deps-ok'
-          deps-changed-label: 'deps-changed'
-          tool-change-mentions: '@wildfly/prod'
+          token: ${{ secrets.WILDFLY_LABELLER_TOKEN }}
+          modules: core-feature-pack
+          deps-ok-label: deps-ok
+          deps-changed-label: deps-changed
+          tool-change-mentions: "@wildfly/prod"
