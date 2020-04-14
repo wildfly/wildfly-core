@@ -1,0 +1,19 @@
+name: Dependency Tree
+
+on:
+  pull_request:
+
+jobs:
+  check:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check versions
+        uses: wildfly/dep-tree-diff-action@v1
+        with:
+          token: '${{ secrets.GITHUB_TOKEN }}'
+          modules: 'core-feature-pack'
+          deps-ok-label: 'deps-ok'
+          deps-changed-label: 'deps-changed'
+          tool-change-mentions: '@wildfly/prod'
