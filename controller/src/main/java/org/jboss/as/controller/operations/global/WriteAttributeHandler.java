@@ -31,6 +31,7 @@ import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.ex
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.NAME;
 import static org.jboss.as.controller.operations.global.GlobalOperationAttributes.VALUE;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -170,7 +171,8 @@ public class WriteAttributeHandler implements OperationStepHandler {
     private void doExecuteInternal(OperationContext context, ModelNode operation, AttributeAccess attributeAccess, String attributeName, ModelNode currentValue, boolean useEnhancedSyntax, String attributeExpression) throws OperationFailedException {
         if (useEnhancedSyntax){
             if (attributeAccess.getStorageType() == AttributeAccess.Storage.CONFIGURATION) {
-                operation = getEnhancedSyntaxResolvedOperation(operation, currentValue, attributeName, attributeExpression);
+                operation = getEnhancedSyntaxResolvedOperation(operation, currentValue, attributeName, attributeExpression,
+                        attributeAccess.getAttributeDefinition());
             } else {
                 assert attributeAccess.getStorageType() == AttributeAccess.Storage.RUNTIME;
 
@@ -181,7 +183,8 @@ public class WriteAttributeHandler implements OperationStepHandler {
                 operation = resolvedOperation;
 
                 context.addStep((context1, operation1) -> {
-                    ModelNode resolved = getEnhancedSyntaxResolvedOperation(originalOperation, currentValue, attributeName, attributeExpression);
+                    ModelNode resolved = getEnhancedSyntaxResolvedOperation(originalOperation, currentValue, attributeName,
+                            attributeExpression, attributeAccess.getAttributeDefinition());
                     resolvedOperation.get(ModelDescriptionConstants.NAME).set(resolved.get(ModelDescriptionConstants.NAME));
                     resolvedOperation.get(ModelDescriptionConstants.VALUE).set(resolved.get(ModelDescriptionConstants.VALUE));
                 }, OperationContext.Stage.RUNTIME);
@@ -209,12 +212,14 @@ public class WriteAttributeHandler implements OperationStepHandler {
         context.emit(notification);
     }
 
-    private ModelNode getEnhancedSyntaxResolvedOperation(ModelNode originalOperation, ModelNode currentModel, String attributeName, String attributeExpression) throws OperationFailedException {
+    private ModelNode getEnhancedSyntaxResolvedOperation(ModelNode originalOperation, ModelNode currentModel,
+                                                         String attributeName, String attributeExpression,
+                                                         AttributeDefinition attributeDefinition) throws OperationFailedException {
         ModelNode writeOp = originalOperation.clone();
         ModelNode diffValue =  originalOperation.get(ModelDescriptionConstants.VALUE);
         ModelNode old = new ModelNode();
         old.get(attributeName).set(currentModel);
-        ModelNode fullValue = EnhancedSyntaxSupport.updateWithEnhancedSyntax(attributeExpression, old, diffValue);
+        ModelNode fullValue = EnhancedSyntaxSupport.updateWithEnhancedSyntax(attributeExpression, old, diffValue, attributeDefinition);
         writeOp.get(ModelDescriptionConstants.NAME).set(attributeName);
         writeOp.get(ModelDescriptionConstants.VALUE).set(fullValue.get(attributeName));
         return writeOp;
