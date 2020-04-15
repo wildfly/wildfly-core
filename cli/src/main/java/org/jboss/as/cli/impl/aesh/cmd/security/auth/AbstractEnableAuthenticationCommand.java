@@ -15,6 +15,24 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security.auth;
 
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_EXPOSED_REALM;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_FILE_SYSTEM_REALM_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_GROUP_PROPERTIES_FILE;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_REALM_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_AUTH_FACTORY_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SECURITY_DOMAIN_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SECURITY_REALM_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NO_RELOAD;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_PLAIN_TEXT;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_PROPERTIES_REALM_NAME;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_RELATIVE_TO;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_ROLES;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_SUPER_USER;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_USER_PROPERTIES_FILE;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_USER_ROLE_DECODER;
+import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.formatOption;
+
 import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthFactorySpec;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,15 +53,6 @@ import org.jboss.as.cli.impl.aesh.cmd.security.model.PropertiesRealmConfiguratio
 import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthSecurityBuilder;
 import org.jboss.as.cli.impl.aesh.cmd.RelativeFile;
 import org.jboss.as.cli.impl.aesh.cmd.RelativeFilePathConverter;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_GROUP_PROPERTIES_FILE;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_AUTH_FACTORY_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SECURITY_DOMAIN_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NO_RELOAD;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_RELATIVE_TO;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_SUPER_USER;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_USER_PROPERTIES_FILE;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_USER_ROLE_DECODER;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.formatOption;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthFactory;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.AuthMechanism;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.ElytronUtil;
@@ -53,14 +62,7 @@ import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.DMRCommand;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_NEW_SECURITY_REALM_NAME;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.ExistingPropertiesRealmConfiguration;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_FILE_SYSTEM_REALM_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_PROPERTIES_REALM_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_EXPOSED_REALM;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_KEY_STORE_REALM_NAME;
-import static org.jboss.as.cli.impl.aesh.cmd.security.SecurityCommand.OPT_ROLES;
 import org.jboss.as.cli.impl.aesh.cmd.security.model.ExistingKeyStoreConfiguration;
 
 /**
@@ -96,6 +98,9 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
 
     @Option(name = OPT_RELATIVE_TO, activator = OptionActivators.RelativeToActivator.class)
     String relativeTo;
+
+    @Option(name = OPT_PLAIN_TEXT, hasValue = false, activator = OptionActivators.PlainTextActivator.class)
+    boolean plaintext;
 
     @Option(name = OPT_NO_RELOAD, hasValue = false)
     boolean noReload;
@@ -257,7 +262,8 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
     }
 
     protected static MechanismConfiguration buildUserPasswordConfiguration(RelativeFile userPropertiesFile,
-            String fileSystemRealm, String userRoleDecoder, String exposedRealmName, RelativeFile groupPropertiesFile, String propertiesRealmName, String relativeTo) throws CommandException, IOException {
+            String fileSystemRealm, String userRoleDecoder, String exposedRealmName, RelativeFile groupPropertiesFile, String propertiesRealmName,
+            String relativeTo, boolean plaintext) throws CommandException, IOException {
         if (userPropertiesFile == null && fileSystemRealm == null && propertiesRealmName == null) {
             throw new CommandException("A properties file or propertie-realm name or a filesystem-realm name must be provided");
         }
@@ -281,7 +287,8 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
             PropertiesRealmConfiguration config = new PropertiesRealmConfiguration(exposedRealmName,
                     userPropertiesFile,
                     groupPropertiesFile,
-                    relativeTo);
+                    relativeTo,
+                    plaintext);
             return config;
         } else if (propertiesRealmName != null) {
             if (exposedRealmName == null) {
@@ -309,7 +316,7 @@ public abstract class AbstractEnableAuthenticationCommand implements Command<CLI
         if (ElytronUtil.getMechanismsWithRealm().contains(getMechanism())) {
             MechanismConfiguration config = buildUserPasswordConfiguration(userPropertiesFile,
                     fileSystemRealmName, userRoleDecoder, exposedRealm,
-                    groupPropertiesFile, propertiesRealmName, relativeTo);
+                    groupPropertiesFile, propertiesRealmName, relativeTo, plaintext);
             mec = new AuthMechanism(getMechanism(), config);
         } else if (ElytronUtil.getMechanismsWithTrustStore().contains(getMechanism())) {
             MechanismConfiguration config = buildExternalConfiguration(context, keyStoreName, keyStoreRealmName, roles);
