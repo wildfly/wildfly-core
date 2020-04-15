@@ -805,4 +805,23 @@ public class EnhancedSyntaxTestCase extends AbstractControllerTestBase {
         Assert.assertEquals("map-value2", result.get("map-key2").asString());
     }
 
+    @Test
+    public void testBadIndex() throws Exception {
+        //test set
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[zero]");
+        op.get("value").set(ModelNode.ZERO);
+        ModelNode resp = executeCheckForFailure(op);
+        Assert.assertTrue(resp.toString(), resp.toString().contains("WFLYCTL0393"));
+    }
+
+    @Test
+    public void testInvalidDot() throws Exception {
+        //test set
+        ModelNode op = createOperation("write-attribute", TEST_ADDRESS);
+        op.get("name").set(OBJECT_LIST.getName() + "[1.1]");
+        op.get("value").set(ModelNode.ZERO);
+        ModelNode resp = executeCheckForFailure(op);
+        Assert.assertTrue(resp.toString(), resp.toString().contains("WFLYCTL0393"));
+    }
 }
