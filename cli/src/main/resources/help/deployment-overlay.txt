@@ -13,8 +13,8 @@ DESCRIPTION
   or even replacing jar libraries with different versions.
 
   The command supports the following actions (action is always the first
-  argument of the command): add, link, list-content, list-links,
-  list-content, list-links, redeploy-affected, remove, upload.
+  argument of the command): add, link, list-content, list-links, 
+  redeploy-affected, remove, upload.
 
   NOTE: When you modify or create an overlay it will not affect existing deployments, 
         they must be redeployed in order to take effect.
