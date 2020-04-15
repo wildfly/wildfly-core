@@ -102,8 +102,8 @@ public interface AttributeConverter {
                 if (operationName.equals(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION)) {
                     this.convertResourceAttribute(address, attributeName, attributeValue, context);
                 } else {
-                    ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
-                    OperationDefinition definition = registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName).getOperationDefinition();
+                    ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(PathAddress.EMPTY_ADDRESS);
+                    OperationDefinition definition = registration.getOperationEntry(address, operationName).getOperationDefinition();
                     for (AttributeDefinition parameter : definition.getParameters()) {
                         if (parameter.getName().equals(attributeName)) {
                             attributeValue.set(parameter.getDefaultValue());
@@ -117,8 +117,8 @@ public interface AttributeConverter {
         @Override
         public void convertResourceAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
             if (!attributeValue.isDefined()) {
-                ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
-                AttributeDefinition definition = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
+                ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(PathAddress.EMPTY_ADDRESS);
+                AttributeDefinition definition = registration.getAttributeAccess(address, attributeName).getAttributeDefinition();
                 attributeValue.set(definition.getDefaultValue());
             }
         }
