@@ -91,7 +91,6 @@ import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
-import org.jboss.as.model.test.EAPRepositoryReachableUtil;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestBootOperationsBuilder;
 import org.jboss.as.model.test.ModelTestControllerVersion;
@@ -537,10 +536,6 @@ final class SubsystemTestDelegate {
                 valid = System.getProperties().containsKey(TEST_OLD_LEGACY);
             }
             Assume.assumeTrue("No legacy controller to test against", valid);
-            //Ignore this test if it is eap
-            if (version.isEap()) {
-                Assume.assumeTrue(EAPRepositoryReachableUtil.isReachable());
-            }
 
             bootOperationBuilder.validateNotAlreadyBuilt();
             if (legacyControllerInitializers.containsKey(modelVersion)) {
