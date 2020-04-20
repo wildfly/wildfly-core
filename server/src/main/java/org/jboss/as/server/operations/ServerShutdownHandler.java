@@ -54,6 +54,7 @@ import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.suspend.OperationListener;
 import org.jboss.as.server.suspend.SuspendController;
+import org.jboss.as.server.suspend.SuspendController.State;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
@@ -119,32 +120,37 @@ public class ServerShutdownHandler implements OperationStepHandler {
                             final ServiceRegistry registry = context.getServiceRegistry(false);
                             final ServiceController<SuspendController> suspendControllerServiceController = (ServiceController<SuspendController>) registry.getRequiredService(JBOSS_SUSPEND_CONTROLLER);
                             final SuspendController suspendController = suspendControllerServiceController.getValue();
-                            OperationListener listener = new OperationListener() {
-                                @Override
-                                public void suspendStarted() {
+                            if (suspendController.getState() == State.SUSPENDED) {
+                                // WFCORE-4935 if server is already in suspend, don't register any listener, just shut it down
+                                shutdown.shutdown();
+                            } else {
+                                OperationListener listener = new OperationListener() {
+                                    @Override
+                                    public void suspendStarted() {
 
-                                }
+                                    }
 
-                                @Override
-                                public void complete() {
-                                    suspendController.removeListener(this);
-                                    shutdown.shutdown();
-                                }
+                                    @Override
+                                    public void complete() {
+                                        suspendController.removeListener(this);
+                                        shutdown.shutdown();
+                                    }
 
-                                @Override
-                                public void cancelled() {
-                                    suspendController.removeListener(this);
-                                    shutdown.cancel();
-                                }
+                                    @Override
+                                    public void cancelled() {
+                                        suspendController.removeListener(this);
+                                        shutdown.cancel();
+                                    }
 
-                                @Override
-                                public void timeout() {
-                                    suspendController.removeListener(this);
-                                    shutdown.shutdown();
-                                }
-                            };
-                            suspendController.addListener(listener);
-                            suspendController.suspend(timeout > 0 ?  timeout * 1000 : timeout);
+                                    @Override
+                                    public void timeout() {
+                                        suspendController.removeListener(this);
+                                        shutdown.shutdown();
+                                    }
+                                };
+                                suspendController.addListener(listener);
+                                suspendController.suspend(timeout > 0 ? timeout * 1000 : timeout);
+                            }
                         }
                     }
                 });
