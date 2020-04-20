@@ -949,7 +949,7 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
                 List<String> res = Arrays.asList("BASIC", "CLIENT_CERT",
-                        "DIGEST", "DIGEST-SHA-256", "FORM");
+                        "DIGEST", "DIGEST-SHA-256", "EXTERNAL", "FORM");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);
                 assertEquals(candidates.toString(), res, candidates);
