@@ -115,7 +115,7 @@
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
         <version.org.wildfly.galleon-plugins>4.2.4.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
-        <version.org.wildfly.plugin>1.2.1.Final</version.org.wildfly.plugin>
+        <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.0.0.Final</version.org.wildfly.plugins>
@@ -185,7 +185,7 @@
         <version.org.jboss.logging.jboss-logging>3.4.1.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.logging.jboss-logging-tools>2.2.1.Final</version.org.jboss.logging.jboss-logging-tools>
         <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
-        <version.org.jboss.logmanager.jboss-logmanager>2.1.14.Final</version.org.jboss.logmanager.jboss-logmanager>
+        <version.org.jboss.logmanager.jboss-logmanager>2.1.15.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>2.0.9.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.10.0.Final</version.org.jboss.modules.jboss-modules>
@@ -212,7 +212,7 @@
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
-        <version.org.wildfly.discovery>1.2.0.Final</version.org.wildfly.discovery>
+        <version.org.wildfly.discovery>1.2.1.Final</version.org.wildfly.discovery>
         <version.org.wildfly.legacy.test>4.0.1.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>1.0.10.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>

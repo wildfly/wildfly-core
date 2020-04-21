@@ -115,14 +115,25 @@ class EnhancedSyntaxSupport {
         return result;
     }
 
-    static ModelNode updateWithEnhancedSyntax(final String attributeExpression, final ModelNode oldValue, final ModelNode newValue) throws OperationFailedException {
+    static ModelNode updateWithEnhancedSyntax(final String attributeExpression, final ModelNode oldValue, final ModelNode newValue,
+                                              AttributeDefinition attributeDefinition) throws OperationFailedException {
         assert attributeExpression != null;
         ModelNode result = oldValue;
-        for (String part : attributeExpression.split("\\.")) {
-            Matcher matcher = BRACKETS_PATTERN.matcher(part);
+        String[] parts = attributeExpression.split("\\.");
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            Matcher matcher =  BRACKETS_PATTERN.matcher(part);
             if (matcher.matches()) {
+                if (attributeDefinition != null && attributeDefinition.getType() != ModelType.LIST) {
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionList(attributeExpression);
+                }
                 String attribute = matcher.group(1);
-                int index = Integer.parseInt(matcher.group(2));
+                int index;
+                try {
+                    index = Integer.parseInt(matcher.group(2));
+                } catch (NumberFormatException e) {
+                    throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                }
                 ModelNode list = attribute.isEmpty() ? result : result.get(attribute); // in case we want to additionally resolve already loaded attribute, this usually applies to attributes that have custom read handlers
                 if (index < 0) {
                     result = list.add();
@@ -131,11 +142,48 @@ class EnhancedSyntaxSupport {
                 } else {
                     throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpressionList(attributeExpression);
                 }
+                if (i < parts.length - 1) {
+                    // More parts implies this is a list of objects, so if the AD type allows it
+                    // track the AD of the value type in order to validate later parts
+                    attributeDefinition = attributeDefinition instanceof ObjectListAttributeDefinition
+                            ? ((ObjectListAttributeDefinition) attributeDefinition).getValueType()
+                            : null; // oh well, AD impl won't let us validate further
+                }
+            } else if (attributeDefinition != null && !part.equals(attributeDefinition.getName())) {
+                // Unknown part
+                throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+            } else if (attributeDefinition == null && part.contains("[")) {
+                // A valid attribute or field name wouldn't include an unmatched '['.
+                throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
             } else {
                 if (!result.isDefined() || result.getType() == ModelType.OBJECT) {
                     result = result.get(part);
                 } else {
                     throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                }
+            }
+
+            if (i < parts.length - 1) {
+                // Try to find the AD for the next part to use in validating it
+                if (attributeDefinition instanceof ObjectTypeAttributeDefinition) {
+                    String nextPart = parts[i + 1];
+                    int bracket = nextPart.indexOf('[');
+                    nextPart = bracket < 0 ? nextPart : nextPart.substring(0, bracket);
+                    // See if the next part matches a field
+                    AttributeDefinition[] fields = ((ObjectTypeAttributeDefinition) attributeDefinition).getValueTypes();
+                    attributeDefinition = null;
+                    for (AttributeDefinition field : fields) {
+                        if (field.getName().equals(nextPart)) {
+                            attributeDefinition = field;
+                            break;
+                        }
+                    }
+                    if (attributeDefinition == null) {
+                        throw ControllerLogger.MGMT_OP_LOGGER.couldNotResolveExpression(attributeExpression);
+                    }
+                } else {
+                    // oh well, AD impl won't let us validate further
+                    attributeDefinition = null;
                 }
             }
         }
