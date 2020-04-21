@@ -25,10 +25,13 @@ import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.MBeanRegistration;
 import javax.management.MBeanServer;
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+import javax.management.NotificationFilterSupport;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import javax.management.RuntimeOperationsException;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -46,7 +49,11 @@ import org.jboss.msc.service.ServiceController;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -105,6 +112,33 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
         reservedDomainTest("jboss.as.expr:bean=test-null", NAME);
     }
 
+    @Test
+    public void testNotificationTccl() throws Exception {
+        ObjectName objName = createName("test.domain:bean=test-tccl");
+        server.registerMBean(new TestBean(objName), objName);
+        ClassLoader oldTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        ClassLoader newOutTccl = new URLClassLoader(new URL[]{}, oldTccl); // creating a new class loader here
+        WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(newOutTccl);
+        try {
+            final AtomicBoolean differ = new AtomicBoolean(false);
+            NotificationFilterSupport filter = new NotificationFilterSupport();
+            filter.enableType("testtccl");
+            server.addNotificationListener(objName, new NotificationListener() {
+                @Override
+                public void handleNotification(Notification notification, Object handback) {
+                    Assert.assertEquals("callback", handback.toString());
+                    ClassLoader newInTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                    Assert.assertNotEquals(newInTccl, newOutTccl);
+                    differ.set(true);
+                }
+            }, filter, "callback");
+            server.invoke(objName, "proceed", null, null);
+            Assert.assertTrue(differ.get());
+        } finally {
+            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(oldTccl);
+        }
+    }
+
     private void reservedDomainTest(String name, ObjectName originalObjectName) throws Exception {
         ObjectName objName = createName(name);
         assertNoMBean(objName);
@@ -137,10 +171,10 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
     }
 
     public interface TestBeanMBean {
-
+        void proceed();
     }
 
-    public static class TestBean implements TestBeanMBean, MBeanRegistration {
+    public static class TestBean extends NotificationBroadcasterSupport implements TestBeanMBean, MBeanRegistration {
 
         private final ObjectName objName;
 
@@ -165,6 +199,10 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
         public void postDeregister() {
         }
 
+        @Override
+        public void proceed() {
+            sendNotification(new Notification("testtccl", 1, 1));
+        }
     }
 
     public interface TestBean2MBean {

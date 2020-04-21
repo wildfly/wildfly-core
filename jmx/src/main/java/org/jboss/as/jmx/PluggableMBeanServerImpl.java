@@ -53,6 +53,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -66,6 +67,7 @@ import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
 import javax.management.ListenerNotFoundException;
+import java.util.Map;
 import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
@@ -74,6 +76,7 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerDelegate;
 import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.ObjectInstance;
@@ -1296,6 +1299,8 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
 
         private final MBeanServer delegate;
 
+        private final Map<NotificationListener, NotificationListener> listeners = new HashMap<>();
+
         public TcclMBeanServer(MBeanServer delegate) {
             this.delegate = delegate;
         }
@@ -1320,7 +1325,21 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 throws InstanceNotFoundException {
             ClassLoader old = pushClassLoader(name);
             try {
-                delegate.addNotificationListener(name, listener, filter, handback);
+                NotificationListener notificationListener = new NotificationListener() {
+                    @Override
+                    public void handleNotification(Notification notification, Object handback) {
+                        ClassLoader previous = null;
+                        try {
+                            previous = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass().getClassLoader());
+                            listener.handleNotification(notification, handback);
+                        } finally {
+                            WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(previous);
+                        }
+                    }
+                };
+                listeners.put(listener, notificationListener);
+                delegate.addNotificationListener(name, notificationListener, filter, handback);
             } finally {
                 resetClassLoader(old);
             }
@@ -1503,7 +1522,12 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 throws InstanceNotFoundException, ListenerNotFoundException {
             ClassLoader old = pushClassLoader(name);
             try {
-                delegate.removeNotificationListener(name, listener, filter, handback);
+                if (listeners.containsKey(listener)) {
+                    delegate.removeNotificationListener(name, listeners.get(listener), filter, handback);
+                    listeners.remove(listener);
+                } else {
+                    delegate.removeNotificationListener(name, listener, filter, handback);
+                }
             } finally {
                 resetClassLoader(old);
             }
@@ -1513,7 +1537,12 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
                 ListenerNotFoundException {
             ClassLoader old = pushClassLoader(name);
             try {
-                delegate.removeNotificationListener(name, listener);
+                if (listeners.containsKey(listener)) {
+                    delegate.removeNotificationListener(name, listeners.get(listener));
+                    listeners.remove(listener);
+                } else {
+                    delegate.removeNotificationListener(name, listener);
+                }
             } finally {
                 resetClassLoader(old);
             }
