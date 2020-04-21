@@ -22,7 +22,7 @@ import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.OperationContext;
 
 /**
- * Extends the {@link AbstractRuntimeOnlyHandler} only {@linkplain #requiresRuntime(OperationContext) requring the runtime step }
+ * Extends the {@link AbstractRuntimeOnlyHandler} only {@linkplain #requiresRuntime(OperationContext) requiring the runtime step }
  * if {@link #isServerOrHostController(OperationContext)} returns {@code true}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
