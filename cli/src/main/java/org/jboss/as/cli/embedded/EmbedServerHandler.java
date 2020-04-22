@@ -34,6 +34,7 @@ import org.jboss.as.cli.CliEventListener;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
@@ -42,6 +43,8 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
@@ -241,13 +244,24 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
             serverReference.set(new EmbeddedProcessLaunch(server, restorer, false));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(server.getModelControllerClient(), contextSelector);
             if (bootTimeout == null || bootTimeout > 0) {
+                // Poll for server state. Alternative would be to get ControlledProcessStateService
+                // and do reflection stuff to read the state and register for change notifications
                 long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
-                String status;
-
+                String status = "starting";
+                final ModelNode getStateOp = new ModelNode();
+                getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                getStateOp.get(ClientConstants.NAME).set("server-state");
                 do {
-                    status = server.getProcessState();
+                    try {
+                        final ModelNode response = mcc.execute(getStateOp);
+                        if (Util.isSuccess(response)) {
+                            status = response.get(ClientConstants.RESULT).asString();
+                        }
+                    } catch (Exception e) {
+                        // ignore and try again
+                    }
 
-                    if (status == null || "starting".equals(status)) {
+                    if ("starting".equals(status)) {
                         try {
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
@@ -259,7 +273,7 @@ class EmbedServerHandler extends CommandHandlerWithHelp {
                     }
                 } while (System.nanoTime() < expired);
 
-                if (status == null || "starting".equals(status)) {
+                if ("starting".equals(status)) {
                     assert bootTimeout != null; // we'll assume the loop didn't run for decades
                     // Stop server and restore environment
                     StopEmbeddedServerHandler.cleanup(serverReference);

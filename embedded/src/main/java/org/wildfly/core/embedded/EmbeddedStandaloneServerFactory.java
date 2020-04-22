@@ -215,7 +215,7 @@ public class EmbeddedStandaloneServerFactory {
         private final ModuleLoader moduleLoader;
         private final ClassLoader embeddedModuleCL;
         private ServiceContainer serviceContainer;
-        private volatile ControlledProcessState.State currentProcessState;
+        private ControlledProcessState.State currentProcessState;
         private ModelControllerClient modelControllerClient;
         private ExecutorService executorService;
         private ProcessStateNotifier processStateNotifier;
@@ -232,7 +232,7 @@ public class EmbeddedStandaloneServerFactory {
                 public void propertyChange(PropertyChangeEvent evt) {
                     if ("currentState".equals(evt.getPropertyName())) {
                         ControlledProcessState.State newState = (ControlledProcessState.State) evt.getNewValue();
-                        establishModelControllerClient(newState, true);
+                        establishModelControllerClient(newState, false);
                     }
                 }
             };
@@ -341,10 +341,9 @@ public class EmbeddedStandaloneServerFactory {
 
         @Override
         public String getProcessState() {
-            if (currentProcessState == null) {
-                return null;
-            }
-            return currentProcessState.toString();
+            // The access to the internal process state is unsupported for the standalone embedded server, you can use a
+            // management operation to query the current server process state instead.
+            throw new UnsupportedOperationException();
         }
 
         private void exit() {

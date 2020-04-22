@@ -22,6 +22,7 @@
 
 package org.wildfly.core.embedded;
 
+import java.beans.PropertyChangeListener;
 import java.util.concurrent.CountDownLatch;
 
 import org.jboss.as.controller.ControlledProcessState;
@@ -56,7 +57,7 @@ public class EmbeddedHostControllerBootstrap {
         this.futureContainer = futureContainer;
     }
 
-    public FutureServiceContainer bootstrap() throws Exception {
+    public FutureServiceContainer bootstrap(PropertyChangeListener processStateListener) throws Exception {
         try {
             final HostRunningModeControl runningModeControl = environment.getRunningModeControl();
             final ControlledProcessState processState = new ControlledProcessState(true);
@@ -64,6 +65,7 @@ public class EmbeddedHostControllerBootstrap {
             ServiceTarget target = serviceContainer.subTarget();
 
             final ProcessStateNotifier processStateNotifier = ControlledProcessStateService.addService(target, processState).getValue();
+            processStateNotifier.addPropertyChangeListener(processStateListener);
             RunningStateJmx.registerMBean(processStateNotifier, null, runningModeControl, false);
             final HostControllerService hcs = new HostControllerService(environment, runningModeControl, authCode, processState, futureContainer);
             target.addService(HostControllerService.HC_SERVICE_NAME, hcs).install();
