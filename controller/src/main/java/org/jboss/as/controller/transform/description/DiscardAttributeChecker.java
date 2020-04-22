@@ -181,8 +181,8 @@ public interface DiscardAttributeChecker {
             if (operationName.equals(ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION)) {
                 return this.isResourceAttributeDiscardable(address, attributeName, attributeValue, context);
             }
-            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
-            OperationDefinition definition = registration.getOperationEntry(PathAddress.EMPTY_ADDRESS, operationName).getOperationDefinition();
+            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(PathAddress.EMPTY_ADDRESS);
+            OperationDefinition definition = registration.getOperationEntry(address, operationName).getOperationDefinition();
             for (AttributeDefinition parameter : definition.getParameters()) {
                 if (parameter.getName().equals(attributeName)) {
                     return attributeValue.equals(parameter.getDefaultValue());
@@ -193,8 +193,8 @@ public interface DiscardAttributeChecker {
 
         @Override
         public boolean isResourceAttributeDiscardable(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
-            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(address);
-            AttributeDefinition definition = registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, attributeName).getAttributeDefinition();
+            ImmutableManagementResourceRegistration registration = context.getResourceRegistrationFromRoot(PathAddress.EMPTY_ADDRESS);
+            AttributeDefinition definition = registration.getAttributeAccess(address, attributeName).getAttributeDefinition();
             return attributeValue.equals(definition.getDefaultValue());
         }
     };
