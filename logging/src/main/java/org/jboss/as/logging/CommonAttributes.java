@@ -40,7 +40,6 @@ import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.correctors.FileCorrector;
-import org.jboss.as.logging.handlers.LogHandlerListAttributeDefinition;
 import org.jboss.as.logging.resolvers.FileResolver;
 import org.jboss.as.logging.resolvers.LevelResolver;
 import org.jboss.as.logging.validators.FileValidator;
@@ -107,24 +106,6 @@ public interface CommonAttributes {
             .setPropertyName("fileName")
             .setResolver(FileResolver.INSTANCE)
             .setValidator(new FileValidator())
-            .build();
-
-    PropertyAttributeDefinition FILTER_SPEC = PropertyAttributeDefinition.Builder.of("filter-spec", ModelType.STRING, true)
-            .addAlternatives("filter")
-            .setAllowExpression(true)
-            .setAttributeMarshaller(ElementAttributeMarshaller.VALUE_ATTRIBUTE_MARSHALLER)
-            .build();
-
-    SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING)
-            .setAllowExpression(false)
-            .setAttributeMarshaller(ElementAttributeMarshaller.NAME_ATTRIBUTE_MARSHALLER)
-            .build();
-
-    LogHandlerListAttributeDefinition HANDLERS = LogHandlerListAttributeDefinition.Builder.of("handlers")
-            .setAllowDuplicates(false)
-            .setAllowExpression(false)
-            .setCapabilityReference(Capabilities.LOGGER_HANDLER_REFERENCE_RECORDER)
-            .setRequired(false)
             .build();
 
     SimpleAttributeDefinition HANDLER_NAME = SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, true)
@@ -298,7 +279,7 @@ public interface CommonAttributes {
 
     ObjectTypeAttributeDefinition FILTER = ObjectTypeAttributeDefinition.Builder.of("filter", ALL, ANY, ACCEPT, CHANGE_LEVEL, DENY, LEVEL, LEVEL_RANGE_LEGACY, MATCH, NOT, REPLACE)
             .setAllowExpression(false)
-            .addAlternatives(FILTER_SPEC.getName())
+            .addAlternatives("filter-spec")
             .setDeprecated(ModelVersion.create(1, 2, 0))
             .setRequired(false)
             .build();

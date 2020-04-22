@@ -51,7 +51,6 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
-import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.ElementAttributeMarshaller;
 import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.Logging;
@@ -93,7 +92,7 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
             .setDefaultValue(ModelNode.FALSE)
             .build();
 
-    public static final SimpleAttributeDefinition FILTER_SPEC = SimpleAttributeDefinitionBuilder.create(CommonAttributes.FILTER_SPEC)
+    public static final SimpleAttributeDefinition FILTER_SPEC = SimpleAttributeDefinitionBuilder.create(AbstractHandlerDefinition.FILTER_SPEC)
             .setAlternatives(new String[0])
             .build();
 

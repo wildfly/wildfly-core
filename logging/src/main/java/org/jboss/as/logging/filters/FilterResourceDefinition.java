@@ -24,7 +24,6 @@ import static org.jboss.as.logging.CommonAttributes.MODULE;
 import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +44,7 @@ import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.LoggingOperations.LoggingWriteAttributeHandler;
 import org.jboss.as.logging.PropertyAttributeMarshaller;
 import org.jboss.as.logging.TransformerResourceDefinition;
+import org.jboss.as.logging.capabilities.Capabilities;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -200,21 +200,6 @@ public class FilterResourceDefinition extends TransformerResourceDefinition {
     private static final OperationStepHandler REMOVE = new LoggingOperations.LoggingRemoveOperationStepHandler() {
 
         @Override
-        @SuppressWarnings("Convert2Lambda")
-        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            super.execute(context, operation);
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-                    final Collection<String> references = Filters.getFilterReferences(context.getCurrentAddress());
-                    if (!references.isEmpty()) {
-                        throw LoggingLogger.ROOT_LOGGER.cannotRemoveFilter(context.getCurrentAddressValue(), references);
-                    }
-                }
-            }, OperationContext.Stage.MODEL);
-        }
-
-        @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
             final String name = context.getCurrentAddressValue();
             final FilterConfiguration configuration = logContextConfiguration.getFilterConfiguration(name);
@@ -230,7 +215,9 @@ public class FilterResourceDefinition extends TransformerResourceDefinition {
     private FilterResourceDefinition() {
         super(new Parameters(PATH, LoggingExtension.getResourceDescriptionResolver(NAME))
                 .setAddHandler(ADD)
-                .setRemoveHandler(REMOVE));
+                .setRemoveHandler(REMOVE)
+                .addCapabilities(Capabilities.FILTER_CAPABILITY)
+        );
     }
 
     @Override

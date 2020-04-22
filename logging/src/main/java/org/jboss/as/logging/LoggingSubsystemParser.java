@@ -31,7 +31,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
 import static org.jboss.as.logging.CommonAttributes.FILTER_PATTERN;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.MAX_INCLUSIVE;
 import static org.jboss.as.logging.CommonAttributes.MAX_LEVEL;
 import static org.jboss.as.logging.CommonAttributes.MIN_INCLUSIVE;
@@ -46,6 +45,7 @@ import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.logging.filters.Filters;
@@ -176,14 +176,15 @@ abstract class LoggingSubsystemParser implements XMLStreamConstants, XMLElementR
      * attribute on the operation.
      *
      * @param operation the operation to add the parsed filter to
+     * @param attribute the attribute for the filter-spec attribute
      * @param reader    the reader used to read the filter
      *
      * @throws XMLStreamException if a parsing error occurs
      */
-    static void parseFilter(final ModelNode operation, final XMLExtendedStreamReader reader) throws XMLStreamException {
+    static void parseFilter(final ModelNode operation, final AttributeDefinition attribute, final XMLExtendedStreamReader reader) throws XMLStreamException {
         final StringBuilder filter = new StringBuilder();
         parseFilterChildren(filter, false, reader);
-        operation.get(FILTER_SPEC.getName()).set(filter.toString());
+        operation.get(attribute.getName()).set(filter.toString());
     }
 
     private static void parseFilterChildren(final StringBuilder filter, final boolean useDelimiter, final XMLExtendedStreamReader reader) throws XMLStreamException {

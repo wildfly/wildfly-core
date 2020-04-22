@@ -127,7 +127,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         // Write each attribute and check the value
 
         testUpdateProperties(kernelServices, address, CommonAttributes.LEVEL, "TRACE");
-        testUpdateProperties(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
+        testUpdateProperties(kernelServices, address, AbstractHandlerDefinition.FILTER_SPEC, "deny");
         testUpdateProperties(kernelServices, address, AsyncHandlerResourceDefinition.OVERFLOW_ACTION, "BLOCK");
         testUpdateProperties(kernelServices, address, AsyncHandlerResourceDefinition.SUBHANDLERS, subhandlers);
 
@@ -328,7 +328,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         testUpdateProperties(kernelServices, address, CommonAttributes.ENABLED, false);
         testUpdateProperties(kernelServices, address, CommonAttributes.ENCODING, "utf-8");
         testUpdateProperties(kernelServices, address, AbstractHandlerDefinition.FORMATTER, "[test] %d{HH:mm:ss,SSS} %-5p [%c] %s%e%n");
-        testUpdateProperties(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
+        testUpdateProperties(kernelServices, address, AbstractHandlerDefinition.FILTER_SPEC, "deny");
     }
 
     private void testUpdateProperties(final KernelServices kernelServices, final ModelNode address, final AttributeDefinition attribute, final boolean value) {
@@ -383,7 +383,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         // Replace the value in the original model, all other attributes should match
         original.get(attribute.getName()).set(value);
         // filter requires special handling
-        if (attribute.getName().equals(CommonAttributes.FILTER_SPEC.getName())) {
+        if (attribute.getName().equals(AbstractHandlerDefinition.FILTER_SPEC.getName())) {
             original.get(CommonAttributes.FILTER.getName()).set(newModel.get(CommonAttributes.FILTER.getName()));
         }
         compare(original, newModel);
@@ -438,7 +438,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
             filter.get(CommonAttributes.ACCEPT.getName()).set(true);
             testWrite(kernelServices, address, CommonAttributes.FILTER, filter);
             // filter-spec should be "accept"
-            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.FILTER_SPEC);
+            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, AbstractHandlerDefinition.FILTER_SPEC);
             final ModelNode result = executeOperation(kernelServices, op);
             assertEquals("accept", SubsystemOperations.readResultAsString(result));
         }
@@ -448,7 +448,7 @@ public class HandlerLegacyOperationsTestCase extends AbstractOperationsTestCase 
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             testUndefine(kernelServices, address, CommonAttributes.FILTER);
             // filter-spec should be undefined
-            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.FILTER_SPEC);
+            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, AbstractHandlerDefinition.FILTER_SPEC);
             final ModelNode result = executeOperation(kernelServices, op);
             assertFalse(SubsystemOperations.readResult(result).isDefined());
         }

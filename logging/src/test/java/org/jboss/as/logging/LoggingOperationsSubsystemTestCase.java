@@ -47,6 +47,7 @@ import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
 import org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.FileHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -177,7 +178,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             ModelNode op = SubsystemOperations.createWriteAttributeOperation(handlerAddress, CommonAttributes.FILTER, entry.getValue());
             executeOperation(kernelServices, op);
             // Read the current value
-            op = SubsystemOperations.createReadAttributeOperation(handlerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createReadAttributeOperation(handlerAddress, LoggerAttributes.FILTER_SPEC);
             String filterSpecResult = SubsystemOperations.readResultAsString(executeOperation(kernelServices, op));
             assertEquals(entry.getKey(), filterSpecResult);
 
@@ -187,7 +188,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             op.get(CommonAttributes.FILTER.getName()).set(entry.getValue());
             executeOperation(kernelServices, op);
             // Read the current value
-            op = SubsystemOperations.createReadAttributeOperation(tempHandlerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createReadAttributeOperation(tempHandlerAddress, LoggerAttributes.FILTER_SPEC);
             filterSpecResult = SubsystemOperations.readResultAsString(executeOperation(kernelServices, op));
             assertEquals(entry.getKey(), filterSpecResult);
             // Remove the temp handler
@@ -200,24 +201,24 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             op.get(CommonAttributes.FILTER.getName()).set(entry.getValue());
             executeOperation(kernelServices, op);
             // Read the current value
-            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, LoggerAttributes.FILTER_SPEC);
             filterSpecResult = SubsystemOperations.readResultAsString(executeOperation(kernelServices, op));
             assertEquals(entry.getKey(), filterSpecResult);
 
             // Remove the attribute
-            op = SubsystemOperations.createUndefineAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createUndefineAttributeOperation(loggerAddress, LoggerAttributes.FILTER_SPEC);
             executeOperation(kernelServices, op);
             op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER);
             // Filter and filter spec should be undefined
             assertEquals("Filter was not undefined", SubsystemOperations.UNDEFINED, SubsystemOperations.readResult(executeOperation(kernelServices, op)));
-            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, LoggerAttributes.FILTER_SPEC);
             assertEquals("Filter was not undefined", SubsystemOperations.UNDEFINED, SubsystemOperations.readResult(executeOperation(kernelServices, op)));
 
             // Test writing the attribute to the logger
             op = SubsystemOperations.createWriteAttributeOperation(loggerAddress, CommonAttributes.FILTER, entry.getValue());
             executeOperation(kernelServices, op);
             // Read the current value
-            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC);
+            op = SubsystemOperations.createReadAttributeOperation(loggerAddress, LoggerAttributes.FILTER_SPEC);
             filterSpecResult = SubsystemOperations.readResultAsString(executeOperation(kernelServices, op));
             assertEquals(entry.getKey(), filterSpecResult);
 
@@ -230,7 +231,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         for (Map.Entry<String, ModelNode> entry : FilterConversionTestCase.MAP.entrySet()) {
             final ModelNode filterModel = FilterConversionTestCase.removeUndefined(entry.getValue());
             // Write to a handler
-            ModelNode op = SubsystemOperations.createWriteAttributeOperation(handlerAddress, CommonAttributes.FILTER_SPEC, entry.getKey());
+            ModelNode op = SubsystemOperations.createWriteAttributeOperation(handlerAddress, LoggerAttributes.FILTER_SPEC, entry.getKey());
             executeOperation(kernelServices, op);
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(handlerAddress, CommonAttributes.FILTER);
@@ -240,7 +241,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             // Validate an add operation
             final ModelNode tempHandlerAddress = createConsoleHandlerAddress("temp").toModelNode();
             op = SubsystemOperations.createAddOperation(tempHandlerAddress);
-            op.get(CommonAttributes.FILTER_SPEC.getName()).set(entry.getKey());
+            op.get(LoggerAttributes.FILTER_SPEC.getName()).set(entry.getKey());
             executeOperation(kernelServices, op);
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(tempHandlerAddress, CommonAttributes.FILTER);
@@ -253,7 +254,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             // Add to a logger
             final ModelNode loggerAddress = createLoggerAddress("test-logger").toModelNode();
             op = SubsystemOperations.createAddOperation(loggerAddress);
-            op.get(CommonAttributes.FILTER_SPEC.getName()).set(entry.getKey());
+            op.get(LoggerAttributes.FILTER_SPEC.getName()).set(entry.getKey());
             executeOperation(kernelServices, op);
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER);
@@ -261,7 +262,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
             ModelTestUtils.compare(filterModel, filterResult);
 
             // Test writing the attribute to the logger
-            op = SubsystemOperations.createWriteAttributeOperation(loggerAddress, CommonAttributes.FILTER_SPEC, entry.getKey());
+            op = SubsystemOperations.createWriteAttributeOperation(loggerAddress, LoggerAttributes.FILTER_SPEC, entry.getKey());
             executeOperation(kernelServices, op);
             // Read the current value
             op = SubsystemOperations.createReadAttributeOperation(loggerAddress, CommonAttributes.FILTER);
@@ -416,7 +417,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final ModelNode rootLoggerAddress = createRootLoggerAddress(loggingProfile).toModelNode();
         ModelNode op = SubsystemOperations.createOperation(ClientConstants.READ_RESOURCE_OPERATION, rootLoggerAddress);
         final ModelNode rootLoggerResult = executeOperation(kernelServices, op);
-        final List<String> handlers = modelNodeAsStringList(rootLoggerResult.get(CommonAttributes.HANDLERS.getName()));
+        final List<String> handlers = modelNodeAsStringList(rootLoggerResult.get(LoggerAttributes.HANDLERS.getName()));
 
         // Remove the root logger
         op = SubsystemOperations.createRemoveOperation(rootLoggerAddress);
@@ -425,8 +426,8 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         // Set a new root logger
         op = SubsystemOperations.createOperation(ModelDescriptionConstants.ADD, rootLoggerAddress);
         op.get(CommonAttributes.LEVEL.getName()).set(rootLoggerResult.get(CommonAttributes.LEVEL.getName()));
-        for (String handler : handlers) op.get(CommonAttributes.HANDLERS.getName()).add(handler);
-        op.get(CommonAttributes.HANDLERS.getName()).add(fileHandlerName);
+        for (String handler : handlers) op.get(LoggerAttributes.HANDLERS.getName()).add(handler);
+        op.get(LoggerAttributes.HANDLERS.getName()).add(fileHandlerName);
         executeOperation(kernelServices, op);
         doLog(loggingProfile, LEVELS, "Test123");
 
@@ -438,7 +439,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         // Revert root logger
         op = SubsystemOperations.createOperation(ModelDescriptionConstants.ADD, rootLoggerAddress);
         op.get(CommonAttributes.LEVEL.getName()).set(rootLoggerResult.get(CommonAttributes.LEVEL.getName()));
-        op.get(CommonAttributes.HANDLERS.getName()).set(rootLoggerResult.get(CommonAttributes.HANDLERS.getName()));
+        op.get(LoggerAttributes.HANDLERS.getName()).set(rootLoggerResult.get(LoggerAttributes.HANDLERS.getName()));
         executeOperation(kernelServices, op);
 
         // remove file handler
@@ -466,7 +467,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
 
         // Ensure the handler is listed
-        op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, CommonAttributes.HANDLERS);
+        op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, LoggerAttributes.HANDLERS);
         ModelNode handlerResult = executeOperation(kernelServices, op);
         List<String> handlerList = SubsystemOperations.readResultAsList(handlerResult);
         assertTrue(String.format("Handler '%s' was not found. Result: %s", fileHandlerName, handlerResult), handlerList.contains(fileHandlerName));
@@ -478,7 +479,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         executeOperation(kernelServices, op);
 
         // Ensure the handler is not listed
-        op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, CommonAttributes.HANDLERS);
+        op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, LoggerAttributes.HANDLERS);
         handlerResult = executeOperation(kernelServices, op);
         handlerList = SubsystemOperations.readResultAsList(handlerResult);
         assertFalse(String.format("Handler '%s' was not removed. Result: %s", fileHandlerName, handlerResult), handlerList.contains(fileHandlerName));
@@ -505,7 +506,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
 
         // Ensure the handler is listed
         final ModelNode rootLoggerAddress = createRootLoggerAddress(profileName).toModelNode();
-        ModelNode op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, CommonAttributes.HANDLERS);
+        ModelNode op = SubsystemOperations.createReadAttributeOperation(rootLoggerAddress, LoggerAttributes.HANDLERS);
         ModelNode handlerResult = executeOperation(kernelServices, op);
         List<String> handlerList = SubsystemOperations.readResultAsList(handlerResult);
         assertTrue(String.format("Handler '%s' was not found. Result: %s", fileHandlerName, handlerResult), handlerList.contains(fileHandlerName));
@@ -573,7 +574,7 @@ public class LoggingOperationsSubsystemTestCase extends AbstractLoggingSubsystem
         final ModelNode loggerAddress = createLoggerAddress(profileName, logger.getName()).toModelNode();
         ModelNode op = SubsystemOperations.createAddOperation(loggerAddress);
         op.get(LoggerResourceDefinition.USE_PARENT_HANDLERS.getName()).set(false);
-        op.get(CommonAttributes.HANDLERS.getName()).setEmptyList().add(fileHandlerName);
+        op.get(LoggerAttributes.HANDLERS.getName()).setEmptyList().add(fileHandlerName);
         executeOperation(kernelServices, op);
 
         // Create a pattern formatter

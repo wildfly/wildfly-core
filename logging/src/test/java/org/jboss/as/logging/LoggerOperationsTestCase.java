@@ -29,6 +29,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -88,7 +90,7 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
                 .build();
         executeOperation(kernelServices, op);
         // Create the read operation
-        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.HANDLERS.getName());
+        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, LoggerAttributes.HANDLERS.getName());
         ModelNode result = executeOperation(kernelServices, readOp);
         assertEquals(handlers, SubsystemOperations.readResult(result));
 
@@ -152,7 +154,7 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
                 .build();
         executeOperation(kernelServices, op);
         // Create the read operation
-        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.HANDLERS.getName());
+        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, LoggerAttributes.HANDLERS.getName());
         ModelNode result = executeOperation(kernelServices, readOp);
         assertEquals(handlers, SubsystemOperations.readResult(result));
 
@@ -191,14 +193,14 @@ public class LoggerOperationsTestCase extends AbstractOperationsTestCase {
     }
 
     private void testWriteCommonAttributes(final KernelServices kernelServices, final ModelNode address, final ModelNode handlers) {
-        testWrite(kernelServices, address, CommonAttributes.FILTER_SPEC, "deny");
+        testWrite(kernelServices, address, AbstractHandlerDefinition.FILTER_SPEC, "deny");
         testWrite(kernelServices, address, CommonAttributes.LEVEL, "INFO");
-        testWrite(kernelServices, address, CommonAttributes.HANDLERS, handlers);
+        testWrite(kernelServices, address, LoggerAttributes.HANDLERS, handlers);
     }
 
     private void testUndefineCommonAttributes(final KernelServices kernelServices, final ModelNode address) {
-        testUndefine(kernelServices, address, CommonAttributes.FILTER_SPEC);
+        testUndefine(kernelServices, address, AbstractHandlerDefinition.FILTER_SPEC);
         testUndefine(kernelServices, address, CommonAttributes.LEVEL);
-        testUndefine(kernelServices, address, CommonAttributes.HANDLERS);
+        testUndefine(kernelServices, address, LoggerAttributes.HANDLERS);
     }
 }

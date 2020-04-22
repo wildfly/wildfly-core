@@ -24,7 +24,6 @@ import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
 import static org.jboss.as.logging.CommonAttributes.FILTER;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.HANDLER_NAME;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.MODULE;
@@ -32,8 +31,10 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.CommonAttributes.ROOT_LOGGER_NAME;
 import static org.jboss.as.logging.Logging.createOperationFailure;
 import static org.jboss.as.logging.formatters.PatternFormatterResourceDefinition.PATTERN;
+import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FILTER_SPEC;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.NAMED_FORMATTER;
+import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.HANDLER;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.QUEUE_LENGTH;
 import static org.jboss.as.logging.handlers.AsyncHandlerResourceDefinition.SUBHANDLERS;
 
@@ -160,18 +161,6 @@ final class HandlerOperations {
         }
 
         @Override
-        protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
-            super.populateModel(context, operation, resource);
-            final ModelNode model = Resource.Tools.readModel(resource);
-            // The filter-spec attribute requires special handling. If defined a step needs to be added to register the
-            // defined custom filters. At this point this cannot be done with a capability as the filter-spec may have
-            // a reference to more than one custom filter.
-            if (model.hasDefined(FILTER_SPEC.getName())) {
-                addRegisterFilterStep(context, FILTER_SPEC.resolveModelAttribute(context, model), false);
-            }
-        }
-
-        @Override
         public void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
             for (AttributeDefinition attribute : attributes) {
                 // Filter attribute needs to be converted to filter spec
@@ -179,7 +168,7 @@ final class HandlerOperations {
                     final ModelNode filter = CommonAttributes.FILTER.validateOperation(operation);
                     if (filter.isDefined()) {
                         final String value = Filters.filterToFilterSpec(filter);
-                        model.get(CommonAttributes.FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
+                        model.get(FILTER_SPEC.getName()).set(value.isEmpty() ? new ModelNode() : new ModelNode(value));
                     }
                 } else {
                     attribute.validateAndSet(operation, model);
@@ -412,28 +401,12 @@ final class HandlerOperations {
                 final String filterSpec = Filters.filterToFilterSpec(newValue);
                 final ModelNode filterSpecValue = (filterSpec.isEmpty() ? new ModelNode() : new ModelNode(filterSpec));
                 // Undefine the filter-spec
-                model.getModel().get(CommonAttributes.FILTER_SPEC.getName()).set(filterSpecValue);
-            }
-            // The filter-spec attribute requires special handling. If defined a step needs to be added to register the
-            // defined custom filters. At this point this cannot be done with a capability as the filter-spec may have
-            // a reference to more than one custom filter.
-            if (FILTER_SPEC.getName().equals(attributeName)) {
-                addRegisterFilterStep(context, newValue, !newValue.isDefined());
+                model.getModel().get(FILTER_SPEC.getName()).set(filterSpecValue);
             }
         }
     }
 
     static class LogHandlerRemoveHandler extends LoggingOperations.LoggingRemoveOperationStepHandler {
-
-        @Override
-        protected void performRemove(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
-            super.performRemove(context, operation, model);
-
-            // Remove any referenced filters
-            if (model.hasDefined(FILTER_SPEC.getName())) {
-                addRegisterFilterStep(context, FILTER_SPEC.resolveModelAttribute(context, model), true);
-            }
-        }
 
         @Override
         public void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model, final LogContextConfiguration logContextConfiguration) throws OperationFailedException {
@@ -486,36 +459,6 @@ final class HandlerOperations {
         }
     }
 
-    @SuppressWarnings("Convert2Lambda")
-    private static class RegisterFilterOperationStepHandler implements OperationStepHandler {
-        private final String filterSpec;
-        private final boolean forRemove;
-
-        private RegisterFilterOperationStepHandler(final String filterSpec, final boolean forRemove) {
-            this.filterSpec = filterSpec;
-            this.forRemove = forRemove;
-        }
-
-        @Override
-        public void execute(final OperationContext context, final ModelNode operation) {
-            if (forRemove) {
-                Filters.unregisterFilter(filterSpec, context.getCurrentAddress());
-            } else {
-                Filters.registerFilter(filterSpec, context.getCurrentAddress());
-            }
-            context.completeStep(new OperationContext.RollbackHandler() {
-                @Override
-                public void handleRollback(final OperationContext context, final ModelNode operation) {
-                    if (forRemove) {
-                        Filters.registerFilter(filterSpec, context.getCurrentAddress());
-                    } else {
-                        Filters.unregisterFilter(filterSpec, context.getCurrentAddress());
-                    }
-                }
-            });
-        }
-    }
-
     /**
      * A step handler to remove a handler
      */
@@ -543,7 +486,7 @@ final class HandlerOperations {
             handlers.add(handlerName);
             SUBHANDLERS.getValidator().validateParameter(SUBHANDLERS.getName(), handlers);
             model.get(SUBHANDLERS.getName()).add(handlerName);
-            recordCapabilitiesAndRequirements(context, resource, SUBHANDLERS, new ModelNode().setEmptyList().add(handlerName), new ModelNode());
+            HANDLER.addCapabilityRequirements(context, resource, handlerName);
         }
 
         @Override
@@ -580,7 +523,7 @@ final class HandlerOperations {
             final List<ModelNode> newHandlers = new ArrayList<>(handlers.size());
             for (ModelNode handler : handlers) {
                 if (handlerName.equals(handler.asString())) {
-                    SUBHANDLERS.removeCapabilityRequirements(context, resource, new ModelNode().setEmptyList().add(handlerName));
+                    HANDLER.removeCapabilityRequirements(context, resource, handler);
                     found = true;
                 } else {
                     newHandlers.add(handler);
@@ -776,7 +719,8 @@ final class HandlerOperations {
             }
         } else {
             if (attribute instanceof ConfigurationProperty) {
-                @SuppressWarnings("unchecked") final ConfigurationProperty<String> configurationProperty = (ConfigurationProperty<String>) attribute;
+                @SuppressWarnings("unchecked")
+                final ConfigurationProperty<String> configurationProperty = (ConfigurationProperty<String>) attribute;
                 if (resolveValue) {
                     configurationProperty.setPropertyValue(context, model, configuration);
                 } else {
@@ -995,9 +939,5 @@ final class HandlerOperations {
                 }
             }, Stage.RUNTIME);
         }
-    }
-
-    private static void addRegisterFilterStep(final OperationContext context, final ModelNode filterSpec, final boolean forRemove) {
-        context.addStep(new RegisterFilterOperationStepHandler(filterSpec.asString(), forRemove), Stage.MODEL);
     }
 }

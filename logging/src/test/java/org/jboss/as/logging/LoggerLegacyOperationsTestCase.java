@@ -30,6 +30,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.logging.handlers.AbstractHandlerDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -76,8 +78,8 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         // Add the handler
         final ModelNode addOp = OperationBuilder.create(RootLoggerResourceDefinition.ADD_ROOT_LOGGER_DEFINITION, address)
                 .addAttribute(CommonAttributes.LEVEL, "WARN")
-                .addAttribute(CommonAttributes.FILTER_SPEC, "accept")
-                .addAttribute(CommonAttributes.HANDLERS, handlers)
+                .addAttribute(AbstractHandlerDefinition.FILTER_SPEC, "accept")
+                .addAttribute(LoggerAttributes.HANDLERS, handlers)
                 .build();
         executeOperation(kernelServices, addOp);
 
@@ -100,7 +102,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         op.get(CommonAttributes.HANDLER_NAME.getName()).set("CONSOLE");
         executeOperation(kernelServices, op);
         // Create the read operation
-        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.HANDLERS
+        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, LoggerAttributes.HANDLERS
                 .getName());
         result = executeOperation(kernelServices, readOp);
         assertTrue("Handler CONSOLE should have been removed: " + result, SubsystemOperations.readResult(result)
@@ -160,7 +162,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
                 .build();
         executeOperation(kernelServices, op);
         // Create the read operation
-        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.HANDLERS
+        final ModelNode readOp = SubsystemOperations.createReadAttributeOperation(address, LoggerAttributes.HANDLERS
                 .getName());
         result = executeOperation(kernelServices, readOp);
         assertEquals(handlers, SubsystemOperations.readResult(result));
@@ -189,7 +191,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
             filter.get(CommonAttributes.ACCEPT.getName()).set(true);
             testWrite(kernelServices, address, CommonAttributes.FILTER, filter);
             // filter-spec should be "accept"
-            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.FILTER_SPEC);
+            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, AbstractHandlerDefinition.FILTER_SPEC);
             final ModelNode result = executeOperation(kernelServices, op);
             assertEquals("accept", SubsystemOperations.readResultAsString(result));
         }
@@ -199,7 +201,7 @@ public class LoggerLegacyOperationsTestCase extends AbstractOperationsTestCase {
         if (!LoggingProfileOperations.isLoggingProfileAddress(PathAddress.pathAddress(address))) {
             testUndefine(kernelServices, address, CommonAttributes.FILTER);
             // filter-spec should be undefined
-            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, CommonAttributes.FILTER_SPEC);
+            final ModelNode op = SubsystemOperations.createReadAttributeOperation(address, AbstractHandlerDefinition.FILTER_SPEC);
             final ModelNode result = executeOperation(kernelServices, op);
             assertFalse(SubsystemOperations.readResult(result).isDefined());
         }

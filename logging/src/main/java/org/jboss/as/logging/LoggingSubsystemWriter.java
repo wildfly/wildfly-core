@@ -28,8 +28,7 @@ import static org.jboss.as.logging.CommonAttributes.CLASS;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
 import static org.jboss.as.logging.CommonAttributes.ENCODING;
 import static org.jboss.as.logging.CommonAttributes.FILE;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
-import static org.jboss.as.logging.CommonAttributes.HANDLERS;
+import static org.jboss.as.logging.loggers.LoggerAttributes.HANDLERS;
 import static org.jboss.as.logging.CommonAttributes.HANDLER_NAME;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.LOGGING_PROFILE;
@@ -80,6 +79,7 @@ import org.jboss.as.logging.handlers.PeriodicSizeRotatingHandlerResourceDefiniti
 import org.jboss.as.logging.handlers.SizeRotatingHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SocketHandlerResourceDefinition;
 import org.jboss.as.logging.handlers.SyslogHandlerResourceDefinition;
+import org.jboss.as.logging.loggers.LoggerAttributes;
 import org.jboss.as.logging.loggers.LoggerResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.dmr.ModelNode;
@@ -247,14 +247,14 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
 
     private void writeCommonLogger(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
         LEVEL.marshallAsElement(model, writer);
-        FILTER_SPEC.marshallAsElement(model, writer);
+        LoggerAttributes.FILTER_SPEC.marshallAsElement(model, writer);
         HANDLERS.marshallAsElement(model, writer);
     }
 
     private void writeCommonHandler(final XMLExtendedStreamWriter writer, final ModelNode model) throws XMLStreamException {
         LEVEL.marshallAsElement(model, writer);
         ENCODING.marshallAsElement(model, writer);
-        FILTER_SPEC.marshallAsElement(model, writer);
+        AbstractHandlerDefinition.FILTER_SPEC.marshallAsElement(model, writer);
         FORMATTER.marshallAsElement(model, writer);
         NAMED_FORMATTER.marshallAsElement(model, writer);
     }
@@ -350,7 +350,7 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         SocketHandlerResourceDefinition.SSL_CONTEXT.marshallAsAttribute(model, writer);
 
         ENCODING.marshallAsElement(model, writer);
-        FILTER_SPEC.marshallAsElement(model, writer);
+        AbstractHandlerDefinition.FILTER_SPEC.marshallAsElement(model, writer);
         LEVEL.marshallAsElement(model, writer);
         SocketHandlerResourceDefinition.NAMED_FORMATTER.marshallAsElement(model, writer);
         SocketHandlerResourceDefinition.PROTOCOL.marshallAsElement(model, writer);
@@ -386,7 +386,7 @@ public class LoggingSubsystemWriter implements XMLStreamConstants, XMLElementWri
         writer.writeAttribute(HANDLER_NAME.getXmlName(), name);
         ENABLED.marshallAsAttribute(model, false, writer);
         LEVEL.marshallAsElement(model, writer);
-        FILTER_SPEC.marshallAsElement(model, writer);
+        AbstractHandlerDefinition.FILTER_SPEC.marshallAsElement(model, writer);
         FORMATTER.marshallAsElement(model, writer);
         QUEUE_LENGTH.marshallAsElement(model, writer);
         OVERFLOW_ACTION.marshallAsElement(model, writer);

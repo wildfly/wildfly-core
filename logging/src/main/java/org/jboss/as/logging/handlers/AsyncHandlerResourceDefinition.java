@@ -21,7 +21,6 @@ package org.jboss.as.logging.handlers;
 
 import static org.jboss.as.logging.CommonAttributes.ADD_HANDLER_OPERATION_NAME;
 import static org.jboss.as.logging.CommonAttributes.ENABLED;
-import static org.jboss.as.logging.CommonAttributes.FILTER_SPEC;
 import static org.jboss.as.logging.CommonAttributes.LEVEL;
 import static org.jboss.as.logging.CommonAttributes.REMOVE_HANDLER_OPERATION_NAME;
 
@@ -33,6 +32,8 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.DefaultAttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -91,10 +92,15 @@ public class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
             .setValidator(EnumValidator.create(OverflowAction.class, false, false))
             .build();
 
-    public static final LogHandlerListAttributeDefinition SUBHANDLERS = LogHandlerListAttributeDefinition.Builder.of("subhandlers")
+    static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING)
+            .setAllowExpression(false)
+            .setAttributeMarshaller(ElementAttributeMarshaller.NAME_ATTRIBUTE_MARSHALLER)
+            .setCapabilityReference(Capabilities.HANDLER_REFERENCE_RECORDER)
+            .build();
+
+    public static final LogHandlerListAttributeDefinition SUBHANDLERS = LogHandlerListAttributeDefinition.Builder.of("subhandlers", HANDLER)
             .setAllowDuplicates(false)
             .setAllowExpression(false)
-            .setCapabilityReference(Capabilities.HANDLER_REFERENCE_RECORDER)
             .setRequired(false)
             .build();
 

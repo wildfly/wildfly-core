@@ -32,7 +32,11 @@ import org.jboss.dmr.ModelNode;
  */
 class HandlersAttributeMarshaller extends DefaultAttributeMarshaller {
 
-    static final HandlersAttributeMarshaller INSTANCE = new HandlersAttributeMarshaller();
+    private final AttributeDefinition valueType;
+
+    HandlersAttributeMarshaller(final AttributeDefinition valueType) {
+        this.valueType = valueType;
+    }
 
     @Override
     public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
@@ -41,7 +45,7 @@ class HandlersAttributeMarshaller extends DefaultAttributeMarshaller {
             final ModelNode handlers = resourceModel.get(attribute.getName());
             for (ModelNode handler : handlers.asList()) {
                 if (handler.isDefined()) {
-                    writer.writeStartElement(CommonAttributes.HANDLER.getXmlName());
+                    writer.writeStartElement(valueType.getXmlName());
                     writer.writeAttribute(CommonAttributes.HANDLER_NAME.getXmlName(), handler.asString());
                     writer.writeEndElement();
                 }

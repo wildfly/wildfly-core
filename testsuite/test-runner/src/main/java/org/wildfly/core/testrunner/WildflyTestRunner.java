@@ -5,6 +5,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +20,9 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkField;
+import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 import org.wildfly.security.WildFlyElytronProvider;
 
@@ -37,6 +41,8 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     private final AtomicBoolean doOnce = new AtomicBoolean(false);
 
+    private final ParameterDescriptions parameterDescriptions = new ParameterDescriptions();
+
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
      *
@@ -47,7 +53,7 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         if (klass.isAnnotationPresent(ServerControl.class)) {
             ServerControl serverControl = klass.getAnnotation(ServerControl.class);
             automaticServerControl = !serverControl.manual();
-        }else{
+        } else {
             automaticServerControl = true;
         }
     }
@@ -84,11 +90,53 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     }
 
     @Override
-    public void run(final RunNotifier notifier){
+    protected List<FrameworkMethod> getChildren() {
+        final List<FrameworkMethod> result = new ArrayList<>();
+        final TestClass testClass = getTestClass();
+        final Collection<Object> parameters = resolveParameters(testClass);
+        // If there are no resolved parameters we can just use the default methods
+        if (parameters.isEmpty()) {
+            result.addAll(super.getChildren());
+        } else {
+            final FrameworkField field = findParameterField(testClass);
+            for (FrameworkMethod method : super.getChildren()) {
+                for (Object value : parameters) {
+                    parameterDescriptions.add(method, field, value);
+                    // Add the same method for each parameter value
+                    result.add(method);
+                }
+            }
+        }
+        return result;
+    }
+
+    @Override
+    protected Statement methodInvoker(final FrameworkMethod method, final Object test) {
+        if (!parameterDescriptions.isEmpty()) {
+            final ParameterDescription description = parameterDescriptions.take(method);
+            if (description != null) {
+                try {
+                    final Field field = description.field.getField();
+                    if (!field.isAccessible()) {
+                        field.setAccessible(true);
+                    }
+                    field.set(test, description.value);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(String.format("Failed to set value %s on field %s for test %s",
+                            description.value, description.field.getName(), test.getClass().getName()), e);
+                }
+            }
+        }
+        return super.methodInvoker(method, test);
+    }
+
+    @Override
+    public void run(final RunNotifier notifier) {
         notifier.addListener(new RunListener() {
             @Override
             public void testRunFinished(Result result) throws Exception {
                 super.testRunFinished(result);
+                parameterDescriptions.clear();
                 if (automaticServerControl) {
                     controller.stop();
                 }
@@ -181,4 +229,46 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
             prepareSetupTasks(getTestClass());
         }
     }
+
+    private FrameworkField findParameterField(final TestClass testClass) {
+        final List<FrameworkField> fields = testClass.getAnnotatedFields(Parameter.class);
+        if (fields.size() > 1) {
+            throw new RuntimeException(String.format("More than one field was annotated with @%s: %s",
+                    Parameter.class.getSimpleName(), fields));
+        } else if (fields.isEmpty()) {
+            throw new RuntimeException(String.format("If the @%s annotation is present on a method a field must be annotated with @%s",
+                    Parameters.class.getSimpleName(), Parameter.class.getSimpleName()));
+        }
+        return fields.get(0);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Collection<Object> resolveParameters(final TestClass testClass) {
+        final FrameworkMethod method = findParametersMethod(testClass);
+        if (method == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return (Collection<Object>) method.invokeExplosively(null);
+        } catch (Throwable t) {
+            throw new RuntimeException(String.format("Failed to invoke method %s on test %s", method.getName(), testClass.getName()), t);
+        }
+    }
+
+    private FrameworkMethod findParametersMethod(final TestClass testClass) {
+        final List<FrameworkMethod> methods = testClass.getAnnotatedMethods(Parameters.class);
+        if (methods.size() > 1) {
+            throw new RuntimeException(String.format("More than one method was annotated with @%s: %s",
+                    Parameters.class.getSimpleName(), methods));
+        } else if (methods.isEmpty()) {
+            return null;
+        }
+        final FrameworkMethod method = methods.get(0);
+        if (method.isPublic() && method.isStatic() && Collection.class.isAssignableFrom(method.getReturnType())) {
+            return method;
+        }
+        throw new RuntimeException(String.format("Method %s must be public, static and have a return type assignable to Collection<Object>.",
+                method.getName()));
+    }
+
 }

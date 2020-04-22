@@ -22,11 +22,11 @@ package org.jboss.as.logging.handlers;
 import java.util.Collections;
 import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
-import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.ConfigurationProperty;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.resolvers.HandlerResolver;
@@ -43,8 +43,8 @@ public class LogHandlerListAttributeDefinition extends SimpleListAttributeDefini
     private final String propertyName;
     private final HandlerResolver resolver = HandlerResolver.INSTANCE;
 
-    private LogHandlerListAttributeDefinition(Builder builder) {
-        super(builder, CommonAttributes.HANDLER);
+    private LogHandlerListAttributeDefinition(final Builder builder, final AttributeDefinition valueType) {
+        super(builder, valueType);
         this.propertyName = builder.propertyName;
     }
 
@@ -75,12 +75,14 @@ public class LogHandlerListAttributeDefinition extends SimpleListAttributeDefini
 
     public static class Builder extends ListAttributeDefinition.Builder<Builder, LogHandlerListAttributeDefinition> {
 
+        private final AttributeDefinition valueType;
         private String propertyName;
 
 
-        Builder(final String name) {
+        Builder(final AttributeDefinition valueType, final String name) {
             super(name);
-            setElementValidator(CommonAttributes.HANDLER.getValidator());
+            this.valueType = valueType;
+            setElementValidator(valueType.getValidator());
         }
 
         /**
@@ -90,16 +92,16 @@ public class LogHandlerListAttributeDefinition extends SimpleListAttributeDefini
          *
          * @return the builder
          */
-        public static Builder of(final String name) {
-            return new Builder(name);
+        public static Builder of(final String name, final AttributeDefinition valueType) {
+            return new Builder(valueType, name);
         }
 
         public LogHandlerListAttributeDefinition build() {
             if (propertyName == null) propertyName = getName();
             if (getAttributeMarshaller() == null) {
-                setAttributeMarshaller(HandlersAttributeMarshaller.INSTANCE);
+                setAttributeMarshaller(new HandlersAttributeMarshaller(valueType));
             }
-            return new LogHandlerListAttributeDefinition(this);
+            return new LogHandlerListAttributeDefinition(this, valueType);
         }
 
         public Builder setPropertyName(final String propertyName) {

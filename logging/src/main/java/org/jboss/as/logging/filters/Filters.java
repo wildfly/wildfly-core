@@ -33,7 +33,6 @@ import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.logging.LoggingLogger;
@@ -59,11 +58,8 @@ public class Filters {
     public static final String SUBSTITUTE = "substitute";
     public static final String SUBSTITUTE_ALL = "substituteAll";
 
-    private static final FilterReferenceRecorder REFERENCE_RECORDER = new FilterReferenceRecorder();
-
     /**
-     * Converts the legacy {@link CommonAttributes#FILTER filter} to the new {@link CommonAttributes#FILTER_SPEC filter
-     * spec}.
+     * Converts the legacy {@link CommonAttributes#FILTER filter} to the new filter spec.
      *
      * @param value the value to convert
      *
@@ -86,7 +82,7 @@ public class Filters {
     }
 
     /**
-     * Converts a {@link CommonAttributes#FILTER_SPEC filter spec} to a legacy {@link CommonAttributes#FILTER filter}.
+     * Converts a filter spec to a legacy {@link CommonAttributes#FILTER filter}.
      *
      * @param value the value to convert
      *
@@ -100,38 +96,18 @@ public class Filters {
     }
 
     /**
-     * Returns the paths to the filter, if any, associated with the filters address.
+     * Returns a collection of names of custom filters inside a {@code filter-spec} attribute.
      *
-     * @param address the filters address
+     * @param filterSpec the filter specification string
      *
-     * @return the associated filter references or an empty collection
+     * @return a collection of custom filter names
      */
-    static Collection<String> getFilterReferences(final PathAddress address) {
-        return REFERENCE_RECORDER.getFilterReferences(address);
-    }
-
-    /**
-     * Registers any possible custom filters with the current handler or logger address.
-     *
-     * @param filterSpec     the filter expression
-     * @param currentAddress the current address
-     */
-    public static void registerFilter(final String filterSpec, final PathAddress currentAddress) {
-        for (String filterName : parseFilterExpression(filterSpec)) {
-            REFERENCE_RECORDER.registerFilter(filterName, currentAddress);
+    public static Collection<String> getCustomFilterNames(final String filterSpec) {
+        final Collection<String> result = new HashSet<>();
+        if (filterSpec != null) {
+            result.addAll(parseFilterExpression(filterSpec));
         }
-    }
-
-    /**
-     * Unregisters any possible custom filters with the current handler or logger address.
-     *
-     * @param filterSpec     the filter expression
-     * @param currentAddress the current address
-     */
-    public static void unregisterFilter(final String filterSpec, final PathAddress currentAddress) {
-        for (String filterName : parseFilterExpression(filterSpec)) {
-            REFERENCE_RECORDER.unregisterFilter(filterName, currentAddress);
-        }
+        return result;
     }
 
     private static Collection<String> parseFilterExpression(final String value) {
