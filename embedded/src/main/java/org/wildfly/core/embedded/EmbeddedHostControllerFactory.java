@@ -275,14 +275,13 @@ public class EmbeddedHostControllerFactory {
                     new Random(new SecureRandom().nextLong()).nextBytes(authBytes);
                     final String authCode = Base64.getEncoder().encodeToString(authBytes);
                     hostControllerBootstrap = new EmbeddedHostControllerBootstrap(futureContainer, environment, authCode);
-                    hostControllerBootstrap.bootstrap();
+                    hostControllerBootstrap.bootstrap(processStateListener);
                     serviceContainer = futureContainer.get();
                     executorService = Executors.newCachedThreadPool();
                     @SuppressWarnings({"unchecked", "deprecation"})
                     final Value<ProcessStateNotifier> processStateNotifierValue = (Value<ProcessStateNotifier>) serviceContainer.getRequiredService(ControlledProcessStateService.SERVICE_NAME);
                     processStateNotifier = processStateNotifierValue.getValue();
-                    processStateNotifier.addPropertyChangeListener(processStateListener);
-                    establishModelControllerClient(processStateNotifier.getCurrentState(), true);
+                    establishModelControllerClient(currentProcessState, false);
                 } catch (RuntimeException rte) {
                     if (hostControllerBootstrap != null) {
                         hostControllerBootstrap.failed();
