@@ -111,6 +111,25 @@ public class LdapAuthenticationSuiteTest extends BaseLdapSuiteTest {
         assertTrue("Supports Digest", supportedMechs.contains(AuthMechanism.PLAIN));
     }
 
+    @Test
+    public void testVerifyGoodPasswordUserNameWithSlash() throws Exception {
+        AuthorizingCallbackHandler cbh = securityRealm.getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
+        NameCallback ncb = new NameCallback("Username", "User/Name");
+        RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("user_/password".toCharArray()));
+        cbh.handle(new Callback[] { ncb, rcb, evc });
+        assertTrue("Password Verified", evc.isVerified());
+    }
+
+    @Test
+    public void testVerifyGoodPasswordUserNameWithBackSlash() throws Exception {
+        AuthorizingCallbackHandler cbh = securityRealm.getAuthorizingCallbackHandler(AuthMechanism.PLAIN);
+        NameCallback ncb = new NameCallback("Username", "User\\Name");
+        RealmCallback rcb = new RealmCallback("Realm", TEST_REALM);
+        EvidenceVerifyCallback evc = new EvidenceVerifyCallback(new PasswordGuessEvidence("user_\\password".toCharArray()));
+        cbh.handle(new Callback[] { ncb, rcb, evc });
+        assertTrue("Password Verified", evc.isVerified());
+    }
 
     @Test
     public void testVerifyGoodPassword() throws Exception {

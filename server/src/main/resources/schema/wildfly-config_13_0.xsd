@@ -4610,7 +4610,7 @@
         <xs:complexContent>
             <xs:extension base="base-scoped-roleType">
                 <xs:choice>
-                    <xs:element name="host" type="namedType" minOccurs="1" maxOccurs="unbounded">
+                    <xs:element name="host" type="namedType" minOccurs="0" maxOccurs="unbounded">
                         <xs:annotation>
                             <xs:documentation>
                                 <![CDATA[
