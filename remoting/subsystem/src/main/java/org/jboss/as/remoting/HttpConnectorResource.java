@@ -25,7 +25,6 @@ import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAP
 import static org.jboss.as.remoting.CommonAttributes.HTTP_CONNECTOR;
 import static org.jboss.as.remoting.ConnectorCommon.SASL_PROTOCOL;
 import static org.jboss.as.remoting.ConnectorCommon.SERVER_NAME;
-import static org.jboss.as.remoting.ConnectorResource.CONNECTOR_CAPABILITY;
 
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
@@ -86,8 +85,7 @@ public class HttpConnectorResource extends SimpleResourceDefinition {
         super(new Parameters(PATH, RemotingExtension.getResourceDescriptionResolver(HTTP_CONNECTOR))
                 .setAddHandler(HttpConnectorAdd.INSTANCE)
                 .setRemoveHandler(HttpConnectorRemove.INSTANCE)
-                // expose a common connector capability (WFCORE-4875)
-                .setCapabilities(CONNECTOR_CAPABILITY, HTTP_CONNECTOR_CAPABILITY));
+                .setCapabilities(HTTP_CONNECTOR_CAPABILITY));
     }
 
     @Override
