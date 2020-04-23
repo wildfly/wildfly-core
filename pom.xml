@@ -149,7 +149,7 @@
         <version.com.jcraft.jzlib>1.1.1</version.com.jcraft.jzlib>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.0.30.Final</version.io.undertow>
+        <version.io.undertow>2.1.0.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
@@ -731,8 +731,16 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
+                        <groupId>org.jboss.threads</groupId>
+                        <artifactId>jboss-threads</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.common</groupId>
+                        <artifactId>wildfly-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.client</groupId>
+                        <artifactId>wildfly-client-config</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -742,8 +750,16 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
+                        <groupId>org.jboss.threads</groupId>
+                        <artifactId>jboss-threads</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.common</groupId>
+                        <artifactId>wildfly-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.client</groupId>
+                        <artifactId>wildfly-client-config</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.jboss.spec.javax.servlet.jsp</groupId>
@@ -757,8 +773,16 @@
                 <version>${version.io.undertow}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>io.undertow</groupId>
-                        <artifactId>undertow-build-config</artifactId>
+                        <groupId>org.jboss.threads</groupId>
+                        <artifactId>jboss-threads</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.common</groupId>
+                        <artifactId>wildfly-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.client</groupId>
+                        <artifactId>wildfly-client-config</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

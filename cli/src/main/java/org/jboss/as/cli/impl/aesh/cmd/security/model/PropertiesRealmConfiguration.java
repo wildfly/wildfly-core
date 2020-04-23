@@ -30,17 +30,19 @@ public class PropertiesRealmConfiguration implements MechanismConfiguration {
     private final String userPropertiesFile;
     private final String groupPropertiesFile;
     private final String exposedRealmName;
+    private final boolean plainText;
     private String realmMapper;
 
-    public PropertiesRealmConfiguration(String exposedRealmName, RelativeFile userPropertiesFile, RelativeFile groupPropertiesFile, String relativeTo) throws IOException {
+    public PropertiesRealmConfiguration(String exposedRealmName, RelativeFile userPropertiesFile, RelativeFile groupPropertiesFile, String relativeTo, boolean plainText) throws IOException {
         this.exposedRealmName = exposedRealmName;
         this.userPropertiesFile = relativeTo != null ? userPropertiesFile.getOriginalPath() : userPropertiesFile.getCanonicalPath();
         this.groupPropertiesFile = groupPropertiesFile == null ? null : relativeTo != null ? groupPropertiesFile.getOriginalPath() : groupPropertiesFile.getCanonicalPath();
         this.relativeTo = relativeTo;
+        this.plainText = plainText;
     }
 
     public PropertiesRealmConfiguration(String name) throws IOException {
-        this(null, null, null, null);
+        this(null, null, null, null, false);
     }
 
 
@@ -65,6 +67,13 @@ public class PropertiesRealmConfiguration implements MechanismConfiguration {
      */
     public String getRelativeTo() {
         return relativeTo;
+    }
+
+    /**
+     * @return the plainText
+     */
+    public boolean getPlainText() {
+        return plainText;
     }
 
     /**

@@ -1126,6 +1126,7 @@ public class CliCompletionTestCase {
                         "--new-realm-name=",
                         "--new-security-domain-name=",
                         "--no-reload",
+                        "--plain-text",
                         "--relative-to=");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);
@@ -1368,6 +1369,7 @@ public class CliCompletionTestCase {
                         "--new-realm-name=",
                         "--new-security-domain-name=",
                         "--no-reload",
+                        "--plain-text",
                         "--relative-to=");
                 assertEquals(candidates.toString(), res, candidates);
                 candidates = complete(ctx, cmd, null);

@@ -81,6 +81,7 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
     public static final String OPT_GROUP_PROPERTIES_FILE = "group-properties-file";
     public static final String OPT_PROPERTIES_REALM_NAME = "properties-realm-name";
     public static final String OPT_RELATIVE_TO = "relative-to";
+    public static final String OPT_PLAIN_TEXT = "plain-text";
     public static final String OPT_NO_RELOAD = "no-reload";
     public static final String OPT_EXPOSED_REALM = "exposed-realm";
     public static final String OPT_NEW_SECURITY_DOMAIN_NAME = "new-security-domain-name";

@@ -209,6 +209,7 @@ public class Util {
     public static final String PEM = "pem";
     public static final String PERMISSION_MAPPER = "permission-mapper";
     public static final String PERSISTENT = "persistent";
+    public static final String PLAIN_TEXT = "plain-text";
     public static final String PROBLEM = "problem";
     public static final String PRODUCT_NAME = "product-name";
     public static final String PRODUCT_VERSION = "product-version";

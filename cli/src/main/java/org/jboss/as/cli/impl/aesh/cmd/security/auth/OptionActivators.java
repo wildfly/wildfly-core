@@ -249,6 +249,13 @@ public class OptionActivators {
         }
     }
 
+    public static class PlainTextActivator extends AbstractDependOptionActivator {
+
+        public PlainTextActivator() {
+            super(false, OPT_USER_PROPERTIES_FILE);
+        }
+    }
+
     public static class FileSystemRoleDecoderActivator extends AbstractDependOptionActivator {
 
         public FileSystemRoleDecoderActivator() {
