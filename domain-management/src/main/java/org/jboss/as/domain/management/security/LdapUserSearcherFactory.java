@@ -205,7 +205,7 @@ class LdapUserSearcherFactory {
                     /*
                      * If this was a referral it would have been handled above.
                      */
-                    distinguishedUserDN = result.getName() + ("".equals(baseDn) ? "" : "," + baseDn);
+                    distinguishedUserDN = result.getNameInNamespace();
                 }
 
                 if (username == null) {
