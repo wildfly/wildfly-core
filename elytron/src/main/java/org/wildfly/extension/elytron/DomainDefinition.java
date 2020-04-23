@@ -608,6 +608,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             RuntimeCapability<Void> runtimeCapability = SECURITY_DOMAIN_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName domainServiceName = runtimeCapability.getCapabilityServiceName(SecurityDomain.class);
             ServiceController<SecurityDomain> serviceController = getRequiredService(serviceRegistry, domainServiceName, SecurityDomain.class);
+            startSecurityDomainServiceIfNotUp(serviceController);
             SecurityDomain domain = serviceController.getValue();
             ServerAuthenticationContext authenticationContext = domain.createNewAuthenticationContext();
             String principalName = NAME.resolveModelAttribute(context, operation).asString();
@@ -645,6 +646,17 @@ class DomainDefinition extends SimpleResourceDefinition {
                 }
             } catch (RealmUnavailableException e) {
                 throw ROOT_LOGGER.couldNotReadIdentity(principalName, domainServiceName, e);
+            }
+        }
+    }
+
+    private static void startSecurityDomainServiceIfNotUp(ServiceController<SecurityDomain> serviceController) throws OperationFailedException {
+        if (serviceController.getState() != ServiceController.State.UP) {
+            serviceController.setMode(Mode.ACTIVE);
+            try {
+                serviceController.awaitValue();
+            } catch (InterruptedException e) {
+                throw new OperationFailedException(e);
             }
         }
     }
