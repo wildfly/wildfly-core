@@ -35,7 +35,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.validation.InetAddressValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.MaskedAddressValidator;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
 /**
@@ -53,7 +52,6 @@ public class OutboundBindAddressResourceDefinition extends PersistentResourceDef
         .setRequired(true)
         .setAllowExpression(true)
         .setValidator(new InetAddressValidator(false, true))
-        .setDefaultValue(ModelNode.ZERO)
         .setRestartAllServices()
         .build();
 
