@@ -159,7 +159,6 @@ public class DeploymentAttributes {
                     ModelDescriptionConstants.HASH, ModelDescriptionConstants.INPUT_STREAM_INDEX,
                     ModelDescriptionConstants.BYTES, ModelDescriptionConstants.URL,
                     ModelDescriptionConstants.PATH, ModelDescriptionConstants.RELATIVE_TO)
-            .setDefaultValue(ModelNode.FALSE)
             .build();
 
     public static final SimpleAttributeDefinition CONTENT_INPUT_STREAM_INDEX =
