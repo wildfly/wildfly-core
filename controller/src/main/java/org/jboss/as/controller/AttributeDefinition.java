@@ -134,6 +134,10 @@ public abstract class AttributeDefinition {
         if (defaultValue != null && defaultValue.isDefined()) {
             this.defaultValue = defaultValue;
             this.defaultValue.protect();
+            if (this.required) {
+                // WFCORE-2252. Incorrect combination from the code author
+                throw new IllegalArgumentException("Attribute " + name + " uses a combination of a default value and a required flag. At most one of those should be set.");
+            }
         } else {
             this.defaultValue = null;
         }
