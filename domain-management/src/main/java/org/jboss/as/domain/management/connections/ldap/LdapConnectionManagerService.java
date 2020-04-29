@@ -251,11 +251,10 @@ public class LdapConnectionManagerService implements Service<LdapConnectionManag
     }
 
     private DirContext getConnection(final Hashtable<String, String> properties, final SSLContext sslContext) throws NamingException {
-        ClassLoader old = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+        ClassLoader old = WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(LdapConnectionManagerService.class);
         try {
             if (sslContext != null) {
                 ThreadLocalSSLSocketFactory.setSSLSocketFactory(sslContext.getSocketFactory());
-                WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(ThreadLocalSSLSocketFactory.class);
                 properties.put("java.naming.ldap.factory.socket", ThreadLocalSSLSocketFactory.class.getName());
             }
             if (SECURITY_LOGGER.isTraceEnabled()) {
