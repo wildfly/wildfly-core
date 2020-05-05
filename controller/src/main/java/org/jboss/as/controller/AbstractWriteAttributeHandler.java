@@ -26,7 +26,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +37,6 @@ import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.common.Assert;
 
 /**
  * Abstract handler for the write aspect of a
@@ -55,16 +56,21 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
     private final Map<String, AttributeDefinition> attributeDefinitions;
 
     protected AbstractWriteAttributeHandler(final AttributeDefinition... definitions) {
-        Assert.assertNotNull(definitions);
-        attributeDefinitions = new HashMap<String, AttributeDefinition>();
-        for (AttributeDefinition def : definitions) {
-            attributeDefinitions.put(def.getName(), def);
-        }
-
+        this(Arrays.asList(definitions));
     }
 
     protected AbstractWriteAttributeHandler(final Collection<AttributeDefinition> definitions) {
-        this(definitions.toArray(new AttributeDefinition[definitions.size()]));
+        if (definitions.isEmpty()) {
+            this.attributeDefinitions = Collections.emptyMap();
+        } else if (definitions.size() == 1) {
+            AttributeDefinition definition = definitions.iterator().next();
+            this.attributeDefinitions = Collections.singletonMap(definition.getName(), definition);
+        } else {
+            this.attributeDefinitions = new HashMap<>(definitions.size());
+            for (AttributeDefinition definition : definitions) {
+                this.attributeDefinitions.put(definition.getName(), definition);
+            }
+        }
     }
 
     @Override
