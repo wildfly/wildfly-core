@@ -24,13 +24,14 @@ package org.wildfly.test.jmx;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.PropertyPermission;
-import java.util.Set;
 
 import org.jboss.as.test.shared.PermissionUtils;
 
@@ -85,7 +86,7 @@ public class ServiceActivatorDeploymentUtil {
         createServiceActivatorListenerDeployment(destination, targetName, listenerClass, Collections.emptySet());
     }
 
-    public static void createServiceActivatorListenerDeployment(File destination, String targetName, Class listenerClass, Set<Permission> additionalPermissions) throws IOException {
+    public static void createServiceActivatorListenerDeployment(File destination, String targetName, Class listenerClass, Collection<Permission> additionalPermissions) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addClass(ServiceActivatorDeployment.class);
         archive.addClass(listenerClass);
@@ -102,6 +103,7 @@ public class ServiceActivatorDeploymentUtil {
         archive.addAsManifestResource(new StringAsset("Dependencies: org.jboss.msc,org.jboss.as.jmx,org.jboss.logging,org.jboss.as.server,org.jboss.as.controller\n"), "MANIFEST.MF");
         archive.addAsResource(new StringAsset(sb.toString()), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
 
+        Path targetPath = destination.getParentFile().getParentFile().toPath();
         List<Permission> permissions = new ArrayList<>(Arrays.asList(
                 new FilePermission(destination.getAbsolutePath()
                         .replace("archives", "wildfly-core")
@@ -109,6 +111,9 @@ public class ServiceActivatorDeploymentUtil {
                 new FilePermission("target", "read, write"),
                 new FilePermission("target/notifications", "read, write"),
                 new FilePermission("target/notifications/-", "read, write"),
+                new FilePermission(targetPath.toAbsolutePath().toString(), "read"),
+                new FilePermission(targetPath.resolve("notifications").toAbsolutePath().toString(), "read, write"),
+                new FilePermission(targetPath.resolve("notifications").toAbsolutePath().toString() + File.separatorChar + '-', "read, write"),
                 getMBeanPermission(RunningStateJmx.class, targetName, "addNotificationListener"),
                 getMBeanPermission(RunningStateJmx.class, targetName, "removeNotificationListener"),
                 new PropertyPermission("user.dir", "read")
