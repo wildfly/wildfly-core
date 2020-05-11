@@ -96,6 +96,12 @@ public class CoreUtils {
 
     private static final char[] KEYSTORE_CREATION_PASSWORD = "123456".toCharArray();
 
+    public static final String KEYSTORE_SERVER_ALIAS = "cn=server";
+
+    public static final String KEYSTORE_CLIENT_ALIAS = "cn=client";
+
+    public static final String KEYSTORE_UNTRUSTED_ALIAS = "cn=untrusted";
+
     private static void createKeyStoreTrustStore(KeyStore keyStore, KeyStore trustStore, String DN, String alias) throws Exception {
         X500Principal principal = new X500Principal(DN);
 
@@ -111,8 +117,8 @@ public class CoreUtils {
         if(trustStore != null) trustStore.setCertificateEntry(alias, certificate);
     }
 
-    private static KeyStore loadKeyStore() throws Exception{
-        KeyStore ks = KeyStore.getInstance("JKS");
+    private static KeyStore loadKeyStore(String provider) throws Exception{
+        KeyStore ks = KeyStore.getInstance(provider);
         ks.load(null, null);
         return ks;
     }
@@ -129,16 +135,16 @@ public class CoreUtils {
         }
     }
 
-    private static void beforeTest(final File keyStoreDir) throws Exception {
-        KeyStore clientKeyStore = loadKeyStore();
-        KeyStore clientTrustStore = loadKeyStore();
-        KeyStore serverKeyStore = loadKeyStore();
-        KeyStore serverTrustStore = loadKeyStore();
-        KeyStore untrustedKeyStore = loadKeyStore();
+    private static void beforeTest(final File keyStoreDir, String provider) throws Exception {
+        KeyStore clientKeyStore = loadKeyStore(provider);
+        KeyStore clientTrustStore = loadKeyStore(provider);
+        KeyStore serverKeyStore = loadKeyStore(provider);
+        KeyStore serverTrustStore = loadKeyStore(provider);
+        KeyStore untrustedKeyStore = loadKeyStore(provider);
 
-        createKeyStoreTrustStore(clientKeyStore, serverTrustStore, "CN=client", "cn=client");
-        createKeyStoreTrustStore(serverKeyStore, clientTrustStore, "CN=server", "cn=server");
-        createKeyStoreTrustStore(untrustedKeyStore, null, "CN=untrusted", "cn=untrusted");
+        createKeyStoreTrustStore(clientKeyStore, serverTrustStore, "CN=client", KEYSTORE_CLIENT_ALIAS);
+        createKeyStoreTrustStore(serverKeyStore, clientTrustStore, "CN=server", KEYSTORE_SERVER_ALIAS);
+        createKeyStoreTrustStore(untrustedKeyStore, null, "CN=untrusted", KEYSTORE_UNTRUSTED_ALIAS);
 
         File clientCertFile = new File(keyStoreDir, "client.crt");
         File clientKeyFile = new File(keyStoreDir, "client.keystore");
@@ -149,9 +155,9 @@ public class CoreUtils {
         File untrustedCertFile = new File(keyStoreDir, "untrusted.crt");
         File untrustedKeyFile = new File(keyStoreDir, "untrusted.keystore");
 
-        createTemporaryCertFile((X509Certificate) clientKeyStore.getCertificate("cn=client"), clientCertFile);
-        createTemporaryCertFile((X509Certificate) serverKeyStore.getCertificate("cn=server"), serverCertFile);
-        createTemporaryCertFile((X509Certificate) untrustedKeyStore.getCertificate("cn=untrusted"), untrustedCertFile);
+        createTemporaryCertFile((X509Certificate) clientKeyStore.getCertificate(KEYSTORE_CLIENT_ALIAS), clientCertFile);
+        createTemporaryCertFile((X509Certificate) serverKeyStore.getCertificate(KEYSTORE_SERVER_ALIAS), serverCertFile);
+        createTemporaryCertFile((X509Certificate) untrustedKeyStore.getCertificate(KEYSTORE_UNTRUSTED_ALIAS), untrustedCertFile);
 
         createTemporaryKeyStoreFile(clientKeyStore, clientKeyFile);
         createTemporaryKeyStoreFile(clientTrustStore, clientTrustFile);
@@ -582,11 +588,15 @@ public class CoreUtils {
      * @throws IllegalArgumentException workingFolder is null or it's not a directory
      */
     public static void createKeyMaterial(final File workingFolder) throws Exception {
+        createKeyMaterial(workingFolder, "JKS");
+    }
+
+    public static void createKeyMaterial(final File workingFolder, String provider) throws Exception {
         if (workingFolder == null || !workingFolder.isDirectory()) {
             throw new IllegalArgumentException("Provide an existing folder as the method parameter.");
         }
 
-        beforeTest(workingFolder);
+        beforeTest(workingFolder, provider);
 
         LOGGER.info("Key material created in " + workingFolder.getAbsolutePath());
     }

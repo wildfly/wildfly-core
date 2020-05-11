@@ -37,6 +37,8 @@ public class RealmKeystore {
     private final String keyPassword;
     private final CredentialReference keystorePasswordCredentialReference;
     private final CredentialReference keyPasswordCredentialReference;
+    private final String alias;
+    private final String provider;
 
     // Constructors ----------------------------------------------------------
 
@@ -51,6 +53,8 @@ public class RealmKeystore {
         this.keyPassword = builder.keyPassword;
         this.keystorePasswordCredentialReference = builder.keystorePasswordCredentialReference;
         this.keyPasswordCredentialReference = builder.keyPasswordCredentialReference;
+        this.alias = builder.alias;
+        this.provider = builder.provider;
     }
 
     // Public methods --------------------------------------------------------
@@ -100,6 +104,24 @@ public class RealmKeystore {
         return keyPasswordCredentialReference;
     }
 
+    /**
+     * Getter for the alias.
+     *
+     * @return the alias
+     */
+    public String getAlias() {
+        return alias;
+    }
+
+    /**
+     * Getter for the provider.
+     *
+     * @return the alias
+     */
+    public String getProvider() {
+        return provider;
+    }
+
     @Override
     public String toString() {
         return "RealmKeystore [keystorePath=" + keystorePath + ", keystorePassword=" + keystorePassword + ", keystorePasswordCredentialReference=" + keystorePasswordCredentialReference + ", keyPassword=" + keyPassword + ", keyPasswordCredentialReference=" + keyPasswordCredentialReference + "]";
@@ -113,6 +135,8 @@ public class RealmKeystore {
         private String keyPassword;
         private CredentialReference keystorePasswordCredentialReference;
         private CredentialReference keyPasswordCredentialReference;
+        private String alias;
+        private String provider;
 
         public Builder keystorePath(String keystorePath) {
             this.keystorePath = keystorePath;
@@ -136,6 +160,16 @@ public class RealmKeystore {
 
         public Builder keyPasswordCredentialReference(CredentialReference keyPasswordCredentialReference) {
             this.keyPasswordCredentialReference = keyPasswordCredentialReference;
+            return this;
+        }
+
+        public Builder alias(String alias) {
+            this.alias = alias;
+            return this;
+        }
+
+        public Builder provider(String provider) {
+            this.provider = provider;
             return this;
         }
 
