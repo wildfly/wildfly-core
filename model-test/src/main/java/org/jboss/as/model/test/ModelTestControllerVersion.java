@@ -47,6 +47,7 @@ public enum ModelTestControllerVersion {
 
     // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
     EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.11.Final-redhat-00001", "7.2.0"),
+    EAP_7_3_0("7.3.0.GA-redhat-00004", true, "18.0.0", "10.1.2.Final-redhat-00001", "7.3.0"),
     ;
 
     private final String mavenGavVersion;
