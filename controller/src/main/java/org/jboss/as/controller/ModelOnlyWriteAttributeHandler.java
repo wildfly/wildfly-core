@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import java.util.Collection;
+
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -32,6 +34,10 @@ import org.jboss.dmr.ModelNode;
 public class ModelOnlyWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
     public ModelOnlyWriteAttributeHandler(AttributeDefinition... attributeDefinitions) {
+        super(attributeDefinitions);
+    }
+
+    public ModelOnlyWriteAttributeHandler(Collection<AttributeDefinition> attributeDefinitions) {
         super(attributeDefinitions);
     }
 
