@@ -40,12 +40,15 @@ import org.wildfly.core.launcher.Arguments.Argument;
 public class CommandBuilderTest {
 
     private static final Path WILDFLY_HOME;
+    private static final Path WILDFLY_BOOTABLE_JAR;
 
     static {
         WILDFLY_HOME = Paths.get(System.getProperty("wildfly.launcher.home")).toAbsolutePath().normalize();
+        WILDFLY_BOOTABLE_JAR = Paths.get(System.getProperty("wildfly.launcher.bootable.jar")).toAbsolutePath().normalize();
 
-        // Create some default directories
+        // Create some default directories and empty bootable fake jar file
         try {
+            Files.createFile(WILDFLY_BOOTABLE_JAR);
             Files.createDirectories(WILDFLY_HOME.resolve("modules"));
             Files.createDirectories(WILDFLY_HOME.resolve("configuration"));
             Files.createDirectories(WILDFLY_HOME.resolve("data"));
@@ -95,6 +98,57 @@ public class CommandBuilderTest {
 
         // The value saved should be the last value added
         Assert.assertTrue("java.net.preferIPv4Stack should be set to false", commandBuilder.getJavaOptions().contains("-Djava.net.preferIPv4Stack=false"));
+
+        // Rename the binding address
+        commandBuilder.setBindAddressHint(null);
+        commands = commandBuilder.buildArguments();
+        Assert.assertFalse("Binding address should have been removed", commands.contains("-b=0.0.0.0"));
+    }
+
+    @Test
+    public void testBootableJarBuilder() {
+        // Set up a bootable command builder
+        final BootableJarCommandBuilder commandBuilder = BootableJarCommandBuilder.of(WILDFLY_BOOTABLE_JAR)
+                .setInstallDir(Paths.get("foo"))
+                .setInstallDir(Paths.get("bar"))
+                .setBindAddressHint("0.0.0.0")
+                .setDebug(true, 5005)
+                .addJavaOption("-Djava.security.manager")
+                .addJavaOption("-Djava.net.preferIPv4Stack=true")
+                .addJavaOption("-Djava.net.preferIPv4Stack=false")
+                .setBindAddressHint("management", "0.0.0.0");
+
+        // Get all the commands
+        List<String> commands = commandBuilder.buildArguments();
+
+        Assert.assertTrue("--install-dir is missing", commands.contains("--install-dir=bar"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
+
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
+
+        Assert.assertTrue("Missing debug argument", commands.contains(String.format(StandaloneCommandBuilder.DEBUG_FORMAT, "y", 5005)));
+
+        // If we're using Java 9+ ensure the modular JDK options were added
+        testModularJvmArguments(commands, 1);
+
+        // A system property should only be added ones
+        long count = 0L;
+        for (String s : commandBuilder.getJavaOptions()) {
+            if (s.contains("java.net.preferIPv4Stack")) {
+                count++;
+            }
+        }
+        Assert.assertEquals("There should be only one java.net.preferIPv4Stack system property", 1, count);
+
+        // Install dir should be added once.
+        count = 0L;
+        for (String s : commandBuilder.getServerArguments()) {
+            if (s.contains("--install-dir")) {
+                count++;
+            }
+        }
+        Assert.assertEquals("There should be only one --install-dir", 1, count);
 
         // Rename the binding address
         commandBuilder.setBindAddressHint(null);

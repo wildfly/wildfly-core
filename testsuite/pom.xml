@@ -417,6 +417,20 @@
             </modules>
         </profile>
 
+        <!-- -Dts.bootable -->
+        <profile>
+            <id>ts.integ.group.bootable</id>
+            <activation>
+                <property>
+                    <name>ts.bootable</name>
+                </property>
+            </activation>
+            <modules>
+                <module>rbac</module>
+                <module>manualmode</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>all-modules.module.profile</id>
             <activation>

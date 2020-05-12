@@ -175,7 +175,7 @@
                         <phase>process-test-resources</phase>
                         <configuration>
                             <target>
-                                <copy file="${project.build.testOutputDirectory}/mgmt-users.properties" todir="${project.build.directory}/wildfly-core/standalone/configuration" overwrite="true" />
+                                <copy file="${project.build.testOutputDirectory}/wildfly/standalone/configuration/mgmt-users.properties" todir="${project.build.directory}/wildfly-core/standalone/configuration" overwrite="true" />
                             </target>
                         </configuration>
                         <goals>
@@ -279,6 +279,125 @@
                                         <!-- Manipulates the legacy security realm ManagementRealm.
                                              TODO determine if we want that used for management in this installation -->
                                         <exclude>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude>
+                                    </excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        
+        <!-- Test against bootable jar -->
+        <profile>
+            <id>bootablejar.profile</id>
+            <activation>
+                <property>
+                    <name>ts.bootable</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jboss.galleon</groupId>
+                        <artifactId>galleon-maven-plugin</artifactId>   
+                        <executions>
+                            <!-- Disable the default provisioning -->
+                            <execution>
+                                <id>server-provisioning</id>
+                                <goals>
+                                    <goal>provisioning</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.wildfly.plugins</groupId>
+                        <artifactId>wildfly-jar-maven-plugin</artifactId>
+                        <version>${version.org.wildfly.jar.plugin}</version>
+                        <executions>
+                            <!-- Provision a server with the core functionality we will provide in OpenShift images -->
+                            <execution>
+                                <id>bootable-jar-packaging</id>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <output-file-name>test-wildfly.jar</output-file-name>
+                                    <hollowJar>true</hollowJar>
+                                    <extraServerContent>${project.basedir}/src/test/resources/wildfly</extraServerContent>
+                                    <record-state>false</record-state>
+                                    <log-time>${galleon.log.time}</log-time>
+                                    <offline>true</offline>
+                                    <plugin-options>
+                                        <jboss-maven-dist/>
+                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                                    </plugin-options>
+                                    <feature-packs>
+                                        <feature-pack>
+                                            <groupId>org.wildfly.core</groupId>
+                                            <artifactId>wildfly-core-galleon-pack</artifactId>
+                                            <version>${project.version}</version>
+                                            <inherit-configs>false</inherit-configs>
+                                            <inherit-packages>false</inherit-packages>
+                                            <!-- Specifically include patching -->
+                                            <included-packages>
+                                                <name>org.jboss.as.patching.cli</name>
+                                            </included-packages>
+                                            <excluded-packages>
+                                                <name>product.conf</name>
+                                            </excluded-packages>
+                                        </feature-pack>
+                                    </feature-packs>
+                                    <layers>
+                                        <layer>core-server</layer>
+                                        <layer>core-tools</layer>
+                                        <layer>deployment-scanner</layer>
+                                    </layers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <!-- Tests against the bootable jar -->
+                            <execution>
+                                <id>bootable-server-surefire</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemProperties>
+                                        <property>
+                                            <name>wildfly.bootable.jar</name>
+                                            <value>true</value>
+                                        </property>
+                                        <property>
+                                            <name>wildfly.bootable.jar.jar</name>
+                                            <value>${project.build.directory}/test-wildfly.jar</value>
+                                        </property>
+                                        <property>
+                                            <name>wildfly.bootable.jar.install.dir</name>
+                                            <value>${project.build.directory}/${server.output.dir.prefix}</value>
+                                        </property>
+                                    </systemProperties>
+                                    <excludes>
+                                        <!-- Manipulates the discovery subsystem, which isn't installed, and tries
+                                            to remove elytron capabilities that the installed config requires -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.java</exclude>
+                                        <!-- Manipulates the legacy security realm ManagementRealm.
+                                             TODO determine if we want that used for management in this installation -->
+                                        <exclude>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude>
+                                        <!-- testcase in admin mode -->
+                                        <exclude>org.jboss.as.test.integration.management.console.WebConsoleRedirectionTestCase.java</exclude>
+                                        <!-- No snapshot, readonly config -->
+                                        <exclude>org.wildfly.core.test.standalone.mgmt.api.ModelPersistenceTestCase.java</exclude>
                                     </excludes>
                                 </configuration>
                             </execution>

@@ -118,6 +118,7 @@
         <version.org.wildfly.galleon-plugins>4.2.6.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
+        <version.org.wildfly.jar.plugin>2.0.0.Alpha2</version.org.wildfly.jar.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.0.0.Final</version.org.wildfly.plugins>
@@ -234,6 +235,7 @@
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
+        <module>bootable-jar</module>
         <module>build</module>
         <module>build-legacy</module>
         <module>dist</module>
@@ -1371,6 +1373,16 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-jar-runtime</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-jar-boot</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-logging</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -2292,6 +2304,36 @@
             <activation>
                 <property>
                     <name>ts.layers</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!-- Disable the surefire tests (at least the default ones) for all modules except for
+                             those where this profile turns them on.  This profile is meant to be an
+                             entirely alternative testsuite execution so there's no point running the normal
+                             tests, which get plenty of exercise elsewhere. -->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>default-test</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- -Dts.bootable -->
+        <profile>
+            <id>ts.bootable</id>
+            <activation>
+                <property>
+                    <name>ts.bootable</name>
                 </property>
             </activation>
             <build>

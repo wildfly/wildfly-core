@@ -1,6 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2014, Red Hat, Inc., and individual contributors
+  ~ Copyright 2020, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -20,21 +22,31 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<build xmlns="urn:wildfly:feature-pack-build:3.1" producer="wildfly-core-vault-test@maven(org.jboss.universe:community-universe):current">
+<module xmlns="urn:jboss:module:1.8" name="org.wildfly.bootable-jar">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <artifact name="${org.wildfly.core:wildfly-jar-runtime}"/>
+    </resources>
+
+    <exports>
+        <exclude path="org/wildfly/core/jar/runtime/_private"/>
+    </exports>
+
     <dependencies>
-        <dependency group-id="org.wildfly.core" artifact-id="wildfly-core-galleon-pack">
-            <name>org.wildfly.core:wildfly-core-galleon-pack</name>
-            <packages inherit="true">
-                <exclude name="product.conf"/>
-            </packages>
-            <default-configs inherit="false">
-                <include model="standalone" name="standalone.xml"/>
-                <include model="domain" name="domain.xml"/>
-                <include model="host" name="host.xml"/>
-            </default-configs>
-        </dependency>
+        <module name="java.xml"/>
+        <module name="java.desktop"/>
+        <module name="org.jboss.as.server"/>
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.controller-client"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.logmanager" services="import"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.threads"/>
+        <module name="org.jboss.dmr"/>
+        <module name="org.jboss.as.process-controller"/>
     </dependencies>
-    <default-packages>
-        <package name="org.picketbox"/>
-    </default-packages>
-</build>
+
+</module>

@@ -63,6 +63,8 @@ public class LayersTestCase {
         "org.jboss.as.standalone",
         // Brought by galleon ServerRootResourceDefinition
         "wildflyee.api",
+        // bootable jar runtime
+        "org.wildfly.bootable-jar"
     };
 
     @Test

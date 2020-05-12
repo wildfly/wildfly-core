@@ -38,6 +38,7 @@
 
     <properties>
         <wildfly.launcher.home>${basedir}/target/fake-wildfly</wildfly.launcher.home>
+        <wildfly.launcher.bootable.jar>${basedir}/target/fake-wildfly.jar</wildfly.launcher.bootable.jar>
     </properties>
 
     <dependencies>
@@ -112,6 +113,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <wildfly.launcher.home>${wildfly.launcher.home}</wildfly.launcher.home>
+                        <wildfly.launcher.bootable.jar>${wildfly.launcher.bootable.jar}</wildfly.launcher.bootable.jar>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
