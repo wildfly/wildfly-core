@@ -102,23 +102,28 @@ public class HTTPSManagementInterfaceTestCase {
     public static final File CLIENT_TRUSTSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.CLIENT_TRUSTSTORE);
     public static final File UNTRUSTED_KEYSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.UNTRUSTED_KEYSTORE);
 
-    private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
+    private static ManagementWebRealmSetup managementNativeRealmSetup;
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
     private static final String MANAGEMENT_WEB_REALM_CR = "ManagementWebRealmCr";
+    private static final String MANAGEMENT_WEB_REALM_CR_ALIAS = "ManagementWebRealmCrAlias";
     private static final String MGMT_CTX = "/management";
 
     @Inject
     protected static ServerController controller;
 
-
     @BeforeClass
     public static void startAndSetupContainer() throws Exception {
+        startAndSetupContainer("JKS");
+    }
+
+    protected static void startAndSetupContainer(String provider) throws Exception {
         controller.startInAdminMode();
 
         try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()){
             ManagementClient managementClient = controller.getClient();
 
-            serverSetup(managementClient);
+            serverSetup(managementClient, provider);
+            managementNativeRealmSetup = new ManagementWebRealmSetup(provider);
             managementNativeRealmSetup.setup(client);
         }
         // To apply new security realm settings for http interface reload of
@@ -157,20 +162,8 @@ public class HTTPSManagementInterfaceTestCase {
         assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
     }
 
-    /**
-     * @throws org.apache.http.client.ClientProtocolException, IOException, URISyntaxException
-     * @test.tsfi tsfi.port.management.https
-     * @test.tsfi tsfi.app.web.admin.console
-     * @test.tsfi tsfi.keystore.file
-     * @test.tsfi tsfi.truststore.file
-     * @test.objective Testing authentication over management-https port. Test with user who has right/wrong certificate
-     * to login into management web interface. Also provides check for web administration console
-     * authentication, which goes through /management context.
-     * @test.expectedResult Management web console page is successfully reached, and test finishes without exception.
-     */
-    @Test
-    public void testHTTPS() throws Exception {
-        changeSecurityRealmForHttpMngmntInterface(MANAGEMENT_WEB_REALM);
+    protected void testHTTPS(String realm) throws Exception{
+        changeSecurityRealmForHttpMngmntInterface(realm);
 
         final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
         final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
@@ -191,7 +184,22 @@ public class HTTPSManagementInterfaceTestCase {
 
         String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
         assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
+    }
 
+    /**
+     * @throws org.apache.http.client.ClientProtocolException, IOException, URISyntaxException
+     * @test.tsfi tsfi.port.management.https
+     * @test.tsfi tsfi.app.web.admin.console
+     * @test.tsfi tsfi.keystore.file
+     * @test.tsfi tsfi.truststore.file
+     * @test.objective Testing authentication over management-https port. Test with user who has right/wrong certificate
+     * to login into management web interface. Also provides check for web administration console
+     * authentication, which goes through /management context.
+     * @test.expectedResult Management web console page is successfully reached, and test finishes without exception.
+     */
+    @Test
+    public void testHTTPS() throws Exception {
+        testHTTPS(MANAGEMENT_WEB_REALM);
     }
 
     /**
@@ -207,28 +215,23 @@ public class HTTPSManagementInterfaceTestCase {
      */
     @Test
     public void testHTTPSWithCredentialReference() throws Exception {
-        changeSecurityRealmForHttpMngmntInterface(MANAGEMENT_WEB_REALM_CR);
+        testHTTPS(MANAGEMENT_WEB_REALM_CR);
+    }
 
-        final HttpClient httpClient = getHttpClient(CLIENT_KEYSTORE_FILE);
-        final HttpClient httpClientUntrusted = getHttpClient(UNTRUSTED_KEYSTORE_FILE);
-
-        URL mgmtURL = new URL("https", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_HTTPS_PORT, MGMT_CTX);
-        try {
-            String responseBody = makeCallWithHttpClient(mgmtURL, httpClientUntrusted, 401);
-            assertThat("Management index page was reached", responseBody, not(containsString("management-major-version")));
-        } catch (SSLHandshakeException | SSLPeerUnverifiedException | SocketException e) {
-            //depending on the OS and the version of HTTP client in use any one of these exceptions may be thrown
-            //in particular the SocketException gets thrown on Windows
-            // OK
-        } catch (SSLException e) {
-            if (!(e.getCause() instanceof SocketException)) {
-                throw e;
-            }
-        }
-
-        String responseBody = makeCallWithHttpClient(mgmtURL, httpClient, 200);
-        assertTrue("Management index page was not reached", responseBody.contains("management-major-version"));
-
+    /**
+     * @throws org.apache.http.client.ClientProtocolException, IOException, URISyntaxException
+     * @test.tsfi tsfi.port.management.https
+     * @test.tsfi tsfi.app.web.admin.console
+     * @test.tsfi tsfi.keystore.file
+     * @test.tsfi tsfi.truststore.file
+     * @test.objective Testing authentication over management-https port configured with credential reference and alias.
+     * Test with user who has right/wrong certificate to login into management web interface. Also provides check for
+     * web administration console authentication, which goes through /management context.
+     * @test.expectedResult Management web console page is successfully reached, and test finishes without exception.
+     */
+    @Test
+    public void testHTTPSWithCredentialReferenceWithAlias() throws Exception {
+        testHTTPS(MANAGEMENT_WEB_REALM_CR_ALIAS);
     }
 
     @AfterClass
@@ -252,6 +255,12 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     static class ManagementWebRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
+
+        private final String provider;
+
+        public ManagementWebRealmSetup(String provider) {
+            this.provider = provider;
+        }
 
         // Overridden just to expose locally
         @Override
@@ -281,22 +290,31 @@ public class HTTPSManagementInterfaceTestCase {
                             .keystorePasswordCredentialReference(credentialReference)
                             .keyPasswordCredentialReference(credentialReference)
                             .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+            final ServerIdentity serverIdentityCRAlias = new ServerIdentity.Builder().ssl(
+                    new RealmKeystore.Builder()
+                            .keystorePasswordCredentialReference(credentialReference)
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
+                            .alias(CoreUtils.KEYSTORE_SERVER_ALIAS)
+                            .provider(provider)
+                            .build()).build();
             final Authentication authenticationCR = new Authentication.Builder().truststore(
                     new RealmKeystore.Builder().keystorePasswordCredentialReference(credentialReference)
                             .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
             final SecurityRealm realmCR = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR).serverIdentity(serverIdentityCR)
                     .authentication(authenticationCR).build();
+            final SecurityRealm realmCR2 = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR_ALIAS).serverIdentity(serverIdentityCRAlias)
+                    .authentication(authenticationCR).build();
 
-            return new SecurityRealm[]{realm, realmCR};
+            return new SecurityRealm[]{realm, realmCR, realmCR2};
         }
     }
 
-    private static void serverSetup(ManagementClient managementClient) throws Exception {
+    private static void serverSetup(ManagementClient managementClient, String provider) throws Exception {
 
         // create key and trust stores with imported certificates from opposing sides
         FileUtils.deleteDirectory(WORK_DIR);
         WORK_DIR.mkdirs();
-        CoreUtils.createKeyMaterial(WORK_DIR);
+        CoreUtils.createKeyMaterial(WORK_DIR, provider);
 
         final ModelControllerClient client = managementClient.getControllerClient();
 

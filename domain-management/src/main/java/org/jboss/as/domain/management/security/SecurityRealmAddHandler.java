@@ -729,10 +729,10 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             ExceptionSupplier<CredentialSource, Exception> keystoreCredentialSourceSupplier = null;
             final String keySuffix = SERVER_IDENTITY + KEY_DELIMITER + SSL;
             if (ssl.hasDefined(KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
+                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             if (ssl.hasDefined(KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME)) {
-                keystoreCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
+                keyCredentialSourceSupplier = CredentialReference.getCredentialSourceSupplier(context, KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE, ssl, serviceBuilder, keySuffix);
             }
             serviceBuilder.setInstance(new FileKeyManagerService(kmsConsumer, pathManagerSupplier, keyCredentialSourceSupplier, keystoreCredentialSourceSupplier, provider, path, relativeTo, keystorePassword, keyPassword, alias, autoGenerateCertHostName));
         }
