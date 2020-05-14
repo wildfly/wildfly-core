@@ -39,6 +39,9 @@
         <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-i386" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
             <filter pattern="META-INF*" include="false" />
         </copy-artifact>
+        <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-linux-s390x" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
+            <filter pattern="META-INF*" include="false" />
+        </copy-artifact>
         <copy-artifact artifact="org.wildfly.openssl:wildfly-openssl-macosx-x86_64" to-location="modules/system/layers/base/org/wildfly/openssl/main/lib" extract="true">
             <filter pattern="META-INF*" include="false" />
         </copy-artifact>
