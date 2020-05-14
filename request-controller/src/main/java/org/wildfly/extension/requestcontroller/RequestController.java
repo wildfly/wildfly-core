@@ -396,7 +396,7 @@ public class RequestController implements Service<RequestController>, ServerActi
         }
     }
 
-    private QueuedTask findForcedTask() {
+    private synchronized QueuedTask findForcedTask() {
         QueuedTask task = null;
         List<QueuedTask> storage = new ArrayList<>();
         while (task == null && !taskQueue.isEmpty()) {
