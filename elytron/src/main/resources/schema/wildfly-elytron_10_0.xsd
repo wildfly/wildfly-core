@@ -2531,6 +2531,7 @@
             <xs:element name="x509-subject-alt-name-evidence-decoder" type="x509SubjectAltNameEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="custom-evidence-decoder" type="customEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="aggregate-evidence-decoder" type="aggregateEvidenceDecoderType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="regex-role-mapper" type="regexRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -3611,6 +3612,47 @@
                     <xs:annotation>
                         <xs:documentation>
                             When set to 'true' the mapped roles will retain all roles, that have no defined mappings.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="regexRoleMapperType">
+        <xs:annotation>
+            <xs:documentation>
+                A RoleMapper definition that uses pattern to find matching roles and then replaces these roles with replacement pattern.
+                Role matches the pattern in given pattern can be found in any substring of the role name.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="roleMapperType">
+                <xs:attribute name="pattern" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The pattern used for matching. Can capture groups.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="replacement" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The replacement string. Can make use of captured groups.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="keep-non-mapped" type="xs:boolean" use="optional" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If true, keep roles that did not match the provided pattern.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="replace-all" type="xs:boolean" use="optional" default="false">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If true, replace all occurrences of pattern and not only the first one.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

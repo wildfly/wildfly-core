@@ -217,6 +217,13 @@ class MapperParser {
             })
             .build();
 
+    private PersistentResourceXMLDescription regexRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getRegexRoleMapperDefinition().getPathElement())
+            .addAttribute(RoleMapperDefinitions.PATTERN)
+            .addAttribute(RoleMapperDefinitions.REPLACEMENT)
+            .addAttribute(RoleMapperDefinitions.KEEP_NON_MAPPED)
+            .addAttribute(RoleMapperDefinitions.REPLACE_ALL)
+            .build();
+
     private PersistentResourceXMLDescription addPrefixRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getAddPrefixRoleMapperDefinition().getPathElement())
             .addAttribute(RoleMapperDefinitions.PREFIX)
             .build();
@@ -434,6 +441,7 @@ class MapperParser {
                 .addChild(aggregateEvidenceDecoderParser)
                 .addChild(sourceAddressRoleDecoderParser) // new
                 .addChild(aggregateRoleDecoderParser) // new
+                .addChild(regexRoleMapperParser) // new
                 .build();
     }
 }
