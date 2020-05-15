@@ -152,7 +152,7 @@
         <version.com.jcraft.jzlib>1.1.1</version.com.jcraft.jzlib>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.1.0.Final</version.io.undertow>
+        <version.io.undertow>2.1.1.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
@@ -217,15 +217,16 @@
         <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.2.1.Final</version.org.wildfly.discovery>
         <version.org.wildfly.legacy.test>5.0.0.Final</version.org.wildfly.legacy.test>
-        <version.org.wildfly.openssl>1.0.10.Final</version.org.wildfly.openssl>
+        <version.org.wildfly.openssl>1.1.0.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>${version.org.wildfly.openssl}</version.org.wildfly.openssl.natives>
         <version.org.wildfly.openssl.wildfly-openssl-linux-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
         <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
+        <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.12.0.CR1</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.12.0.CR2</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.7.1.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
        
@@ -1513,6 +1514,11 @@
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-linux-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl.wildfly-openssl-linux-x86_64}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl-linux-s390x</artifactId>
+                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-s390x}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>

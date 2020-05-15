@@ -156,6 +156,14 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                         sslModuleNode.get(Constants.KEY_PASSWORD_CREDENTIAL_REFERENCE).set(getCredentialReferenceModelNode(ssl.getKeyPasswordCredentialReference()));
                     }
 
+                    if (StringUtils.isNotEmpty(ssl.getAlias())) {
+                        sslModuleNode.get(Constants.ALIAS).set(ssl.getAlias());
+                    }
+
+                    if (StringUtils.isNotEmpty(ssl.getProvider())) {
+                        sslModuleNode.get(Constants.PROVIDER).set(ssl.getProvider());
+                    }
+
                     sslModuleNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
                     steps.add(sslModuleNode);
                 }
