@@ -45,6 +45,9 @@
         <security-domain name="TestDomain" default-realm="FileRealm">
             <realm name="FileRealm" />
         </security-domain>
+        <security-domain name="AggregateDomain" default-realm="FileRealm" role-decoder="aggregateRoleDecoder">
+            <realm name="FileRealm"/>
+        </security-domain>
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
@@ -110,6 +113,12 @@
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
         <regex-principal-transformer name="RegexOne" pattern="a" replacement="b" />
+        <source-address-role-decoder name="ipRoleDecoder" source-address="10.12.14.16" roles="admin user"/>
+        <source-address-role-decoder name="regexRoleDecoder" pattern="10\.12\.14\.\d+$" roles="employee"/>
+        <aggregate-role-decoder name="aggregateRoleDecoder">
+            <role-decoder name="ipRoleDecoder"/>
+            <role-decoder name="regexRoleDecoder"/>
+        </aggregate-role-decoder>
     </mappers>
     <tls>
         <key-stores>

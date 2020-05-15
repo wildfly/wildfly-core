@@ -41,6 +41,7 @@ interface ElytronDescriptionConstants {
     String AGGREGATE_PRINCIPAL_TRANSFORMER = "aggregate-principal-transformer";
     String AGGREGATE_PROVIDERS = "aggregate-providers";
     String AGGREGATE_REALM = "aggregate-realm";
+    String AGGREGATE_ROLE_DECODER = "aggregate-role-decoder";
     String AGGREGATE_ROLE_MAPPER = "aggregate-role-mapper";
     String AGGREGATE_SASL_SERVER_FACTORY = "aggregate-sasl-server-factory";
     String AGGREGATE_SECURITY_EVENT_LISTENER = "aggregate-security-event-listener";
@@ -449,6 +450,7 @@ interface ElytronDescriptionConstants {
     String REVOKE_CERTIFICATE = "revoke-certificate";
     String RIGHT = "right";
     String ROLE_DECODER = "role-decoder";
+    String ROLE_DECODERS = "role-decoders";
     String ROLE_RECURSION = "role-recursion";
     String ROLE_RECURSION_NAME = "role-recursion-name";
     String ROLE_MAP = "role-map";
@@ -520,12 +522,14 @@ interface ElytronDescriptionConstants {
     String SIMPLE_ROLE_DECODER = "simple-role-decoder";
     String SIZE = "size";
     String SIZE_ROTATING_FILE_AUDIT_LOG = "size-rotating-file-audit-log";
+    String SOURCE_ADDRESS_ROLE_DECODER = "source-address-role-decoder";
     String SQL = "sql";
     String SSL_CONTEXT = "ssl-context";
     String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
     String SNI_MAPPING = "sni-mapping";
     String SOFT_FAIL = "soft-fail";
+    String SOURCE_ADDRESS = "source-address";
     String STAGING = "staging";
     String STAGING_URL = "staging-url";
     String START_SEGMENT = "start-segment";

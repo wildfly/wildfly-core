@@ -1,6 +1,18 @@
 <subsystem xmlns="urn:wildfly:elytron:10.0">
     <security-domains>
-        <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder">
+        <security-domain name="TestingDomain" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="ipRoleDecoder1">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="TestingDomainIPv6" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="ipv6RoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="TestingDomainRegex" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="regexRoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="TestingDomainRegexIPv6" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="ipv6RegexRoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="TestingDomainAggregate" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="aggregateRoleDecoder">
             <realm name="PropRealm"/>
         </security-domain>
         <security-domain name="CustomTestingDomain" default-realm="PropRealm" evidence-decoder="customEvidenceDecoder">
@@ -44,5 +56,16 @@
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
 
+        <source-address-role-decoder name="ipRoleDecoder1" source-address="10.12.14.16" roles="admin user"/>
+        <source-address-role-decoder name="ipRoleDecoder2" source-address="10.12.14.18" roles="employee"/>
+        <source-address-role-decoder name="ipRoleDecoder3" pattern="10\.12\.14\.\d+$" roles="internal"/>
+        <source-address-role-decoder name="ipv6RoleDecoder" source-address="2001:db8:85a3:0:0:8a2e:370:7334" roles="admin user"/>
+        <source-address-role-decoder name="regexRoleDecoder" pattern="10\.12\.14\.\d+$" roles="admin user"/>
+        <source-address-role-decoder name="ipv6RegexRoleDecoder" pattern="2001\:db8\:85a3\:0\:0\:8a2e\:370\:\d+$" roles="admin user"/>
+        <aggregate-role-decoder name="aggregateRoleDecoder">
+            <role-decoder name="ipRoleDecoder1"/>
+            <role-decoder name="ipRoleDecoder2"/>
+            <role-decoder name="ipRoleDecoder3"/>
+        </aggregate-role-decoder>
     </mappers>
 </subsystem>
