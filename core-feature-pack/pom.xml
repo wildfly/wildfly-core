@@ -546,6 +546,11 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
+            <artifactId>wildfly-openssl-linux-s390x</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
         </dependency>
 
