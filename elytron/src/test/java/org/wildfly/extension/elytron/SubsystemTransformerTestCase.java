@@ -177,6 +177,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(AGGREGATE_REALM, "AggregateTwo")), REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.WEBSERVICES)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, "RegexRoleMapper")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 );
     }
 
