@@ -144,6 +144,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .end();
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER));
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER));
 
     }
 

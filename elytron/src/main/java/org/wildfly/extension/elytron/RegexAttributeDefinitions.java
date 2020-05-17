@@ -37,7 +37,7 @@ class RegexAttributeDefinitions {
 
     static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN, ModelType.STRING, false)
             .setAllowExpression(true)
-            .setValidator(new RexExValidator())
+            .setValidator(new RegExValidator())
             .setMinSize(1)
             .setRestartAllServices()
             .build();
@@ -49,9 +49,9 @@ class RegexAttributeDefinitions {
             .setRestartAllServices()
             .build();
 
-    private static class RexExValidator extends StringLengthValidator {
+    private static class RegExValidator extends StringLengthValidator {
 
-        private RexExValidator() {
+        private RegExValidator() {
             super(1, false, false);
         }
 
@@ -70,7 +70,7 @@ class RegexAttributeDefinitions {
 
     }
 
-    private static class CaptureGroupRexExValidator extends RexExValidator {
+    private static class CaptureGroupRexExValidator extends RegExValidator {
 
         @Override
         public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {

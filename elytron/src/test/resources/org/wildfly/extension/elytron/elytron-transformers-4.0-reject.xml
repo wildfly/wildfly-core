@@ -119,6 +119,7 @@
             <role-decoder name="ipRoleDecoder"/>
             <role-decoder name="regexRoleDecoder"/>
         </aggregate-role-decoder>
+        <regex-role-mapper name="RegexRoleMapper" pattern=".*-[a-z]*" replacement="$1"/>
     </mappers>
     <tls>
         <key-stores>

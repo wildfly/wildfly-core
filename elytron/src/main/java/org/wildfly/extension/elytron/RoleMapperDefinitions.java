@@ -58,6 +58,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.authz.MappedRoleMapper;
+import org.wildfly.security.authz.RegexRoleMapper;
 import org.wildfly.security.authz.RoleMapper;
 import org.wildfly.security.authz.Roles;
 
@@ -79,6 +80,14 @@ class RoleMapperDefinitions {
         .setMinSize(1)
         .setRestartAllServices()
         .build();
+
+    static final SimpleAttributeDefinition PATTERN = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN).build();
+
+    static final SimpleAttributeDefinition REPLACEMENT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACEMENT, ModelType.STRING, false)
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
 
     static final SimpleAttributeDefinition LEFT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LEFT, ModelType.STRING, true)
         .setMinSize(1)
@@ -113,6 +122,12 @@ class RoleMapperDefinitions {
             .build();
 
     static final SimpleAttributeDefinition KEEP_NON_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_NON_MAPPED, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(ModelNode.FALSE)
+            .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition REPLACE_ALL = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REPLACE_ALL, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
             .setRestartAllServices()
@@ -171,6 +186,31 @@ class RoleMapperDefinitions {
         };
 
         return new RoleMapperResourceDefinition(ElytronDescriptionConstants.MAPPED_ROLE_MAPPER, add, ROLE_MAPPING_MAP, KEEP_MAPPED, KEEP_NON_MAPPED);
+    }
+
+    static ResourceDefinition getRegexRoleMapperDefinition() {
+        AbstractAddStepHandler add = new RoleMapperAddHandler(PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL) {
+
+            @Override
+            protected ValueSupplier<RoleMapper> getValueSupplier(OperationContext context, ModelNode model) throws OperationFailedException {
+                final String regex = PATTERN.resolveModelAttribute(context, model).asString();
+                final String replacement = REPLACEMENT.resolveModelAttribute(context, model).asString();
+                final Boolean keepNonMapped = KEEP_NON_MAPPED.resolveModelAttribute(context, model).asBoolean();
+                final Boolean replaceAll = REPLACE_ALL.resolveModelAttribute(context, model).asBoolean();
+
+                final RegexRoleMapper roleMapper = new RegexRoleMapper.Builder()
+                        .setPattern(regex)
+                        .setReplacement(replacement)
+                        .setKeepNonMapped(keepNonMapped)
+                        .setReplaceAll(replaceAll)
+                        .build();
+
+                return () -> roleMapper;
+
+            }
+        };
+
+        return new RoleMapperResourceDefinition(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, add, PATTERN, REPLACEMENT, KEEP_NON_MAPPED, REPLACE_ALL);
     }
 
     static AggregateComponentDefinition<RoleMapper> getAggregateRoleMapperDefinition() {
