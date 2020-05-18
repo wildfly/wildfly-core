@@ -403,6 +403,7 @@ public enum Phase {
     public static final int PARSE_CASSANDRA_DRIVER                      = 0x4C02;
     public static final int PARSE_MONGO_DRIVER                          = 0x4C03;
     public static final int PARSE_MICROPROFILE_JWT_DETECTION            = 0x4C0D;
+    public static final int PARSE_DEFINE_VIRTUAL_DOMAIN_NAME            = 0x4C17;
 
     // REGISTER
     /**
