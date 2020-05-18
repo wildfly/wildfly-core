@@ -396,21 +396,21 @@ public class RequestController implements Service<RequestController>, ServerActi
         }
     }
 
-    private synchronized QueuedTask findForcedTask() {
-        QueuedTask task = null;
+    private QueuedTask findForcedTask() {
+        QueuedTask _ret = null;
+        QueuedTask task;
         List<QueuedTask> storage = new ArrayList<>();
-        while (task == null && !taskQueue.isEmpty()) {
-            QueuedTask tmp = taskQueue.poll();
-            if(tmp.forceRun) {
-                task = tmp;
+        while ((task = taskQueue.poll()) != null) {
+            if (task.forceRun) {
+                _ret = task;
             } else {
-                storage.add(tmp);
+                storage.add(task);
             }
         }
-        //this screws the order somewhat, but the container is suspending anyway, and the order
-        //was never guarenteed. if we push them back onto the front we will need to just go through them again
+        // this screws the order somewhat, but the container is suspending anyway, and the order
+        // was never guarenteed. if we push them back onto the front we will need to just go through them again
         taskQueue.addAll(storage);
-        return task;
+        return _ret;
     }
 
     private static final class ControlPointIdentifier {

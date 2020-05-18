@@ -22,12 +22,23 @@ public class WFCORE4967_TestCase {
         });
 
         CountDownLatch latch = new CountDownLatch(THREADS_QTY);
-        createSynchronisedThreads(latch, () -> {
+        List<Thread> threads = createSynchronisedThreads(latch, () -> {
             rc.requestComplete();
-        }).forEach(Thread::start);
+        });
+        threads.forEach(Thread::start);
+        // wait until all above threads ready to fire rc.requestComplete() together with bellow rc.resume()
         latch.await();
-
         rc.resume();
+
+        for (Thread t : threads) {
+            t.join();
+        }
+
+        // simulate just enough requests after server is resumed to drain potential outstanding tasks from taskQueue
+        for (int requestNo = 0; requestNo < TASKS_QTY; requestNo++) {
+            rc.requestComplete();
+        }
+
         assertEquals(TASKS_QTY, executedTaskCount.intValue());
     }
 
