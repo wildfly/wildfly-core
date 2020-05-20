@@ -749,6 +749,7 @@ public class CliCompletionTestCase {
                 System.in, System.out);
         ctx.connectController();
         try {
+
             {
                 String cmd = "command add --node-type=/subsystem=logging/logger ";
                 List<String> candidates = new ArrayList<>();
@@ -875,6 +876,76 @@ public class CliCompletionTestCase {
                 assertTrue(candidates.toString(), candidates.contains("--value="));
                 candidates = complete(ctx, cmd, false, cmd.length() - "--value".length());
                 assertTrue(candidates.toString(), candidates.contains("--value="));
+            }
+
+            {
+                String cmd = "command add --node-child=/core-service=management/access=authorization ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--command-name"));
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.toString(), candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--command-name"));
+            }
+
+            {
+                String cmd = "command add --node-child=/core-service=management/access=authorization --command-name";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--command-name="));
+                candidates = complete(ctx, cmd, false, cmd.length() - "--command-name".length());
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("--command-name="));
+            }
+
+            {
+                String cmd = "command add --node-child=/core-service=management/access=authorization --command-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("authorization"));
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.size() == 1);
+                assertTrue(candidates.toString(), candidates.contains("authorization"));
+            }
+
+            {
+                String cmd = "command add ---node-child=/core-service=management/access=authorization --command-name=authorization";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.isEmpty());
+                candidates = complete(ctx, cmd, true, 0);
+                assertTrue(candidates.isEmpty());
+            }
+
+            ctx.handle("command add --node-child=/core-service=management/access=authorization --command-name=authorization");
+
+            {
+                String cmd = "authorization ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--provider"));
+                assertFalse(candidates.toString(), candidates.contains("add"));
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.toString(), candidates.contains("--provider"));
+                assertFalse(candidates.toString(), candidates.contains("add"));
+            }
+
+            {
+                String cmd = "authorization read-attribute ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx, cmd,
+                        cmd.length(), candidates);
+                assertTrue(candidates.toString(), candidates.contains("--name"));
+                candidates = complete(ctx, cmd, false, cmd.length());
+                assertTrue(candidates.toString(), candidates.contains("--name"));
             }
 
             {
