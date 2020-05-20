@@ -23,6 +23,7 @@
 package org.jboss.as.remoting;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -81,12 +82,15 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
 
         // Get the destination URI
         final URI uri = getDestinationURI(context, operation);
+
         // create the service
-        final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName serviceName = OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         // also add an alias service name to easily distinguish between a generic, remote and local type of connection services
         final ServiceName aliasServiceName = GenericOutboundConnectionService.GENERIC_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName deprecatedServiceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+
         final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
-        final Consumer<GenericOutboundConnectionService> serviceConsumer = builder.provides(serviceName, aliasServiceName);
+        final Consumer<GenericOutboundConnectionService> serviceConsumer = builder.provides(deprecatedServiceName, aliasServiceName);
         builder.setInstance(new GenericOutboundConnectionService(serviceConsumer, uri));
         builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
         builder.install();

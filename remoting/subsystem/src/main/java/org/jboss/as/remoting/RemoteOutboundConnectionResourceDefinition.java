@@ -22,7 +22,6 @@
 
 package org.jboss.as.remoting;
 
-import static org.jboss.as.remoting.AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME;
 import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -96,7 +95,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
     private RemoteOutboundConnectionResourceDefinition() {
         super(new Parameters(ADDRESS, RemotingExtension.getResourceDescriptionResolver(CommonAttributes.REMOTE_OUTBOUND_CONNECTION))
                 .setAddHandler(RemoteOutboundConnectionAdd.INSTANCE)
-                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_BASE_SERVICE_NAME, RemoteOutboundConnectionAdd.INSTANCE))
+                .setRemoveHandler(new ServiceRemoveStepHandler(OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(), RemoteOutboundConnectionAdd.INSTANCE))
         );
     }
 

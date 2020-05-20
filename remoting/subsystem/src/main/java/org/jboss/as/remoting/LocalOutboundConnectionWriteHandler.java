@@ -63,7 +63,7 @@ class LocalOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler<
     private boolean applyModelToRuntime(OperationContext context, ModelNode operation) throws OperationFailedException {
         boolean reloadRequired = false;
         final String connectionName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)).getLastElement().getValue();
-        final ServiceName serviceName = LocalOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName serviceName = LocalOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         final ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController sc = registry.getService(serviceName);
         if (sc != null && sc.getState() == ServiceController.State.UP) {

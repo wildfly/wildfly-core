@@ -22,6 +22,7 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY;
 import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME;
 import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
@@ -48,6 +49,7 @@ import org.xnio.OptionMap;
  */
 class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
 
+
     static final RemoteOutboundConnectionAdd INSTANCE = new RemoteOutboundConnectionAdd();
 
     private RemoteOutboundConnectionAdd() {
@@ -72,10 +74,12 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final String protocol = authenticationContext != null ? null : RemoteOutboundConnectionResourceDefinition.PROTOCOL.resolveModelAttribute(context, operation).asString();
 
         // create the service
-        final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName serviceName = OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         final ServiceName aliasServiceName = RemoteOutboundConnectionService.REMOTE_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName deprecatedName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+
         final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
-        final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(serviceName, aliasServiceName);
+        final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(deprecatedName, aliasServiceName);
         final Supplier<OutboundSocketBinding> osbSupplier = builder.requires(outboundSocketBindingDependency);
         final Supplier<SecurityRealm> srSupplier = securityRealm != null ? SecurityRealm.ServiceUtil.requires(builder, securityRealm) : null;
         final Supplier<AuthenticationContext> acSupplier = authenticationContext != null ? builder.requires(context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContext, AuthenticationContext.class)) : null;
