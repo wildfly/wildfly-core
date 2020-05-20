@@ -17,6 +17,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +39,7 @@ import org.wildfly.core.launcher.CommandBuilder;
 import org.wildfly.core.launcher.Launcher;
 import org.wildfly.core.launcher.ProcessHelper;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * encapsulation of a server process
@@ -45,6 +48,14 @@ import org.wildfly.core.launcher.StandaloneCommandBuilder;
  * @author Tomaz Cerar
  */
 public class Server {
+
+    private static final String FACTOR_SYS_PROP = "ts.timeout.factor";
+    private static final String serverDebug = "wildfly.debug";
+    private static int factor;
+
+    static {
+        factor = WildFlySecurityManager.isChecking() ? AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Integer.getInteger(FACTOR_SYS_PROP, 100)) : Integer.getInteger(FACTOR_SYS_PROP, 100);
+    }
 
     // Bootable jar
     private final String bootableJar = System.getProperty("wildfly.bootable.jar.jar");
@@ -66,10 +77,9 @@ public class Server {
     private final String managementProtocol = System.getProperty("management.protocol", "remote+http");
 
     // timeouts
-    private final int startupTimeout = Integer.getInteger("server.startup.timeout", 30);
-    private final int stopTimeout = Integer.getInteger("server.stop.timeout", 10);
+    private final int startupTimeout = adjust(Integer.getInteger("server.startup.timeout", 60));
+    private final int stopTimeout = adjust(Integer.getInteger("server.stop.timeout", 30));
 
-    private final String serverDebug = "wildfly.debug";
     private final int serverDebugPort = Integer.getInteger("wildfly.debug.port", 8787);
     private StartMode startMode = StartMode.NORMAL;
 
@@ -445,6 +455,29 @@ public class Server {
 
         }
         fail("Live Server did not reload in the imparted time.");
+    }
+
+    /**
+     * Adjusts timeout for operations.
+     *
+     * @return given timeout adjusted by ratio from system property "ts.timeout.factor"
+     */
+    private static int adjust(int amount) {
+        if(amount<0){
+            throw new IllegalArgumentException("amount must be non-negative");
+        }
+        int numerator = amount * factor;
+        int finalTimeout;
+        if(numerator % 100 == 0){
+            //in this case there is no lost of accuracy in integer division
+            finalTimeout = numerator / 100;
+        } else {
+          /*in this case there is a loss of accuracy. It's better to round the result up because
+          if we round down, we would get 0 in case that amount<100.
+           */
+            finalTimeout = (numerator / 100) + 1;
+        }
+        return finalTimeout;
     }
 
 
