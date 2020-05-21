@@ -45,6 +45,7 @@ import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
 import org.jboss.as.test.integration.management.extension.ExtensionUtils;
 import org.jboss.as.test.integration.management.extension.blocker.BlockerExtension;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Test;
@@ -466,7 +467,8 @@ public class CommandTimeoutHandlerTestCase {
                 TimeoutCommandContext tc = (TimeoutCommandContext) context;
                 tc.setLastHandlerTask(null);
                 try {
-                    Thread.sleep(200);
+                    long sleep = TimeoutUtil.adjust(1000);
+                    Thread.sleep(sleep);
                     holder.add(null);
                 } catch (InterruptedException ex) {
                     holder.add(ex);
