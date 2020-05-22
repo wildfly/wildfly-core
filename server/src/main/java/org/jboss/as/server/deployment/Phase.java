@@ -670,7 +670,8 @@ public enum Phase {
     public static final int INSTALL_WS_UNIVERSAL_META_DATA_MODEL        = 0x1C10;
     public static final int INSTALL_WS_DEPLOYMENT_ASPECTS               = 0x1C11;
     // IMPORTANT: WS integration installs deployment aspects dynamically
-    // so consider INSTALL 0x1C10 - 0x1CFF reserved for WS subsystem!
+    // so consider INSTALL 0x1C10 - 0x1CFE reserved for WS subsystem!
+    public static final int INSTALL_WEB_RESOLVE_SECURITY_DOMAIN         = 0x1CFF;
     public static final int INSTALL_WAR_DEPLOYMENT                      = 0x1D00;
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration
