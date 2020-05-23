@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.logging.ServerLogger;
@@ -141,10 +140,17 @@ final class DeploymentUnitPhaseService<T> implements Service<T> {
             }
         }
 
-        Set<String> subSystemNames = list.stream().map(e -> e.getSubsystemName()).collect(Collectors.toSet());
-        Set<String> registeredSubSystems = (phase == Phase.STRUCTURE) ? new HashSet<>() : deploymentUnit.getAttachment(Attachments.REGISTERED_SUBSYSTEMS);
-        registeredSubSystems.addAll(subSystemNames);
-        deploymentUnit.putAttachment(Attachments.REGISTERED_SUBSYSTEMS, registeredSubSystems);
+        final Set<String> registeredSubSystems;
+        if (phase == Phase.STRUCTURE) {
+            registeredSubSystems = new HashSet<>();
+            deploymentUnit.putAttachment(Attachments.REGISTERED_SUBSYSTEMS, registeredSubSystems);
+        } else {
+            registeredSubSystems = deploymentUnit.getAttachment(Attachments.REGISTERED_SUBSYSTEMS);
+        }
+
+        for (RegisteredDeploymentUnitProcessor dupRegistration : list) {
+            registeredSubSystems.add(dupRegistration.getSubsystemName());
+        }
 
         if (phase == Phase.CLEANUP) {
             // WFCORE-4233 check all excluded subsystems via jboss-deployment-structure.xml are valid in last Phase.CLEANUP
