@@ -49,6 +49,7 @@ import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
 import org.wildfly.security.auth.client.CallbackKind;
 import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.wildfly.security.sasl.localuser.LocalUserClient;
 import org.xnio.IoFuture;
@@ -159,6 +160,10 @@ public class ProtocolConnectionUtils {
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
         if (handler != null) {
+            // Clear the three values as the CallbackHandler will be used for these.
+            mergedConfiguration = mergedConfiguration.useAnonymous();
+            mergedConfiguration = mergedConfiguration.useCredentials(IdentityCredentials.NONE);
+            mergedConfiguration = mergedConfiguration.useRealm(null);
             mergedConfiguration = mergedConfiguration.useCallbackHandler(handler, DEFAULT_CALLBACK_KINDS);
         }
 
