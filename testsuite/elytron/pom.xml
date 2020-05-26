@@ -23,8 +23,8 @@
         <version.javax.enterprise>1.2</version.javax.enterprise>
 
         <ts.enable.elytron.cli>enable-elytron.cli</ts.enable.elytron.cli>
-        <ts.config.elytron.cli>configure-elytron.cli</ts.config.elytron.cli>
-        <ts.config.elytron.bootable.cli>configure-elytron-bootable.cli</ts.config.elytron.bootable.cli>
+        <ts.config.elytron.cli.no.embedded>configure-elytron.cli</ts.config.elytron.cli.no.embedded>
+        <ts.config.elytron.cli>${project.build.directory}/${ts.config.elytron.cli.no.embedded}</ts.config.elytron.cli>
     </properties>
 
     <dependencies>
@@ -104,6 +104,29 @@
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-elytron-config-file</id>
+                        <phase>process-test-resources</phase>
+                        <configuration>
+                            <target>
+                                <copy file="${ts.config.elytron.cli.no.embedded}" toFile="${ts.config.elytron.cli}" overwrite="true">
+                                    <filterset begintoken="#" endtoken="#" >
+                                        <filter token="EMBED_SERVER" value="embed-server --admin-only=true"/>
+                                        <filter token="STOP_EMBED_SERVER" value="stop-embedded-server"/>
+                                    </filterset>
+                                </copy>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
                 <plugin>
                     <groupId>org.jboss.galleon</groupId>
@@ -303,6 +326,16 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-elytron-config-file</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                          <groupId>org.wildfly.plugins</groupId>
                          <artifactId>wildfly-maven-plugin</artifactId>
                          <version>${version.wildfly.plugin}</version>
@@ -352,7 +385,7 @@
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                     </plugin-options>
                                     <cli-script-files>
-                                        <script>${ts.config.elytron.bootable.cli}</script>
+                                        <script>${ts.config.elytron.cli.no.embedded}</script>
                                     </cli-script-files>
                                     <feature-packs>
                                         <feature-pack>

@@ -1,5 +1,5 @@
-embed-server --admin-only=true
 
+#EMBED_SERVER# 
 
 # Use filesystem-realm instead of legacy (compatibility mode) properties-realm in default domains
 /subsystem=elytron/filesystem-realm=ManagementFsRealm:add(path=mgmt-users,relative-to=jboss.server.config.dir)
@@ -35,4 +35,4 @@ embed-server --admin-only=true
 /subsystem=elytron/filesystem-realm=ApplicationFsRealm:set-password(identity=guest, clear={password="guest"})
 /subsystem=elytron/filesystem-realm=ApplicationFsRealm:add-identity-attribute(identity=guest, name=groups, value=["guest"])
 
-stop-embedded-server
+#STOP_EMBED_SERVER#
