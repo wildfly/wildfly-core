@@ -397,12 +397,12 @@ public class RequestController implements Service<RequestController>, ServerActi
     }
 
     private QueuedTask findForcedTask() {
-        QueuedTask _ret = null;
+        QueuedTask forcedTask = null;
         QueuedTask task;
         List<QueuedTask> storage = new ArrayList<>();
-        while ((task = taskQueue.poll()) != null) {
+        while (forcedTask == null && (task = taskQueue.poll()) != null) {
             if (task.forceRun) {
-                _ret = task;
+                forcedTask = task;
             } else {
                 storage.add(task);
             }
@@ -410,7 +410,7 @@ public class RequestController implements Service<RequestController>, ServerActi
         // this screws the order somewhat, but the container is suspending anyway, and the order
         // was never guarenteed. if we push them back onto the front we will need to just go through them again
         taskQueue.addAll(storage);
-        return _ret;
+        return forcedTask;
     }
 
     private static final class ControlPointIdentifier {
