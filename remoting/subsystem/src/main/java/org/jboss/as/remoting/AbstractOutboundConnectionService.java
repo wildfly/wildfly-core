@@ -22,43 +22,20 @@
 
 package org.jboss.as.remoting;
 
-import java.net.URI;
-
-import javax.net.ssl.SSLContext;
-
+import org.jboss.as.network.OutboundConnection;
 import org.jboss.msc.service.ServiceName;
-import org.wildfly.security.auth.client.AuthenticationConfiguration;
 
 /**
  * @author Jaikiran Pai
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public abstract class AbstractOutboundConnectionService {
+public abstract class AbstractOutboundConnectionService implements OutboundConnection {
 
+    /**
+     * @deprecated Use {@code AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY}
+     * capability to get the base service name for an OutboundConnection.
+     */
+    @Deprecated
     public static final ServiceName OUTBOUND_CONNECTION_BASE_SERVICE_NAME = RemotingServices.SUBSYSTEM_ENDPOINT.append("outbound-connection");
 
-    protected AbstractOutboundConnectionService() {
-    }
-
-    /**
-     * Get the destination URI for the connection.
-     *
-     * @return the destination URI
-     */
-    public abstract URI getDestinationUri();
-
-    /**
-     * Get the connection authentication configuration.  This is derived either from the authentication information
-     * defined on the resource, or the linked authentication configuration named on the resource.
-     *
-     * @return the authentication configuration
-     */
-    public abstract AuthenticationConfiguration getAuthenticationConfiguration();
-
-    /**
-     * Get the connection SSL Context.
-     *
-     * @return the SSL context
-     */
-    public abstract SSLContext getSSLContext();
 }

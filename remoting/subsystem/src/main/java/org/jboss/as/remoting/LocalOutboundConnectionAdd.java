@@ -22,6 +22,7 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY;
 import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME;
 
 import java.util.function.Consumer;
@@ -60,10 +61,13 @@ class LocalOutboundConnectionAdd extends AbstractAddStepHandler {
         final String connectionName = address.getLastElement().getValue();
         final String outboundSocketBindingRef = LocalOutboundConnectionResourceDefinition.OUTBOUND_SOCKET_BINDING_REF.resolveModelAttribute(context, operation).asString();
         final ServiceName outboundSocketBindingDependency = context.getCapabilityServiceName(OUTBOUND_SOCKET_BINDING_CAPABILITY_NAME, outboundSocketBindingRef, OutboundSocketBinding.class);
-        final ServiceName serviceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+
+        final ServiceName serviceName = OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         final ServiceName aliasServiceName = LocalOutboundConnectionService.LOCAL_OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+        final ServiceName deprecatedServiceName = AbstractOutboundConnectionService.OUTBOUND_CONNECTION_BASE_SERVICE_NAME.append(connectionName);
+
         final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
-        final Consumer<LocalOutboundConnectionService> serviceConsumer = builder.provides(serviceName, aliasServiceName);
+        final Consumer<LocalOutboundConnectionService> serviceConsumer = builder.provides(deprecatedServiceName, aliasServiceName);
         final Supplier<OutboundSocketBinding> osbSupplier = builder.requires(outboundSocketBindingDependency);
         builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
         builder.setInstance(new LocalOutboundConnectionService(serviceConsumer, osbSupplier));
