@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2019 Red Hat, Inc., and individual contributors
+ * Copyright 2020 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,15 +26,15 @@ import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem100TestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem110TestCase extends AbstractSubsystemBaseTest {
 
-    public ElytronSubsystem100TestCase() {
+    public ElytronSubsystem110TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-elytron_10_0.xsd";
+        return "schema/wildfly-elytron_11_0.xsd";
     }
 
     @Override
@@ -52,12 +52,7 @@ public class ElytronSubsystem100TestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-10.0.xml");
-    }
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
+        return readResource("elytron-subsystem-11.0.xml");
     }
 
 }

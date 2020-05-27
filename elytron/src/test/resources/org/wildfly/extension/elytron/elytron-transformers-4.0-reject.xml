@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:10.0" default-ssl-context="ClientContext">
+<subsystem xmlns="urn:wildfly:elytron:11.0" default-ssl-context="ClientContext">
     <authentication-client>
         <authentication-configuration name="test">
             <mechanism-properties>
