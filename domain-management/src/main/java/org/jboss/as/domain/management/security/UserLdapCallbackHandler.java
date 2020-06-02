@@ -343,6 +343,7 @@ public class UserLdapCallbackHandler implements Service, CallbackHandlerService 
                 throw new RealmUnavailableException(e);
             } catch (IllegalStateException | NamingException e) {
                 safeClose(ldapConnectionHandler);
+                SECURITY_LOGGER.tracef(e, "Unable to lookup the principal '%s' in the LDAP.", name);
                 return RealmIdentity.NON_EXISTENT;
             }
         }
