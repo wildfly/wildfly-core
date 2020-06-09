@@ -50,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_OPERATION_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOLVE_EXPRESSIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -147,7 +148,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                         model.get("profile", "profileA", "subsystem", "subsystem2", "string1").set("s1");
                         model.get("profile", "profileA", "subsystem", "subsystem2", "string2").set("s2");
                         model.get("profile", "profileA", "subsystem", "subsystem2", "type").set(ModelType.TYPE);
-
+                        model.get(RESOLVE_EXPRESSIONS).set(true);
 
                         model.get("profile", "profileB", "name").set("Profile B");
 
