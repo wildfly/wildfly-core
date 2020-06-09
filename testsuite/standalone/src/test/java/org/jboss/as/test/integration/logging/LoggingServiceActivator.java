@@ -45,8 +45,10 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
     public static final Logger.Level[] LOG_LEVELS = Logger.Level.values();
     public static final String MSG_KEY = "msg";
     public static final String INCLUDE_LEVEL_KEY = "includeLevel";
+    public static final String LOG_COUNT_KEY = "logCount";
     public static final String LOG_INFO_ONLY_KEY = "logInfoOnly";
     public static final String LOG_LEVELS_KEY = "logLevels";
+    public static final String LOG_NAME_KEY = "logName";
     public static final String NDC_KEY = "ndc";
     public static final String LOG_EXCEPTION_KEY = "logException";
     public static final Logger LOGGER = Logger.getLogger(LoggingServiceActivator.class);
@@ -60,10 +62,12 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
                 final Map<String, Deque<String>> params = new TreeMap<>(exchange.getQueryParameters());
                 final String msg = getValue(params, MSG_KEY, DEFAULT_MESSAGE);
                 final boolean includeLevel = getValue(params, INCLUDE_LEVEL_KEY, false);
+                final int logCount = getValue(params, LOG_COUNT_KEY, 1);
                 final boolean logInfoOnly = getValue(params, LOG_INFO_ONLY_KEY, false);
                 final boolean logException = getValue(params, LOG_EXCEPTION_KEY, false);
                 final String ndcValue = getValue(params, NDC_KEY, null);
                 final Set<Logger.Level> logLevels = getLevels(params);
+                final String loggerName = getValue(params, LOG_NAME_KEY, null);
                 if (ndcValue != null) {
                     NDC.push(ndcValue);
                 }
@@ -71,14 +75,17 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
                 for (String key : params.keySet()) {
                     MDC.put(key, params.get(key).getFirst());
                 }
-                if (logInfoOnly) {
-                    LOGGER.info(getMessage(msg, Logger.Level.INFO, includeLevel));
-                } else {
-                    for (Logger.Level level : logLevels) {
-                        if (logException) {
-                            LOGGER.log(level, getMessage(msg, level, includeLevel), createMultiNestedCause());
-                        } else {
-                            LOGGER.log(level, getMessage(msg, level, includeLevel));
+                final Logger logger = (loggerName == null ? LOGGER : Logger.getLogger(loggerName));
+                for (int i = 0; i < logCount; i++) {
+                    if (logInfoOnly) {
+                        logger.info(getMessage(msg, Logger.Level.INFO, includeLevel));
+                    } else {
+                        for (Logger.Level level : logLevels) {
+                            if (logException) {
+                                logger.log(level, getMessage(msg, level, includeLevel), createMultiNestedCause());
+                            } else {
+                                logger.log(level, getMessage(msg, level, includeLevel));
+                            }
                         }
                     }
                 }
@@ -109,6 +116,14 @@ public class LoggingServiceActivator extends UndertowServiceActivator {
         final Deque<String> values = params.remove(key);
         if (values != null) {
             return Boolean.parseBoolean(values.getFirst());
+        }
+        return dft;
+    }
+
+    private static int getValue(final Map<String, Deque<String>> params, final String key, final int dft) {
+        final Deque<String> values = params.remove(key);
+        if (values != null) {
+            return Integer.parseInt(values.getFirst());
         }
         return dft;
     }
