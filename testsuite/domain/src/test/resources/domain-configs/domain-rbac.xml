@@ -22,7 +22,7 @@
   ~ */
   -->
 
-<domain xmlns="urn:jboss:domain:13.0">
+<domain xmlns="urn:jboss:domain:14.0">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>

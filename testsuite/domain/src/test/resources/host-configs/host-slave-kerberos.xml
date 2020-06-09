@@ -13,8 +13,8 @@
 	Franklin St, Fifth Floor, Boston, MA ~ 02110-1301 USA, or see the FSF site: 
 	http://www.fsf.org. -->
 
-<host xmlns="urn:jboss:domain:13.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="urn:jboss:domain:13.0 wildfly-config_13_0.xsd" name="slave">
+<host xmlns="urn:jboss:domain:14.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="urn:jboss:domain:14.0 wildfly-config_14_0.xsd" name="slave">
 
 	<extensions>
 		<extension module="org.jboss.as.jmx" />
