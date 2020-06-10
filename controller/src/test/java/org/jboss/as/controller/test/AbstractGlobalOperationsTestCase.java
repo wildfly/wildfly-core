@@ -148,7 +148,6 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                         model.get("profile", "profileA", "subsystem", "subsystem2", "string1").set("s1");
                         model.get("profile", "profileA", "subsystem", "subsystem2", "string2").set("s2");
                         model.get("profile", "profileA", "subsystem", "subsystem2", "type").set(ModelType.TYPE);
-                        model.get(RESOLVE_EXPRESSIONS).set(true);
 
                         model.get("profile", "profileB", "name").set("Profile B");
 
@@ -489,6 +488,13 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
             assertTrue(notifs.contains(RESOURCE_REMOVED_NOTIFICATION));
             assertEquals(processType != ProcessType.DOMAIN_SERVER, notifs.contains(ATTRIBUTE_VALUE_WRITTEN_NOTIFICATION));
         }
+    }
+
+    protected void checkResolveExpression(ModelNode result,boolean resolveExpression) {
+          assertNotNull(result);
+          if (resolveExpression) {
+              result.get(RESOLVE_EXPRESSIONS).set(true);
+          }
     }
 
     protected ModelNode createOperation(String operationName, String... address) {
