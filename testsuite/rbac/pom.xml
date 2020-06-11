@@ -497,7 +497,9 @@
                                     <cli-script-files>
                                         <script>${project.basedir}/enable-rbac.cli</script>
                                     </cli-script-files>
-                                    <extraServerContent>${project.basedir}/src/test/resources/wildfly</extraServerContent>
+                                    <extra-server-content-dirs>
+                                        <dir>${project.basedir}/src/test/resources/wildfly</dir>
+                                    </extra-server-content-dirs>
                                     <plugin-options>
                                         <jboss-maven-dist/>
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
