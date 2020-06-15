@@ -243,7 +243,6 @@
         <module>dist-legacy</module>
         <module>component-matrix-builder</module>
         <module>core-feature-pack</module>
-        <module>core-galleon-pack</module>
         <module>core-management</module>
         <module>core-model-test</module>
         <module>core-security</module>
@@ -1249,6 +1248,24 @@
                 <artifactId>wildfly-core-feature-pack</artifactId>
                 <version>${project.version}</version>
                 <type>zip</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-common</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-feature-pack-parent</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
