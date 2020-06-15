@@ -105,6 +105,7 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 import org.wildfly.security.http.util.FilterServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
+import org.wildfly.security.http.util.SocketAddressCallbackServerMechanismFactory;
 import org.wildfly.security.http.util.SortedServerMechanismFactory;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.WildFlySasl;
@@ -340,6 +341,7 @@ public class SecurityRealmService implements Service<SecurityRealm>, SecurityRea
 
         final Provider elytronProvider = new WildFlyElytronProvider();
         HttpServerAuthenticationMechanismFactory httpServerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {elytronProvider});
+        httpServerFactory = new SocketAddressCallbackServerMechanismFactory(httpServerFactory);
         httpServerFactory = new SetMechanismInformationMechanismFactory(httpServerFactory);
         httpServerFactory = new FilterServerMechanismFactory(httpServerFactory, (s) -> {
             AuthMechanism mechanism = toAuthMechanism("HTTP", s);

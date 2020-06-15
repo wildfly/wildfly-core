@@ -70,6 +70,7 @@ import org.wildfly.security.http.util.PropertiesServerMechanismFactory;
 import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 import org.wildfly.security.http.util.ServiceLoaderServerMechanismFactory;
 import org.wildfly.security.http.util.SetMechanismInformationMechanismFactory;
+import org.wildfly.security.http.util.SocketAddressCallbackServerMechanismFactory;
 
 /**
  * Resource definitions for loading and configuring the HTTP server side authentication mechanisms.
@@ -163,6 +164,7 @@ class HttpServerDefinitions {
                 final Map<String, String> propertiesMap = PROPERTIES.unwrap(context, model);
                 return () -> {
                     HttpServerAuthenticationMechanismFactory factory = factoryInjector.getValue();
+                    factory = new SocketAddressCallbackServerMechanismFactory(factory);
                     factory = new SetMechanismInformationMechanismFactory(factory);
                     factory = finalFilter != null ? new FilterServerMechanismFactory(factory, finalFilter) : factory;
                     factory = propertiesMap != null ? new PropertiesServerMechanismFactory(factory, propertiesMap) : factory;
@@ -204,7 +206,7 @@ class HttpServerDefinitions {
                     if ( findProviderService(actualProviders, serviceFilter) == null ) {
                         throw ROOT_LOGGER.noSuitableProvider(HttpServerAuthenticationMechanismFactory.class.getSimpleName());
                     }
-                    return new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(actualProviders));
+                    return new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new SecurityProviderServerMechanismFactory(actualProviders)));
                 };
             }
 
@@ -228,7 +230,7 @@ class HttpServerDefinitions {
                     try {
                         ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
 
-                        return new SetMechanismInformationMechanismFactory(new ServiceLoaderServerMechanismFactory(classLoader));
+                        return new SocketAddressCallbackServerMechanismFactory(new SetMechanismInformationMechanismFactory(new ServiceLoaderServerMechanismFactory(classLoader)));
                     } catch (Exception e) {
                         throw new StartException(e);
                     }
