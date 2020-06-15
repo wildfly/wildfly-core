@@ -109,6 +109,43 @@ public class DomainTestCase extends AbstractSubsystemTest {
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SourceAddressRoleDecoderDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "LowerCasePrincipalTransformerDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "UpperCasePrincipalTransformerDomain");
+
+    }
+
+    @Test
+    public void testCasePrincipalTransformerLowerCase() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("LowerCasePrincipalTransformerDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("USER1"); // the realm contains "user1"
+        Assert.assertTrue(context.exists());
+        context.authorize();
+        context.succeed();
+
+        SecurityIdentity identity = context.getAuthorizedIdentity();
+        Assert.assertEquals("user1", identity.getPrincipal().getName()); // after pre-realm-name-rewriter only
+    }
+
+    @Test
+    public void testCasePrincipalTransformerUpperCase() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("UpperCasePrincipalTransformerDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("user8"); // the realm contains "USER8"
+        Assert.assertTrue(context.exists());
+        context.authorize();
+        context.succeed();
+
+        SecurityIdentity identity = context.getAuthorizedIdentity();
+        Assert.assertEquals("USER8", identity.getPrincipal().getName()); // after pre-realm-name-rewriter only
     }
 
     @Test

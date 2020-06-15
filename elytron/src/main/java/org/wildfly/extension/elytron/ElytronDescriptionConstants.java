@@ -86,6 +86,7 @@ interface ElytronDescriptionConstants {
 
     String CAA_IDENTITIES = "caa-identities";
     String CACHING_REALM = "caching-realm";
+    String CASE_PRINCIPAL_TRANSFORMER = "case-principal-transformer";
     String CERTIFICATE = "certificate";
     String CERTIFICATE_ATTRIBUTE = "certificate-attribute";
     String CERTIFICATE_AUTHORITY = "certificate-authority";
@@ -565,6 +566,7 @@ interface ElytronDescriptionConstants {
     String RELOAD_CERTIFICATE_REVOCATION_LIST = "reload-certificate-revocation-list";
     String UNLESS = "unless";
     String UPDATE_ACCOUNT = "update-account";
+    String UPPER_CASE = "upper-case";
     String URL = "url";
     String USE_RECURSIVE_SEARCH = "use-recursive-search";
     String USE_CIPHER_SUITES_ORDER = "use-cipher-suites-order";

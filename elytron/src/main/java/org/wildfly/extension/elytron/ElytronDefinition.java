@@ -239,6 +239,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new CustomComponentDefinition<>(PrincipalTransformer.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_PRINCIPAL_TRANSFORMER, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY));
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexPrincipalTransformerDefinition());
         resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getRegexValidatingPrincipalTransformerDefinition());
+        resourceRegistration.registerSubModel(PrincipalTransformerDefinitions.getCasePrincipalTransformerDefinition());
 
         // Realm Mappers
         resourceRegistration.registerSubModel(RealmMapperDefinitions.getConstantRealmMapper());

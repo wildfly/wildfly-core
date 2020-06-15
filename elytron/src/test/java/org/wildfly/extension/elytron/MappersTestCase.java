@@ -87,6 +87,38 @@ public class MappersTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Test
+    public void testCasePrincipalTransformerUpperCase() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainUpperCase");
+        ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("upperCase");
+        PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(transformer);
+
+        Assert.assertEquals("ALPHA", transformer.apply(new NamePrincipal("alpha")).getName());
+        Assert.assertEquals(null, transformer.apply(null));
+    }
+
+    @Test
+    public void testCasePrincipalTransformerLowerCase() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainLowerCase");
+        ServiceName serviceName = Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY.getCapabilityServiceName("lowerCase");
+        PrincipalTransformer transformer = (PrincipalTransformer) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(transformer);
+
+        Assert.assertEquals("alpha", transformer.apply(new NamePrincipal("ALPHA")).getName());
+        Assert.assertEquals(null, transformer.apply(null));
+    }
+
+    @Test
     public void testEvidenceDecoder() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
