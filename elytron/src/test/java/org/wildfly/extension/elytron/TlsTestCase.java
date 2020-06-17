@@ -436,7 +436,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Assert.assertEquals(trustManager.getAcceptedIssuers().length, 1);
 
         X509Certificate originalFoundDN = trustManager.getAcceptedIssuers()[0];
-        Assert.assertEquals(originalFoundDN.getIssuerX500Principal(), ISSUER_DN);
+        Assert.assertEquals(originalFoundDN.getIssuerX500Principal().getName(), ISSUER_DN.getName());
 
         // Update the trust store certificate
         SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
@@ -462,7 +462,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
         // See if the trust manager contains the new certificate
         X509Certificate newFoundDN = trustManager.getAcceptedIssuers()[0];
-        Assert.assertEquals(newFoundDN.getIssuerX500Principal(), NEW_DN);
+        Assert.assertEquals(newFoundDN.getIssuerX500Principal().getName(), NEW_DN.getName());
 
         Files.delete(Paths.get(WORKING_DIRECTORY_LOCATION + INIT_TEST_FILE));
     }
