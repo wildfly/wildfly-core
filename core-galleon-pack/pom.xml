@@ -1059,7 +1059,7 @@
                             <licensesConfigFile>${feature-pack.license.directory}/core-feature-pack-licenses.xml</licensesConfigFile>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedGroups>org.wildfly.galleon-plugins</excludedGroups>
-                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-elytron\z</excludedArtifacts>
+                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-elytron\z</excludedArtifacts>
                             <excludedScopes>system</excludedScopes>
                         </configuration>
                     </execution>
