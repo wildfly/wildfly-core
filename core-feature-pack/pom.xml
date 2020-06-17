@@ -896,7 +896,7 @@
                                     <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                                     <licensesConfigFile>${project.basedir}/src/license/core-feature-pack-licenses.xml</licensesConfigFile>
                                     <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
-                                    <excludedArtifacts>wildfly-core-model-test-framework|wildfly-elytron\z</excludedArtifacts>
+                                    <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-elytron\z</excludedArtifacts>
                                     <excludedScopes>system,provided</excludedScopes>
                                 </configuration>
                             </execution>
