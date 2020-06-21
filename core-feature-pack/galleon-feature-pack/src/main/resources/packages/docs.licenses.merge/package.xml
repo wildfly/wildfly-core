@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="docs.licenses.merge">
+    <!-- We provide a package under this name as a compatibility thing for users of
+         the wildfly-core feature pack. But it's just an alias for the renamed core.docs.licenses.merge -->
+    <dependencies>
+        <package name="core.docs.licenses.merge"/>
+    </dependencies>
+</package-spec>
