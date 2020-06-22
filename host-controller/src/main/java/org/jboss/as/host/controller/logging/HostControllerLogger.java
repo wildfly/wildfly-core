@@ -32,7 +32,6 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
-
 import javax.security.sasl.SaslException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -1451,5 +1450,15 @@ public interface HostControllerLogger extends BasicLogger {
      */
     @Message(id = 215, value = "Could not find java executable under %s.")
     IllegalStateException cannotFindJavaExe(String binDir);
+
+    /**
+     * Creates an exception inidcating the module options is not allowed.
+     *
+     * @param option the option that is not allowed
+     *
+     * @return an {@link OperationFailedException} for the error
+     */
+    @Message(id = 216, value = "The module option %s is not allowed.")
+    OperationFailedException moduleOptionNotAllowed(String option);
 
 }

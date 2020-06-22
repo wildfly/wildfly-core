@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
@@ -32,8 +33,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.json.JsonObject;
+
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -43,6 +45,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.wildfly.common.test.ServerHelper;
+import org.wildfly.common.test.LoggingAgent;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -67,23 +71,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
     @Parameter
     public Map<String, String> env;
 
-    private static final Function<ModelControllerClient, Boolean> STANDALONE_CHECK = new Function<ModelControllerClient, Boolean>() {
-        private final ModelNode op = Operations.createReadAttributeOperation(EMPTY_ADDRESS, "server-state");
-
-        @Override
-        public Boolean apply(final ModelControllerClient client) {
-
-            try {
-                final ModelNode result = client.execute(op);
-                if (Operations.isSuccessfulOutcome(result) &&
-                        ClientConstants.CONTROLLER_PROCESS_STATE_RUNNING.equals(Operations.readResult(result).asString())) {
-                    return true;
-                }
-            } catch (IllegalStateException | IOException ignore) {
-            }
-            return false;
-        }
-    };
+    private static final Function<ModelControllerClient, Boolean> STANDALONE_CHECK = ServerHelper::isStandaloneRunning;
 
     public StandaloneScriptTestCase() {
         super("standalone", STANDALONE_CHECK);
@@ -94,6 +82,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         final Collection<Object> result = new ArrayList<>(2);
         result.add(Collections.emptyMap());
         result.add(Collections.singletonMap("GC_LOG", "true"));
+        result.add(Collections.singletonMap("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG));
         return result;
     }
 
@@ -105,9 +94,20 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
         Assume.assumeFalse(TestSuiteEnvironment.isWindows() && MODULAR_JVM && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
-        script.start(env, DEFAULT_SERVER_JAVA_OPTS);
+        script.start(env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
+
+        if (env.containsKey("MODULE_OPTS")) {
+            final List<JsonObject> lines = ServerHelper.readLogFileFromModel("json.log");
+            Assert.assertEquals("Expected 2 lines found " + lines.size(), 2, lines.size());
+            JsonObject msg = lines.get(0);
+            Assert.assertEquals(LoggingAgent.MSG, msg.getString("message"));
+            Assert.assertEquals("FINE", msg.getString("level"));
+            msg = lines.get(1);
+            Assert.assertEquals(LoggingAgent.MSG, msg.getString("message"));
+            Assert.assertEquals("INFO", msg.getString("level"));
+        }
 
         // Shutdown the server
         @SuppressWarnings("Convert2Lambda")

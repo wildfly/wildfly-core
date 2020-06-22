@@ -47,9 +47,13 @@ class ServerGroupTransformers {
         //////////////////////////////////
         //The EAP/AS 7.x chains
 
+        // module-options was introduced in 13, WildFly 20
+        ResourceTransformationDescriptionBuilder currentTo13 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_13_0);
+        JvmTransformers.registerTransformers13_AndBelow(currentTo13);
+
         //timeout attribute renamed to suspend-timeout in Version 9.0. Must be renamed for 8.0 and below
-        ResourceTransformationDescriptionBuilder currentTo80 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_8_0);
-        DomainServerLifecycleHandlers.registerTimeoutToSuspendTimeoutRename(currentTo80);
+        ResourceTransformationDescriptionBuilder builder10to8 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_10_0, KernelAPIVersion.VERSION_8_0);
+        DomainServerLifecycleHandlers.registerTimeoutToSuspendTimeoutRename(builder10to8);
 
         // kill-servers and destroy-servers are rejected since 5.0 and below
         ResourceTransformationDescriptionBuilder builder60to50 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_6_0, KernelAPIVersion.VERSION_5_0);

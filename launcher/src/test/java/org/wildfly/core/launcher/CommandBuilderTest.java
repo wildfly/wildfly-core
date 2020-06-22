@@ -67,6 +67,7 @@ public class CommandBuilderTest {
                 .addJavaOption("-Djava.security.manager")
                 .addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false")
+                .addModuleOption("-javaagent:test-agent1.jar")
                 .setBindAddressHint("management", "0.0.0.0");
 
         // Get all the commands
@@ -83,6 +84,9 @@ public class CommandBuilderTest {
         Assert.assertTrue("Missing server configuration file override", commands.contains("-c=standalone-full.xml"));
 
         Assert.assertTrue("Missing -secmgr option", commands.contains("-secmgr"));
+
+        Assert.assertTrue("Missing jboss-modules.jar", commands.stream().anyMatch(entry -> entry.matches("-javaagent:.*jboss-modules.jar$")));
+        Assert.assertTrue("Missing test-agent1.jar", commands.contains("-javaagent:test-agent1.jar"));
 
         // If we're using Java 9+ ensure the modular JDK options were added
         testModularJvmArguments(commands, 1);

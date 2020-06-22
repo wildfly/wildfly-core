@@ -138,6 +138,7 @@ public enum Element {
     MANAGEMENT_CLIENT_CONTENT("management-client-content"),
     MANAGEMENT_INTERFACES("management-interfaces"),
     MEMBERSHIP_FILTER("membership-filter"),
+    MODULE_OPTIONS("module-options"),
     MULTICAST("multicast"),
 
     NAME("name"),
