@@ -122,7 +122,6 @@
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.2.0.Final</version.org.wildfly.plugins>
-        <version.org.zanata.plugin>3.9.1</version.org.zanata.plugin>
         <version.versions.plugin>2.5</version.versions.plugin>
         <version.xml.plugin>1.0.1</version.xml.plugin>
         <wildfly.build.output.dir>dist/target/${server.output.dir.prefix}-${wildfly.core.release.version}</wildfly.build.output.dir>
@@ -372,23 +371,6 @@
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
                         <excludes>**/*$logger.java,**/*$bundle.java</excludes>
                         <useFile></useFile>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.zanata</groupId>
-                    <artifactId>zanata-maven-plugin</artifactId>
-                    <version>${version.org.zanata.plugin}</version>
-                    <configuration>
-                        <!-- Process sub-modules separately, sharing parent config -->
-                        <enableModules>true</enableModules>
-                        <projectConfig>${session.executionRootDirectory}/zanata.xml</projectConfig>
-                        <!-- Generated English i18n.properties are written here: -->
-                        <srcDir>target/classes</srcDir>
-                        <transDir>src/main/resources</transDir>
-                        <includes>**/*.i18n.properties,**/LocalDescriptions.properties</includes>
-                        <!-- In previous versions, 3.8.0 and lower, this defaulted to true -->
-                        <copyTrans>true</copyTrans>
-                        <deleteObsoleteModules>true</deleteObsoleteModules>
                     </configuration>
                 </plugin>
 
