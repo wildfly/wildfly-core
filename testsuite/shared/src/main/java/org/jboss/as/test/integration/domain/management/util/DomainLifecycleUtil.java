@@ -138,6 +138,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
      */
     public void start() {
         try {
+            log.info("Starting HostController (host = " + configuration.getHostName() + ")");
             configuration.validate();
 
             final String address = NetworkUtils.formatPossibleIpv6Address(configuration.getHostControllerManagementAddress());
@@ -286,7 +287,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
             // Wait for the HC to be in running state. Normally if all servers are started, this is redundant
             // but there may not be any servers or we may be in --admin-only mode
             awaitHostController(start);
-            log.info("HostController started in " + (System.currentTimeMillis() - start) + " ms");
+            log.info("HostController (host = " + configuration.getHostName() + ") started in " + (System.currentTimeMillis() - start) + " ms");
 
         } catch (RuntimeException e) {
             throw e;
