@@ -1658,12 +1658,12 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, String dynamicPart, Class<?> serviceType) {
-        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicPart), serviceType, activeStep.address);
+        return getCapabilityServiceName(capabilityBaseName, serviceType, dynamicPart);
     }
 
     @Override
     public ServiceName getCapabilityServiceName(String capabilityBaseName, Class<?> serviceType, String ... dynamicParts) {
-        return getCapabilityServiceName(RuntimeCapability.buildDynamicCapabilityName(capabilityBaseName, dynamicParts), serviceType, activeStep.address);
+        return getCapabilityServiceName(capabilityBaseName, serviceType).append(dynamicParts);
     }
 
     ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType, final PathAddress address) {
