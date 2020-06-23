@@ -22,6 +22,8 @@
 package org.jboss.as.test.integration.security.common;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.security.KeyStore;
 import javax.net.ssl.SSLContext;
 
 import org.apache.http.client.HttpClient;
@@ -53,17 +55,34 @@ public class SSLTruststoreUtil {
     private static final String HTTPS = "https";
 
     public static HttpClient getHttpClientWithSSL(File trustStoreFile, String password) {
-        return getHttpClientWithSSL(null, null, trustStoreFile, password);
+        return getHttpClientWithSSL(null, null, null, trustStoreFile, password, "JKS");
+    }
+
+    public static HttpClient getHttpClientWithSSL(File trustStoreFile, String password, String provider) {
+        return getHttpClientWithSSL(null, null, null, trustStoreFile, password, provider);
     }
 
     public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, File trustStoreFile, String trustStorePassword) {
+        return getHttpClientWithSSL(keyStoreFile, keyStorePassword, "JKS", trustStoreFile, trustStorePassword, "JKS");
+    }
+
+    public static HttpClient getHttpClientWithSSL(File keyStoreFile, String keyStorePassword, String keyStoreProvider,
+            File trustStoreFile, String trustStorePassword, String trustStoreProvider) {
 
         try {
+            KeyStore trustStore = KeyStore.getInstance(trustStoreProvider);
+            try (FileInputStream fis = new FileInputStream(trustStoreFile)) {
+                trustStore.load(fis, trustStorePassword.toCharArray());
+            }
             SSLContextBuilder sslContextBuilder = SSLContexts.custom()
-                    .useProtocol("TLS")
-                    .loadTrustMaterial(trustStoreFile, trustStorePassword.toCharArray());
+                    .setProtocol("TLS")
+                    .loadTrustMaterial(trustStore, null);
             if (keyStoreFile != null) {
-                sslContextBuilder.loadKeyMaterial(keyStoreFile, keyStorePassword.toCharArray(), keyStorePassword.toCharArray());
+                KeyStore keyStore = KeyStore.getInstance(keyStoreProvider);
+                try (FileInputStream fis = new FileInputStream(keyStoreFile)) {
+                    keyStore.load(fis, keyStorePassword.toCharArray());
+                }
+                sslContextBuilder.loadKeyMaterial(keyStore, keyStorePassword.toCharArray(), null);
             }
             SSLContext sslContext = sslContextBuilder.build();
             SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);

@@ -750,8 +750,9 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
         char[] keystorePassword = keystorePasswordNode.isDefined() ? keystorePasswordNode.asString().toCharArray() : null;
         final String provider = KeystoreAttributes.KEYSTORE_PROVIDER.resolveModelAttribute(context, ssl).asString();
         String keySuffix = AUTHENTICATION + KEY_DELIMITER + TRUSTSTORE;
+        ModelNode pathNode = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl);
 
-        if (!JKS.equalsIgnoreCase(provider)) {
+        if (!pathNode.isDefined()) {
             serviceBuilder = serviceTarget.addService(serviceName);
             final Consumer<TrustManager[]> trustManagersConsumer = serviceBuilder.provides(serviceName);
             ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = null;
@@ -760,7 +761,7 @@ public class SecurityRealmAddHandler extends AbstractAddStepHandler {
             }
             serviceBuilder.setInstance(new ProviderTrustManagerService(trustManagersConsumer, credentialSourceSupplier, provider, keystorePassword));
         } else {
-            String path = KeystoreAttributes.KEYSTORE_PATH.resolveModelAttribute(context, ssl).asString();
+            String path = pathNode.asString();
             ModelNode relativeToNode = KeystoreAttributes.KEYSTORE_RELATIVE_TO.resolveModelAttribute(context, ssl);
             String relativeTo = relativeToNode.isDefined() ? relativeToNode.asString() : null;
 

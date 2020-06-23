@@ -102,11 +102,13 @@ public class HTTPSManagementInterfaceTestCase {
     public static final File CLIENT_TRUSTSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.CLIENT_TRUSTSTORE);
     public static final File UNTRUSTED_KEYSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.UNTRUSTED_KEYSTORE);
 
-    private static ManagementWebRealmSetup managementNativeRealmSetup;
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
     private static final String MANAGEMENT_WEB_REALM_CR = "ManagementWebRealmCr";
     private static final String MANAGEMENT_WEB_REALM_CR_ALIAS = "ManagementWebRealmCrAlias";
     private static final String MGMT_CTX = "/management";
+
+    private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
+    private static String providerToUse = null; // static provider to use for key and trust store (JKS or PKCS12)
 
     @Inject
     protected static ServerController controller;
@@ -117,13 +119,13 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     protected static void startAndSetupContainer(String provider) throws Exception {
+        providerToUse = provider;
         controller.startInAdminMode();
 
         try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()){
             ManagementClient managementClient = controller.getClient();
 
-            serverSetup(managementClient, provider);
-            managementNativeRealmSetup = new ManagementWebRealmSetup(provider);
+            serverSetup(managementClient);
             managementNativeRealmSetup.setup(client);
         }
         // To apply new security realm settings for http interface reload of
@@ -251,16 +253,11 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     private static HttpClient getHttpClient(File keystoreFile) {
-        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE, SecurityTestConstants.KEYSTORE_PASSWORD);
+        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, providerToUse,
+                CLIENT_TRUSTSTORE_FILE, SecurityTestConstants.KEYSTORE_PASSWORD, providerToUse);
     }
 
     static class ManagementWebRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
-
-        private final String provider;
-
-        public ManagementWebRealmSetup(String provider) {
-            this.provider = provider;
-        }
 
         // Overridden just to expose locally
         @Override
@@ -277,10 +274,12 @@ public class HTTPSManagementInterfaceTestCase {
         protected SecurityRealm[] getSecurityRealms() throws Exception {
             final ServerIdentity serverIdentity = new ServerIdentity.Builder().ssl(
                     new RealmKeystore.Builder().keystorePassword(SecurityTestConstants.KEYSTORE_PASSWORD)
-                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final Authentication authentication = new Authentication.Builder().truststore(
                     new RealmKeystore.Builder().keystorePassword(SecurityTestConstants.KEYSTORE_PASSWORD)
-                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final SecurityRealm realm = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM).serverIdentity(serverIdentity)
                     .authentication(authentication).build();
             // Same using credential reference
@@ -289,17 +288,19 @@ public class HTTPSManagementInterfaceTestCase {
                     new RealmKeystore.Builder()
                             .keystorePasswordCredentialReference(credentialReference)
                             .keyPasswordCredentialReference(credentialReference)
-                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final ServerIdentity serverIdentityCRAlias = new ServerIdentity.Builder().ssl(
                     new RealmKeystore.Builder()
                             .keystorePasswordCredentialReference(credentialReference)
                             .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
                             .alias(CoreUtils.KEYSTORE_SERVER_ALIAS)
-                            .provider(provider)
+                            .provider(providerToUse)
                             .build()).build();
             final Authentication authenticationCR = new Authentication.Builder().truststore(
                     new RealmKeystore.Builder().keystorePasswordCredentialReference(credentialReference)
-                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final SecurityRealm realmCR = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR).serverIdentity(serverIdentityCR)
                     .authentication(authenticationCR).build();
             final SecurityRealm realmCR2 = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR_ALIAS).serverIdentity(serverIdentityCRAlias)
@@ -309,12 +310,12 @@ public class HTTPSManagementInterfaceTestCase {
         }
     }
 
-    private static void serverSetup(ManagementClient managementClient, String provider) throws Exception {
+    private static void serverSetup(ManagementClient managementClient) throws Exception {
 
         // create key and trust stores with imported certificates from opposing sides
         FileUtils.deleteDirectory(WORK_DIR);
         WORK_DIR.mkdirs();
-        CoreUtils.createKeyMaterial(WORK_DIR, provider);
+        CoreUtils.createKeyMaterial(WORK_DIR, providerToUse);
 
         final ModelControllerClient client = managementClient.getControllerClient();
 
