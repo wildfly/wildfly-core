@@ -22,7 +22,7 @@
 
 package org.jboss.as.logging.deployments;
 
-import static org.jboss.as.logging.LoggingResourceDefinition.DUP_INJECTED_LOGGING_MODULES;
+import org.jboss.as.logging.LoggingModuleDependency;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -56,11 +56,12 @@ public class LoggingDependencyDeploymentProcessor implements DeploymentUnitProce
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
         // Add the logging modules
-        for (String moduleId : DUP_INJECTED_LOGGING_MODULES) {
+        for (LoggingModuleDependency moduleDep : LoggingModuleDependency.values()) {
+            final String moduleId = moduleDep.getModuleName();
             try {
                 LoggingLogger.ROOT_LOGGER.tracef("Adding module '%s' to deployment '%s'", moduleId, deploymentUnit.getName());
                 moduleLoader.loadModule(moduleId);
-                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, moduleId, false, false, false, false));
+                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, moduleId, false, false, moduleDep.isImportServices(), false));
             } catch (ModuleLoadException ex) {
                 LoggingLogger.ROOT_LOGGER.debugf("Module not found: %s", moduleId);
             }

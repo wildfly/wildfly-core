@@ -313,6 +313,10 @@ abstract class AbstractLoggingProfilesTestCase extends AbstractLoggingTestCase {
         }
     }
 
+    protected void processDeployment(final JavaArchive deployment) {
+        addPermissions(deployment);
+    }
+
     private void deploy(final String name, final String profileName) throws IOException {
         deploy(name, profileName, true);
     }
@@ -324,7 +328,7 @@ abstract class AbstractLoggingProfilesTestCase extends AbstractLoggingTestCase {
             archive.addAsServiceProviderAndClasses(ServiceActivator.class, serviceActivator);
         }
         archive.addAsResource(new StringAsset("Dependencies: io.undertow.core\nLogging-Profile: " + profileName), "META-INF/MANIFEST.MF");
-        addPermissions(archive);
+        processDeployment(archive);
         deploy(archive, name);
     }
 }

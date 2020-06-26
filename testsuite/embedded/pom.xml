@@ -38,7 +38,6 @@
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
         <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
-        <version.org.apache.logging.log4j>2.13.3</version.org.apache.logging.log4j>
         <version.ch.qos.logback>1.2.3</version.ch.qos.logback>
     </properties>
 
@@ -56,13 +55,11 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>${version.org.apache.logging.log4j}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>${version.org.apache.logging.log4j}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
