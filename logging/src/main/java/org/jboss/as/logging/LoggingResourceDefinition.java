@@ -84,6 +84,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
         "org.jboss.logging",
         APACHE_COMMONS_LOGGING,
         "org.apache.log4j",
+        "org.apache.logging.log4j",
         SLF4J,
         SLF4J_STUB,};
 
