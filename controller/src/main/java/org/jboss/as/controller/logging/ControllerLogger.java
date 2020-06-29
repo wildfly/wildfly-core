@@ -3623,4 +3623,7 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 475, value = "Value for attribute '%s' is invalid.")
     OperationFailedException invalidAttributeValue(String attributeName);
+
+    @Message(id = 476, value = "Unsupported usage of expression:")
+    String unsupportedUsageOfExpression();
 }

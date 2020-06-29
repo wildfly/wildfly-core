@@ -144,6 +144,8 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static final Set<Action.ActionEffect> WRITE_RUNTIME = EnumSet.of(Action.ActionEffect.WRITE_RUNTIME);
     private static final Set<Action.ActionEffect> ALL_READ_WRITE = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG, Action.ActionEffect.WRITE_RUNTIME);
 
+    private static final String UNSUPPORTED_EXPRESSION_PATTERN = ".+\\.\\$\\{.+\\}";
+
     private final ModelControllerImpl modelController;
     private final OperationMessageHandler messageHandler;
     private final Map<ServiceName, ServiceController<?>> realRemovingControllers = new HashMap<>();
@@ -347,32 +349,38 @@ final class OperationContextImpl extends AbstractOperationContext {
             for (Map.Entry<Step, Set<CapabilityId>> entry : missingForStep.entrySet()) {
                 Step step = entry.getKey();
                 ModelNode response = step.response;
-                // only overwrite reponse failure-description if there isn't one
-                StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
-                        ? null
-                        : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
-                StringBuilder bootMsg = isBooting() || ignoreFailures
-                        ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
-                        : null;
+                StringBuilder unsupportedExpressionsMsg = new StringBuilder();
+                StringBuilder capabilityMissingMsg = new StringBuilder();
                 for (CapabilityId id : entry.getValue()) {
-                    String formattedCapability = ignoreContext
-                            ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
-                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
-                    Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
-                    if (msg != null) {
-                        msg = appendPossibleProviderPoints(msg, formattedCapability, possiblePoints);
-                    }
-                    if (bootMsg != null) {
-                        bootMsg = appendPossibleProviderPoints(bootMsg, formattedCapability, possiblePoints);
+                    if (id.getName().matches(UNSUPPORTED_EXPRESSION_PATTERN)) {
+                        unsupportedExpressionsMsg.append(System.lineSeparator()).append("\t\t").append(id.getName());
+                    } else {
+                        String formattedCapability = ignoreContext
+                                ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
+                                : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
+                        Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
+                        if (!response.hasDefined(FAILURE_DESCRIPTION) || isBooting() || ignoreFailures)
+                            capabilityMissingMsg = appendPossibleProviderPoints(capabilityMissingMsg, formattedCapability, possiblePoints);
                     }
                 }
-                if (msg != null) {
+                // only overwrite reponse failure-description if there isn't one
+                if (!response.hasDefined(FAILURE_DESCRIPTION)) {
                     if(!ignoreFailures) {
+                        StringBuilder msg = new StringBuilder();
+                        if (unsupportedExpressionsMsg.length() > 0)
+                            msg.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression()).append(unsupportedExpressionsMsg);
+                        if (capabilityMissingMsg.length() > 0)
+                            msg.append(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing()).append(capabilityMissingMsg);
                         response.get(FAILURE_DESCRIPTION).set(msg.toString());
                     }
                     failureRecorded = true;
                 }
-                if (bootMsg != null) {
+                if (isBooting() || ignoreFailures) {
+                    StringBuilder bootMsg = new StringBuilder();
+                    if (unsupportedExpressionsMsg.length() > 0)
+                        bootMsg.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression()).append(unsupportedExpressionsMsg);
+                    if (capabilityMissingMsg.length() > 0)
+                        bootMsg.append(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString())).append(capabilityMissingMsg);
                     ControllerLogger.ROOT_LOGGER.error(bootMsg.toString());
                 }
             }
