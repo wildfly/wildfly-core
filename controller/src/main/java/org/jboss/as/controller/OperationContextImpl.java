@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
@@ -144,7 +145,9 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static final Set<Action.ActionEffect> WRITE_RUNTIME = EnumSet.of(Action.ActionEffect.WRITE_RUNTIME);
     private static final Set<Action.ActionEffect> ALL_READ_WRITE = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG, Action.ActionEffect.WRITE_RUNTIME);
 
-    private static final String UNSUPPORTED_EXPRESSION_PATTERN = ".+\\.\\$\\{.+\\}";
+    /** Pattern that can be used to identify capabilities name strings that include expression syntax
+     * started with one or more of any character, followed by '.${' sequence, then one or more of any character ended with '}' */
+    private static final Pattern UNSUPPORTED_EXPRESSION_PATTERN = Pattern.compile(".+\\.\\$\\{.+\\}");
 
     private final ModelControllerImpl modelController;
     private final OperationMessageHandler messageHandler;
@@ -352,7 +355,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 StringBuilder unsupportedExpressionsMsg = new StringBuilder();
                 StringBuilder capabilityMissingMsg = new StringBuilder();
                 for (CapabilityId id : entry.getValue()) {
-                    if (id.getName().matches(UNSUPPORTED_EXPRESSION_PATTERN)) {
+                    if (UNSUPPORTED_EXPRESSION_PATTERN.matcher(id.getName()).matches()) {
                         unsupportedExpressionsMsg.append(System.lineSeparator()).append("\t\t").append(id.getName());
                     } else {
                         String formattedCapability = ignoreContext
