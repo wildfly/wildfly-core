@@ -52,6 +52,7 @@ public class ProtocolConnectionConfiguration {
     private ProtocolTimeoutHandler timeoutHandler;
     private boolean sslEnabled = true;
     private boolean useStartTLS = true;
+    private boolean callbackHandlerPreferred = true;
 
     protected ProtocolConnectionConfiguration() {
         // TODO AS7-6223 propagate clientBindAddress configuration up to end user level and get rid of this system property
@@ -169,6 +170,20 @@ public class ProtocolConnectionConfiguration {
         return useStartTLS;
     }
 
+    /**
+     * Where a {@code CallbackHandler} is provided should this be preferred over any resolved
+     * {@code AuthenticationConfiguration}, defaults to {@code true}.
+     *
+     * @return {@code true} if the referenced {@code CallbackHandler} should be preferred.
+     */
+    public boolean isCallbackHandlerPreferred() {
+        return callbackHandlerPreferred;
+    }
+
+    public void setCallbackHandlerPreferred(boolean callbackHandlerPreferred) {
+        this.callbackHandlerPreferred = callbackHandlerPreferred;
+    }
+
     public ProtocolConnectionConfiguration copy() {
         return copy(this);
     }
@@ -206,6 +221,7 @@ public class ProtocolConnectionConfiguration {
         target.timeoutHandler = old.timeoutHandler;
         target.sslEnabled = old.sslEnabled;
         target.useStartTLS = old.useStartTLS;
+        target.callbackHandlerPreferred = old.callbackHandlerPreferred;
         return target;
     }
 
