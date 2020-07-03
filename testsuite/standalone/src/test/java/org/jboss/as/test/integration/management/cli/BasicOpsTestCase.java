@@ -34,6 +34,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.auth.client.AuthenticationConfiguration;
+import org.wildfly.security.auth.client.AuthenticationContext;
+import org.wildfly.security.auth.client.MatchRule;
+import org.wildfly.security.sasl.SaslMechanismSelector;
 
 /**
  *
@@ -54,6 +58,22 @@ public class BasicOpsTestCase {
 
         cli.quit();
     }
+
+    @Test
+    public void testConnect_AuthenticationConfig() throws Exception {
+        AuthenticationContext testContext = AuthenticationContext.empty().with(MatchRule.ALL,
+                AuthenticationConfiguration.empty().useDefaultProviders()
+                        .setSaslMechanismSelector(SaslMechanismSelector.NONE.addMechanism("DIGEST-MD5")).useName("testSuite")
+                        .usePassword("testSuitePassword"));
+        AuthenticationContext original = AuthenticationContext.getContextManager().getGlobalDefault();
+        AuthenticationContext.getContextManager().setGlobalDefault(testContext);
+        try {
+            testConnect();
+        } finally {
+            AuthenticationContext.getContextManager().setGlobalDefault(original);
+        }
+    }
+
 
     @Test
     public void testConnectBind() throws Exception {
