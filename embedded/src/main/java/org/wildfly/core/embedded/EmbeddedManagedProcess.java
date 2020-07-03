@@ -54,8 +54,19 @@ public interface EmbeddedManagedProcess {
      * The returned value is a String representation of one of the possible {@code ControlledProcessState.State} values.
      *
      * @return The current process state, or {@code null} if currently the process state is unknown.
+     * @throws UnsupportedOperationException if the requested operation is not supported by the implementation of this embedded server.
      */
     String getProcessState();
+
+    /**
+     * Check if the implementation of this interface is able to use getProcessState() to retrieve the current process state.
+     * <p>
+     * The implementation class could be an implementation comming from an older server version that does not support to check
+     * the process state directly.
+     *
+     * @return Whether the implementation supports to query for the process state.
+     */
+    boolean canQueryProcessState();
 
     static ClassLoader getTccl() {
         if (System.getSecurityManager() == null) {

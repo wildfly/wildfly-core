@@ -377,6 +377,11 @@ public class EmbeddedHostControllerFactory {
             return currentProcessState.toString();
         }
 
+        @Override
+        public boolean canQueryProcessState() {
+            return true;
+        }
+
         private void exit() {
 
             if (serviceContainer != null) {

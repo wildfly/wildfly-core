@@ -60,6 +60,11 @@ public final class EmbeddedServerReference implements StandaloneServer, HostCont
     }
 
     @Override
+    public boolean canQueryProcessState() {
+        return delegate.canQueryProcessState();
+    }
+
+    @Override
     public ModelControllerClient getModelControllerClient()  {
         return delegate.getModelControllerClient();
     }

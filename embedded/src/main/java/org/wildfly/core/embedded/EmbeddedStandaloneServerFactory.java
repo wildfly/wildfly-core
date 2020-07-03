@@ -346,6 +346,11 @@ public class EmbeddedStandaloneServerFactory {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public boolean canQueryProcessState() {
+            return false;
+        }
+
         private void exit() {
 
             if (serviceContainer != null) {
