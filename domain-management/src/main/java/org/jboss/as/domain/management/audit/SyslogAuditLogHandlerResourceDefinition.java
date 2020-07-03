@@ -46,7 +46,6 @@ import java.util.Set;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -82,6 +81,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
 
     private static final String DEFAULT_APP_NAME_IF_NOT_A_PRODUCT = "WildFly";
 
+    @SuppressWarnings("deprecation")
     public static final SimpleAttributeDefinition SYSLOG_FORMAT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SYSLOG_FORMAT, ModelType.STRING)
         .setRequired(false)
         .setDefaultValue(new ModelNode(SyslogHandler.SyslogType.RFC5424.toString()))
@@ -119,12 +119,12 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {FORMATTER, MAX_LENGTH, SYSLOG_FORMAT, TRUNCATE, MAX_FAILURE_COUNT, APP_NAME, FACILITY};
 
     public SyslogAuditLogHandlerResourceDefinition(ManagedAuditLogger auditLogger, PathManagerService pathManager, EnvironmentNameReader environmentReader) {
-        super(auditLogger, pathManager, new Parameters(PathElement.pathElement(SYSLOG_HANDLER),
-                DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.syslog-handler"))
+        super(auditLogger, pathManager,
+                new Parameters(PathElement.pathElement(SYSLOG_HANDLER), DomainManagementResolver.getResolver(
+                        "core.management.syslog-handler"))
                 .setAddHandler(new SyslogAuditLogHandlerAddHandler(auditLogger, pathManager, environmentReader))
                 .setRemoveHandler(new HandlerRemoveHandler(auditLogger)));
         this.environmentReader = environmentReader;
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     public static void createServerAddOperations(List<ModelNode> addOps, PathAddress syslogHandlerAddress, ModelNode syslogHandler) {

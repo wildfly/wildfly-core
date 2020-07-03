@@ -29,7 +29,6 @@ import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -78,11 +77,10 @@ public class AuditLogLoggerResourceDefinition extends SimpleResourceDefinition {
     private final ManagedAuditLogger auditLogger;
 
     private AuditLogLoggerResourceDefinition(final PathElement pathElement, final ManagedAuditLogger auditLogger) {
-        super(pathElement,
-                DomainManagementResolver.getDeprecatedResolver(AccessAuditResourceDefinition.DEPRECATED_MESSAGE_CATEGORY, "core.management.audit-log"),
+        super(pathElement, DomainManagementResolver.getResolver(
+                "core.management.audit-log"),
                 new AuditLogLoggerAddHandler(auditLogger), new AuditLogLoggerRemoveHandler(auditLogger));
         this.auditLogger = auditLogger;
-        setDeprecated(ModelVersion.create(1, 7));
     }
 
     static AuditLogLoggerResourceDefinition createDefinition(ManagedAuditLogger auditLogger){
