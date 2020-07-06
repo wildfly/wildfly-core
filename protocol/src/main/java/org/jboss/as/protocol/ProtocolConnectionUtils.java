@@ -160,10 +160,12 @@ public class ProtocolConnectionUtils {
         AuthenticationContext captured = AuthenticationContext.captureCurrent();
         AuthenticationConfiguration mergedConfiguration = AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(uri, captured);
         if (handler != null) {
-            // Clear the three values as the CallbackHandler will be used for these.
-            mergedConfiguration = mergedConfiguration.useAnonymous();
-            mergedConfiguration = mergedConfiguration.useCredentials(IdentityCredentials.NONE);
-            mergedConfiguration = mergedConfiguration.useRealm(null);
+            if (configuration.isCallbackHandlerPreferred()) {
+                // Clear the three values as the CallbackHandler will be used for these.
+                mergedConfiguration = mergedConfiguration.useAnonymous();
+                mergedConfiguration = mergedConfiguration.useCredentials(IdentityCredentials.NONE);
+                mergedConfiguration = mergedConfiguration.useRealm(null);
+            }
             mergedConfiguration = mergedConfiguration.useCallbackHandler(handler, DEFAULT_CALLBACK_KINDS);
         }
 

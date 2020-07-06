@@ -164,6 +164,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             channelConfig.setConnectionTimeout(connectionTimeout);
         }
         channelConfig.setTimeoutHandler(timeoutHandler);
+        channelConfig.setCallbackHandlerPreferred(false);
     }
 
     @Override
