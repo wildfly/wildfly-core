@@ -581,4 +581,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1067, value = "Value '%s' is not valid regex.")
     OperationFailedException invalidRegex(String regex);
 
+    @Message(id = 1068, value = "Duplicate PolicyContextHandler found for key '%s'.")
+    IllegalStateException duplicatePolicyContextHandler(String key);
+
 }

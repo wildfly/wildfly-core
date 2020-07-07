@@ -84,7 +84,6 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.security.SecurityContextAssociation;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
@@ -96,6 +95,7 @@ import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
@@ -586,9 +586,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
         @Override
         public Boolean get() {
             if (WildFlySecurityManager.isChecking()) {
-                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityContextAssociation.getSecurityContext() != null);
+                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityDomain.getCurrent() == null);
             } else {
-                return SecurityContextAssociation.getSecurityContext() != null;
+                return SecurityDomain.getCurrent() == null;
             }
         }
     };
