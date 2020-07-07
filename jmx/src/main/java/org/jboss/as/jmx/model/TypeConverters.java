@@ -43,6 +43,7 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.jmx.logging.JmxLogger;
@@ -98,26 +99,26 @@ class TypeConverters {
         return new TypeConverters(true, true);
     }
 
-    OpenType<?> convertToMBeanType(final ModelNode description) {
-        return getConverter(description).getOpenType();
+    OpenType<?> convertToMBeanType(AttributeDefinition attributeDefinition, final ModelNode description) {
+        return getConverter(attributeDefinition, description).getOpenType();
     }
 
-    ModelNode toModelNode(final ModelNode description, final Object value) {
+    ModelNode toModelNode(AttributeDefinition attributeDefinition, final ModelNode description, final Object value) {
         ModelNode node = new ModelNode();
         if (value == null) {
             return node;
         }
-        return getConverter(description).toModelNode(value);
+        return getConverter(attributeDefinition, description).toModelNode(value);
     }
 
-    Object fromModelNode(final ModelNode description, final ModelNode value) {
+    Object fromModelNode(AttributeDefinition attributeDefinition, final ModelNode description, final ModelNode value) {
         if (value == null || !value.isDefined()) {
             return null;
         }
-        return getConverter(description).fromModelNode(value);
+        return getConverter(attributeDefinition, description).fromModelNode(value);
     }
 
-    public ModelType getType(ModelNode typeNode) {
+    private ModelType getType(ModelNode typeNode) {
         if (typeNode == null) {
             return ModelType.UNDEFINED;
         }
@@ -130,12 +131,14 @@ class TypeConverters {
 
     // TODO WFCORE-3551 stop using the full attribute description for this, particularly
     // for non-OBJECT/LIST/PROPERTY where all we need is the ModelType
-    public TypeConverter getConverter(ModelNode description) {
-        return getConverter(description.hasDefined(TYPE) ? description.get(TYPE) : null,
+    public TypeConverter getConverter(AttributeDefinition attributeDefinition, ModelNode description) {
+        return getConverter(
+                attributeDefinition,
+                description.hasDefined(TYPE) ? description.get(TYPE) : null,
                 description.hasDefined(VALUE_TYPE) ? description.get(VALUE_TYPE) : null);
     }
 
-    TypeConverter getConverter(ModelType modelType, ModelNode valueTypeNode) {
+    TypeConverter getConverter(AttributeDefinition attributeDefinition, ModelType modelType, ModelNode valueTypeNode) {
         switch (modelType) {
             case BIG_DECIMAL:
                 return expressions ? BIG_DECIMAL_EXPR : BIG_DECIMAL_NO_EXPR;
@@ -153,7 +156,7 @@ class TypeConverters {
             case PROPERTY:
                 //For the legacy setup properties are converted to a dmr string
                 //For the expr setup or legacy with legacyWithProperPropertyFormat=true we use a composite type
-                return expressions || legacyWithProperPropertyFormat ? new PropertyTypeConverter(valueTypeNode) : PROPERTY_NO_EXPR;
+                return expressions || legacyWithProperPropertyFormat ? new PropertyTypeConverter(attributeDefinition, valueTypeNode) : PROPERTY_NO_EXPR;
             case INT:
                 return expressions ? INT_EXPR : INT_NO_EXPR;
             case LONG:
@@ -163,20 +166,20 @@ class TypeConverters {
             case UNDEFINED:
                 return expressions ? UNDEFINED_EXPR : UNDEFINED_NO_EXPR;
             case OBJECT:
-                return new ObjectTypeConverter(valueTypeNode);
+                return new ObjectTypeConverter(attributeDefinition, valueTypeNode);
             case LIST:
-                return new ListTypeConverter(valueTypeNode);
+                return new ListTypeConverter(attributeDefinition, valueTypeNode);
             default:
                 throw JmxLogger.ROOT_LOGGER.unknownType(modelType);
         }
     }
 
-    TypeConverter getConverter(ModelNode typeNode, ModelNode valueTypeNode) {
+    TypeConverter getConverter(AttributeDefinition attributeDefinition, ModelNode typeNode, ModelNode valueTypeNode) {
         ModelType modelType = getType(typeNode);
         if (modelType == null) {
-            return new ComplexTypeConverter(typeNode);
+            return new ComplexTypeConverter(attributeDefinition, typeNode);
         }
-        return getConverter(modelType, valueTypeNode);
+        return getConverter(attributeDefinition, modelType, valueTypeNode);
     }
 
     private static ModelNode nullNodeAsUndefined(ModelNode node) {
@@ -282,11 +285,13 @@ class TypeConverters {
 
     private class ObjectTypeConverter implements TypeConverter {
 
+        private final AttributeDefinition attributeDefinition;
         final ModelNode valueTypeNode;
         final ModelType valueType;
         OpenType<?> openType;
 
-        ObjectTypeConverter(ModelNode valueTypeNode) {
+        ObjectTypeConverter(AttributeDefinition attributeDefinition, ModelNode valueTypeNode) {
+            this.attributeDefinition = attributeDefinition;
             this.valueTypeNode = nullNodeAsUndefined(valueTypeNode);
             ModelType valueType = getType(valueTypeNode);
             this.valueType = valueType == ModelType.UNDEFINED ? null : valueType;
@@ -297,7 +302,7 @@ class TypeConverters {
             if (openType != null) {
                 return openType;
             }
-            openType = getConverter(valueTypeNode, null).getOpenType();
+            openType = getConverter(attributeDefinition, valueTypeNode, null).getOpenType();
             if (valueType == null && (openType instanceof CompositeType || !valueTypeNode.isDefined())) {
                 //For complex value types just return the composite type
                 return openType;
@@ -324,7 +329,7 @@ class TypeConverters {
             if (valueType != null) {
                 return fromSimpleModelNode(node);
             } else {
-                TypeConverter converter = getConverter(valueTypeNode, null);
+                TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
                 return converter.fromModelNode(node);
             }
         }
@@ -340,7 +345,7 @@ class TypeConverters {
                 }
             }
 
-            final TypeConverter converter = getConverter(valueTypeNode, null);
+            final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
             for (Map.Entry<String, ModelNode> prop : values.entrySet()) {
                 Map<String, Object> rowData = new HashMap<String, Object>();
                 rowData.put("key", prop.getKey());
@@ -361,11 +366,11 @@ class TypeConverters {
             }
             if (valueType == null) {
                 //complex
-                return getConverter(valueTypeNode, null).toModelNode(o);
+                return getConverter(attributeDefinition, valueTypeNode, null).toModelNode(o);
             } else {
                 //map
                 final ModelNode node = new ModelNode();
-                final TypeConverter converter = getConverter(valueTypeNode, null);
+                final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
                 for (Map.Entry<String, Object> entry : ((Map<String, Object>)o).entrySet()) {
                     entry = convertTabularTypeEntryToMapEntry(entry);
                     node.get(entry.getKey()).set(converter.toModelNode(entry.getValue()));
@@ -432,16 +437,18 @@ class TypeConverters {
     }
 
     private class ListTypeConverter implements TypeConverter {
+        private final AttributeDefinition attributeDefinition;
         final ModelNode valueTypeNode;
 
-        ListTypeConverter(ModelNode valueTypeNode) {
+        ListTypeConverter(AttributeDefinition attributeDefinition, ModelNode valueTypeNode) {
+            this.attributeDefinition = attributeDefinition;
             this.valueTypeNode = nullNodeAsUndefined(valueTypeNode);
         }
 
         @Override
         public OpenType<?> getOpenType() {
             try {
-                return ArrayType.getArrayType(getConverter(valueTypeNode, null).getOpenType());
+                return ArrayType.getArrayType(getConverter(attributeDefinition, valueTypeNode, null).getOpenType());
             } catch (OpenDataException e) {
                 throw new RuntimeException(e);
             }
@@ -453,7 +460,7 @@ class TypeConverters {
                 return null;
             }
             final List<Object> list = new ArrayList<Object>();
-            final TypeConverter converter = getConverter(valueTypeNode, null);
+            final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
             for (ModelNode element : node.asList()) {
                 list.add(converter.fromModelNode(element));
             }
@@ -466,7 +473,7 @@ class TypeConverters {
                 return new ModelNode();
             }
             ModelNode node = new ModelNode();
-            final TypeConverter converter = getConverter(valueTypeNode, null);
+            final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
             for (Object value : (Object[])o) {
                 node.add(converter.toModelNode(value));
             }
@@ -480,9 +487,11 @@ class TypeConverters {
     }
 
     private class ComplexTypeConverter implements TypeConverter {
+        private final AttributeDefinition attributeDefinition;
         final ModelNode typeNode;
 
-        ComplexTypeConverter(final ModelNode typeNode) {
+        ComplexTypeConverter(AttributeDefinition attributeDefinition, final ModelNode typeNode) {
+            this.attributeDefinition = attributeDefinition;
             this.typeNode = nullNodeAsUndefined(typeNode);
         }
 
@@ -512,7 +521,7 @@ class TypeConverters {
                 }
 
                 itemDescriptions.add(getDescription(current));
-                itemTypes.add(getConverter(current).getOpenType());
+                itemTypes.add(getConverter(attributeDefinition, current).getOpenType());
             }
             try {
                 return new CompositeType(JmxLogger.ROOT_LOGGER.complexCompositeEntryTypeName(),
@@ -548,7 +557,7 @@ class TypeConverters {
                 //Create a composite
                 final Map<String, Object> items = new HashMap<String, Object>();
                 for (String attrName : compositeType.keySet()) {
-                    TypeConverter converter = getConverter(typeNode.get(attrName, TYPE), typeNode.get(attrName, VALUE_TYPE));
+                    TypeConverter converter = getConverter(attributeDefinition, typeNode.get(attrName, TYPE), typeNode.get(attrName, VALUE_TYPE));
                     items.put(attrName, converter.fromModelNode(node.get(attrName)));
                 }
 
@@ -574,7 +583,7 @@ class TypeConverters {
                     if (!typeNode.hasDefined(key)){
                         throw JmxLogger.ROOT_LOGGER.unknownValue(key);
                     }
-                    TypeConverter converter = getConverter(typeNode.get(key, TYPE), typeNode.get(key, VALUE_TYPE));
+                    TypeConverter converter = getConverter(attributeDefinition, typeNode.get(key, TYPE), typeNode.get(key, VALUE_TYPE));
                     node.get(key).set(converter.toModelNode(composite.get(key)));
                 }
                 return node;
@@ -590,9 +599,11 @@ class TypeConverters {
     }
 
     private class PropertyTypeConverter implements TypeConverter {
+        private final AttributeDefinition attributeDefinition;
         final ModelNode typeNode;
 
-        public PropertyTypeConverter(ModelNode typeNode) {
+        public PropertyTypeConverter(AttributeDefinition attributeDefinition, ModelNode typeNode) {
+            this.attributeDefinition = attributeDefinition;
             this.typeNode = typeNode;
         }
 
@@ -642,7 +653,7 @@ class TypeConverters {
             if (typeNode == null) {
                 return expressions ? STRING_EXPR : STRING_NO_EXPR;
             }
-            return TypeConverters.this.getConverter(typeNode, null);
+            return TypeConverters.this.getConverter(attributeDefinition, typeNode, null);
         }
     }
 

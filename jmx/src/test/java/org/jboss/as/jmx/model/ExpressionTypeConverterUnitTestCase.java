@@ -882,7 +882,7 @@ public class ExpressionTypeConverterUnitTestCase {
     }
 
     private TypeConverter getConverter(ModelNode description) {
-        return TypeConverters.createExpressionTypeConverters().getConverter(description);
+        return TypeConverters.createExpressionTypeConverters().getConverter(null, description);
     }
 
     private ModelNode createDescription(ModelType type) {
