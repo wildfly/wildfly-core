@@ -72,16 +72,20 @@ public abstract class DeploymentResourceDefinition extends SimpleResourceDefinit
                 resourceRegistration.registerReadOnlyAttribute(DeploymentAttributes.MANAGED, new OperationStepHandler() {
                     @Override
                     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                        ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS, true).getModel();
-                        if(deployment.hasDefined(CONTENT_RESOURCE_ALL.getName())) {
-                            ModelNode content = deployment.get(CONTENT_RESOURCE_ALL.getName()).asList().get(0);
-                            context.getResult().set(!isUnmanagedContent(content));
-                        }
+                        extractedManaged(context, operation);
                     }
                 });
             } else {
                 resourceRegistration.registerReadOnlyAttribute(attr, null);
             }
+        }
+    }
+
+    public void extractedManaged(OperationContext context, ModelNode operation) {
+        ModelNode deployment = context.readResource(PathAddress.EMPTY_ADDRESS, true).getModel();
+        if(deployment.hasDefined(CONTENT_RESOURCE_ALL.getName())) {
+            ModelNode content = deployment.get(CONTENT_RESOURCE_ALL.getName()).asList().get(0);
+            context.getResult().set(!isUnmanagedContent(content));
         }
     }
 
