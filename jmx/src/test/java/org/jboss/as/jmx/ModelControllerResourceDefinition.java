@@ -70,7 +70,6 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
     protected ObjectTypeAttributeDefinition complex;
     private SimpleOperationDefinition COMPLEX_OP_DEF;
 
-
     private void init() {
         complexValueType = new ModelNode();
         complexValueType.get("int-value", DESCRIPTION).set("An int value");
@@ -90,6 +89,8 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
                 .setReplyType(ModelType.OBJECT)
                 .setReplyParameters(complex)
                 .build();
+
+
 
     }
 

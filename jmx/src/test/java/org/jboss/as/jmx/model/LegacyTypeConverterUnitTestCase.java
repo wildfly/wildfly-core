@@ -26,6 +26,17 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -34,20 +45,16 @@ import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularType;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectMapAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.jmx.logging.JmxLogger;
-
 import org.jboss.as.jmx.model.TypeConverters.TypeConverter;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -896,6 +903,92 @@ public class LegacyTypeConverterUnitTestCase {
         Assert.assertEquals(expected, converter.toModelNode(tabularData));
     }
 
+    @Test
+    public void testComplexTypeObject() throws Exception {
+        AttributeDefinition def =
+                ObjectMapAttributeDefinition.Builder.of(
+                        "complex-attr",
+                        ObjectTypeAttributeDefinition.Builder.of(
+                                "internal",
+                                SimpleAttributeDefinitionBuilder
+                                        .create("one", ModelType.LONG, false)
+                                        .setAllowExpression(true)
+                                        .build(),
+                                SimpleAttributeDefinitionBuilder.create("two", ModelType.STRING, false)
+                                        .setAllowExpression(true)
+                                        .build()
+                        ).build())
+                .build();
+        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), new NonResolvingResourceDescriptionResolver(), Locale.ENGLISH, null);
+        TypeConverter converter = getConverter(def, desc);
+
+        ModelNode node = new ModelNode();
+        node.get("A", "one").set(100L);
+        node.get("A", "two").set("a");
+        node.get("B", "one").set(102L);
+        node.get("B", "two").set("b");
+        node.protect();
+
+        TabularData tabularData = assertCast(TabularData.class, converter.fromModelNode(node));
+        Assert.assertEquals(2, tabularData.size());
+        checkMapOfMapsEntry(100, "a", tabularData, "A");
+        checkMapOfMapsEntry(102, "b", tabularData, "B");
+
+        ModelNode convertedNode = converter.toModelNode(tabularData);
+        Assert.assertEquals(node, convertedNode);
+    }
+
+    private void checkMapOfMapsEntry(long expectedOne, String expectedTwo, TabularData tabularData, String key) {
+        CompositeData mapEntry = assertCast(CompositeData.class, tabularData.get(new Object[]{key}));
+        CompositeData valueEntry = assertCast(CompositeData.class, mapEntry.get("value"));
+        Assert.assertEquals(expectedOne, valueEntry.get("one"));
+        Assert.assertEquals(expectedTwo, valueEntry.get("two"));
+    }
+
+    @Test
+    public void testComplexTypeList() throws Exception {
+        AttributeDefinition def =
+                ObjectListAttributeDefinition.Builder.of(
+                        "complex-attr",
+                        ObjectTypeAttributeDefinition.Builder.of(
+                                "internal",
+                                SimpleAttributeDefinitionBuilder
+                                        .create("one", ModelType.LONG, false)
+                                        .setAllowExpression(true)
+                                        .build(),
+                                SimpleAttributeDefinitionBuilder.create("two", ModelType.STRING, false)
+                                        .setAllowExpression(true)
+                                        .build()
+                        ).build())
+                        .build();
+        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), new NonResolvingResourceDescriptionResolver(), Locale.ENGLISH, null);
+        TypeConverter converter = getConverter(def, desc);
+
+        ModelNode node = new ModelNode();
+        ModelNode v1 = new ModelNode();
+        v1.get("one").set(100L);
+        v1.get("two").set("a");
+        node.add(v1);
+        ModelNode v2 = new ModelNode();
+        v2.get("one").set(102L);
+        v2.get("two").set("b");
+        node.add(v2);
+        node.protect();
+
+        System.out.println(converter.fromModelNode(node));
+
+        Object o = converter.fromModelNode(node);
+        CompositeData[] listData = assertCast(CompositeData[].class, converter.fromModelNode(node));
+        Assert.assertEquals(2, listData.length);
+        Assert.assertEquals(100L, listData[0].get("one"));
+        Assert.assertEquals("a", listData[0].get("two"));
+        Assert.assertEquals(102L, listData[1].get("one"));
+        Assert.assertEquals("b", listData[1].get("two"));
+
+        ModelNode convertedNode = converter.toModelNode(listData);
+        Assert.assertEquals(node, convertedNode);
+    }
+
     private OpenType<?> assertCompositeType(CompositeType composite, String name, String type, String description){
         return assertCompositeType(composite, name, type, description, true);
     }
@@ -942,14 +1035,22 @@ public class LegacyTypeConverterUnitTestCase {
     }
 
     private TypeConverter getConverter(ModelNode description) {
-        return TypeConverters.createLegacyTypeConverters(false).getConverter(null, description);
+        return getConverter(null, description);
+    }
+
+    private TypeConverter getConverter(AttributeDefinition attrDef, ModelNode description) {
+        return TypeConverters.createLegacyTypeConverters(false).getConverter(attrDef, description);
     }
 
     private ModelNode createDescription(ModelType type) {
-        return createDescription(type, null);
+        return createDescription(type, (ModelNode)null);
     }
 
     private ModelNode createDescription(ModelType type, ModelType valueType) {
+        return createDescription(type, new ModelNode(valueType));
+    }
+
+    private ModelNode createDescription(ModelType type, ModelNode valueType) {
         ModelNode node = new ModelNode();
         node.get(TYPE).set(type);
         if (valueType != null) {

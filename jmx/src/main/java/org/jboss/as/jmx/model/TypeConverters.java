@@ -45,6 +45,7 @@ import javax.management.openmbean.TabularType;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ObjectMapAttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.jmx.logging.JmxLogger;
 import org.jboss.dmr.ModelNode;
@@ -288,6 +289,7 @@ class TypeConverters {
         private final AttributeDefinition attributeDefinition;
         final ModelNode valueTypeNode;
         final ModelType valueType;
+        final boolean mapOfMaps;
         OpenType<?> openType;
 
         ObjectTypeConverter(AttributeDefinition attributeDefinition, ModelNode valueTypeNode) {
@@ -295,6 +297,7 @@ class TypeConverters {
             this.valueTypeNode = nullNodeAsUndefined(valueTypeNode);
             ModelType valueType = getType(valueTypeNode);
             this.valueType = valueType == ModelType.UNDEFINED ? null : valueType;
+            mapOfMaps = attributeDefinition instanceof ObjectMapAttributeDefinition;
         }
 
         @Override
@@ -302,19 +305,34 @@ class TypeConverters {
             if (openType != null) {
                 return openType;
             }
+
             openType = getConverter(attributeDefinition, valueTypeNode, null).getOpenType();
-            if (valueType == null && (openType instanceof CompositeType || !valueTypeNode.isDefined())) {
-                //For complex value types just return the composite type
+            if ((valueType == null && !mapOfMaps) && (openType instanceof CompositeType || !valueTypeNode.isDefined())) {
+                //For complex value types that are not maps of maps just return the composite type
                 return openType;
             }
             try {
-                CompositeType rowType = new CompositeType(
-                        JmxLogger.ROOT_LOGGER.compositeEntryTypeName(),
-                        JmxLogger.ROOT_LOGGER.compositeEntryTypeDescription(),
-                        new String[] {"key", "value"},
-                        new String[] { JmxLogger.ROOT_LOGGER.compositeEntryKeyDescription(), JmxLogger.ROOT_LOGGER.compositeEntryValueDescription()},
-                        new OpenType[] {SimpleType.STRING, openType});
-                openType = new TabularType(JmxLogger.ROOT_LOGGER.compositeMapName(), JmxLogger.ROOT_LOGGER.compositeMapDescription(), rowType, new String[] {"key"});
+
+                if (!(openType instanceof CompositeType)) {
+                    CompositeType rowType = new CompositeType(
+                            JmxLogger.ROOT_LOGGER.compositeEntryTypeName(),
+                            JmxLogger.ROOT_LOGGER.compositeEntryTypeDescription(),
+                            new String[]{"key", "value"},
+                            new String[]{JmxLogger.ROOT_LOGGER.compositeEntryKeyDescription(), JmxLogger.ROOT_LOGGER.compositeEntryValueDescription()},
+                            new OpenType[]{SimpleType.STRING, openType});
+                    openType = new TabularType(JmxLogger.ROOT_LOGGER.compositeMapName(), JmxLogger.ROOT_LOGGER.compositeMapDescription(), rowType, new String[]{"key"});
+                } else if (mapOfMaps) {
+                    CompositeType rowType = (CompositeType) openType;
+                    CompositeType wrapperType = new CompositeType(
+                            JmxLogger.ROOT_LOGGER.compositeEntryTypeName(),
+                            JmxLogger.ROOT_LOGGER.compositeEntryTypeDescription(),
+                            new String[]{"key", "value"},
+                            new String[]{JmxLogger.ROOT_LOGGER.compositeEntryKeyDescription(), JmxLogger.ROOT_LOGGER.compositeEntryValueDescription()},
+                            new OpenType[]{SimpleType.STRING, rowType});
+                    openType = new TabularType(JmxLogger.ROOT_LOGGER.compositeMapName(), JmxLogger.ROOT_LOGGER.compositeMapDescription(), wrapperType, new String[]{"key"});
+                } else {
+                    JmxLogger.ROOT_LOGGER.debugf("Attribute is not a composite type, or a mapOfMaps: %s", openType);
+                }
                 return openType;
             } catch (OpenDataException e1) {
                 throw new RuntimeException(e1);
@@ -329,8 +347,12 @@ class TypeConverters {
             if (valueType != null) {
                 return fromSimpleModelNode(node);
             } else {
-                TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
-                return converter.fromModelNode(node);
+                if (mapOfMaps) {
+                    return fromMapOfMapsModelNode(node);
+                } else {
+                    TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
+                    return converter.fromModelNode(node);
+                }
             }
         }
 
@@ -359,18 +381,62 @@ class TypeConverters {
             return tabularData;
         }
 
+        Object fromMapOfMapsModelNode(ModelNode node) {
+            final TabularType tabularType = (TabularType)getOpenType();
+            final TabularDataSupport tabularData = new TabularDataSupport(tabularType);
+            final Map<String, ModelNode> values = new HashMap<String, ModelNode>();
+            final List<Property> properties = node.isDefined() ? node.asPropertyList() : null;
+            if (properties != null) {
+                for (Property prop : properties) {
+                    values.put(prop.getName(), prop.getValue());
+                }
+            }
+
+            final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
+            for (Map.Entry<String, ModelNode> prop : values.entrySet()) {
+                String key = prop.getKey();
+                ModelNode value = prop.getValue();
+
+                CompositeData valueData = (CompositeData)converter.fromModelNode(value);
+
+                Map<String, Object> rowData = new HashMap<>();
+                rowData.put("key", key);
+                rowData.put("value", valueData);
+
+                try {
+                    tabularData.put(new CompositeDataSupport(tabularType.getRowType(), rowData));
+                } catch (OpenDataException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return tabularData;
+        }
+
         @Override
         public ModelNode toModelNode(Object o) {
             if (o == null) {
                 return new ModelNode();
             }
+            final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
             if (valueType == null) {
                 //complex
-                return getConverter(attributeDefinition, valueTypeNode, null).toModelNode(o);
+                if (mapOfMaps) {
+                    final ModelNode node = new ModelNode();
+                    for (Map.Entry<String, Object> entry : ((Map<String, Object>)o).entrySet()) {
+                        entry = convertTabularTypeEntryToMapEntry(entry);
+                        String mapKey = entry.getKey();
+                        CompositeDataSupport data = (CompositeDataSupport) entry.getValue();
+                        ModelNode valueNode = converter.toModelNode(entry.getValue());
+                        node.get(mapKey).set(valueNode);
+                    }
+                    return node;
+
+                } else {
+                    return converter.toModelNode(o);
+                }
             } else {
                 //map
                 final ModelNode node = new ModelNode();
-                final TypeConverter converter = getConverter(attributeDefinition, valueTypeNode, null);
                 for (Map.Entry<String, Object> entry : ((Map<String, Object>)o).entrySet()) {
                     entry = convertTabularTypeEntryToMapEntry(entry);
                     node.get(entry.getKey()).set(converter.toModelNode(entry.getValue()));
