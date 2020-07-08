@@ -34,6 +34,7 @@ import org.jboss.as.cli.CliEventListener;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.handlers.SimpleTabCompleter;
@@ -42,6 +43,8 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logmanager.LogContext;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.stdio.NullOutputStream;
@@ -268,32 +271,93 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
             hostControllerReference.set(new EmbeddedProcessLaunch(hostController, restorer, true));
             ModelControllerClient mcc = new ThreadContextsModelControllerClient(hostController.getModelControllerClient(), contextSelector);
 
-            if (bootTimeout == null || bootTimeout > 0) {
-                long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
+            if (hostController.canQueryProcessState()) {
+                // If we can check the process state, then use this method instead of using management operations to verify
+                // the process state and wait for it even if we are on EMPTY_HOST_CONFIG scenario.
+                if (bootTimeout == null || bootTimeout > 0) {
+                    long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                String status;
+                    String status;
 
-                do {
-                    status = hostController.getProcessState();
+                    do {
+                        status = hostController.getProcessState();
+
+                        if (status == null || "starting".equals(status)) {
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new CommandLineException("Interrupted while waiting for embedded server to start");
+                            }
+                        } else {
+                            break;
+                        }
+                    } while (System.nanoTime() < expired);
 
                     if (status == null || "starting".equals(status)) {
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new CommandLineException("Interrupted while waiting for embedded server to start");
-                        }
-                    } else {
-                        break;
+                        assert bootTimeout != null; // we'll assume the loop didn't run for decades
+                        // Stop server and restore environment
+                        StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
+                        throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
+                                TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
                     }
-                } while (System.nanoTime() < expired);
+                }
+            } else {
+                // Fallback to management operations. This could be problematic when we are using an empty host configuration
+                // file because, in this case, there is no way to wait for the embedded process before returning the control
+                // to the client. We need the host name to query for its state.
+                // In specific cases, it could return the client when the managed process is still starting, which is problematic
+                // when we are using the embedded server programmatically.
+                // See https://issues.redhat.com/browse/WFLY-13276 for some context.
+                if (!emptyHost && (bootTimeout == null || bootTimeout > 0)) {
+                    long expired = bootTimeout == null ? Long.MAX_VALUE : System.nanoTime() + bootTimeout;
 
-                if (status == null || "starting".equals(status)) {
-                    assert bootTimeout != null; // we'll assume the loop didn't run for decades
-                    // Stop server and restore environment
-                    StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
-                    throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
-                            TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
+                    String status = "starting";
+
+                    // read out the host controller name
+                    final ModelNode getNameOp = new ModelNode();
+                    getNameOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                    getNameOp.get(ClientConstants.NAME).set(Util.LOCAL_HOST_NAME);
+
+                    final ModelNode getStateOp = new ModelNode();
+                    getStateOp.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+                    ModelNode address = getStateOp.get(ClientConstants.ADDRESS);
+                    getStateOp.get(ClientConstants.NAME).set(ClientConstants.HOST_STATE);
+                    do {
+                        try {
+                            final ModelNode nameResponse = mcc.execute(getNameOp);
+                            if (Util.isSuccess(nameResponse)) {
+                                // read out the connected HC name
+                                final String localName = nameResponse.get(ClientConstants.RESULT).asString();
+                                address.set(ClientConstants.HOST, localName);
+                                final ModelNode stateResponse = mcc.execute(getStateOp);
+                                if (Util.isSuccess(stateResponse)) {
+                                    status = stateResponse.get(ClientConstants.RESULT).asString();
+                                }
+                            }
+                        } catch (Exception e) {
+                            // ignore and try again
+                        }
+
+                        if ("starting".equals(status)) {
+                            try {
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new CommandLineException("Interrupted while waiting for embedded server to start");
+                            }
+                        } else {
+                            break;
+                        }
+                    } while (System.nanoTime() < expired);
+
+                    if ("starting".equals(status)) {
+                        assert bootTimeout != null; // we'll assume the loop didn't run for decades
+                        // Stop server and restore environment
+                        StopEmbeddedHostControllerHandler.cleanup(hostControllerReference);
+                        throw new CommandLineException("Embedded host controller did not exit 'starting' status within " +
+                                TimeUnit.NANOSECONDS.toSeconds(bootTimeout) + " seconds");
+                    }
                 }
             }
             // Expose the client to the rest of the CLI last so nothing can be done with

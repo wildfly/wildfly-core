@@ -287,7 +287,17 @@ public class EmbeddedProcessFactory {
 
         // Create the server
         Object hostControllerImpl = createManagedProcess(ProcessType.HOST_CONTROLLER, createServerMethod, configuration, useClMethod ? embeddedModuleCL : null);
-        return new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context);
+
+        Method methodGetProcessState;
+        EmbeddedManagedProcessImpl embeddedManagedProcess;
+        try {
+            methodGetProcessState = hostControllerClass.getMethod("getProcessState");
+            embeddedManagedProcess = new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context, methodGetProcessState);
+        } catch (final NoSuchMethodException nsme) {
+            embeddedManagedProcess = new EmbeddedManagedProcessImpl(hostControllerClass, hostControllerImpl, context);
+        }
+
+        return embeddedManagedProcess;
     }
 
     private static void setupVfsModule(final ModuleLoader moduleLoader) {

@@ -41,13 +41,17 @@ class EmbeddedManagedProcessImpl implements EmbeddedManagedProcess, StandaloneSe
     private final Context context;
 
     EmbeddedManagedProcessImpl(Class<?> processClass, Object managedProcess, Context context) {
+       this(processClass, managedProcess, context, null);
+    }
+
+    EmbeddedManagedProcessImpl(Class<?> processClass, Object managedProcess, Context context, Method methodGetProcessState) {
         this.managedProcess = managedProcess;
+        this.methodGetProcessState = methodGetProcessState;
         // Get a handle on the {@link EmbeddedManagedProcess} methods
         try {
             methodStart = processClass.getMethod("start");
             methodStop = processClass.getMethod("stop");
             methodGetModelControllerClient = processClass.getMethod("getModelControllerClient");
-            methodGetProcessState = processClass.getMethod("getProcessState");
         } catch (final NoSuchMethodException nsme) {
             throw EmbeddedLogger.ROOT_LOGGER.cannotGetReflectiveMethod(nsme, nsme.getMessage(), processClass.getName());
         }
@@ -71,7 +75,15 @@ class EmbeddedManagedProcessImpl implements EmbeddedManagedProcess, StandaloneSe
 
     @Override
     public String getProcessState() {
-        return (String) safeInvokeOnServer(methodGetProcessState);
+        if (canQueryProcessState()) {
+            return (String) safeInvokeOnServer(methodGetProcessState);
+        }
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean canQueryProcessState() {
+       return (methodGetProcessState != null);
     }
 
     @Override
