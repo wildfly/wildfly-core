@@ -20,7 +20,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.controller.persistence.ConfigurationPersister.SnapshotInfo;
@@ -34,16 +36,20 @@ import org.junit.Test;
  *
  * @author Emmanuel Hugonnet (c) 2017 Red Hat, inc.
  */
+
 public class GitPersistenceResourceTestCase extends AbstractGitPersistenceResourceTestCase {
 
     @Before
     public void createDirectoriesAndFiles() throws Exception {
-        root = new File("target", "standalone").toPath();
+        root = Files.createTempDirectory("local").resolve("standalone");
         Files.createDirectories(root);
         File baseDir = root.toAbsolutePath().toFile();
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).setGitDir(gitDir).call()) {
+                StoredConfig config = git.getRepository().getConfig();
+                config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.save();
                 git.commit().setMessage("Repository initialized").call();
             }
         }
@@ -55,7 +61,7 @@ public class GitPersistenceResourceTestCase extends AbstractGitPersistenceResour
         if (repository != null) {
             repository.close();
         }
-        FileUtils.delete(root.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(root.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
     }
 
     @Test

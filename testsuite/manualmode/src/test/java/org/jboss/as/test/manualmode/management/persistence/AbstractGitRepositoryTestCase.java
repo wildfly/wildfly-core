@@ -29,6 +29,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -74,11 +75,14 @@ public class AbstractGitRepositoryTestCase {
 
     @Before
     public void prepareEmptyRemoteRepository() throws Exception {
-        emptyRemoteRoot = new File("target", "empty-remote").toPath();
+        emptyRemoteRoot = Files.createTempDirectory("AbstractGitRepositoryTestCase").resolve("empty-remote");
         Files.createDirectories(emptyRemoteRoot);
         File gitDir = new File(emptyRemoteRoot.toFile(), Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).call()) {
+                StoredConfig config = git.getRepository().getConfig();
+                config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.save();
             }
         }
         Assert.assertTrue(gitDir.exists());
@@ -89,7 +93,7 @@ public class AbstractGitRepositoryTestCase {
         if (emptyRemoteRepository != null) {
             emptyRemoteRepository.close();
         }
-        FileUtils.delete(emptyRemoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
     }
 
     protected Repository createRepository() throws IOException {

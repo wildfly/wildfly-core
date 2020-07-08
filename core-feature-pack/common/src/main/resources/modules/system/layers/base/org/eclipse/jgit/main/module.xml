@@ -35,9 +35,10 @@
         <module name="org.slf4j" />
         <module name="org.slf4j.impl" />
         <module name="javax.api"/>
-        <module name="com.jcraft.jsch"/>
-        <module name="com.jcraft.jzlib"/>
         <module name="com.googlecode.javaewah"/>
         <module name="org.apache.httpcomponents.core"/>
+        <module name="org.bouncycastle.bcpg"/>
+        <module name="org.bouncycastle.bcpkix"/>
+        <module name="org.bouncycastle.bcprov"/>
     </dependencies>
 </module>
