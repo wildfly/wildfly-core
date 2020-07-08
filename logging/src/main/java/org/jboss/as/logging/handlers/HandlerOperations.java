@@ -48,7 +48,6 @@ import java.util.logging.Handler;
 import org.apache.log4j.Appender;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.ResultHandler;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -63,7 +62,6 @@ import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.Log4jAppenderHandler;
-import org.jboss.as.logging.logmanager.PropertySorter;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -96,11 +94,9 @@ final class HandlerOperations {
      * A step handler for updating logging handler properties.
      */
     static class HandlerUpdateOperationStepHandler extends LoggingOperations.LoggingUpdateOperationStepHandler {
-        private final PropertySorter propertySorter;
 
-        HandlerUpdateOperationStepHandler(final PropertySorter propertySorter, final AttributeDefinition... attributes) {
+        HandlerUpdateOperationStepHandler(final AttributeDefinition... attributes) {
             super(attributes);
-            this.propertySorter = propertySorter;
         }
 
         @Override
@@ -128,10 +124,6 @@ final class HandlerOperations {
                     context.reloadRequired();
                 }
             }
-
-            // It's important that properties are written in the correct order, reorder the properties if
-            // needed before the commit.
-            addOrderPropertiesStep(context, propertySorter, configuration);
         }
     }
 
@@ -142,13 +134,8 @@ final class HandlerOperations {
         private final String[] constructionProperties;
         private final AttributeDefinition[] attributes;
         private final Class<? extends Handler> type;
-        private final PropertySorter propertySorter;
 
-        HandlerAddOperationStepHandler(final Class<? extends Handler> type, final AttributeDefinition[] attributes) {
-            this(PropertySorter.NO_OP, type, attributes);
-        }
-
-        HandlerAddOperationStepHandler(final PropertySorter propertySorter, final Class<? extends Handler> type, final AttributeDefinition[] attributes, final ConfigurationProperty<?>... constructionProperties) {
+        HandlerAddOperationStepHandler(final Class<? extends Handler> type, final AttributeDefinition[] attributes, final ConfigurationProperty<?>... constructionProperties) {
             super(attributes);
             this.type = type;
             this.attributes = attributes;
@@ -157,7 +144,6 @@ final class HandlerOperations {
                 names.add(prop.getPropertyName());
             }
             this.constructionProperties = names.toArray(new String[0]);
-            this.propertySorter = (propertySorter == null ? PropertySorter.NO_OP : propertySorter);
         }
 
         @Override
@@ -249,13 +235,10 @@ final class HandlerOperations {
                     skip = (exists && equalValue(attribute, context, model, logContextConfiguration, configuration));
                 }
 
-                if (!skip)
+                if (!skip) {
                     handleProperty(attribute, context, model, logContextConfiguration, configuration);
+                }
             }
-
-            // It's important that properties are written in the correct order, reorder the properties if
-            // needed before the commit.
-            addOrderPropertiesStep(context, propertySorter, configuration);
         }
 
         HandlerConfiguration createHandlerConfiguration(final String className,
@@ -315,15 +298,9 @@ final class HandlerOperations {
      * A default log handler write attribute step handler.
      */
     static class LogHandlerWriteAttributeHandler extends LoggingOperations.LoggingWriteAttributeHandler {
-        private final PropertySorter propertySorter;
 
         LogHandlerWriteAttributeHandler(final AttributeDefinition... attributes) {
-            this(PropertySorter.NO_OP, attributes);
-        }
-
-        LogHandlerWriteAttributeHandler(final PropertySorter propertySorter, final AttributeDefinition... attributes) {
             super(attributes);
-            this.propertySorter = propertySorter;
         }
 
         @Override
@@ -384,10 +361,6 @@ final class HandlerOperations {
                         }
                     }
                 }
-
-                // It's important that properties are written in the correct order, reorder the properties if
-                // needed before the commit.
-                addOrderPropertiesStep(context, propertySorter, configuration);
             }
             return restartRequired;
         }
@@ -462,7 +435,7 @@ final class HandlerOperations {
     /**
      * A step handler to remove a handler
      */
-    static final OperationStepHandler CHANGE_LEVEL = new HandlerUpdateOperationStepHandler(PropertySorter.NO_OP, LEVEL);
+    static final OperationStepHandler CHANGE_LEVEL = new HandlerUpdateOperationStepHandler(LEVEL);
 
     /**
      * A step handler to remove a handler
@@ -549,7 +522,7 @@ final class HandlerOperations {
     /**
      * Changes the file for a file handler.
      */
-    static final OperationStepHandler CHANGE_FILE = new HandlerUpdateOperationStepHandler(PropertySorter.NO_OP, FILE);
+    static final OperationStepHandler CHANGE_FILE = new HandlerUpdateOperationStepHandler(FILE);
 
     static final LoggingOperations.LoggingUpdateOperationStepHandler ENABLE_HANDLER = new LoggingOperations.LoggingUpdateOperationStepHandler() {
         @Override
@@ -719,23 +692,43 @@ final class HandlerOperations {
             }
         } else {
             if (attribute instanceof ConfigurationProperty) {
+                // We need to set the file last in case it was set after the append for example. We'll use a new step
+                // for this.
+                final boolean addAsStep = (FILE.equals(attribute));
                 @SuppressWarnings("unchecked")
                 final ConfigurationProperty<String> configurationProperty = (ConfigurationProperty<String>) attribute;
                 if (resolveValue) {
-                    configurationProperty.setPropertyValue(context, model, configuration);
+                    if (addAsStep) {
+                        context.addStep((c, m) -> {
+                            configurationProperty.setPropertyValue(c, m, configuration);
+                        }, Stage.RUNTIME);
+                    } else {
+                        configurationProperty.setPropertyValue(context, model, configuration);
+                    }
                 } else {
                     // Get the resolver
                     final ModelNodeResolver<String> resolver = configurationProperty.resolver();
                     // Resolve the value
                     final String resolvedValue = (resolver == null ? (model.isDefined() ? model.asString() : null) : resolver.resolveValue(context, model));
                     if (resolvedValue == null) {
-                        // The value must be set to null and then the property removed,
+                        // The value must be set to null and then the property removed.
                         // Note that primitive attributes should use a default value as null is invalid
-                        configuration.setPropertyValueString(configurationProperty.getPropertyName(), null);
-                        configuration.removeProperty(configurationProperty.getPropertyName());
+                        if (addAsStep) {
+                            context.addStep((c, m) -> {
+                                configuration.setPropertyValueString(configurationProperty.getPropertyName(), null);
+                                configuration.removeProperty(configurationProperty.getPropertyName());
+                            }, Stage.RUNTIME);
+                        } else {
+                            configuration.setPropertyValueString(configurationProperty.getPropertyName(), null);
+                            configuration.removeProperty(configurationProperty.getPropertyName());
+                        }
                     } else {
-                        // Set the string value
-                        configuration.setPropertyValueString(configurationProperty.getPropertyName(), resolvedValue);
+                        if (addAsStep) {
+                            context.addStep((c, m) -> configuration.setPropertyValueString(configurationProperty.getPropertyName(), resolvedValue), Stage.RUNTIME);
+                        } else {
+                            // Set the string value
+                            configuration.setPropertyValueString(configurationProperty.getPropertyName(), resolvedValue);
+                        }
                     }
                 }
             } else {
@@ -768,7 +761,7 @@ final class HandlerOperations {
             if (configuration.hasProperty(ENABLED.getPropertyName())) {
                 currentValue = Boolean.parseBoolean(configuration.getPropertyValueString(ENABLED.getPropertyName()));
             } else {
-                currentValue = isDisabledHandler(logContextConfiguration.getLogContext(), configuration.getName());
+                currentValue = isEnabled(logContextConfiguration.getLogContext(), configuration.getName());
             }
             result = resolvedValue == currentValue;
         } else if (attribute.getName().equals(ENCODING.getName())) {
@@ -859,13 +852,13 @@ final class HandlerOperations {
 
 
     /**
-     * Checks to see if a handler is disabled
+     * Checks to see if a handler is enabled
      *
      * @param handlerName the name of the handler to enable.
      */
-    private static boolean isDisabledHandler(final LogContext logContext, final String handlerName) {
+    private static boolean isEnabled(final LogContext logContext, final String handlerName) {
         final Map<String, String> disableHandlers = logContext.getAttachment(CommonAttributes.ROOT_LOGGER_NAME, DISABLED_HANDLERS_KEY);
-        return disableHandlers != null && disableHandlers.containsKey(handlerName);
+        return disableHandlers == null || !disableHandlers.containsKey(handlerName);
     }
 
 
@@ -925,19 +918,6 @@ final class HandlerOperations {
                 disableHandlers.put(handlerName, handlerConfiguration.getFilter());
                 handlerConfiguration.setFilter(CommonAttributes.DENY.getName());
             }
-        }
-    }
-
-    private static void addOrderPropertiesStep(final OperationContext context, final PropertySorter propertySorter, final PropertyConfigurable configuration) {
-        if (propertySorter.isReorderRequired(configuration)) {
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(final OperationContext context, final ModelNode operation) {
-                    propertySorter.sort(configuration);
-                    // Nothing to really rollback, properties are only reordered
-                    context.completeStep(ResultHandler.NOOP_RESULT_HANDLER);
-                }
-            }, Stage.RUNTIME);
         }
     }
 }
