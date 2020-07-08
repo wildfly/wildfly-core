@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<feature-group-spec name="standalone-profile" xmlns="urn:jboss:galleon:feature-group:1.0">
+<feature-group-spec name="core-standalone-profile" xmlns="urn:jboss:galleon:feature-group:1.0">
 
     <feature-group name="basic-profile"/>
     <feature-group name="standalone-elytron"/>
