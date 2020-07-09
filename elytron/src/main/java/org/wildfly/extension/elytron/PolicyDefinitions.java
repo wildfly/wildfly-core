@@ -18,6 +18,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
@@ -29,12 +30,14 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
 import java.security.AccessController;
 import java.security.Policy;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import javax.security.jacc.PolicyConfigurationFactory;
 import javax.security.jacc.PolicyContext;
 import javax.security.jacc.PolicyContextException;
 import javax.security.jacc.PolicyContextHandler;
@@ -59,6 +62,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -286,7 +290,13 @@ class PolicyDefinitions {
             String className = CustomPolicyDefinition.CLASS_NAME.resolveModelAttribute(context, policyModel).asString();
             String module = CustomPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-            return () -> newPolicy(className, module);
+            return () -> {
+                try {
+                    return newPolicy(className, ClassLoadingAttributeDefinitions.resolveClassLoader(module));
+                } catch (ModuleLoadException e) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModuleRuntime(module, e);
+                }
+            };
         }
 
         return null;
@@ -296,8 +306,9 @@ class PolicyDefinitions {
         ModelNode policyModel = model.get(JACC_POLICY);
 
         if (policyModel.isDefined()) {
-            String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
-            String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
+            final String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
+            final String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
+            final boolean defaultConfigurationFactory = configurationFactory.equals(JaccPolicyDefinition.CONFIGURATION_FACTORY.getDefaultValue().asString());
             String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
             serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
@@ -305,17 +316,16 @@ class PolicyDefinitions {
             return new Supplier<Policy>() {
                 @Override
                 public Policy get() {
-                    if (configurationFactory != null) {
-                        if (WildFlySecurityManager.isChecking()) {
-                            AccessController.doPrivileged(setConfigurationProviderSystemProperty());
-                        } else {
-                            setConfigurationProviderSystemProperty().run();
-                        }
-                    }
-
-                    Policy policy = newPolicy(policyProvider, module);
-
                     try {
+                        ClassLoader configuredClassLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
+
+                        doPrivileged((PrivilegedExceptionAction<PolicyConfigurationFactory>) () -> newPolicyConfigurationFactory(
+                                configurationFactory,
+                                defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
+
+                        Policy policy = newPolicy(policyProvider, configuredClassLoader);
+
+
                         Map<String, PolicyContextHandler> discoveredHandlers = discoverPolicyContextHandlers();
 
                         registerHandler(discoveredHandlers, new SubjectPolicyContextHandler());
@@ -323,11 +333,11 @@ class PolicyDefinitions {
                         for (Entry<String, PolicyContextHandler> entry : discoveredHandlers.entrySet()) {
                             PolicyContext.registerHandler(entry.getKey(), entry.getValue(), true);
                         }
-                    } catch (PolicyContextException cause) {
+
+                        return policy;
+                    } catch (Exception cause) {
                         throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
                     }
-
-                    return policy;
                 }
 
                 private void registerHandler(Map<String, PolicyContextHandler> discoveredHandlers, PolicyContextHandler handler) throws PolicyContextException {
@@ -359,26 +369,38 @@ class PolicyDefinitions {
                     return handlerMap;
                 }
 
-                private PrivilegedAction<Void> setConfigurationProviderSystemProperty() {
-                    return () -> {
-                        WildFlySecurityManager.setPropertyPrivileged("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
-                        return null;
-                    };
-                }
             };
         }
 
         return null;
     }
 
-    private static Policy newPolicy(String className, String module) {
+    private static Policy newPolicy(String className, ClassLoader classLoader) {
         try {
-            ClassLoader classLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
             Object policy = classLoader.loadClass(className).newInstance();
             return Policy.class.cast(policy);
         } catch (Exception e) {
             throw ElytronSubsystemMessages.ROOT_LOGGER.failedToCreatePolicy(className, e);
         }
+    }
+
+    private static PolicyConfigurationFactory newPolicyConfigurationFactory(String className, ClassLoader classLoader) throws PolicyContextException, ClassNotFoundException {
+        final ClassLoader original = Thread.currentThread().getContextClassLoader();
+
+        try {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            System.setProperty(PolicyConfigurationFactory.class.getName() + ".provider", className);
+            PolicyConfigurationFactory policyConfigurationFactory = PolicyConfigurationFactory.getPolicyConfigurationFactory();
+            String loadedClassName = policyConfigurationFactory.getClass().getName();
+            if (className.equals(loadedClassName) == false) {
+                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidImplementationLoaded(PolicyConfigurationFactory.class.getCanonicalName(), className, loadedClassName);
+            }
+
+            return policyConfigurationFactory;
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
+        }
+
     }
 
     // The jacc-policy and custom-policy attributes used to be LIST of OBJECT

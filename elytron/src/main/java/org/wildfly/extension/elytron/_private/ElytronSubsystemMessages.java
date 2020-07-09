@@ -584,4 +584,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1068, value = "Duplicate PolicyContextHandler found for key '%s'.")
     IllegalStateException duplicatePolicyContextHandler(String key);
 
+    @Message(id = 1069, value = "Invalid %s loaded, expected %s but received %s.")
+    IllegalStateException invalidImplementationLoaded(String type, String expected, String actual);
+
+    @Message(id = 1079, value = "Unable to load module '%s'.")
+    RuntimeException unableToLoadModuleRuntime(String module, @Cause Exception cause);
 }
