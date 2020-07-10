@@ -126,6 +126,7 @@
         <module name="org.wildfly.common"/>
         <module name="javax.xml.ws.api" optional="true"/>
         <module name="org.jboss.ws.spi" optional="true"/>
+        <module name="org.apache.sshd"/>
         <!--
         This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other
         modules use the parser, they need to have visibility to this module.

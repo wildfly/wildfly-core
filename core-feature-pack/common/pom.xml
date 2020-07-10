@@ -213,6 +213,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-common</artifactId>
+            <version>${version.org.apache.sshd}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
         </dependency>
