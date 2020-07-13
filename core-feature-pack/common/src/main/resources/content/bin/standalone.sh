@@ -153,6 +153,15 @@ if $linux; then
               ;;
        esac
     done
+    # determine if we are running on RHEL 6, RHEL 7, or RHEL 8
+    RHEL_VERSION=$(uname -r | sed 's/.*\.\(el[678]\)\..*/\1/')
+    if [[ $RHEL_VERSION =~ ^el[678]$ ]]; then
+        # set the -Djboss.modules.os-name property if not already set
+        JBOSS_MODULES_OS_NAME_OPTION=`echo $SERVER_OPTS | $GREP "\-Djboss.modules.os-name"`
+        if [ "x$JBOSS_MODULES_OS_NAME_OPTION" = "x" ]; then
+            SERVER_OPTS="${SERVER_OPTS} -Djboss.modules.os-name=${RHEL_VERSION}"
+        fi
+    fi
 fi
 
 if $solaris; then
