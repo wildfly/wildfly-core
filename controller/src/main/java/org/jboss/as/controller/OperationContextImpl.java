@@ -63,7 +63,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
@@ -144,10 +143,6 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static final Set<Action.ActionEffect> WRITE_CONFIG = EnumSet.of(Action.ActionEffect.WRITE_CONFIG);
     private static final Set<Action.ActionEffect> WRITE_RUNTIME = EnumSet.of(Action.ActionEffect.WRITE_RUNTIME);
     private static final Set<Action.ActionEffect> ALL_READ_WRITE = EnumSet.of(Action.ActionEffect.READ_CONFIG, Action.ActionEffect.READ_RUNTIME, Action.ActionEffect.WRITE_CONFIG, Action.ActionEffect.WRITE_RUNTIME);
-
-    /** Pattern that can be used to identify capabilities name strings that include expression syntax
-     * started with one or more of any character, followed by '.${' sequence, then one or more of any character ended with '}' */
-    private static final Pattern UNSUPPORTED_EXPRESSION_PATTERN = Pattern.compile(".+\\.\\$\\{.+\\}");
 
     private final ModelControllerImpl modelController;
     private final OperationMessageHandler messageHandler;
@@ -352,38 +347,32 @@ final class OperationContextImpl extends AbstractOperationContext {
             for (Map.Entry<Step, Set<CapabilityId>> entry : missingForStep.entrySet()) {
                 Step step = entry.getKey();
                 ModelNode response = step.response;
-                StringBuilder unsupportedExpressionsMsg = new StringBuilder();
-                StringBuilder capabilityMissingMsg = new StringBuilder();
+                // only overwrite reponse failure-description if there isn't one
+                StringBuilder msg = response.hasDefined(FAILURE_DESCRIPTION)
+                        ? null
+                        : new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing());
+                StringBuilder bootMsg = isBooting() || ignoreFailures
+                        ? new StringBuilder(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString()))
+                        : null;
                 for (CapabilityId id : entry.getValue()) {
-                    if (UNSUPPORTED_EXPRESSION_PATTERN.matcher(id.getName()).matches()) {
-                        unsupportedExpressionsMsg.append(System.lineSeparator()).append("\t\t").append(id.getName());
-                    } else {
-                        String formattedCapability = ignoreContext
-                                ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
-                                : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
-                        Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
-                        if (!response.hasDefined(FAILURE_DESCRIPTION) || isBooting() || ignoreFailures)
-                            capabilityMissingMsg = appendPossibleProviderPoints(capabilityMissingMsg, formattedCapability, possiblePoints);
+                    String formattedCapability = ignoreContext
+                            ? ControllerLogger.ROOT_LOGGER.formattedCapabilityName(id.getName())
+                            : ControllerLogger.ROOT_LOGGER.formattedCapabilityId(id.getName(), id.getScope().getName());
+                    Set<PathAddress> possiblePoints = managementModel.getCapabilityRegistry().getPossibleProviderPoints(id);
+                    if (msg != null) {
+                        msg = appendPossibleProviderPoints(msg, formattedCapability, possiblePoints);
+                    }
+                    if (bootMsg != null) {
+                        bootMsg = appendPossibleProviderPoints(bootMsg, formattedCapability, possiblePoints);
                     }
                 }
-                // only overwrite reponse failure-description if there isn't one
-                if (!response.hasDefined(FAILURE_DESCRIPTION)) {
+                if (msg != null) {
                     if(!ignoreFailures) {
-                        StringBuilder msg = new StringBuilder();
-                        if (unsupportedExpressionsMsg.length() > 0)
-                            msg.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression()).append(unsupportedExpressionsMsg);
-                        if (capabilityMissingMsg.length() > 0)
-                            msg.append(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing()).append(capabilityMissingMsg);
                         response.get(FAILURE_DESCRIPTION).set(msg.toString());
                     }
                     failureRecorded = true;
                 }
-                if (isBooting() || ignoreFailures) {
-                    StringBuilder bootMsg = new StringBuilder();
-                    if (unsupportedExpressionsMsg.length() > 0)
-                        bootMsg.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression()).append(unsupportedExpressionsMsg);
-                    if (capabilityMissingMsg.length() > 0)
-                        bootMsg.append(ControllerLogger.ROOT_LOGGER.requiredCapabilityMissing(step.address.toCLIStyleString())).append(capabilityMissingMsg);
+                if (bootMsg != null) {
                     ControllerLogger.ROOT_LOGGER.error(bootMsg.toString());
                 }
             }
@@ -441,8 +430,10 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static StringBuilder appendPossibleProviderPoints(StringBuilder sb, String formattedCapability, Set<PathAddress> possible){
         //"you wanted X and it doesn't exist; here's where you can add X"
         sb = sb.append(System.lineSeparator()).append(formattedCapability);
-        if (possible.isEmpty()){
+        if (possible.isEmpty()) {
             return sb.append(ControllerLogger.ROOT_LOGGER.noKnownProviderPoints());
+        } else if (ExpressionResolver.EXPRESSION_PATTERN.matcher(formattedCapability).matches()) {
+            return sb.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression());
         }
         StringBuffer points = new StringBuffer();
         for (PathAddress c: possible){
