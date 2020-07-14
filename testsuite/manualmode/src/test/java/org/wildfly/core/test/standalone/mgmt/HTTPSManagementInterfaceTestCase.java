@@ -41,6 +41,8 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.inject.Inject;
 import javax.net.ssl.SSLException;
@@ -109,6 +111,13 @@ public class HTTPSManagementInterfaceTestCase {
 
     private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
     private static String providerToUse = null; // static provider to use for key and trust store (JKS or PKCS12)
+
+    private static final boolean isElytronSetup = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            return System.getProperty("elytron") != null;
+        }
+    });
 
     @Inject
     protected static ServerController controller;
@@ -326,6 +335,14 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get(VALUE).set(MANAGEMENT_WEB_REALM);
         CoreUtils.applyUpdate(operation, client);
 
+        // undefine the http-authentication-factory if we are using elytron setup
+        if (isElytronSetup) {
+            operation = createOpNode("core-service=management/management-interface=http-interface",
+                    ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("http-authentication-factory");
+            CoreUtils.applyUpdate(operation, client);
+        }
+
         // add https connector to management interface
         operation = createOpNode("core-service=management/management-interface=http-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
@@ -339,10 +356,13 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get("interface").set("management");
         CoreUtils.applyUpdate(operation, client);
 
-
         // create native interface to control server while http interface will be secured
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
-        operation.get("security-realm").set("ManagementRealm");
+        if (isElytronSetup) {
+            operation.get("sasl-authentication-factory").set("management-sasl-authentication");
+        } else {
+            operation.get("security-realm").set("ManagementRealm");
+        }
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
     }
@@ -394,8 +414,13 @@ public class HTTPSManagementInterfaceTestCase {
         // change back security realm for http management interface
         ModelNode operation = createOpNode("core-service=management/management-interface=http-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set("security-realm");
-        operation.get(VALUE).set("ManagementRealm");
+        if (isElytronSetup) {
+            operation.get(NAME).set("http-authentication-factory");
+            operation.get(VALUE).set("management-http-authentication");
+        } else {
+            operation.get(NAME).set("security-realm");
+            operation.get(VALUE).set("ManagementRealm");
+        }
         CoreUtils.applyUpdate(operation, client);
 
         // undefine secure socket binding from http interface
@@ -403,6 +428,14 @@ public class HTTPSManagementInterfaceTestCase {
                 ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
         operation.get(NAME).set("secure-socket-binding");
         CoreUtils.applyUpdate(operation, client);
+
+        if (isElytronSetup) {
+            // remove the security-realm if using elytron
+            operation = createOpNode("core-service=management/management-interface=http-interface",
+                ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("security-realm");
+            CoreUtils.applyUpdate(operation, client);
+        }
     }
 
     static ModelControllerClient getNativeModelControllerClient() {
