@@ -18,7 +18,6 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
@@ -26,6 +25,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_P
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 
 import java.security.AccessController;
 import java.security.Policy;
@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 import javax.security.jacc.PolicyConfigurationFactory;
 import javax.security.jacc.PolicyContext;
@@ -71,7 +71,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
@@ -159,12 +158,12 @@ class PolicyDefinitions {
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
                 ServiceName serviceName = POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName(Policy.class);
-                InjectedValue<Supplier<Policy>> policyProviderInjector = new InjectedValue<>();
                 ServiceTarget serviceTarget = context.getServiceTarget();
-                ServiceBuilder<Policy> serviceBuilder = serviceTarget.addService(serviceName, createPolicyService(policyProviderInjector));
-                Supplier<Policy> policySupplier = getPolicyProvider(context, model, serviceBuilder);
-
-                policyProviderInjector.setValue(() -> policySupplier);
+                Consumer<Consumer<Policy>> policyConsumer = getPolicyProvider(context, model);
+                ServiceBuilder<Policy> serviceBuilder = serviceTarget.addService(serviceName, createPolicyService(policyConsumer));
+                if (model.get(JACC_POLICY).isDefined()) {
+                    serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
+                }
 
                 serviceBuilder.setInitialMode(Mode.ACTIVE).install();
 
@@ -173,40 +172,42 @@ class PolicyDefinitions {
                 }
             }
 
-            private Service<Policy> createPolicyService(InjectedValue<Supplier<Policy>> injector) {
+            private Service<Policy> createPolicyService(Consumer<Consumer<Policy>> policyProvider) {
                 return new Service<Policy>() {
-                    volatile Policy delegated;
-                    volatile Policy policy;
+                    volatile Policy original;
 
                     @Override
                     public void start(StartContext context) throws StartException {
-                        delegated = getPolicy();
-                        policy = injector.getValue().get();
+                        original = getPolicy();
 
                         try {
-                            setPolicy(policy);
-                            policy.refresh();
+                            policyProvider.accept(this::setPolicy);
                         } catch (Exception cause) {
-                            setPolicy(delegated);
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, cause);
+                            setPolicy(original);
+                            throw new StartException(cause);
                         }
                     }
 
                     @Override
                     public void stop(StopContext context) {
-                        setPolicy(delegated);
+                        setPolicy(original);
                     }
 
                     @Override
                     public Policy getValue() throws IllegalStateException, IllegalArgumentException {
-                        return policy;
+                        return getPolicy();
                     }
 
                     private void setPolicy(Policy policy) {
-                        if (WildFlySecurityManager.isChecking()) {
-                            AccessController.doPrivileged(setPolicyAction(policy));
-                        } else {
-                            setPolicyAction(policy).run();
+                        policy.refresh();
+                        try {
+                            if (WildFlySecurityManager.isChecking()) {
+                                AccessController.doPrivileged(setPolicyAction(policy));
+                            } else {
+                                setPolicyAction(policy).run();
+                            }
+                        } catch (Exception e) {
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, e);
                         }
                     }
 
@@ -275,24 +276,24 @@ class PolicyDefinitions {
 
     }
 
-    private static Supplier<Policy> getPolicyProvider(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
-        Supplier<Policy> result = configureJaccPolicy(context, model, serviceBuilder);
+    private static Consumer<Consumer<Policy>> getPolicyProvider(OperationContext context, ModelNode model) throws OperationFailedException {
+        Consumer<Consumer<Policy>> result = configureJaccPolicy(context, model);
         if (result == null) {
             result = configureCustomPolicy(context, model);
         }
         return result;
     }
 
-    private static Supplier<Policy> configureCustomPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
+    private static Consumer<Consumer<Policy>> configureCustomPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
         ModelNode policyModel = model.get(CUSTOM_POLICY);
 
         if (policyModel.isDefined()) {
             String className = CustomPolicyDefinition.CLASS_NAME.resolveModelAttribute(context, policyModel).asString();
             String module = CustomPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-            return () -> {
+            return (t) -> {
                 try {
-                    return newPolicy(className, ClassLoadingAttributeDefinitions.resolveClassLoader(module));
+                    t.accept(newPolicy(className, ClassLoadingAttributeDefinitions.resolveClassLoader(module)));
                 } catch (ModuleLoadException e) {
                     throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModuleRuntime(module, e);
                 }
@@ -302,7 +303,7 @@ class PolicyDefinitions {
         return null;
     }
 
-    private static Supplier<Policy> configureJaccPolicy(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
+    private static Consumer<Consumer<Policy>> configureJaccPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
         ModelNode policyModel = model.get(JACC_POLICY);
 
         if (policyModel.isDefined()) {
@@ -311,20 +312,20 @@ class PolicyDefinitions {
             final boolean defaultConfigurationFactory = configurationFactory.equals(JaccPolicyDefinition.CONFIGURATION_FACTORY.getDefaultValue().asString());
             String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-            serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
+            return new Consumer<Consumer<Policy>>() {
 
-            return new Supplier<Policy>() {
                 @Override
-                public Policy get() {
+                public void accept(Consumer<Policy> policyConsumer) {
+
                     try {
                         ClassLoader configuredClassLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
+
+                        Policy policy = newPolicy(policyProvider, configuredClassLoader);
+                        policyConsumer.accept(policy);
 
                         doPrivileged((PrivilegedExceptionAction<PolicyConfigurationFactory>) () -> newPolicyConfigurationFactory(
                                 configurationFactory,
                                 defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
-
-                        Policy policy = newPolicy(policyProvider, configuredClassLoader);
-
 
                         Map<String, PolicyContextHandler> discoveredHandlers = discoverPolicyContextHandlers();
 
@@ -334,7 +335,6 @@ class PolicyDefinitions {
                             PolicyContext.registerHandler(entry.getKey(), entry.getValue(), true);
                         }
 
-                        return policy;
                     } catch (Exception cause) {
                         throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
                     }
