@@ -44,6 +44,7 @@ import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -108,6 +109,9 @@ public class GitRepository implements Closeable {
         } else {
             if (isLocalGitRepository(gitConfig.getRepository())) {
                 try (Git git = Git.init().setDirectory(baseDir).call()) {
+                    StoredConfig config = git.getRepository().getConfig();
+                    config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
+                    config.save();
                     final AddCommand addCommand = git.add();
                     addCommand.addFilepattern("data/content/");
                     Path configurationDir = basePath.resolve("configuration");
@@ -117,7 +121,7 @@ public class GitRepository implements Closeable {
                     }
                     addCommand.call();
                     createGitIgnore(git, basePath);
-                    git.commit().setMessage(ServerLogger.ROOT_LOGGER.repositoryInitialized()).call();
+                    git.commit().setSign(gitConfig.isSign()).setMessage(ServerLogger.ROOT_LOGGER.repositoryInitialized()).call();
                 } catch (GitAPIException | IOException ex) {
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
                 }
@@ -128,8 +132,9 @@ public class GitRepository implements Closeable {
                     StoredConfig config = git.getRepository().getConfig();
                     config.setString("remote", remoteName, "url", gitConfig.getRepository());
                     config.setString("remote", remoteName, "fetch", "+" + R_HEADS + "*:" + R_REMOTES + remoteName + "/*");
+                    config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
-                    git.clean();
+                    git.clean().call();
                     git.pull().setRemote(remoteName).setRemoteBranchName(branch).setStrategy(MergeStrategy.RESOLVE).call();
                     checkoutToSelectedBranch(git);
                     if (createGitIgnore(git, basePath)) {

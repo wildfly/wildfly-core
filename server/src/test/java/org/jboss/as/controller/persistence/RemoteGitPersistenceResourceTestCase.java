@@ -20,8 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.jboss.as.controller.persistence.ConfigurationPersister.SnapshotInfo;
 import org.jboss.as.server.controller.git.GitRepository;
@@ -42,14 +44,17 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
 
     @Before
     public void createDirectoriesAndFiles() throws Exception {
-        root = new File("target", "standalone").toPath();
-        remoteRoot = new File("target", "remote").toPath().resolve("standalone");
+        root = Files.createTempDirectory("local").resolve("standalone");
+        remoteRoot = Files.createTempDirectory("remote").resolve("standalone");
         Files.createDirectories(remoteRoot);
         File baseDir = remoteRoot.toAbsolutePath().toFile();
         createFile(remoteRoot, "standard.xml", "std");
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).call()) {
+                StoredConfig config = git.getRepository().getConfig();
+                config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.save();
                 git.add().addFilepattern("standard.xml").call();
                 git.commit().setMessage("Repository initialized").call();
             }
@@ -66,8 +71,8 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
         if (repository != null) {
             repository.close();
         }
-        delete(remoteRoot.toFile());
-        delete(root.toFile());
+        delete(remoteRoot.getParent().toFile());
+        delete(root.getParent().toFile());
     }
 
     @Test
