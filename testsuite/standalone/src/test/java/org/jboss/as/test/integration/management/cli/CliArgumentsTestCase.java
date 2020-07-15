@@ -25,7 +25,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.StringReader;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -144,7 +146,15 @@ public class CliArgumentsTestCase {
         cli.executeNonInteractive();
 
         int exitCode = cli.getProcessExitValue();
-        assertEquals("Unknown argument: --controler=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1), cli.getOutput().trim());
+        String output = cli.getOutput();
+        try (BufferedReader reader = new BufferedReader(new StringReader(output))) {
+            String line = reader.readLine();
+            // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
+            while (line.startsWith("Picked up _JAVA_")) {
+                line = reader.readLine();
+            }
+            assertEquals("Unknown argument: --controler=" + TestSuiteEnvironment.getServerAddress() + ":" + (TestSuiteEnvironment.getServerPort() - 1), line);
+        }
         assertTrue(exitCode != 0);
     }
 }
