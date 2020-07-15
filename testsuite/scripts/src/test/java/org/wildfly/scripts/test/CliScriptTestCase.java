@@ -19,8 +19,9 @@
 
 package org.wildfly.scripts.test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.concurrent.TimeoutException;
 
@@ -47,13 +48,23 @@ public class CliScriptTestCase extends ScriptTestCase {
 
         validateProcess(script);
 
+        StringBuilder builder = new StringBuilder();
         // Read the output lines which should be valid DMR
-        try (InputStream in = Files.newInputStream(script.getStdout())) {
-            final ModelNode result = ModelNode.fromStream(in);
-            if (!Operations.isSuccessfulOutcome(result)) {
-                Assert.fail(result.asString());
+        try (BufferedReader reader = Files.newBufferedReader(script.getStdout(), StandardCharsets.UTF_8)) {
+            String line = reader.readLine();
+            // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
+            while (line.startsWith("Picked up _JAVA_")) {
+                line = reader.readLine();
             }
-            Assert.assertEquals(ClientConstants.CONTROLLER_PROCESS_STATE_RUNNING, Operations.readResult(result).asString());
+            while (line != null) {
+                builder.append(line);
+                line = reader.readLine();
+            }
         }
+        final ModelNode result = ModelNode.fromString(builder.toString());
+        if (!Operations.isSuccessfulOutcome(result)) {
+            Assert.fail(result.asString());
+        }
+        Assert.assertEquals(ClientConstants.CONTROLLER_PROCESS_STATE_RUNNING, Operations.readResult(result).asString());
     }
 }

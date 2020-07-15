@@ -19,9 +19,10 @@
 
 package org.wildfly.scripts.test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
@@ -46,10 +47,16 @@ public class ElytronToolScriptTestCase extends ScriptTestCase {
             validateProcess(script);
 
             // Get the output and test the masked password
-            final List<String> allLines = Files.readAllLines(script.getStdout());
-            // We should only have one line
-            Assert.assertEquals("Expected only one entry: " + allLines.toString(), 1, allLines.size());
-            Assert.assertEquals("MASK-8VzWsSNwBaR676g8ujiIDdFKwSjOBHCHgnKf17nun3v;12345678;123", allLines.get(0));
+            try (BufferedReader reader = Files.newBufferedReader(script.getStdout(), StandardCharsets.UTF_8)) {
+                String line = reader.readLine();
+                // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
+                while (line.startsWith("Picked up _JAVA_")) {
+                    line = reader.readLine();
+                }
+                Assert.assertEquals("MASK-8VzWsSNwBaR676g8ujiIDdFKwSjOBHCHgnKf17nun3v;12345678;123", line);
+                // We should only have one line
+                Assert.assertNull(reader.readLine());
+            }
         } finally {
             script.close();
         }
