@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="git-history">
+    <packages>
+       <package name="org.eclipse.jgit"/>
+    </packages>
+</layer-spec>

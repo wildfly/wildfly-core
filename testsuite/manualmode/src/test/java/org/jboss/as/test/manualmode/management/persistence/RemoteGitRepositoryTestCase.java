@@ -24,8 +24,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.util.FileUtils;
 import org.jboss.as.repository.PathUtil;
@@ -47,7 +49,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
 
     @Before
     public void prepareTest() throws Exception {
-        remoteRoot = new File("target", "remote").toPath();
+        remoteRoot = Files.createTempDirectory("RemoteGitRepositoryTestCase").resolve("remote");
         Path repoConfigDir = remoteRoot.resolve("configuration");
         Files.createDirectories(repoConfigDir);
         File baseDir = remoteRoot.toAbsolutePath().toFile();
@@ -59,6 +61,9 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).call()) {
+                StoredConfig config = git.getRepository().getConfig();
+                config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.save();
                 git.add().addFilepattern("configuration").call();
                 git.commit().setMessage("Repository initialized").call();
             }
@@ -86,7 +91,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         if (remoteRepository != null) {
             remoteRepository.close();
         }
-        FileUtils.delete(remoteRoot.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        FileUtils.delete(remoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
     }
 
     /**
