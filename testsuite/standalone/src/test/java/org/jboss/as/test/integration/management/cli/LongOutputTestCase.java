@@ -10,6 +10,7 @@ import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.cli.impl.ReadlineConsole;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Assert;
@@ -389,7 +390,7 @@ public class LongOutputTestCase {
     private void testDisabledOutputPaging() throws Exception {
         consoleWriter.println("/subsystem=elytron:read-resource-description(recursive=true)");
         Assert.assertFalse(consoleWriter.checkError());
-        String window = queue.poll(10, TimeUnit.SECONDS);
+        String window = queue.poll(TimeoutUtil.adjust(20), TimeUnit.SECONDS);
 
         Assert.assertNotNull(window);
         checkWithRegex(window, promptPattern);
