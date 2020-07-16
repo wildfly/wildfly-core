@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.jboss.modules.Module;
@@ -53,6 +54,7 @@ public final class Main {
     private static final String INSTALL_DIR = "--install-dir";
 
     private static final String WILDFLY_RESOURCE = "/wildfly.zip";
+
     private static final String WILDFLY_BOOTABLE_TMP_DIR_PREFIX = "wildfly-bootable-server";
 
     public static void main(String[] args) throws Exception {
@@ -75,6 +77,13 @@ public final class Main {
             }
             unzip(wf, installDir.toFile());
         }
+
+        //Extensions are injected by the maven plugin during packaging.
+        ServiceLoader<RuntimeExtension> loader = ServiceLoader.load(RuntimeExtension.class);
+        for (RuntimeExtension extension : loader) {
+            extension.boot(filteredArgs, installDir);
+        }
+
         runBootableJar(installDir, filteredArgs, System.currentTimeMillis() - t);
     }
 
