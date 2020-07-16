@@ -494,9 +494,13 @@
                                     <record-state>false</record-state>
                                     <log-time>${galleon.log.time}</log-time>
                                     <offline>true</offline>
-                                    <cli-script-files>
-                                        <script>${project.basedir}/enable-rbac.cli</script>
-                                    </cli-script-files>
+                                    <cli-sessions>
+                                        <cli-session>
+                                            <script-files>
+                                                <script>${project.basedir}/enable-rbac.cli</script>
+                                            </script-files>
+                                        </cli-session>
+                                    </cli-sessions>
                                     <extra-server-content-dirs>
                                         <dir>${project.basedir}/src/test/resources/wildfly</dir>
                                     </extra-server-content-dirs>
