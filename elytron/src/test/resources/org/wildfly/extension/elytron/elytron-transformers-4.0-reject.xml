@@ -103,6 +103,7 @@
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
+        <distributed-realm name="DistributedRealm" realms="SslTokenRealm FileRealm"/>
     </security-realms>
     <mappers>
         <x500-subject-evidence-decoder name="subjectDecoder" />
