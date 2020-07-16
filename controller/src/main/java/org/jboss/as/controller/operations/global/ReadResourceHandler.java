@@ -57,6 +57,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.UnauthorizedException;
+import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
@@ -108,6 +109,8 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
             .build();
 
     public static final OperationStepHandler RESOLVE_INSTANCE = new ReadResourceHandler(true);
+
+    public static final AttachmentKey<ModelNode> ROLLBACKED_FAILURE_DESC = AttachmentKey.create(ModelNode.class);
 
     private final ParametersValidator validator = new ParametersValidator() {
 
