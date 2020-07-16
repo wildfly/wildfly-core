@@ -27,6 +27,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.wildfly.extension.elytron.JdbcRealmDefinition.PrincipalQueryAttributes;
 
+
 /**
  * A parser for the security realm definition.
  *
@@ -82,6 +83,9 @@ class RealmParser {
     private final PersistentResourceXMLDescription cachingRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CACHING_REALM), null)
             .addAttributes(CachingRealmDefinition.ATTRIBUTES)
             .build();
+    private final PersistentResourceXMLDescription distributedRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM), null)
+            .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+            .build();
 
     final PersistentResourceXMLDescription realmParser = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
             .addChild(aggregateRealmParser)
@@ -123,6 +127,21 @@ class RealmParser {
             .addChild(fileSystemRealmDescription)
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
+            .build();
+
+    final PersistentResourceXMLDescription realmParser_11_0 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_7_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser)
+            .addChild(ldapRealmParser)
+            .addChild(fileSystemRealmDescription)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .addChild(distributedRealmParser)
             .build();
 
     RealmParser() {

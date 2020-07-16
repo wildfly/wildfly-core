@@ -18,6 +18,8 @@
 
 package org.wildfly.extension.elytron;
 
+import org.jboss.as.controller.PersistentResourceXMLDescription;
+
 /**
  * The subsystem parser, which uses stax to read and write to and from xml.
  *
@@ -31,5 +33,9 @@ public class ElytronSubsystemParser11_0 extends ElytronSubsystemParser10_0 {
         return ElytronExtension.NAMESPACE_11_0;
     }
 
+    @Override
+    PersistentResourceXMLDescription getRealmParser() {
+        return new RealmParser().realmParser_11_0;
+    }
 }
 
