@@ -5,6 +5,8 @@ GREP="grep"
 
 . "$DIRNAME/common.sh"
 
+args=("$@")
+
 # OS specific support (must be 'true' or 'false').
 cygwin=false;
 darwin=false;
@@ -74,6 +76,37 @@ else
     JAVA_OPTS="$JAVA_OPTS -Djboss.modules.system.pkgs=com.sun.java.swing"
 fi
 
+# Determine whether ascii coloring could be used
+if [[ ! "${args[*]}" =~ "--no-color-output" ]]; then
+    min=0
+    max=256
+
+    if tty -s ; then
+        printf '\e]4;%d;?\a' 0
+        read -d $'\a' -s -t 0.1 </dev/tty
+        if [ -z "$REPLY" ]; then
+            max=0
+        else
+            while [ $(( min+1 )) -lt $max ]; do
+                i=$(( (min+max)/2 ))
+                printf '\e]4;%d;?\a' $i
+                read -d $'\a' -s -t 0.1 </dev/tty
+                if [ -z "$REPLY" ]; then
+                    max=$i
+                else
+                    min=$i
+                fi
+            done
+        fi
+    else
+        max=0
+    fi
+
+    if [ $max -lt 8 ] ; then
+        args+=("--no-color-output")
+    fi
+fi
+
 # Override ibm JRE behavior
 JAVA_OPTS="$JAVA_OPTS -Dcom.ibm.jsse2.overrideDefaultTLS=true"
 
@@ -82,8 +115,8 @@ JAVA_OPTS="$JAVA_OPTS -Dcom.ibm.jsse2.overrideDefaultTLS=true"
 
 LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
 if [ "x$LOG_CONF" = "x" ]; then
-    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
+    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "${args[@]}"
 else
     echo "logging.configuration already set in JAVA_OPTS"
-    exec "$JAVA" $JAVA_OPTS -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
+    exec "$JAVA" $JAVA_OPTS -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "${args[@]}"
 fi
