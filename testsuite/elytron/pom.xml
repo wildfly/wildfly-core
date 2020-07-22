@@ -384,9 +384,13 @@
                                         <jboss-maven-dist/>
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                     </plugin-options>
-                                    <cli-script-files>
-                                        <script>${ts.config.elytron.cli.no.embedded}</script>
-                                    </cli-script-files>
+                                    <cli-sessions>
+                                        <cli-session>
+                                            <script-files>
+                                                <script>${ts.config.elytron.cli.no.embedded}</script>
+                                            </script-files>
+                                        </cli-session>
+                                    </cli-sessions>
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
