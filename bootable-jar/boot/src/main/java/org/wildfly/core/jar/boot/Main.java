@@ -17,12 +17,12 @@
 package org.wildfly.core.jar.boot;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -75,7 +75,7 @@ public final class Main {
             if (wf == null) {
                 throw new Exception("Resource " + WILDFLY_RESOURCE + " doesn't exist, can't run.");
             }
-            unzip(wf, installDir.toFile());
+            unzip(wf, installDir);
         }
 
         //Extensions are injected by the maven plugin during packaging.
@@ -121,24 +121,21 @@ public final class Main {
         runMethod.invoke(null, jbossHome, arguments, moduleLoader, moduleCL, unzipTime);
     }
 
-    private static void unzip(InputStream wf, File dir) throws Exception {
-        byte[] buffer = new byte[1024];
+    private static void unzip(InputStream wf, Path dir) throws Exception {
         try (ZipInputStream zis = new ZipInputStream(wf)) {
             ZipEntry ze = zis.getNextEntry();
             while (ze != null) {
                 String fileName = ze.getName();
-                File newFile = new File(dir, fileName);
-                if (fileName.endsWith("/")) {
-                    newFile.mkdirs();
-                    zis.closeEntry();
-                    ze = zis.getNextEntry();
-                    continue;
-                }
-                try (FileOutputStream fos = new FileOutputStream(newFile)) {
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
+                Path newFile = dir.resolve(fileName);
+                if (ze.isDirectory()) {
+                    Files.createDirectories(newFile);
+                } else {
+                    // Create any parent directories that may be required before the copy
+                    final Path parent = newFile.getParent();
+                    if (parent != null && Files.notExists(parent)) {
+                        Files.createDirectories(parent);
                     }
+                    Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
                 }
                 zis.closeEntry();
                 ze = zis.getNextEntry();
