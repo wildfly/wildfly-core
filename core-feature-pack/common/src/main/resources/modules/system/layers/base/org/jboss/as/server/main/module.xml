@@ -105,5 +105,7 @@
         <module name="io.undertow.core" />
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.extension.core-management-client" />
+        <!-- Allow javax->jakarta deployment transformation if this module is provided -->
+        <module name="org.wildfly.deployment.transformation" optional="true" services="import"/>
     </dependencies>
 </module>
