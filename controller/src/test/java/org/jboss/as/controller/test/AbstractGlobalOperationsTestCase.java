@@ -99,7 +99,6 @@ import org.jboss.dmr.ValueExpression;
 public abstract class AbstractGlobalOperationsTestCase extends AbstractControllerTestBase {
 
     private final AccessType expectedRwAttributeAccess;
-    //private final ModelControllerImpl expressionResolver;
 
     protected AbstractGlobalOperationsTestCase() {
         super();
