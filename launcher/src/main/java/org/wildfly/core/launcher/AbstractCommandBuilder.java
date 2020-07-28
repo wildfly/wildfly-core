@@ -29,6 +29,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.wildfly.core.launcher.Arguments.Argument;
 import org.wildfly.core.launcher.logger.LauncherMessages;
@@ -44,6 +47,8 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
     static final String[] DEFAULT_VM_ARGUMENTS;
     static final Collection<String> DEFAULT_MODULAR_VM_ARGUMENTS;
+    private static final Pattern RHEL_PATTERN = Pattern.compile(".*\\.(el[678])\\..*");
+    protected static final String JBOSS_MODULES_OS_NAME = "jboss.modules.os-name";
 
     static {
         // Default JVM parameters for all versions
@@ -70,6 +75,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     private boolean useSecMgr;
     private Path logDir;
     private Path configDir;
+    private String jbossModulesOSName;
     private final Arguments serverArgs;
 
     protected AbstractCommandBuilder(final Path wildflyHome) {
@@ -493,6 +499,19 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     }
 
     /**
+     * Sets the value of {@code jboss.modules.os-name} to use.
+     *
+     * @param jbossModulesOSName the value of {@code jboss.modules.os-name} to use
+     *
+     * @return the builder
+     */
+    public T setJBossModulesOSName(final String jbossModulesOSName) {
+        this.jbossModulesOSName = jbossModulesOSName;
+        return getThis();
+    }
+
+
+    /**
      * Returns the home directory used.
      *
      * @return the home directory
@@ -585,6 +604,35 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
      */
     public List<String> getServerArguments() {
         return serverArgs.asList();
+    }
+
+    /**
+     * Returns the value of the {@code jboss.modules.os-name} property.
+     *
+     * @return the value of the {@code jboss.modules.os-name} property
+     */
+    public String getJBossModulesOSName() {
+        if (jbossModulesOSName == null) {
+            String sysOs = System.getProperty("os.name");
+            if (sysOs != null) {
+                sysOs = sysOs.toUpperCase(Locale.US);
+                if (sysOs.startsWith("LINUX")) {
+                    String sysVersion = System.getProperty("os.version");
+                    Matcher m = RHEL_PATTERN.matcher(sysVersion);
+                    if (m.matches()) {
+                        String osName = m.group(1); // el6, el7, or el8
+                        if (isRHEL(osName)) {
+                            jbossModulesOSName = osName;
+                        }
+                    }
+                }
+            }
+        }
+        return jbossModulesOSName;
+    }
+
+    private static boolean isRHEL(String osName) {
+        return osName.equals("el6") || osName.equals("el7") || osName.equals("el8");
     }
 
     /**

@@ -750,6 +750,11 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         addSystemPropertyArg(cmd, DOMAIN_LOG_DIR, getLogDirectory());
         addSystemPropertyArg(cmd, DOMAIN_CONFIG_DIR, getConfigurationDirectory());
 
+        String jbossModulesOSName = getJBossModulesOSName();
+        if (jbossModulesOSName != null) {
+            addSystemPropertyArg(cmd, JBOSS_MODULES_OS_NAME, jbossModulesOSName);
+        }
+
         cmd.addAll(getServerArguments());
         return cmd;
     }

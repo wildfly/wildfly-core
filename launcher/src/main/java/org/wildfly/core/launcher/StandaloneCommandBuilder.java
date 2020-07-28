@@ -540,6 +540,12 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         addSystemPropertyArg(cmd, SERVER_BASE_DIR, getBaseDirectory());
         addSystemPropertyArg(cmd, SERVER_LOG_DIR, getLogDirectory());
         addSystemPropertyArg(cmd, SERVER_CONFIG_DIR, getConfigurationDirectory());
+
+        String jbossModulesOSName = getJBossModulesOSName();
+        if (jbossModulesOSName != null) {
+            addSystemPropertyArg(cmd, JBOSS_MODULES_OS_NAME, jbossModulesOSName);
+        }
+
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);
         }
