@@ -319,7 +319,7 @@ public class ModelControllerMBeanHelper {
             throw new AttributeNotFoundException(error);
         }
         ModelNode attrDesc = getAttributeDescription(attributeName, registration, attributes);
-        return converters.fromModelNode(attrDesc, result.get(RESULT));
+        return converters.fromModelNode(attributes.get(attributeName).getAttributeDefinition(), attrDesc, result.get(RESULT));
     }
 
     private ModelNode getAttributeDescription(String attributeName, ImmutableManagementResourceRegistration registration, Map<String, AttributeAccess> attributes) {
@@ -396,7 +396,7 @@ public class ModelControllerMBeanHelper {
         op.get(NAME).set(attributeName);
         try {
             ModelNode attrDesc = getAttributeDescription(attributeName, registration, attributes);
-            op.get(VALUE).set(converters.toModelNode(attrDesc, attribute.getValue()));
+            op.get(VALUE).set(converters.toModelNode(attributes.get(attributeName).getAttributeDefinition(), attrDesc, attribute.getValue()));
         } catch (ClassCastException e) {
             throw JmxLogger.ROOT_LOGGER.invalidAttributeType(e, attribute.getName());
         }
@@ -519,7 +519,15 @@ public class ModelControllerMBeanHelper {
             for (Object param : params) {
                 String attributeName = it.next();
                 ModelNode paramDescription = requestProperties.get(attributeName);
-                op.get(attributeName).set(converters.toModelNode(paramDescription, param));
+                AttributeDefinition[] attrs = entry.getOperationDefinition().getParameters();
+                AttributeDefinition attr = null;
+                for (AttributeDefinition currAttr : attrs) {
+                    if (currAttr.getName().equals(attributeName)) {
+                        attr = currAttr;
+                        break;
+                    }
+                }
+                op.get(attributeName).set(converters.toModelNode(attr, paramDescription, param));
             }
         }
 
@@ -543,7 +551,12 @@ public class ModelControllerMBeanHelper {
             return null;
         }
         //TODO we could have more than one reply property
-        return converters.fromModelNode(description.get(REPLY_PROPERTIES), result.get(RESULT));
+        AttributeDefinition reply = null;
+        AttributeDefinition[] replyParams = entry.getOperationDefinition().getReplyParameters();
+        if (replyParams.length > 0) {
+            reply = replyParams[0];
+        }
+        return converters.fromModelNode(reply, description.get(REPLY_PROPERTIES), result.get(RESULT));
     }
 
     private ManagementModelIntegration.ResourceAndRegistration getRootResourceAndRegistration() {

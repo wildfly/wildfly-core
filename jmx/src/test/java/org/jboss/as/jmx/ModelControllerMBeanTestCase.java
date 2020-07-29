@@ -144,6 +144,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     private static final QueryExp   DEFAULT_INTERFACE_QUERY_EXP = Query.eq(Query.attr("defaultInterface"), Query.value("test-interface"));
 
     private JMXConnector jmxConnector;
+    private KernelServices kernelServices;
 
     public ModelControllerMBeanTestCase() {
         super(JMXExtension.SUBSYSTEM_NAME, new JMXExtension());
@@ -160,6 +161,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         super.cleanup();
         IoUtils.safeClose(jmxConnector);
         jmxConnector = null;
+        kernelServices = kernelServices;
     }
 
     @Test
@@ -1421,6 +1423,28 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         connection.removeNotificationListener(MBeanServerDelegate.DELEGATE_NAME, listener, filter, null);
     }
 
+    @Test
+    public void testNestedComplexRuntimeTypeDefinitions() throws Exception {
+        MBeanServerConnection connection = setupAndGetConnection(new MBeanInfoAdditionalInitialization(ProcessType.STANDALONE_SERVER, new ComplexRuntimeAttributesExtension()));
+        ObjectName name = new ObjectName("jboss.as.expr:subsystem=test");
+
+        TabularData mapOfMaps = (TabularData) connection.getAttribute(name, "map-of-maps");
+        System.out.println(mapOfMaps);
+        Assert.assertEquals(3, mapOfMaps.size());
+        checkMapOfMapsEntry(1001, "Hello a", mapOfMaps, "A");
+        checkMapOfMapsEntry(1002, "Hello b", mapOfMaps, "B");
+        checkMapOfMapsEntry(1003, "Hello c", mapOfMaps, "C");
+    }
+
+    private void checkMapOfMapsEntry(long expectedOne, String expectedTwo, TabularData tabularData, String key) {
+        CompositeData mapEntry = assertCast(CompositeData.class, tabularData.get(new Object[]{key}));
+        CompositeData valueEntry = assertCast(CompositeData.class, mapEntry.get("value"));
+        Assert.assertEquals(String.valueOf(expectedOne), valueEntry.get("one"));
+        Assert.assertEquals(expectedTwo, valueEntry.get("two"));
+    }
+
+
+
     private OpenMBeanOperationInfo findOperation(MBeanOperationInfo[] ops, String name) {
         for (MBeanOperationInfo op : ops) {
             Assert.assertNotNull(op.getName());
@@ -1614,7 +1638,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     }
 
     private MBeanServerConnection setupAndGetConnection(BaseAdditionalInitialization additionalInitialization) throws Exception {
-        setup(additionalInitialization);
+        kernelServices = setup(additionalInitialization);
         return getRemoteConnection();
     }
 
