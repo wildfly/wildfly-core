@@ -33,8 +33,11 @@
             <filter>
                 <!-- This artifact packages both the API and the impl in the same jar,
                      but we want to use our own API jar (see javax.json.api module).
-                     So suppress the API packages. -->
+                     So suppress the API packages. We suppress both javax and jakarta
+                     so this same file can be used with artifacts that provide either
+                     package namespace. -->
                 <exclude path="javax/*"/>
+                <exclude path="jakarta/*"/>
             </filter>
         </artifact>
     </resources>
