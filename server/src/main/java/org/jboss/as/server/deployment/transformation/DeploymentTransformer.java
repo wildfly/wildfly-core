@@ -48,7 +48,6 @@ public interface DeploymentTransformer {
      *               in which it should be written. If the latter the name of the written file will be the same as
      *               the name of the {@code src} file. Note also that {@code target} can be the same path as
      *               {@code src}, in which case the file at {@code src} will be replaced.
-     *               
      * @throws IOException if a problem occurs reading or writing the content
      */
     void transform(Path src, Path target) throws IOException ;
