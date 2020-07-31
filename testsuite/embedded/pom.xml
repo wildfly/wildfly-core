@@ -104,6 +104,8 @@
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
                     </environmentVariables>
 
+                    <jvm>${test.java.home}/bin/java</jvm>
+
                     <systemPropertyVariables>
                         <jboss.home>${wildfly.home}</jboss.home>
                         <org.jboss.logging.provider>jdk</org.jboss.logging.provider>

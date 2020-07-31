@@ -92,6 +92,7 @@
         <!-- This value is overridden in modules with the correct relative pathname. -->
         <jboss.dist>${project.basedir}/target/wildfly-core</jboss.dist>
         <jboss.home>${jboss.dist}</jboss.home>
+        <test.java.home>${java.home}</test.java.home>
 
         <!-- Used to provide an absolute location for the XSLT scripts. -->
         <!-- This value is overridden in modules with the correct relative pathname. -->
@@ -139,7 +140,7 @@
         <surefire.memory.args>-Xmx512m -XX:MetaspaceSize=128m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
-        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist} ${surefire.jacoco.args}</surefire.system.args>
+        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} -Djboss.dist=${jboss.dist} ${surefire.jacoco.args}</surefire.system.args>
         <surefire.forked.process.timeout>1500</surefire.forked.process.timeout>
 
         <!-- If servers should be killed before the test suite is run-->
@@ -321,6 +322,7 @@
                         <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                         <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
                         <systemPropertyVariables>
+                            <legacy.java.home>${test.java.home}</legacy.java.home>
                             <jboss.dist>${jboss.dist}</jboss.dist>
                             <jboss.home>${basedir}/target/wildfly-core</jboss.home>
                             <org.wildfly.test.kill-servers-before-test>${org.wildfly.test.kill-servers-before-test}</org.wildfly.test.kill-servers-before-test>
@@ -540,6 +542,17 @@
             </modules>
         </profile>
 
+        <profile>
+            <id>jdk8</id>
+            <activation>
+                <property>
+                    <name>java8.home</name>
+                </property>
+            </activation>
+            <properties>
+                <test.java.home>${java8.home}</test.java.home>
+            </properties>
+        </profile>
 
     </profiles>
 </project>

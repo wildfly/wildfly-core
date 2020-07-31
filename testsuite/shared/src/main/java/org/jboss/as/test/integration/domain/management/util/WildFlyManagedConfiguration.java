@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import javax.security.auth.callback.CallbackHandler;
 
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TimeoutUtil;
 
 /**
@@ -61,9 +62,9 @@ public class WildFlyManagedConfiguration {
 
     private String jbossHome = System.getProperty("jboss.home");
 
-    private String javaHome = System.getenv("JAVA_HOME");
+    private String javaHome = TestJvm.getPath().toString();
 
-    private String controllerJavaHome = System.getenv("JAVA_HOME");
+    private String controllerJavaHome = TestJvm.getPath().toString();
 
     private String modulePath = System.getProperty("module.path");
 

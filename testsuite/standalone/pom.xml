@@ -127,7 +127,7 @@
                     </environmentVariables>
 
                     <systemPropertyVariables>
-                        <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
+                        <cli.jvm.args>-Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
                         <jboss.home>${wildfly.home}</jboss.home>
                         <!-- This is required so JBoss Modules knows which repository to use -->
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>
@@ -451,7 +451,6 @@
                              </scripts>
                              <jboss-home>${project.build.directory}/${server.output.dir.prefix}</jboss-home>
                              <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
-                             <java-opts>${modular.jdk.args}</java-opts>
                              <system-properties>
                                  <maven.repo.local>${settings.localRepository}</maven.repo.local>
                                  <module.path>${jboss.dist}/modules</module.path>

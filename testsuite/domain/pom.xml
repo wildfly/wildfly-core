@@ -183,7 +183,6 @@
 
                     <systemPropertyVariables>
                         <jboss.options>-ea</jboss.options>
-                        <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                         <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <module.path>${jboss.dist}/modules</module.path>
                         <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>
@@ -251,7 +250,6 @@
 
                             <systemPropertyVariables>
                                 <jboss.options>-ea</jboss.options>
-                                <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                                 <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                                 <module.path>${jboss.dist}/modules</module.path>
                                 <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>
@@ -303,7 +301,6 @@
                             </scripts>
                             <jboss-home>${project.build.directory}/wildfly-core</jboss-home>
                             <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
-                            <java-opts>${modular.jdk.args}</java-opts>
                             <system-properties>
                                 <maven.repo.local>${settings.localRepository}</maven.repo.local>
                                 <module.path>${jboss.dist}/modules</module.path>

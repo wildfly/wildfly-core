@@ -81,6 +81,7 @@
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 
                     <systemPropertyVariables>
+                        <test.java.home>${test.java.home}</test.java.home>
                         <jboss.home>${wildfly.home}</jboss.home>
                         <jboss.test.start.timeout>${jboss.test.start.timeout}</jboss.test.start.timeout>
                         <maven.repo.local>${settings.localRepository}</maven.repo.local>

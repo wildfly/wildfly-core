@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.json.JsonObject;
 
@@ -45,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.jboss.as.test.shared.TestJvm;
 import org.wildfly.common.test.ServerHelper;
 import org.wildfly.common.test.LoggingAgent;
 
@@ -53,20 +52,6 @@ import org.wildfly.common.test.LoggingAgent;
  */
 @RunWith(Parameterized.class)
 public class StandaloneScriptTestCase extends ScriptTestCase {
-    private static final boolean MODULAR_JVM;
-
-    static {
-        final String javaSpecVersion = System.getProperty("java.specification.version");
-        // Shouldn't happen, but we'll assume we're not a modular environment
-        boolean modularJvm = false;
-        if (javaSpecVersion != null) {
-            final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
-            if (matcher.find()) {
-                modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
-            }
-        }
-        MODULAR_JVM = modularJvm;
-    }
 
     @Parameter
     public Map<String, String> env;
@@ -93,7 +78,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // however the workaround is to do something like file=`\`"C:\wildfly\standalong\logs\gc.log`\`". This does not
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
-        Assume.assumeFalse(TestSuiteEnvironment.isWindows() && MODULAR_JVM && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
+        Assume.assumeFalse(TestSuiteEnvironment.isWindows() && TestJvm.isModular() && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
         script.start(env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
@@ -128,7 +113,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
             Assert.assertTrue(Files.exists(logDir));
             final String fileName;
             // The IBM J9 JVM does seems to just use the gc.log name format for the current file name.
-            if (MODULAR_JVM || TestSuiteEnvironment.isJ9Jvm()) {
+            if (TestJvm.isModular() || TestJvm.isJ9Jvm()) {
                 fileName = "gc.log";
             } else {
                 fileName = "gc.log.0.current";

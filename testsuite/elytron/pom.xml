@@ -99,7 +99,6 @@
                     </environmentVariables>
 
                     <systemPropertyVariables>
-                        <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                         <jboss.home>${wildfly.home}</jboss.home>
                         <jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                     </systemPropertyVariables>
@@ -202,7 +201,6 @@
                              </scripts>
                              <jboss-home>${project.build.directory}/wildfly-core</jboss-home>
                              <stdout>${project.build.directory}/wildfly-plugin.log</stdout>
-                             <java-opts>${modular.jdk.args}</java-opts>
                              <system-properties>
                                  <maven.repo.local>${settings.localRepository}</maven.repo.local>
                                  <module.path>${jboss.dist}/modules</module.path>

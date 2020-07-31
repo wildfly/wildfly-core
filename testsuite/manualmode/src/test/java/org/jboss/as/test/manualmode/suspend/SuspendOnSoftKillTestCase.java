@@ -40,6 +40,7 @@ import javax.inject.Inject;
 
 import org.jboss.as.test.integration.common.HttpRequest;
 import org.jboss.as.test.shared.PermissionUtils;
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
@@ -347,7 +348,7 @@ public class SuspendOnSoftKillTestCase {
     private static class UnixProcessUtil extends ProcessUtil {
         @Override
         String[] getJpsCommand() {
-            final File jreHome = new File(System.getProperty("java.home"));
+            final File jreHome = TestJvm.getPath().toFile();
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
             if (TestSuiteEnvironment.isIbmJvm()) {
                 return new String[] { "sh", "-c", "ps -ef | awk '{$1=\"\"; print $0}'" };
@@ -371,7 +372,7 @@ public class SuspendOnSoftKillTestCase {
 
         @Override
         String[] getJpsCommand() {
-            final File jreHome = new File(System.getProperty("java.home"));
+            final File jreHome = TestJvm.getPath().toFile();
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
             File jpsExe = new File(jreHome, "bin/jps.exe");
             if (!jpsExe.exists()) {

@@ -39,6 +39,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -84,6 +85,7 @@ public class ServerConfigurator {
     private static void configureStandalone() throws InterruptedException, IOException {
         final Path stdout = Paths.get(TestSuiteEnvironment.getTmpDir(), "config-standalone-stdout.txt");
         final StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(ServerHelper.JBOSS_HOME)
+                .setJavaHome(TestJvm.getPath())
                 .addJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
 
         final String localRepo = System.getProperty("maven.repo.local");
@@ -146,8 +148,10 @@ public class ServerConfigurator {
 
     private static void configureDomain() throws IOException, InterruptedException {
         final Path stdout = Paths.get(TestSuiteEnvironment.getTmpDir(), "config-domain-stdout.txt");
-        final DomainCommandBuilder builder = DomainCommandBuilder.of(ServerHelper.JBOSS_HOME)
-                .addHostControllerJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        final DomainCommandBuilder builder = DomainCommandBuilder.of(ServerHelper.JBOSS_HOME, TestJvm.getPath())
+                .setHostControllerJavaHome(TestJvm.getPath())
+                .addHostControllerJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS)
+                .setServerJavaHome(TestJvm.getPath());
 
         final String localRepo = System.getProperty("maven.repo.local");
         if (localRepo != null) {

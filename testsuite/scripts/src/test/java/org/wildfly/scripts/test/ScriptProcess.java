@@ -43,6 +43,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.logging.Logger;
 
@@ -120,6 +121,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
                 .redirectInput(input.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(stdoutLog.toFile());
+        builder.environment().put("JAVA_HOME", TestJvm.getPath().toString());
         builder.environment().put("JBOSS_HOME", containerHome.toString());
         // The Windows scripts should not pause at the requiring user input
         if (TestSuiteEnvironment.isWindows()) {
@@ -164,7 +166,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
         try {
             for (String line : Files.readAllLines(stdoutLog)) {
                 errorMessage.append(line)
-                            .append(System.lineSeparator());
+                        .append(System.lineSeparator());
             }
         } catch (IOException ignore) {
         }

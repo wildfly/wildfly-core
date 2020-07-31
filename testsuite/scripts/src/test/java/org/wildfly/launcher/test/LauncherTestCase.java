@@ -30,6 +30,7 @@ import javax.json.JsonObject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -59,6 +60,7 @@ public class LauncherTestCase {
     @Test
     public void testStandaloneWithAgent() throws Exception {
         final StandaloneCommandBuilder builder = StandaloneCommandBuilder.of(ServerHelper.JBOSS_HOME)
+                .setJavaHome(TestJvm.getPath())
                 .addJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS)
                 .setUseSecurityManager(parseProperty("security.manager"))
                 // Add the test logging agent to the jboss-modules arguments
@@ -98,8 +100,10 @@ public class LauncherTestCase {
 
     @Test
     public void testDomainServerWithAgent() throws Exception {
-        final DomainCommandBuilder builder = DomainCommandBuilder.of(ServerHelper.JBOSS_HOME)
+        final DomainCommandBuilder builder = DomainCommandBuilder.of(ServerHelper.JBOSS_HOME, TestJvm.getPath())
+                .setHostControllerJavaHome(TestJvm.getPath())
                 .addHostControllerJavaOptions(ServerHelper.DEFAULT_SERVER_JAVA_OPTS)
+                .setServerJavaHome(TestJvm.getPath())
                 .setUseSecurityManager(parseProperty("security.manager"));
 
         final String localRepo = System.getProperty("maven.repo.local");

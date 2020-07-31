@@ -68,7 +68,6 @@ public class Server {
     private final String modulePath = System.getProperty("module.path");
     private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
     private final String jbossArgs = System.getProperty("jboss.args");
-    private final String javaHome = System.getProperty("java.home", System.getenv("JAVA_HOME"));
     //Use this when specifying an older java to be used for running the server
     private final String legacyJavaHome = System.getProperty(LEGACY_JAVA_HOME);
     private String serverConfig = System.getProperty("server.config", "standalone.xml");
@@ -171,6 +170,8 @@ public class Server {
 
     protected void start(PrintStream out) {
         try {
+            final TestJvm jvm = TestJvm.getInstance();
+            final Path javaHome = (legacyJavaHome == null ?  jvm.getPath() : Paths.get(legacyJavaHome));
             CommandBuilder cbuilder = null;
             if (isBootableJar) {
                 final Path bootableJarPath = Paths.get(bootableJar);
@@ -181,7 +182,7 @@ public class Server {
                 commandBuilder.setInstallDir(Paths.get(installDir));
                 cbuilder = commandBuilder;
 
-                commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
+                commandBuilder.setJavaHome(javaHome);
                 if (jvmArgs != null) {
                     commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
                 }
@@ -209,7 +210,7 @@ public class Server {
                     commandBuilder.setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
                 }
 
-                commandBuilder.setJavaHome(legacyJavaHome == null ? javaHome : legacyJavaHome);
+                commandBuilder.setJavaHome(javaHome);
                 if (jvmArgs != null) {
                     commandBuilder.setJavaOptions(jvmArgs.split("\\s+"));
                 }

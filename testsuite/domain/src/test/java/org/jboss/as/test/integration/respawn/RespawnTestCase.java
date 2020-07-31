@@ -65,6 +65,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.process.Main;
 import org.jboss.as.process.ProcessController;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -725,7 +726,7 @@ public class RespawnTestCase {
     private static class UnixProcessUtil extends ProcessUtil {
         @Override
         String[] getJpsCommand() {
-            final File jreHome = new File(System.getProperty("java.home"));
+            final File jreHome = TestJvm.getPath().toFile();
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
             if (TestSuiteEnvironment.isIbmJvm()) {
                 return new String[] { "sh", "-c", "ps -ef | awk '{$1=\"\"; print $0}'" };
@@ -741,7 +742,7 @@ public class RespawnTestCase {
 
         @Override
         String getJavaCommand() {
-            return System.getProperty("java.home") + "/bin/java";
+            return TestJvm.getCommand();
         }
 
         @Override
@@ -754,7 +755,7 @@ public class RespawnTestCase {
 
         @Override
         String[] getJpsCommand() {
-            final File jreHome = new File(System.getProperty("java.home"));
+            final File jreHome = TestJvm.getPath().toFile();
             Assert.assertTrue("JRE home not found. File: " + jreHome.getAbsoluteFile(), jreHome.exists());
             File jpsExe = new File(jreHome, "bin/jps.exe");
             if (!jpsExe.exists()) {
@@ -766,7 +767,7 @@ public class RespawnTestCase {
 
         @Override
         String getJavaCommand() {
-            return System.getProperty("java.home") + "/bin/java.exe";
+            return TestJvm.getCommand();
         }
 
         @Override
