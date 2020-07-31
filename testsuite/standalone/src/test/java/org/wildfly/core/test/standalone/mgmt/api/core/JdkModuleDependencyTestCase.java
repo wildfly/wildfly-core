@@ -27,6 +27,7 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.operations.global.MapOperations;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.shared.PermissionUtils;
@@ -114,7 +115,7 @@ public class JdkModuleDependencyTestCase {
     @Test
     public void testJdk8ModuleEmulation() throws Exception {
         Assume.assumeTrue("Skipping testJdk8ModuleEmulation, test is not ran on JDK 1.8.",
-                System.getProperty("java.specification.version").equals("1.8"));
+                this.getJavaSpecificationVersion().equals("1.8"));
 
         testModuleDependencies(REQUIRED_1_8_EMULATED_MODULES);
     }
@@ -122,7 +123,7 @@ public class JdkModuleDependencyTestCase {
     @Test
     public void testJdk9ModuleDependencies() throws Exception {
         Assume.assumeTrue("Skipping testJdk9ModuleDependencies, test is not ran on JDK 9.",
-                System.getProperty("java.specification.version").equals("9"));
+                this.getJavaSpecificationVersion().equals("9"));
         System.out.println(System.getProperty("java.specification.version"));
 
         testModuleDependencies(REQUIRED_9_MODULES);
@@ -131,7 +132,7 @@ public class JdkModuleDependencyTestCase {
     @Test
     public void testJdk10ModuleDependencies() throws Exception {
         Assume.assumeTrue("Skipping testJdk10ModuleDependencies, test is not ran on JDK 10.",
-                System.getProperty("java.specification.version").equals("10"));
+                this.getJavaSpecificationVersion().equals("10"));
 
         testModuleDependencies(REQUIRED_10_MODULES);
     }
@@ -139,7 +140,7 @@ public class JdkModuleDependencyTestCase {
     @Test
     public void testJdk11ModuleDependencies() throws Exception {
         Assume.assumeTrue("Skipping testJdk11ModuleDependencies, test is not ran on JDK 11.",
-                System.getProperty("java.specification.version").equals("11"));
+                this.getJavaSpecificationVersion().equals("11"));
 
         testModuleDependencies(REQUIRED_11_MODULES);
     }
@@ -182,14 +183,26 @@ public class JdkModuleDependencyTestCase {
     }
 
     private boolean isDeploymentFunctional(String deploymentName, ModelControllerClient mcc) throws Exception {
-        final PathAddress RESOURCE_ADDRESS = PathAddress.pathAddress(
-                PathElement.pathElement("core-service", "platform-mbean"),
+        final PathAddress address = PathAddress.pathAddress(
+                PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.PLATFORM_MBEAN),
                 PathElement.pathElement(ModelDescriptionConstants.TYPE, "runtime")
         );
-        final ModelNode op = Util.createEmptyOperation(ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION, RESOURCE_ADDRESS);
-        op.get(ModelDescriptionConstants.NAME).set("system-properties");
+        final ModelNode op = Util.createEmptyOperation(ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION, address);
+        op.get(ModelDescriptionConstants.NAME).set(ModelDescriptionConstants.SYSTEM_PROPERTIES);
         ModelNode serviceActivatorValue = ManagementOperations.executeOperation(mcc, op).get(deploymentName + "Service");
         return "isNew".equals(serviceActivatorValue.asString());
+    }
+
+    private String getJavaSpecificationVersion() throws Exception {
+        final PathAddress address = PathAddress.pathAddress(
+                PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.PLATFORM_MBEAN),
+                PathElement.pathElement(ModelDescriptionConstants.TYPE, "runtime")
+        );
+        final ModelNode operation = Util.createEmptyOperation(MapOperations.MAP_GET_DEFINITION.getName(), address);
+        operation.get(ModelDescriptionConstants.NAME).set(ModelDescriptionConstants.SYSTEM_PROPERTIES);
+        operation.get("key").set("java.specification.version");
+        ModelNode result = ManagementOperations.executeOperation(this.managementClient.getControllerClient(), operation);
+        return result.asString();
     }
 
     private void testModuleDependencies(Set<String> moduleDependencies) throws Exception {
