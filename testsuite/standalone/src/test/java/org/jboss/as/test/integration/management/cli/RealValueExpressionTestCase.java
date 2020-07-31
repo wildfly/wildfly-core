@@ -21,7 +21,12 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.global.MapOperations;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
+import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -93,11 +98,13 @@ public class RealValueExpressionTestCase extends AbstractCliTestBase {
     public void testRealValue() {
         String oldSystemProperty = "java.version";
 
-        // get test.bind.address system property
-        String testBindAddress = System.getProperty(oldSystemProperty);
-        testBindAddress = testBindAddress == null ? "" : testBindAddress;
-        log.info("testBindAddress = " + testBindAddress);
-
+        // get java.version system property on server
+        PathAddress address = PathAddress.pathAddress(
+                PathElement.pathElement(ModelDescriptionConstants.CORE_SERVICE, ModelDescriptionConstants.PLATFORM_MBEAN),
+                PathElement.pathElement(ModelDescriptionConstants.TYPE, "runtime")
+        );
+        String result = cliRequest(String.format("%s:%s(name=%s, key=%s", address.toCLIStyleString(), MapOperations.MAP_GET_DEFINITION.getName(), ModelDescriptionConstants.SYSTEM_PROPERTIES, oldSystemProperty));
+        String testJavaVersion = ModelNode.fromString(result).get(ModelDescriptionConstants.RESULT).asString();
         // cli
         try {
             cliRequest(prepareCliAddSystemPropertyCommand(oldSystemProperty));
@@ -105,19 +112,17 @@ public class RealValueExpressionTestCase extends AbstractCliTestBase {
             // read-resource test
             String command = "/system-property=" + newSystemPropertyName + ":read-resource(resolve-expressions=true)";
             String output = cliRequest(command);
-            String errorMessage = "CLI command \"" + command + "\" returns unexpected output";
-            assertTrue(errorMessage, output.contains(testBindAddress));
-            assertTrue(errorMessage, output.contains("value"));
-            assertFalse(errorMessage, output.contains(oldSystemProperty));
-            assertFalse(errorMessage, output.contains(defaultValue));
+            assertTrue(output, output.contains(testJavaVersion));
+            assertTrue(output, output.contains("value"));
+            assertFalse(output, output.contains(oldSystemProperty));
+            assertFalse(output, output.contains(defaultValue));
 
             // read-attribute test
             command = "/system-property=" + newSystemPropertyName + ":read-attribute(name=value, resolve-expressions=true)";
             output = cliRequest(command);
-            errorMessage = "CLI command \"" + command + "\" returns unexpected output";
-            assertTrue(errorMessage, output.contains(testBindAddress));
-            assertFalse(errorMessage, output.contains(oldSystemProperty));
-            assertFalse(errorMessage, output.contains(defaultValue));
+            assertTrue(output, output.contains(testJavaVersion));
+            assertFalse(output, output.contains(oldSystemProperty));
+            assertFalse(output, output.contains(defaultValue));
 
         } finally {
             cliRequest("/system-property=" + newSystemPropertyName + ":remove");
@@ -138,17 +143,15 @@ public class RealValueExpressionTestCase extends AbstractCliTestBase {
             // read-resource test
             String command = "/system-property=" + newSystemPropertyName + ":read-resource(resolve-expressions=true)";
             String output = cliRequest(command);
-            String errorMessage = "CLI command \"" + command + "\" returns unexpected output";
-            assertTrue(errorMessage, output.contains(defaultValue));
-            assertTrue(errorMessage, output.contains("value"));
-            assertFalse(errorMessage, output.contains(oldSystemProperty));
+            assertTrue(output, output.contains(defaultValue));
+            assertTrue(output, output.contains("value"));
+            assertFalse(output, output.contains(oldSystemProperty));
 
             // read-attribute test
             command = "/system-property=" + newSystemPropertyName + ":read-attribute(name=value, resolve-expressions=true)";
             output = cliRequest(command);
-            errorMessage = "CLI command \"" + command + "\" returns unexpected output";
-            assertTrue(errorMessage, output.contains(defaultValue));
-            assertFalse(errorMessage, output.contains(oldSystemProperty));
+            assertTrue(output, output.contains(defaultValue));
+            assertFalse(output, output.contains(oldSystemProperty));
 
         } finally {
             cliRequest("/system-property=" + newSystemPropertyName + ":remove");
