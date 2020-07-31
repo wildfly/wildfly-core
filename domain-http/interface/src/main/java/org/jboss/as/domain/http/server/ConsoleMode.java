@@ -54,14 +54,24 @@ public enum ConsoleMode {
      * Show the console normally
      */
     CONSOLE {
+
+        private Boolean consoleLoadable;
         @Override
         ResourceHandlerDefinition createConsoleHandler(String slot) throws ModuleLoadException {
-            return ConsoleHandler.createConsoleHandler(slot);
+            consoleLoadable = null;
+            try {
+                return ConsoleHandler.createConsoleHandler(slot);
+            } catch (ModuleLoadException e) {
+                consoleLoadable = false;
+                throw e;
+            }
         }
 
         @Override
         public boolean hasConsole() {
-            return true;
+            // We assume true until trying to create the handler shows otherwise.
+            // A bit dodgy but in practice we try to create the handler before this is ever called.
+            return consoleLoadable == null ? true : consoleLoadable;
         }
     },
     /**
