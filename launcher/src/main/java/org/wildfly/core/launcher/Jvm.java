@@ -49,10 +49,7 @@ class Jvm {
             exe = "java.exe";
         }
         JAVA_EXE = exe;
-        String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null) {
-            javaHome = System.getProperty("java.home");
-        }
+        final String javaHome = System.getProperty("java.home");
         JAVA_HOME = Paths.get(javaHome);
 
         // Shouldn't happen, but we'll assume we're not a modular environment
