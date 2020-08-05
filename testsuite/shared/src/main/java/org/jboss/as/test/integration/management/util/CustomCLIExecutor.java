@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.jboss.as.test.shared.TestJvm;
 import org.junit.Assert;
 
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -105,6 +106,7 @@ public class CustomCLIExecutor {
 
 
         final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                .setJavaHome(TestJvm.getPath())
                 .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
 
         final List<String> ipv6Args = new ArrayList<>();
@@ -206,6 +208,7 @@ public class CustomCLIExecutor {
 
                 // Build the CLI command
                 final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                        .setJavaHome(TestJvm.getPath())
                         .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)))
                         .addCliArgument("--file=" + cliScript.toAbsolutePath());
 

@@ -22,6 +22,7 @@
 
 package org.jboss.as.test.integration.management.cli;
 
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.wildfly.core.launcher.CliCommandBuilder;
 import org.wildfly.core.launcher.Launcher;
@@ -50,7 +51,8 @@ abstract class CliProcessBuilder{
 
     public CliProcessBuilder(){
         String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
-        cliCommandBuilder = CliCommandBuilder.of(jbossDist);
+        cliCommandBuilder = CliCommandBuilder.of(jbossDist)
+                .setJavaHome(TestJvm.getPath());
         cliCommandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
     }
 

@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
+import org.jboss.as.test.shared.TestJvm;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import static org.junit.Assert.fail;
@@ -71,7 +73,8 @@ public class JBossCliXmlConfigTestCase {
             fail("jboss.dist system property is not set");
         }
 
-        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist);
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                .setJavaHome(TestJvm.getPath());
         commandBuilder.addJavaOptions("-Djboss.cli.config=" + f.toPath());
         commandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
         commandBuilder.addCliArgument("--command=help");

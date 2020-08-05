@@ -321,6 +321,9 @@
                         <failIfNoTests>false</failIfNoTests>
                         <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
                         <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
+                        <environmentVariables>
+                            <JAVA_HOME>${test.java.home}</JAVA_HOME>
+                        </environmentVariables>
                         <systemPropertyVariables>
                             <legacy.java.home>${test.java.home}</legacy.java.home>
                             <jboss.dist>${jboss.dist}</jboss.dist>
