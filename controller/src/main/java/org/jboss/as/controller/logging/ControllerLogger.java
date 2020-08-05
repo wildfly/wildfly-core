@@ -3646,5 +3646,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 481, value = "The runtime dependency package '%s' is already registered at location '%s'")
     void runtimePackageDependencyAlreadyRegistered(String pckg, String location);
 
-
+    @LogMessage(level = WARN)
+    @Message(id = 482, value = "Unknown attribute '%s' encountered. Valid attribute names are: '%s'")
+    void unknownAttribute(StringBuilder unexpectedAttr, StringBuilder possibleAttributes);
 }

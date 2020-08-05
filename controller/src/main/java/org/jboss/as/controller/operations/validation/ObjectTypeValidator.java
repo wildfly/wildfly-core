@@ -22,11 +22,16 @@
 
 package org.jboss.as.controller.operations.validation;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -51,6 +56,8 @@ public class ObjectTypeValidator extends ModelTypeValidator {
     public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
+            // unlike ObjectModelValue maintains a map inside, PropertyModelValue is irrelevant as it only contains one property.
+            Set<String> keys = value.getType() == ModelType.OBJECT ? new HashSet<>(value.keys()): Collections.emptySet();
             for (AttributeDefinition ad : allowedValues.values()) {
                 String key = ad.getName();
                 // Don't modify the value by calls to get(), because that's best in general.
@@ -59,6 +66,24 @@ public class ObjectTypeValidator extends ModelTypeValidator {
                 // Changing the test is too much trouble.
                 ModelNode toTest = value.has(key) ? value.get(key) : new ModelNode();
                 ad.getValidator().validateParameter(key, toTest);
+                if (keys.contains(key)) {
+                    keys.remove(key);
+                }
+            }
+            // WFCORE-5083 check invalid attribute in ObjectTypeValidator.
+            if (!keys.isEmpty()) {
+                Iterator<String> it = keys.iterator();
+                StringBuilder sb = new StringBuilder();
+                while (it.hasNext()) {
+                    sb.append(it.next());
+                    if (it.hasNext())
+                        sb.append(' ');
+                }
+                StringBuilder allowed = new StringBuilder();
+                for (AttributeDefinition ad : allowedValues.values()) {
+                    allowed.append(ad.getName()).append(' ');
+                }
+                ControllerLogger.ROOT_LOGGER.unknownAttribute(sb, allowed);
             }
         }
     }
