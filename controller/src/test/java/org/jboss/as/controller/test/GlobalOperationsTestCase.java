@@ -50,6 +50,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RECURSIVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUEST_PROPERTIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOLVE_EXPRESSIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_ADDED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESOURCE_REMOVED_NOTIFICATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNTIME_ONLY;
@@ -954,6 +955,19 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         executeForFailure(operation);
     }
 
+    @Test
+    public void testRecursiveReadSubModeWithResolveExpression() throws Exception {
+            try {   ModelNode operation = createOperation(READ_RESOURCE_OPERATION, "profile", "profileA");
+            System.setProperty("expr", "test-resolve-true");
+            operation.get(RECURSIVE).set(true);
+            operation.get(RESOLVE_EXPRESSIONS).set(true);
+            ModelNode result = executeForResult(operation);
+            assertTrue(result.toString(), result.hasDefined("subsystem", "subsystem2"));
+            checkRecursiveSubsystem2(result.get("subsystem", "subsystem2"), "test-resolve-true");
+        } finally {
+            System.clearProperty("expr");
+        }     }
+
     private void checkNonRecursiveSubsystem1(ModelNode result, boolean includeRuntime) {
         assertEquals(includeRuntime ? 7 : 5, result.keys().size());
         ModelNode content = result.require("attr1");
@@ -997,8 +1011,11 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
     }
 
     private void checkRecursiveSubsystem2(ModelNode result) {
-        assertEquals(14, result.keys().size());
+        checkRecursiveSubsystem2(result, "${expr}");
+    }
 
+    private void checkRecursiveSubsystem2(ModelNode result, String expressionValue) {
+        assertEquals(14, result.keys().size());
         assertEquals(new BigDecimal(100), result.require("bigdecimal").asBigDecimal());
         assertEquals(new BigInteger("101"), result.require("biginteger").asBigInteger());
         assertTrue(result.require("boolean").asBoolean());
@@ -1007,7 +1024,7 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         assertEquals(2, result.require("bytes").asBytes()[1]);
         assertEquals(3, result.require("bytes").asBytes()[2]);
         assertEquals(Double.MAX_VALUE, result.require("double").asDouble(), 0.0d);
-        assertEquals("{expr}", result.require("expression").asString());
+        assertEquals(expressionValue,result.require("expression").asString());
         assertEquals(102, result.require("int").asInt());
         List<ModelNode> list = result.require("list").asList();
         assertEquals(2, list.size());
@@ -1022,4 +1039,6 @@ public class GlobalOperationsTestCase extends AbstractGlobalOperationsTestCase {
         assertEquals("s2", result.require("string2").asString());
         assertEquals(ModelType.TYPE, result.require("type").asType());
     }
+
+
 }

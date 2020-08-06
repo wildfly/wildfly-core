@@ -137,7 +137,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                         model.get("profile", "profileA", "subsystem", "subsystem2", "boolean").set(true);
                         model.get("profile", "profileA", "subsystem", "subsystem2", "bytes").set(new byte[]{1, 2, 3});
                         model.get("profile", "profileA", "subsystem", "subsystem2", "double").set(Double.MAX_VALUE);
-                        model.get("profile", "profileA", "subsystem", "subsystem2", "expression").set(new ValueExpression("{expr}"));
+                        model.get("profile", "profileA", "subsystem", "subsystem2", "expression").set(new ValueExpression("${expr}"));
                         model.get("profile", "profileA", "subsystem", "subsystem2", "int").set(102);
                         model.get("profile", "profileA", "subsystem", "subsystem2", "list").add("l1A");
                         model.get("profile", "profileA", "subsystem", "subsystem2", "list").add("l1B");
@@ -154,6 +154,8 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                         model.get("profile", "profileC", "name").set("profileC");
                         model.get("profile", "profileC", "subsystem", "subsystem4");
                         model.get("profile", "profileC", "subsystem", "subsystem5", "name").set("Test");
+
+
 
                         createModel(context, model);
                     }

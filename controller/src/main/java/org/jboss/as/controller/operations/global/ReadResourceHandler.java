@@ -298,6 +298,7 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                             rrOp.get(ModelDescriptionConstants.INCLUDE_RUNTIME).set(queryRuntime);
                             rrOp.get(ModelDescriptionConstants.INCLUDE_ALIASES).set(aliases);
                             rrOp.get(ModelDescriptionConstants.INCLUDE_DEFAULTS).set(defaults);
+                            rrOp.get(ModelDescriptionConstants.RESOLVE_EXPRESSIONS).set(resolve);
                             ModelNode rrRsp = new ModelNode();
                             childResources.put(childPE, rrRsp);
 
