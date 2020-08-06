@@ -149,11 +149,25 @@ abstract class SystemPropertyContext implements Context {
      * @return the resolved base directory
      */
     Path resolveBaseDir(final String name, final String dirName) {
-        final String currentDir = SecurityActions.getPropertyPrivileged(name);
-        if (currentDir == null) {
-            return jbossHomeDir.resolve(dirName);
+        return resolveDir(name, jbossHomeDir.resolve(dirName));
+    }
+
+    /**
+     * Resolves directory based on system property. If the property is set that value will be uses. Otherwise
+     * {@code defaultValue} will be used.
+     *
+     * @param key           system property name
+     * @param defaultPath   default directory
+     *
+     * @return the resolved directory
+     */
+    Path resolveDir(String key, Path defaultPath) {
+        final String dataDirPath = SecurityActions.getPropertyPrivileged(key);
+        if (dataDirPath == null) {
+            return defaultPath;
+        } else {
+            return Paths.get(dataDirPath);
         }
-        return Paths.get(currentDir);
     }
 
     /**

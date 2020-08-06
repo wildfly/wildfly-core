@@ -52,9 +52,10 @@ final class HostControllerSystemPropertyContext extends SystemPropertyContext {
         final Path baseDir = resolveBaseDir(DOMAIN_BASE_DIR, "domain");
         addPropertyIfAbsent(DOMAIN_BASE_DIR, baseDir.toString());
         addPropertyIfAbsent(DOMAIN_CONFIG_DIR, resolvePath(baseDir, "configuration"));
-        addPropertyIfAbsent(DOMAIN_DATA_DIR, resolvePath(baseDir, "data"));
-        addPropertyIfAbsent(DOMAIN_CONTENT_DIR, resolvePath(baseDir, "data", "content"));
-        addPropertyIfAbsent(DOMAIN_DEPLOYMENT_DIR, resolvePath(baseDir, "data", "content"));
+        Path dataDir = resolveDir(DOMAIN_DATA_DIR, baseDir.resolve("data"));
+        addPropertyIfAbsent(DOMAIN_DATA_DIR, dataDir);
+        addPropertyIfAbsent(DOMAIN_CONTENT_DIR, resolvePath(dataDir, "content"));
+        addPropertyIfAbsent(DOMAIN_DEPLOYMENT_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(DOMAIN_LOG_DIR, resolvePath(baseDir, "log"));
         addPropertyIfAbsent(DOMAIN_TEMP_DIR, resolvePath(baseDir, "tmp"));
         checkProperty(JBOSS_DOMAIN_MASTER_ADDRESS);
