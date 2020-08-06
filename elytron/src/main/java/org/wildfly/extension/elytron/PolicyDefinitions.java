@@ -29,16 +29,15 @@ import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 
 import java.security.AccessController;
 import java.security.Policy;
-import java.security.Principal;
 import java.security.PrivilegedAction;
-import java.security.acl.Group;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.security.PrivilegedExceptionAction;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
-import javax.security.auth.Subject;
+import javax.security.jacc.PolicyConfigurationFactory;
 import javax.security.jacc.PolicyContext;
 import javax.security.jacc.PolicyContextException;
 import javax.security.jacc.PolicyContextHandler;
@@ -63,6 +62,7 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -71,25 +71,12 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
-import org.jboss.security.SecurityConstants;
-import org.jboss.security.auth.callback.CallbackHandlerPolicyContextHandler;
-import org.jboss.security.jacc.SubjectPolicyContextHandler;
-import org.wildfly.common.Assert;
 import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
-import org.wildfly.security.auth.principal.NamePrincipal;
-import org.wildfly.security.auth.server.IdentityCredentials;
-import org.wildfly.security.auth.server.SecurityDomain;
-import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
 import org.wildfly.security.authz.jacc.JaccDelegatingPolicy;
-import org.wildfly.security.credential.Credential;
-import org.wildfly.security.credential.KeyPairCredential;
-import org.wildfly.security.credential.PasswordCredential;
-import org.wildfly.security.credential.PublicKeyCredential;
-import org.wildfly.security.credential.SecretKeyCredential;
-import org.wildfly.security.credential.X509CertificateChainPrivateCredential;
-import org.wildfly.security.credential.X509CertificateChainPublicCredential;
+import org.wildfly.security.authz.jacc.SecurityIdentityHandler;
+import org.wildfly.security.authz.jacc.SubjectPolicyContextHandler;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -171,12 +158,12 @@ class PolicyDefinitions {
             protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
 
                 ServiceName serviceName = POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName(Policy.class);
-                InjectedValue<Supplier<Policy>> policyProviderInjector = new InjectedValue<>();
                 ServiceTarget serviceTarget = context.getServiceTarget();
-                ServiceBuilder<Policy> serviceBuilder = serviceTarget.addService(serviceName, createPolicyService(policyProviderInjector));
-                Supplier<Policy> policySupplier = getPolicyProvider(context, model, serviceBuilder);
-
-                policyProviderInjector.setValue(() -> policySupplier);
+                Consumer<Consumer<Policy>> policyConsumer = getPolicyProvider(context, model);
+                ServiceBuilder<Policy> serviceBuilder = serviceTarget.addService(serviceName, createPolicyService(policyConsumer));
+                if (model.get(JACC_POLICY).isDefined()) {
+                    serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
+                }
 
                 serviceBuilder.setInitialMode(Mode.ACTIVE).install();
 
@@ -185,40 +172,42 @@ class PolicyDefinitions {
                 }
             }
 
-            private Service<Policy> createPolicyService(InjectedValue<Supplier<Policy>> injector) {
+            private Service<Policy> createPolicyService(Consumer<Consumer<Policy>> policyProvider) {
                 return new Service<Policy>() {
-                    volatile Policy delegated;
-                    volatile Policy policy;
+                    volatile Policy original;
 
                     @Override
                     public void start(StartContext context) throws StartException {
-                        delegated = getPolicy();
-                        policy = injector.getValue().get();
+                        original = getPolicy();
 
                         try {
-                            setPolicy(policy);
-                            policy.refresh();
+                            policyProvider.accept(this::setPolicy);
                         } catch (Exception cause) {
-                            setPolicy(delegated);
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, cause);
+                            setPolicy(original);
+                            throw new StartException(cause);
                         }
                     }
 
                     @Override
                     public void stop(StopContext context) {
-                        setPolicy(delegated);
+                        setPolicy(original);
                     }
 
                     @Override
                     public Policy getValue() throws IllegalStateException, IllegalArgumentException {
-                        return policy;
+                        return getPolicy();
                     }
 
                     private void setPolicy(Policy policy) {
-                        if (WildFlySecurityManager.isChecking()) {
-                            AccessController.doPrivileged(setPolicyAction(policy));
-                        } else {
-                            setPolicyAction(policy).run();
+                        policy.refresh();
+                        try {
+                            if (WildFlySecurityManager.isChecking()) {
+                                AccessController.doPrivileged(setPolicyAction(policy));
+                            } else {
+                                setPolicyAction(policy).run();
+                            }
+                        } catch (Exception e) {
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.failedToSetPolicy(policy, e);
                         }
                     }
 
@@ -287,159 +276,26 @@ class PolicyDefinitions {
 
     }
 
-    private static Supplier<Policy> getPolicyProvider(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
-        Supplier<Policy> result = configureJaccPolicy(context, model, serviceBuilder);
+    private static Consumer<Consumer<Policy>> getPolicyProvider(OperationContext context, ModelNode model) throws OperationFailedException {
+        Consumer<Consumer<Policy>> result = configureJaccPolicy(context, model);
         if (result == null) {
             result = configureCustomPolicy(context, model);
         }
         return result;
     }
 
-    private static Supplier<Policy> configureCustomPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
+    private static Consumer<Consumer<Policy>> configureCustomPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
         ModelNode policyModel = model.get(CUSTOM_POLICY);
 
         if (policyModel.isDefined()) {
             String className = CustomPolicyDefinition.CLASS_NAME.resolveModelAttribute(context, policyModel).asString();
             String module = CustomPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
 
-            return () -> newPolicy(className, module);
-        }
-
-        return null;
-    }
-
-    private static Supplier<Policy> configureJaccPolicy(OperationContext context, ModelNode model, ServiceBuilder<Policy> serviceBuilder) throws OperationFailedException {
-        ModelNode policyModel = model.get(JACC_POLICY);
-
-        if (policyModel.isDefined()) {
-            String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
-            String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
-            String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
-
-            serviceBuilder.addAliases(JACC_POLICY_RUNTIME_CAPABILITY.getCapabilityServiceName());
-
-            return new Supplier<Policy>() {
-                @Override
-                public Policy get() {
-                    if (configurationFactory != null) {
-                        if (WildFlySecurityManager.isChecking()) {
-                            AccessController.doPrivileged(setConfigurationProviderSystemProperty());
-                        } else {
-                            setConfigurationProviderSystemProperty().run();
-                        }
-                    }
-
-                    Policy policy = newPolicy(policyProvider, module);
-
-                    try {
-                        PolicyContext.registerHandler(SecurityConstants.SUBJECT_CONTEXT_KEY, createSubjectPolicyContextHandler(), true);
-                        PolicyContext.registerHandler(SecurityConstants.CALLBACK_HANDLER_KEY, createCallbackHandlerContextHandler(), true);
-                        PolicyContext.registerHandler(SecurityIdentity.class.getName(), createSecurityIdentityContextHandler(), true);
-                    } catch (PolicyContextException cause) {
-                        throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
-                    }
-
-                    return policy;
-                }
-
-                private PrivilegedAction<Void> setConfigurationProviderSystemProperty() {
-                    return () -> {
-                        if (WildFlySecurityManager.isChecking()) {
-                            WildFlySecurityManager.setPropertyPrivileged("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
-                        } else {
-                            System.setProperty("javax.security.jacc.PolicyConfigurationFactory.provider", configurationFactory);
-                        }
-                        return null;
-                    };
-                }
-
-                private PolicyContextHandler createSecurityIdentityContextHandler() {
-                    return new PolicyContextHandler() {
-                        final String KEY = SecurityIdentity.class.getName();
-
-                        @Override
-                        public Object getContext(String key, Object data) throws PolicyContextException {
-                            if (supports(key)) {
-                                SecurityDomain securityDomain = doPrivileged((PrivilegedAction<SecurityDomain>) SecurityDomain::getCurrent);
-
-                                if (securityDomain == null) {
-                                    return null;
-                                }
-
-                                SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();
-
-                                if (securityIdentity != null) {
-                                    return securityIdentity;
-                                }
-                            }
-
-                            return null;
-                        }
-
-                        @Override
-                        public String[] getKeys() throws PolicyContextException {
-                            return new String[]{KEY};
-                        }
-
-                        @Override
-                        public boolean supports(String key) throws PolicyContextException {
-                            return getKeys()[0].equalsIgnoreCase(key);
-                        }
-                    };
-                }
-
-                private PolicyContextHandler createCallbackHandlerContextHandler() {
-                    return new PolicyContextHandler() {
-                        // in case applications are using legacy (PicketBox) security infrastructure
-                        CallbackHandlerPolicyContextHandler legacy = new CallbackHandlerPolicyContextHandler();
-
-                        @Override
-                        public Object getContext(String key, Object data) throws PolicyContextException {
-                            return legacy.getContext(key, data);
-                        }
-
-                        @Override
-                        public String[] getKeys() throws PolicyContextException {
-                            return legacy.getKeys();
-                        }
-
-                        @Override
-                        public boolean supports(String key) throws PolicyContextException {
-                            return legacy.supports(key);
-                        }
-                    };
-                }
-
-                private PolicyContextHandler createSubjectPolicyContextHandler() {
-                    return new PolicyContextHandler() {
-                        // in case applications are using legacy (PicketBox) security infrastructure
-                        SubjectPolicyContextHandler legacy = new SubjectPolicyContextHandler();
-
-                        @Override
-                        public Object getContext(String key, Object data) throws PolicyContextException {
-                            if (supports(key)) {
-                                SecurityIdentity securityIdentity = (SecurityIdentity) PolicyContext.getContext(SecurityIdentity.class.getName());
-
-                                if (securityIdentity == null) {
-                                    return legacy.getContext(key, data);
-                                }
-
-                                return SubjectUtil.fromSecurityIdentity(securityIdentity);
-                            }
-
-                            return null;
-                        }
-
-                        @Override
-                        public String[] getKeys() throws PolicyContextException {
-                            return legacy.getKeys();
-                        }
-
-                        @Override
-                        public boolean supports(String key) throws PolicyContextException {
-                            return legacy.supports(key);
-                        }
-                    };
+            return (t) -> {
+                try {
+                    t.accept(newPolicy(className, ClassLoadingAttributeDefinitions.resolveClassLoader(module)));
+                } catch (ModuleLoadException e) {
+                    throw ElytronSubsystemMessages.ROOT_LOGGER.unableToLoadModuleRuntime(module, e);
                 }
             };
         }
@@ -447,9 +303,80 @@ class PolicyDefinitions {
         return null;
     }
 
-    private static Policy newPolicy(String className, String module) {
+    private static Consumer<Consumer<Policy>> configureJaccPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
+        ModelNode policyModel = model.get(JACC_POLICY);
+
+        if (policyModel.isDefined()) {
+            final String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
+            final String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
+            final boolean defaultConfigurationFactory = configurationFactory.equals(JaccPolicyDefinition.CONFIGURATION_FACTORY.getDefaultValue().asString());
+            String module = JaccPolicyDefinition.MODULE.resolveModelAttribute(context, policyModel).asStringOrNull();
+
+            return new Consumer<Consumer<Policy>>() {
+
+                @Override
+                public void accept(Consumer<Policy> policyConsumer) {
+
+                    try {
+                        ClassLoader configuredClassLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
+
+                        Policy policy = newPolicy(policyProvider, configuredClassLoader);
+                        policyConsumer.accept(policy);
+
+                        doPrivileged((PrivilegedExceptionAction<PolicyConfigurationFactory>) () -> newPolicyConfigurationFactory(
+                                configurationFactory,
+                                defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
+
+                        Map<String, PolicyContextHandler> discoveredHandlers = discoverPolicyContextHandlers();
+
+                        registerHandler(discoveredHandlers, new SubjectPolicyContextHandler());
+                        registerHandler(discoveredHandlers, new SecurityIdentityHandler());
+                        for (Entry<String, PolicyContextHandler> entry : discoveredHandlers.entrySet()) {
+                            PolicyContext.registerHandler(entry.getKey(), entry.getValue(), true);
+                        }
+
+                    } catch (Exception cause) {
+                        throw ElytronSubsystemMessages.ROOT_LOGGER.failedToRegisterPolicyHandlers(cause);
+                    }
+                }
+
+                private void registerHandler(Map<String, PolicyContextHandler> discoveredHandlers, PolicyContextHandler handler) throws PolicyContextException {
+                    for (String key : handler.getKeys()) {
+                        PolicyContextHandler discovered = discoveredHandlers.remove(key);
+                        if (discovered != null) {
+                            ElytronSubsystemMessages.ROOT_LOGGER.tracef("Registering DelegatingPolicyContextHandler for key '%s'.", key);
+                            PolicyContext.registerHandler(key, discovered != null ? new DelegatingPolicyContextHandler(key, handler, discovered) : handler, true);
+                        } else {
+                            PolicyContext.registerHandler(key, handler, true);
+                        }
+                    }
+                }
+
+                private Map<String, PolicyContextHandler> discoverPolicyContextHandlers() throws PolicyContextException {
+                    Map<String, PolicyContextHandler> handlerMap = new HashMap<>();
+                    ServiceLoader<PolicyContextHandler> serviceLoader = ServiceLoader.load(PolicyContextHandler.class, PolicyDefinitions.class.getClassLoader());
+                    for (PolicyContextHandler handler : serviceLoader) {
+                        for (String key : handler.getKeys()) {
+                            if (handlerMap.put(key, handler) != null) {
+                                throw ElytronSubsystemMessages.ROOT_LOGGER.duplicatePolicyContextHandler(key);
+                            }
+                            if (ElytronSubsystemMessages.ROOT_LOGGER.isTraceEnabled()) {
+                                ElytronSubsystemMessages.ROOT_LOGGER.tracef("Discovered PolicyContextHandler '%s' for key '%s'.", handler.getClass().getName(), key);
+                            }
+                        }
+                    }
+
+                    return handlerMap;
+                }
+
+            };
+        }
+
+        return null;
+    }
+
+    private static Policy newPolicy(String className, ClassLoader classLoader) {
         try {
-            ClassLoader classLoader = ClassLoadingAttributeDefinitions.resolveClassLoader(module);
             Object policy = classLoader.loadClass(className).newInstance();
             return Policy.class.cast(policy);
         } catch (Exception e) {
@@ -457,122 +384,23 @@ class PolicyDefinitions {
         }
     }
 
-    /**
-     * Utilities for dealing with {@link Subject}.
-     *
-     * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
-     */
-    static final class SubjectUtil {
+    private static PolicyConfigurationFactory newPolicyConfigurationFactory(String className, ClassLoader classLoader) throws PolicyContextException, ClassNotFoundException {
+        final ClassLoader original = Thread.currentThread().getContextClassLoader();
 
-        /**
-         * Converts the supplied {@link SecurityIdentity} into a {@link Subject}.
-         *
-         * @param securityIdentity the {@link SecurityIdentity} to be converted.
-         * @return the constructed {@link Subject} instance.
-         */
-        static Subject fromSecurityIdentity(final SecurityIdentity securityIdentity) {
-            Assert.checkNotNullParam("securityIdentity", securityIdentity);
-            Subject subject = new Subject();
-            subject.getPrincipals().add(securityIdentity.getPrincipal());
-
-            // add the 'Roles' group to the subject containing the identity's mapped roles.
-            Group rolesGroup = new SimpleGroup("Roles");
-            for (String role : securityIdentity.getRoles()) {
-                rolesGroup.addMember(new NamePrincipal(role));
-            }
-            subject.getPrincipals().add(rolesGroup);
-
-            // add a 'CallerPrincipal' group containing the identity's principal.
-            Group callerPrincipalGroup = new SimpleGroup("CallerPrincipal");
-            callerPrincipalGroup.addMember(securityIdentity.getPrincipal());
-            subject.getPrincipals().add(callerPrincipalGroup);
-
-            // process the identity's public and private credentials.
-            for (Credential credential : securityIdentity.getPublicCredentials()) {
-                if (credential instanceof PublicKeyCredential) {
-                    subject.getPublicCredentials().add(credential.castAs(PublicKeyCredential.class).getPublicKey());
-                }
-                else if (credential instanceof X509CertificateChainPublicCredential) {
-                    subject.getPublicCredentials().add(credential.castAs(X509CertificateChainPublicCredential.class).getCertificateChain());
-                }
-                else {
-                    subject.getPublicCredentials().add(credential);
-                }
+        try {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            System.setProperty(PolicyConfigurationFactory.class.getName() + ".provider", className);
+            PolicyConfigurationFactory policyConfigurationFactory = PolicyConfigurationFactory.getPolicyConfigurationFactory();
+            String loadedClassName = policyConfigurationFactory.getClass().getName();
+            if (className.equals(loadedClassName) == false) {
+                throw ElytronSubsystemMessages.ROOT_LOGGER.invalidImplementationLoaded(PolicyConfigurationFactory.class.getCanonicalName(), className, loadedClassName);
             }
 
-            for (Credential credential : doPrivileged((PrivilegedAction<IdentityCredentials>) securityIdentity::getPrivateCredentials)) {
-                if (credential instanceof PasswordCredential) {
-                    addPrivateCredential(subject, credential.castAs(PasswordCredential.class).getPassword());
-                }
-                else if (credential instanceof SecretKeyCredential) {
-                    addPrivateCredential(subject, credential.castAs(SecretKeyCredential.class).getSecretKey());
-                }
-                else if (credential instanceof KeyPairCredential) {
-                    addPrivateCredential(subject, credential.castAs(KeyPairCredential.class).getKeyPair());
-                }
-                else if (credential instanceof X509CertificateChainPrivateCredential) {
-                    addPrivateCredential(subject, credential.castAs(X509CertificateChainPrivateCredential.class).getCertificateChain());
-                }
-                else {
-                    addPrivateCredential(subject, credential);
-                }
-            }
-
-            // add the identity itself as a private credential - integration code can interact with the SI instead of the Subject if desired.
-            addPrivateCredential(subject, securityIdentity);
-
-            return subject;
+            return policyConfigurationFactory;
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
         }
 
-        static void addPrivateCredential(final Subject subject, final Object credential) {
-            if (!WildFlySecurityManager.isChecking()) {
-                subject.getPrivateCredentials().add(credential);
-            }
-            else {
-                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    subject.getPrivateCredentials().add(credential);
-                    return null;
-                });
-            }
-        }
-
-
-        private static class SimpleGroup implements Group {
-
-            private final String name;
-
-            private final Set<Principal> principals;
-
-            SimpleGroup(final String name) {
-                this.name = name;
-                this.principals = new HashSet<>();
-            }
-
-            @Override
-            public String getName() {
-                return this.name;
-            }
-
-            @Override
-            public boolean addMember(Principal principal) {
-                return this.principals.add(principal);
-            }
-
-            @Override
-            public boolean removeMember(Principal principal) {
-                return this.principals.remove(principal);
-            }
-
-            @Override
-            public Enumeration<? extends Principal> members() {
-                return Collections.enumeration(this.principals);
-            }
-
-            @Override
-            public boolean isMember(Principal principal) {
-                return this.principals.contains(principal);
-            }
-        }
     }
 
     // The jacc-policy and custom-policy attributes used to be LIST of OBJECT
