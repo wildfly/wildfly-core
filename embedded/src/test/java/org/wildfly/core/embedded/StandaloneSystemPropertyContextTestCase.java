@@ -52,7 +52,9 @@ public class StandaloneSystemPropertyContextTestCase {
     @After
     public void tearDown() {
         for (Object property : new HashSet<>(System.getProperties().keySet())) {
-            System.clearProperty((String)property);
+            if (!startingProperties.contains(property)) {
+                System.clearProperty((String) property);
+            }
         }
     }
 

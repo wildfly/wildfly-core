@@ -51,6 +51,7 @@ final class StandaloneSystemPropertyContext extends SystemPropertyContext {
         addPropertyIfAbsent(SERVER_BASE_DIR, baseDir);
         addPropertyIfAbsent(SERVER_CONFIG_DIR, resolvePath(baseDir, "configuration"));
         Path dataDir = resolveDir(SERVER_DATA_DIR, baseDir.resolve("data"));
+        addPropertyIfAbsent(SERVER_DATA_DIR, dataDir);
         addPropertyIfAbsent(SERVER_CONTENT_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(SERVER_DEPLOY_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(SERVER_LOG_DIR, resolvePath(baseDir, "log"));

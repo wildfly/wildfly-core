@@ -817,11 +817,17 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
             assertTrue(cli.isConnected());
 
             for(String prop : SERVER_PROPS) {
+                String overriddenDir = ROOT + File.separator + newStandalone + File.separator + value;
                 if (prop.equals(propName)) {
-                    assertPath(propName, ROOT + File.separator + newStandalone + File.separator + value);
+                    assertPath(propName, overriddenDir);
                 } else {
                     // just make sure the unchanged property has the default basedir
-                    assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").contains(currBaseDir));
+                    // if the changed property is jboss.server.data.dir, property jboss.server.deploy.dir will be changed as well
+                    if (prop.equals(JBOSS_SERVER_DEPLOY_DIR) && propName.equals(JBOSS_SERVER_DATA_DIR)) {
+                        assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").contains(overriddenDir));
+                    } else {
+                        assertTrue(WildFlySecurityManager.getPropertyPrivileged(prop, "").contains(currBaseDir));
+                    }
                 }
             }
         } finally {
