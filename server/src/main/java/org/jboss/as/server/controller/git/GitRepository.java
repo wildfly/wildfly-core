@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
+
 import org.eclipse.jgit.api.AddCommand;
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.CheckoutResult;
@@ -52,6 +53,8 @@ import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.merge.MergeStrategy;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
+import org.eclipse.jgit.transport.SshSessionFactory;
+import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.client.config.ConfigXMLParseException;
 
@@ -67,6 +70,7 @@ public class GitRepository implements Closeable {
     private final Path basePath;
     private final String defaultRemoteRepository;
     private final String branch;
+    private final SshdSessionFactory sshdSessionFactory;
 
     public GitRepository(GitRepositoryConfiguration gitConfig)
             throws IllegalArgumentException, IOException, ConfigXMLParseException, GeneralSecurityException {
@@ -79,6 +83,8 @@ public class GitRepository implements Closeable {
         if (gitConfig.getAuthenticationConfig() != null) {
             CredentialsProvider.setDefault(new ElytronClientCredentialsProvider(gitConfig.getAuthenticationConfig()));
         }
+        this.sshdSessionFactory = new ElytronClientSshdSessionFactory(gitConfig.getAuthenticationConfig());
+        SshSessionFactory.setInstance(sshdSessionFactory);
         if (gitDir.exists()) {
             try {
                 repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
@@ -175,6 +181,7 @@ public class GitRepository implements Closeable {
             this.basePath = repository.getDirectory().toPath().getParent();
         }
         ServerLogger.ROOT_LOGGER.usingGit();
+        sshdSessionFactory = null;
     }
 
     private void clearExistingFiles(Path root, String gitRepository) {
@@ -183,7 +190,7 @@ public class GitRepository implements Closeable {
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                     if (!ignored.contains(dir.getFileName().toString() + '/')) {
-                    return FileVisitResult.CONTINUE;
+                        return FileVisitResult.CONTINUE;
                     }
                     return FileVisitResult.SKIP_SUBTREE;
                 }
@@ -255,6 +262,9 @@ public class GitRepository implements Closeable {
 
     @Override
     public void close() {
+        if (sshdSessionFactory != null) {
+            this.sshdSessionFactory.close();
+        }
         this.repository.close();
     }
 
