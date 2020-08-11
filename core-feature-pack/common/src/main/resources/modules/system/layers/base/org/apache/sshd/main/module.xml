@@ -29,9 +29,13 @@
 
     <resources>
         <artifact name="${org.apache.sshd:sshd-common}"/>
+        <artifact name="${org.apache.sshd:sshd-core}"/>
     </resources>
 
     <dependencies>
+        <module name="org.bouncycastle.bcpg"/>
+        <module name="org.bouncycastle.bcpkix"/>
+        <module name="org.bouncycastle.bcprov"/>
         <module name="org.slf4j"/>
         <module name="org.slf4j.impl"/>
         <module name="java.logging"/>
