@@ -23,7 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.Policy;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.zip.ZipEntry;
@@ -52,6 +54,7 @@ public final class Main {
     private static final String BOOTABLE_JAR_RUN_METHOD = "run";
 
     private static final String INSTALL_DIR = "--install-dir";
+    private static final String SECMGR = "-secmgr";
 
     private static final String WILDFLY_RESOURCE = "/wildfly.zip";
 
@@ -61,12 +64,20 @@ public final class Main {
 
         List<String> filteredArgs = new ArrayList<>();
         Path installDir = null;
+        boolean securityManager = false;
         for (String arg : args) {
             if (arg.startsWith(INSTALL_DIR)) {
                 installDir = Paths.get(getValue(arg));
+            } else if (SECMGR.equals(arg)) {
+                securityManager = true;
             } else {
                 filteredArgs.add(arg);
             }
+        }
+
+        final SecurityManager existingSecMgr = System.getSecurityManager();
+        if (existingSecMgr != null) {
+            throw new Exception("An existing security manager was detected.  You must use the -secmgr switch to start with a security manager.");
         }
 
         installDir = installDir == null ? Files.createTempDirectory(WILDFLY_BOOTABLE_TMP_DIR_PREFIX) : installDir;
@@ -84,7 +95,7 @@ public final class Main {
             extension.boot(filteredArgs, installDir);
         }
 
-        runBootableJar(installDir, filteredArgs, System.currentTimeMillis() - t);
+        runBootableJar(installDir, filteredArgs, System.currentTimeMillis() - t, securityManager);
     }
 
     private static String getValue(String arg) {
@@ -95,7 +106,7 @@ public final class Main {
         return arg.substring(sep + 1);
     }
 
-    private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime) throws Exception {
+    private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime, boolean securityManager) throws Exception {
         final String modulePath = jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString();
         ModuleLoader moduleLoader = setupModuleLoader(modulePath);
         final Module bootableJarModule;
@@ -118,6 +129,20 @@ public final class Main {
         } catch (final NoSuchMethodException nsme) {
             throw new Exception(nsme);
         }
+
+        // Wait until the last moment and install the SecurityManager.
+        if (securityManager) {
+            final BootablePolicy policy = new BootablePolicy(Policy.getPolicy());
+            Policy.setPolicy(policy);
+
+            final Iterator<SecurityManager> iterator = bootableJarModule.loadService(SecurityManager.class).iterator();
+            if (iterator.hasNext()) {
+                System.setSecurityManager(iterator.next());
+            } else {
+                throw new IllegalStateException("No SecurityManager found to install.");
+            }
+        }
+
         runMethod.invoke(null, jbossHome, arguments, moduleLoader, moduleCL, unzipTime);
     }
 

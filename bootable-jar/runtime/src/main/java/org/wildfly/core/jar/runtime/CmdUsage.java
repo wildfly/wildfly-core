@@ -50,6 +50,9 @@ final class CmdUsage extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.PROPERTIES + "=<url>");
         instructions.add(BootableJarLogger.ROOT_LOGGER.argProperties());
 
+        addArguments(CommandLineConstants.SECMGR);
+        instructions.add(BootableJarLogger.ROOT_LOGGER.argSecurityManager());
+
         addArguments(CommandLineConstants.SECURITY_PROP + "<name>[=<value>]");
         instructions.add(BootableJarLogger.ROOT_LOGGER.argSecurityProperty());
 
