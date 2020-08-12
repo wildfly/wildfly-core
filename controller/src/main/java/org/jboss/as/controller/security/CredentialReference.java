@@ -41,6 +41,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
@@ -283,7 +284,8 @@ public final class CredentialReference {
                 .setAttributeMarshaller(AttributeMarshaller.ATTRIBUTE_OBJECT)
                 .setAttributeParser(AttributeParser.OBJECT_PARSER)
                 .setRequired(!allowNull)
-                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.CREDENTIAL);
+                .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.CREDENTIAL)
+                .setValidator(new CredentialReferenceValidator());
     }
 
     /**
@@ -732,4 +734,34 @@ public final class CredentialReference {
             return false;
         }
     };
+
+    private static class CredentialReferenceValidator implements ParameterValidator {
+
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            if (value.isDefined()) {
+                String store = null;
+                String secret = null;
+                String alias = null;
+                if (value.hasDefined(STORE)) {
+                    store = value.get(STORE).asString();
+                }
+                if (value.hasDefined(CLEAR_TEXT)) {
+                    secret = value.get(CLEAR_TEXT).asString();
+                }
+                if (value.hasDefined(ALIAS)) {
+                    alias = value.get(ALIAS).asString();
+                }
+                boolean valid = false;
+                if (secret != null && store == null && alias == null) {
+                    valid = true; // clear-text only
+                } else if (store != null && (secret != null || alias != null)) {
+                    valid = true; // store and at least one of clear-text and alias
+                }
+                if (! valid) {
+                    throw ControllerLogger.ROOT_LOGGER.invalidCredentialReferenceValue(parameterName, CLEAR_TEXT, STORE, CLEAR_TEXT, ALIAS);
+                }
+
+            }
+        }
+    }
 }

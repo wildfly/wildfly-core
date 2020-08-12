@@ -18,14 +18,19 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.security.CredentialReference.ALIAS;
 import static org.jboss.as.controller.security.CredentialReference.CLEAR_TEXT;
+import static org.jboss.as.controller.security.CredentialReference.CREDENTIAL_REFERENCE;
+import static org.jboss.as.controller.security.CredentialReference.NEW_ALIAS;
+import static org.jboss.as.controller.security.CredentialReference.STORE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Path;
@@ -70,6 +75,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
     private static final String KS_NAME = "test-keystore";
     private static final String CLEAR_TEXT_ATTRIBUTE_NAME = CredentialReference.CREDENTIAL_REFERENCE + "." + CLEAR_TEXT;
     private static final String ALIAS_ATTRIBUTE_NAME = CredentialReference.CREDENTIAL_REFERENCE + "." + ALIAS;
+    private static final String STORE_ATTRIBUTE_NAME = CredentialReference.CREDENTIAL_REFERENCE + "." + STORE;
     private static final String EXISTING_ALIAS = "existingAlias";
     private static final String EXISTING_PASSWORD = "existingPassword";
     private static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
@@ -131,7 +137,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(alias, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -152,7 +158,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(generatedAlias, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -176,7 +182,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(alias, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -198,7 +204,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(generatedAlias, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -224,7 +230,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(newPassword.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -250,7 +256,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -274,7 +280,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             ClearPassword clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -303,7 +309,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals("alias1", readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -331,7 +337,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(password.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
@@ -356,20 +362,8 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             clearPassword = passwordCredential.getPassword(ClearPassword.class);
             assertTrue(Arrays.equals(EXISTING_PASSWORD.toCharArray(), clearPassword.getPassword()));
 
-            assertEquals(null, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
             assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
-        } finally {
-            removeKeyStore(KS_NAME);
-        }
-    }
-
-    @Test
-    public void testCredentialReferenceClearTextOnly() throws Exception {
-        try {
-            String password = "secret";
-            addKeyStoreWithCredentialReference(KS_NAME, null, null, "secret", false, false);
-            assertEquals(password, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
-            assertEquals(null, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
         } finally {
             removeKeyStore(KS_NAME);
         }
@@ -438,7 +432,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
             operation.get(ElytronDescriptionConstants.ALGORITHM).set("Invalid");
             operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
-            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.STORE).set(NON_EMPTY_CS_NAME);
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(NON_EMPTY_CS_NAME);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(ALIAS).set(alias);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set(password);
             ModelNode response = assertFailed(services.executeOperation(operation)).get(RESULT);
@@ -470,7 +464,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
             operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
             operation.get(ElytronDescriptionConstants.ALGORITHM).set("Invalid");
             operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us");
-            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.STORE).set(NON_EMPTY_CS_NAME);
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(NON_EMPTY_CS_NAME);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(ALIAS).set(EXISTING_ALIAS);
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set(password);
             ModelNode response = assertFailed(services.executeOperation(operation)).get(RESULT);
@@ -503,6 +497,77 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         }
     }
 
+    @Test
+    public void testAddOperationWithCredentialReferenceWithStoreOnly() throws Exception {
+        testAddKeyStoreWithInvalidCredentialReference(KS_NAME, NON_EMPTY_CS_NAME, null, null);
+    }
+
+    @Test
+    public void testAddOperationWithCredentialReferenceWithAliasOnly() throws Exception {
+        testAddKeyStoreWithInvalidCredentialReference(KS_NAME, null, EXISTING_ALIAS, null);
+    }
+
+    @Test
+    public void testAddOperationWithCredentialReferenceWithClearTextOnly() throws Exception {
+        try {
+            String password = "secret";
+            addKeyStoreWithCredentialReference(KS_NAME, null, null, password, false, false);
+            assertEquals(password, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
+        } finally {
+            removeKeyStore(KS_NAME);
+        }
+    }
+
+    @Test
+    public void testWriteAttributeWithCredentialReferenceWithStoreOnly() throws Exception {
+        try {
+            getNonEmptyCredentialStore();
+            addKeyStoreWithCredentialReference(KS_NAME, NON_EMPTY_CS_NAME, EXISTING_ALIAS, null, true);
+            testWriteCredentialReferenceAttribute("key-store", KS_NAME, NON_EMPTY_CS_NAME, null, null, true);
+
+            // no changes to credential-reference attribute
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
+            assertEquals(NON_EMPTY_CS_NAME, readAttribute(KS_NAME, STORE_ATTRIBUTE_NAME));
+        } finally {
+            removeKeyStore(KS_NAME);
+        }
+    }
+
+    @Test
+    public void testWriteAttributeWithCredentialReferenceWithAliasOnly() throws Exception {
+        try {
+            getNonEmptyCredentialStore();
+            addKeyStoreWithCredentialReference(KS_NAME, NON_EMPTY_CS_NAME, EXISTING_ALIAS, null, true);
+            testWriteCredentialReferenceAttribute("key-store", KS_NAME, null, NEW_ALIAS, null, true);
+
+            // no changes to credential-reference attribute
+            assertNull(readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertEquals(EXISTING_ALIAS, readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
+            assertEquals(NON_EMPTY_CS_NAME, readAttribute(KS_NAME, STORE_ATTRIBUTE_NAME));
+        } finally {
+            removeKeyStore(KS_NAME);
+        }
+    }
+
+    @Test
+    public void testWriteAttributeWithCredentialReferenceWithClearTextOnly() throws Exception {
+        try {
+            String newPassword = "newPassword";
+            getNonEmptyCredentialStore();
+            addKeyStoreWithCredentialReference(KS_NAME, NON_EMPTY_CS_NAME, EXISTING_ALIAS, null, true);
+            testWriteCredentialReferenceAttribute("key-store", KS_NAME, null, null, newPassword, false);
+
+            // changes to credential-reference attribute
+            assertEquals(newPassword, readAttribute(KS_NAME, CLEAR_TEXT_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, ALIAS_ATTRIBUTE_NAME));
+            assertNull(readAttribute(KS_NAME, STORE_ATTRIBUTE_NAME));
+        } finally {
+            removeKeyStore(KS_NAME);
+        }
+    }
+
     private String addKeyStoreWithCredentialReference(String keyStoreName, String store, String alias, String secret, boolean exists) throws Exception {
         return addKeyStoreWithCredentialReference(keyStoreName, store, alias, secret, "JKS", exists, true, false);
     }
@@ -524,7 +589,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test.keystore");
         operation.get(ElytronDescriptionConstants.TYPE).set(type);
         if (store != null) {
-            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.STORE).set(store);
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
         }
         boolean autoGeneratedAlias = false;
         if (alias != null) {
@@ -552,6 +617,54 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         }
     }
 
+    private void testAddKeyStoreWithInvalidCredentialReference(String keyStoreName, String store, String alias, String secret) throws Exception {
+        Path resources = Paths.get(KeyStoresTestCase.class.getResource(".").toURI());
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OPERATION_HEADERS).get("allow-resource-service-restart").set(Boolean.TRUE);
+        operation.get(ClientConstants.OP_ADDR).add("subsystem","elytron").add("key-store", keyStoreName);
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.PATH).set(resources + "/test.keystore");
+        operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
+        if (store != null) {
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
+        }
+        if (alias != null) {
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(ALIAS).set(alias);
+        }
+        if (secret != null) {
+            operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CLEAR_TEXT).set(secret);
+        }
+
+        ModelNode response = services.executeOperation(operation);
+        assertEquals(FAILED, response.get(OUTCOME).asString());
+        assertTrue(response.get(FAILURE_DESCRIPTION).asString().contains(CREDENTIAL_REFERENCE));
+    }
+
+    private void testWriteCredentialReferenceAttribute(String resource, String resourceName, String store, String alias, String secret, boolean assertFailed) {
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(resource, resourceName);
+        operation.get(ClientConstants.OP).set(ClientConstants.WRITE_ATTRIBUTE_OPERATION);
+        operation.get(ClientConstants.NAME).set(CREDENTIAL_REFERENCE);
+        ModelNode credentialReference = new ModelNode();
+        if (store != null) {
+            credentialReference.get(STORE).set(store);
+        }
+        if (alias != null) {
+            credentialReference.get(ALIAS).set(alias);
+        }
+        if (secret != null) {
+            credentialReference.get(CLEAR_TEXT).set(secret);
+        }
+        operation.get(ClientConstants.VALUE).set(credentialReference);
+        ModelNode response = services.executeOperation(operation);
+        if (assertFailed) {
+            assertEquals(FAILED, response.get(OUTCOME).asString());
+            assertTrue(response.get(FAILURE_DESCRIPTION).asString().contains(CREDENTIAL_REFERENCE));
+        } else {
+            assertSuccess(response);
+        }
+    }
+
     private void writeClearTextAttribute(String resource, String resourceName, String secret) {
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(resource, resourceName);
@@ -568,7 +681,7 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
         operation.get(ElytronDescriptionConstants.ALIAS).set("bsmith");
         operation.get(ElytronDescriptionConstants.DISTINGUISHED_NAME).set("CN=bob smith");
-        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.STORE).set(store);
+        operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(STORE).set(store);
         boolean autoGeneratedAlias = false;
         if (alias != null) {
             operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.ALIAS).set(alias);
