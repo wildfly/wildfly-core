@@ -660,42 +660,6 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>remoting-provisioning</id>
-                                <goals>
-                                    <goal>provision</goal>
-                                </goals>
-                                <phase>compile</phase>
-                                <configuration>
-                                    <install-dir>${project.build.directory}/layers-results/remoting</install-dir>
-                                    <record-state>false</record-state>
-                                    <log-time>${galleon.log.time}</log-time>
-                                    <offline>true</offline>
-                                    <plugin-options>
-                                        <jboss-maven-dist/>
-                                        <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
-                                        <optional-packages>passive+</optional-packages>
-                                    </plugin-options>
-                                    <feature-packs>
-                                        <feature-pack>
-                                            <groupId>org.wildfly.core</groupId>
-                                            <artifactId>wildfly-core-galleon-pack</artifactId>
-                                            <version>${project.version}</version>
-                                            <inherit-configs>false</inherit-configs>
-                                            <inherit-packages>false</inherit-packages>
-                                        </feature-pack>
-                                    </feature-packs>
-                                    <configurations>
-                                        <config>
-                                            <model>standalone</model>
-                                            <name>standalone.xml</name>
-                                            <layers>
-                                                <layer>remoting</layer>
-                                            </layers>
-                                        </config>
-                                    </configurations>
-                                </configuration>
-                            </execution>
-                            <execution>
                                 <id>request-controller-provisioning</id>
                                 <goals>
                                     <goal>provision</goal>
@@ -848,7 +812,6 @@
                                                 <layer>logging</layer>
                                                 <layer>management</layer>
                                                 <layer>management-security-realm</layer>
-                                                <layer>remoting</layer>
                                                 <layer>request-controller</layer>
                                                 <layer>secure-management</layer>
                                                 <layer>security-manager</layer>
