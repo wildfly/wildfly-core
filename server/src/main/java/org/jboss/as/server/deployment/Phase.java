@@ -613,6 +613,7 @@ public enum Phase {
     public static final int POST_MODULE_UNDERTOW_SERVLET_CONTAINER_DEPENDENCY       = 0x2F1A;
 
     public static final int POST_MODULE_EE_CONCURRENT_CONTEXT           = 0x3000;
+    public static final int POST_MODULE_EE_STARTUP_COUNTDOWN            = 0x3080;
     public static final int POST_MODULE_BATCH_ENVIRONMENT               = 0x3100;
     public static final int POST_MODULE_RAR_SERVICES_DEPS               = 0x3300;
     public static final int POST_MODULE_UNDERTOW_MODCLUSTER             = 0x3400;
