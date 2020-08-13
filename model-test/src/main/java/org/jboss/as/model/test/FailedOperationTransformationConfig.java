@@ -425,6 +425,7 @@ public class FailedOperationTransformationConfig {
         @Override
         public ModelNode correctOperation(ModelNode operation) {
             ModelNode op = operation.clone();
+            boolean corrected = false;
             for (String attr : attributes) {
                 ModelNode value = op.get(attr);
                 ModelNode checkOp = op.clone();
@@ -437,10 +438,14 @@ public class FailedOperationTransformationConfig {
                     } else {
                         op.get(attr).set(complexChildConfig.correctOperation(operation.get(attr)));
                     }
-                    return op;
                 }
+                corrected = true;
             }
-            return operation;
+            if (corrected) {
+                return op;
+            } else {
+                return operation;
+            }
         }
 
         protected boolean correctUndefinedValue() {
