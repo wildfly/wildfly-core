@@ -48,11 +48,12 @@ final class StandaloneSystemPropertyContext extends SystemPropertyContext {
     @Override
     void configureProperties() {
         final Path baseDir = resolveBaseDir(SERVER_BASE_DIR, "standalone");
-        addPropertyIfAbsent(SERVER_BASE_DIR, baseDir.toString());
+        addPropertyIfAbsent(SERVER_BASE_DIR, baseDir);
         addPropertyIfAbsent(SERVER_CONFIG_DIR, resolvePath(baseDir, "configuration"));
-        addPropertyIfAbsent(SERVER_DATA_DIR, resolvePath(baseDir, "data"));
-        addPropertyIfAbsent(SERVER_CONTENT_DIR, resolvePath(baseDir, "data", "content"));
-        addPropertyIfAbsent(SERVER_DEPLOY_DIR, resolvePath(baseDir, "data", "content"));
+        Path dataDir = resolveDir(SERVER_DATA_DIR, baseDir.resolve("data"));
+        addPropertyIfAbsent(SERVER_DATA_DIR, dataDir);
+        addPropertyIfAbsent(SERVER_CONTENT_DIR, resolvePath(dataDir, "content"));
+        addPropertyIfAbsent(SERVER_DEPLOY_DIR, resolvePath(dataDir, "content"));
         addPropertyIfAbsent(SERVER_LOG_DIR, resolvePath(baseDir, "log"));
         addPropertyIfAbsent(SERVER_TEMP_DIR, resolvePath(baseDir, "tmp"));
     }
