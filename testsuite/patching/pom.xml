@@ -134,7 +134,7 @@
                                     <model>standalone</model>
                                     <name>standalone.xml</name>
                                     <layers>
-                                        <layer>secure-management</layer>
+                                        <layer>management</layer>
                                     </layers>
                                 </config>
                             </configurations>

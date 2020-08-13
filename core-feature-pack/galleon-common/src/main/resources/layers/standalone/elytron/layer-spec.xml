@@ -3,8 +3,6 @@
     <dependencies>
         <layer name="base-server"/> 
     </dependencies>
-    <!-- elytron layer comes with access-control -->
-    <feature-group name="access-control"/>
     <feature spec="subsystem.elytron">
         <feature-group name="elytron-common"/>
         <feature-group name="elytron-app"/>
