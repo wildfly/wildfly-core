@@ -1018,6 +1018,7 @@
             <xs:element name="token-realm" type="tokenRealmType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="caching-realm" type="cachingRealmType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="distributed-realm" type="distributedRealmType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="failover-realm" type="failoverRealmType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -1157,6 +1158,39 @@
                         <xs:documentation>
                             A list of security realms that should be used for authentication until one succeeds.
                             At least one realm must be specified.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="failoverRealmType">
+        <xs:annotation>
+            <xs:documentation>
+                A realm definition which wraps one realm and delegates to another in case the first is unavailable.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="realmType">
+                <xs:attribute name="delegate-realm" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the realm to use as a default.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="failover-realm" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the realm to use in case the default realm is unavailable.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="emit-events" type="xs:boolean" use="optional" default="true">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Whenever security events should be emitted when failover takes place.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

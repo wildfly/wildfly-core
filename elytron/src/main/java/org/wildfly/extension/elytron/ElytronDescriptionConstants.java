@@ -163,6 +163,7 @@ interface ElytronDescriptionConstants {
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
     String DEFAULT_SSL_CONTEXT = "default-ssl-context";
+    String DELEGATE_REALM = "delegate-realm";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
     String DESCRIPTION = "description";
     String DIGEST = "digest";
@@ -193,6 +194,7 @@ interface ElytronDescriptionConstants {
     String EXTENSIONS = "extensions";
 
     String FAIL_CACHE = "fail-cache";
+    String FAILOVER_REALM = "failover-realm";
     String FILE = "file";
     String FILE_AUDIT_LOG = "file-audit-log";
     String FILESYSTEM_REALM = "filesystem-realm";
@@ -288,6 +290,7 @@ interface ElytronDescriptionConstants {
     String LOCAL_CERTIFICATES = "local-certificates";
     String LOCAL_PRINCIPAL = "local-principal";
     String LOCATION = "location";
+    String EMIT_EVENTS = "emit-events";
     String LOGICAL_OPERATION = "logical-operation";
     String LOGICAL_PERMISSION_MAPPER = "logical-permission-mapper";
     String LOGICAL_ROLE_MAPPER = "logical-role-mapper";
