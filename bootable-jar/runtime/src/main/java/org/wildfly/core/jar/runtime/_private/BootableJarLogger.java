@@ -133,6 +133,9 @@ public interface BootableJarLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Print version and exit")
     String argVersion();
 
+    @Message(id = Message.NONE, value = "Activate the SecurityManager")
+    String argSecurityManager();
+
     @Message(id = Message.NONE, value = "Set a security property")
     String argSecurityProperty();
 
