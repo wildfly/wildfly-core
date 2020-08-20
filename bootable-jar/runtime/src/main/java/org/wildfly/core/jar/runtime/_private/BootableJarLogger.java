@@ -144,4 +144,7 @@ public interface BootableJarLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Path to directory in which the server is installed. By default the server is installed in TEMP directory.")
     String argInstallation();
+
+    @Message(id = Message.NONE, value = "Display the content of the Galleon configuration used to build this bootable JAR")
+    String argDisplayGalleonConfig();
 }
