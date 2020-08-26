@@ -184,6 +184,9 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(DISTRIBUTED_REALM, "DistributedRealm")), REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(FAILOVER_REALM, "FailoverRealm")), REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER, "LazyKeyManager")),
+                        FailedOperationTransformationConfig.REJECTED_RESOURCE
+                )
                 );
     }
 

@@ -288,6 +288,11 @@
                 <implementation type="JKS"/>
                 <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
             </key-store>
+            <key-store name="test.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="PKCS12"/>
+                <file path="test.keystore" relative-to="jboss.server.config.dir"/>
+            </key-store>
             <filtering-key-store name="FilteringKeyStore" key-store="Custom_PKCS_11" alias-filter="NONE:+firefly"/>
         </key-stores>
         <key-managers>
@@ -299,6 +304,9 @@
             </key-manager>
             <key-manager name="clientKey" algorithm="SunX509" key-store="jks_store">
                 <credential-reference store="credstore1" alias="password-alias" type="PasswordCredential"/>
+            </key-manager>
+            <key-manager name="LazyKeyManager" key-store="test.keystore" generate-self-signed-certificate-host="localhost">
+                <credential-reference clear-text="elytron"/>
             </key-manager>
         </key-managers>
         <trust-managers>

@@ -24,6 +24,7 @@ import static org.jboss.as.controller.security.CredentialReference.rollbackCrede
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.KEY_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.REALM_MAPPER_CAPABILITY;
@@ -93,6 +94,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -111,6 +113,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
@@ -371,6 +374,11 @@ class SSLDefinitions {
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition GENERATE_SELF_SIGNED_CERTIFICATE_HOST = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
 
     /*
      * Runtime Attributes
@@ -496,7 +504,7 @@ class SSLDefinitions {
 
         final ObjectTypeAttributeDefinition credentialReferenceDefinition = CredentialReference.getAttributeDefinition(true);
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition};
+        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, credentialReferenceDefinition, GENERATE_SELF_SIGNED_CERTIFICATE_HOST};
 
         AbstractAddStepHandler add = new TrivialAddHandler<KeyManager>(KeyManager.class, attributes, KEY_MANAGER_RUNTIME_CAPABILITY) {
 
@@ -529,6 +537,8 @@ class SSLDefinitions {
 
                 final String aliasFilter = ALIAS_FILTER.resolveModelAttribute(context, model).asStringOrNull();
                 final String algorithm = algorithmName != null ? algorithmName : KeyManagerFactory.getDefaultAlgorithm();
+                final String generateSelfSignedCertificateHost = GENERATE_SELF_SIGNED_CERTIFICATE_HOST.resolveModelAttribute(context, model).asStringOrNull();
+                final ModifiableKeyStoreService keyStoreService = getModifiableKeyStoreService(context, keyStoreName);
 
                 ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier =
                         CredentialReference.getCredentialSourceSupplier(context, credentialReferenceDefinition, model, serviceBuilder);
@@ -559,19 +569,15 @@ class SSLDefinitions {
                         }
                     }
 
+                    KeyStore keyStore = keyStoreInjector.getOptionalValue();
+                    char[] password;
                     try {
                         CredentialSource cs = credentialSourceSupplier.get();
-                        char[] password;
                         if (cs != null) {
                             password = cs.getCredential(PasswordCredential.class).getPassword(ClearPassword.class).getPassword();
                         } else {
                             throw new StartException(ROOT_LOGGER.keyStorePasswordCannotBeResolved(keyStoreName));
                         }
-                        KeyStore keyStore = keyStoreInjector.getOptionalValue();
-                        if (aliasFilter != null) {
-                            keyStore = FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter));
-                        }
-
                         if (ROOT_LOGGER.isTraceEnabled()) {
                             ROOT_LOGGER.tracef(
                                     "KeyManager supplying:  providers = %s  provider = %s  algorithm = %s  keyManagerFactory = %s  " +
@@ -579,22 +585,26 @@ class SSLDefinitions {
                                     Arrays.toString(providers), providerName, algorithm, keyManagerFactory, keyStoreName, aliasFilter, keyStore, keyStore.size(), password != null
                             );
                         }
-
-                        keyManagerFactory.init(keyStore, password);
                     } catch (StartException e) {
                         throw e;
                     } catch (Exception e) {
                         throw new StartException(e);
                     }
 
-                    KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
-                    for (KeyManager keyManager : keyManagers) {
-                        if (keyManager instanceof X509ExtendedKeyManager) {
-                            delegatingKeyManager.setKeyManager((X509ExtendedKeyManager) keyManager);
-                            return delegatingKeyManager;
+                    if (((KeyStoreService) keyStoreService).shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost)) {
+                        ROOT_LOGGER.selfSignedCertificateWillBeCreated(((KeyStoreService) keyStoreService).getResolvedAbsolutePath(), generateSelfSignedCertificateHost);
+                        return new LazyDelegatingKeyManager(keyStoreService, password, keyManagerFactory,
+                                generateSelfSignedCertificateHost, aliasFilter);
+                    } else {
+                        try {
+                            if (initKeyManagerFactory(keyStore, delegatingKeyManager, aliasFilter, password, keyManagerFactory)) {
+                                return delegatingKeyManager;
+                            }
+                        } catch (Exception e) {
+                            throw new StartException(e);
                         }
+                        throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
                     }
-                    throw ROOT_LOGGER.noTypeFound(X509ExtendedKeyManager.class.getSimpleName());
                 };
             }
 
@@ -1015,6 +1025,110 @@ class SSLDefinitions {
         public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
             return delegating.get().chooseEngineServerAlias(keyType, issuers, engine);
         }
+    }
+
+    private static class LazyDelegatingKeyManager extends DelegatingKeyManager {
+        private ModifiableKeyStoreService keyStoreService;
+        private char[] password;
+        private KeyManagerFactory keyManagerFactory;
+        private String generateSelfSignedCertificateHostName;
+        private String aliasFilter;
+        private volatile boolean init = false;
+
+        private LazyDelegatingKeyManager(ModifiableKeyStoreService keyStoreService, char[] password, KeyManagerFactory keyManagerFactory,
+                                         String generateSelfSignedCertificateHostName, String aliasFilter) {
+            this.keyStoreService = keyStoreService;
+            this.password = password;
+            this.keyManagerFactory = keyManagerFactory;
+            this.generateSelfSignedCertificateHostName = generateSelfSignedCertificateHostName;
+            this.aliasFilter = aliasFilter;
+        }
+
+        private void doInit() {
+            if(! init) {
+                synchronized (this) {
+                    if(! init) {
+                        try {
+                            ((KeyStoreService) keyStoreService).generateAndSaveSelfSignedCertificate(generateSelfSignedCertificateHostName, password);
+                            if (! initKeyManagerFactory(keyStoreService.getValue(), this, aliasFilter, password, keyManagerFactory)) {
+                                throw ROOT_LOGGER.noTypeFoundForLazyInitKeyManager(X509ExtendedKeyManager.class.getSimpleName());
+                            }
+                        } catch (Exception e) {
+                            throw ROOT_LOGGER.failedToLazilyInitKeyManager(e);
+                        } finally {
+                            init = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public String[] getClientAliases(String s, Principal[] principals) {
+            doInit();
+            return super.getClientAliases(s, principals);
+        }
+
+        @Override
+        public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+            doInit();
+            return super.chooseClientAlias(strings, principals, socket);
+        }
+
+        @Override
+        public String[] getServerAliases(String s, Principal[] principals) {
+            doInit();
+            return super.getServerAliases(s, principals);
+        }
+
+        @Override
+        public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+            doInit();
+            return super.chooseServerAlias(s, principals, socket);
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String s) {
+            doInit();
+            return super.getCertificateChain(s);
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String s) {
+            doInit();
+            return super.getPrivateKey(s);
+        }
+
+        @Override
+        public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+            doInit();
+            return super.chooseEngineClientAlias(keyType, issuers, engine);
+        }
+
+        @Override
+        public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+            doInit();
+            return super.chooseEngineServerAlias(keyType, issuers, engine);
+        }
+
+    }
+
+    static boolean initKeyManagerFactory(KeyStore keyStore, DelegatingKeyManager delegating, String aliasFilter,
+                                         char[] password, KeyManagerFactory keyManagerFactory) throws Exception {
+        if (aliasFilter != null) {
+            keyStore = FilteringKeyStore.filteringKeyStore(keyStore, AliasFilter.fromString(aliasFilter));
+        }
+        keyManagerFactory.init(keyStore, password);
+        KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
+        boolean keyManagerTypeFound = false;
+        for (KeyManager keyManager : keyManagers) {
+            if (keyManager instanceof X509ExtendedKeyManager) {
+                delegating.setKeyManager((X509ExtendedKeyManager) keyManager);
+                keyManagerTypeFound = true;
+                break;
+            }
+        }
+        return keyManagerTypeFound;
     }
 
     private static class DelegatingTrustManager extends X509ExtendedTrustManager {
@@ -1449,6 +1563,14 @@ class SSLDefinitions {
         }
 
         return Boolean.FALSE::booleanValue;
+    }
+
+    static ModifiableKeyStoreService getModifiableKeyStoreService(OperationContext context, String keyStoreName) {
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+        RuntimeCapability<Void> runtimeCapability = KEY_STORE_RUNTIME_CAPABILITY.fromBaseCapability(keyStoreName);
+        ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
+        ServiceController<KeyStore> serviceContainer = getRequiredService(serviceRegistry, serviceName, KeyStore.class);
+        return (ModifiableKeyStoreService) serviceContainer.getService();
     }
 
 }

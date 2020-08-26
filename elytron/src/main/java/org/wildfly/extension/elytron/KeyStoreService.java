@@ -28,14 +28,21 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.TimeZone;
 import java.util.function.Supplier;
+
+import javax.security.auth.x500.X500Principal;
 
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.PathManager;
@@ -47,6 +54,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.EmptyProvider;
 import org.wildfly.security.credential.PasswordCredential;
@@ -58,6 +66,7 @@ import org.wildfly.security.keystore.KeyStoreUtil;
 import org.wildfly.security.keystore.ModifyTrackingKeyStore;
 import org.wildfly.security.keystore.UnmodifiableKeyStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 
 /**
  * A {@link Service} responsible for a single {@link KeyStore} instance.
@@ -65,6 +74,13 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class KeyStoreService implements ModifiableKeyStoreService {
+
+    private static final String GENERATED_CERTIFICATE_ALIAS = "server";
+    private static final String GENERATED_CERTIFICATE_KEY_ALGORITHM = "RSA";
+    private static final int GENERATED_CERTIFICATE_KEY_SIZE = 2048;
+    private static final String GENERATED_CERTIFICATE_SIGNATURE_ALGORITHM = "SHA256withRSA";
+    private static final int HEX_DELIMITER = ':';
+    private static final String COMMON_NAME_PREFIX = "CN=";
 
     private final String provider;
     private final String type;
@@ -247,6 +263,10 @@ class KeyStoreService implements ModifiableKeyStoreService {
         return credentialSourceSupplier;
     }
 
+    String getResolvedAbsolutePath() {
+        return resolvedPath != null ? resolvedPath.getAbsolutePath() : null;
+    }
+
     /*
      * OperationStepHandler Access Methods
      */
@@ -328,6 +348,42 @@ class KeyStoreService implements ModifiableKeyStoreService {
             pathResolver.relativeTo(relativeTo, pathManager.getValue());
         }
         return pathResolver.resolve();
+    }
+
+    void generateAndSaveSelfSignedCertificate(String host, char[] password) {
+        try {
+            if (shouldAutoGenerateSelfSignedCertificate(host)) {
+                // generate certificate
+                Date from = new Date();
+                Date to = new Date(from.getTime() + (1000L * 60L * 60L * 24L * 365L * 10L));
+                SelfSignedX509CertificateAndSigningKey selfSignedCertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
+                        .setDn(new X500Principal(COMMON_NAME_PREFIX + host))
+                        .setNotValidAfter(ZonedDateTime.ofInstant(Instant.ofEpochMilli(to.getTime()), TimeZone.getDefault().toZoneId()))
+                        .setNotValidBefore(ZonedDateTime.ofInstant(Instant.ofEpochMilli(from.getTime()), TimeZone.getDefault().toZoneId()))
+                        .setKeyAlgorithmName(GENERATED_CERTIFICATE_KEY_ALGORITHM)
+                        .setKeySize(GENERATED_CERTIFICATE_KEY_SIZE)
+                        .setSignatureAlgorithmName(GENERATED_CERTIFICATE_SIGNATURE_ALGORITHM)
+                        .build();
+                X509Certificate selfSignedCertificate = selfSignedCertificateAndSigningKey.getSelfSignedCertificate();
+                keyStore.setKeyEntry(GENERATED_CERTIFICATE_ALIAS, selfSignedCertificateAndSigningKey.getSigningKey(), password == null ? resolvePassword() : password,
+                        new X509Certificate[]{selfSignedCertificate});
+                ROOT_LOGGER.selfSignedCertificateHasBeenCreated(resolvedPath.getAbsolutePath(), getShaFingerprint(selfSignedCertificate, "SHA-1"), getShaFingerprint(selfSignedCertificate, "SHA-256"));
+                save();
+            }
+        } catch (Exception e) {
+            throw ROOT_LOGGER.failedToStoreGeneratedSelfSignedCertificate(e);
+        }
+    }
+
+    boolean shouldAutoGenerateSelfSignedCertificate(String host) {
+        return host != null && resolvedPath != null && ! resolvedPath.exists();
+    }
+
+    private static String getShaFingerprint(X509Certificate certificate, String algorithm) throws Exception {
+        MessageDigest md = MessageDigest.getInstance(algorithm);
+        md.update(certificate.getEncoded());
+        byte[] digest = md.digest();
+        return ByteIterator.ofBytes(digest).hexEncode().drainToString(HEX_DELIMITER, 2);
     }
 
     static class LoadKey {
