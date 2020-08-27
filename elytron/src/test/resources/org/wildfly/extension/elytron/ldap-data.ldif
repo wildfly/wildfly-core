@@ -38,6 +38,29 @@ memberOf: cn=Sales,ou=Finance,dc=groups,dc=elytron,dc=wildfly,dc=org
 userPassword:: cGxhaW5QYXNzd29yZA==
 # Password plainPassword
 
+dn: uid=ssha512UserCharset,dc=users,dc=elytron,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: organizationalPerson
+objectClass: groupMember
+cn: ssha512UserCharset
+sn: ssha512UserCharset
+uid: ssha512UserCharset
+userPassword:: e3NzaGE1MTJ9QUcvNmJGQWZFbmhiZUl3UHdjWjg4TjVkeEhMZGR2VXUxeEhVTlRXMXFqaTNuc0VmWGNQV3BZcVFib2NhRmh3cnpaUUc5OEhla0dMY1NMN09WTEowNEkzM0Y5anRaamRxMzRQemVRdGFHTG89
+# Password password密码 using a the GB2312 character set
+
+dn: uid=ssha512UserCharsetHex,dc=elytron,dc=wildfly,dc=org
+objectClass: top
+objectClass: inetOrgPerson
+objectClass: person
+objectClass: organizationalPerson
+cn: ssha512UserCharsetHex
+sn: ssha512UserCharsetHex
+uid: ssha512UserCharsetHex
+userPassword: {ssha512}8919cfea2823895f0cc53400473ce3ae5d39d78aa54f11d809e0b339f295f3df0bc5731b92f415455c9ed11a46c901660748b2dbef89880a109c0ee2d9aab44b493a6c234d519a541787ad3751985176
+# Password password密码 using the GB2312 character set hex encoding
+
 dn: uid=x509User,dc=users,dc=elytron,dc=wildfly,dc=org
 objectClass: top
 objectClass: inetOrgPerson

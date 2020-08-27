@@ -23,7 +23,11 @@ import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REA
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +54,8 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.operations.validation.CharsetValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -66,6 +72,7 @@ import org.wildfly.security.auth.realm.ldap.AttributeMapping;
 import org.wildfly.security.auth.realm.ldap.LdapSecurityRealmBuilder;
 import org.wildfly.security.auth.realm.ldap.LdapSecurityRealmBuilder.IdentityMappingBuilder;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.password.spec.Encoding;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} backed by LDAP.
@@ -393,7 +400,22 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             .setRestartAllServices()
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {IdentityMappingObjectDefinition.OBJECT_DEFINITION, DIR_CONTEXT, DIRECT_VERIFICATION, ALLOW_BLANK_PASSWORD};
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode(BASE64))
+            .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setValidator(new CharsetValidator())
+            .setDefaultValue(new ModelNode(UTF_8))
+            .setAllowExpression(true)
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {IdentityMappingObjectDefinition.OBJECT_DEFINITION, DIR_CONTEXT, DIRECT_VERIFICATION, ALLOW_BLANK_PASSWORD,
+                                                                                HASH_ENCODING, HASH_CHARSET};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -435,6 +457,12 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
                 boolean allowBlankPassword = ALLOW_BLANK_PASSWORD.resolveModelAttribute(context, model).asBoolean();
                 builder.addDirectEvidenceVerification(allowBlankPassword);
             }
+
+            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, model).asString();
+            String hashCharset = HASH_CHARSET.resolveModelAttribute(context, model).asString();
+            Charset charset = Charset.forName(hashCharset);
+            builder.setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64);
+            builder.setHashCharset(charset);
 
             TrivialService<SecurityRealm> ldapRealmService = new TrivialService<>(builder::build);
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(mainServiceName, ldapRealmService)

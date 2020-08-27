@@ -3644,5 +3644,10 @@ public interface ControllerLogger extends BasicLogger {
 
 
 
+    @Message(id = 482, value = "Value '%s' is not a legal charset name")
+    OperationFailedException illegalCharsetName(String charset);
+
+    @Message(id = 483, value = "Charset '%s' is not supported in this instance of the Java Virtual Machine")
+    OperationFailedException unsupportedCharset(String charset);
 
 }

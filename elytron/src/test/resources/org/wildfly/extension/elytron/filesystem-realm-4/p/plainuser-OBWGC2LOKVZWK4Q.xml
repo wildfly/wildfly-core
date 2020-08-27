@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<identity xmlns="urn:elytron:1.0">
+    <!--    This filesystem directory was generated using the test -->
+    <!--    FileSystemSecurityRealmTest.testCreateIdentityWithBcryptCredentialHexEncodedAndCharset() by running *only* that test, -->
+    <!--    retrieving the generated directory from the project files in Elytron, and copying them into the resources of this -->
+    <!--    project. -->
+    <credentials>
+        <password algorithm="bcrypt" format="hex">050a10fc61150faa8ae79313a884dc882efe68dcb82b93d82089a52866609824372663055392818b1788</password>
+    </credentials></identity>

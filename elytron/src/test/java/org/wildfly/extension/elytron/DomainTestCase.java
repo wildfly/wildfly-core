@@ -109,9 +109,70 @@ public class DomainTestCase extends AbstractSubsystemTest {
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectAltNameEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SubjectEvidenceDecoderDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "SourceAddressRoleDecoderDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "PropEncodingCharsetDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingDomain");
+        TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "FilesystemEncodingCharsetDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "LowerCasePrincipalTransformerDomain");
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "UpperCasePrincipalTransformerDomain");
+    }
 
+    /**
+     * Testing legacy properties realm BASE64 encoding and UTF-8 charset.
+     */
+    @Test
+    public void testPropRealmBase64EncodingConfiguration() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("elytron"); // the realm contains user "elytron"
+        Assert.assertTrue(context.exists());
+        Assert.assertTrue(context.authorize());
+    }
+
+    /**
+     * Testing legacy properties realm BASE64 encoding and GB2312 charset.
+     */
+    @Test
+    public void testPropRealmBase64EncodingAndCharsetConfiguration() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("PropEncodingCharsetDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("elytron4"); // the realm contains user "elytron4"
+        Assert.assertTrue(context.exists());
+        Assert.assertTrue(context.authorize());
+    }
+
+    @Test
+    public void testFilesystemRealmHexEncodingConfiguration() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("plainUser"); // the realm contains user "plainUser"
+        Assert.assertTrue(context.exists());
+        Assert.assertTrue(context.authorize());
+    }
+
+    @Test
+    public void testFilesystemRealmHexEncodingAndCharsetConfiguration() throws Exception {
+        init();
+        ServiceName serviceName = Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemEncodingCharsetDomain");
+        SecurityDomain domain = (SecurityDomain) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(domain);
+
+        ServerAuthenticationContext context = domain.createNewAuthenticationContext();
+        context.setAuthenticationName("plainUser"); // the realm contains user "plainUser"
+        Assert.assertTrue(context.exists());
+        Assert.assertTrue(context.authorize());
     }
 
     @Test

@@ -217,6 +217,14 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testRejectingTransformersEAP740() throws Exception {
         testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM, "PropertiesRealmEncodingCharset")),
+            FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "JDBCRealmCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
 
         );
     }

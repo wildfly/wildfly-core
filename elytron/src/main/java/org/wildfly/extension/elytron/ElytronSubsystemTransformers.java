@@ -25,12 +25,16 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
@@ -125,7 +129,31 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
+        builder.addChildResource(PathElement.pathElement(PROPERTIES_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
 
+        builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
+
+        builder.addChildResource(PathElement.pathElement(JDBC_REALM))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET);
+
+        builder.addChildResource(PathElement.pathElement(LDAP_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING);
     }
 
     private static void from13(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -145,6 +173,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .end();
+
 
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER));
     }
