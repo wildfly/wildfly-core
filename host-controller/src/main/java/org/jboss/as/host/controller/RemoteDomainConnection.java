@@ -280,6 +280,8 @@ class RemoteDomainConnection extends FutureManagementChannel {
                                 } catch (IOException ioe) {
                                     // If the cause is one of the irrecoverable ones, unwrap and throw it on
                                     RemoteDomainConnectionService.rethrowIrrecoverableConnectionFailures(ioe);
+                                    // If we get here it's not irrecoverable, but we should note it
+                                    HostControllerLogger.ROOT_LOGGER.debugf("Failed connecting to DomainController -- %s", ioe);
                                 }
                             }
                         } catch (Exception e) {
