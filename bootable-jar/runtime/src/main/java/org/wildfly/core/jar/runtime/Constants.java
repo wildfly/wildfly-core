@@ -27,6 +27,7 @@ interface Constants {
 
     static final String DEPLOYMENT_ARG = "--deployment";
     static final String INSTALL_DIR_ARG = "--install-dir";
+    static final String DISPLAY_GALLEON_CONFIG_ARG = "--display-galleon-config";
 
     static final String CONFIGURATION = "configuration";
     static final String DATA = "data";

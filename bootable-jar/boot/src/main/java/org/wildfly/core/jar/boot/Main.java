@@ -16,9 +16,12 @@
  */
 package org.wildfly.core.jar.boot;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,8 +58,11 @@ public final class Main {
 
     private static final String INSTALL_DIR = "--install-dir";
     private static final String SECMGR = "-secmgr";
+    private static final String DISPLAY_GALLEON_CONFIG = "--display-galleon-config";
 
     private static final String WILDFLY_RESOURCE = "/wildfly.zip";
+
+    private static final String PROVISIONING_RESOURCE = "/provisioning.xml";
 
     private static final String WILDFLY_BOOTABLE_TMP_DIR_PREFIX = "wildfly-bootable-server";
 
@@ -65,14 +71,33 @@ public final class Main {
         List<String> filteredArgs = new ArrayList<>();
         Path installDir = null;
         boolean securityManager = false;
+        boolean displayGalleonConfig = false;
+
         for (String arg : args) {
             if (arg.startsWith(INSTALL_DIR)) {
                 installDir = Paths.get(getValue(arg));
             } else if (SECMGR.equals(arg)) {
                 securityManager = true;
+            } else if (DISPLAY_GALLEON_CONFIG.equals(arg)) {
+                displayGalleonConfig = true;
             } else {
                 filteredArgs.add(arg);
             }
+        }
+
+        if (displayGalleonConfig) {
+            try (InputStream provisioningFile = Main.class.getResourceAsStream(PROVISIONING_RESOURCE)) {
+                if (provisioningFile == null) {
+                    throw new Exception("Resource " + PROVISIONING_RESOURCE + " doesn't exist, can't retrieve galleon configuration.");
+                }
+                try(InputStreamReader reader = new InputStreamReader(provisioningFile, StandardCharsets.UTF_8);
+                    BufferedReader br = new BufferedReader(reader)) {
+                    while(br.ready()) {
+                        System.out.println(br.readLine());
+                    }
+                }
+            }
+            return;
         }
 
         final SecurityManager existingSecMgr = System.getSecurityManager();
