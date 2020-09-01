@@ -50,6 +50,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAM
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleClassLoader;
@@ -210,9 +211,8 @@ public final class BootableJar implements ShutdownHandler {
     private void configureLogging() throws IOException {
         if (!arguments.isVersion()) {
             LogContext ctx = configureLogContext();
-            LogContext.setLogContextSelector(() -> {
-                return ctx;
-            });
+            // Use our own LogContextSelector which returns the configured context.
+            LogContext.setLogContextSelector(() -> ctx);
         }
     }
 
@@ -224,17 +224,23 @@ public final class BootableJar implements ShutdownHandler {
             System.setProperty(JBOSS_SERVER_LOG_DIR, serverLogDir);
         }
         final String serverCfgDir = System.getProperty(JBOSS_SERVER_CONFIG_DIR, baseDir.resolve(CONFIGURATION).toString());
-        final LogContext embeddedLogContext = LogContext.create();
+        // Create our own log context instead of using the default system log context. This is useful for cases when the
+        // LogManager.readConfiguration() may be invoked it will not override the current configuration.
+        final LogContext logContext = LogContext.create();
         final Path bootLog = Paths.get(serverLogDir).resolve(SERVER_LOG);
         final Path loggingProperties = Paths.get(serverCfgDir).resolve(Paths.get(LOGGING_PROPERTIES));
         if (Files.exists(loggingProperties)) {
             try (final InputStream in = Files.newInputStream(loggingProperties)) {
                 System.setProperty(LOG_BOOT_FILE_PROP, bootLog.toAbsolutePath().toString());
-                PropertyConfigurator configurator = new PropertyConfigurator(embeddedLogContext);
+                // The LogManager.readConfiguration() uses the LogContext.getSystemLogContext(). Since we create our
+                // own LogContext we need to configure the context and attach the configurator to the root logger. The
+                // logging subsystem will use this configurator to determine what resources may need to be reconfigured.
+                PropertyConfigurator configurator = new PropertyConfigurator(logContext);
                 configurator.configure(in);
+                logContext.getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
             }
         }
-        return embeddedLogContext;
+        return logContext;
     }
 
     public void run() throws Exception {
