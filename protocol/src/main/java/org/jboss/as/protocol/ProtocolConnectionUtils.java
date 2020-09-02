@@ -122,13 +122,29 @@ public class ProtocolConnectionUtils {
 
         IoFuture.Status status = timeoutHandler.await(future, timeoutMillis);
 
+        Connection result = checkFuture(status, future, configuration);
+        if (result == null) {
+            // Did not complete in time; tell remoting we don't want it
+            future.cancel();
+            // In case the future completed between when we waited for it and when we cancelled,
+            // close any connection that was established. We don't want to risk using a
+            // Connection after we told remoting to cancel, and if we don't use it we must close it.
+            Connection toClose = checkFuture(future.getStatus(), future, configuration);
+            StreamUtils.safeClose(toClose);
+
+            throw ProtocolLogger.ROOT_LOGGER.couldNotConnect(configuration.getUri());
+        }
+        return result;
+    }
+
+    private static Connection checkFuture(IoFuture.Status status, IoFuture<Connection> future, ProtocolConnectionConfiguration configuration) throws IOException {
         if (status == IoFuture.Status.DONE) {
             return future.get();
         }
         if (status == IoFuture.Status.FAILED) {
             throw ProtocolLogger.ROOT_LOGGER.failedToConnect(configuration.getUri(), future.getException());
         }
-        throw ProtocolLogger.ROOT_LOGGER.couldNotConnect(configuration.getUri());
+        return null;
     }
 
     public static Connection connectSync(final ProtocolConnectionConfiguration configuration, CallbackHandler handler) throws IOException {
