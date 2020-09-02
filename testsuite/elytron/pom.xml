@@ -397,8 +397,6 @@
                                             <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
                                             <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
                                             <version>${project.version}</version>
-                                            <inherit-configs>false</inherit-configs>
-                                            <inherit-packages>false</inherit-packages>
                                             <!-- Specifically include patching -->
                                             <included-packages>
                                                 <name>org.jboss.as.patching.cli</name>
