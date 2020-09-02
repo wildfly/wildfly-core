@@ -320,7 +320,7 @@ public final class BootableJar implements ShutdownHandler {
                         break;
                     }
                 } catch (Exception ex) {
-                    log.unexpectedExceptionWhileShuttingDown(ex);
+                    throw log.unexpectedExceptionWhileShuttingDown(ex);
                 }
             }
         } finally {
