@@ -16,9 +16,13 @@
  */
 package org.wildfly.core.jar.runtime;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -348,8 +352,56 @@ public final class BootableJar implements ShutdownHandler {
             CmdUsage.printUsage(System.out);
             return;
         }
+
+        // Side effect is to initialise Log Manager
         BootableJar bootableJar = new BootableJar(jbossHome, arguments, moduleLoader, unzipTime);
+
+        // At this point we can configure JMX
+        configureJMX(moduleClassLoader, bootableJar.log);
+
         bootableJar.run();
+    }
+
+    private static void configureJMX(ModuleClassLoader moduleClassLoader, BootableJarLogger log) throws Exception {
+        final String mbeanServerBuilderName = getServiceName(moduleClassLoader, "javax.management.MBeanServerBuilder");
+        if (mbeanServerBuilderName != null) {
+            System.setProperty("javax.management.builder.initial", mbeanServerBuilderName);
+            // Initialize the platform mbean server
+            ManagementFactory.getPlatformMBeanServer();
+        }
+
+        // Register JBoss Modules MBean
+        // MODULES-401 makes this method public
+        // Remove this workaround when upgrading to JBoss modules 1.11
+        try {
+            Method m = ModuleLoader.class.getDeclaredMethod("installMBeanServer");
+            m.setAccessible(true);
+            m.invoke(null);
+        } catch (NoSuchMethodException ex) {
+            log.cantRegisterModuleMBeans(ex);
+        }
+    }
+
+    private static String getServiceName(ClassLoader classLoader, String className) throws IOException {
+        try (final InputStream stream = classLoader.getResourceAsStream("META-INF/services/" + className)) {
+            if (stream == null) {
+                return null;
+            }
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                final int i = line.indexOf('#');
+                if (i != -1) {
+                    line = line.substring(0, i);
+                }
+                line = line.trim();
+                if (line.length() == 0) {
+                    continue;
+                }
+                return line;
+            }
+            return null;
+        }
     }
 
     static void setTccl(final ClassLoader cl) {

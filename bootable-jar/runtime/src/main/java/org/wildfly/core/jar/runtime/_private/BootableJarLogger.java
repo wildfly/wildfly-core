@@ -112,6 +112,10 @@ public interface BootableJarLogger extends BasicLogger {
     @Message(id = 20, value = "Can't delete %s. Exception %s")
     void cantDelete(String path, IOException ioex);
 
+    @LogMessage(level = WARN)
+    @Message(id = 21, value = "Cannot register JBoss Modules MBeans, %s")
+    void cantRegisterModuleMBeans(Exception ex);
+
     @Message(id = Message.NONE, value = "Set system property jboss.bind.address to the given value")
     String argPublicBindAddress();
 

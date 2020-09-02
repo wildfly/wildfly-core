@@ -54,6 +54,13 @@
         <module name="org.codehaus.woodstox" services="import"/>
         <!-- END JAXP default dependencies -->
         
+        <!-- JMX to expose server MBeans -->
+        <!-- Fake java.management module required to access ManagementFactory -->
+        <module name="java.management"/>
+        <!-- module required to retrieve MBeanServer builder -->
+        <module name="org.jboss.as.jmx" services="import"/>
+        <!-- end JMX -->
+
         <module name="java.xml"/>
         <module name="java.desktop"/>
         <module name="org.jboss.as.server"/>
