@@ -95,6 +95,7 @@
                                         </config>
                                     </included-configs>
                                     <excludedPackages>
+                                        <name>banner</name>
                                         <param>product.conf</param>
                                     </excludedPackages>
                                 </feature-pack>
@@ -388,6 +389,7 @@
                                                 <name>org.picketbox</name>
                                             </included-packages>
                                             <excluded-packages>
+                                                <name>banner</name>
                                                 <name>product.conf</name>
                                             </excluded-packages>
                                         </feature-pack>
@@ -519,6 +521,7 @@
                                                 <name>org.picketbox</name>
                                             </included-packages>
                                             <excluded-packages>
+                                                <name>banner</name>
                                                 <name>product.conf</name>
                                             </excluded-packages>
                                         </feature-pack>

@@ -25,6 +25,7 @@
         <dependency group-id="org.wildfly.core" artifact-id="wildfly-core-galleon-pack">
             <name>org.wildfly.core:wildfly-core-galleon-pack</name>
             <packages inherit="true">
+                <exclude name="banner"/>
                 <exclude name="product.conf"/>
             </packages>
             <default-configs inherit="false">

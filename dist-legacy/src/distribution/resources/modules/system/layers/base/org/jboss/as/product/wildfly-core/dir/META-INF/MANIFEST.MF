@@ -1,2 +1,9 @@
 JBoss-Project-Release-Name: WildFly Core
 JBoss-Product-Release-Version: ${project.version}
+JBoss-Project-Banner: \n
+  _       ___ __    __________         ______              \n
+ | |     / [_] /___/ / ____/ /_  __   / ____/___  ________ \n
+ | | /| / / / / __  / /_  / / / / /  / /   / __ \/ ___/ _ \\n
+ | |/ |/ / / / /_/ / __/ / / /_/ /  / /___/ /_/ / /  /  __/\n
+ |__/|__/_/_/\__,_/_/   /_/\__, /   \____/\____/_/   \___/ \n
+                          /____/                           \n

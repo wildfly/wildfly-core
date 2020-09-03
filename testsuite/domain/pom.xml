@@ -134,6 +134,7 @@
                                     </excluded-configs>
                                     <excluded-packages>
                                         <name>product.conf</name>
+                                        <name>banner</name>
                                     </excluded-packages>
                                 </feature-pack>
                             </feature-packs>

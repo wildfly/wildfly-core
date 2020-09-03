@@ -104,7 +104,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
         final ProductConfig config = serverEnvironment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
+        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion, config.getBanner());
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }
@@ -225,7 +225,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         //processState.setStopping();
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
         BootstrapListener.deleteStartupMarker(configuration.getServerEnvironment().getServerTempDir());
     }
 

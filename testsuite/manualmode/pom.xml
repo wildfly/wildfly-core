@@ -198,6 +198,7 @@
                                             <version>${project.version}</version>
                                             <excluded-packages>
                                                 <param>product.conf</param>
+                                                <name>banner</name>
                                             </excluded-packages>
                                         </feature-pack>
                                     </feature-packs>
@@ -419,6 +420,7 @@
                                             </included-packages>
                                             <excluded-packages>
                                                 <name>product.conf</name>
+                                                <name>banner</name>
                                             </excluded-packages>
                                         </feature-pack>
                                     </feature-packs>
@@ -520,6 +522,7 @@
                                             </included-packages>
                                             <excluded-packages>
                                                 <name>product.conf</name>
+                                                <name>banner</name>
                                             </excluded-packages>
                                         </feature-pack>
                                     </feature-packs>

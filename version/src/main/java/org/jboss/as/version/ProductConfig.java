@@ -23,12 +23,14 @@
 package org.jboss.as.version;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -49,26 +51,28 @@ public class ProductConfig implements Serializable {
 
     private final String name;
     private final String version;
+    private final String banner;
     private final String consoleSlot;
     private boolean isProduct;
 
     public static ProductConfig fromFilesystemSlot(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
-        return new ProductConfig(loader, getProductConfProperties(home), providedProperties);
+        return new ProductConfig(loader, home, getProductConfProperties(home), providedProperties);
     }
 
     public static ProductConfig fromKnownSlot(String slot, ModuleLoader loader, Map<?, ?> providedProperties) {
-        return new ProductConfig(loader, new ProductConfProps(slot), providedProperties);
+        return new ProductConfig(loader, null, new ProductConfProps(slot), providedProperties);
     }
 
     /** @deprecated use {@link #fromFilesystemSlot(ModuleLoader, String, Map)}. May be removed at any time. */
     @Deprecated
     public ProductConfig(ModuleLoader loader, String home, Map<?, ?> providedProperties) {
-        this(loader, getProductConfProperties(home), providedProperties);
+        this(loader, home, getProductConfProperties(home), providedProperties);
     }
 
-    private ProductConfig(ModuleLoader loader, ProductConfProps productConfProps, Map<?, ?> providedProperties) {
+    private ProductConfig(ModuleLoader loader, String home, ProductConfProps productConfProps, Map<?, ?> providedProperties) {
         String productName = null;
         String projectName = null;
+        String projectBanner = "";
         String productVersion = null;
         String consoleSlot = null;
 
@@ -90,10 +94,24 @@ public class ProductConfig implements Serializable {
                     consoleSlot = manifest.getMainAttributes().getValue("JBoss-Product-Console-Slot");
                     projectName = manifest.getMainAttributes().getValue("JBoss-Project-Release-Name");
                 }
+                Path bannerPath = getBannerFile(home);
+                if (bannerPath != null && Files.exists(bannerPath)) {
+                    try (InputStream in = Files.newInputStream(getBannerFile(home));
+                            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                        byte[] buffer = new byte[in.available()];
+                        int bytesRead;
+                        while ((bytesRead = in.read(buffer)) > -1) {
+                            out.write(buffer, 0, bytesRead);
+                        }
+                        projectBanner = System.lineSeparator() + out.toString();
+                    } catch (Exception e) {
+                        // Don't care
+                    }
+                }
             }
-
             setSystemProperties(productConfProps.miscProperties, providedProperties);
         } catch (Exception e) {
+            e.printStackTrace();
             // Don't care
         } finally {
             safeClose(manifestStream);
@@ -102,6 +120,14 @@ public class ProductConfig implements Serializable {
         name = isProduct ? productName : projectName;
         version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.banner = projectBanner;
+    }
+
+    private static Path getBannerFile(String home) {
+        if (home != null) {
+            return Paths.get(home, "bin", "banner.txt");
+        }
+        return null;
     }
 
     private static String getProductConf(String home) {
@@ -138,6 +164,7 @@ public class ProductConfig implements Serializable {
         this.name = productName;
         this.version = productVersion;
         this.consoleSlot = consoleSlot;
+        this.banner = null;
     }
 
     public String getProductName() {
@@ -154,6 +181,14 @@ public class ProductConfig implements Serializable {
 
     public String getConsoleSlot() {
         return consoleSlot;
+    }
+
+    /**
+     * The product ASCII banner defined in MANIFEST.MF using \n as line ending.
+     * @return the ASCII banner.
+     */
+    public String getBanner() {
+        return banner;
     }
 
     public String getPrettyVersionString() {

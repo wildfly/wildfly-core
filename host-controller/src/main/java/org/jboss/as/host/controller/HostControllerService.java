@@ -121,7 +121,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         // processState.setStarting();
         final ProductConfig config = environment.getProductConfig();
         final String prettyVersion = config.getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion);
+        ServerLogger.AS_ROOT_LOGGER.serverStarting(prettyVersion, config.getBanner());
         if (System.getSecurityManager() != null) {
             ServerLogger.AS_ROOT_LOGGER.securityManagerEnabled();
         }
@@ -221,7 +221,7 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         String prettyVersion = environment.getProductConfig().getPrettyVersionString();
         //Moved to AbstractControllerService.stop()
         //processState.setStopping();
-        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
         BootstrapListener.deleteStartupMarker(environment.getDomainTempDir());
     }
 

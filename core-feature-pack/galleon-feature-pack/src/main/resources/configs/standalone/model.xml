@@ -10,6 +10,7 @@
         <prop name="--internal-remove-config" value=""/>
     </props>
     <packages>
+        <package name="banner" optional="true"/>
         <package name="product.conf" optional="true"/>
         <package name="misc.standalone"/>
         <package name="org.jboss.as.standalone"/>
