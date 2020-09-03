@@ -19,10 +19,7 @@ package org.wildfly.core.jar.runtime;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import static java.lang.System.getProperties;
-import static java.lang.System.getSecurityManager;
 import static java.lang.System.getenv;
-import static java.lang.System.setProperty;
-import java.nio.file.Path;
 import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -97,26 +94,11 @@ final class Server {
         };
     }
 
-    static Server newSever(Path jbossHome, String[] cmdargs, ModuleLoader moduleLoader, ShutdownHandler shutdownHandler) {
-        setPropertyPrivileged(ServerEnvironment.HOME_DIR, jbossHome.toString());
+    static Server newSever(String[] cmdargs, ModuleLoader moduleLoader, ShutdownHandler shutdownHandler) {
         setupVfsModule(moduleLoader);
         Properties sysprops = getSystemPropertiesPrivileged();
         Map<String, String> sysenv = getSystemEnvironmentPrivileged();
         return new Server(cmdargs, sysprops, sysenv, moduleLoader, shutdownHandler);
-    }
-
-    static String setPropertyPrivileged(final String name, final String value) {
-        final SecurityManager sm = getSecurityManager();
-        if (sm == null) {
-            return setProperty(name, value);
-        } else {
-            return doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return setProperty(name, value);
-                }
-            });
-        }
     }
 
     private static void setupVfsModule(final ModuleLoader moduleLoader) {
