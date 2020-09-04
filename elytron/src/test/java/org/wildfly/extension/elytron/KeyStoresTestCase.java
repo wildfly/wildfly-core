@@ -677,9 +677,9 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             X509Certificate secondCertificate = (X509Certificate) chain[1];
             String expectedIssuerDn = "O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA";
             assertEquals(new X500Principal("CN=ssmith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us"), firstCertificate.getSubjectX500Principal());
-            assertEquals(new X500Principal(expectedIssuerDn), firstCertificate.getIssuerX500Principal());
-            assertEquals(new X500Principal(expectedIssuerDn), secondCertificate.getSubjectX500Principal());
-            assertEquals(new X500Principal(expectedIssuerDn), secondCertificate.getIssuerX500Principal());
+            assertEquals(new X500Principal(expectedIssuerDn).getName(), firstCertificate.getIssuerX500Principal().getName());
+            assertEquals(new X500Principal(expectedIssuerDn).getName(), secondCertificate.getSubjectX500Principal().getName());
+            assertEquals(new X500Principal(expectedIssuerDn).getName(), secondCertificate.getIssuerX500Principal().getName());
         } finally {
             removeKeyStore();
         }
@@ -738,10 +738,10 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
                 X509Certificate firstCertificate = (X509Certificate) chain[0];
                 X509Certificate secondCertificate = (X509Certificate) chain[1];
                 String expectedIssuerDn = "O=Another Root Certificate Authority, EMAILADDRESS=anotherca@wildfly.org, C=UK, ST=Elytron, CN=Another Elytron CA";
-                assertEquals(new X500Principal("CN=ssmith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us"), firstCertificate.getSubjectX500Principal());
-                assertEquals(new X500Principal(expectedIssuerDn), firstCertificate.getIssuerX500Principal());
-                assertEquals(new X500Principal(expectedIssuerDn), secondCertificate.getSubjectX500Principal());
-                assertEquals(new X500Principal(expectedIssuerDn), secondCertificate.getIssuerX500Principal());
+                assertEquals(new X500Principal("CN=ssmith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us").getName(), firstCertificate.getSubjectX500Principal().getName());
+                assertEquals(new X500Principal(expectedIssuerDn).getName(), firstCertificate.getIssuerX500Principal().getName());
+                assertEquals(new X500Principal(expectedIssuerDn).getName(), secondCertificate.getSubjectX500Principal().getName());
+                assertEquals(new X500Principal(expectedIssuerDn).getName(), secondCertificate.getIssuerX500Principal().getName());
             }
         } finally {
             removeKeyStore();
@@ -774,8 +774,8 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             KeyStore keyStore = (KeyStore) services.getContainer().getService(serviceName).getValue();
             assertNotNull(keyStore);
             X509Certificate certificate = (X509Certificate) keyStore.getCertificate("intermediateCA");
-            assertEquals(new X500Principal("O=Intermediate Certificate Authority, EMAILADDRESS=intermediateca@wildfly.org, C=UK, ST=Elytron, CN=Intermediate Elytron CA"), certificate.getSubjectX500Principal());
-            assertEquals(new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA"), certificate.getIssuerX500Principal());
+            assertEquals(new X500Principal("O=Intermediate Certificate Authority, EMAILADDRESS=intermediateca@wildfly.org, C=UK, ST=Elytron, CN=Intermediate Elytron CA").getName(), certificate.getSubjectX500Principal().getName());
+            assertEquals(new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA").getName(), certificate.getIssuerX500Principal().getName());
         } finally {
             removeKeyStore();
         }
@@ -825,8 +825,8 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
                 assertNotNull(keyStore);
                 String expectedDn = "O=Another Root Certificate Authority, EMAILADDRESS=anotherca@wildfly.org, C=UK, ST=Elytron, CN=Another Elytron CA";
                 X509Certificate certificate = (X509Certificate) keyStore.getCertificate("anotherCA");
-                assertEquals(new X500Principal(expectedDn), certificate.getSubjectX500Principal());
-                assertEquals(new X500Principal(expectedDn), certificate.getIssuerX500Principal());
+                assertEquals(new X500Principal(expectedDn).getName(), certificate.getSubjectX500Principal().getName());
+                assertEquals(new X500Principal(expectedDn).getName(), certificate.getIssuerX500Principal().getName());
             }
         } finally {
             removeKeyStore();
