@@ -280,6 +280,10 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return requiredConfigurationHolder;
     }
 
+    public Set<String> getDomainIgnoredExtensions() {
+        return domainIgnoredExtensions;
+    }
+
     private static class IgnoredType {
         private final boolean wildcard;
         private final Set<String> names;
@@ -321,7 +325,7 @@ public class HostInfo implements Transformers.ResourceIgnoredTransformationRegis
         return createIgnoredRegistry(modelNode, null);
     }
 
-    private static Transformers.ResourceIgnoredTransformationRegistry createIgnoredRegistry(final ModelNode modelNode,
+    public static Transformers.ResourceIgnoredTransformationRegistry createIgnoredRegistry(final ModelNode modelNode,
                                                                                             Set<String> domainIgnoredExtensions) {
         final Map<String, IgnoredType> ignoredResources = processIgnoredResource(modelNode, domainIgnoredExtensions);
         return new Transformers.ResourceIgnoredTransformationRegistry() {
