@@ -793,9 +793,9 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
                 List<String> res = Arrays.asList("foo");
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
                 candidates = complete(ctx, cmd, null);
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
             }
 
             {
@@ -874,9 +874,9 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
                 List<String> res = Arrays.asList("foo");
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
                 candidates = complete(ctx, cmd, null);
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
             }
 
             {
@@ -976,9 +976,9 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
                 List<String> res = Arrays.asList("foo");
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
                 candidates = complete(ctx, cmd, null);
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
             }
 
             {
@@ -1198,9 +1198,9 @@ public class CliCompletionTestCase {
                 ctx.getDefaultCommandCompleter().complete(ctx,
                         cmd, cmd.length(), candidates);
                 List<String> res = Arrays.asList("foo");
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
                 candidates = complete(ctx, cmd, null);
-                assertEquals(candidates.toString(), res, candidates);
+                assertTrue(candidates.toString(), candidates.contains("foo"));
             }
 
             {

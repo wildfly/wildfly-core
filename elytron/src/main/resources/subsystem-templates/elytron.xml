@@ -89,6 +89,8 @@
             </mechanism-provider-filtering-sasl-server-factory>
             <provider-sasl-server-factory name="global"/>
         </sasl>
+
+        <?TLS_DEFINITIONS?>
     </subsystem>
 
     <supplement name="domain">
@@ -117,6 +119,25 @@
                     </mechanism>
                 </mechanism-configuration>
             </sasl-authentication-factory>
+        </replacement>
+        <replacement placeholder="TLS_DEFINITIONS">
+            <tls>
+                <key-stores>
+                    <key-store name="applicationKS">
+                        <credential-reference clear-text="password"/>
+                        <implementation type="PKCS12"/>
+                        <file path="application.keystore" relative-to="jboss.domain.config.dir"/>
+                    </key-store>
+                </key-stores>
+                <key-managers>
+                    <key-manager name="applicationKM" key-store="applicationKS" generate-self-signed-certificate-host="localhost">
+                        <credential-reference clear-text="password"/>
+                    </key-manager>
+                </key-managers>
+                <server-ssl-contexts>
+                    <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+                </server-ssl-contexts>
+            </tls>
         </replacement>
     </supplement>
 
@@ -223,6 +244,25 @@
                     </mechanism>
                 </mechanism-configuration>
             </sasl-authentication-factory>
+        </replacement>
+        <replacement placeholder="TLS_DEFINITIONS">
+            <tls>
+                <key-stores>
+                    <key-store name="applicationKS">
+                        <credential-reference clear-text="password"/>
+                        <implementation type="PKCS12"/>
+                        <file path="application.keystore" relative-to="jboss.server.config.dir"/>
+                    </key-store>
+                </key-stores>
+                <key-managers>
+                    <key-manager name="applicationKM" key-store="applicationKS" generate-self-signed-certificate-host="localhost">
+                        <credential-reference clear-text="password"/>
+                    </key-manager>
+                </key-managers>
+                <server-ssl-contexts>
+                    <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+                </server-ssl-contexts>
+            </tls>
         </replacement>
     </supplement>
 

@@ -14,6 +14,13 @@
                     <param name="relative-to" value="jboss.domain.config.dir"/>
                 </feature>
             </include>
+            <include feature-id="subsystem.elytron.key-store:key-store=applicationKS">
+                <param name="key-store" value="applicationKS" />
+                <param name="path" value="application.keystore" />
+                <param name="relative-to" value="jboss.domain.config.dir" />
+                <param name="type" value="PKCS12" />
+                <param name="credential-reference" value="{clear-text=password}" />
+            </include>
         </feature-group>
     </feature>
 

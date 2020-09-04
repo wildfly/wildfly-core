@@ -56,6 +56,9 @@ public class CliScriptTestCase extends ScriptTestCase {
             while (line.startsWith("Picked up _JAVA_")) {
                 line = reader.readLine();
             }
+            while (line.startsWith("WARNING")) {
+                line = reader.readLine();
+            }
             while (line != null) {
                 builder.append(line);
                 line = reader.readLine();
