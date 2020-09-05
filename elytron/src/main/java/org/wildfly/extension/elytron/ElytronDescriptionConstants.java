@@ -191,6 +191,7 @@ interface ElytronDescriptionConstants {
     String ENCODED = "encoded";
     String ENCRYPTION = "encryption";
     String ENTRY = "entry";
+    String ENCODING = "encoding";
     String ENTRY_TYPE = "entry-type";
     String EVIDENCE_DECODER = "evidence-decoder";
     String EVIDENCE_DECODERS = "evidence-decoders";

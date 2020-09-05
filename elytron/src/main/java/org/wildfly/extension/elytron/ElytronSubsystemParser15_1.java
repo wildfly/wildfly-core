@@ -37,5 +37,9 @@ public class ElytronSubsystemParser15_1 extends ElytronSubsystemParser15_0 {
         return new RealmParser().realmParser_15_1;
     }
 
+    @Override
+    PersistentResourceXMLDescription getAuditLoggingParser() {
+        return new AuditLoggingParser().parser15_1;
+    }
 }
 

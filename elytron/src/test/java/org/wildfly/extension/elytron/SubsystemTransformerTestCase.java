@@ -236,6 +236,12 @@ public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTe
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, "ClientContextSSLv2Hello")),
                         REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JAAS_REALM, "myJaasRealm")), REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG)),
+                new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG)),
+                new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG)),
+                new FailedOperationTransformationConfig.NewAttributesConfig(AuditResourceDefinitions.ENCODING))
         );
     }
     /**

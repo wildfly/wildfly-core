@@ -48,6 +48,11 @@ class AuditLoggingParser {
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT)
             .build();
 
+    private final PersistentResourceXMLDescription fileAuditLogParser_15_1 = builder(PathElement.pathElement(FILE_AUDIT_LOG), null)
+        .setUseElementsForGroups(false)
+        .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.ENCODING)
+        .build();
+
     private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
@@ -58,6 +63,11 @@ class AuditLoggingParser {
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
             .build();
 
+    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser_15_1 = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
+        .setUseElementsForGroups(false)
+        .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.ENCODING, AuditResourceDefinitions.PERIODIC_SUFFIX)
+        .build();
+
     private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
@@ -67,6 +77,11 @@ class AuditLoggingParser {
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
             .build();
+
+    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser_15_1 = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
+        .setUseElementsForGroups(false)
+        .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.ENCODING, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
+        .build();
 
     private final PersistentResourceXMLDescription syslogAuditLogParser = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
             .setUseElementsForGroups(false)
@@ -123,4 +138,12 @@ class AuditLoggingParser {
             .addChild(syslogAuditLogParser_8_0)
             .build();
 
+    final PersistentResourceXMLDescription parser15_1 = decorator(ElytronDescriptionConstants.AUDIT_LOGGING)
+        .addChild(aggregateSecurityEventParser)
+        .addChild(customSecurityEventParser)
+        .addChild(fileAuditLogParser_15_1)
+        .addChild(periodicRotatingFileAuditLogParser_15_1)
+        .addChild(sizeRotatingFileAuditLogParser_15_1)
+        .addChild(syslogAuditLogParser_8_0)
+        .build();
 }

@@ -159,6 +159,22 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SECRET_KEY)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, CREDENTIAL_STORE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, SECRET_KEY);
+
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.FILE_AUDIT_LOG))
+            .getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
+            .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
+            .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG))
+            .getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
+            .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
+            .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG))
+            .getAttributeBuilder()
+            .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.ENCODING)
+            .setDiscard(DiscardAttributeChecker.UNDEFINED, AuditResourceDefinitions.ENCODING)
+            .end();
     }
 
     private static void from15(ChainedTransformationDescriptionBuilder chainedBuilder) {

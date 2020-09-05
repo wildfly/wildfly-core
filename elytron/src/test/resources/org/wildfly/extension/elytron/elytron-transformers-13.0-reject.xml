@@ -54,6 +54,11 @@
         </credential-store>
         <secret-key-credential-store name="secretkeycredentialstore" path="target/test-classes/org/wildfly/extension/elytron/mysecretkeycredstore.cs" create="true" populate="true" />
     </credential-stores>
+    <audit-logging>
+        <file-audit-log name="audit1" path="audit.log" encoding="UTF-8"/>
+        <periodic-rotating-file-audit-log name="audit2" path="target/audit.log" format="JSON" suffix="y-M-d" encoding="UTF-8"/>
+        <size-rotating-file-audit-log name="audit3" path="target/audit.log" format="JSON" max-backup-index="5" rotate-on-boot="true" rotate-size="5" suffix="y-M-d" encoding="UTF-8" />
+    </audit-logging>
     <security-realms>
         <properties-realm name="PropertiesRealmEncodingCharset" hash-charset="GB2312" hash-encoding="base64">
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm"/>
