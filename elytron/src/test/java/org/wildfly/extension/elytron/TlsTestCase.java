@@ -377,6 +377,16 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testSslServiceAuthNoTLS13CipherSuitesOpenSsl() throws Throwable {
+        // WFCORE-5122: Update this test once we are ready to enable TLS 1.3 by default for the WildFly OpenSSL provider
+        // For now, TLS 1.2 should be used by default since no TLS 1.3 cipher suites have been explicitly configured
+        Assume.assumeTrue("Skipping testSslServiceAuthNoTLS13CipherSuitesOpenSsl, test is not being run with JDK 11+ and OpenSSL 1.1.1+",
+                JdkUtils.getJavaSpecVersion() >= 11 && isOpenSSL111OrHigher());
+        testCommunication("ServerSslContextNoTLS13CipherSuites", "ClientSslContextNoTLS13CipherSuites", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false);
+    }
+
+    @Test
     public void testSslServiceAuthProtocolMismatch() throws Throwable {
         Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11+.",
                 JdkUtils.getJavaSpecVersion() >= 11);
