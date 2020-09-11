@@ -34,7 +34,9 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
+import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -43,6 +45,8 @@ import org.xml.sax.SAXParseException;
  *
  * @author Dominik Pospisil <dpospisi@redhat.com>
  */
+// Required by Bootable JAR in order to create the installation directory
+@RunWith(WildflyTestRunner.class)
 public class JBossCliXmlValidationTestCase {
 
     @Test
