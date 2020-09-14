@@ -589,4 +589,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1079, value = "Unable to load module '%s'.")
     RuntimeException unableToLoadModuleRuntime(String module, @Cause Exception cause);
+
+    @Message(id = 1080, value = "Non existing key store needs to have defined type.")
+    OperationFailedException nonexistingKeyStoreMissingType();
 }

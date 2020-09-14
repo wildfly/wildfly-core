@@ -123,8 +123,12 @@ class KeyStoreService implements ModifiableKeyStoreService {
 
             synched = System.currentTimeMillis();
             if (resolvedPath != null && ! resolvedPath.exists()) {
-                if (required || type == null) {
-                    throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
+                if (required) {
+                    if (type == null) {
+                        throw ROOT_LOGGER.nonexistingKeyStoreMissingType();
+                    } else {
+                        throw ROOT_LOGGER.keyStoreFileNotExists(resolvedPath.getAbsolutePath());
+                    }
                 } else {
                     ROOT_LOGGER.keyStoreFileNotExistsButIgnored(resolvedPath.getAbsolutePath());
                 }
