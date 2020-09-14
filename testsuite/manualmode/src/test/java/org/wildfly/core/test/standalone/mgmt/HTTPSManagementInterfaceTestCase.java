@@ -41,6 +41,8 @@ import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.inject.Inject;
 import javax.net.ssl.SSLException;
@@ -102,11 +104,20 @@ public class HTTPSManagementInterfaceTestCase {
     public static final File CLIENT_TRUSTSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.CLIENT_TRUSTSTORE);
     public static final File UNTRUSTED_KEYSTORE_FILE = new File(WORK_DIR, SecurityTestConstants.UNTRUSTED_KEYSTORE);
 
-    private static ManagementWebRealmSetup managementNativeRealmSetup;
     private static final String MANAGEMENT_WEB_REALM = "ManagementWebRealm";
     private static final String MANAGEMENT_WEB_REALM_CR = "ManagementWebRealmCr";
     private static final String MANAGEMENT_WEB_REALM_CR_ALIAS = "ManagementWebRealmCrAlias";
     private static final String MGMT_CTX = "/management";
+
+    private static final ManagementWebRealmSetup managementNativeRealmSetup = new ManagementWebRealmSetup();
+    private static String providerToUse = null; // static provider to use for key and trust store (JKS or PKCS12)
+
+    private static final boolean isElytronSetup = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            return System.getProperty("elytron") != null;
+        }
+    });
 
     @Inject
     protected static ServerController controller;
@@ -117,13 +128,13 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     protected static void startAndSetupContainer(String provider) throws Exception {
+        providerToUse = provider;
         controller.startInAdminMode();
 
         try (ModelControllerClient client = TestSuiteEnvironment.getModelControllerClient()){
             ManagementClient managementClient = controller.getClient();
 
-            serverSetup(managementClient, provider);
-            managementNativeRealmSetup = new ManagementWebRealmSetup(provider);
+            serverSetup(managementClient);
             managementNativeRealmSetup.setup(client);
         }
         // To apply new security realm settings for http interface reload of
@@ -251,16 +262,11 @@ public class HTTPSManagementInterfaceTestCase {
     }
 
     private static HttpClient getHttpClient(File keystoreFile) {
-        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, CLIENT_TRUSTSTORE_FILE, SecurityTestConstants.KEYSTORE_PASSWORD);
+        return SSLTruststoreUtil.getHttpClientWithSSL(keystoreFile, SecurityTestConstants.KEYSTORE_PASSWORD, providerToUse,
+                CLIENT_TRUSTSTORE_FILE, SecurityTestConstants.KEYSTORE_PASSWORD, providerToUse);
     }
 
     static class ManagementWebRealmSetup extends AbstractBaseSecurityRealmsServerSetupTask {
-
-        private final String provider;
-
-        public ManagementWebRealmSetup(String provider) {
-            this.provider = provider;
-        }
 
         // Overridden just to expose locally
         @Override
@@ -277,10 +283,12 @@ public class HTTPSManagementInterfaceTestCase {
         protected SecurityRealm[] getSecurityRealms() throws Exception {
             final ServerIdentity serverIdentity = new ServerIdentity.Builder().ssl(
                     new RealmKeystore.Builder().keystorePassword(SecurityTestConstants.KEYSTORE_PASSWORD)
-                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final Authentication authentication = new Authentication.Builder().truststore(
                     new RealmKeystore.Builder().keystorePassword(SecurityTestConstants.KEYSTORE_PASSWORD)
-                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final SecurityRealm realm = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM).serverIdentity(serverIdentity)
                     .authentication(authentication).build();
             // Same using credential reference
@@ -289,17 +297,19 @@ public class HTTPSManagementInterfaceTestCase {
                     new RealmKeystore.Builder()
                             .keystorePasswordCredentialReference(credentialReference)
                             .keyPasswordCredentialReference(credentialReference)
-                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final ServerIdentity serverIdentityCRAlias = new ServerIdentity.Builder().ssl(
                     new RealmKeystore.Builder()
                             .keystorePasswordCredentialReference(credentialReference)
                             .keystorePath(SERVER_KEYSTORE_FILE.getAbsolutePath())
                             .alias(CoreUtils.KEYSTORE_SERVER_ALIAS)
-                            .provider(provider)
+                            .provider(providerToUse)
                             .build()).build();
             final Authentication authenticationCR = new Authentication.Builder().truststore(
                     new RealmKeystore.Builder().keystorePasswordCredentialReference(credentialReference)
-                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath()).build()).build();
+                            .keystorePath(SERVER_TRUSTSTORE_FILE.getAbsolutePath())
+                            .provider(providerToUse).build()).build();
             final SecurityRealm realmCR = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR).serverIdentity(serverIdentityCR)
                     .authentication(authenticationCR).build();
             final SecurityRealm realmCR2 = new SecurityRealm.Builder().name(MANAGEMENT_WEB_REALM_CR_ALIAS).serverIdentity(serverIdentityCRAlias)
@@ -309,12 +319,12 @@ public class HTTPSManagementInterfaceTestCase {
         }
     }
 
-    private static void serverSetup(ManagementClient managementClient, String provider) throws Exception {
+    private static void serverSetup(ManagementClient managementClient) throws Exception {
 
         // create key and trust stores with imported certificates from opposing sides
         FileUtils.deleteDirectory(WORK_DIR);
         WORK_DIR.mkdirs();
-        CoreUtils.createKeyMaterial(WORK_DIR, provider);
+        CoreUtils.createKeyMaterial(WORK_DIR, providerToUse);
 
         final ModelControllerClient client = managementClient.getControllerClient();
 
@@ -324,6 +334,14 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get(NAME).set("security-realm");
         operation.get(VALUE).set(MANAGEMENT_WEB_REALM);
         CoreUtils.applyUpdate(operation, client);
+
+        // undefine the http-authentication-factory if we are using elytron setup
+        if (isElytronSetup) {
+            operation = createOpNode("core-service=management/management-interface=http-interface",
+                    ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("http-authentication-factory");
+            CoreUtils.applyUpdate(operation, client);
+        }
 
         // add https connector to management interface
         operation = createOpNode("core-service=management/management-interface=http-interface",
@@ -338,10 +356,13 @@ public class HTTPSManagementInterfaceTestCase {
         operation.get("interface").set("management");
         CoreUtils.applyUpdate(operation, client);
 
-
         // create native interface to control server while http interface will be secured
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
-        operation.get("security-realm").set("ManagementRealm");
+        if (isElytronSetup) {
+            operation.get("sasl-authentication-factory").set("management-sasl-authentication");
+        } else {
+            operation.get("security-realm").set("ManagementRealm");
+        }
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
     }
@@ -393,8 +414,13 @@ public class HTTPSManagementInterfaceTestCase {
         // change back security realm for http management interface
         ModelNode operation = createOpNode("core-service=management/management-interface=http-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
-        operation.get(NAME).set("security-realm");
-        operation.get(VALUE).set("ManagementRealm");
+        if (isElytronSetup) {
+            operation.get(NAME).set("http-authentication-factory");
+            operation.get(VALUE).set("management-http-authentication");
+        } else {
+            operation.get(NAME).set("security-realm");
+            operation.get(VALUE).set("ManagementRealm");
+        }
         CoreUtils.applyUpdate(operation, client);
 
         // undefine secure socket binding from http interface
@@ -402,6 +428,14 @@ public class HTTPSManagementInterfaceTestCase {
                 ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
         operation.get(NAME).set("secure-socket-binding");
         CoreUtils.applyUpdate(operation, client);
+
+        if (isElytronSetup) {
+            // remove the security-realm if using elytron
+            operation = createOpNode("core-service=management/management-interface=http-interface",
+                ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION);
+            operation.get(NAME).set("security-realm");
+            CoreUtils.applyUpdate(operation, client);
+        }
     }
 
     static ModelControllerClient getNativeModelControllerClient() {

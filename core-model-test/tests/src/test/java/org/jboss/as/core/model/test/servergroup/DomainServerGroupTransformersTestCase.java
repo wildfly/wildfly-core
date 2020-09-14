@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIM
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT;
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MODULE_OPTIONS;
 
 import java.util.List;
 import java.util.function.Predicate;
@@ -123,7 +124,8 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
                         FailedOperationTransformationConfig.ChainedConfig.createBuilder(MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE)
                                 .addConfig(new FailedOperationTransformationConfig.RejectExpressionsConfig(MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET))
                                 .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(SOCKET_BINDING_DEFAULT_INTERFACE))
-                                .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT)));
+                                .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT))
+                .addFailedAttribute(serverGroupAddress.append("jvm", "full"), new FailedOperationTransformationConfig.NewAttributesConfig(MODULE_OPTIONS)));
 
         //check that we reject /server-group=main-server-group:suspend-servers(timeout=?)
         OperationTransformer.TransformedOperation transOp = mainServices.transformOperation(modelVersion, Util.createOperation("suspend-servers", serverGroupAddress));

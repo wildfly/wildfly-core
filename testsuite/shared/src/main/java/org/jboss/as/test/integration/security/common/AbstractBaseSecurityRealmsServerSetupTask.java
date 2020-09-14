@@ -161,7 +161,7 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                     }
 
                     if (StringUtils.isNotEmpty(ssl.getProvider())) {
-                        sslModuleNode.get(Constants.PROVIDER).set(ssl.getProvider());
+                        sslModuleNode.get(Constants.KEYSTORE_PROVIDER).set(ssl.getProvider());
                     }
 
                     sslModuleNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
@@ -178,6 +178,9 @@ public abstract class AbstractBaseSecurityRealmsServerSetupTask implements Serve
                         sslModuleNode.get(Constants.KEYSTORE_PASSWORD).set(truststore.getKeystorePassword());
                     } else {
                         sslModuleNode.get(Constants.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE).set(getCredentialReferenceModelNode(truststore.getKeystorePasswordCredentialReference()));
+                    }
+                    if (StringUtils.isNotEmpty(truststore.getProvider())) {
+                        sslModuleNode.get(Constants.KEYSTORE_PROVIDER).set(truststore.getProvider());
                     }
                     sslModuleNode.get(OPERATION_HEADERS, ALLOW_RESOURCE_SERVICE_RESTART).set(true);
                     steps.add(sslModuleNode);

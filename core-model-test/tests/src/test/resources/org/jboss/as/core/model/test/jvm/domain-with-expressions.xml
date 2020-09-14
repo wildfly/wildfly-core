@@ -20,6 +20,9 @@
                     <variable name="name2" value="${mytest.value2:value2}"/>
                 </environment-variables>
                 <launch-command prefix="${mytest.value:command-prefix}"/>
+                <module-options>
+                    <option value="${mytest.agent.value:-javaagent:jboss-modules.jar}"/>
+                </module-options>
              </jvm>
              <!-- Needed for the add operation -->
              <socket-binding-group ref="test-sockets"/>

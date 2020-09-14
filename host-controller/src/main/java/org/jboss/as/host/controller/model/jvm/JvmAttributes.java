@@ -21,6 +21,7 @@
 */
 package org.jboss.as.host.controller.model.jvm;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import javax.xml.stream.XMLStreamException;
@@ -29,6 +30,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
@@ -38,6 +40,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Element;
+import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -116,6 +119,31 @@ public class JvmAttributes {
                     .setXmlName(JvmAttributes.JVM_LAUNCH_COMMAND)
                     .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.JVM)
                     .build();
+    /**
+     * Module options are resolved in ManagedServerBootCmdFactory before the JVM is launched.
+     */
+    public static final AttributeDefinition MODULE_OPTIONS = new StringListAttributeDefinition.Builder("module-options")
+            .setElementValidator(new ModuleOptionsValidator())
+            .setRequired(false)
+            .setAllowExpression(true)
+            .setAttributeMarshaller(new AttributeMarshaller() {
+                @Override
+                public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
+                    if (resourceModel.hasDefined(attribute.getName())) {
+                        List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
+                        if (!list.isEmpty()) {
+                            writer.writeStartElement(attribute.getName());
+                            for (ModelNode child : list) {
+                                writer.writeEmptyElement(Element.OPTION.getLocalName());
+                                writer.writeAttribute(ModelDescriptionConstants.VALUE, child.asString());
+                            }
+                            writer.writeEndElement();
+                        }
+                    }
+                }
+            })
+            .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.JVM)
+            .build();
     /**
      * JVM options are resolved in ManagedServerBootCmdFactory before the JVM is launched.
      */
@@ -201,14 +229,32 @@ public class JvmAttributes {
 
     private static final AttributeDefinition[] GLOBAL_ATTRIBUTES = new AttributeDefinition[] {
         AGENT_LIB, AGENT_PATH, ENV_CLASSPATH_IGNORED, ENVIRONMENT_VARIABLES, JAVA_AGENT, JAVA_HOME,
-        LAUNCH_COMMAND, OPTIONS, STACK_SIZE, TYPE, HEAP_SIZE, MAX_HEAP_SIZE, PERMGEN_SIZE, MAX_PERMGEN_SIZE};
+        LAUNCH_COMMAND, MODULE_OPTIONS, OPTIONS, STACK_SIZE, TYPE, HEAP_SIZE, MAX_HEAP_SIZE, PERMGEN_SIZE, MAX_PERMGEN_SIZE};
 
     private static final AttributeDefinition[] SERVER_ATTRIBUTES = new AttributeDefinition[] {
         AGENT_LIB, AGENT_PATH, ENV_CLASSPATH_IGNORED, ENVIRONMENT_VARIABLES, JAVA_AGENT, JAVA_HOME,
-        LAUNCH_COMMAND, OPTIONS, STACK_SIZE, TYPE, HEAP_SIZE, MAX_HEAP_SIZE, PERMGEN_SIZE, MAX_PERMGEN_SIZE,
+        LAUNCH_COMMAND, MODULE_OPTIONS, OPTIONS, STACK_SIZE, TYPE, HEAP_SIZE, MAX_HEAP_SIZE, PERMGEN_SIZE, MAX_PERMGEN_SIZE,
         DEBUG_ENABLED, DEBUG_OPTIONS};
 
     static AttributeDefinition[] getAttributes(boolean server) {
         return server ? SERVER_ATTRIBUTES : GLOBAL_ATTRIBUTES;
+    }
+
+
+
+    private static class ModuleOptionsValidator extends StringLengthValidator {
+        private final List<String> valuesNotAllowed = Arrays.asList("-mp", "--modulepath", "-secmgr");
+        public ModuleOptionsValidator() {
+            super(1, true, true);
+        }
+
+        @Override
+        public void validateParameter(final String parameterName, final ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+            final String option = value.asString();
+            if (valuesNotAllowed.contains(option)) {
+                throw HostControllerLogger.ROOT_LOGGER.moduleOptionNotAllowed(option);
+            }
+        }
     }
 }

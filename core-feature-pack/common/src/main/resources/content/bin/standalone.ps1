@@ -18,6 +18,11 @@ Write-Debug "debug is: $global:DEBUG_MODE"
 Write-Debug "debug port: $global:DEBUG_PORT"
 Write-Debug "sec mgr: $SECMGR"
 
+$MODULE_OPTS = Get-Env MODULE_OPTS $null
+if ($MODULE_OPTS -like "*-javaagent:*") {
+    $JAVA_OPTS += "-javaagent:$JBOSS_HOME\jboss-modules.jar"
+}
+Write-Debug "MODULE_OPTS: $MODULE_OPTS"
 if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }

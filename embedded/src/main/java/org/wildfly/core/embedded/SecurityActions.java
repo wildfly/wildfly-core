@@ -77,4 +77,30 @@ final class SecurityActions {
             });
         }
     }
+
+    static ClassLoader getTccl() {
+        if (getSecurityManager() == null) {
+            return Thread.currentThread().getContextClassLoader();
+        }
+        return doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return Thread.currentThread().getContextClassLoader();
+            }
+        });
+    }
+
+    static void setTccl(final ClassLoader cl) {
+        if (getSecurityManager() == null) {
+            Thread.currentThread().setContextClassLoader(cl);
+        } else {
+            doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    Thread.currentThread().setContextClassLoader(cl);
+                    return null;
+                }
+            });
+        }
+    }
 }

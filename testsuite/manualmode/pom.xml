@@ -25,7 +25,7 @@
     <parent>
           <groupId>org.wildfly.core</groupId>
           <artifactId>wildfly-core-testsuite</artifactId>
-          <version>13.0.0.Beta1-SNAPSHOT</version>
+          <version>13.0.0.Beta6-SNAPSHOT</version>
           <relativePath>../pom.xml</relativePath>
      </parent>
 
@@ -98,6 +98,36 @@
             <artifactId>byteman-bmunit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpg-jdk15on</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.junit.http</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.junit.ssh</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sshd</groupId>
+            <artifactId>sshd-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -122,7 +152,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.6.0</version>
                         <executions>
                             <execution>
                                 <id>generate-jboss-stores</id>
@@ -480,8 +509,6 @@
                                             <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
                                             <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
                                             <version>${project.version}</version>
-                                            <inherit-configs>false</inherit-configs>
-                                            <inherit-packages>false</inherit-packages>
                                             <!-- Specifically include patching -->
                                             <included-packages>
                                                 <name>org.jboss.as.patching.cli</name>

@@ -82,3 +82,7 @@ rem # Uncomment and edit to use a custom java.security file to override all the 
 rem set "JAVA_OPTS=%JAVA_OPTS% -Djava.security.properties==C:\path\to\custom\java.security"
 
 :JAVA_OPTS_SET
+
+rem # Uncomment to add a Java agent. If an agent is added to the module options, then jboss-modules.jar is added as an agent
+rem # on the JVM. This allows things like the log manager or security manager to be configured before the agent is invoked.
+rem set "MODULE_OPTS=-javaagent:agent.jar"

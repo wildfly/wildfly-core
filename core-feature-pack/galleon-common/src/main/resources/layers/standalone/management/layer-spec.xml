@@ -1,7 +1,21 @@
 <?xml version="1.0" ?>
-<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="management">  
+<layer-spec xmlns="urn:jboss:galleon:layer-spec:1.0" name="management">
     <dependencies>
-        <layer name="base-server"/> 
+        <layer name="elytron"/>
     </dependencies>
-    <feature-group name="management"/>
+
+    <feature-group name="unsecured-management"/>
+
+    <feature spec="core-service.management.access.identity">
+        <param name="security-domain" value="ManagementDomain"/>
+    </feature>
+
+    <feature spec="core-service.management.management-interface.http-interface">
+        <param name="socket-binding" value="management-http"/>
+        <param name="http-authentication-factory" value="management-http-authentication"/>
+        <feature spec="core-service.management.management-interface.http-interface.http-upgrade">
+            <param name="sasl-authentication-factory" value="management-sasl-authentication"/>
+        </feature>
+    </feature>
+    
 </layer-spec>

@@ -26,6 +26,7 @@ import static org.jboss.as.host.controller.model.jvm.JvmAttributes.LAUNCH_COMMAN
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.jboss.as.host.controller.model.jvm.JvmAttributes;
 import org.jboss.as.host.controller.model.jvm.JvmResourceDefinition;
 
 /**
@@ -43,5 +44,19 @@ class JvmTransformers {
             .setDiscard(DiscardAttributeChecker.UNDEFINED, LAUNCH_COMMAND)
             .addRejectCheck(RejectAttributeChecker.DEFINED, LAUNCH_COMMAND)
         .end();
+    }
+
+
+    public static void registerTransformers13_AndBelow(ResourceTransformationDescriptionBuilder parent) {
+        parent.addChildResource(JvmResourceDefinition.GLOBAL.getPathElement())
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, JvmAttributes.MODULE_OPTIONS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, JvmAttributes.MODULE_OPTIONS)
+                .end();
+        parent.addChildResource(JvmResourceDefinition.SERVER.getPathElement())
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, JvmAttributes.MODULE_OPTIONS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, JvmAttributes.MODULE_OPTIONS)
+                .end();
     }
 }

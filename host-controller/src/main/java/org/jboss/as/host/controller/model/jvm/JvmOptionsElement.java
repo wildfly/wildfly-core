@@ -24,6 +24,7 @@ package org.jboss.as.host.controller.model.jvm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.wildfly.common.Assert;
 
@@ -66,6 +67,25 @@ public final class JvmOptionsElement {
      */
     public List<String> getOptions() {
         return new ArrayList<String>(options);
+    }
+
+    /**
+     * Uses regex on each option to check if the option matches the pattern.
+     *
+     * @param regex the regex pattern
+     *
+     * @return {@code true} if one of the options matches the patter, otherwise {@code false}
+     */
+    public boolean contains(final String regex) {
+        final Pattern pattern = Pattern.compile(regex);
+        synchronized (options) {
+            for (String opt : options) {
+                if (pattern.matcher(opt).matches()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }

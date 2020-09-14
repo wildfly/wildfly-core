@@ -134,7 +134,7 @@ public class RemotingHttpUpgradeService implements Service {
         final Supplier<org.jboss.as.domain.management.SecurityRealm> srSupplier = securityRealm != null ? sb.requires(org.jboss.as.domain.management.SecurityRealm.ServiceUtil.createServiceName(securityRealm)) : null;
         final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class)) : null;
         sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, srSupplier, safSupplier, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
-        sb.setInitialMode(ServiceController.Mode.PASSIVE);
+        sb.setInitialMode(ServiceController.Mode.ACTIVE);
         sb.install();
     }
 

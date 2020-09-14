@@ -235,6 +235,7 @@ public final class LoggingOperations {
     /**
      * A base update step handler for logging operations.
      */
+    @SuppressWarnings("Convert2Lambda")
     public abstract static class LoggingUpdateOperationStepHandler implements OperationStepHandler {
         private final AttributeDefinition[] attributes;
 
@@ -243,10 +244,7 @@ public final class LoggingOperations {
         }
 
         @Override
-        public final void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
-            final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
-
+        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
             final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
             final ModelNode model = resource.getModel();
             updateModel(context, operation, model);
@@ -254,17 +252,19 @@ public final class LoggingOperations {
                 context.addStep(new OperationStepHandler() {
                     @Override
                     public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
+                        final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
+                        final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
                         performRuntime(context, operation, model, logContextConfiguration);
+                        addCommitStep(context, configurationPersistence);
+                        context.completeStep(new RollbackHandler() {
+                            @Override
+                            public void handleRollback(final OperationContext context, final ModelNode operation) {
+                                configurationPersistence.rollback();
+                            }
+                        });
                     }
                 }, Stage.RUNTIME);
             }
-            addCommitStep(context, configurationPersistence);
-            context.completeStep(new RollbackHandler() {
-                @Override
-                public void handleRollback(final OperationContext context, final ModelNode operation) {
-                    configurationPersistence.rollback();
-                }
-            });
         }
 
         /**

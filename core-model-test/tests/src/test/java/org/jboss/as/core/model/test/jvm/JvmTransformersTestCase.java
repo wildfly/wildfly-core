@@ -34,6 +34,7 @@ import static org.jboss.as.host.controller.model.jvm.JvmAttributes.JAVA_HOME;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.LAUNCH_COMMAND;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MAX_HEAP_SIZE;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MAX_PERMGEN_SIZE;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MODULE_OPTIONS;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.OPTIONS;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.PERMGEN_SIZE;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.STACK_SIZE;
@@ -138,6 +139,9 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
             // Get rid of launchCommand attribute to prove we can resource transform without it
             ModelNode op = Util.getWriteAttributeOperation(ADDRESS, LAUNCH_COMMAND.getName(), new ModelNode());
             mainServices.executeOperation(op, ModelController.OperationTransactionControl.COMMIT);
+            // Get rid of module-options attribute to prove we can resource transform without it
+            op = Util.getWriteAttributeOperation(ADDRESS, MODULE_OPTIONS.getName(), new ModelNode());
+            mainServices.executeOperation(op, ModelController.OperationTransactionControl.COMMIT);
             checkCoreModelTransformation(mainServices,
                     modelVersion,
                     fixer,
@@ -153,15 +157,18 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
                     .addFailedAttribute(ADDRESS,
                         FailedOperationTransformationConfig.ChainedConfig.createBuilder(AGENT_PATH, HEAP_SIZE, JAVA_HOME, MAX_HEAP_SIZE,
                             PERMGEN_SIZE, MAX_PERMGEN_SIZE, STACK_SIZE, OPTIONS, ENVIRONMENT_VARIABLES,
-                            ENV_CLASSPATH_IGNORED, AGENT_LIB, JAVA_AGENT, LAUNCH_COMMAND)
+                            ENV_CLASSPATH_IGNORED, AGENT_LIB, JAVA_AGENT, LAUNCH_COMMAND, MODULE_OPTIONS)
                             .addConfig(new FailedOperationTransformationConfig.RejectExpressionsConfig(AGENT_PATH, HEAP_SIZE, JAVA_HOME, MAX_HEAP_SIZE,
                                 PERMGEN_SIZE, MAX_PERMGEN_SIZE, STACK_SIZE, OPTIONS, ENVIRONMENT_VARIABLES,
                                 ENV_CLASSPATH_IGNORED, AGENT_LIB, JAVA_AGENT))
-                            .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(LAUNCH_COMMAND))
+                            .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(LAUNCH_COMMAND, MODULE_OPTIONS))
                             .build());
         } else if (isFailLaunchCommand()) {
             result = new FailedOperationTransformationConfig()
-                .addFailedAttribute(ADDRESS, new FailedOperationTransformationConfig.NewAttributesConfig(LAUNCH_COMMAND));
+                .addFailedAttribute(ADDRESS, new FailedOperationTransformationConfig.NewAttributesConfig(LAUNCH_COMMAND, MODULE_OPTIONS));
+        } else if (modelVersion.getMajor() <= 13) {
+            result = new FailedOperationTransformationConfig()
+                    .addFailedAttribute(ADDRESS, new FailedOperationTransformationConfig.NewAttributesConfig(MODULE_OPTIONS));
         } else {
             result = FailedOperationTransformationConfig.NO_FAILURES;
         }
@@ -190,6 +197,7 @@ public class JvmTransformersTestCase extends AbstractCoreModelTest {
             modelNode.remove(SOCKET_BINDING_GROUP);
             if (!isIgnoredResourceListAvailableAtRegistration()) {
                 modelNode.get(SERVER_GROUP, "test", JVM, "full").remove(LAUNCH_COMMAND.getName());
+                modelNode.get(SERVER_GROUP, "test", JVM, "full").remove(MODULE_OPTIONS.getName());
             }
             return isFailExpressions() ? resolve(modelNode) : modelNode;
         }

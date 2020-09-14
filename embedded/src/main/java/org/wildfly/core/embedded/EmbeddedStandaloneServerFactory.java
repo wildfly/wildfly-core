@@ -250,9 +250,9 @@ public class EmbeddedStandaloneServerFactory {
 
         @Override
         public void start() throws EmbeddedProcessStartException {
-            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
+            ClassLoader tccl = SecurityActions.getTccl();
             try {
-                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                SecurityActions.setTccl(embeddedModuleCL);
                 Bootstrap bootstrap = null;
                 try {
                     final long startTime = System.currentTimeMillis();
@@ -324,18 +324,18 @@ public class EmbeddedStandaloneServerFactory {
                     throw EmbeddedLogger.ROOT_LOGGER.cannotStartEmbeddedServer(ex);
                 }
             } finally {
-                EmbeddedManagedProcess.setTccl(tccl);
+                SecurityActions.setTccl(tccl);
             }
         }
 
         @Override
         public void stop() {
-            ClassLoader tccl = EmbeddedManagedProcess.getTccl();
+            ClassLoader tccl = SecurityActions.getTccl();
             try {
-                EmbeddedManagedProcess.setTccl(embeddedModuleCL);
+                SecurityActions.setTccl(embeddedModuleCL);
                 exit();
             } finally {
-                EmbeddedManagedProcess.setTccl(tccl);
+                SecurityActions.setTccl(tccl);
             }
         }
 
@@ -344,6 +344,11 @@ public class EmbeddedStandaloneServerFactory {
             // The access to the internal process state is unsupported for the standalone embedded server, you can use a
             // management operation to query the current server process state instead.
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean canQueryProcessState() {
+            return false;
         }
 
         private void exit() {

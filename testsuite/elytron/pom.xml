@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>13.0.0.Beta1-SNAPSHOT</version>
+        <version>13.0.0.Beta6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -384,17 +384,19 @@
                                         <jboss-maven-dist/>
                                         <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
                                     </plugin-options>
-                                    <cli-script-files>
-                                        <script>${ts.config.elytron.cli.no.embedded}</script>
-                                    </cli-script-files>
+                                    <cli-sessions>
+                                        <cli-session>
+                                            <script-files>
+                                                <script>${ts.config.elytron.cli.no.embedded}</script>
+                                            </script-files>
+                                        </cli-session>
+                                    </cli-sessions>
                                     <feature-packs>
                                         <feature-pack>
                                             <groupId>org.wildfly.core</groupId>
                                             <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
                                             <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
                                             <version>${project.version}</version>
-                                            <inherit-configs>false</inherit-configs>
-                                            <inherit-packages>false</inherit-packages>
                                             <!-- Specifically include patching -->
                                             <included-packages>
                                                 <name>org.jboss.as.patching.cli</name>

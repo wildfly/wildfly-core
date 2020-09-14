@@ -92,6 +92,10 @@ public class ManagedServerBootCmdFactoryTestCase {
         ModelNode hostModel = new ModelNode();
         ModelNode serverModel = new ModelNode();
         serverModel.get("group").set("test-group");
+        final ModelNode jvm = serverModel.get("jvm", "test-jvm");
+        jvm.get("heap-size").set("64m");
+        jvm.get("max-heap-size").set("256m");
+        jvm.get("module-options").setEmptyList().add("-javaagent:test-agent.jar");
         hostModel.get("server-config").get("test-server").set(serverModel);
         return hostModel;
     }
@@ -123,13 +127,15 @@ public class ManagedServerBootCmdFactoryTestCase {
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
         List<String> result = instance.getServerLaunchCommand();
         Assert.assertThat(result.size(), is(notNullValue()));
-        if (result.size() > 16) {
-            Assert.assertThat(result.size(), is(19));
+        if (result.size() > 18) {
+            Assert.assertThat(result.size(), is(21));
         } else {
-            Assert.assertThat(result.size(), is(16));
+            Assert.assertThat(result.size(), is(18));
         }
+        Assert.assertTrue("Missing -javaagent:test-agent.jar entry: " + result, result.contains("-javaagent:test-agent.jar"));
         boolean sawDServer = false;
         boolean sawDpcid = false;
+        boolean sawJbmAgent = false;
         for (String arg : result) {
             if (arg.startsWith("-Djboss.server.log.dir")) {
                 Assert.assertThat(arg, is(not("-Djboss.server.log.dir=/tmp/")));
@@ -141,9 +147,12 @@ public class ManagedServerBootCmdFactoryTestCase {
                 sawDServer = true;
             } else if (arg.startsWith("-D[pcid:") && arg.endsWith("]")) {
                 sawDpcid = true;
+            } else if (arg.startsWith("-javaagent:") && arg.endsWith("jboss-modules.jar")) {
+                sawJbmAgent = true;
             }
         }
         Assert.assertTrue(sawDServer);
         Assert.assertTrue(sawDpcid);
+        Assert.assertTrue("Missing jboss-modules.jar configured as an agent: " + result, sawJbmAgent);
     }
 }

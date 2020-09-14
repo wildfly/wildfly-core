@@ -60,8 +60,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -89,6 +91,7 @@ import org.jboss.as.server.deployment.scanner.ZipCompletionScanner.NonScannableZ
 import org.jboss.as.server.deployment.scanner.api.DeploymentOperations;
 import org.jboss.as.server.deployment.scanner.api.DeploymentScanner;
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
+import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
@@ -162,6 +165,10 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
     private volatile boolean deploymentDirAccessible = true;
     private volatile boolean lastScanSuccessful = true;
+
+    @SuppressWarnings("deprecation")
+    private final DeploymentTransformer deploymentTransformer;
+
 
     @Override
     public void handleNotification(Notification notification) {
@@ -288,6 +295,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         } else {
             relativePath = null;
         }
+        this.deploymentTransformer = loadDeploymentTransformer();
     }
 
     @Override
@@ -1068,6 +1076,14 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
 
     private long addContentAddingTask(final String path, final boolean archive, final String deploymentName,
                                       final File deploymentFile, final long timestamp, final ScanContext scanContext) {
+        if (deploymentTransformer != null) {
+            try {
+                deploymentTransformer.transform(deploymentFile.toPath(), deploymentFile.toPath());
+                deploymentFile.setLastModified(timestamp);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
         if (scanContext.registeredDeployments.containsKey(deploymentName)) {
             scanContext.scannerTasks.add(new ReplaceTask(path, archive, deploymentName, deploymentFile, timestamp));
         } else {
@@ -1346,6 +1362,11 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         } finally {
             safeClose(fos);
         }
+    }
+
+    private static DeploymentTransformer loadDeploymentTransformer() {
+        Iterator<DeploymentTransformer> iter = ServiceLoader.load(DeploymentTransformer.class, DeploymentAddHandler.class.getClassLoader()).iterator();
+        return iter.hasNext() ? iter.next() : null;
     }
 
     private static List<File> listDirectoryChildren(File directory) {

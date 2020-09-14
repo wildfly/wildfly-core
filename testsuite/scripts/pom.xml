@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-testsuite</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>13.0.0.Beta1-SNAPSHOT</version>
+        <version>13.0.0.Beta6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -40,14 +40,43 @@
         <wildfly.home>${project.basedir}${file.separator}target${file.separator}${server.name}</wildfly.home>
         <test.log.level>INFO</test.log.level>
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
+        <maven.test.skip>false</maven.test.skip>
+        <skipTests>${maven.test.skip}</skipTests>
     </properties>
 
     <build>
         <plugins>
+            <!-- Create a test agent for the BootWithAgentTestCase -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-agent</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                        <phase>process-test-classes</phase>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <finalName>logging-agent</finalName>
+                            <includes>
+                                <include>**/LoggingAgent.class</include>
+                            </includes>
+                            <archive>
+                                <manifestEntries>
+                                    <Premain-Class>org.wildfly.common.test.LoggingAgent</Premain-Class>
+                                </manifestEntries>
+                            </archive>
+                            <outputDirectory>${wildfly.home}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skip>${skipTests}</skip>
                     <failIfNoTests>false</failIfNoTests>
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
 

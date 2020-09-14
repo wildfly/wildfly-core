@@ -22,6 +22,7 @@
 package org.jboss.as.host.controller.operations;
 
 import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.GROUP;
+import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MODULE_OPTIONS;
 import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_GROUP;
 import static org.jboss.as.host.controller.resources.ServerConfigResourceDefinition.SOCKET_BINDING_PORT_OFFSET;
@@ -45,7 +46,7 @@ public class ServerRestartRequiredServerConfigWriteAttributeHandler extends Mode
     public static OperationStepHandler INSTANCE = new ServerRestartRequiredServerConfigWriteAttributeHandler();
 
     protected ServerRestartRequiredServerConfigWriteAttributeHandler() {
-        super(GROUP, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE);
+        super(GROUP, MODULE_OPTIONS, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE);
     }
 
 

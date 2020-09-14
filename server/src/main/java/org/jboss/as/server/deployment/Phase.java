@@ -272,6 +272,7 @@ public enum Phase {
     public static final int STRUCTURE_GLOBAL_REQUEST_CONTROLLER         = 0x2000;
     public static final int STRUCTURE_WS_SERVICES_DEPS                  = 0x2100;
     public static final int STRUCTURE_DEPENDENCIES_MANIFEST             = 0x2200;
+    public static final int STRUCTURE_SECURITY_METADATA                 = 0x2300;
     public static final int STRUCTURE_DEFERRED_DEPLOYMENT_OVERLAY       = 0xF000; //needs to run after all structure processors
 
     // PARSE
@@ -402,6 +403,7 @@ public enum Phase {
     public static final int PARSE_CASSANDRA_DRIVER                      = 0x4C02;
     public static final int PARSE_MONGO_DRIVER                          = 0x4C03;
     public static final int PARSE_MICROPROFILE_JWT_DETECTION            = 0x4C0D;
+    public static final int PARSE_DEFINE_VIRTUAL_DOMAIN_NAME            = 0x4C17;
 
     // REGISTER
     /**
@@ -611,6 +613,7 @@ public enum Phase {
     public static final int POST_MODULE_UNDERTOW_SERVLET_CONTAINER_DEPENDENCY       = 0x2F1A;
 
     public static final int POST_MODULE_EE_CONCURRENT_CONTEXT           = 0x3000;
+    public static final int POST_MODULE_EE_STARTUP_COUNTDOWN            = 0x3080;
     public static final int POST_MODULE_BATCH_ENVIRONMENT               = 0x3100;
     public static final int POST_MODULE_RAR_SERVICES_DEPS               = 0x3300;
     public static final int POST_MODULE_UNDERTOW_MODCLUSTER             = 0x3400;
@@ -668,7 +671,8 @@ public enum Phase {
     public static final int INSTALL_WS_UNIVERSAL_META_DATA_MODEL        = 0x1C10;
     public static final int INSTALL_WS_DEPLOYMENT_ASPECTS               = 0x1C11;
     // IMPORTANT: WS integration installs deployment aspects dynamically
-    // so consider INSTALL 0x1C10 - 0x1CFF reserved for WS subsystem!
+    // so consider INSTALL 0x1C10 - 0x1CFE reserved for WS subsystem!
+    public static final int INSTALL_WEB_RESOLVE_SECURITY_DOMAIN         = 0x1CFF;
     public static final int INSTALL_WAR_DEPLOYMENT                      = 0x1D00;
     /**
      * @deprecated there is no phase processing associated with this constant - it was used for OSGi integration

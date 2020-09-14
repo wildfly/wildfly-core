@@ -30,7 +30,6 @@ import java.security.cert.X509Certificate;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -108,7 +107,7 @@ class FileTrustManagerService extends AbstractTrustManagerService {
     @Override
     public void start(StartContext context) throws StartException {
         try {
-            trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         } catch (NoSuchAlgorithmException e) {
             throw DomainManagementLogger.ROOT_LOGGER.unableToStart(e);
         }

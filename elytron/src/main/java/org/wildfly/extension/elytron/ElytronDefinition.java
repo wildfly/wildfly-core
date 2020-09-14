@@ -84,7 +84,6 @@ import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.security.SecurityContextAssociation;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
@@ -96,6 +95,7 @@ import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.PrincipalDecoder;
 import org.wildfly.security.auth.server.RealmMapper;
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.authz.PermissionMapper;
 import org.wildfly.security.authz.RoleDecoder;
@@ -209,6 +209,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new LdapRealmDefinition()));
         resourceRegistration.registerSubModel(ModifiableRealmDecorator.wrap(new FileSystemRealmDefinition()));
         resourceRegistration.registerSubModel(new CachingRealmDefinition());
+        resourceRegistration.registerSubModel(new DistributedRealmDefinition());
+        resourceRegistration.registerSubModel(new FailoverRealmDefinition());
 
         // Security Factories
         resourceRegistration.registerSubModel(new CustomComponentDefinition<>(CredentialSecurityFactory.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
@@ -510,6 +512,8 @@ class ElytronDefinition extends SimpleResourceDefinition {
                 context.addStep(new AbstractDeploymentChainStep() {
                     @Override
                     protected void execute(DeploymentProcessorTarget processorTarget) {
+                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.STRUCTURE,  Phase.STRUCTURE_SECURITY_METADATA, new SecurityMetaDataProcessor());
+                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.PARSE, Phase.PARSE_DEFINE_VIRTUAL_DOMAIN_NAME, new VirtualSecurityDomainNameProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_ELYTRON, new DependencyProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_ELYTRON_EE_SECURITY, new EESecurityDependencyProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.CONFIGURE_MODULE, Phase.CONFIGURE_AUTHENTICATION_CONTEXT, AUTHENITCATION_CONTEXT_PROCESSOR);
@@ -586,9 +590,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
         @Override
         public Boolean get() {
             if (WildFlySecurityManager.isChecking()) {
-                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityContextAssociation.getSecurityContext() != null);
+                return doPrivileged((PrivilegedAction<Boolean>) () -> SecurityDomain.getCurrent() == null);
             } else {
-                return SecurityContextAssociation.getSecurityContext() != null;
+                return SecurityDomain.getCurrent() == null;
             }
         }
     };

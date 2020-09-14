@@ -16,17 +16,22 @@
  */
 package org.wildfly.core.jar.runtime;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -46,16 +51,14 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.RUNTIME_NAM
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ExitCodes;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logmanager.Configurator;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleLoader;
-import static org.wildfly.core.jar.runtime.Constants.JBOSS_SERVER_CONFIG_DIR;
-import static org.wildfly.core.jar.runtime.Constants.JBOSS_SERVER_LOG_DIR;
 import static org.wildfly.core.jar.runtime.Constants.LOG_BOOT_FILE_PROP;
 import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_CLASS;
 import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_PROP;
-import static org.wildfly.core.jar.runtime.Constants.STANDALONE;
 import static org.wildfly.core.jar.runtime.Constants.STANDALONE_CONFIG;
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
 
@@ -63,10 +66,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import static org.wildfly.core.jar.runtime.Constants.CONFIGURATION;
-import static org.wildfly.core.jar.runtime.Constants.DATA;
 import static org.wildfly.core.jar.runtime.Constants.DEPLOYMENTS;
-import static org.wildfly.core.jar.runtime.Constants.LOG;
 import static org.wildfly.core.jar.runtime.Constants.LOGGING_PROPERTIES;
 import static org.wildfly.core.jar.runtime.Constants.SERVER_LOG;
 import static org.wildfly.core.jar.runtime.Constants.SERVER_STATE;
@@ -94,14 +94,14 @@ public final class BootableJar implements ShutdownHandler {
 
     private BootableJarLogger log;
 
-    private final Path jbossHome;
+    private final BootableEnvironment environment;
     private final List<String> startServerArgs = new ArrayList<>();
     private Server server;
     private final Arguments arguments;
     private final ModuleLoader loader;
 
-    private BootableJar(Path jbossHome, Arguments arguments, ModuleLoader loader, long unzipTime) throws Exception {
-        this.jbossHome = jbossHome;
+    private BootableJar(BootableEnvironment environment, Arguments arguments, ModuleLoader loader, long unzipTime) throws Exception {
+        this.environment = environment;
         this.arguments = arguments;
         this.loader = loader;
         startServerArgs.addAll(arguments.getServerArguments());
@@ -114,7 +114,7 @@ public final class BootableJar implements ShutdownHandler {
             setupDeployment(arguments.getDeployment());
         }
 
-        log.advertiseInstall(jbossHome, unzipTime + (System.currentTimeMillis() - t));
+        log.advertiseInstall(environment.getJBossHome(), unzipTime + (System.currentTimeMillis() - t));
     }
 
     @Override
@@ -126,13 +126,13 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     private void setupDeployment(Path deployment) throws Exception {
-        Path deploymentDir = jbossHome.resolve(STANDALONE).resolve(DATA).resolve(CONTENT).resolve(DEP_1).resolve(DEP_2);
+        Path deploymentDir = environment.resolveContentDir(DEP_1, DEP_2);
 
         Path target = deploymentDir.resolve(CONTENT);
         Files.createDirectories(deploymentDir);
         // Exploded deployment
         boolean isExploded = Files.isDirectory(deployment);
-        updateConfig(jbossHome.resolve(STANDALONE).resolve(CONFIGURATION).resolve(STANDALONE_CONFIG),
+        updateConfig(environment.resolveConfigurationDir(STANDALONE_CONFIG),
                 deployment.getFileName().toString(), isExploded);
         if (isExploded) {
             copyDirectory(deployment, target);
@@ -198,39 +198,39 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     private void configureLogger() throws IOException {
-        System.setProperty(LOG_MANAGER_PROP, LOG_MANAGER_CLASS);
+        environment.setSystemProperty(LOG_MANAGER_PROP, LOG_MANAGER_CLASS);
         configureLogging();
         log = BootableJarLogger.ROOT_LOGGER;
     }
 
     private void configureLogging() throws IOException {
         if (!arguments.isVersion()) {
+            // Load the boot configuration properties
+            loadBootConfigProperties();
             LogContext ctx = configureLogContext();
-            LogContext.setLogContextSelector(() -> {
-                return ctx;
-            });
+            // Use our own LogContextSelector which returns the configured context.
+            LogContext.setLogContextSelector(() -> ctx);
         }
     }
 
     private LogContext configureLogContext() throws IOException {
-        final Path baseDir = jbossHome.resolve(STANDALONE);
-        String serverLogDir = System.getProperty(JBOSS_SERVER_LOG_DIR, null);
-        if (serverLogDir == null) {
-            serverLogDir = baseDir.resolve(LOG).toString();
-            System.setProperty(JBOSS_SERVER_LOG_DIR, serverLogDir);
-        }
-        final String serverCfgDir = System.getProperty(JBOSS_SERVER_CONFIG_DIR, baseDir.resolve(CONFIGURATION).toString());
-        final LogContext embeddedLogContext = LogContext.create();
-        final Path bootLog = Paths.get(serverLogDir).resolve(SERVER_LOG);
-        final Path loggingProperties = Paths.get(serverCfgDir).resolve(Paths.get(LOGGING_PROPERTIES));
+        // Create our own log context instead of using the default system log context. This is useful for cases when the
+        // LogManager.readConfiguration() may be invoked it will not override the current configuration.
+        final LogContext logContext = LogContext.create();
+        final Path bootLog = environment.resolveLogDir(SERVER_LOG);
+        final Path loggingProperties = environment.resolveConfigurationDir(LOGGING_PROPERTIES);
         if (Files.exists(loggingProperties)) {
             try (final InputStream in = Files.newInputStream(loggingProperties)) {
-                System.setProperty(LOG_BOOT_FILE_PROP, bootLog.toAbsolutePath().toString());
-                PropertyConfigurator configurator = new PropertyConfigurator(embeddedLogContext);
+                environment.setSystemProperty(LOG_BOOT_FILE_PROP, bootLog.toAbsolutePath().toString());
+                // The LogManager.readConfiguration() uses the LogContext.getSystemLogContext(). Since we create our
+                // own LogContext we need to configure the context and attach the configurator to the root logger. The
+                // logging subsystem will use this configurator to determine what resources may need to be reconfigured.
+                PropertyConfigurator configurator = new PropertyConfigurator(logContext);
                 configurator.configure(in);
+                logContext.getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
             }
         }
-        return embeddedLogContext;
+        return logContext;
     }
 
     public void run() throws Exception {
@@ -246,15 +246,15 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     private void cleanup() {
-        log.deletingHome(jbossHome);
-        deleteDir(jbossHome);
+        log.deletingHome(environment.getJBossHome());
+        deleteDir(environment.getJBossHome());
 
     }
 
     private Server buildServer(List<String> args) throws IOException {
         String[] array = new String[args.size()];
         log.advertiseOptions(args);
-        return Server.newSever(jbossHome, args.toArray(array), loader, this);
+        return Server.newSever(args.toArray(array), loader, this);
     }
 
     private void deleteDir(Path root) {
@@ -316,11 +316,27 @@ public final class BootableJar implements ShutdownHandler {
                         break;
                     }
                 } catch (Exception ex) {
-                    log.unexpectedExceptionWhileShuttingDown(ex);
+                    throw log.unexpectedExceptionWhileShuttingDown(ex);
                 }
             }
         } finally {
             cleanup();
+        }
+    }
+
+    private void loadBootConfigProperties() throws IOException {
+        final Path configFile = environment.resolveConfigurationDir( "boot-config.properties");
+        if (Files.exists(configFile)) {
+            try (BufferedReader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
+                final Properties properties = new Properties();
+                properties.load(reader);
+                // Set the system properties if they are not already defined
+                for (String key : properties.stringPropertyNames()) {
+                    // Note this overrides any previously set system property. This is what the system-property resource
+                    // does and this should behave the same.
+                    environment.setSystemProperty(key, properties.getProperty(key));
+                }
+            }
         }
     }
 
@@ -336,9 +352,11 @@ public final class BootableJar implements ShutdownHandler {
      */
     public static void run(Path jbossHome, List<String> args, ModuleLoader moduleLoader, ModuleClassLoader moduleClassLoader, Long unzipTime) throws Exception {
         setTccl(moduleClassLoader);
+        // Initialize the environment
+        final BootableEnvironment environment = BootableEnvironment.of(jbossHome);
         Arguments arguments;
         try {
-            arguments = Arguments.parseArguments(args);
+            arguments = Arguments.parseArguments(args, environment);
         } catch (Throwable ex) {
             System.err.println(ex);
             CmdUsage.printUsage(System.out);
@@ -348,8 +366,56 @@ public final class BootableJar implements ShutdownHandler {
             CmdUsage.printUsage(System.out);
             return;
         }
-        BootableJar bootableJar = new BootableJar(jbossHome, arguments, moduleLoader, unzipTime);
+
+        // Side effect is to initialise Log Manager
+        BootableJar bootableJar = new BootableJar(environment, arguments, moduleLoader, unzipTime);
+
+        // At this point we can configure JMX
+        configureJMX(moduleClassLoader, bootableJar.log);
+
         bootableJar.run();
+    }
+
+    private static void configureJMX(ModuleClassLoader moduleClassLoader, BootableJarLogger log) throws Exception {
+        final String mbeanServerBuilderName = getServiceName(moduleClassLoader, "javax.management.MBeanServerBuilder");
+        if (mbeanServerBuilderName != null) {
+            System.setProperty("javax.management.builder.initial", mbeanServerBuilderName);
+            // Initialize the platform mbean server
+            ManagementFactory.getPlatformMBeanServer();
+        }
+
+        // Register JBoss Modules MBean
+        // MODULES-401 makes this method public
+        // Remove this workaround when upgrading to JBoss modules 1.11
+        try {
+            Method m = ModuleLoader.class.getDeclaredMethod("installMBeanServer");
+            m.setAccessible(true);
+            m.invoke(null);
+        } catch (NoSuchMethodException ex) {
+            log.cantRegisterModuleMBeans(ex);
+        }
+    }
+
+    private static String getServiceName(ClassLoader classLoader, String className) throws IOException {
+        try (final InputStream stream = classLoader.getResourceAsStream("META-INF/services/" + className)) {
+            if (stream == null) {
+                return null;
+            }
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                final int i = line.indexOf('#');
+                if (i != -1) {
+                    line = line.substring(0, i);
+                }
+                line = line.trim();
+                if (line.length() == 0) {
+                    continue;
+                }
+                return line;
+            }
+            return null;
+        }
     }
 
     static void setTccl(final ClassLoader cl) {

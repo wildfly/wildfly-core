@@ -26,6 +26,7 @@ import static org.wildfly.core.launcher.logger.LauncherMessages.MESSAGES;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +40,7 @@ import org.wildfly.core.launcher.Arguments.Argument;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "MagicNumber", "UnusedReturnValue"})
 public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneCommandBuilder> implements CommandBuilder {
 
     // JPDA remote socket debugging
@@ -55,6 +56,8 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     private String modulesLocklessArg;
     private String modulesMetricsArg;
     private final Map<String, String> securityProperties;
+    private boolean addModuleAgent;
+    private final Collection<String> moduleOpts;
 
     /**
      * Creates a new command builder for a standalone instance.
@@ -69,6 +72,8 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         javaOpts = new Arguments();
         javaOpts.addAll(DEFAULT_VM_ARGUMENTS);
         securityProperties = new LinkedHashMap<>();
+        moduleOpts = new ArrayList<>();
+        addModuleAgent = false;
     }
 
     /**
@@ -200,6 +205,105 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
      */
     public List<String> getJavaOptions() {
         return javaOpts.asList();
+    }
+
+    /**
+     * Adds an option which will be passed to JBoss Modules.
+     * <p>
+     * Note that {@code -mp} or {@code --modulepath} is not supported. Use {@link #addModuleDir(String)} to add a module
+     * directory.
+     * </p>
+     *
+     * @param arg the argument to add
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder addModuleOption(final String arg) {
+        if (arg != null) {
+            if (arg.startsWith("-javaagent:")) {
+                addModuleAgent = true;
+            } else if ("-mp".equals(arg) || "--modulepath".equals(arg)) {
+                throw MESSAGES.invalidArgument(arg, "addModuleOption");
+            } else if ("-secmgr".equals(arg)) {
+                throw MESSAGES.invalidArgument(arg, "setUseSecurityManager");
+            }
+            moduleOpts.add(arg);
+        }
+        return this;
+    }
+
+    /**
+     * Adds the options which will be passed to JBoss Modules.
+     * <p>
+     * Note that {@code -mp} or {@code --modulepath} is not supported. Use {@link #addModuleDirs(String...)} to add a
+     * module directory.
+     * </p>
+     *
+     * @param args the argument to add
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder addModuleOptions(final String... args) {
+        if (args != null) {
+            for (String arg : args) {
+                addModuleOption(arg);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Adds the options which will be passed to JBoss Modules.
+     * <p>
+     * Note that {@code -mp} or {@code --modulepath} is not supported. Use {@link #addModuleDirs(Iterable)} to add a
+     * module directory.
+     * </p>
+     *
+     * @param args the argument to add
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder addModuleOptions(final Iterable<String> args) {
+        if (args != null) {
+            for (String arg : args) {
+                addModuleOption(arg);
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Clears the current module options and adds the options which will be passed to JBoss Modules.
+     * <p>
+     * Note that {@code -mp} or {@code --modulepath} is not supported. Use {@link #addModuleDirs(String...)} to add a
+     * module directory.
+     * </p>
+     *
+     * @param args the argument to use
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder setModuleOptions(final String... args) {
+        moduleOpts.clear();
+        addModuleOptions(args);
+        return this;
+    }
+
+    /**
+     * Clears the current module options and adds the options which will be passed to JBoss Modules.
+     * <p>
+     * Note that {@code -mp} or {@code --modulepath} is not supported. Use {@link #addModuleDirs(Iterable)} to add a
+     * module directory.
+     * </p>
+     *
+     * @param args the argument to use
+     *
+     * @return the builder
+     */
+    public StandaloneCommandBuilder setModuleOptions(final Iterable<String> args) {
+        moduleOpts.clear();
+        addModuleOptions(args);
+        return this;
     }
 
     /**
@@ -405,7 +509,7 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     }
 
     public StandaloneCommandBuilder setGitRepository(final String gitRepository, final String gitBranch, final String gitAuthentication) {
-        if(gitRepository == null) {
+        if (gitRepository == null) {
             throw MESSAGES.nullParam("git-repo");
         }
         addServerArg("--git-repo", gitRepository);
@@ -423,10 +527,19 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();
         cmd.add("-D[Standalone]");
+        // Check to see if an agent was added as a module option, if so we want to add JBoss Modules as an agent.
+        if (addModuleAgent) {
+            cmd.add("-javaagent:" + getModulesJarName());
+        }
         cmd.addAll(getJavaOptions());
         if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
+        // Add these to JVM level system properties
+        addSystemPropertyArg(cmd, HOME_DIR, getWildFlyHome());
+        addSystemPropertyArg(cmd, SERVER_BASE_DIR, getBaseDirectory());
+        addSystemPropertyArg(cmd, SERVER_LOG_DIR, getLogDirectory());
+        addSystemPropertyArg(cmd, SERVER_CONFIG_DIR, getConfigurationDirectory());
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);
         }
@@ -443,13 +556,11 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         if (useSecurityManager()) {
             cmd.add(SECURITY_MANAGER_ARG);
         }
+        // Add the agent argument for jboss-modules
+        cmd.addAll(moduleOpts);
         cmd.add("-mp");
         cmd.add(getModulePaths());
         cmd.add("org.jboss.as.standalone");
-        addSystemPropertyArg(cmd, HOME_DIR, getWildFlyHome());
-        addSystemPropertyArg(cmd, SERVER_BASE_DIR, getBaseDirectory());
-        addSystemPropertyArg(cmd, SERVER_LOG_DIR, getLogDirectory());
-        addSystemPropertyArg(cmd, SERVER_CONFIG_DIR, getConfigurationDirectory());
 
         // Add the security properties
         StringBuilder sb = new StringBuilder(64);
