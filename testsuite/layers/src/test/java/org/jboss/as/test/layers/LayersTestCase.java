@@ -17,8 +17,10 @@
 package org.jboss.as.test.layers;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import org.junit.Test;
+import org.junit.Assert;
 
 /**
  *
@@ -67,10 +69,22 @@ public class LayersTestCase {
         "org.wildfly.bootable-jar"
     };
 
+    private static final String[] BANNED_MODULES = {
+            "org.jboss.as.security"
+    };
+
     @Test
     public void test() throws Exception {
         String root = System.getProperty("layers.install.root");
         LayersTest.test(root, new HashSet<>(Arrays.asList(NOT_REFERENCED)),
                 new HashSet<>(Arrays.asList(NOT_USED)));
+    }
+
+    @Test
+    public void checkBannedModules() throws Exception {
+        String root = System.getProperty("layers.install.root");
+        HashMap<String, String> results = LayersTest.checkBannedModules(root, new HashSet<>(Arrays.asList(BANNED_MODULES)));
+
+        Assert.assertTrue("The following banned modules were provisioned " + results.toString(), results.isEmpty());
     }
 }
