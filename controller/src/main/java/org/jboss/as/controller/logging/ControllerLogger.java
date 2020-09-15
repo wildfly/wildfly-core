@@ -3229,6 +3229,9 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = NONE, value = "; There are no known registration points which can provide this capability.")
     String noKnownProviderPoints();
 
+    @Message(id = NONE, value = "; This unresolvable capability likely is due to the use of an expression string in a configuration attribute that does not support expressions.")
+    String unsupportedUsageOfExpression();
+
     @Message(id = 370, value="Incomplete expression: %s")
     OperationFailedException incompleteExpression(String expression);
 

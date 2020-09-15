@@ -430,8 +430,10 @@ final class OperationContextImpl extends AbstractOperationContext {
     private static StringBuilder appendPossibleProviderPoints(StringBuilder sb, String formattedCapability, Set<PathAddress> possible){
         //"you wanted X and it doesn't exist; here's where you can add X"
         sb = sb.append(System.lineSeparator()).append(formattedCapability);
-        if (possible.isEmpty()){
+        if (possible.isEmpty()) {
             return sb.append(ControllerLogger.ROOT_LOGGER.noKnownProviderPoints());
+        } else if (ExpressionResolver.EXPRESSION_PATTERN.matcher(formattedCapability).matches()) {
+            return sb.append(ControllerLogger.ROOT_LOGGER.unsupportedUsageOfExpression());
         }
         StringBuffer points = new StringBuffer();
         for (PathAddress c: possible){
