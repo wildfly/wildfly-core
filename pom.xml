@@ -225,8 +225,8 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.13.0.CR4</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.7.1.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron>1.13.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web>1.8.0.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
        
     </properties>
@@ -1762,6 +1762,11 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-digest</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-external</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
             <dependency>

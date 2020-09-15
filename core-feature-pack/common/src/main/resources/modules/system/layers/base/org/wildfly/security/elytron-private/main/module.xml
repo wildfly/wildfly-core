@@ -58,6 +58,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-http-cert}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-digest}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-deprecated}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-http-external}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-form}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-spnego}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-sso}"/>
