@@ -16,8 +16,15 @@
  */
 package org.jboss.as.test.layers;
 
+import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -67,10 +74,43 @@ public class LayersTestCase {
         "org.wildfly.bootable-jar"
     };
 
+    /**
+     * A HashMap to configure a banned module.
+     * They key is the banned module name, the value is an optional List with the installation names that are allowed to
+     * provision the banned module. This installations will be ignored.
+     */
+    private static final HashMap<String, List<String>> BANNED_MODULES_CONF = new HashMap<String, List<String>>(){{
+        put("org.jboss.as.security", null);
+    }};
+
+    public static String root;
+
+    @BeforeClass
+    public static void setUp() {
+        root = System.getProperty("layers.install.root");
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        Boolean delete = Boolean.getBoolean("layers.delete.installations");
+        if(delete) {
+            File[] installations = new File(root).listFiles(File::isDirectory);
+            for(File f : installations) {
+                LayersTest.recursiveDelete(f.toPath());
+            }
+        }
+    }
+
     @Test
     public void test() throws Exception {
-        String root = System.getProperty("layers.install.root");
         LayersTest.test(root, new HashSet<>(Arrays.asList(NOT_REFERENCED)),
                 new HashSet<>(Arrays.asList(NOT_USED)));
+    }
+
+    @Test
+    public void checkBannedModules() throws Exception {
+        HashMap<String, String> results = LayersTest.checkBannedModules(root, BANNED_MODULES_CONF);
+
+        Assert.assertTrue("The following banned modules were provisioned " + results.toString(), results.isEmpty());
     }
 }
