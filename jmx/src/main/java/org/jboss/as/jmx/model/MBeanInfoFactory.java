@@ -266,8 +266,11 @@ public class MBeanInfoFactory {
         List<OpenMBeanParameterInfo> params = new ArrayList<OpenMBeanParameterInfo>(propertyList.size());
 
         Map<String, AttributeDefinition> attributeDefinitions = new HashMap<>();
-        for (AttributeDefinition attributeDefinition : opDef.getParameters()) {
-            attributeDefinitions.put(attributeDefinition.getName(), attributeDefinition);
+        AttributeDefinition[] attrs = opDef.getParameters();
+        if (attrs != null) {
+            for (AttributeDefinition attributeDefinition : attrs) {
+                attributeDefinitions.put(attributeDefinition.getName(), attributeDefinition);
+            }
         }
 
         for (Property prop : propertyList) {
