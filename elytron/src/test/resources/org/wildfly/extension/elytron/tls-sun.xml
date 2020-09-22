@@ -2,6 +2,7 @@
 <subsystem xmlns="urn:wildfly:elytron:11.0" default-ssl-context="ClientSslContextNoAuth">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="com.sun.net.ssl.internal.ssl.Provider" />
+        <provider-loader name="openssl" module="org.wildfly.openssl"/>
     </providers>
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm">
@@ -95,6 +96,21 @@
             <server-ssl-context name="ServerSslContextTLS12Only" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="ManagerProviderLoader"
                                 provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13OpenSsl" protocols="TLSv1.3 TLSv1.2 TLSv1.1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS12OnlyOpenSsl" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13OnlyOpenSsl" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextNoTLS13CipherSuites" protocols="TLSv1.2 TLSv1.3"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
         </server-ssl-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
@@ -103,6 +119,12 @@
                                 key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
             <client-ssl-context name="ClientSslContextTLS13Only" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_GCM_SHA256"
                                 key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13OpenSsl" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" cipher-suite-names="TLS_AES_256_GCM_SHA384:TLS_AES_128_CCM_8_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientSslContextTLS13OnlyOpenSsl" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_GCM_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientSslContextNoTLS13CipherSuites" protocols="TLSv1.2 TLSv1.3"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
         </client-ssl-contexts>
     </tls>
 </subsystem>

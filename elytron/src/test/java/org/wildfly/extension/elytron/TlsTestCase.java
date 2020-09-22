@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -44,8 +44,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
@@ -109,6 +111,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
     private static final String INIT_TEST_TRUSTSTORE = "myTS";
     private static final String INIT_TEST_TRUSTMANAGER = "myTM";
+
+    private static final Pattern OPENSSL_TLSv13_PATTERN = Pattern.compile("^(TLS_AES_128_GCM_SHA256|TLS_AES_256_GCM_SHA384|TLS_CHACHA20_POLY1305_SHA256|TLS_AES_128_CCM_SHA256|TLS_AES_128_CCM_8_SHA256)$");
 
     public TlsTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
@@ -281,6 +285,19 @@ public class TlsTestCase extends AbstractSubsystemTest {
         }
     }
 
+    private boolean isOpenSSL111OrHigher() {
+        SSLContext sslContext = getSslContext("ServerSslContextTLS13OpenSsl", false);
+        if (sslContext == null) {
+            return false; // running on OpenSSL version < 1.0.1, which is the minimum required version for WildFly OpenSSL
+        }
+        String[] OPENSSL_AVAILABLE_CIPHERSUITES = sslContext.getSupportedSSLParameters().getCipherSuites();
+        for (String cipherSuite : OPENSSL_AVAILABLE_CIPHERSUITES) {
+            if (OPENSSL_TLSv13_PATTERN.matcher(cipherSuite).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @BeforeClass
     public static void noJDK14Plus() {
@@ -345,16 +362,34 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthTLS13() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthTLS13, test is not being run on JDK 11.",
-                System.getProperty("java.specification.version").equals("11"));
+        Assume.assumeTrue("Skipping testSslServiceAuthTLS13, test is not being run on JDK 11+.",
+                JdkUtils.getJavaSpecVersion() >= 11);
         testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                 "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
     }
 
     @Test
+    public void testSslServiceAuthTLS13OpenSsl() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthTLS13OpenSsl, test is not being run with JDK 11+ and OpenSSL 1.1.1+",
+                JdkUtils.getJavaSpecVersion() >= 11 && isOpenSSL111OrHigher());
+        testCommunication("ServerSslContextTLS13OpenSsl", "ClientSslContextTLS13OpenSsl", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
+    }
+
+    @Test
+    public void testSslServiceAuthNoTLS13CipherSuitesOpenSsl() throws Throwable {
+        // WFCORE-5122: Update this test once we are ready to enable TLS 1.3 by default for the WildFly OpenSSL provider
+        // For now, TLS 1.2 should be used by default since no TLS 1.3 cipher suites have been explicitly configured
+        Assume.assumeTrue("Skipping testSslServiceAuthNoTLS13CipherSuitesOpenSsl, test is not being run with JDK 11+ and OpenSSL 1.1.1+",
+                JdkUtils.getJavaSpecVersion() >= 11 && isOpenSSL111OrHigher());
+        testCommunication("ServerSslContextNoTLS13CipherSuites", "ClientSslContextNoTLS13CipherSuites", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false);
+    }
+
+    @Test
     public void testSslServiceAuthProtocolMismatch() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11.",
-                System.getProperty("java.specification.version").equals("11"));
+        Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11+.",
+                JdkUtils.getJavaSpecVersion() >= 11);
         try {
             testCommunication("ServerSslContextTLS12Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
@@ -364,14 +399,38 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testSslServiceAuthProtocolMismatchOpenSsl() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthProtocolMismatch, test is not being run on JDK 11+ and OpenSSL 1.1.1+",
+                JdkUtils.getJavaSpecVersion() >= 11 && isOpenSSL111OrHigher());
+        try {
+            testCommunication("ServerSslContextTLS12OnlyOpenSsl", "ClientSslContextTLS13OnlyOpenSsl", false, "",
+                    "", "");
+            fail("Expected SSLException not thrown");
+        } catch (SSLException expected) {
+        }
+    }
+
+    @Test
     public void testSslServiceAuthCipherSuiteMismatch() throws Throwable {
-        Assume.assumeTrue("Skipping testSslServiceAuthCipherSuiteMismatch, test is not being run on JDK 11.",
-                System.getProperty("java.specification.version").equals("11"));
+        Assume.assumeTrue("Skipping testSslServiceAuthCipherSuiteMismatch, test is not being run on JDK 11+.",
+                JdkUtils.getJavaSpecVersion() >= 11);
         try {
             testCommunication("ServerSslContextTLS13Only", "ClientSslContextTLS13Only", false, "",
                     "", "");
             fail("Expected SSLHandshakeException not thrown");
         } catch (SSLHandshakeException expected) {
+        }
+    }
+
+    @Test
+    public void testSslServiceAuthCipherSuiteMismatchOpenSsl() throws Throwable {
+        Assume.assumeTrue("Skipping testSslServiceAuthCipherSuiteMismatchOpenSsl, test is not being run on JDK 11+ and OpenSSL 1.1.1+.",
+                JdkUtils.getJavaSpecVersion() >= 11 && isOpenSSL111OrHigher());
+        try {
+            testCommunication("ServerSslContextTLS13OnlyOpenSsl", "ClientSslContextTLS13OnlyOpenSsl", false, "",
+                    "", "");
+            fail("Expected SSLException not thrown");
+        } catch (SSLException expected) {
         }
     }
 
@@ -482,9 +541,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private SSLContext getSslContext(String contextName) {
+        return getSslContext(contextName, true);
+    }
+
+    private SSLContext getSslContext(String contextName, boolean assertNotNull) {
         ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(contextName);
         SSLContext sslContext = (SSLContext) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(sslContext);
+        if (assertNotNull) {
+            Assert.assertNotNull(sslContext);
+        }
         return sslContext;
     }
 
@@ -497,12 +562,13 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test) throws Throwable {
-        boolean testSessions = ! System.getProperty("java.specification.version").equals("11"); // session IDs are essentially obsolete in TLSv1.3
+        boolean testSessions = ! (JdkUtils.getJavaSpecVersion() >= 11); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
+        ServerSocket listeningSocket;
 
-        ServerSocket listeningSocket = serverContext.getServerSocketFactory().createServerSocket();
-        listeningSocket.bind(new InetSocketAddress("localhost", TESTING_PORT));
+
+        listeningSocket = serverContext.getServerSocketFactory().createServerSocket(TESTING_PORT, 10, InetAddress.getByName("localhost"));
         SSLSocket clientSocket = (SSLSocket) clientContext.getSocketFactory().createSocket("localhost", TESTING_PORT);
         SSLSocket serverSocket = (SSLSocket) listeningSocket.accept();
 
