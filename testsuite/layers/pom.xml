@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>13.0.0.Beta6-SNAPSHOT</version>
+        <version>13.0.0.Beta7-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -766,9 +766,11 @@
                                                 <layer>core-management</layer>
                                                 <layer>core-security-realms</layer>
                                                 <layer>core-server</layer>
+                                                <layer>core-tools</layer>
                                                 <layer>deployment-scanner</layer>
                                                 <layer>discovery</layer>
                                                 <layer>elytron</layer>
+                                                <layer>git-history</layer>
                                                 <layer>io</layer>
                                                 <layer>jmx</layer>
                                                 <layer>jmx-remoting</layer>
@@ -778,7 +780,6 @@
                                                 <layer>management-security-realm</layer>
                                                 <layer>request-controller</layer>
                                                 <layer>security-manager</layer>
-                                                <layer>core-tools</layer>
                                             </layers>
                                         </config>
                                     </configurations>

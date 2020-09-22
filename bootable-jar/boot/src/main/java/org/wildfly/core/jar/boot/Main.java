@@ -16,18 +16,26 @@
  */
 package org.wildfly.core.jar.boot;
 
+import __redirected.__JAXPRedirected;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.Policy;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.jboss.modules.Module;
@@ -55,24 +63,59 @@ public final class Main {
 
     private static final String INSTALL_DIR = "--install-dir";
     private static final String SECMGR = "-secmgr";
+    private static final String DISPLAY_GALLEON_CONFIG = "--display-galleon-config";
 
     private static final String WILDFLY_RESOURCE = "/wildfly.zip";
 
+    private static final String PROVISIONING_RESOURCE = "/provisioning.xml";
+
     private static final String WILDFLY_BOOTABLE_TMP_DIR_PREFIX = "wildfly-bootable-server";
+
+    private static final Set<PosixFilePermission> EXECUTE_PERMISSIONS = new HashSet<>();
+
+    static {
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.OWNER_EXECUTE);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.OWNER_WRITE);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.OWNER_READ);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.GROUP_EXECUTE);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.GROUP_WRITE);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.GROUP_READ);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.OTHERS_EXECUTE);
+        EXECUTE_PERMISSIONS.add(PosixFilePermission.OTHERS_READ);
+    }
 
     public static void main(String[] args) throws Exception {
 
         List<String> filteredArgs = new ArrayList<>();
         Path installDir = null;
         boolean securityManager = false;
+        boolean displayGalleonConfig = false;
+
         for (String arg : args) {
             if (arg.startsWith(INSTALL_DIR)) {
                 installDir = Paths.get(getValue(arg));
             } else if (SECMGR.equals(arg)) {
                 securityManager = true;
+            } else if (DISPLAY_GALLEON_CONFIG.equals(arg)) {
+                displayGalleonConfig = true;
             } else {
                 filteredArgs.add(arg);
             }
+        }
+
+        if (displayGalleonConfig) {
+            try (InputStream provisioningFile = Main.class.getResourceAsStream(PROVISIONING_RESOURCE)) {
+                if (provisioningFile == null) {
+                    throw new Exception("Resource " + PROVISIONING_RESOURCE + " doesn't exist, can't retrieve galleon configuration.");
+                }
+                try(InputStreamReader reader = new InputStreamReader(provisioningFile, StandardCharsets.UTF_8);
+                    BufferedReader br = new BufferedReader(reader)) {
+                    while(br.ready()) {
+                        System.out.println(br.readLine());
+                    }
+                }
+            }
+            return;
         }
 
         final SecurityManager existingSecMgr = System.getSecurityManager();
@@ -109,6 +152,9 @@ public final class Main {
     private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime, boolean securityManager) throws Exception {
         final String modulePath = jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString();
         ModuleLoader moduleLoader = setupModuleLoader(modulePath);
+
+        __JAXPRedirected.changeAll(MODULE_ID_JAR_RUNTIME, moduleLoader);
+
         final Module bootableJarModule;
         try {
             bootableJarModule = moduleLoader.loadModule(MODULE_ID_JAR_RUNTIME);
@@ -147,6 +193,7 @@ public final class Main {
     }
 
     private static void unzip(InputStream wf, Path dir) throws Exception {
+        boolean isWindows = isWindows();
         try (ZipInputStream zis = new ZipInputStream(wf)) {
             ZipEntry ze = zis.getNextEntry();
             while (ze != null) {
@@ -161,11 +208,18 @@ public final class Main {
                         Files.createDirectories(parent);
                     }
                     Files.copy(zis, newFile, StandardCopyOption.REPLACE_EXISTING);
+                    if (!isWindows && newFile.getFileName().toString().endsWith(".sh")) {
+                        Files.setPosixFilePermissions(newFile, EXECUTE_PERMISSIONS);
+                    }
                 }
                 zis.closeEntry();
                 ze = zis.getNextEntry();
             }
         }
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows");
     }
 
     private static String trimPathToModulesDir(String modulePath) {

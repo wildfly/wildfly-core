@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-jar-parent</artifactId>
-        <version>13.0.0.Beta6-SNAPSHOT</version>
+        <version>13.0.0.Beta7-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-jar-runtime</artifactId>
@@ -118,4 +118,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- This is only set for testing purposes and is not a real home directory -->
+                        <test.jboss.home>${project.build.directory}</test.jboss.home>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

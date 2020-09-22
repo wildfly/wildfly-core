@@ -521,10 +521,12 @@ public class ModelControllerMBeanHelper {
                 ModelNode paramDescription = requestProperties.get(attributeName);
                 AttributeDefinition[] attrs = entry.getOperationDefinition().getParameters();
                 AttributeDefinition attr = null;
-                for (AttributeDefinition currAttr : attrs) {
-                    if (currAttr.getName().equals(attributeName)) {
-                        attr = currAttr;
-                        break;
+                if (attrs != null) {
+                    for (AttributeDefinition currAttr : attrs) {
+                        if (currAttr.getName().equals(attributeName)) {
+                            attr = currAttr;
+                            break;
+                        }
                     }
                 }
                 op.get(attributeName).set(converters.toModelNode(attr, paramDescription, param));
@@ -553,7 +555,7 @@ public class ModelControllerMBeanHelper {
         //TODO we could have more than one reply property
         AttributeDefinition reply = null;
         AttributeDefinition[] replyParams = entry.getOperationDefinition().getReplyParameters();
-        if (replyParams.length > 0) {
+        if (replyParams != null && replyParams.length > 0) {
             reply = replyParams[0];
         }
         return converters.fromModelNode(reply, description.get(REPLY_PROPERTIES), result.get(RESULT));

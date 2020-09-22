@@ -46,6 +46,7 @@ import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.HostRegistrations;
+import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.FetchMissingConfigurationHandler;
 import org.jboss.as.domain.controller.operations.coordination.DomainControllerLockIdUtils;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -103,6 +104,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
     @Override
     public ManagementChannelHandler startReceiving(final Channel channel) {
+        DomainControllerLogger.ROOT_LOGGER.debugf("Starting receiving from a remote HostController on channel %s", channel);
         final ManagementChannelHandler handler = new ManagementChannelHandler(ManagementClientChannelStrategy.create(channel), getExecutor());
         handler.getAttachments().attach(ManagementChannelHandler.TEMP_DIR, tempDir);
         // Assemble the request handlers for the domain channel

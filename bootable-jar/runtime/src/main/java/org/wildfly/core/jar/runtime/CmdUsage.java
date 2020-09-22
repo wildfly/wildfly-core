@@ -41,6 +41,9 @@ final class CmdUsage extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.SYS_PROP + "<name>[=<value>]");
         instructions.add(BootableJarLogger.ROOT_LOGGER.argSystem());
 
+        addArguments(Constants.DISPLAY_GALLEON_CONFIG_ARG);
+        instructions.add(BootableJarLogger.ROOT_LOGGER.argDisplayGalleonConfig());
+
         addArguments(CommandLineConstants.HELP);
         instructions.add(BootableJarLogger.ROOT_LOGGER.argHelp());
 

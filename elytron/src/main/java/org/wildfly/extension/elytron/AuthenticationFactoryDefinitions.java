@@ -565,10 +565,12 @@ class AuthenticationFactoryDefinitions {
     private static int toPriorityHttp(String name) {
         switch (name) {
             case HttpConstants.CLIENT_CERT_NAME:
-                return 30;
+                return 40;
             case HttpConstants.SPNEGO_NAME:
-                return 20;
+                return 30;
             case HttpConstants.BEARER_TOKEN:
+                return 20;
+            case HttpConstants.EXTERNAL_NAME:
                 return 10;
             case HttpConstants.BASIC_NAME:
                 // i.e. Any hashed username / password mechs are preferred.

@@ -35,13 +35,17 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.wildfly.core.launcher.CliCommandBuilder;
 import org.wildfly.core.launcher.Launcher;
+import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  *
  * @author Jean-François Denise <jdenise@redhat.com>
  */
+// Required by Bootable JAR in order to create the installation directory
+@RunWith(WildflyTestRunner.class)
 public class JBossCliXmlConfigTestCase {
 
     @Test
