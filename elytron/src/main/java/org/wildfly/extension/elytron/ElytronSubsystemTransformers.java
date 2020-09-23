@@ -39,6 +39,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROT
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_10_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_11_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_12_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
@@ -89,6 +90,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 12.0.0 (WildFly 22) to 11.0.0 (WildFly 21)
+        from12(chainedBuilder);
         // 11.0.0 (WildFly 21) to 10.0.0 (WildFly 20)
         from11(chainedBuilder);
         // 10.0.0 (WildFly 20) to 9.0.0 (WildFly 19)
@@ -110,7 +113,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_10_0_0, ELYTRON_9_0_0, ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_11_0_0, ELYTRON_10_0_0, ELYTRON_9_0_0, ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+
+    }
+
+    private static void from12(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_12_0_0, ELYTRON_11_0_0);
 
     }
 
