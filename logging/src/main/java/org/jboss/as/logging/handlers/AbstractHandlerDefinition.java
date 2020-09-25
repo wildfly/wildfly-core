@@ -245,7 +245,7 @@ public abstract class AbstractHandlerDefinition extends TransformerResourceDefin
      *
      * @return the default parameters
      */
-    private static Parameters createParameters(final PathElement path, final Class<? extends Handler> type,
+    static Parameters createParameters(final PathElement path, final Class<? extends Handler> type,
                                                final AttributeDefinition[] addAttributes,
                                                final ConfigurationProperty<?>... constructionProperties) {
         return new Parameters(path, LoggingExtension.getResourceDescriptionResolver(path.getKey()))

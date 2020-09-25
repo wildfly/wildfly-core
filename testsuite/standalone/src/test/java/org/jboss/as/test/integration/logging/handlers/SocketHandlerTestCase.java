@@ -74,7 +74,6 @@ import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-// https://github.com/justinmcook/wildfly-core/blob/caea7f7170c24598244558c6a82404e8417c6335/domain-management/src/test/java/org/jboss/as/domain/management/security/auditlog/AuditLogHandlerBootEnabledTestCase.java
 @RunWith(WildflyTestRunner.class)
 @ServerSetup(SocketHandlerTestCase.ConfigureSubsystem.class)
 public class SocketHandlerTestCase extends AbstractLoggingTestCase {
