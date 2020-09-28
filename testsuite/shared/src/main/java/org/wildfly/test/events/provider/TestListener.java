@@ -57,8 +57,21 @@ public class TestListener implements ProcessStateListener {
     private FileWriter fileRunningWriter;
     private ProcessStateListenerInitParameters parameters;
 
+    private static void checkTccl() {
+        // search for this same class as a resource, finding it means the TCCL is assigned to our module
+        String classFile = TestListener.class.getName().replaceAll("\\.", "/") + ".class";
+        if (Thread.currentThread().getContextClassLoader().getResource(classFile) == null) {
+            throw new ListenerFailureException("Incorrect TCCL assigned to the listener: " + Thread.currentThread().getContextClassLoader());
+        }
+    }
+
+    public TestListener() {
+        checkTccl();
+    }
+
     @Override
     public void init(ProcessStateListenerInitParameters parameters) {
+        checkTccl();
         this.parameters = parameters;
         Path dataDir = Paths.get(parameters.getInitProperties().get("file"));
 
@@ -85,6 +98,7 @@ public class TestListener implements ProcessStateListener {
 
     @Override
     public void cleanup() {
+        checkTccl();
         try {
             fileRuntimeWriter.close();
         } catch (IOException e) {
@@ -103,6 +117,7 @@ public class TestListener implements ProcessStateListener {
 
     @Override
     public void runtimeConfigurationStateChanged(RuntimeConfigurationStateChangeEvent evt) {
+        checkTccl();
         if (parameters.getInitProperties().containsKey(FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED)) {
             throw new ListenerFailureException(FAIL_RUNTIME_CONFIGURATION_STATE_CHANGED);
         }
@@ -124,6 +139,7 @@ public class TestListener implements ProcessStateListener {
 
     @Override
     public void runningStateChanged(RunningStateChangeEvent evt) {
+        checkTccl();
         if (parameters.getInitProperties().containsKey(FAIL_RUNNING_STATE_CHANGED)) {
             throw new ListenerFailureException(FAIL_RUNNING_STATE_CHANGED);
         }

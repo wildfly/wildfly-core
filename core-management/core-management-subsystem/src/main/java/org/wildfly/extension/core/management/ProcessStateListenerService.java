@@ -56,6 +56,7 @@ import org.wildfly.extension.core.management.client.RunningStateChangeEvent;
 import org.wildfly.extension.core.management.logging.CoreManagementLogger;
 import org.wildfly.extension.core.management.client.ProcessStateListener;
 import org.wildfly.extension.core.management.client.ProcessStateListenerInitParameters;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Service that listens for process state changes and notifies the ProcessStateListener instance of those events.
@@ -153,7 +154,13 @@ public class ProcessStateListenerService implements Service {
             final RuntimeConfigurationStateChangeEvent event = new RuntimeConfigurationStateChangeEvent(oldState, newState);
             Future<?> controlledProcessStateTransition = executorServiceSupplier.get().submit(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runtimeConfigurationStateChanged %s in thread %s", event, Thread.currentThread().getName());
-                listener.runtimeConfigurationStateChanged(event);
+                ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                try {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass());
+                    listener.runtimeConfigurationStateChanged(event);
+                } finally {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
+                }
             });
             try {
                 controlledProcessStateTransition.get(timeout, TimeUnit.SECONDS);
@@ -218,7 +225,13 @@ public class ProcessStateListenerService implements Service {
             final RunningStateChangeEvent event = new RunningStateChangeEvent(oldState, newState);
             Future<?> suspendStateTransition = executorServiceSupplier.get().submit(() -> {
                 CoreManagementLogger.ROOT_LOGGER.debugf("Executing runningStateChanged %s in thread %s", event, Thread.currentThread().getName());
-                listener.runningStateChanged(event);
+                ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                try {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass());
+                    listener.runningStateChanged(event);
+                } finally {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
+                }
             });
             try {
                 suspendStateTransition.get(timeout, TimeUnit.SECONDS);
@@ -250,7 +263,13 @@ public class ProcessStateListenerService implements Service {
     public void start(StartContext context) {
         Runnable task = () -> {
             try {
-                ProcessStateListenerService.this.listener.init(parameters);
+                ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
+                try {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass());
+                    listener.init(parameters);
+                } finally {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
+                }
                 processStateNotifierSupplier.get().addPropertyChangeListener(propertyChangeListener);
                 final Supplier<SuspendController> suspendControllerSupplier = ProcessStateListenerService.this.suspendControllerSupplier;
                 SuspendController controller = suspendControllerSupplier != null ? suspendControllerSupplier.get() : null;
@@ -320,11 +339,14 @@ public class ProcessStateListenerService implements Service {
                     controller.removeListener(operationListener);
                 }
                 runningState = null;
+                ClassLoader currentTccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(listener.getClass());
                     listener.cleanup();
                 } catch (RuntimeException t) {
                     CoreManagementLogger.ROOT_LOGGER.processStateCleanupError(t, name);
                 } finally {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(currentTccl);
                     context.complete();
                 }
             }
