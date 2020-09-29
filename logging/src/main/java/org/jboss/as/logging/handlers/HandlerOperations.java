@@ -31,6 +31,7 @@ import static org.jboss.as.logging.CommonAttributes.PROPERTIES;
 import static org.jboss.as.logging.CommonAttributes.ROOT_LOGGER_NAME;
 import static org.jboss.as.logging.Logging.createOperationFailure;
 import static org.jboss.as.logging.formatters.PatternFormatterResourceDefinition.PATTERN;
+import static org.jboss.as.logging.formatters.PatternFormatterResourceDefinition.getDefaultFomatterName;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FILTER_SPEC;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.FORMATTER;
 import static org.jboss.as.logging.handlers.AbstractHandlerDefinition.NAMED_FORMATTER;
@@ -58,7 +59,6 @@ import org.jboss.as.logging.ConfigurationProperty;
 import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.filters.Filters;
-import org.jboss.as.logging.formatters.PatternFormatterResourceDefinition;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.Log4jAppenderHandler;
@@ -422,8 +422,9 @@ final class HandlerOperations {
             // Remove the handler
             logContextConfiguration.removeHandlerConfiguration(name);
             // Remove the formatter if there is one
-            if (logContextConfiguration.getFormatterNames().contains(name) && !model.hasDefined(NAMED_FORMATTER.getName())) {
-                logContextConfiguration.removeFormatterConfiguration(name);
+            final String defaultFormatterName = getDefaultFomatterName(name);
+            if (logContextConfiguration.getFormatterNames().contains(defaultFormatterName) && !model.hasDefined(NAMED_FORMATTER.getName())) {
+                logContextConfiguration.removeFormatterConfiguration(defaultFormatterName);
             }
             // Remove the POJO if it exists
             if (logContextConfiguration.getPojoNames().contains(name)) {
@@ -596,7 +597,7 @@ final class HandlerOperations {
             configuration.setEncoding(resolvedValue);
         } else if (attribute.getName().equals(FORMATTER.getName())) {
             // The handler name will be used for the name of a formatter for the formatter attribute
-            final String defaultFormatterName = configuration.getName() + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX;
+            final String defaultFormatterName = getDefaultFomatterName(configuration.getName());
             // Get the current model and check for a defined named-formatter attribute
             final Resource resource = context.readResource(PathAddress.EMPTY_ADDRESS);
             final ModelNode m = resource.getModel();
@@ -621,7 +622,7 @@ final class HandlerOperations {
         } else if (attribute.getName().equals(NAMED_FORMATTER.getName())) {
             // The name of the handler will be used for a "formatter" if the named-formatter is not defined
             final String handlerName = configuration.getName();
-            final String defaultFormatterName = handlerName + PatternFormatterResourceDefinition.DEFAULT_FORMATTER_SUFFIX;
+            final String defaultFormatterName = getDefaultFomatterName(handlerName);
             final ModelNode valueNode = (resolveValue ? NAMED_FORMATTER.resolveModelAttribute(context, model) : model);
             // Set the formatter if the value is defined
             if (valueNode.isDefined()) {
