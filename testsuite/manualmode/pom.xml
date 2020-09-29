@@ -23,11 +23,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-          <groupId>org.wildfly.core</groupId>
-          <artifactId>wildfly-core-testsuite</artifactId>
-          <version>13.0.0.Beta7-SNAPSHOT</version>
-          <relativePath>../pom.xml</relativePath>
-     </parent>
+        <groupId>org.wildfly.core</groupId>
+        <artifactId>wildfly-core-testsuite</artifactId>
+        <version>13.0.0.Beta7-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <artifactId>wildfly-core-testsuite-manualmode</artifactId>
 
@@ -126,6 +126,11 @@
         <dependency>
             <groupId>org.apache.sshd</groupId>
             <artifactId>sshd-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jcraft</groupId>
+            <artifactId>jsch</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -457,7 +462,7 @@
                 </plugins>
             </build>
         </profile>
-<!-- Test against bootable jar -->
+        <!-- Test against bootable jar -->
         <profile>
             <id>bootablejar.profile</id>
             <activation>
