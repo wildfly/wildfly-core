@@ -38,6 +38,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.logging.filters.Filters;
 import org.jboss.as.logging.loggers.LoggerAttributes;
+import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.ConfigurationPersistence;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -104,27 +105,31 @@ public final class LoggingOperations {
         }
 
         @Override
-        public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            configurationPersistence.prepare();
-            context.completeStep(new ResultHandler() {
-                @Override
-                public void handleResult(final ResultAction resultAction, final OperationContext context, final ModelNode operation) {
-                    if (resultAction == ResultAction.KEEP) {
-                        configurationPersistence.commit();
-                        if (!LoggingProfileOperations.isLoggingProfileAddress(context.getCurrentAddress())) {
-                            // Write once
-                            if (context.getAttachment(WRITTEN_KEY) == null) {
-                                context.attachIfAbsent(WRITTEN_KEY, Boolean.TRUE);
-                                if (persistConfig) {
-                                    configurationPersistence.writeConfiguration(context);
+        public void execute(final OperationContext context, final ModelNode operation) {
+            // Add as a new step to ensure it's executed as late as possible
+            context.addStep((c, o) -> {
+                configurationPersistence.prepare();
+                LoggingLogger.ROOT_LOGGER.tracef("Prepared the configuration for commit on operation: %s", operation);
+                context.completeStep(new ResultHandler() {
+                    @Override
+                    public void handleResult(final ResultAction resultAction, final OperationContext context, final ModelNode operation) {
+                        if (resultAction == ResultAction.KEEP) {
+                            configurationPersistence.commit();
+                            if (!LoggingProfileOperations.isLoggingProfileAddress(context.getCurrentAddress())) {
+                                // Write once
+                                if (context.getAttachment(WRITTEN_KEY) == null) {
+                                    context.attachIfAbsent(WRITTEN_KEY, Boolean.TRUE);
+                                    if (persistConfig) {
+                                        configurationPersistence.writeConfiguration(context);
+                                    }
                                 }
                             }
+                        } else if (resultAction == ResultAction.ROLLBACK) {
+                            configurationPersistence.rollback();
                         }
-                    } else if (resultAction == ResultAction.ROLLBACK) {
-                        configurationPersistence.rollback();
                     }
-                }
-            });
+                });
+            }, Stage.RUNTIME);
         }
     }
 
@@ -396,6 +401,8 @@ public final class LoggingOperations {
             final ConfigurationPersistence configurationPersistence = getOrCreateConfigurationPersistence(context);
             final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
             handbackHolder.setHandback(configurationPersistence);
+            LoggingLogger.ROOT_LOGGER.tracef("Writing attribute \"%s\" with current value of \"%s\" to value \"%s\".",
+                    attributeName, currentValue.asString(), resolvedValue.asString());
             final boolean restartRequired = applyUpdate(context, attributeName, name, resolvedValue, logContextConfiguration);
             addCommitStep(context, configurationPersistence);
             final OperationStepHandler afterCommit = afterCommit(logContextConfiguration, attributeName, resolvedValue, currentValue);

@@ -197,7 +197,6 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
                     final boolean blockOnReconnect = BLOCK_ON_RECONNECT.resolveModelAttribute(context, model).asBoolean();
                     final boolean enabled = ENABLED.resolveModelAttribute(context, model).asBoolean();
 
-                    final DelayedHandler delayedHandler = (DelayedHandler) configuration.getInstance();
                     final String socketBindingName = OUTBOUND_SOCKET_BINDING_REF.resolveModelAttribute(context, model).asString();
                     final ModelNode sslContextRef = SSL_CONTEXT.resolveModelAttribute(context, model);
 
@@ -238,6 +237,7 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
                         public synchronized void start(final StartContext context) {
                             final ClientSocketFactory clientSocketFactory = new WildFlyClientSocketFactory(socketBindingManager.get(),
                                     outboundSocketBinding.get(), sslContext.get(), name);
+                            final DelayedHandler delayedHandler = (DelayedHandler) configuration.getInstance();
                             delayedHandler.setCloseChildren(true);
                             final SocketHandler socketHandler = new SocketHandler(clientSocketFactory, protocol);
                             socketHandler.setAutoFlush(autoflush);
