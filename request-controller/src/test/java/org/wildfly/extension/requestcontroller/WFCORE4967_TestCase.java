@@ -43,32 +43,33 @@ public class WFCORE4967_TestCase {
     }
 
     private RequestController suspendedRCWithQueuedTasks(int i, Runnable whenExecuted) {
-        RequestController _ret = new RequestController(false);
-        _ret.suspended(() -> {
+        RequestController requestController = new RequestController(false);
+        requestController.suspended(() -> {
         });
 
         for (int taskNo = 0; taskNo < TASKS_QTY; taskNo++) {
-            _ret.queueTask(null, null, task -> whenExecuted.run(), 0, null, false, false);
+            requestController.queueTask(null, null, task -> whenExecuted.run(), 0, null, false, false);
         }
-        return _ret;
+        return requestController;
     }
 
     private List<Thread> createSynchronisedThreads(CountDownLatch latch, Runnable action) {
         int threadsQty = (int) latch.getCount();
-        List<Thread> _ret = new ArrayList<>(threadsQty);
+        List<Thread> threads = new ArrayList<>(threadsQty);
         for (int threadNo = 0; threadNo < threadsQty; threadNo++) {
-            _ret.add(new Thread(() -> {
+            threads.add(new Thread(() -> {
                 // wait for all threads to initialise
                 try {
                     latch.countDown();
                     latch.await();
-                } catch (Exception e) {
-                    /* yummy */}
+                } catch (InterruptedException e) {
+                    return;
+                }
 
                 // run all of them simultaneously
                 action.run();
             }));
         }
-        return _ret;
+        return threads;
     }
 }
