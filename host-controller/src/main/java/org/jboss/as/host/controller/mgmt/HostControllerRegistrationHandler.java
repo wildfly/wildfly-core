@@ -348,7 +348,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                         ModelVersion.create(major, minor, micro), Collections.<PathAddress, ModelVersion>emptyMap(), hostInfo);
                 final Transformers transformers = Transformers.Factory.create(target);
                 try {
-                    SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers);
+                    SlaveChannelAttachments.attachSlaveInfo(handler.getChannel(), registrationContext.hostName, transformers, hostInfo.getDomainIgnoredExtensions());
                 } catch (IOException e) {
                     throw new OperationFailedException(e.getLocalizedMessage());
                 }

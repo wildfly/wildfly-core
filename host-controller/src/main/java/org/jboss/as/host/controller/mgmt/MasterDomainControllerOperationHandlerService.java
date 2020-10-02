@@ -137,6 +137,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
             final String operationName = operation.getOperation().require(OP).asString();
             if (operationName.equals(FetchMissingConfigurationHandler.OPERATION_NAME)) {
                 handler = new FetchMissingConfigurationHandler(SlaveChannelAttachments.getHostName(context.getChannel()),
+                        SlaveChannelAttachments.getDomainIgnoredExtensions(context.getChannel()),
                         SlaveChannelAttachments.getTransformers(context.getChannel()),
                         domainController.getExtensionRegistry());
             } else {

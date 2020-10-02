@@ -50,10 +50,12 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
 
     private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;
+    private final Set<String> excludedExtensions;
 
-    public FetchMissingConfigurationHandler(final String hostName, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
+    public FetchMissingConfigurationHandler(final String hostName, final Set<String> excludedExtensions, final Transformers transformers, final ExtensionRegistry extensionRegistry) {
         this.transformers = transformers;
         this.extensionRegistry = extensionRegistry;
+        this.excludedExtensions = excludedExtensions;
     }
 
     @Override
@@ -66,7 +68,7 @@ public class FetchMissingConfigurationHandler implements OperationStepHandler {
         for (final ServerConfigInfo serverConfig : serverConfigs) {
             ReadMasterDomainModelUtil.processServerConfig(context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS), rc, serverConfig, extensionRegistry);
         }
-        final Transformers.ResourceIgnoredTransformationRegistry manualExcludes = HostInfo.createIgnoredRegistry(operation);
+        final Transformers.ResourceIgnoredTransformationRegistry manualExcludes = HostInfo.createIgnoredRegistry(operation, excludedExtensions);
         final Transformers.ResourceIgnoredTransformationRegistry ignoredTransformationRegistry = ReadMasterDomainModelUtil.createServerIgnoredRegistry(rc, manualExcludes);
 
         final ReadDomainModelHandler handler = new ReadDomainModelHandler(ignoredTransformationRegistry, transformers, true);
