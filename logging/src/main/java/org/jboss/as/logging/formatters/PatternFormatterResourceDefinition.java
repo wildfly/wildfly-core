@@ -59,6 +59,10 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
 
     public static final String DEFAULT_FORMATTER_SUFFIX = "-wfcore-pattern-formatter";
 
+    public static String getDefaultFomatterName(String name) {
+        return name + DEFAULT_FORMATTER_SUFFIX;
+    }
+
     // Pattern formatter options
     public static final PropertyAttributeDefinition COLOR_MAP = PropertyAttributeDefinition.Builder.of("color-map", ModelType.STRING)
             .setAllowExpression(true)
