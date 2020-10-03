@@ -345,7 +345,7 @@ class PolicyDefinitions {
                         PolicyContextHandler discovered = discoveredHandlers.remove(key);
                         if (discovered != null) {
                             ElytronSubsystemMessages.ROOT_LOGGER.tracef("Registering DelegatingPolicyContextHandler for key '%s'.", key);
-                            PolicyContext.registerHandler(key, discovered != null ? new DelegatingPolicyContextHandler(key, handler, discovered) : handler, true);
+                            PolicyContext.registerHandler(key, new DelegatingPolicyContextHandler(key, handler, discovered), true);
                         } else {
                             PolicyContext.registerHandler(key, handler, true);
                         }
