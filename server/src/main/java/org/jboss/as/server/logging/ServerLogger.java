@@ -1353,6 +1353,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 279, value = "Git initialized in %s")
     void gitRespositoryInitialized(String name);
 
+    @Message(id = 280, value = "Unable to initialise the git repository.")
+    IllegalArgumentException unableToInitialiseGitRepository(@Cause Throwable cause);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
