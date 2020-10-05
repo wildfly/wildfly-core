@@ -527,6 +527,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 try {
                     repository = new GitRepository(gitConfiguration);
                 } catch(Exception ex) {
+                    ServerLogger.ROOT_LOGGER.errorUsingGit(ex, ex.getMessage());
                     throw ServerLogger.ROOT_LOGGER.unableToInitialiseGitRepository(ex);
                 }
             } else {
