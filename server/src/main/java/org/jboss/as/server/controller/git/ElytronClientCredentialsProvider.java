@@ -39,12 +39,12 @@ import org.wildfly.security.auth.client.ElytronXmlParser;
  * Currently only login/password is supported.
  * @author Emmanuel Hugonnet (c) 2018 Red Hat, inc.
  */
-public class ElytronClientCredentialsProvider extends CredentialsProvider {
+class ElytronClientCredentialsProvider extends CredentialsProvider {
 
     private static AuthenticationContextConfigurationClient CLIENT = AccessController.doPrivileged(AuthenticationContextConfigurationClient.ACTION);
     private final AuthenticationContext context;
 
-    public ElytronClientCredentialsProvider(URI authenticationConfig) throws ConfigXMLParseException, GeneralSecurityException {
+    ElytronClientCredentialsProvider(URI authenticationConfig) throws ConfigXMLParseException, GeneralSecurityException {
         context =  ElytronXmlParser.parseAuthenticationClientConfiguration(authenticationConfig).create();
     }
 

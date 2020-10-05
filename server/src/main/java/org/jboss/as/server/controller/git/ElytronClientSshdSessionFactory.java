@@ -66,7 +66,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
  *
  * @author <a href="mailto:aabdelsa@redhat.com">Ashley Abdel-Sayed</a>
  */
-public class ElytronClientSshdSessionFactory extends SshdSessionFactory {
+class ElytronClientSshdSessionFactory extends SshdSessionFactory {
 
     private static AuthenticationContextConfigurationClient CLIENT = AccessController.doPrivileged(AuthenticationContextConfigurationClient.ACTION);
     private final AuthenticationContext context;
@@ -77,7 +77,7 @@ public class ElytronClientSshdSessionFactory extends SshdSessionFactory {
     private URI uri;
     private String knownHostsFile;
 
-    public ElytronClientSshdSessionFactory(URI authenticationConfig) throws ConfigXMLParseException, GeneralSecurityException {
+    ElytronClientSshdSessionFactory(URI authenticationConfig) throws ConfigXMLParseException, GeneralSecurityException {
         if (authenticationConfig != null) {
             context = ElytronXmlParser.parseAuthenticationClientConfiguration(authenticationConfig).create();
         } else {
