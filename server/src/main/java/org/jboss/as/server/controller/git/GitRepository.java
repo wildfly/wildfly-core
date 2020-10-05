@@ -198,7 +198,7 @@ public class GitRepository implements Closeable {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
-                        ServerLogger.ROOT_LOGGER.deletingFile(file);
+                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", file);
                         Files.delete(file);
                     } catch (IOException ioex) {
                         ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
@@ -220,7 +220,7 @@ public class GitRepository implements Closeable {
                         throw exc;
                     }
                     try {
-                        ServerLogger.ROOT_LOGGER.deletingFile(dir);
+                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", dir);
                         Files.delete(dir);
                     } catch (IOException ioex) {
                         ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
