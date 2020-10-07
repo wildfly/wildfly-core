@@ -228,6 +228,21 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
+        public final ModelNode getCurrentOperationName() {
+            return null;
+        }
+
+        @Override
+        public final ModelNode getCurrentOperationParameter(final String parameterName) {
+            return null;
+        }
+
+        @Override
+        public final ModelNode getCurrentOperationParameter(final String parameterName, boolean nullable) {
+            return null;
+        }
+
+        @Override
         public String getCurrentAddressValue() {
             if (operationAddress.size() == 0) {
                 throw new IllegalStateException();

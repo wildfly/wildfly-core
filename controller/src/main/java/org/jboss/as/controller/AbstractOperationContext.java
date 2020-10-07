@@ -541,6 +541,41 @@ abstract class AbstractOperationContext implements OperationContext {
         return pa.getLastElement().getValue();
     }
 
+    @Override
+    public final ModelNode getCurrentOperationName() {
+        assert activeStep != null;
+        ModelNode operation = activeStep.operation;
+
+        assert operation != null;
+        return operation.get(NAME);
+    }
+
+    @Override
+    public final ModelNode getCurrentOperationParameter(final String parameterName) {
+        return getCurrentOperationParameter(parameterName, true);
+    }
+
+    @Override
+    public final ModelNode getCurrentOperationParameter(final String parameterName, boolean nullable) {
+        if (isLegalParameterName(parameterName)) {
+            assert activeStep != null;
+            ModelNode operation = activeStep.operation;
+
+            assert operation != null;
+            if (!operation.has(parameterName) && nullable) {
+                return null;
+            } else {
+                return operation.get(parameterName);
+            }
+        } else {
+            throw new IllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidParameterName(parameterName));
+        }
+    }
+
+    private boolean isLegalParameterName(final String parameterName) {
+        return !(parameterName.equals(NAME) || parameterName.equals(OP) || parameterName.equals(OP_ADDR) || parameterName.equals(OPERATION_HEADERS));
+    }
+
     /**
      * Notification that all steps in a stage have been executed.
      * <p>This default implementation always returns {@code true}.</p>

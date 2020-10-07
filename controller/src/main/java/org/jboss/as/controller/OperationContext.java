@@ -419,6 +419,30 @@ public interface OperationContext extends ExpressionResolver {
     String getCurrentAddressValue();
 
     /**
+     * Get the node with current operation name
+     *
+     * @return operation name node
+     */
+    ModelNode getCurrentOperationName();
+
+    /**
+     * Get parameter node by its name
+     *
+     * @param name of desired parameter
+     * @return node for parameter of given name
+     */
+    ModelNode getCurrentOperationParameter(String name);
+
+    /**
+     * Get parameter node by its name
+     *
+     * @param name of desired parameter
+     * @param nullable whether return value can be null
+     * @return node for parameter of given name
+     */
+    ModelNode getCurrentOperationParameter(String name, boolean nullable);
+
+    /**
      * Get a read only view of the managed resource registration.  The registration is relative to the operation address.
      *
      * @return the model node registration

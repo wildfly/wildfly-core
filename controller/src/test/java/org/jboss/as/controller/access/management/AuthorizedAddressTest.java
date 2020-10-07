@@ -460,6 +460,21 @@ public class AuthorizedAddressTest {
         }
 
         @Override
+        public ModelNode getCurrentOperationName() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ModelNode getCurrentOperationParameter(String name) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ModelNode getCurrentOperationParameter(String name, boolean nullable) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public AuthorizationResult authorize(ModelNode operation) {
             String address = operation.get(OP_ADDR).asString();
             if(authorizedAddress.contains(address)) {

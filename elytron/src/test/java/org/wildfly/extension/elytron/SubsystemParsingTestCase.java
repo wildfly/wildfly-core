@@ -381,6 +381,21 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
             }
 
             @Override
+            public final ModelNode getCurrentOperationName() {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public final ModelNode getCurrentOperationParameter(final String parameterName) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
+            public final ModelNode getCurrentOperationParameter(final String parameterName, boolean nullable) {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            @Override
             public ImmutableManagementResourceRegistration getResourceRegistration() {
                 throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
