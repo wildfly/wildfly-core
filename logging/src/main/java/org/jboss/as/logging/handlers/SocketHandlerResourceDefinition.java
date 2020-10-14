@@ -185,7 +185,7 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
         }
 
         @Override
-        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
+        protected OperationStepHandler afterPrepare(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
             return new OperationStepHandler() {
                 @Override
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
@@ -353,8 +353,8 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
         }
 
         @Override
-        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration,
-                                                   final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue) {
+        protected OperationStepHandler afterPrepare(final LogContextConfiguration logContextConfiguration,
+                                                    final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue) {
             return new OperationStepHandler() {
                 @Override
                 public void execute(final OperationContext context, final ModelNode operation) throws OperationFailedException {
