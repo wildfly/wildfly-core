@@ -229,7 +229,9 @@
         <version.org.wildfly.security.elytron>1.13.1.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.8.0.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
-       
+
+        <!-- Allow insecure repositories -->
+        <insecure.repositories>WARN</insecure.repositories>
     </properties>
 
     <modules>
