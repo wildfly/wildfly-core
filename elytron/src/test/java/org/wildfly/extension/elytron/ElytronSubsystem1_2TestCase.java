@@ -25,9 +25,9 @@ import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
  *
  * @author Brian Stansberry
  */
-public class ElytronSubsystem12TestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem1_2TestCase extends AbstractSubsystemBaseTest {
 
-    public ElytronSubsystem12TestCase() {
+    public ElytronSubsystem1_2TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
