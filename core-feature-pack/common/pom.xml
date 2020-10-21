@@ -549,11 +549,6 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-linux-i386</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-linux-s390x</artifactId>
         </dependency>
 
@@ -564,17 +559,7 @@
 
         <dependency>
             <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-windows-i386</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
             <artifactId>wildfly-openssl-windows-x86_64</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.openssl</groupId>
-            <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
         </dependency>
 
         <dependency>
