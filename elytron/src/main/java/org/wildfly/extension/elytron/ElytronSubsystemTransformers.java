@@ -125,6 +125,14 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
 
     }
 

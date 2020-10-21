@@ -5,5 +5,24 @@
  -->
 
 <subsystem xmlns="urn:wildfly:elytron:14.0">
-
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="key1" key-store="accounts.keystore">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+        </key-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="ctxSSLv2Hello" key-manager="key1" protocols="SSLv2Hello TLSv1" />
+        </server-ssl-contexts>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientContextSSLv2Hello" protocols="SSLv2Hello TLSv1" />
+        </client-ssl-contexts>
+    </tls>
 </subsystem>

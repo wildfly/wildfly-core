@@ -84,10 +84,37 @@
             <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" use-cipher-suites-order="false"
                                 providers="ManagerProviderLoader" provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextSSLv2Hello" protocols="TLSv1 SSLv2Hello"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS12Only" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="ManagerProviderLoader"
+                                provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextDefaultProtocols"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="SeverSslContextSSLv2HelloOpenSsl" protocols="TLSv1 SSLv2Hello"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" providers="openssl" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextSSLv2HelloOneWay" protocols="TLSv1 SSLv2Hello"
+                                key-manager="ServerKeyManager" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                session-timeout="321" maximum-session-cache-size="123"/>
         </server-ssl-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
             <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextSSLv2Hello" protocols="SSLv2Hello TLSv1" key-manager="ClientKeyManager"
+                                trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextOnlyTLS1" protocols="TLSv1" key-manager="ClientKeyManager"
+                                trust-manager="CaTrustManager" providers="ManagerProviderLoader" />
+            <client-ssl-context name="ClientSslContextDefaultProtocols" key-manager="ClientKeyManager"
+                                trust-manager="CaTrustManager" providers="ManagerProviderLoader" />
+            <client-ssl-context name="ClientSslContextSSLv2HelloOpenSsl" protocols="SSLv2Hello TLSv1" key-manager="ClientKeyManager"
+                                trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientSslContextSSLv2HelloOneWay" protocols="SSLv2Hello TLSv1"
+                                trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
         </client-ssl-contexts>
     </tls>
 </subsystem>
