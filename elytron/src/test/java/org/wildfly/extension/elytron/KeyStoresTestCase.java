@@ -526,6 +526,10 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         try {
             int numAliasesBefore = readAliases().size();
 
+            // This value will be compared with a Date representation with precision of seconds only so
+            // drop any nanoseconds.
+            ZonedDateTime startTime = ZonedDateTime.now().withNano(0);
+
             ModelNode operation = new ModelNode();
             operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("key-store", KEYSTORE_NAME);
             operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_KEY_PAIR);
@@ -544,6 +548,10 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             assertSuccess(services.executeOperation(operation));
             assertEquals(numAliasesBefore + 1, readAliases().size());
 
+            // Don't drop the nanoseconds from this value as this is being used to check the expirtation is no longer
+            // than 365 days in the future.
+            ZonedDateTime createdTime = ZonedDateTime.now();
+
             ModelNode newAlias = readAlias("bsmith");
             assertEquals(KeyStore.PrivateKeyEntry.class.getSimpleName(), newAlias.get(ElytronDescriptionConstants.ENTRY_TYPE).asString());
             assertEquals(1, newAlias.get(ElytronDescriptionConstants.CERTIFICATE_CHAIN).asList().size());
@@ -554,9 +562,17 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             X509Certificate certificate = (X509Certificate) keyStore.getCertificate("bsmith");
             assertEquals("RSA", certificate.getPublicKey().getAlgorithm());
             assertEquals(1024, ((RSAKey) certificate.getPublicKey()).getModulus().bitLength());
-            Date notBefore = certificate.getNotBefore();
+
+            ZonedDateTime notBefore = ZonedDateTime.ofInstant(certificate.getNotBefore().toInstant(), ZoneId.systemDefault());
+            assertTrue("Certificate not valid before test ran.", !notBefore.isBefore(startTime));
+
+            ZonedDateTime calculatedAfter = notBefore.plusDays(365);
             Date notAfter = certificate.getNotAfter();
-            assertEquals(365, (notAfter.getTime() - notBefore.getTime()) / (1000 * 60 * 60 * 24));
+            assertEquals("Expected 'notAfter' value.", calculatedAfter.toInstant(), notAfter.toInstant());
+
+            ZonedDateTime in365Days = createdTime.plusDays(365);
+            assertTrue("Certificate not valid more than 365 days after creation", !notAfter.toInstant().isAfter(in365Days.toInstant()));
+
             assertEquals("SHA256withRSA", certificate.getSigAlgName());
             assertEquals(new X500Principal("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us"), certificate.getSubjectX500Principal());
             assertEquals(new X500Principal("CN=bob smith, OU=jboss, O=red hat, L=raleigh, ST=north carolina, C=us"), certificate.getIssuerX500Principal());
