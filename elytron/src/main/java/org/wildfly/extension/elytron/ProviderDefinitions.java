@@ -68,6 +68,7 @@ import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.modules.ModuleClassLoader;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
@@ -218,10 +219,13 @@ class ProviderDefinitions {
                                     try {
                                         if (!(iterator.hasNext())) { break; }
                                         final Provider p = iterator.next();
-                                        if (configSupplier != null) {
-                                            deferred.add(p::load);
+                                        // We don't want to pick up JDK services resolved via JPMS definitions.
+                                        if (p.getClass().getClassLoader() instanceof ModuleClassLoader) {
+                                            if (configSupplier != null) {
+                                                deferred.add(p::load);
+                                            }
+                                            loadedProviders.add(p);
                                         }
-                                        loadedProviders.add(p);
                                     } catch (ServiceConfigurationError | RuntimeException e) {
                                         ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
                                     }
