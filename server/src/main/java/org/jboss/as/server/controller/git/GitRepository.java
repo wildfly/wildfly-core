@@ -155,6 +155,20 @@ public class GitRepository implements Closeable {
         ServerLogger.ROOT_LOGGER.usingGit();
     }
 
+    public GitRepository(Repository repository) {
+        this.repository = repository;
+        this.ignored = Collections.emptySet();
+        this.defaultRemoteRepository = DEFAULT_REMOTE_NAME;
+        this.branch = MASTER;
+        if (repository.isBare()) {
+            this.basePath = repository.getDirectory().toPath();
+        } else {
+            this.basePath = repository.getDirectory().toPath().getParent();
+        }
+        ServerLogger.ROOT_LOGGER.usingGit();
+        sshdSessionFactory = null;
+    }
+
     private void checkoutToSelectedBranch(final Git git) throws IOException, GitAPIException {
         boolean createBranch = !ObjectId.isId(branch);
         if (createBranch) {
@@ -168,20 +182,6 @@ public class GitRepository implements Closeable {
         if (checkout.getResult().getStatus() == CheckoutResult.Status.ERROR) {
             throw ServerLogger.ROOT_LOGGER.failedToPullRepository(null, defaultRemoteRepository);
         }
-    }
-
-    public GitRepository(Repository repository) {
-        this.repository = repository;
-        this.ignored = Collections.emptySet();
-        this.defaultRemoteRepository = DEFAULT_REMOTE_NAME;
-        this.branch = MASTER;
-        if (repository.isBare()) {
-            this.basePath = repository.getDirectory().toPath();
-        } else {
-            this.basePath = repository.getDirectory().toPath().getParent();
-        }
-        ServerLogger.ROOT_LOGGER.usingGit();
-        sshdSessionFactory = null;
     }
 
     private void clearExistingFiles(Path root, String gitRepository) {
@@ -198,7 +198,7 @@ public class GitRepository implements Closeable {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     try {
-                        ServerLogger.ROOT_LOGGER.deletingFile(file);
+                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", file);
                         Files.delete(file);
                     } catch (IOException ioex) {
                         ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
@@ -220,7 +220,7 @@ public class GitRepository implements Closeable {
                         throw exc;
                     }
                     try {
-                        ServerLogger.ROOT_LOGGER.deletingFile(dir);
+                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", dir);
                         Files.delete(dir);
                     } catch (IOException ioex) {
                         ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);

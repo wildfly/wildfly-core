@@ -78,6 +78,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 @ServerControl(manual = true)
 public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
 
+    private static Path backupRoot;
     private static Path remoteRoot;
     private static Repository remoteRepository;
     private static SSHServer sshServer;
@@ -133,6 +134,8 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
 
     @BeforeClass
     public static void setUp() throws Exception {
+        backupConfiguration();
+
         Security.insertProviderAt(CREDENTIAL_STORE_PROVIDER, 1);
 
         cleanCredentialStores();
@@ -171,10 +174,19 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
 
     }
 
+    static void backupConfiguration() throws IOException {
+        Path backUpRoot = Files.createTempDirectory("BackUpConfigurationFiles").resolve("configuration");
+        Files.createDirectories(backUpRoot);
+        PathUtil.copyRecursively(getJbossServerBaseDir().resolve("configuration"), backUpRoot, true);
+
+        RemoteSshGitRepositoryTestCase.backupRoot = backUpRoot;
+    }
+
     @AfterClass
     public static void afterClass() throws IOException {
         Security.removeProvider(CREDENTIAL_STORE_PROVIDER.getName());
         FileUtils.delete(CS_PUBKEY.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        PathUtil.deleteRecursively(backupRoot);
     }
 
     @Before
@@ -244,6 +256,16 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         closeRepository();
         closeEmptyRemoteRepository();
         closeRemoteRepository();
+
+        restoreConfiguration();
+    }
+
+    void restoreConfiguration() throws IOException {
+        Path configuration = getJbossServerBaseDir().resolve("configuration");
+        PathUtil.deleteRecursively(configuration);
+        Files.createDirectories(configuration);
+
+        PathUtil.copyRecursively(backupRoot,  getJbossServerBaseDir().resolve("configuration"), true);
     }
 
     @Test
@@ -428,11 +450,6 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
 
     @Test
     public void startGitRepoRemoteSSHFailedAuthTest() throws Exception {
-        Path backUpRoot = Files.createTempDirectory("BackUpConfigurationFiles").resolve("remote");
-        Path backUpConfigDir = backUpRoot.resolve("configuration");
-        Files.createDirectories(backUpConfigDir);
-        PathUtil.copyRecursively(getJbossServerBaseDir().resolve("configuration"), backUpConfigDir, true);
-
         //add user to server
         sshServer.setTestUser(EC_USER);
         sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + RSA_PUBKEY)); //incorrect public key
@@ -448,24 +465,10 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         } catch (RuntimeException ex) {
             //
         }
-
-        //reset for next test
-        PathUtil.copyRecursively(backUpConfigDir, getJbossServerBaseDir().resolve("configuration"), true);
-        Path properties = getJbossServerBaseDir().resolve("configuration").resolve("logging.properties");
-        if(Files.exists(properties)) {
-            Files.delete(properties);
-        }
-        PathUtil.deleteRecursively(backUpRoot);
-
     }
 
     @Test
     public void startGitRepoRemoteUnknownHostTest() throws Exception {
-        Path backUpRoot = Files.createTempDirectory("BackUpConfigurationFiles").resolve("remote");
-        Path backUpConfigDir = backUpRoot.resolve("configuration");
-        Files.createDirectories(backUpConfigDir);
-        PathUtil.copyRecursively(getJbossServerBaseDir().resolve("configuration"), backUpConfigDir, true);
-
         //Create new empty known hosts file
         Path emptyHosts = new File(SSH_DIR, "empty_hosts").toPath();
         Files.write(emptyHosts, Collections.singleton("[localhost]:"));
@@ -487,16 +490,8 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             assertLogContains(serverLog, "cannot be established", true);
         }
 
-        //reset for next test
-        PathUtil.copyRecursively(backUpConfigDir, getJbossServerBaseDir().resolve("configuration"), true);
-        Path properties = getJbossServerBaseDir().resolve("configuration").resolve("logging.properties");
-        if(Files.exists(properties)) {
-            Files.delete(properties);
-        }
-        PathUtil.deleteRecursively(backUpRoot);
         //Delete empty known_hosts file
         FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
-
     }
 
     private static class SSHServer extends SshTestGitServer {

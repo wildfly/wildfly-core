@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
-import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -52,7 +51,6 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
-import org.wildfly.client.config.ConfigXMLParseException;
 import org.wildfly.common.cpu.ProcessorInfo;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -528,9 +526,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             if (gitConfiguration != null ) {
                 try {
                     repository = new GitRepository(gitConfiguration);
-                } catch(IllegalArgumentException | IOException | ConfigXMLParseException | GeneralSecurityException ex) {
-                    repository = null;
+                } catch(Exception ex) {
                     ServerLogger.ROOT_LOGGER.errorUsingGit(ex, ex.getMessage());
+                    throw ServerLogger.ROOT_LOGGER.unableToInitialiseGitRepository(ex);
                 }
             } else {
                 repository = null;
