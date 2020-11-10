@@ -23,6 +23,7 @@
         <cve>CVE-2019-20444</cve>
         <cve>CVE-2019-20445</cve>
         <cve>CVE-2020-11612</cve>
+        <cve>CVE-2020-7238</cve>
     </suppress>
 
     <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
