@@ -79,6 +79,7 @@
                     <skip>${skipTests}</skip>
                     <failIfNoTests>false</failIfNoTests>
                     <redirectTestOutputToFile>${testLogToFile}</redirectTestOutputToFile>
+                    <reuseForks>true</reuseForks>
 
                     <systemPropertyVariables>
                         <jboss.home>${wildfly.home}</jboss.home>
@@ -150,6 +151,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager</argLine>
+                            <reuseForks>true</reuseForks>
                             <systemPropertyVariables>
                                 <org.jboss.logging.provider>jboss</org.jboss.logging.provider>
                                 <test.log.level>${test.log.level}</test.log.level>
