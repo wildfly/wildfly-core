@@ -297,7 +297,7 @@ Function Start-WildFly-Process {
 			pushd $JBOSS_HOME
 			& $JAVA $programArguments
 			if ($LastExitCode -eq 10){ # :shutdown(restart=true) was called
-			    Write-Host "Restarting application server..."
+			    Write-Host "Restarting..."
 				Start-WildFly-Process -programArguments $programArguments
 			}
 
