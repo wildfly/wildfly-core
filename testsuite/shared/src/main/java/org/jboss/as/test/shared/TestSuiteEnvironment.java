@@ -27,7 +27,8 @@ public class TestSuiteEnvironment {
         final String os = System.getProperty("os.name").toLowerCase(Locale.ROOT);
         IS_WINDOWS = os.contains("win");
         IS_IBM_JVM = System.getProperty("java.vendor").startsWith("IBM");
-        IS_J9_JVM = System.getProperty("java.vendor").contains("OpenJ9") || IS_IBM_JVM;
+        IS_J9_JVM = System.getProperty("java.vendor").contains("OpenJ9")
+                    || System.getProperty("java.vm.vendor").contains("OpenJ9") || IS_IBM_JVM;
     }
 
     public static ModelControllerClient getModelControllerClient() {
