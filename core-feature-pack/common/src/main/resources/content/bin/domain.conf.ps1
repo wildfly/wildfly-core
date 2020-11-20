@@ -51,6 +51,8 @@ if (-Not $JAVA_OPTS) {
     # This is necessary to inject Byteman rules into AS7 deployments
     $JAVA_OPTS += "-Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS"
 
+    $JAVA_OPTS += '-Djava.awt.headless=true'
+
     # Use JBoss Modules lockless mode
     # $JAVA_OPTS += '-Djboss.modules.lockless=true'
 }
