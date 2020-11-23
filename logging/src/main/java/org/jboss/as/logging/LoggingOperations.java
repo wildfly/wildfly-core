@@ -63,10 +63,28 @@ public final class LoggingOperations {
      * @param configurationPersistence the configuration to commit
      */
     static void addCommitStep(final OperationContext context, final ConfigurationPersistence configurationPersistence) {
+        addCommitStep(context, configurationPersistence, null);
+    }
+
+    /**
+     * Adds a {@link Stage#RUNTIME runtime} step to the context that will commit or rollback any logging changes. Also
+     * if not a logging profile writes the {@code logging.properties} file.
+     * <p>
+     * Note the commit step will only be added if process type is a
+     * {@linkplain org.jboss.as.controller.ProcessType#isServer() server}.
+     * </p>
+     *
+     * @param context                  the context to add the step to
+     * @param configurationPersistence the configuration to commit
+     * @param afterPrepare             an optional step handler to be added as a step after the
+     *                                 {@linkplain LogContextConfiguration#prepare() prepare} method has been invoked.
+     */
+    static void addCommitStep(final OperationContext context, final ConfigurationPersistence configurationPersistence,
+                              final OperationStepHandler afterPrepare) {
         // This should only check that it's a server for the commit step. The logging.properties may need to be written
         // in ADMIN_ONLY mode
         if (context.getProcessType().isServer()) {
-            context.addStep(new CommitOperationStepHandler(configurationPersistence), Stage.RUNTIME);
+            context.addStep(new CommitOperationStepHandler(configurationPersistence, afterPrepare), Stage.RUNTIME);
         }
     }
 
@@ -96,11 +114,13 @@ public final class LoggingOperations {
     private static final class CommitOperationStepHandler implements OperationStepHandler {
         private static final AttachmentKey<Boolean> WRITTEN_KEY = AttachmentKey.create(Boolean.class);
         private final ConfigurationPersistence configurationPersistence;
+        private final OperationStepHandler afterPrepare;
         private final boolean persistConfig;
 
         @SuppressWarnings("deprecation")
-        CommitOperationStepHandler(final ConfigurationPersistence configurationPersistence) {
+        CommitOperationStepHandler(final ConfigurationPersistence configurationPersistence, final OperationStepHandler afterPrepare) {
             this.configurationPersistence = configurationPersistence;
+            this.afterPrepare = afterPrepare;
             persistConfig = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, Boolean.toString(true)));
         }
 
@@ -109,8 +129,12 @@ public final class LoggingOperations {
             // Add as a new step to ensure it's executed as late as possible
             context.addStep((c, o) -> {
                 configurationPersistence.prepare();
-                LoggingLogger.ROOT_LOGGER.tracef("Prepared the configuration for commit on operation: %s", operation);
-                context.completeStep(new ResultHandler() {
+                LoggingLogger.ROOT_LOGGER.tracef("Prepared the configuration for commit on operation: %s", o);
+                // Add any steps that may need to occur after the configuration has been prepared.
+                if (afterPrepare != null) {
+                    c.addStep(afterPrepare, Stage.RUNTIME);
+                }
+                c.completeStep(new ResultHandler() {
                     @Override
                     public void handleResult(final ResultAction resultAction, final OperationContext context, final ModelNode operation) {
                         if (resultAction == ResultAction.KEEP) {
@@ -190,22 +214,19 @@ public final class LoggingOperations {
             final LogContextConfiguration logContextConfiguration = configurationPersistence.getLogContextConfiguration();
 
             performRuntime(context, operation, model, logContextConfiguration);
-            addCommitStep(context, configurationPersistence);
-            final OperationStepHandler afterCommit = afterCommit(logContextConfiguration, model);
-            if (afterCommit != null) {
-                context.addStep(afterCommit, Stage.RUNTIME);
-            }
+            addCommitStep(context, configurationPersistence, afterPrepare(logContextConfiguration, model));
         }
 
         /**
-         * An {@link OperationStepHandler} to register after the commit step has been registered.
+         * An {@link OperationStepHandler} to register after the {@linkplain LogContextConfiguration#prepare() prepare}
+         * has been executed.
          *
          * @param logContextConfiguration the log context configuration used
          * @param model                   the current model to use
          *
-         * @return an operation step handler to register or {@code null} to not register a step after the commit step
+         * @return an operation step handler to register or {@code null} to not register a new step
          */
-        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
+        protected OperationStepHandler afterPrepare(final LogContextConfiguration logContextConfiguration, final ModelNode model) {
             return null;
         }
 
@@ -404,16 +425,14 @@ public final class LoggingOperations {
             LoggingLogger.ROOT_LOGGER.tracef("Writing attribute \"%s\" with current value of \"%s\" to value \"%s\".",
                     attributeName, currentValue.asString(), resolvedValue.asString());
             final boolean restartRequired = applyUpdate(context, attributeName, name, resolvedValue, logContextConfiguration);
-            addCommitStep(context, configurationPersistence);
-            final OperationStepHandler afterCommit = afterCommit(logContextConfiguration, attributeName, resolvedValue, currentValue);
-            if (afterCommit != null && !restartRequired) {
-                context.addStep(afterCommit, Stage.RUNTIME);
-            }
+            final OperationStepHandler afterPrepare = afterPrepare(logContextConfiguration, attributeName, resolvedValue, currentValue);
+            addCommitStep(context, configurationPersistence, afterPrepare);
             return restartRequired;
         }
 
         /**
-         * An {@link OperationStepHandler} to register after the commit step has been registered.
+         * An {@link OperationStepHandler}  o register after the {@linkplain LogContextConfiguration#prepare() prepare}
+         * has been executed.
          * <p>
          * If {@linkplain #applyUpdateToRuntime(OperationContext, ModelNode, String, ModelNode, ModelNode, HandbackHolder)}
          * returns {@code true} this step will not be registered.
@@ -424,10 +443,10 @@ public final class LoggingOperations {
          * @param currentValue            the current value of the attribute
          * @param resolvedValue           the resolved value of the attribute
          *
-         * @return an operation step handler to register or {@code null} to not register a step after the commit step
+         * @return an operation step handler to register or {@code null} to not register a step
          */
-        protected OperationStepHandler afterCommit(final LogContextConfiguration logContextConfiguration,
-                                                   final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue) {
+        protected OperationStepHandler afterPrepare(final LogContextConfiguration logContextConfiguration,
+                                                    final String attributeName, final ModelNode resolvedValue, final ModelNode currentValue) {
             return null;
         }
 

@@ -150,6 +150,18 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     }
 
     @Test
+    public void testAsyncTcpSocket() throws Exception {
+        // Create a TCP server and start it
+        try (JsonLogServer server = JsonLogServer.createTcpServer(PORT)) {
+            server.start(DFT_TIMEOUT);
+
+            // Add the socket handler and test all levels
+            final ModelNode socketHandlerAddress = addSocketHandler("test-async-log-server", null, null, null, true);
+            checkLevelsLogged(server, EnumSet.allOf(Logger.Level.class), "Test TCP all levels.");
+        }
+    }
+
+    @Test
     public void testTlsSocket() throws Exception {
         final KeyStore clientTrustStore = loadKeyStore();
         final KeyStore serverKeyStore = loadKeyStore();
@@ -323,6 +335,11 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
     }
 
     private ModelNode addSocketHandler(final String name, final String level, final String protocol, final Path keyStore) throws IOException {
+        return addSocketHandler(name, level, protocol, keyStore, false);
+    }
+
+    private ModelNode addSocketHandler(final String name, final String level, final String protocol, final Path keyStore,
+                                       final boolean wrapInAsyncHandler) throws IOException {
         final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
         // Add a socket handler
         final ModelNode address = SUBSYSTEM_ADDRESS.append("socket-handler", name).toModelNode();
@@ -364,9 +381,26 @@ public class SocketHandlerTestCase extends AbstractLoggingTestCase {
         builder.addStep(op);
         resourcesToRemove.addFirst(address);
 
+        final String handlerName;
+
+        if (wrapInAsyncHandler) {
+            handlerName = "async";
+            final ModelNode asyncHandlerAddress = SUBSYSTEM_ADDRESS.append("async-handler", handlerName).toModelNode();
+            op = Operations.createAddOperation(asyncHandlerAddress);
+            op.get("subhandlers").setEmptyList().add(name);
+            if (level != null) {
+                op.get("level").set(level);
+            }
+            op.get("queue-length").set(100L);
+            builder.addStep(op);
+            resourcesToRemove.addFirst(asyncHandlerAddress);
+        } else {
+            handlerName = name;
+        }
+
         // Add the handler to the logger
         op = Operations.createOperation("add-handler", LOGGER_ADDRESS);
-        op.get("name").set(name);
+        op.get("name").set(handlerName);
         builder.addStep(op);
         executeOperation(builder.build());
         return address;
