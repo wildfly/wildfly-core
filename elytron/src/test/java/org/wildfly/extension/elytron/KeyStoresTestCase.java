@@ -172,7 +172,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
                 .setDn(ROOT_DN)
                 .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
                 .build();
         X509Certificate issuerCertificate = issuerSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
@@ -181,7 +181,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
         X509Certificate fireflyCertificate = new X509CertificateBuilder()
                 .setIssuerDn(ROOT_DN)
                 .setSubjectDn(FIREFLY_DN)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
                 .setPublicKey(fireflyPublicKey)
                 .setSerialNumber(new BigInteger("1"))
@@ -1210,7 +1210,7 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
                 .setIssuerDn(ROOT_DN)
                 .setSubjectDn(FIREFLY_DN)
                 .setPublicKey(publicKey)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(privateKey)
                 .setNotValidBefore(notValidBefore)
                 .setNotValidAfter(notValidAfter)

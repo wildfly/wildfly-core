@@ -69,7 +69,7 @@ class TestEnvironment extends AdditionalInitialization {
         return SelfSignedX509CertificateAndSigningKey.builder()
                 .setDn(ISSUER_DN)
                 .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
                 .build();
     }
@@ -97,7 +97,7 @@ class TestEnvironment extends AdditionalInitialization {
         X509Certificate localhostCertificate = new X509CertificateBuilder()
                 .setIssuerDn(ISSUER_DN)
                 .setSubjectDn(LOCALHOST_DN)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
                 .setPublicKey(localhostPublicKey)
                 .setSerialNumber(new BigInteger("3"))
