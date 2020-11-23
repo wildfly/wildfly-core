@@ -96,14 +96,14 @@ public class LdapTestCase extends AbstractSubsystemTest {
         SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
                 .setDn(ISSUER_DN)
                 .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
                 .build();
 
         return new X509CertificateBuilder()
                 .setIssuerDn(ISSUER_DN)
                 .setSubjectDn(SCARAB_DN)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
                 .setPublicKey(scarabPublicKey)
                 .setSerialNumber(new BigInteger("4"))
