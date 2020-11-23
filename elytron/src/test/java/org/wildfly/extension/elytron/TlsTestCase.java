@@ -130,7 +130,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return SelfSignedX509CertificateAndSigningKey.builder()
                 .setDn(ISSUER_DN)
                 .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
                 .build();
     }
@@ -157,7 +157,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         X509Certificate fireflyCertificate = new X509CertificateBuilder()
                 .setIssuerDn(ISSUER_DN)
                 .setSubjectDn(FIREFLY_DN)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
                 .setPublicKey(fireflyPublicKey)
                 .setSerialNumber(new BigInteger("1"))
@@ -182,7 +182,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         X509Certificate localhostCertificate = new X509CertificateBuilder()
                 .setIssuerDn(ISSUER_DN)
                 .setSubjectDn(LOCALHOST_DN)
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .setSigningKey(issuerSelfSignedX509CertificateAndSigningKey.getSigningKey())
                 .setPublicKey(localhostPublicKey)
                 .setSerialNumber(new BigInteger("3"))
@@ -357,6 +357,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuth() throws Throwable {
+        System.out.println("Ok lets begin this test." + System.getProperty("java.home"));
         testCommunication("ServerSslContextAuth", "ClientSslContextAuth", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost", "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
     }
 
@@ -501,7 +502,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
                 .setDn(NEW_DN)
                 .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA1withRSA")
+                .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
                 .build();
         KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
