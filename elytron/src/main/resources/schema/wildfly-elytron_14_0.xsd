@@ -4730,6 +4730,7 @@
         </xs:annotation>
         <xs:all>
             <xs:element name="certificate-revocation-list" type="certificateRevocationListType" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="certificate-revocation-lists" type="certificateRevocationListsType" minOccurs="0" maxOccurs="1" />
             <xs:element name="ocsp" type="ocspType" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="required">
@@ -4830,6 +4831,39 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum number of non-self-issued intermediate certificates that may exist in a certification path.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="certificateRevocationListsType">
+        <xs:annotation>
+            <xs:documentation>
+                The presence of this element enables checking the peer's certificate against multiple certificate revocation lists.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="certificate-revocation-list" type="certificateRevocationListNoMaxCertPathType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="certificateRevocationListNoMaxCertPathType">
+        <xs:annotation>
+            <xs:documentation>
+                The presence of this element enables checking the peer's certificate against a certificate revocation list.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="path" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Path to the certificate revocation list.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="relative-to" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    The base path of the certificate revocation list file.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -25,6 +25,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
@@ -125,7 +126,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
-
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
+                .getAttributeBuilder()
+                .addRejectCheck(REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
+                .addRename(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+                .setValueConverter(CERTIFICATE_REVOCATION_LIST_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
+                .end();
     }
 
     private static void from13(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -430,6 +436,25 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
+    private static final AttributeConverter CERTIFICATE_REVOCATION_LIST_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            // If we reached this point, we know the attribute was not rejected so CERTIFICATE_REVOCATION_LISTS can have at most one CRL.
+            if (attributeValue.isDefined()) {
+                List<ModelNode> crls = attributeValue.asListOrEmpty();
+                if (crls.size() == 1) {
+                    ModelNode singleCrl = crls.get(0);
+                    attributeValue.clear();
+                    attributeValue.get(ElytronDescriptionConstants.PATH).set(singleCrl.get(ElytronDescriptionConstants.PATH));
+                    attributeValue.get(ElytronDescriptionConstants.RELATIVE_TO).set(singleCrl.get(ElytronDescriptionConstants.RELATIVE_TO));
+                } else if (crls.isEmpty()) {
+                    attributeValue.clear();
+                }
+            }
+        }
+
+    };
+
     private static final RejectAttributeChecker REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
@@ -468,6 +493,23 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
             return ROOT_LOGGER.invalidAttributeValue(AUTHORIZATION_REALMS).getMessage();
+        }
+    };
+
+    private static final RejectAttributeChecker REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+
+        @Override
+        protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+            // reject if there is more than one certificate revocation list specified
+            if (value.isDefined()) {
+                List<ModelNode> values = value.asList();
+                return (values.size() > 1);
+            }
+            return false;
+        }
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_REVOCATION_LISTS).getMessage();
         }
     };
 

@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBU
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FAILOVER_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
 import java.io.IOException;
 import java.util.List;
@@ -217,6 +218,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testRejectingTransformersEAP740() throws Exception {
         testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(TRUST_MANAGER, "TrustManagerCrls")), REJECTED_RESOURCE)
 
         );
     }

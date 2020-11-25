@@ -5,5 +5,22 @@
  -->
 
 <subsystem xmlns="urn:wildfly:elytron:14.0">
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+        </key-stores>
+        <trust-managers>
+            <trust-manager name="TrustManagerCrls" key-store="accounts.keystore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list />
+                    <certificate-revocation-list />
+                </certificate-revocation-lists>
+            </trust-manager>
+        </trust-managers>
+    </tls>
 
 </subsystem>

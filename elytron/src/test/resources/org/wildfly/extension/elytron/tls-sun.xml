@@ -69,8 +69,17 @@
             <trust-manager name="trust-with-crl" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-list path="crl.pem" relative-to="jboss.server.config.dir" maximum-cert-path="2"/>
             </trust-manager>
+            <trust-manager name="trust-with-multiple-crls" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list path="crl.pem" relative-to="jboss.server.config.dir"/>
+                    <certificate-revocation-list path="crl-new.pem" relative-to="jboss.server.config.dir" />
+                </certificate-revocation-lists>
+            </trust-manager>
             <trust-manager name="trust-with-crl-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-list />
+            </trust-manager>
+            <trust-manager name="trust-with-crls-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-lists />
             </trust-manager>
             <trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="ElytronCaTruststore" soft-fail="true" only-leaf-cert="true">
                 <certificate-revocation-list />
@@ -125,6 +134,7 @@
                                 key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
             <client-ssl-context name="ClientSslContextNoTLS13CipherSuites" protocols="TLSv1.2 TLSv1.3"
                                 key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientWithMultipleCRLs" key-manager="ClientKeyManager" trust-manager="trust-with-multiple-crls" />
         </client-ssl-contexts>
     </tls>
 </subsystem>

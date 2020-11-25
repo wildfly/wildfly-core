@@ -99,6 +99,7 @@ interface ElytronDescriptionConstants {
     String CERTIFICATE_FROM = "certificate-from";
     String CERTIFICATE_TYPE = "certificate-type";
     String CERTIFICATE_REVOCATION_LIST = "certificate-revocation-list";
+    String CERTIFICATE_REVOCATION_LISTS = "certificate-revocation-lists";
     String CHAINED_PRINCIPAL_TRANSFORMER = "chained-principal-transformer";
     String CHANGE_ACCOUNT_KEY = "change-account-key";
     String CHANGE_ALIAS = "change-alias";
