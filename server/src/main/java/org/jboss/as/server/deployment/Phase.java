@@ -261,6 +261,7 @@ public enum Phase {
     public static final int STRUCTURE_CLASS_PATH                        = 0x1900;
     public static final int STRUCTURE_MODULE_IDENTIFIERS                = 0x1A00;
     public static final int STRUCTURE_EE_MODULE_INIT                    = 0x1B00;
+    public static final int STRUCTURE_EE_DEFAULT_BINDINGS_CONFIG            = 0x1B01;
     public static final int STRUCTURE_EE_RESOURCE_INJECTION_REGISTRY                = 0x1C00;
     public static final int STRUCTURE_DATASOURCE_RESOURCE_INJECTION                 = 0x1C01;
     public static final int STRUCTURE_JMS_CONNECTION_FACTORY_RESOURCE_INJECTION     = 0x1C02;
@@ -393,7 +394,6 @@ public enum Phase {
     public static final int PARSE_EE_CONCURRENT_DEFAULT_MANAGED_THREAD_FACTORY              = 0x4801;
     public static final int PARSE_EE_CONCURRENT_DEFAULT_MANAGED_EXECUTOR_SERVICE            = 0x4802;
     public static final int PARSE_EE_CONCURRENT_DEFAULT_MANAGED_SCHEDULED_EXECUTOR_SERVICE  = 0x4803;
-    public static final int PARSE_EE_DEFAULT_BINDINGS_CONFIG            = 0x4880;
     public static final int PARSE_JSF_MANAGED_BEANS                     = 0x4900;
     public static final int PARSE_JSF_METADATA                          = 0x4A00;
     public static final int PARSE_SINGLETON_DEPLOYMENT                  = 0x4B00;
