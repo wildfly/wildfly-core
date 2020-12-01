@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -227,14 +228,15 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         KNOWN_HOSTS = new File(SSH_DIR, "known_hosts");
 
         FileWriter fileWritter = new FileWriter(KNOWN_HOSTS,true);
-        BufferedWriter bw = new BufferedWriter(fileWritter);
-        bw.write("[127.0.0.1]:" + port + ' ' + publicHostKey.toString(US_ASCII.name()) + "\n");
-        bw.write("[localhost]:" + port + ' ' + publicHostKey.toString(US_ASCII.name()) + "\n");
-        if (System.getenv().containsKey("COMPUTERNAME")) {
-            bw.write("[" + System.getenv().get("COMPUTERNAME") + "]:" + port + ' ' + publicHostKey.toString(US_ASCII.name()) + "\n");
+        String knownHostTemplate = "[%s]:" + port + ' ' + publicHostKey.toString(US_ASCII.name()) + "\n";
+        try (BufferedWriter bw = new BufferedWriter(fileWritter)) {
+            bw.write(String.format(knownHostTemplate, "127.0.0.1"));
+            bw.write(String.format(knownHostTemplate, "localhost"));
+            bw.write(String.format(knownHostTemplate, InetAddress.getLocalHost().getHostName()));
+            if (System.getenv().containsKey("COMPUTERNAME")) {
+                bw.write(String.format(knownHostTemplate, System.getenv().get("COMPUTERNAME")));
+            }
         }
-        bw.close();
-
     }
 
     @After

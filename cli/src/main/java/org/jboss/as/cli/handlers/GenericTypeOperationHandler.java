@@ -94,6 +94,8 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
     private WritePropertyHandler writePropHandler;
     private Map<String, OperationCommand> opHandlers;
 
+    private final boolean isChildNode;
+
     /**
      * Generic command constructor.
      *
@@ -114,7 +116,21 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
      * @param idProperty The property name that identify the resource.
      */
     public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty) {
-        this(commandName, ctx, nodeType, idProperty, "read-attribute", "read-children-names", "read-children-resources",
+        this(commandName, ctx, nodeType, idProperty, false);
+    }
+
+    /**
+     * Generic command constructor.
+     *
+     * @param commandName The name of the command. If null, nodeType is used.
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type.
+     * @param idProperty The property name that identify the resource.
+     * @param isChildNode True is the path references a child node, false if the
+     * path references a type node.
+     */
+    public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty, boolean isChildNode) {
+        this(commandName, ctx, nodeType, idProperty, isChildNode, "read-attribute", "read-children-names", "read-children-resources",
                 "read-children-types", "read-operation-description", "read-operation-names",
                 "read-resource-description", "validate-address", "write-attribute", "undefine-attribute", "whoami");
     }
@@ -141,8 +157,25 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
      * @param excludeOperations The list of operations to exclude.
      */
     public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty, String... excludeOperations) {
+        this(commandName, ctx, nodeType, idProperty, false, excludeOperations);
+    }
+
+    /**
+     * Generic command constructor.
+     *
+     * @param commandName The name of the command. If null, nodeType is used.
+     * @param ctx The CommandContext.
+     * @param nodeType The resource type.
+     * @param isChildNode True is the path references a child node, false if the
+     * path references a type node.
+     * @param idProperty The property name that identify the resource.
+     * @param excludeOperations The list of operations to exclude.
+     */
+    public GenericTypeOperationHandler(String commandName, CommandContext ctx, String nodeType, String idProperty, boolean isChildNode, String... excludeOperations) {
 
         super(ctx, "generic-type-operation", true);
+
+        this.isChildNode = isChildNode;
 
         if(nodeType == null || nodeType.isEmpty()) {
             throw new IllegalArgumentException("Node type is " + (nodeType == null ? "null." : "empty."));
@@ -163,8 +196,20 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
 
         addRequiredPath(nodeType);
 
-        this.commandName = commandName == null ? getRequiredType() : commandName;
+        String cmdName = commandName == null ? getRequiredType() : commandName;
 
+        if (isChildNode) {
+            if (cmdName == null) {
+                cmdName = requiredAddress.getNodeName();
+            } else {
+                // It means that the getRequiredType returned a value, wrong for child node.
+                if (commandName == null) {
+                    throw new IllegalArgumentException("The child node path appears to end on a type: '" + nodeType + "'");
+                }
+            }
+        }
+
+        this.commandName = cmdName;
         if (this.commandName == null) {
             throw new IllegalArgumentException("The node path doesn't end on a type: '" + nodeType + "'");
         }
@@ -173,8 +218,16 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
 
         if(excludeOperations != null) {
             this.excludedOps = new HashSet<String>(Arrays.asList(excludeOperations));
+            if (isChildNode) {
+                this.excludedOps.add(Util.ADD);
+            }
         } else {
-            excludedOps = Collections.emptySet();
+            if (isChildNode) {
+                excludedOps = new HashSet<>();
+                excludedOps.add(Util.ADD);
+            } else {
+                excludedOps = Collections.emptySet();
+            }
         }
 
         profile = new ArgumentWithValue(this, new DefaultCompleter(new CandidatesProvider(){
@@ -209,7 +262,9 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                     for(OperationRequestAddress.Node node : getRequiredAddress()) {
                         address.toNode(node.getType(), node.getName());
                     }
-                    address.toNode(getRequiredType(), "?");
+                    if (!isChildNode) {
+                        address.toNode(getRequiredType(), "?");
+                    }
                     Collection<String> ops = Util.getOperationNames(ctx, address);
                     ops.removeAll(excludedOps);
                     if(customHandlers != null) {
@@ -242,7 +297,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
             @Override
             public List<String> getAllCandidates(CommandContext ctx) {
                 ModelControllerClient client = ctx.getModelControllerClient();
-                if (client == null) {
+                if (client == null || isChildNode) {
                     return Collections.emptyList();
                 }
                 DefaultOperationRequestAddress address = new DefaultOperationRequestAddress();
@@ -261,7 +316,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
             }), (idProperty == null ? "--name" : "--" + idProperty)) {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                if(isDependsOnProfile() && ctx.isDomainMode() && !profile.isValueComplete(ctx.getParsedCommandLine())) {
+                if ((isDependsOnProfile() && ctx.isDomainMode() && !profile.isValueComplete(ctx.getParsedCommandLine())) || isChildNode) {
                     return false;
                 }
                 return super.canAppearNext(ctx);
@@ -346,9 +401,14 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
     @Override
     public Collection<CommandArgument> getArguments(CommandContext ctx) {
         final ParsedCommandLine args = ctx.getParsedCommandLine();
+        List<CommandArgument> arguments = new ArrayList<>();
         try {
-            if(!name.isValueComplete(args)) {
-                return staticArgs.values();
+            if (isChildNode) {
+                arguments.addAll(staticArgs.values());
+            } else {
+                if (!name.isValueComplete(args)) {
+                    return staticArgs.values();
+                }
             }
         } catch (CommandFormatException e) {
             return Collections.emptyList();
@@ -358,9 +418,11 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         try {
             handler = getHandler(ctx, op);
         } catch (CommandLineException e) {
-            return Collections.emptyList();
+            // Return the static arguments in case of child node.
+            return arguments;
         }
-        return handler.getArguments(ctx);
+        arguments.addAll(handler.getArguments(ctx));
+        return arguments;
     }
 
     private OperationCommand getHandler(CommandContext ctx, String op) throws CommandLineException {
@@ -1161,7 +1223,9 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         for(OperationRequestAddress.Node node : getRequiredAddress()) {
             address.add(node.getType(), node.getName());
         }
-        address.add(getRequiredType(), "?");
+        if (!isChildNode) {
+            address.add(getRequiredType(), "?");
+        }
         return request;
     }
 
@@ -1219,8 +1283,10 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         @Override
         public ModelNode buildRequest(CommandContext ctx) throws CommandFormatException {
 
-            final String name = GenericTypeOperationHandler.this.name.getValue(ctx.getParsedCommandLine(), true);
-
+            final String name = GenericTypeOperationHandler.this.name.getValue(ctx.getParsedCommandLine(), false);
+            if (!isChildNode && name == null) {
+                throw new CommandFormatException("Required argument '" + GenericTypeOperationHandler.this.name.getFullName() + "' is missing.");
+            }
             final ModelNode composite = new ModelNode();
             composite.get(Util.OPERATION).set(Util.COMPOSITE);
             composite.get(Util.ADDRESS).setEmptyList();
@@ -1305,12 +1371,13 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
                 address.add(Util.PROFILE, profile);
             }
 
-            final String name = GenericTypeOperationHandler.this.name.getValue(ctx.getParsedCommandLine(), true);
-
-            for(OperationRequestAddress.Node node : getRequiredAddress()) {
+            for (OperationRequestAddress.Node node : getRequiredAddress()) {
                 address.add(node.getType(), node.getName());
             }
-            address.add(getRequiredType(), name);
+            if (!isChildNode) {
+                final String name = GenericTypeOperationHandler.this.name.getValue(ctx.getParsedCommandLine(), true);
+                address.add(getRequiredType(), name);
+            }
             request.get(Util.OPERATION).set(opName);
 
             for(String argName : parsedArgs.getPropertyNames()) {

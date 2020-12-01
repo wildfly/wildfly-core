@@ -1497,6 +1497,87 @@ public class CliCompletionTestCase {
         }
     }
 
+    @Test
+    public void genericCommandCompletion() throws Exception {
+        CommandContext ctx = CLITestUtil.getCommandContext(TestSuiteEnvironment.getServerAddress(),
+                TestSuiteEnvironment.getServerPort(), System.in, System.out);
+        ctx.connectController();
+        try {
+
+            {
+                String cmd = "command add ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--node-child", "--node-type"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("--node-child", "--node-type"), candidates);
+            }
+
+            {
+                String cmd = "command add --node-child=/foo=bar ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--command-name"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("--command-name"), candidates);
+            }
+
+            {
+                String cmd = "command add --node-child=/foo=bar --command-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("bar"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("bar"), candidates);
+            }
+
+            {
+                String cmd = "command add --node-child=/foo=bar --command-name=bar ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Collections.emptyList(), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Collections.emptyList(), candidates);
+            }
+
+            {
+                String cmd = "command add --node-type=/foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--command-name", "--property-id"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("--command-name", "--property-id"), candidates);
+            }
+
+            {
+                String cmd = "command add --node-type=/foo --command-name=";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("foo"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("foo"), candidates);
+            }
+
+            {
+                String cmd = "command add --node-type=/foo --command-name=foo ";
+                List<String> candidates = new ArrayList<>();
+                ctx.getDefaultCommandCompleter().complete(ctx,
+                        cmd, cmd.length(), candidates);
+                assertEquals(candidates.toString(), Arrays.asList("--property-id"), candidates);
+                candidates = complete(ctx, cmd, null);
+                assertEquals(candidates.toString(), Arrays.asList("--property-id"), candidates);
+            }
+        } finally {
+            ctx.terminateSession();
+        }
+    }
+
     public static String escapePath(String filePath) {
         if (Util.isWindows()) {
             StringBuilder builder = new StringBuilder();
