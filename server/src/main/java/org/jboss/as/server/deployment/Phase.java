@@ -488,6 +488,7 @@ public enum Phase {
      */
     @Deprecated
     public static final int CONFIGURE_RESOLVE_BUNDLE                    = 0x0100;
+    public static final int CONFIGURE_JDBC_DRIVER_MANAGER_ADAPTER       = 0x0180;
     public static final int CONFIGURE_MODULE_SPEC                       = 0x0200;
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
