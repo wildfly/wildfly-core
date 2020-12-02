@@ -52,6 +52,7 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
 
     private final ArgumentWithValue action = new ArgumentWithValue(this, new SimpleTabCompleter(new String[]{"add", "list", "remove"}), 0, "--action");
     private final ArgumentWithValue nodePath;
+    private final ArgumentWithValue nodeChild;
     private final ArgumentWithValue idProperty;
     private final ArgumentWithValue commandName;
 
@@ -74,10 +75,25 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
             }}, "--node-type") {
             @Override
             public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
-                return "add".equals(action.getValue(ctx.getParsedCommandLine())) && super.canAppearNext(ctx);
+                String nChild = nodeChild.getValue(ctx.getParsedCommandLine(), false);
+                return "add".equals(action.getValue(ctx.getParsedCommandLine())) && super.canAppearNext(ctx) && nChild == null;
             }
         };
 
+        nodeChild = new ArgumentWithValue(this, new CommandLineCompleter() {
+            @Override
+            public int complete(CommandContext ctx, String buffer, int cursor, List<String> candidates) {
+                int offset = 0;
+                int result = OperationRequestCompleter.ARG_VALUE_COMPLETER.complete(ctx, buffer, cursor + offset, candidates) - offset;
+                return result;
+            }
+        }, "--node-child") {
+            @Override
+            public boolean canAppearNext(CommandContext ctx) throws CommandFormatException {
+                String ntype = nodePath.getValue(ctx.getParsedCommandLine(), false);
+                return "add".equals(action.getValue(ctx.getParsedCommandLine())) && super.canAppearNext(ctx) && ntype == null;
+            }
+        };
         idProperty = new ArgumentWithValue(this, new DefaultCompleter(new CandidatesProvider(){
             @Override
             public List<String> getAllCandidates(CommandContext ctx) {
@@ -112,11 +128,15 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
                 }
 
                 if (actionName.equals("add")) {
-                   final String thePath = nodePath.getValue(ctx.getParsedCommandLine());
+                    boolean isChildPath = false;
+                    String thePath = nodePath.getValue(ctx.getParsedCommandLine());
                    if (thePath == null) {
-                      return Collections.emptyList();
-                   }
-
+                       thePath = nodeChild.getValue(ctx.getParsedCommandLine());
+                       isChildPath = thePath != null;
+                    }
+                    if (thePath == null) {
+                        return Collections.emptyList();
+                    }
                    callback.reset();
                    try {
                        ParserUtil.parseOperationRequest(thePath, callback);
@@ -124,11 +144,18 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
                        return Collections.emptyList();
                    }
 
-                   OperationRequestAddress typeAddress = callback.getAddress();
-                   if (!typeAddress.endsOnType()) {
-                       return Collections.emptyList();
-                   }
-                   return Collections.singletonList(typeAddress.getNodeType());
+                    OperationRequestAddress typeAddress = callback.getAddress();
+                    if (!typeAddress.endsOnType()) {
+                        if (!isChildPath) {
+                            return Collections.emptyList();
+                        }
+                    }
+                    if (typeAddress.endsOnType()) {
+                        return Collections.singletonList(typeAddress.getNodeType());
+                    } else {
+                        return Collections.singletonList(typeAddress.getNodeName());
+                    }
+
                }
 
                 if (actionName.equals("remove")) {
@@ -147,7 +174,7 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
                     return false;
                 }
                 if("add".equals(actionStr)) {
-                    return nodePath.isValueComplete(args);
+                    return nodePath.isValueComplete(args) || nodeChild.isValueComplete(args);
                 }
                 if("remove".equals(actionStr)) {
                     return true;
@@ -175,15 +202,24 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
         }
 
         if(action.equals("add")) {
-            final String nodePath = this.nodePath.getValue(args, true);
+            final String nodePath = this.nodePath.getValue(args, false);
+            final String nodeChild = this.nodeChild.getValue(args, false);
+            if (nodePath == null && nodeChild == null) {
+                throw new CommandFormatException(this.nodePath.getFullName() + " or " + this.nodeChild.getFullName() + " must be defined");
+            }
+            if (nodePath != null && nodeChild != null) {
+                throw new CommandFormatException("Only one of " + this.nodePath.getFullName() + " or " + this.nodeChild.getFullName() + " can be defined");
+            }
+            boolean isChildPath = nodeChild != null;
+            String path = isChildPath ? nodeChild : nodePath;
             final String propName = this.idProperty.getValue(args, false);
             final String cmdName = this.commandName.getValue(args, true);
-            validateInput(ctx, nodePath, propName);
+            validateInput(ctx, path, propName, isChildPath);
 
             if(cmdRegistry.getCommandHandler(cmdName) != null) {
                 throw new CommandFormatException("Command '" + cmdName + "' already registered.");
             }
-            cmdRegistry.registerHandler(new GenericTypeOperationHandler(cmdName, ctx, nodePath, propName), cmdName);
+            cmdRegistry.registerHandler(new GenericTypeOperationHandler(cmdName, ctx, path, propName, isChildPath), cmdName);
             return;
         }
 
@@ -254,7 +290,7 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
         return request;
     }
 
-    protected void validateInput(CommandContext ctx, String typePath, String propertyName) throws CommandFormatException {
+    protected void validateInput(CommandContext ctx, String typePath, String propertyName, boolean isChildType) throws CommandFormatException {
 
         ModelNode request = new ModelNode();
         ModelNode address = request.get(Util.ADDRESS);
@@ -272,67 +308,84 @@ public class CommandCommandHandler extends CommandHandlerWithHelp {
         }
 
         OperationRequestAddress typeAddress = callback.getAddress();
-        if(!typeAddress.endsOnType()) {
+        if (!typeAddress.endsOnType() && !isChildType) {
             throw new CommandFormatException("Node path '" + typePath + "' doesn't appear to end on a type.");
         }
 
-        final String typeName = typeAddress.toParentNode().getType();
-        for(OperationRequestAddress.Node node : typeAddress) {
-            address.add(node.getType(), node.getName());
+        if (typeAddress.endsOnType() && isChildType) {
+            throw new CommandFormatException("Child path '" + typePath + "' appears to end on a type.");
         }
-
-        request.get(Util.OPERATION).set(Util.READ_CHILDREN_TYPES);
 
         ModelNode result;
-        try {
-            result = ctx.getModelControllerClient().execute(request);
-        } catch (IOException e) {
-            throw new CommandFormatException("Failed to validate input: " + e.getLocalizedMessage());
-        }
-        if(!result.hasDefined(Util.RESULT)) {
-            throw new CommandFormatException("Failed to validate input: operation response doesn't contain result info.");
-        }
-
-        boolean pathValid = false;
-        for(ModelNode typeNode : result.get(Util.RESULT).asList()) {
-            if(typeNode.asString().equals(typeName)) {
-                pathValid = true;
-                break;
+        if (isChildType) {
+            for (OperationRequestAddress.Node node : typeAddress) {
+                address.add(node.getType(), node.getName());
             }
-        }
-        if(!pathValid) {
-            throw new CommandFormatException("Type '" + typeName + "' not found among child types of '" + ctx.getNodePathFormatter().format(typeAddress) + "'");
-        }
+            request.get(Util.OPERATION).set(Util.READ_RESOURCE);
+        } else {
+            final String typeName = typeAddress.toParentNode().getType();
+            for (OperationRequestAddress.Node node : typeAddress) {
+                address.add(node.getType(), node.getName());
+            }
 
-        address.add(typeName, "?");
-        request.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
+            request.get(Util.OPERATION).set(Util.READ_CHILDREN_TYPES);
+
+            try {
+                result = ctx.getModelControllerClient().execute(request);
+            } catch (IOException e) {
+                throw new CommandFormatException("Failed to validate input: " + e.getLocalizedMessage());
+            }
+            if (!result.hasDefined(Util.RESULT)) {
+                throw new CommandFormatException("Failed to validate input: operation response doesn't contain result info.");
+            }
+
+            boolean pathValid = false;
+            for (ModelNode typeNode : result.get(Util.RESULT).asList()) {
+                if (typeNode.asString().equals(typeName)) {
+                    pathValid = true;
+                    break;
+                }
+            }
+            if (!pathValid) {
+                throw new CommandFormatException("Type '" + typeName + "' not found among child types of '" + ctx.getNodePathFormatter().format(typeAddress) + "'");
+            }
+            address.add(typeName, "?");
+            request.get(Util.OPERATION).set(Util.READ_RESOURCE_DESCRIPTION);
+        }
 
         try {
             result = ctx.getModelControllerClient().execute(request);
         } catch (IOException e) {
             throw new CommandFormatException(e.getLocalizedMessage());
         }
-        if(!result.hasDefined(Util.RESULT)) {
-            throw new CommandFormatException("Failed to validate input: operation response doesn't contain result info.");
-        }
-        result = result.get(Util.RESULT);
-        if(!result.hasDefined("attributes")) {
-            throw new CommandFormatException("Failed to validate input: description of attributes is missing for " + typePath);
-        }
 
-        if(propertyName != null) {
-            for(Property prop : result.get(Util.ATTRIBUTES).asPropertyList()) {
-                if(prop.getName().equals(propertyName)) {
-                    ModelNode value = prop.getValue();
-                    if(value.has(Util.ACCESS_TYPE) && Util.READ_ONLY.equals(value.get(Util.ACCESS_TYPE).asString())) {
-                        return;
-                    }
-                    throw new CommandFormatException("Property " + propertyName + " is not read-only.");
-                }
+        if (isChildType) {
+            if (!Util.isSuccess(result)) {
+                throw new CommandFormatException("Failure retrieving resource " + typePath + ". Check that the resource already exists.");
             }
         } else {
-            return;
+            if (!result.hasDefined(Util.RESULT)) {
+                throw new CommandFormatException("Failed to validate input: operation response doesn't contain result info.");
+            }
+            result = result.get(Util.RESULT);
+            if (!result.hasDefined("attributes")) {
+                throw new CommandFormatException("Failed to validate input: description of attributes is missing for " + typePath);
+            }
+
+            if (propertyName != null) {
+                for (Property prop : result.get(Util.ATTRIBUTES).asPropertyList()) {
+                    if (prop.getName().equals(propertyName)) {
+                        ModelNode value = prop.getValue();
+                        if (value.has(Util.ACCESS_TYPE) && Util.READ_ONLY.equals(value.get(Util.ACCESS_TYPE).asString())) {
+                            return;
+                        }
+                        throw new CommandFormatException("Property " + propertyName + " is not read-only.");
+                    }
+                }
+            } else {
+                return;
+            }
+            throw new CommandFormatException("Property '" + propertyName + "' wasn't found among the properties of " + typePath);
         }
-        throw new CommandFormatException("Property '" + propertyName + "' wasn't found among the properties of " + typePath);
     }
 }

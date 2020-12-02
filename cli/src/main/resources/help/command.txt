@@ -1,7 +1,8 @@
 SYNOPSIS
 
-   command [add --node-type=node_path_to_the_type
-                [--property-id=identifying_property]
+   command [add [ --node-type=node_path_to_the_type
+                [--property-id=identifying_property] ] |
+                [ --node-child=node_path_to_the_child ]
                 --command-name=name_for_the_command |
             remove --command_name=command_to_remove |
             list]
@@ -9,10 +10,13 @@ SYNOPSIS
 DESCRIPTION
 
   Allows to add new, remove and list existing generic type commands.
-  A generic type command is a command that is assigned to a specific node type
-  and which allows to perform any operation available for an instance of that
-  type and/or modify any of the properties exposed by the type on any existing
-  instance of that type.
+
+  Generic command for a type node
+
+  When --node-type argument is used, a created generic type command is a command 
+  that is assigned to a specific node type and which allows to perform any 
+  operation available for an instance of that type and/or modify any of the 
+  properties exposed by the type on any existing instance of that type.
 
   For example, suppose there is a generic type command assigned to type
   /subsystem=datasources/data-source and named data-source. Now, data-source
@@ -46,6 +50,31 @@ DESCRIPTION
 
   data-source --jndi-name=my-new-ds --min-pool-size=11 --max-pool-size=22
 
+  Generic command for a child node
+
+  When --node-child argument is used, a created generic type command is a 
+  command that is assigned to a specific child node instance and which allows 
+  to perform any operation available for that instance and/or modify any of its 
+  properties. The child node must already exist in the management model. It can't
+  be added using the created generic command.
+
+  For example:
+
+  To create an 'authorization' command named 'authorization' for the 
+  access=authorization child node:
+
+  command add --node-child=/core-service=management/access=authorization 
+              --command-name=authorization
+  
+  To write some attributes of the access=authorization child node:
+
+  authorization --provider=rbac --permission-combination-policy=permissive 
+                --use-identity-roles=false
+
+  To call the operation 'read-attribute' on the access=authorization child node:
+
+  authorization read-attribute --name=provider
+  
   Tab-completion will help completing operation and property names.
 
   Generic type commands support --help option. The content of the help will be
@@ -74,15 +103,20 @@ ARGUMENTS
   add     - adds a new generic type command. The following arguments are used to
             add a new command:
 
-              --node-type     - (required) specifies the node path which ends on
-                              a type, for which the generic command should be
-                              created;
+              --node-type     - (required if no --node-child) specifies the node 
+                              path which ends on a type, for which the generic 
+                              command should be created;
 
-              --property-id   - (optional) a property name exposed by the type
-                              that should be used to identify instances of the
-                              type. If not specified, argument '--name' will be
-                              used with the instance name as its value to
-                              identify the target instance.
+              --node-child    - (required if no --node-type) specifies the node 
+                              path which ends on a child, for which the generic 
+                              command should be created;
+
+              --property-id   - (optional, only usable with --node-type) a 
+                              property name exposed by the type that should be 
+                              used to identify instances of the type. If not 
+                              specified, argument '--name' will be used with the 
+                              instance name as its value to identify the target 
+                              instance.
 
               --command-name  - (required) the name for the command.
 
