@@ -4674,6 +4674,19 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="generate-self-signed-certificate-host" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    If this attribute is set and if the file that backs the KeyStore does not exist, then
+                    a self-signed certificate will be generated on first use and it will be persisted to
+                    the file that backs the KeyStore. The value of this attribute will be used for the
+                    Common Name value in the self-signed certificate.
+
+                    The use of this attribute is intended for testing purposes only. This attribute is not
+                    intended for production use.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="trustManagersType">

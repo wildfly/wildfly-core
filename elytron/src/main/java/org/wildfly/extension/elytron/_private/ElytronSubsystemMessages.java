@@ -592,4 +592,21 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1080, value = "Non existing key store needs to have defined type.")
     OperationFailedException nonexistingKeyStoreMissingType();
+
+    @Message(id = 1081, value = "Failed to lazily initialize key manager")
+    RuntimeException failedToLazilyInitKeyManager(@Cause  Exception e);
+
+    @Message(id = 1082, value = "Failed to store generated self-signed certificate")
+    RuntimeException failedToStoreGeneratedSelfSignedCertificate(@Cause  Exception e);
+
+    @Message(id = 1083, value = "No '%s' found in injected value.")
+    RuntimeException noTypeFoundForLazyInitKeyManager(final String type);
+
+    @Message(id = 1084, value = "KeyStore %s not found, it will be auto generated on first use with a self-signed certificate for host %s")
+    @LogMessage(level = WARN)
+    void selfSignedCertificateWillBeCreated(String file, String host);
+
+    @Message(id = 1085, value = "Generated self-signed certificate at %s. Please note that self-signed certificates are not secure and should only be used for testing purposes. Do not use this self-signed certificate in production.\nSHA-1 fingerprint of the generated key is %s\nSHA-256 fingerprint of the generated key is %s")
+    @LogMessage(level = WARN)
+    void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
 }

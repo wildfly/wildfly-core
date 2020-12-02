@@ -75,6 +75,16 @@ class TlsParser {
             .addAttribute(SSLDefinitions.PROVIDER_NAME)
             .addAttribute(CredentialReference.getAttributeDefinition());
 
+    private PersistentResourceXMLBuilder keyManagerParser_12_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_MANAGER))
+            .setXmlWrapperElement(KEY_MANAGERS)
+            .addAttribute(SSLDefinitions.ALGORITHM)
+            .addAttribute(SSLDefinitions.KEYSTORE)
+            .addAttribute(SSLDefinitions.ALIAS_FILTER)
+            .addAttribute(SSLDefinitions.PROVIDERS)
+            .addAttribute(SSLDefinitions.PROVIDER_NAME)
+            .addAttribute(CredentialReference.getAttributeDefinition())
+            .addAttribute(SSLDefinitions.GENERATE_SELF_SIGNED_CERTIFICATE_HOST); // new
+
     private PersistentResourceXMLBuilder keyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(KEY_STORE))
             .addAttribute(KeyStoreDefinition.TYPE)
             .addAttribute(KeyStoreDefinition.PROVIDER_NAME)
@@ -304,6 +314,21 @@ class TlsParser {
             .addChild(trustManagerParser)
             .addChild(serverSslContextParser_9_0) // new cipher-suite-names attribute
             .addChild(clientSslContextParser_9_0) // new cipher-suite-names attribute
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .build();
+
+    final PersistentResourceXMLDescription tlsParser_12_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
             .addChild(certificateAuthorityParser)
             .addChild(certificateAuthorityAccountParser)
             .addChild(serverSslSniContextParser)

@@ -148,6 +148,9 @@
             <key-manager name="key2" key-store="accounts.keystore">
                 <credential-reference store="store1" clear-text="supersecret!"/>
             </key-manager>
+            <key-manager name="LazyKeyManager" key-store="test.keystore" generate-self-signed-certificate-host="localhost">
+                <credential-reference clear-text="elytron"/>
+            </key-manager>
         </key-managers>
         <server-ssl-contexts>
             <server-ssl-context name="ctx" key-manager="key1"/>

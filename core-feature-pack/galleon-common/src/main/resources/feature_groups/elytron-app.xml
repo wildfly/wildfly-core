@@ -22,4 +22,21 @@
         <param name="security-domain" value="ApplicationDomain"/>
         <param name="mechanism-configurations" value="[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}]"/>
     </feature>
+    <feature spec="subsystem.elytron.key-store">
+        <param name="key-store" value="applicationKS" />
+        <param name="path" value="application.keystore" />
+        <param name="relative-to" value="jboss.server.config.dir" />
+        <param name="type" value="PKCS12" />
+        <param name="credential-reference" value="{clear-text=password}" />
+    </feature>
+    <feature spec="subsystem.elytron.key-manager">
+        <param name="key-manager" value="applicationKM" />
+        <param name="key-store" value="applicationKS" />
+        <param name="generate-self-signed-certificate-host" value="localhost" />
+        <param name="credential-reference" value="{clear-text=password}" />
+    </feature>
+    <feature spec="subsystem.elytron.server-ssl-context">
+        <param name="server-ssl-context" value="applicationSSC" />
+        <param name="key-manager" value="applicationKM" />
+    </feature>
 </feature-group-spec>

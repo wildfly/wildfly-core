@@ -216,6 +216,7 @@ interface ElytronDescriptionConstants {
 
     String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
     String GENERATE_KEY_PAIR = "generate-key-pair";
+    String GENERATE_SELF_SIGNED_CERTIFICATE_HOST = "generate-self-signed-certificate-host";
     String GET_METADATA = "get-metadata";
     String GREATER_THAN = "greater-than";
     String GROUPS = "groups";
