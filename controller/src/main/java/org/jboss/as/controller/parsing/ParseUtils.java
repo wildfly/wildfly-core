@@ -542,8 +542,12 @@ public final class ParseUtils {
         final String trimmed = value == null ? null : value.trim();
         ModelNode node;
         if (trimmed != null) {
-            if (isExpressionAllowed && isExpression(trimmed)) {
-                node = new ModelNode(new ValueExpression(trimmed));
+            if (isExpressionAllowed && isExpression(value)) {
+                if(attributeType == STRING || attributeType == PROPERTY) {
+                    node = new ModelNode(new ValueExpression(value));
+                } else {
+                    node = new ModelNode(new ValueExpression(trimmed));
+                }
             } else {
                 if(attributeType == STRING || attributeType == PROPERTY) {
                     node = new ModelNode().set(value);
