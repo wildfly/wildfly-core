@@ -5029,6 +5029,24 @@
                             </xs:documentation>
                         </xs:annotation>
                     </xs:enumeration>
+                    <xs:enumeration value="WildFly20.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for kernel management API version 13.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
+                    <xs:enumeration value="WildFly21.0">
+                        <xs:annotation>
+                            <xs:documentation>
+                                <![CDATA[
+                                   A shorthand identifier for kernel management API version 14.0.x
+                                ]]>
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:enumeration>
                     <xs:enumeration value="EAP7.3">
                         <xs:annotation>
                             <xs:documentation>
