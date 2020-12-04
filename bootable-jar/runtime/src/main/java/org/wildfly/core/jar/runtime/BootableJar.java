@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -384,16 +383,7 @@ public final class BootableJar implements ShutdownHandler {
             ManagementFactory.getPlatformMBeanServer();
         }
 
-        // Register JBoss Modules MBean
-        // MODULES-401 makes this method public
-        // Remove this workaround when upgrading to JBoss modules 1.11
-        try {
-            Method m = ModuleLoader.class.getDeclaredMethod("installMBeanServer");
-            m.setAccessible(true);
-            m.invoke(null);
-        } catch (NoSuchMethodException ex) {
-            log.cantRegisterModuleMBeans(ex);
-        }
+        ModuleLoader.installMBeanServer();
     }
 
     private static String getServiceName(ClassLoader classLoader, String className) throws IOException {
