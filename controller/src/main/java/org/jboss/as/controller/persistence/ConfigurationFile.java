@@ -128,6 +128,7 @@ public class ConfigurationFile {
     private final File historyRoot;
     private final File currentHistory;
     private final File snapshotsDirectory;
+    private final File serverTempDir;
     // Policy governing how to interact with the physical file
     private final InteractionPolicy interactionPolicy;
     /* Backup copy of the most recent configuration, stored in the history dir.
@@ -154,16 +155,33 @@ public class ConfigurationFile {
     /**
      * Creates a new ConfigurationFile.
      *
-     * @param configurationDir directory in which configuration files are stored. Cannot be {@code null} and must exist
-     *                         and be a directory
-     * @param rawName default name for configuration files of the type handled by this object.
-     *                Cannot be {@code null} or an empty string
-     * @param name user provided name of the configuration file to use
-     * @param interactionPolicy policy governing interaction with the configuration file
-     * @param useGit {@code true} if configuration is using Git to manage its history.
+     * @param configurationDir  directory in which configuration files are stored. Cannot be {@code null} and must exist
+     *                          and be a directory
+     * @param rawName           default name for configuration files of the type handled by this object.
+     *                          Cannot be {@code null} or an empty string
+     * @param name              user provided name of the configuration file to use
+     * @param interactionPolicy policy governing interaction with the configuration file.
+     * @param useGit            {@code true} if configuration is using Git to manage its history.
+     */
+    public ConfigurationFile(final File configurationDir, final String rawName, final String name, final InteractionPolicy interactionPolicy, final boolean useGit) {
+        this(configurationDir, rawName, name, interactionPolicy, useGit, null);
+    }
+
+    /**
+     * Creates a new ConfigurationFile.
+     *
+     * @param configurationDir  directory in which configuration files are stored. Cannot be {@code null} and must exist
+     *                          and be a directory.
+     * @param rawName           default name for configuration files of the type handled by this object.
+     *                          Cannot be {@code null} or an empty string.
+     * @param name              user provided name of the configuration file to use.
+     * @param interactionPolicy policy governing interaction with the configuration file.
+     * @param useGit            {@code true} if configuration is using Git to manage its history.
+     * @param tmpDir            The server temporary directory to use as a fallback if the configuration directory cannot
+     *                          be written and we are running on read only mode.
      */
     public ConfigurationFile(final File configurationDir, final String rawName, final String name,
-                             final InteractionPolicy interactionPolicy, boolean useGit) {
+                             final InteractionPolicy interactionPolicy, final boolean useGit, final File tmpDir) {
         if (!configurationDir.exists() || !configurationDir.isDirectory()) {
             throw ControllerLogger.ROOT_LOGGER.directoryNotFound(configurationDir.getAbsolutePath());
         }
@@ -171,11 +189,14 @@ public class ConfigurationFile {
         this.rawFileName = rawName;
         this.bootFileName = name != null ? name : rawName;
         this.configurationDir = configurationDir;
-        this.historyRoot = new File(configurationDir, rawName.replace('.', '_') + "_history");
+        this.serverTempDir = tmpDir;
+        this.interactionPolicy = interactionPolicy == null ? InteractionPolicy.STANDARD : interactionPolicy;
+        // If we are in a read only policy and the configurationDir cannot be written, then we use the tmpDir for temporal files and history
+        this.historyRoot = new File(tmpDir != null && this.interactionPolicy.isReadOnly() && !configurationDir.canWrite() ? tmpDir : configurationDir,
+                rawName.replace('.', '_') + "_history");
         this.currentHistory = new File(historyRoot, "current");
         this.snapshotsDirectory = new File(historyRoot, "snapshot");
         this.useGit = useGit;
-        this.interactionPolicy = interactionPolicy == null ? InteractionPolicy.STANDARD : interactionPolicy;
         final File file = determineMainFile(rawName, name);
         try {
             this.mainFile = file.getCanonicalFile();
@@ -478,6 +499,9 @@ public class ConfigurationFile {
         return configurationDir;
     }
 
+    File getConfigurationTmpDir() {
+        return this.serverTempDir;
+    }
 
     /** Notification that boot has completed successfully and the configuration history should be updated */
     void successfulBoot() throws ConfigurationPersistenceException {
@@ -493,7 +517,7 @@ public class ConfigurationFile {
                 if ( FilePersistenceUtils.isParentFolderWritable(mainFile) ) {
                     copySource = new File(mainFile.getParentFile(), mainFile.getName() + ".boot");
                 } else{
-                    copySource = new File(configurationDir, mainFile.getName() + ".boot");
+                    copySource = new File(this.serverTempDir, mainFile.getName() + ".boot");
                 }
 
                 FilePersistenceUtils.deleteFile(copySource);
