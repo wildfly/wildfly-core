@@ -261,6 +261,7 @@ public enum Phase {
     public static final int STRUCTURE_CLASS_PATH                        = 0x1900;
     public static final int STRUCTURE_MODULE_IDENTIFIERS                = 0x1A00;
     public static final int STRUCTURE_EE_MODULE_INIT                    = 0x1B00;
+    public static final int STRUCTURE_EE_DEFAULT_BINDINGS_CONFIG        = 0x1B10;
     public static final int STRUCTURE_EE_RESOURCE_INJECTION_REGISTRY                = 0x1C00;
     public static final int STRUCTURE_DATASOURCE_RESOURCE_INJECTION                 = 0x1C01;
     public static final int STRUCTURE_JMS_CONNECTION_FACTORY_RESOURCE_INJECTION     = 0x1C02;
