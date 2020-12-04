@@ -75,4 +75,8 @@ public interface IOLogger extends BasicLogger {
 
     @Message(id = 7, value = "Unexpected bind address conflict in resource \"%s\" when attempting to establish binding for destination %s to %s: a binding of %s already existed")
     OperationFailedException unexpectedBindAddressConflict(PathAddress currentAddress, CidrAddress cidrAddress, InetSocketAddress bindAddress, InetSocketAddress existing);
+
+    @LogMessage(level = WARN)
+    @Message(id = 8, value = "The stack-size value of %d bytes for IO worker %s is low and may result in problems. A value of at least 150,000 is recommended.")
+    void wrongStackSize(long val, String workerName);
 }
