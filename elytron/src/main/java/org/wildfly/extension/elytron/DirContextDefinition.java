@@ -106,8 +106,8 @@ class DirContextDefinition extends SimpleResourceDefinition {
             .build();
 
     static final SimpleAttributeDefinition REFERRAL_MODE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.REFERRAL_MODE, ModelType.STRING, true)
-            .setDefaultValue(new ModelNode(ReferralMode.IGNORE.name()))
-            .setAllowedValues(ReferralMode.FOLLOW.name(), ReferralMode.IGNORE.name(), ReferralMode.THROW.name())
+            .setDefaultValue(new ModelNode(ReferralMode.IGNORE.toString()))
+            .setAllowedValues(ReferralMode.FOLLOW.toString(), ReferralMode.IGNORE.toString(), ReferralMode.THROW.toString())
             .setValidator(EnumValidator.create(ReferralMode.class, true, true))
             .setAllowExpression(true)
             .setRestartAllServices()
