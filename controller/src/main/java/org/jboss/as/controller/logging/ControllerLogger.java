@@ -3631,5 +3631,5 @@ public interface ControllerLogger extends BasicLogger {
     OperationFailedException invalidCredentialReferenceValue(String attributeName, String clearTextAttributeName, String credentialStoreAttributeName, String clearTextAttributeName1, String alias);
 
     @Message(id = 477, value = "Parameter name '%s' is invalid.")
-    OperationFailedException invalidParameterName(String parameterName);
+    IllegalArgumentException invalidParameterName(String parameterName);
 }

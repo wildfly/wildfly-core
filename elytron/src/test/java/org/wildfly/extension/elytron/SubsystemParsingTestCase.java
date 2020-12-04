@@ -381,7 +381,7 @@ public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
             }
 
             @Override
-            public final ModelNode getCurrentOperationName() {
+            public final String getCurrentOperationName() {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 

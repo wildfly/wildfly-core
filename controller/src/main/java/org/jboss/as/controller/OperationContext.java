@@ -423,13 +423,13 @@ public interface OperationContext extends ExpressionResolver {
      *
      * @return operation name node
      */
-    ModelNode getCurrentOperationName();
+    String getCurrentOperationName();
 
     /**
      * Get parameter node by its name
      *
      * @param name of desired parameter
-     * @return node for parameter of given name
+     * @return node for parameter of given name or {@code null} if the operation has no such parameter
      */
     ModelNode getCurrentOperationParameter(String name);
 
@@ -437,8 +437,8 @@ public interface OperationContext extends ExpressionResolver {
      * Get parameter node by its name
      *
      * @param name of desired parameter
-     * @param nullable whether return value can be null
-     * @return node for parameter of given name
+     * @param nullable whether the return value can be null if the operation has no parameter with the given name
+     * @return node for the parameter of the given name, or {@code null} if {@code nullable} is {@code true} and the operation has no parameter with the given name
      */
     ModelNode getCurrentOperationParameter(String name, boolean nullable);
 

@@ -228,7 +228,7 @@ public abstract class AbstractOperationTestCase {
         }
 
         @Override
-        public final ModelNode getCurrentOperationName() {
+        public final String getCurrentOperationName() {
             return null;
         }
 

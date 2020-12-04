@@ -460,7 +460,7 @@ public class AuthorizedAddressTest {
         }
 
         @Override
-        public ModelNode getCurrentOperationName() {
+        public String getCurrentOperationName() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

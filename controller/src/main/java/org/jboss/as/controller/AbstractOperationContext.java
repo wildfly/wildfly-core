@@ -542,12 +542,12 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     @Override
-    public final ModelNode getCurrentOperationName() {
+    public final String getCurrentOperationName() {
         assert activeStep != null;
         ModelNode operation = activeStep.operation;
 
         assert operation != null;
-        return operation.get(NAME);
+        return operation.get(NAME).asString();
     }
 
     @Override
@@ -568,12 +568,12 @@ abstract class AbstractOperationContext implements OperationContext {
                 return operation.get(parameterName);
             }
         } else {
-            throw new IllegalArgumentException(ControllerLogger.ROOT_LOGGER.invalidParameterName(parameterName));
+            throw ControllerLogger.ROOT_LOGGER.invalidParameterName(parameterName);
         }
     }
 
     private boolean isLegalParameterName(final String parameterName) {
-        return !(parameterName.equals(NAME) || parameterName.equals(OP) || parameterName.equals(OP_ADDR) || parameterName.equals(OPERATION_HEADERS));
+        return !(parameterName.equals(OP) || parameterName.equals(OP_ADDR) || parameterName.equals(OPERATION_HEADERS));
     }
 
     /**
