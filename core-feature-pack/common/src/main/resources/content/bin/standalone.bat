@@ -308,7 +308,8 @@ echo.
       %SERVER_OPTS%
 
 if %errorlevel% equ 10 (
-	goto RESTART
+    echo Restarting...
+    goto RESTART
 )
 
 :END
