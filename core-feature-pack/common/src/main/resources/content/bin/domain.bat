@@ -218,7 +218,8 @@ echo.
     %*
 
 if %errorlevel% equ 10 (
-	goto RESTART
+    echo Restarting...
+    goto RESTART
 )
 
 :END
