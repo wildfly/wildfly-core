@@ -59,7 +59,6 @@ import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
@@ -76,16 +75,6 @@ import org.jboss.dmr.Property;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class LoggingResourceDefinition extends TransformerResourceDefinition {
-
-    private static String APACHE_COMMONS_LOGGING = "org.apache.commons.logging";
-    private static String SLF4J = "org.slf4j";
-    private static String SLF4J_STUB = "org.jboss.logging.jul-to-slf4j-stub";
-    public static final String[] DUP_INJECTED_LOGGING_MODULES = new String[]{
-        "org.jboss.logging",
-        APACHE_COMMONS_LOGGING,
-        "org.apache.log4j",
-        SLF4J,
-        SLF4J_STUB,};
 
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(SUBSYSTEM, LoggingExtension.SUBSYSTEM_NAME);
 
@@ -208,11 +197,7 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
 
     @Override
     public void registerAdditionalRuntimePackages(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerAdditionalRuntimePackages(RuntimePackageDependency.optional(APACHE_COMMONS_LOGGING),
-                RuntimePackageDependency.optional(SLF4J),
-                RuntimePackageDependency.optional(SLF4J_STUB),
-                // The next ones are Loaded by LoggingExtension
-                RuntimePackageDependency.optional("org.slf4j.impl"));
+        resourceRegistration.registerAdditionalRuntimePackages(LoggingModuleDependency.getRuntimeDependencies());
     }
 
     private class ListLogFilesOperation implements OperationStepHandler {

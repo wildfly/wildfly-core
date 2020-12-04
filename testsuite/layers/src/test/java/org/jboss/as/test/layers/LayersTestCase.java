@@ -59,7 +59,11 @@ public class LayersTestCase {
         // injected by elytron
         "org.wildfly.security.elytron",
         // injected by logging
+        "org.apache.logging.log4j.api",
+        // injected by logging
         "org.jboss.logging.jul-to-slf4j-stub",
+        // injected by logging
+        "org.jboss.logmanager.log4j2",
         // tooling
         "org.jboss.as.domain-add-user",
         // deployment-scanner not configured in default config

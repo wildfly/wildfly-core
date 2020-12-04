@@ -105,16 +105,6 @@ public class LoggingExtension implements Extension {
 
     private static final ModelVersion CURRENT_VERSION = ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION, MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
 
-    private static final String[] LOGGING_API_MODULES = new String[] {
-            "org.apache.commons.logging",
-            "org.apache.log4j",
-            "org.jboss.logging",
-            "org.jboss.logging.jul-to-slf4j-stub",
-            "org.jboss.logmanager",
-            "org.slf4j",
-            "org.slf4j.impl",
-    };
-
     private static final List<String> DELEGATE_DESC_OPTS = Arrays.asList(
             AbstractHandlerDefinition.UPDATE_OPERATION_NAME,
             RootLoggerResourceDefinition.ROOT_LOGGER_ADD_OPERATION_NAME
@@ -204,9 +194,9 @@ public class LoggingExtension implements Extension {
         // Load logging API modules
         try {
             final ModuleLoader moduleLoader = Module.forClass(LoggingExtension.class).getModuleLoader();
-            for (String moduleName : LOGGING_API_MODULES) {
+            for (LoggingModuleDependency dependency : LoggingModuleDependency.values()) {
                 try {
-                    contextSelector.addLogApiClassLoader(moduleLoader.loadModule(moduleName).getClassLoader());
+                    contextSelector.addLogApiClassLoader(moduleLoader.loadModule(dependency.getModuleName()).getClassLoader());
                 } catch (Throwable ignore) {
                     // ignore
                 }
