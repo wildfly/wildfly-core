@@ -221,12 +221,9 @@
         <version.org.wildfly.legacy.test>5.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.1.2.Final</version.org.wildfly.openssl>
         <version.org.wildfly.openssl.natives>2.1.0.Final</version.org.wildfly.openssl.natives>
-        <version.org.wildfly.openssl.wildfly-openssl-linux-i386>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-i386>
         <version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
-        <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
         <version.org.wildfly.security.elytron>1.14.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.8.0.Final</version.org.wildfly.security.elytron-web>
@@ -1653,11 +1650,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-linux-i386</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-linux-i386}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-linux-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl.wildfly-openssl-linux-x86_64}</version>
             </dependency>
@@ -1670,16 +1662,6 @@
                 <groupId>org.wildfly.openssl</groupId>
                 <artifactId>wildfly-openssl-macosx-x86_64</artifactId>
                 <version>${version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-solaris-x86_64</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.openssl</groupId>
-                <artifactId>wildfly-openssl-windows-i386</artifactId>
-                <version>${version.org.wildfly.openssl.wildfly-openssl-windows-i386}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.openssl</groupId>
