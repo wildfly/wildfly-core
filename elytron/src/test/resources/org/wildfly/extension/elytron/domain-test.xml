@@ -33,6 +33,12 @@
         <security-domain name="SourceAddressRoleDecoderDomain" default-realm="TestRealm" permission-mapper="ipPermissionMapper" role-decoder="ipRoleDecoder1">
             <realm name="TestRealm" role-decoder="groups-to-roles"/>
         </security-domain>
+        <security-domain name="LowerCasePrincipalTransformerDomain" pre-realm-principal-transformer="myCasePrincipalTransformerLower" default-realm="ClearPropRealm" permission-mapper="LoginPermissionMapper">
+            <realm name="ClearPropRealm" />
+        </security-domain>
+        <security-domain name="UpperCasePrincipalTransformerDomain" pre-realm-principal-transformer="myCasePrincipalTransformerUpper" default-realm="ClearPropRealm" permission-mapper="LoginPermissionMapper">
+            <realm name="ClearPropRealm" />
+        </security-domain>
     </security-domains>
     <security-realms>
         <properties-realm name="PropRealm">
@@ -44,6 +50,9 @@
         <properties-realm name="TestRealm">
             <users-properties path="users-hashed.properties" relative-to="jboss.server.config.dir"/>
             <groups-properties path="users-roles.properties" relative-to="jboss.server.config.dir"/>
+        </properties-realm>
+        <properties-realm name="ClearPropRealm">
+            <users-properties path="users-clear.properties" relative-to="jboss.server.config.dir" plain-text="true"/>
         </properties-realm>
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
@@ -124,6 +133,8 @@
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
         <source-address-role-decoder name="ipRoleDecoder1" source-address="10.12.14.16" roles="admin user"/>
+        <case-principal-transformer name="myCasePrincipalTransformerLower" upper-case="false" />
+        <case-principal-transformer name="myCasePrincipalTransformerUpper" upper-case="true" />
     </mappers>
     <permission-sets>
         <permission-set name="login-permission">

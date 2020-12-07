@@ -2562,6 +2562,7 @@
             <xs:element name="constant-principal-transformer" type="constantPrincipalTransformer" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="custom-principal-transformer" type="customPrincipalTransformerType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="regex-principal-transformer" type="regexPrincipalTransformerType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="case-principal-transformer" type="casePrincipalTransformerType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="regex-validating-principal-transformer" type="regexValidatingPrincipalTransformer" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="custom-permission-mapper" type="customPermissionMapperType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="logical-permission-mapper" type="logicalPermissionMapperType" minOccurs="0" maxOccurs="unbounded" />
@@ -3178,6 +3179,26 @@
                 <xs:sequence>
                     <xs:element name="principal-transformer" type="principalTransformerRefType" minOccurs="2" maxOccurs="unbounded" />
                 </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="casePrincipalTransformerType">
+        <xs:annotation>
+            <xs:documentation>
+                A PrincipalTransformer that adjusts a principal to upper or lower case.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="principalTransformerType">
+                <xs:attribute name="upper-case" type="xs:boolean" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            If set to true, principal is adjusted to upper case. If set to false, principal is adjusted
+                            to lower case.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

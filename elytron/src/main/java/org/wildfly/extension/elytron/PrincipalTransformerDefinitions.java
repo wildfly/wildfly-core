@@ -18,6 +18,7 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONSTANT_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REGEX_PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REGEX_VALIDATING_PRINCIPAL_TRANSFORMER;
@@ -40,6 +41,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.util.CaseNameRewriter;
 import org.wildfly.security.auth.util.RegexNameRewriter;
 import org.wildfly.security.auth.util.RegexNameValidatingRewriter;
 
@@ -72,6 +74,11 @@ class PrincipalTransformerDefinitions {
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.TRUE)
             .setRestartAllServices()
+            .build();
+
+    static final SimpleAttributeDefinition UPPER_CASE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.UPPER_CASE, ModelType.BOOLEAN, true)
+            .setAllowExpression(true)
+            .setDefaultValue(ModelNode.TRUE)
             .build();
 
     static final AggregateComponentDefinition<PrincipalTransformer> AGGREGATE_PRINCIPAL_TRANSFORMER = AggregateComponentDefinition.create(PrincipalTransformer.class,
@@ -142,4 +149,17 @@ class PrincipalTransformerDefinitions {
         return new TrivialResourceDefinition(REGEX_VALIDATING_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
     }
 
+    static ResourceDefinition getCasePrincipalTransformerDefinition() {
+        final AttributeDefinition[] attributes = new AttributeDefinition[] {UPPER_CASE};
+        AbstractAddStepHandler add = new TrivialAddHandler<PrincipalTransformer>(PrincipalTransformer.class, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY) {
+
+            @Override
+            protected ValueSupplier<PrincipalTransformer> getValueSupplier(ServiceBuilder<PrincipalTransformer> serviceBuilder,
+                                                                           OperationContext context, ModelNode model) throws OperationFailedException {
+                final boolean upperCase = UPPER_CASE.resolveModelAttribute(context, model).asBoolean();
+                return () -> PrincipalTransformer.from(new CaseNameRewriter(upperCase).asPrincipalRewriter());
+            }
+        };
+        return new TrivialResourceDefinition(CASE_PRINCIPAL_TRANSFORMER, add, attributes, PRINCIPAL_TRANSFORMER_RUNTIME_CAPABILITY);
+    }
 }

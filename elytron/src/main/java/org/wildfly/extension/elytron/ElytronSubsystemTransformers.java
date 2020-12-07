@@ -125,6 +125,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .end();
 
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER));
     }
 
     private static void from11(ChainedTransformationDescriptionBuilder chainedBuilder) {

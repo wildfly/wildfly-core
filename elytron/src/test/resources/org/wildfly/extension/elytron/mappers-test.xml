@@ -9,6 +9,12 @@
         <security-domain name="TestingDomainRegex" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="regexRoleDecoder">
             <realm name="PropRealm"/>
         </security-domain>
+        <security-domain name="TestingDomainUpperCase" default-realm="PropRealm" pre-realm-principal-transformer="upperCase" evidence-decoder="aggregateEvidenceDecoder" role-decoder="regexRoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <security-domain name="TestingDomainLowerCase" default-realm="PropRealm" pre-realm-principal-transformer="lowerCase" evidence-decoder="aggregateEvidenceDecoder" role-decoder="regexRoleDecoder">
+            <realm name="PropRealm"/>
+        </security-domain>
         <security-domain name="TestingDomainRegexIPv6" default-realm="PropRealm" pre-realm-principal-transformer="tree" evidence-decoder="aggregateEvidenceDecoder" role-decoder="ipv6RegexRoleDecoder">
             <realm name="PropRealm"/>
         </security-domain>
@@ -67,5 +73,8 @@
             <role-decoder name="ipRoleDecoder2"/>
             <role-decoder name="ipRoleDecoder3"/>
         </aggregate-role-decoder>
+
+        <case-principal-transformer name="upperCase" upper-case="true"/>
+        <case-principal-transformer name="lowerCase" upper-case="false"/>
     </mappers>
 </subsystem>

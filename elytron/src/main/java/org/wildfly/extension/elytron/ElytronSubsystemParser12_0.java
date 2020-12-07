@@ -33,6 +33,12 @@ public class ElytronSubsystemParser12_0 extends ElytronSubsystemParser11_0 {
         return ElytronExtension.NAMESPACE_12_0;
     }
 
+    @Override
+    protected PersistentResourceXMLDescription getMapperParser() {
+        return new MapperParser(MapperParser.Version.VERSION_7_0).getParser();
+    }
+
+
     PersistentResourceXMLDescription getTlsParser() {
         return new TlsParser().tlsParser_12_0;
     }
