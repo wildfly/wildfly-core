@@ -20,6 +20,7 @@
 package org.jboss.as.test.integration.logging.profiles;
 
 import java.io.FilePermission;
+import java.nio.file.Paths;
 import java.security.Permission;
 import java.util.PropertyPermission;
 
@@ -47,12 +48,27 @@ public class Log4j2LoggingProfilesTestCase extends AbstractLoggingProfilesTestCa
                 new RuntimePermission("getClassLoader"),
                 // The FilePermissions is also for the org.apache.logging.log4j.util.ProviderUtil as it needs to read the JAR
                 // for the service loader.
-                new FilePermission("<<ALL FILES>>", "read"),
+                new FilePermission(resolveFilePermissions(), "read"),
                 // Required for the EnvironmentPropertySource System.getenv().
                 new RuntimePermission("getenv.*"),
                 // Required for the SystemPropertiesPropertySource System.getProperties().
                 new PropertyPermission("*", "read,write"),
         };
         addPermissions(deployment, permissions);
+    }
+
+    private static String resolveFilePermissions() {
+        // WildFly Core uses "thin" server so artifacts are resolved from maven coordinates.
+        final String dir = System.getProperty("maven.repo.local");
+        if (dir == null) {
+            throw new RuntimeException("Failed to resolve system property maven.repo.local");
+        }
+        return Paths.get(dir)
+                .resolve("org")
+                .resolve("jboss")
+                .resolve("logmanager")
+                .resolve("log4j2-jboss-logmanager")
+                .resolve("-")
+                .toString();
     }
 }

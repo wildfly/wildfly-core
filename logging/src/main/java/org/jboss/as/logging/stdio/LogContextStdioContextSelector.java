@@ -53,8 +53,7 @@ public class LogContextStdioContextSelector implements StdioContextSelector {
         final Logger root = logContext.getLogger(CommonAttributes.ROOT_LOGGER_NAME);
         StdioContext stdioContext = root.getAttachment(STDIO_CONTEXT_ATTACHMENT_KEY);
         if (stdioContext == null) {
-            // Create the StdioContext possibly using a privileged action. This is required for scenarios where a
-            // deployment or library may attempt to write to System.out or System.err.
+            // Create the StdioContext
             stdioContext = createContext(logContext);
             final StdioContext appearing = attachIfAbsent(root, stdioContext);
             if (appearing != null) {
@@ -72,6 +71,12 @@ public class LogContextStdioContextSelector implements StdioContextSelector {
                     new LoggingOutputStream(logContext.getLogger("stderr"), Level.ERROR)
             );
         }
+
+        // Create the StdioContext using a privileged action. StdioContext.create() requires the "createStdioContext"
+        // RuntimePermission. If a deployment or a dependency of the deployment attempts to write to System.out or
+        // System.err with the security manager enabled then this could throw a security exception without the
+        // privileged action. We should not block writing to those streams as they could be "logging" an important
+        // error.
         return AccessController.doPrivileged((PrivilegedAction<StdioContext>) () -> StdioContext.create(
                 new NullInputStream(),
                 new LoggingOutputStream(logContext.getLogger("stdout"), Level.INFO),
