@@ -36,6 +36,8 @@
                 <path name="com/ibm/crypto"/>
                 <path name="com/ibm/crypto/provider"/>
                 <path name="com/ibm/dataaccess"/>
+                <path name="com/ibm/jsse"/>
+                <path name="com/ibm/jsse2"/>
                 <path name="com/ibm/jvm"/>
                 <path name="com/ibm/jvm/io"/>
                 <path name="com/ibm/jvm/util"/>
