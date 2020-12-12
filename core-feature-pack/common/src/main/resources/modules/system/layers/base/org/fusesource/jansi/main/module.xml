@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.fusesource.jansi">
+<module xmlns="urn:jboss:module:1.8" name="org.fusesource.jansi">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>

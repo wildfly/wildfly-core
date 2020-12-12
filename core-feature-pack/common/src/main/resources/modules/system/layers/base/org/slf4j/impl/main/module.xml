@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.slf4j.impl">
+<module xmlns="urn:jboss:module:1.8" name="org.slf4j.impl">
 
     <properties>
         <property name="jboss.api" value="private"/>
@@ -33,6 +33,7 @@
     </resources>
 
     <dependencies>
+        <module name="java.logging"/>
         <module name="org.slf4j"/>
         <module name="org.jboss.logmanager"/>
     </dependencies>
