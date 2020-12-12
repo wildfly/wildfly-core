@@ -22,12 +22,13 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.logging">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.logging">
     <resources>
         <artifact name="${org.jboss.logging:jboss-logging}"/>
     </resources>
 
     <dependencies>
         <module name="org.jboss.logmanager"/>
+        <module name="java.logging"/>
     </dependencies>
 </module>

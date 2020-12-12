@@ -22,12 +22,13 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.6" name="org.jboss.logging.jul-to-slf4j-stub">
+<module xmlns="urn:jboss:module:1.8" name="org.jboss.logging.jul-to-slf4j-stub">
     <resources>
         <artifact name="${org.jboss.logging:jul-to-slf4j-stub}"/>
     </resources>
 
     <dependencies>
+        <module name="java.logging"/>
         <module name="org.slf4j"/>
     </dependencies>
 </module>
