@@ -22,7 +22,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module xmlns="urn:jboss:module:1.8" name="org.wildfly.embedded">
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.embedded">
     <properties>
         <!-- Core version of the embedded API is currently only meant
         for use by the CLI -->
