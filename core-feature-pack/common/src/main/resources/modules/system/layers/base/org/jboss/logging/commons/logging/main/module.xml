@@ -19,7 +19,7 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.8" name="org.jboss.logging.commons.logging">
+<module xmlns="urn:jboss:module:1.9" name="org.jboss.logging.commons.logging">
 
     <properties>
         <property name="jboss.api" value="private"/>
