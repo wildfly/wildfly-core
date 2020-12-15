@@ -116,6 +116,17 @@ public interface BootableJarLogger extends BasicLogger {
     @Message(id = 21, value = "Cannot register JBoss Modules MBeans, %s")
     void cantRegisterModuleMBeans(Exception ex);
 
+    @Message(id = 22, value = "The PID file %s already exists. This may result in the install directory \"%s\" not being properly deleted.")
+    IllegalStateException pidFileAlreadyExists(Path pidFile, Path installDir);
+
+    @LogMessage(level = WARN)
+    @Message(id = 23, value = "Failed to start the cleanup processor. This may result in the install directory \"%s\" not being properly deleted.")
+    void failedToStartCleanupProcess(@Cause Throwable cause, Path installDir);
+
+    @LogMessage(level = WARN)
+    @Message(id = 24, value = "The container has not properly shutdown within %ds. This may result in the install directory \"%s\" not being properly deleted.")
+    void cleanupTimeout(long timeout, Path installDir);
+
     @Message(id = Message.NONE, value = "Set system property jboss.bind.address to the given value")
     String argPublicBindAddress();
 
