@@ -62,7 +62,7 @@ jobs:
           mvn -B install -DskipTests
 
       - name: Check versions
-        uses: kabir/dep-tree-diff@master
+        uses: wildfly/dep-tree-diff@master
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
           modules: ${{ steps.prepare.outputs.modules_to_check }}
