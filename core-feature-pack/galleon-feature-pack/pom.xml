@@ -44,8 +44,6 @@
         <ee-8-api.resources.directory>${basedir}/../ee-8-api/src/main/resources</ee-8-api.resources.directory>
         <galleon-common.resources.directory>${basedir}/../galleon-common/src/main/resources</galleon-common.resources.directory>
         <galleon-pruned.resources.directory>${basedir}/../galleon-pruned/src/main/resources</galleon-pruned.resources.directory>
-        <common.license.directory>${basedir}/../common/src/license</common.license.directory>
-        <ee-8-api.license.directory>${basedir}/../ee-8-api/src/license</ee-8-api.license.directory>
     </properties>
 
     <dependencies>
@@ -200,8 +198,8 @@
                         <configuration>
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                             <licensesConfigFiles>
-                                <licensesConfigFile>${common.license.directory}/core-feature-pack-common-licenses.xml</licensesConfigFile>
-                                <licensesConfigFile>${ee-8-api.license.directory}/core-feature-pack-ee-8-api-licenses.xml</licensesConfigFile>
+                                <licensesConfigFile>${basedir}/target/resources/license/core-feature-pack-common-licenses.xml</licensesConfigFile>
+                                <licensesConfigFile>${basedir}/target/resources/license/core-feature-pack-ee-8-api-licenses.xml</licensesConfigFile>
                             </licensesConfigFiles>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedGroups>org.wildfly.galleon-plugins</excludedGroups>
