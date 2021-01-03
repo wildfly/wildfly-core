@@ -42,8 +42,8 @@
         <license.directory>${project.build.directory}/resources/content/docs/licenses</license.directory>
         <common.resources.directory>${basedir}/../common/src/main/resources</common.resources.directory>
         <ee-8-api.resources.directory>${basedir}/../ee-8-api/src/main/resources</ee-8-api.resources.directory>
-        <legacy.resources.directory>${basedir}/../legacy-feature-pack/src/main/resources</legacy.resources.directory>
         <galleon-common.resources.directory>${basedir}/../galleon-common/src/main/resources</galleon-common.resources.directory>
+        <galleon-pruned.resources.directory>${basedir}/../galleon-pruned/src/main/resources</galleon-pruned.resources.directory>
         <common.license.directory>${basedir}/../common/src/license</common.license.directory>
         <ee-8-api.license.directory>${basedir}/../ee-8-api/src/license</ee-8-api.license.directory>
     </properties>
@@ -140,25 +140,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>copy-legacy-feature-pack-resources</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/resources</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${legacy.resources.directory}</directory>
-                                    <includes>
-                                        <include>content/**</include>
-                                        <include>modules/**</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>copy-galleon-common-feature-pack-resources</id>
                         <phase>process-resources</phase>
                         <goals>
@@ -169,6 +150,21 @@
                             <resources>
                                 <resource>
                                     <directory>${galleon-common.resources.directory}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-galleon-pruned-feature-pack-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${galleon-pruned.resources.directory}</directory>
                                 </resource>
                             </resources>
                         </configuration>
