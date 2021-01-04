@@ -64,10 +64,9 @@ jobs:
           baseVersionFiles=""
           for module in $(echo "${MODULES_TO_CHECK}" | sed "s/,/ /g")
           do
-            baseVersionFile="_base-versions-$i.txt"
+            baseVersionFile="${GITHUB_WORKSPACE}/_base-versions-$i.txt"
             mvn -B dependency:tree -pl "${module}" -DoutputFile="${baseVersionFile}" || exit 1
 
-            baseVersionFile="base/${baseVersionFile}"
             if [ $i -gt 0 ]; then
               baseVersionFiles="${baseVersionFiles},${baseVersionFile}"
             else
@@ -90,10 +89,9 @@ jobs:
           newVersionFiles=""
           for module in $(echo "${MODULES_TO_CHECK}" | sed "s/,/ /g")
           do
-            newVersionFile="_new-versions-$i.txt"
+            newVersionFile="${GITHUB_WORKSPACE}/_new-versions-$i.txt"
             mvn -B dependency:tree -pl "${module}" -DoutputFile="${newVersionFile}" || exit 1
 
-            newVersionFile="pr/${newVersionFile}"
             if [ $i -gt 0 ]; then
               newVersionFiles="${newVersionFiles},${newVersionFile}"
             else
