@@ -102,8 +102,7 @@ jobs:
           echo "::set-output name=files::${newVersionFiles}"
 
       - name: Check versions
-        #uses: wildfly/dep-tree-diff@master
-        uses: kabir/dep-tree-diff@development
+        uses: wildfly/dep-tree-diff@master
         with:
           token: '${{ secrets.GITHUB_TOKEN }}'
           deps-ok-label: ${{ steps.prepare.outputs.deps_ok_label_name }}
