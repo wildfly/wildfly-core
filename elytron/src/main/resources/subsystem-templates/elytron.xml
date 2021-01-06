@@ -125,7 +125,7 @@
                 <key-stores>
                     <key-store name="applicationKS">
                         <credential-reference clear-text="password"/>
-                        <implementation type="PKCS12"/>
+                        <implementation type="JKS"/>
                         <file path="application.keystore" relative-to="jboss.domain.config.dir"/>
                     </key-store>
                 </key-stores>
@@ -250,7 +250,7 @@
                 <key-stores>
                     <key-store name="applicationKS">
                         <credential-reference clear-text="password"/>
-                        <implementation type="PKCS12"/>
+                        <implementation type="JKS"/>
                         <file path="application.keystore" relative-to="jboss.server.config.dir"/>
                     </key-store>
                 </key-stores>

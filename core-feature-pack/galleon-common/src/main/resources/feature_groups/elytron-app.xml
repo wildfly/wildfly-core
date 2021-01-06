@@ -26,7 +26,7 @@
         <param name="key-store" value="applicationKS" />
         <param name="path" value="application.keystore" />
         <param name="relative-to" value="jboss.server.config.dir" />
-        <param name="type" value="PKCS12" />
+        <param name="type" value="JKS" />
         <param name="credential-reference" value="{clear-text=password}" />
     </feature>
     <feature spec="subsystem.elytron.key-manager">
