@@ -139,7 +139,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         resourceRegistration.registerReadWriteAttribute(map, null, new ReloadRequiredWriteAttributeHandler(map));
 
 
-        resourceRegistration.registerReadWriteAttribute(complex, null, new ComplexWriteAttributeHandler());
+        resourceRegistration.registerReadWriteAttribute(complex, null, new ReloadRequiredWriteAttributeHandler(complex));
     }
 
     private static SimpleAttributeDefinition createAttribute(String name, ModelType type, boolean allowExpressions) {
@@ -153,12 +153,6 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
         resourceRegistration.registerReadWriteAttribute(attr, null, new ModelOnlyWriteAttributeHandler(attr));
     }
 
-    class ComplexWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
-        @Override
-        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            super.execute(context, operation);
-        }
-    }
 
     static class TestSubystemAdd extends AbstractAddStepHandler {
         static final TestSubystemAdd INSTANCE = new TestSubystemAdd();

@@ -178,8 +178,19 @@ public class WriteAttributeHandler implements OperationStepHandler {
 
                 // Resolution must be postponed to RUNTIME stage for Storage.RUNTIME attributes.
 
-                final ModelNode originalOperation = operation; // final vars so they can be accessed from lambda
+                // We have to invoke on the AttributeAccess' write handler in Stage.MODEL but we don't know yet what the value
+                // we want to write. We can't know that until Stage.RUNTIME.
+                // So, for Stage.MODEL we are going to pass to the AttributeAccess' write handler an operation that amounts to
+                // writing the same value as exists now. The Stage.MODEL handling for a Storage.RUNTIME attribute is basically
+                // meaningless, so passing in an operation whose value amounts to a no-op should be ok (although kludgy).
+                // But before calling that handler we will register a Stage.RUNTIME step that will change the 'operation' object to
+                // the properly resolved operation value. The step we add will execute *before* any Stage.RUNTIME step the
+                // write handler adds, so the one the write handler adds will see the operation state that our step will set up.
+
+                final ModelNode originalOperation = operation;
                 final ModelNode resolvedOperation = operation.clone();
+                resolvedOperation.get(ModelDescriptionConstants.NAME).set(attributeName); // replace the current expression with the base attribute name
+                resolvedOperation.get(ModelDescriptionConstants.VALUE).set(currentValue); // just pass in the existing value
                 operation = resolvedOperation;
 
                 context.addStep((context1, operation1) -> {
