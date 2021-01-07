@@ -227,6 +227,11 @@ public class DelegatingManagementResourceRegistration implements ManagementResou
     }
 
     @Override
+    public ManagementResourceRegistration registerSubModelIfAbsent(ResourceDefinition resourceDefinition) {
+        return getDelegate().registerSubModelIfAbsent(resourceDefinition);
+    }
+
+    @Override
     public void unregisterSubModel(PathElement address) {
         getDelegate().unregisterSubModel(address);
     }

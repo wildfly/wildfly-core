@@ -1015,6 +1015,13 @@ public class ExtensionRegistry {
         }
 
         @Override
+        public ManagementResourceRegistration registerSubModelIfAbsent(ResourceDefinition resourceDefinition) {
+            ManagementResourceRegistration depl = deployments.registerSubModelIfAbsent(resourceDefinition);
+            ManagementResourceRegistration subdepl = subdeployments.registerSubModelIfAbsent(resourceDefinition);
+            return new DeploymentManagementResourceRegistration(depl, subdepl);
+        }
+
+        @Override
         public void unregisterSubModel(PathElement address) {
             deployments.unregisterSubModel(address);
             subdeployments.unregisterSubModel(address);

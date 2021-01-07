@@ -977,6 +977,11 @@ final class SubsystemTestDelegate {
         }
 
         @Override
+        public ManagementResourceRegistration registerSubModelIfAbsent(ResourceDefinition resourceDefinition) {
+            return MOCK_RESOURCE_REG;
+        }
+
+        @Override
         public void unregisterSubModel(PathElement address) {
         }
 

@@ -138,6 +138,11 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     }
 
     @Override
+    public ManagementResourceRegistration registerSubModelIfAbsent(final ResourceDefinition resourceDefinition) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     public void registerCapability(RuntimeCapability capability) {
         throw alreadyRegistered();
     }

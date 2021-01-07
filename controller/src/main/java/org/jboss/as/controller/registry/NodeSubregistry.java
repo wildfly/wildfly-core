@@ -92,7 +92,8 @@ final class NodeSubregistry {
         return new HashSet<String>(snapshot.keySet());
     }
 
-    ManagementResourceRegistration registerChild(final String elementValue, final ResourceDefinition provider) {
+    ManagementResourceRegistration registerChild(final String elementValue, final ResourceDefinition provider,
+                                                 final boolean ifAbsent) {
         boolean ordered = provider.isOrderedChild();
 
         final ConcreteResourceRegistration newRegistry =
@@ -103,6 +104,9 @@ final class NodeSubregistry {
 
             final AbstractResourceRegistration existingRegistry = childRegistriesUpdater.putIfAbsent(this, elementValue, newRegistry);
             if (existingRegistry != null) {
+                if (ifAbsent) {
+                    return existingRegistry;
+                }
                 throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(getLocationString(elementValue));
             }
 

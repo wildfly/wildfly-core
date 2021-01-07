@@ -125,6 +125,11 @@ final class AliasResourceRegistration extends AbstractResourceRegistration imple
     }
 
     @Override
+    public ManagementResourceRegistration registerSubModelIfAbsent(ResourceDefinition resourceDefinition) {
+        throw alreadyRegistered();
+    }
+
+    @Override
     public void unregisterSubModel(final PathElement address) throws IllegalArgumentException {
         throw alreadyRegistered();
     }

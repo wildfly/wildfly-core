@@ -104,6 +104,10 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public abstract ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition);
 
+    /** {@inheritDoc} */
+    @Override
+    public abstract ManagementResourceRegistration registerSubModelIfAbsent(final ResourceDefinition resourceDefinition);
+
     @Override
     public boolean isAllowsOverride() {
         checkPermission();

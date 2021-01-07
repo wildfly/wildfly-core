@@ -91,6 +91,35 @@ public interface ManagementResourceRegistration extends ImmutableManagementResou
     ManagementResourceRegistration registerSubModel(ResourceDefinition resourceDefinition);
 
     /**
+     * Register the existence of an addressable sub-resource of this resource, if there isn't already one registered.
+     * Before this method returns if no resource is already registered the provided {@code resourceDefinition}
+     * will be given the opportunity to
+     * {@link ResourceDefinition#registerAttributes(ManagementResourceRegistration) register attributes},
+     * {@link ResourceDefinition#registerOperations(ManagementResourceRegistration) register operations},
+     * and {@link ResourceDefinition#registerNotifications(ManagementResourceRegistration) register notifications}
+     *
+     * @param resourceDefinition source for descriptive information describing this
+     *                            portion of the model (must not be {@code null})
+     * @return a resource registration which may be used to add attributes, operations, notifications and sub-models
+     *
+     * @throws IllegalStateException if {@link #isRuntimeOnly()} returns {@code true}
+     * @throws SecurityException if the caller does not have {@link ImmutableManagementResourceRegistration#ACCESS_PERMISSION}
+     */
+    default ManagementResourceRegistration registerSubModelIfAbsent(ResourceDefinition resourceDefinition) {
+        // This default impl is primarily just to avoid breaking any unknown impls
+        ManagementResourceRegistration result;
+        try {
+            result = registerSubModel(resourceDefinition);
+        } catch (IllegalArgumentException iae) {
+            result = getSubModel(PathAddress.pathAddress(resourceDefinition.getPathElement()));
+            if (result == null) {
+                throw iae;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Unregister the existence of an addressable sub-resource of this resource.
      *
      * @param address the child of this registry that should no longer be available

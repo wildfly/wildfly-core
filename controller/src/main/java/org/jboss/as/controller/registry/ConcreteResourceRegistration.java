@@ -226,6 +226,15 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition) {
+        return registerSubModel(resourceDefinition, false);
+    }
+
+    @Override
+    public ManagementResourceRegistration registerSubModelIfAbsent(final ResourceDefinition resourceDefinition) {
+        return registerSubModel(resourceDefinition, true);
+    }
+
+    private ManagementResourceRegistration registerSubModel(final ResourceDefinition resourceDefinition, boolean ifAbsent) {
         Assert.checkNotNullParam("resourceDefinition", resourceDefinition);
         final PathElement address = resourceDefinition.getPathElement();
         if (address == null) {
@@ -233,10 +242,13 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         }
         final ManagementResourceRegistration existing = getSubRegistration(PathAddress.pathAddress(address));
         if (existing != null && existing.getPathAddress().getLastElement().getValue().equals(address.getValue())) {
+            if (ifAbsent) {
+                return existing;
+            }
             throw ControllerLogger.ROOT_LOGGER.nodeAlreadyRegistered(existing.getPathAddress().toCLIStyleString());
         }
         final NodeSubregistry child = getOrCreateSubregistry(address.getKey());
-        return child.registerChild(address.getValue(), resourceDefinition);
+        return child.registerChild(address.getValue(), resourceDefinition, ifAbsent);
     }
 
     @Override

@@ -47,6 +47,7 @@ import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraint
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -353,6 +354,24 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         assertTrue(acds.contains(SensitiveTargetAccessConstraintDefinition.EXTENSIONS));
         assertTrue(acds.contains(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN));
         assertTrue(acds.contains(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
+    }
+
+    @Test
+    public void testRegisterSubModelIfAbsent() {
+        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(null, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootRd);
+
+        PathElement childPE = PathElement.pathElement("child");
+        ResourceDefinition childRd = new SimpleResourceDefinition(new Parameters(childPE, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = root.registerSubModel(childRd);
+        try {
+            root.registerSubModel(childRd);
+            Assert.fail("Should not be able to register the same address twice");
+        } catch (IllegalArgumentException iae) {
+            // good
+        }
+        ManagementResourceRegistration child2 = root.registerSubModelIfAbsent(childRd);
+        assertEquals(child, child2);
     }
 
     private static class TestHandler implements OperationStepHandler {
