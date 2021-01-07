@@ -323,7 +323,7 @@
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
                             </excludes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_12_0.xsd</systemId>
+                            <systemId>src/main/resources/schema/wildfly-elytron_13_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>
