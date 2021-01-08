@@ -23,14 +23,16 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -59,6 +61,7 @@ import static org.wildfly.core.jar.runtime.Constants.LOG_BOOT_FILE_PROP;
 import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_CLASS;
 import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_PROP;
 import static org.wildfly.core.jar.runtime.Constants.STANDALONE_CONFIG;
+
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
 
 import org.w3c.dom.Document;
@@ -76,20 +79,12 @@ import org.wildfly.core.jar.runtime.Server.ShutdownHandler;
 /**
  *
  * @author jdenise
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public final class BootableJar implements ShutdownHandler {
 
     private static final String DEP_1 = "ff";
     private static final String DEP_2 = "00";
-
-    private class ShutdownHook extends Thread {
-
-        @Override
-        public void run() {
-            log.shuttingDown();
-            waitAndClean();
-        }
-    }
 
     private BootableJarLogger log;
 
@@ -98,6 +93,7 @@ public final class BootableJar implements ShutdownHandler {
     private Server server;
     private final Arguments arguments;
     private final ModuleLoader loader;
+    private final Path pidFile;
 
     private BootableJar(BootableEnvironment environment, Arguments arguments, ModuleLoader loader, long unzipTime) throws Exception {
         this.environment = environment;
@@ -114,6 +110,7 @@ public final class BootableJar implements ShutdownHandler {
         }
 
         log.advertiseInstall(environment.getJBossHome(), unzipTime + (System.currentTimeMillis() - t));
+        pidFile = environment.getPidFile();
     }
 
     @Override
@@ -233,94 +230,21 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     public void run() throws Exception {
-        try {
-            server = buildServer(startServerArgs);
-        } catch (RuntimeException ex) {
-            cleanup();
-            throw ex;
-        }
-
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
+        server = buildServer(startServerArgs);
+
+        if (Files.notExists(pidFile)) {
+            Files.write(pidFile, Collections.singleton(Long.toString(org.wildfly.common.os.Process.getProcessId())), StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW);
+        } else {
+            throw log.pidFileAlreadyExists(pidFile, environment.getJBossHome());
+        }
         server.start();
-    }
-
-    private void cleanup() {
-        log.deletingHome(environment.getJBossHome());
-        deleteDir(environment.getJBossHome());
-
     }
 
     private Server buildServer(List<String> args) throws IOException {
         String[] array = new String[args.size()];
         log.advertiseOptions(args);
         return Server.newSever(args.toArray(array), loader, this);
-    }
-
-    private void deleteDir(Path root) {
-        if (root == null || !Files.exists(root)) {
-            return;
-        }
-        try {
-            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    try {
-                        Files.delete(file);
-                    } catch (IOException ex) {
-                        log.cantDelete(file.toString(), ex);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException e)
-                        throws IOException {
-                    try {
-                        Files.delete(dir);
-                    } catch (IOException ex) {
-                        log.cantDelete(dir.toString(), ex);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-        }
-    }
-
-    private void waitAndClean() {
-        try {
-            // Give max 10 seconds for the server to stop before to delete jbossHome.
-            ModelNode mn = new ModelNode();
-            mn.get(ADDRESS);
-            mn.get(OP).set(READ_ATTRIBUTE_OPERATION);
-            mn.get(NAME).set(SERVER_STATE);
-            for (int i = 0; i < 10; i++) {
-                try {
-                    ModelControllerClient client = server.getModelControllerClient();
-                    if (client != null) {
-                        ModelNode ret = client.execute(mn);
-                        if (ret.hasDefined(RESULT)) {
-                            String val = ret.get(RESULT).asString();
-                            if (STOPPED.equals(val)) {
-                                log.serverStopped();
-                                break;
-                            } else {
-                                log.serverNotStopped();
-                            }
-                        }
-                        Thread.sleep(1000);
-                    } else {
-                        log.nullController();
-                        break;
-                    }
-                } catch (Exception ex) {
-                    throw log.unexpectedExceptionWhileShuttingDown(ex);
-                }
-            }
-        } finally {
-            cleanup();
-        }
     }
 
     private void loadBootConfigProperties() throws IOException {
@@ -410,5 +334,74 @@ public final class BootableJar implements ShutdownHandler {
 
     static void setTccl(final ClassLoader cl) {
         Thread.currentThread().setContextClassLoader(cl);
+    }
+
+    private class ShutdownHook extends Thread {
+
+        @Override
+        public void run() {
+            log.shuttingDown();
+            final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+                final Thread thread = new Thread(r);
+                thread.setName("installation-cleaner");
+                return thread;
+            });
+            final InstallationCleaner cleaner = new InstallationCleaner(environment, log);
+            executor.submit(cleaner);
+            if (Files.exists(pidFile)) {
+                waitForShutdown();
+            }
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(environment.getTimeout(), TimeUnit.SECONDS)) {
+                    // For some reason we've timed out. The deletion should likely be executing, but let's force it to
+                    // be safe.
+                    cleaner.cleanup();
+                }
+            } catch (IOException | InterruptedException e) {
+                // Possibly already logged, but we should log again to be safe
+                log.failedToStartCleanupProcess(e, environment.getJBossHome());
+            }
+        }
+
+        private void waitForShutdown() {
+            try {
+                // Give max 10 seconds for the server to stop before to delete jbossHome.
+                ModelNode mn = new ModelNode();
+                mn.get(ADDRESS);
+                mn.get(OP).set(READ_ATTRIBUTE_OPERATION);
+                mn.get(NAME).set(SERVER_STATE);
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        ModelControllerClient client = server.getModelControllerClient();
+                        if (client != null) {
+                            ModelNode ret = client.execute(mn);
+                            if (ret.hasDefined(RESULT)) {
+                                String val = ret.get(RESULT).asString();
+                                if (STOPPED.equals(val)) {
+                                    log.serverStopped();
+                                    break;
+                                } else {
+                                    log.serverNotStopped();
+                                }
+                            }
+                            Thread.sleep(1000);
+                        } else {
+                            log.nullController();
+                            break;
+                        }
+                    } catch (Exception ex) {
+                        throw log.unexpectedExceptionWhileShuttingDown(ex);
+                    }
+                }
+            } finally {
+                try {
+                    Files.deleteIfExists(pidFile);
+                    log.debugf("Deleted PID file %s", pidFile);
+                } catch (IOException e) {
+                    log.cantDelete(pidFile.toString(), e);
+                }
+            }
+        }
     }
 }

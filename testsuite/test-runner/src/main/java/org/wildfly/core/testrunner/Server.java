@@ -327,6 +327,18 @@ public class Server {
             throw new RuntimeException("Could not stop container", e);
         } finally {
             safeCloseClient();
+            // Attempt to delete the PID file if this is a bootable JAR. Some manual mode tests don't seem to be able
+            // to connect to the server for shutdown. This causes the Process.destroy() to be invoked. This can also
+            // happen when Server.stop(true) is invoked. When Process.destroy() is invoked on Windows the shutdown
+            // hooks don't seem to be invoked causing this file to not be deleted.
+            if (isBootableJar) {
+                final Path pidFile = Paths.get(jbossHome, "wildfly.pid");
+                try {
+                    Files.deleteIfExists(pidFile);
+                } catch (IOException e) {
+                    log.warnf(e, "Failed to delete PID file \"%s\" for bootable JAR.", pidFile);
+                }
+            }
         }
     }
 

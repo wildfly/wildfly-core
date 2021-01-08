@@ -25,6 +25,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -40,10 +41,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class BootableEnvironment {
 
     private static final AtomicBoolean DEBUG = new AtomicBoolean();
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows");
     private final Path jbossHome;
     private final Path serverDir;
     private final Collection<String> ignoredProperties;
     private final PropertyUpdater propertyUpdater;
+    private final String pidFileName;
+    private final long timeout;
 
     private BootableEnvironment(final Path jbossHome, final Collection<String> ignoredProperties,
                                 final PropertyUpdater propertyUpdater) {
@@ -51,6 +55,22 @@ class BootableEnvironment {
         serverDir = jbossHome.resolve("standalone");
         this.ignoredProperties = ignoredProperties;
         this.propertyUpdater = propertyUpdater;
+        String pidFileName = System.getProperty("org.wildfly.core.bootable.jar.pidFile");
+        if (pidFileName == null) {
+            pidFileName = System.getenv("JBOSS_PIDFILE");
+            if (pidFileName == null) {
+                pidFileName = "wildfly.pid";
+            }
+        }
+        this.pidFileName = pidFileName;
+        long timeout;
+        try {
+            timeout = Long.parseLong(System.getProperty("org.wildfly.core.bootable.jar.timeout", "10"));
+        } catch (NumberFormatException ignore) {
+            //noinspection MagicNumber
+            timeout = 10L;
+        }
+        this.timeout = timeout;
     }
 
     /**
@@ -90,6 +110,33 @@ class BootableEnvironment {
      */
     Path getJBossHome() {
         return jbossHome;
+    }
+
+    /**
+     * Returns the PID file.
+     *
+     * @return the PID file
+     */
+    Path getPidFile() {
+        return resolvePath(jbossHome, pidFileName);
+    }
+
+    /**
+     * Returns the timeout value for the bootable JAR in seconds.
+     *
+     * @return the timeout in seconds
+     */
+    long getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * Indicates the OS is a Windows based OS.
+     *
+     * @return {@code true} if this is a Windows based OS, otherwise {@code false}
+     */
+    boolean isWindows() {
+        return IS_WINDOWS;
     }
 
     /**

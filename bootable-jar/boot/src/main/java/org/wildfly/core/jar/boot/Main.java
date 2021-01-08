@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.jboss.modules.Module;
@@ -47,6 +48,7 @@ import org.jboss.modules.ModuleLoader;
  * Bootable jar Main class.
  *
  * @author jdenise
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public final class Main {
 
@@ -125,6 +127,18 @@ public final class Main {
 
         installDir = installDir == null ? Files.createTempDirectory(WILDFLY_BOOTABLE_TMP_DIR_PREFIX) : installDir;
         long t = System.currentTimeMillis();
+        // If the same install directory is being used and a previous delete is happening we should attempt to wait for
+        // the directory to be deleted before we extract our container.
+        waitForDelete(installDir);
+
+        // If the directory already exists and there is a PID file the container is already running and we should not
+        // attempt to overwrite it.
+        final Path pidFile = installDir.resolve(getPidFileName());
+        if (Files.exists(pidFile)) {
+            throw new IllegalStateException(String.format("The server has already been extracted to \"%s\" and appears " +
+                    "to be running.", installDir));
+        }
+
         try (InputStream wf = Main.class.getResourceAsStream(WILDFLY_RESOURCE)) {
             if (wf == null) {
                 throw new Exception("Resource " + WILDFLY_RESOURCE + " doesn't exist, can't run.");
@@ -257,6 +271,46 @@ public final class Main {
             // Return to previous state for classpath prop
             if (classPath != null) {
                 System.setProperty(SYSPROP_KEY_CLASS_PATH, classPath);
+            }
+        }
+    }
+
+    private static String getPidFileName() {
+        String pidFileName = System.getProperty("org.wildfly.core.bootable.jar.pidFile");
+        if (pidFileName == null) {
+            pidFileName = System.getenv("JBOSS_PIDFILE");
+            if (pidFileName == null) {
+                pidFileName = "wildfly.pid";
+            }
+        }
+        return pidFileName;
+    }
+
+    @SuppressWarnings("MagicNumber")
+    private static void waitForDelete(final Path installDir) throws InterruptedException {
+        final Path cleanupMarker = installDir.resolve("wildfly-cleanup-marker");
+        if (Files.exists(cleanupMarker)) {
+            long t;
+            try {
+                t = Long.parseLong(System.getProperty("org.wildfly.core.bootable.jar.timeout", "10"));
+            } catch (NumberFormatException ignore) {
+                t = 10L; // 10 seconds
+            }
+            long timeout = (t * 1000L);
+            while (Files.exists(cleanupMarker)) {
+                final long wait = 500L;
+                TimeUnit.MILLISECONDS.sleep(wait);
+                timeout -= wait;
+                if (timeout <= 0L) {
+                    if (Files.exists(cleanupMarker)) {
+                        final String msg = String.format("The install directory %s may still be in the process of being deleted. " +
+                                        "The marker file %s has not been deleted within %ds. Please check for a previous job running " +
+                                        "and delete the marker file if it was left behind because of an error.",
+                                installDir, cleanupMarker, t);
+                        throw new IllegalStateException(msg);
+                    }
+                    break;
+                }
             }
         }
     }
