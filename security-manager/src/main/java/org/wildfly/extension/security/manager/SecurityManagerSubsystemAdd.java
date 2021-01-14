@@ -49,15 +49,11 @@ import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.security.FactoryPermissionCollection;
-import org.jboss.modules.security.LoadedPermissionFactory;
 import org.jboss.modules.security.PermissionFactory;
 import org.wildfly.extension.security.manager.deployment.PermissionsParserProcessor;
 import org.wildfly.extension.security.manager.deployment.PermissionsValidationProcessor;
 import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
-import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Handler that adds the security manager subsystem. It instantiates the permissions specified in the subsystem configuration
@@ -85,20 +81,20 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
         // get the minimum set of deployment permissions.
         final ModelNode deploymentPermissionsModel = node.get(DEPLOYMENT_PERMISSIONS_PATH.getKeyValuePair());
         final ModelNode minimumPermissionsNode = MINIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
-        final List<PermissionFactory> minimumSet = this.retrievePermissionSet(context, minimumPermissionsNode);
+        final List<PermissionFactory> minimumSet = this.retrievePermissionSet(DeferredPermissionFactory.Type.MINIMUM_SET, context, minimumPermissionsNode);
 
         // get the maximum set of deployment permissions.
         ModelNode maximumPermissionsNode = MAXIMUM_PERMISSIONS.resolveModelAttribute(context, deploymentPermissionsModel);
         if (!maximumPermissionsNode.isDefined())
             maximumPermissionsNode = DEFAULT_MAXIMUM_SET;
-        final List<PermissionFactory> maximumSet = this.retrievePermissionSet(context, maximumPermissionsNode);
+        final List<PermissionFactory> maximumSet = this.retrievePermissionSet(DeferredPermissionFactory.Type.MAXIMUM_SET, context, maximumPermissionsNode);
 
         // validate the configured permissions - the minimum set must be implied by the maximum set.
         final FactoryPermissionCollection maxPermissionCollection = new FactoryPermissionCollection(maximumSet.toArray(new PermissionFactory[maximumSet.size()]));
         final StringBuilder failedPermissions = new StringBuilder();
         for (PermissionFactory factory : minimumSet) {
             Permission permission = factory.construct();
-            if (!maxPermissionCollection.implies(permission)) {
+            if (permission != null && !maxPermissionCollection.implies(permission)) {
                 failedPermissions.append("\n\t\t").append(permission);
             }
         }
@@ -120,12 +116,13 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
     /**
      * This method retrieves all security permissions contained within the specified node.
      *
+     * @param type the type of the permission set (maximum-set or minimum-set)
      * @param context the {@link OperationContext} used to resolve the permission attributes.
      * @param node the {@link ModelNode} that might contain security permissions metadata.
      * @return a {@link List} containing the retrieved permissions. They are wrapped as {@link PermissionFactory} instances.
      * @throws OperationFailedException if an error occurs while retrieving the security permissions.
      */
-    private List<PermissionFactory> retrievePermissionSet(final OperationContext context, final ModelNode node) throws OperationFailedException {
+    private List<PermissionFactory> retrievePermissionSet(DeferredPermissionFactory.Type type, final OperationContext context, final ModelNode node) throws OperationFailedException {
 
         final List<PermissionFactory> permissions = new ArrayList<>();
 
@@ -142,16 +139,8 @@ class SecurityManagerSubsystemAdd extends AbstractBoottimeAddStepHandler {
                 if(permissionNode.hasDefined(PERMISSION_MODULE)) {
                     moduleName =  MODULE.resolveModelAttribute(context, permissionNode).asString();
                 }
-                ClassLoader cl = WildFlySecurityManager.getClassLoaderPrivileged(this.getClass());
-                if(moduleName != null) {
-                    try {
-                        cl = Module.getBootModuleLoader().loadModule(ModuleIdentifier.fromString(moduleName)).getClassLoader();
-                    } catch (ModuleLoadException e) {
-                        throw new OperationFailedException(e);
-                    }
-                }
 
-                permissions.add(new LoadedPermissionFactory(cl,
+                permissions.add(new DeferredPermissionFactory(type, Module.getBootModuleLoader(), moduleName,
                         permissionClass, permissionName, permissionActions));
             }
         }
