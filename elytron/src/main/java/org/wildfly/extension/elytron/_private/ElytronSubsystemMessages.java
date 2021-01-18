@@ -631,6 +631,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
 
+    @Message(id=1086, value = "Unable to initialize Elytron JACC support while legacy JACC support is enabled.")
+    IllegalStateException unableToEnableJaccSupport();
+
     /*
      * Expression Resolver Section
      */
@@ -661,6 +664,5 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      *
      * If no suitable section is available add a new section.
      */
-
 
 }

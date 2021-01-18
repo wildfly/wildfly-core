@@ -21,6 +21,7 @@ package org.wildfly.extension.elytron;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.JACC_POLICY_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.POLICY_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CONFIGURATION_FACTORY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CUSTOM_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
@@ -57,6 +58,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
@@ -238,6 +240,15 @@ class PolicyDefinitions {
                 .setAddHandler(add)
                 .setRemoveHandler(new ReloadRequiredRemoveStepHandler() {
                     @Override
+                    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+                        super.performRuntime(context, operation, model);
+                        // JACC settings require a restart to take place
+                        if (model.get(JACC_POLICY).isDefined()) {
+                            context.restartRequired();
+                        }
+                    }
+
+                    @Override
                     protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
                         super.recordCapabilitiesAndRequirements(context, operation, resource);
                         context.deregisterCapability(JACC_POLICY_CAPABILITY); // even if it wasn't registered, deregistering is ok
@@ -250,6 +261,18 @@ class PolicyDefinitions {
             @Override
             public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
                 OperationStepHandler write = new ReloadRequiredWriteAttributeHandler(attributes) {
+
+                    @Override
+                    protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Void> voidHandback) throws OperationFailedException {
+                        // the configuration factory will only be applied on restart
+                        for (ModelNode modelNode : resolvedValue.asList()) {
+                            if (modelNode.asProperty().getName().equals(CONFIGURATION_FACTORY)) {
+                                context.restartRequired();
+                            }
+                        }
+                        return super.applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, voidHandback);
+                    }
+
                     @Override
                     protected void recordCapabilitiesAndRequirements(OperationContext context, AttributeDefinition attributeDefinition, ModelNode newValue, ModelNode oldValue) {
                         super.recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, oldValue);
@@ -306,6 +329,9 @@ class PolicyDefinitions {
     private static Consumer<Consumer<Policy>> configureJaccPolicy(OperationContext context, ModelNode model) throws OperationFailedException {
         ModelNode policyModel = model.get(JACC_POLICY);
 
+        CapabilityServiceSupport capabilitySupport = context.getCapabilityServiceSupport();
+        final boolean legacyJacc = capabilitySupport.hasCapability("org.wildfly.legacy-security.jacc");
+
         if (policyModel.isDefined()) {
             final String policyProvider = JaccPolicyDefinition.POLICY_PROVIDER.resolveModelAttribute(context, policyModel).asString();
             final String configurationFactory = JaccPolicyDefinition.CONFIGURATION_FACTORY.resolveModelAttribute(context, policyModel).asString();
@@ -323,9 +349,17 @@ class PolicyDefinitions {
                         Policy policy = newPolicy(policyProvider, configuredClassLoader);
                         policyConsumer.accept(policy);
 
-                        doPrivileged((PrivilegedExceptionAction<PolicyConfigurationFactory>) () -> newPolicyConfigurationFactory(
-                                configurationFactory,
-                                defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
+                        if (context.isBooting() && legacyJacc) {
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.unableToEnableJaccSupport();
+                        }
+
+                        if (legacyJacc) {
+                            context.restartRequired();
+                        } else {
+                            doPrivileged((PrivilegedExceptionAction<PolicyConfigurationFactory>) () -> newPolicyConfigurationFactory(
+                                    configurationFactory,
+                                    defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
+                        }
 
                         Map<String, PolicyContextHandler> discoveredHandlers = discoverPolicyContextHandlers();
 
