@@ -105,12 +105,15 @@ public enum Namespace {
     DOMAIN_14_0(14, "urn:jboss:domain:14.0"),
 
     // WF 22
-    DOMAIN_15_0(15, "urn:jboss:domain:15.0");
+    DOMAIN_15_0(15, "urn:jboss:domain:15.0"),
+
+    // WF 23
+    DOMAIN_16_0(16, "urn:jboss:domain:16.0");
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = DOMAIN_15_0;
+    public static final Namespace CURRENT = DOMAIN_16_0;
 
     public static final Namespace[] ALL_NAMESPACES = domainValues();
 
