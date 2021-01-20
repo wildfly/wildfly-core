@@ -23,10 +23,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 
@@ -41,8 +44,13 @@ public class CliScriptTestCase extends ScriptTestCase {
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
+        Map<String, String> env = new LinkedHashMap<>(MAVEN_JAVA_OPTS);
+        if (!TestSuiteEnvironment.isWindows()) {
+            // WFCORE-5216
+            env.put("JBOSS_MODULEPATH", "$JBOSS_HOME/modules:$HOME");
+        }
         // Read an attribute
-        script.start(MAVEN_JAVA_OPTS, "--commands=embed-server,:read-attribute(name=server-state),exit");
+        script.start(env, "--commands=embed-server,:read-attribute(name=server-state),exit");
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 
