@@ -23,7 +23,7 @@
   ~  */
   -->
 
-<host xmlns="urn:jboss:domain:15.0">
+<host xmlns="urn:jboss:domain:16.0">
     <management>
         <audit-log>
             <formatters>

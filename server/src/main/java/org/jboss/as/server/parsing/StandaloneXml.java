@@ -137,15 +137,18 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
             case 14:
                 new StandaloneXml_14(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            default:
+            case 15:
                 new StandaloneXml_15(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                break;
+            default:
+                new StandaloneXml_16(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_15(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_16(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {

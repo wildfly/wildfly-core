@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<host xmlns="urn:jboss:domain:15.0">
+<host xmlns="urn:jboss:domain:16.0">
     <management>
         <security-realms>
             <!-- Kerberos Security Realm Definition -->

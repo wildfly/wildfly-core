@@ -77,7 +77,8 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         WILDFLY18("WildFly18.0", KernelAPIVersion.VERSION_10_0),
         WILDFLY19("WildFly19.0", KernelAPIVersion.VERSION_12_0),
         WILDFLY20("WildFly20.0", KernelAPIVersion.VERSION_13_0),
-        WILDFLY21("WildFly21.0", KernelAPIVersion.VERSION_14_0);
+        WILDFLY21("WildFly21.0", KernelAPIVersion.VERSION_14_0),
+        WILDFLY22("WildFly22.0", KernelAPIVersion.VERSION_15_0);
 
 
 
