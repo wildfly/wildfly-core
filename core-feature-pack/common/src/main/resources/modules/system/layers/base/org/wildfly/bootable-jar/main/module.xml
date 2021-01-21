@@ -74,6 +74,7 @@
         <module name="org.jboss.as.process-controller"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-private" services="import"/>
+        <module name="org.jboss.as.cli"/>
     </dependencies>
 
 </module>

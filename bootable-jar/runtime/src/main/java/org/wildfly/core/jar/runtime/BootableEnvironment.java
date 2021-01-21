@@ -44,6 +44,7 @@ class BootableEnvironment {
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows");
     private final Path jbossHome;
     private final Path serverDir;
+    private final Path tmpDir;
     private final Collection<String> ignoredProperties;
     private final PropertyUpdater propertyUpdater;
     private final String pidFileName;
@@ -53,6 +54,7 @@ class BootableEnvironment {
                                 final PropertyUpdater propertyUpdater) {
         this.jbossHome = jbossHome;
         serverDir = jbossHome.resolve("standalone");
+        tmpDir = resolvePath(serverDir, "tmp");
         this.ignoredProperties = ignoredProperties;
         this.propertyUpdater = propertyUpdater;
         String pidFileName = System.getProperty("org.wildfly.core.bootable.jar.pidFile");
@@ -110,6 +112,15 @@ class BootableEnvironment {
      */
     Path getJBossHome() {
         return jbossHome;
+    }
+
+    /**
+     * Returns the server tmp dir.
+     *
+     * @return the server tmp dir.
+     */
+    Path getTmpDir() {
+        return tmpDir;
     }
 
     /**

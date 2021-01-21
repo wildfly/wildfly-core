@@ -97,6 +97,32 @@ public class ArgumentsTestCase {
                 throw new Exception("Should have failed");
             }
         }
+
+        {
+            Path script = Files.createTempFile(null, ".cli");
+            try {
+                String[] args = {"--cli-script=" + script };
+                Arguments arguments = Arguments.parseArguments(Arrays.asList(args), createEnvironment());
+                assertEquals(arguments.getCLIScript(), script);
+                assertEquals(0, arguments.getServerArguments().size());
+            } finally {
+                Files.delete(script);
+            }
+        }
+
+        {
+            boolean error = false;
+            try {
+                String[] args = {"--cli-script=foo.cli"};
+                Arguments arguments = Arguments.parseArguments(Arrays.asList(args), createEnvironment());
+                error = true;
+            } catch (Exception ex) {
+                // OK expected
+            }
+            if (error) {
+                throw new Exception("Should have failed");
+            }
+        }
     }
 
     @Test
