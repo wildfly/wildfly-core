@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "`date "+%Y-%m-%d %H:%M:%S"` Starting the domain server"
+
 DIRNAME=`dirname "$0"`
 PROGNAME=`basename "$0"`
 GREP="grep"

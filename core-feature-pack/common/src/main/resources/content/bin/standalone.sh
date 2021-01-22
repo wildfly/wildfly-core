@@ -5,6 +5,9 @@
 #         standalone.sh --debug 9797
 
 # By default debug mode is disabled.
+
+echo "`date "+%Y-%m-%d %H:%M:%S"` Starting the standalone server"
+
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
 GC_LOG="$GC_LOG"

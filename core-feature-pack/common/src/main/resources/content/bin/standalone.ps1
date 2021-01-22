@@ -1,3 +1,5 @@
+"$((Get-Date).ToString('yyyy-MM-dd hh:mm:ss')) Starting the standalone server"
+
 #############################################################################
 #                                                                          ##
 #    WildFly Startup Script for starting the standalone server             ##
