@@ -143,7 +143,6 @@ public class LdapService implements Closeable {
             for (String current : indexes) {
                 partitionFactory.addIndex(partition, current, indexSize);
             }
-            partition.setCacheService(directoryService.getCacheService());
             partition.initialize();
             directoryService.addPartition(partition);
 
