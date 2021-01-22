@@ -24,6 +24,7 @@ package org.jboss.as.domain.controller.transformers;
 
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_10_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_13_0;
+import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_15_0;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_7;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_1_8;
 import static org.jboss.as.domain.controller.transformers.KernelAPIVersion.VERSION_2_0;
@@ -148,7 +149,9 @@ public class DomainTransformers {
 
     private static void registerChainedServerGroupTransformers(TransformerRegistry registry) {
         ChainedTransformationDescriptionBuilder builder = ServerGroupTransformers.buildTransformerChain();
-        registerChainedTransformer(registry, builder, VERSION_13_0, VERSION_10_0, VERSION_8_0, VERSION_7_0, VERSION_6_0, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8, VERSION_1_7);
+        registerChainedTransformer(registry, builder, VERSION_15_0, VERSION_13_0, VERSION_10_0, VERSION_8_0, VERSION_7_0,
+                VERSION_6_0, VERSION_5_0, VERSION_4_1, VERSION_4_0, VERSION_3_0, VERSION_2_1, VERSION_2_0, VERSION_1_8,
+                VERSION_1_7);
     }
 
     private static void registerProfileTransformers(TransformerRegistry registry) {

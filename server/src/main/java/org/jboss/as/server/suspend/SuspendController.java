@@ -116,11 +116,24 @@ public class SuspendController implements Service<SuspendController> {
         }
     }
 
-    public synchronized void resume() {
+    public void nonGracefulStart() {
+        resume(false);
+    }
+
+    public void resume() {
+        resume(true);
+    }
+
+    private synchronized void resume(boolean gracefulStart) {
         if (state == State.RUNNING) {
             return;
         }
-        ServerLogger.ROOT_LOGGER.resumingServer();
+        if (!gracefulStart) {
+            ServerLogger.ROOT_LOGGER.startingNonGraceful();
+        } else {
+            ServerLogger.ROOT_LOGGER.resumingServer();
+        }
+
         if (timer != null) {
             timer.cancel();
             timer = null;

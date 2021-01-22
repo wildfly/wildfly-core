@@ -77,6 +77,9 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.START_MODE);
         instructions.add(ServerLogger.ROOT_LOGGER.argStartMode());
 
+        addArguments(CommandLineConstants.GRACEFUL_STARTUP+"=<value>");
+        instructions.add(ServerLogger.ROOT_LOGGER.argGracefulStartup());
+
         addArguments(CommandLineConstants.GIT_REPO + " <repo_url>", CommandLineConstants.GIT_REPO + "=<repo_url>");
         instructions.add(ServerLogger.ROOT_LOGGER.argGitRepo());
 

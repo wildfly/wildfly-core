@@ -130,6 +130,7 @@ public class CommandLineConstants {
     public static final String NORMAL_MODE = "normal";
     public static final String SUSPEND_MODE = "suspend";
     public static final String ADMIN_ONLY_MODE = "admin-only";
+    public static final String GRACEFUL_STARTUP = "--graceful-startup";
 
 
     // java.net properties

@@ -13,7 +13,7 @@
     </deployment-overlays>
 
     <server-groups>
-        <server-group name="test" profile="test" management-subsystem-endpoint="true">
+        <server-group name="test" profile="test" management-subsystem-endpoint="true" graceful-startup="false">
 
             <jvm name="full" java-home="javaHome" type="SUN" env-classpath-ignored="true">
                  <heap size="heapSize" max-size="maxHeapSize"/>

@@ -312,9 +312,17 @@ public final class ServerService extends AbstractControllerService {
             newExtDirs[extDirs.length] = new File(serverEnvironment.getServerBaseDir(), "lib/ext");
             serviceTarget.addService(org.jboss.as.server.deployment.Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX,
                     new ExtensionIndexService(newExtDirs)).setInitialMode(ServiceController.Mode.ON_DEMAND).install();
-            final Boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
+            final boolean suspend = runningModeControl.getSuspend()!= null ? runningModeControl.getSuspend() : serverEnvironment.isStartSuspended();
+            final boolean gracefulStartup = serverEnvironment.isStartGracefully();
             suspendController.setStartSuspended(suspend);
             runningModeControl.setSuspend(false);
+            if (!gracefulStartup) {
+                if (suspend) {
+                    ServerLogger.ROOT_LOGGER.disregardingNonGraceful();
+                } else {
+                    suspendController.nonGracefulStart();
+                }
+            }
             context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
                     .addAliases(SuspendController.SERVICE_NAME)
                     .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())

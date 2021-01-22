@@ -325,6 +325,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final UUID serverUUID;
     private final long startTime;
     private final boolean startSuspended;
+    private final boolean startGracefully;
     private GitRepository repository;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
@@ -334,6 +335,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 System.currentTimeMillis(), startSuspended, null, null, null);
     }
 
+    @Deprecated
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig) {
@@ -341,6 +343,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 System.currentTimeMillis(), false, null, null, null);
     }
 
+    @Deprecated
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, String gitRepository, String gitBranch, String gitAuthConfiguration) {
@@ -348,12 +351,23 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
                 startTime, false, gitRepository, gitBranch, gitAuthConfiguration);
     }
 
+    @Deprecated
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
                              final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
                              final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
                              String gitRepository, String gitBranch, String gitAuthConfiguration) {
-        this.startSuspended = startSuspended;
+        this(hostControllerName, props, env, serverConfig, configInteractionPolicy, launchType, initialRunningMode,
+                productConfig, startTime, startSuspended, false, gitRepository, gitBranch, gitAuthConfiguration);
+    }
+
+    public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
+                             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
+                             final RunningMode initialRunningMode, ProductConfig productConfig, long startTime, boolean startSuspended,
+                             final boolean startGracefully, final String gitRepository, final String gitBranch, final String gitAuthConfiguration) {
         assert props != null;
+
+        this.startSuspended = startSuspended;
+        this.startGracefully = startGracefully;
 
         this.launchType = launchType;
         this.standalone = launchType != LaunchType.DOMAIN;
@@ -970,6 +984,15 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     public boolean isStartSuspended() {
         return startSuspended;
+    }
+
+    /**
+     * If this is true then the server will start with graceful startup disabled
+     *
+     * @return <code>true</code> if the server should start with graceful startup disabled
+     */
+    public boolean isStartGracefully() {
+        return startGracefully;
     }
 
     private File configureServerTempDir(String path, Properties providedProps) {

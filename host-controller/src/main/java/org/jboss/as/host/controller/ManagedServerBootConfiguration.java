@@ -97,6 +97,8 @@ public interface ManagedServerBootConfiguration {
 
     boolean isSuspended();
 
+    boolean isGracefulStartup();
+
     /**
      * Gets a semi-unique id for the server process.
      * @return the id

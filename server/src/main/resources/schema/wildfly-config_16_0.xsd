@@ -2923,6 +2923,15 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="graceful-startup" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Set to true to have servers in the group start gracefully, queuing or cleanly rejecting incoming
+                    requests until the server is fully started. If set to false, the server will pass the request to the
+                    appropriate subsystem for processing, irrespective of whether or not that system is ready.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="management-subsystem-endpoint" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>

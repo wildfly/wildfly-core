@@ -103,7 +103,13 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.MANAGEMENT_INTERFACES)
             .build();
 
-    public static final AttributeDefinition[] ADD_ATTRIBUTES = new AttributeDefinition[] {PROFILE, SOCKET_BINDING_GROUP, SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, MANAGEMENT_SUBSYSTEM_ENDPOINT};
+    public static final SimpleAttributeDefinition GRACEFUL_STARTUP = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.GRACEFUL_STARTUP, ModelType.BOOLEAN, true)
+                    .setAllowExpression(true)
+                    .setDefaultValue(ModelNode.TRUE)
+                    .build();
+
+    public static final AttributeDefinition[] ADD_ATTRIBUTES = new AttributeDefinition[] {PROFILE, SOCKET_BINDING_GROUP,
+            SOCKET_BINDING_DEFAULT_INTERFACE, SOCKET_BINDING_PORT_OFFSET, MANAGEMENT_SUBSYSTEM_ENDPOINT, GRACEFUL_STARTUP};
 
     private final HostFileRepository fileRepository;
     private final ContentRepository contentRepository;
