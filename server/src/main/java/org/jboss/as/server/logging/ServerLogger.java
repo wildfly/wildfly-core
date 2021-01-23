@@ -1356,6 +1356,10 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 280, value = "Unable to initialise the git repository.")
     IllegalArgumentException unableToInitialiseGitRepository(@Cause Throwable cause);
 
+    @LogMessage(level = WARN)
+    @Message(id = 281, value = "System property %s is set. This should only be used for standalone clients. Setting this on the server will override your profile configuration.")
+    void wildflyConfigUrlIsSet(String property);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

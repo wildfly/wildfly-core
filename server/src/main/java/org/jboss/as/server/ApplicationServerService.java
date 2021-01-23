@@ -126,6 +126,9 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
                     matcher.appendTail(sb);
                     propVal = sb.toString();
                 }
+                if (property.toLowerCase(Locale.ROOT).equals("wildfly.config.url") && !propVal.isEmpty()) {
+                    ServerLogger.CONFIG_LOGGER.wildflyConfigUrlIsSet(property + " = " + propVal);
+                }
                 b.append("\n\t").append(property).append(" = ").append(propVal);
             }
             ServerLogger.CONFIG_LOGGER.debug(b);
