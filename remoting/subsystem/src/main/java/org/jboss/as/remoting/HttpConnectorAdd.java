@@ -22,8 +22,6 @@
 
 package org.jboss.as.remoting;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -59,8 +57,7 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String connectorName = address.getLastElement().getValue();
+        final String connectorName = context.getCurrentAddressValue();
         final ModelNode fullModel = Resource.Tools.readModel(resource);
         launchServices(context, connectorName, fullModel);
     }

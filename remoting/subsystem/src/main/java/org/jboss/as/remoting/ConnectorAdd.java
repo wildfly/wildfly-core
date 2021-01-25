@@ -21,7 +21,7 @@
  */
 
 package org.jboss.as.remoting;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Capabilities.SOCKET_BINDING_MANAGER_CAPABILTIY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
@@ -59,8 +59,7 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
     @Override
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        final PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String connectorName = address.getLastElement().getValue();
+        final String connectorName = context.getCurrentAddressValue();
         final ModelNode fullModel = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
 
         launchServices(context, connectorName, fullModel);
