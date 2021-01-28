@@ -217,6 +217,16 @@
                             as the risk of cross-test pollution is too high -->
                             <reuseForks>false</reuseForks>
 
+                            <!-- Exclude the test cases that are part of test suites -->
+                            <excludes>
+                                <exclude>**/org/jboss/as/test/manualmode/logging/module/*TestCase.java</exclude>
+                            </excludes>
+                            <!-- Include test cases and test suites -->
+                            <includes>
+                                <include>**/*TestCase.java</include>
+                                <include>**/*TestSuite.java</include>
+                            </includes>
+
                             <!-- Parameters to test cases. -->
                             <systemPropertyVariables combine.children="append">
                                 <byteman.server.ipaddress>${node0}</byteman.server.ipaddress>
@@ -453,7 +463,14 @@
                                     <excludes>
                                         <!-- No domain mode support -->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase.java</exclude>
+                                        <!-- Exclude tests that are part of test suites -->
+                                        <exclude>**/org/jboss/as/test/manualmode/logging/module/*TestCase.java</exclude>
                                     </excludes>
+                                    <!-- Include test cases and test suites -->
+                                    <includes>
+                                        <include>**/*TestCase.java</include>
+                                        <include>**/*TestSuite.java</include>
+                                    </includes>
                                 </configuration>
                             </execution>
                         </executions>
@@ -581,6 +598,9 @@
                                         <exclude>org.jboss.as.test.manualmode.logging.SyslogIsNotAvailableDuringServerBootTestCase</exclude>
                                         <!-- check that the server config exists before starting it -->
                                         <exclude>org.jboss.as.test.manualmode.logging.capabilities.*TestCase</exclude>
+                                        <!-- requires modules to be installed -->
+                                        <exclude>org.jboss.as.test.manualmode.logging.module.*TestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.logging.module.*TestSuite</exclude>
                                         <!-- restart the server -->
                                         <exclude>org.jboss.as.test.manualmode.management.*TestCase</exclude>
                                         

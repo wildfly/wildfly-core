@@ -71,7 +71,7 @@ public abstract class AbstractLoggingTestCase {
     public static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SUBSYSTEM_PATH);
 
     @Inject
-    protected ServerController container;
+    protected static ServerController container;
 
     protected static ModelControllerClient client;
 
