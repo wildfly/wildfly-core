@@ -116,8 +116,12 @@ public class ReadAttributeHandler extends BaseOperationCommand {
                     op.get(Util.ADDRESS).setEmptyList();
                 } else {
                     final ModelNode addrNode = op.get(Util.ADDRESS);
-                    for(OperationRequestAddress.Node node : address) {
-                        addrNode.add(node.getType(), node.getName());
+                    for (OperationRequestAddress.Node node : address) {
+                        if (node.getName() == null) {
+                            addrNode.add(node.getType(), "*");
+                        } else {
+                            addrNode.add(node.getType(), node.getName());
+                        }
                     }
                 }
 
@@ -219,6 +223,7 @@ public class ReadAttributeHandler extends BaseOperationCommand {
         return req;
     }
 
+    @Override
     protected void handleResponse(CommandContext ctx, ModelNode response, boolean composite) throws CommandFormatException {
         if (!Util.isSuccess(response)) {
             throw new CommandFormatException(Util.getFailureDescription(response));

@@ -22,6 +22,28 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.aesh.complete.AeshCompleteOperation;
+import org.aesh.readline.completion.Completion;
+import org.aesh.readline.terminal.formatting.TerminalString;
+import org.hamcrest.CoreMatchers;
+import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandLineException;
+import org.jboss.as.cli.Util;
+import org.jboss.as.test.integration.management.util.CLITestUtil;
+import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.wildfly.core.testrunner.WildflyTestRunner;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,28 +55,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.aesh.complete.AeshCompleteOperation;
-import org.aesh.readline.completion.Completion;
-import org.aesh.readline.terminal.formatting.TerminalString;
-import org.hamcrest.CoreMatchers;
-import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.Util;
-import org.jboss.as.test.integration.management.util.CLITestUtil;
-import org.jboss.as.test.shared.TestSuiteEnvironment;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  *
@@ -118,7 +118,54 @@ public class CliCompletionTestCase {
             assertEquals(candidates.toString(), Arrays.asList(","), candidates);
         }
     }
+    /**
+     * Checks CLI completion for "read-attribute " command
+     */
+    @Test
+    public void readAttributeWithSpaceTest() {
+        for (List<String> candidates : getCandidatesLists("read-attribute ", null)) {
+            assertTrue(candidates.contains("--resolve-expressions"));
+            assertTrue(candidates.contains("management-major-version"));
+            assertFalse(candidates.contains("--admin-only"));
+        }
+    }
+    /**
+     * Checks CLI completion for "read-a" command
+     */
+    @Test
+    public void readAttributeWithUnfinishedCmdTest() {
+        for (List<String> candidates : getCandidatesLists("read-a", true)) {
+            assertTrue(candidates.contains("read-attribute"));
+        }
+    }
+    /**
+     * Checks CLI completion for "read-attribute --" command
+     */
+    @Test
+    public void readAttributeWithUnfinishedArgumentTest() {
+        for (List<String> candidates : getCandidatesLists("read-attribute --", false)) {
+            assertTrue(candidates.contains("--resolve-expressions"));
+            assertTrue(candidates.contains("--verbose"));
+        }
+    }
 
+    @Test
+    public void readAttributeAfterSystemPropertyTest() throws CommandLineException {
+        CommandContext ctx = CLITestUtil
+                .getCommandContext(TestSuiteEnvironment.getServerAddress(), TestSuiteEnvironment.getServerPort(), System.in,
+                        System.out);
+        ctx.connectController();
+        ctx.handle("cd /system-property");
+        try {
+            String cmd = "read-attribute ";
+            List candidates = new ArrayList<>();
+            ctx.getDefaultCommandCompleter().complete(ctx, cmd, cmd.length(), candidates);
+            candidates = complete(ctx, cmd, null);
+            assertTrue(candidates.contains("--verbose"));
+        } finally {
+            ctx.terminateSession();
+        }
+    }
     /**
      * Checks CLI completion for "help" command
      */
