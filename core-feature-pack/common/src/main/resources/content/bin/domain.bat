@@ -103,14 +103,38 @@ call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!PROCESS_CONTROLLER_JAV
 set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
 call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!HOST_CONTROLLER_JAVA_OPTS!"
 set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
-setlocal DisableDelayedExpansion
 
-rem Add -server to the JVM options, if supported
-"%JAVA%" -server -version 2>&1 | findstr /I hotspot > nul
-if not errorlevel == 1 (
-  set "PROCESS_CONTROLLER_JAVA_OPTS=%PROCESS_CONTROLLER_JAVA_OPTS% -server"
-  set "HOST_CONTROLLER_JAVA_OPTS=%HOST_CONTROLLER_JAVA_OPTS% -server"
+rem Add -server to the JVM options, if supported by JDK
+echo "%JAVA_OPTS%" | findstr /I \-server > nul
+if errorlevel == 1 (
+    set JVM_OPTVERSION=-version
+    echo "%JAVA_OPTS%" | findstr /I \-d64 > nul
+    if not errorlevel == 1 (
+        set "JVM_OPTVERSION=-d64 !JVM_OPTVERSION!"
+        goto :CHECK_VERSION
+    )
+    echo "%JAVA_OPTS%" | findstr /I \-d32 > nul
+    if not errorlevel == 1 (
+        set "JVM_OPTVERSION=-d32 !JVM_OPTVERSION!"
+        goto :CHECK_VERSION
+    )
+    goto :CHECK_SUPPORTED
+
+    :CHECK_VERSION
+    "%JAVA%" !JVM_OPTVERSION! 2>&1 | findstr /I /C:"Unrecognized option" > nul
+    if not errorlevel == 1 (
+        set JVM_OPTVERSION=-version
+    )
+
+    rem Add -server to the JVM options, if supported
+    :CHECK_SUPPORTED
+    "%JAVA%" !JVM_OPTVERSION! 2>&1 | findstr /I /C:"hotspot" /C:"openJDK" /C:"IBM J9" > nul
+    if not errorlevel == 1 (
+        set "PROCESS_CONTROLLER_JAVA_OPTS=-server %PROCESS_CONTROLLER_JAVA_OPTS%"
+        set "HOST_CONTROLLER_JAVA_OPTS=-server %HOST_CONTROLLER_JAVA_OPTS%"
+    )
 )
+setlocal DisableDelayedExpansion
 
 rem Find run.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
