@@ -343,8 +343,13 @@ public class ConfigurationFile {
         if (mainName == null) {
             // Try the basic case, where name is the name
             final File directoryFile = new File(configurationDir, name);
+            // Translate alias if possible
+            String aliasedName = translateFileAlias(name);
+            final File aliasedFile = new File(configurationDir, aliasedName);
             if (directoryFile.exists()) {
                 mainName = stripPrefixSuffix(name); // TODO what if the stripped name doesn't exist? And why would there be a file like configuration/standalone.last.xml?
+            } else if (aliasedFile.exists()) {
+                mainName = aliasedName;
             } else if (interactionPolicy.isReadOnly()) {
                 // We allow absolute paths in this case
                 final File absoluteFile = new File(name);
@@ -361,6 +366,18 @@ public class ConfigurationFile {
         }
 
         throw ControllerLogger.ROOT_LOGGER.mainFileNotFound(name != null ? name : rawName, configurationDir);
+    }
+
+    private String translateFileAlias(String alias) {
+        final int pos = rawFileName.lastIndexOf('.');
+        final String base = pos != -1 ? rawFileName.substring(0, pos) : rawFileName;
+        switch (alias) {
+            case "fullha": alias = "full-ha"; break;
+            case "lb":     alias = "load-balancer"; break;
+            case "mp":     alias = "microprofile"; break;
+            case "mpha":   alias = "microprofile-ha"; break;
+        }
+        return base + "-" + alias + ".xml";
     }
 
     /**
@@ -451,6 +468,7 @@ public class ConfigurationFile {
 
     private File determineBootFile(final File configurationDir, final String name) {
         final File directoryFile = new File(configurationDir, name);
+        final File aliasedFile = new File(configurationDir, translateFileAlias(name));
         File result;
         if (name.equals(LAST) || name.equals(INITIAL) || name.equals(BOOT)) {
             result = addSuffixToFile(new File(historyRoot, mainFile.getName()), name);
@@ -461,6 +479,8 @@ public class ConfigurationFile {
             if (result == null) {
                 if (directoryFile.exists()) {
                     result = directoryFile;
+                } else if (aliasedFile.exists()) {
+                    result = aliasedFile;
                 } else if (interactionPolicy.isReadOnly()) {
                     File absoluteFile = new File(name);
                     if (absoluteFile.exists()) {
