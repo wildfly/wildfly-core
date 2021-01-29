@@ -33,7 +33,6 @@ import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
-import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -71,21 +70,11 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
-    public static final SimpleAttributeDefinition[] ATTRIBUTES = {SOURCE_PORT,SOURCE_INTERFACE,FIXED_SOURCE_PORT};
-
     protected OutboundSocketBindingResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
                                                       final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
         super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
                 .setAddHandler(addHandler)
                 .setRemoveHandler(removeHandler)
                 .addCapabilities(OUTBOUND_SOCKET_BINDING_CAPABILITY));
-    }
-
-    @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-
-        for (SimpleAttributeDefinition ad:ATTRIBUTES){
-            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, false));
-        }
     }
 }
