@@ -39,12 +39,12 @@ public class DomainScriptTestCase extends ScriptTestCase {
     private static final Function<ModelControllerClient, Boolean> HOST_CONTROLLER_CHECK = ServerHelper::isDomainRunning;
 
     public DomainScriptTestCase() {
-        super("domain", HOST_CONTROLLER_CHECK);
+        super("domain");
     }
 
     @Override
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
-        script.start(ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        script.start(HOST_CONTROLLER_CHECK, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
 
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());

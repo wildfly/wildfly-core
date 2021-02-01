@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,6 +56,7 @@ public class ScriptProcess extends Process implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(ScriptProcess.class);
 
     private static final Path PROC_DIR;
+    private static final Function<String, String> WINDOWS_ARG_FORMATTER = s -> "\"" + s + "\"";
 
     static {
         PROC_DIR = Paths.get(System.getProperty("jboss.test.proc.dir"));
@@ -65,59 +67,51 @@ public class ScriptProcess extends Process implements AutoCloseable {
         }
     }
 
-    private static final Function<String, String> WINDOWS_ARG_FORMATTER = s -> "\"" + s + "\"";
     private final Path containerHome;
     private final Path script;
-    private final Path stdoutLog;
-    private final Path input;
     private final long timeout;
-    private final Function<ModelControllerClient, Boolean> check;
     private final Collection<String> prefixCmds;
     private Process delegate;
+    private Path stdoutLog;
     private String lastExecutedCmd;
 
-    ScriptProcess(final Path containerHome, final String scriptName, final long timeout,
-                  final Function<ModelControllerClient, Boolean> check, final String... prefixCmds) throws IOException {
+    ScriptProcess(final Path containerHome, final String scriptBaseName, final Shell shell, final long timeout) {
         this.containerHome = containerHome;
+        final String scriptName = scriptBaseName + shell.getExtension();
         this.script = containerHome.resolve("bin").resolve(scriptName);
         this.timeout = timeout;
-        this.check = check;
-        this.prefixCmds = new ArrayList<>(Arrays.asList(prefixCmds));
-        final String baseFileName = script.getFileName().toString().replace('.', '-');
-        stdoutLog = PROC_DIR.resolve(baseFileName + "-out.txt");
-        input = PROC_DIR.resolve(baseFileName + "-in.txt");
-        // Delete and create the input file
-        Files.deleteIfExists(input);
-        Files.createFile(input);
+        this.prefixCmds = Arrays.asList(shell.getPrefix());
         lastExecutedCmd = "";
     }
 
     void start(final String... arguments) throws IOException, TimeoutException, InterruptedException {
-        start(Arrays.asList(arguments));
-    }
-
-    @SuppressWarnings("WeakerAccess")
-    void start(final Collection<String> arguments) throws IOException, TimeoutException, InterruptedException {
-        start(Collections.emptyMap(), arguments);
+        start(null, Collections.emptyMap(), arguments);
     }
 
     @SuppressWarnings("SameParameterValue")
-    void start(final Map<String, String> env, final String... arguments) throws IOException, TimeoutException, InterruptedException {
-        start(env, Arrays.asList(arguments));
+    void start(final Function<ModelControllerClient, Boolean> check, final String... arguments) throws IOException, TimeoutException, InterruptedException {
+        start(check, Collections.emptyMap(), arguments);
     }
 
-    @SuppressWarnings("WeakerAccess")
-    void start(final Map<String, String> env, final Collection<String> arguments) throws IOException, TimeoutException, InterruptedException {
+    void start(final Map<String, String> env, final String... arguments) throws IOException, TimeoutException, InterruptedException {
+        start(null, env, arguments);
+    }
+
+    @SuppressWarnings({"WeakerAccess", "SameParameterValue"})
+    void start(final Function<ModelControllerClient, Boolean> check, final Map<String, String> env,
+               final String... arguments) throws IOException, TimeoutException, InterruptedException {
         if (delegate != null) {
             throw new IllegalStateException("This process has already been started and has not exited.");
         }
+        final Collection<String> args = Arrays.asList(arguments);
+        lastExecutedCmd = getCommandString(args);
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugf("Attempting to start: %s", getCommandString(arguments));
+            LOGGER.debugf("Attempting to start: %s", lastExecutedCmd);
         }
-        lastExecutedCmd = getCommandString(arguments);
-        final ProcessBuilder builder = new ProcessBuilder(getCommand(arguments))
+        final String baseFileName = script.getFileName().toString().replace('.', '-');
+        stdoutLog = Files.createTempFile(PROC_DIR, baseFileName, "-out.txt");
+        final ProcessBuilder builder = new ProcessBuilder(getCommand(args))
                 .directory(containerHome.toFile())
-                .redirectInput(input.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(stdoutLog.toFile());
         builder.environment().put("JBOSS_HOME", containerHome.toString());
@@ -141,13 +135,11 @@ public class ScriptProcess extends Process implements AutoCloseable {
         return script;
     }
 
-    Path getStdout() {
-        return stdoutLog;
-    }
-
-    @SuppressWarnings("unused")
-    Path getInput() {
-        return input;
+    List<String> getStdout() throws IOException {
+        if (stdoutLog == null) {
+            return Collections.emptyList();
+        }
+        return Files.readAllLines(stdoutLog, StandardCharsets.UTF_8);
     }
 
     String getErrorMessage(final String msg) {
@@ -162,9 +154,9 @@ public class ScriptProcess extends Process implements AutoCloseable {
                 .append("Output:")
                 .append(System.lineSeparator());
         try {
-            for (String line : Files.readAllLines(stdoutLog)) {
+            for (String line : getStdout()) {
                 errorMessage.append(line)
-                            .append(System.lineSeparator());
+                        .append(System.lineSeparator());
             }
         } catch (IOException ignore) {
         }

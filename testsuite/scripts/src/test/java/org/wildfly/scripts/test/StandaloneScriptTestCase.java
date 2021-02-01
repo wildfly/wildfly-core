@@ -74,7 +74,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
     private static final Function<ModelControllerClient, Boolean> STANDALONE_CHECK = ServerHelper::isStandaloneRunning;
 
     public StandaloneScriptTestCase() {
-        super("standalone", STANDALONE_CHECK);
+        super("standalone");
     }
 
     @Parameters
@@ -94,7 +94,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         // seem to work when a directory has a space. An error indicating the trailing quote cannot be found. Removing
         // the `\ parts and just keeping quotes ends in the error shown in JDK-8215398.
         Assume.assumeFalse(TestSuiteEnvironment.isWindows() && MODULAR_JVM && env.containsKey("GC_LOG") && script.getScript().toString().contains(" "));
-        script.start(env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
+        script.start(STANDALONE_CHECK, env, ServerHelper.DEFAULT_SERVER_JAVA_OPTS);
         Assert.assertNotNull("The process is null and may have failed to start.", script);
         Assert.assertTrue("The process is not running and should be", script.isAlive());
 

@@ -7,6 +7,8 @@ GREP="grep"
 # Use the maximum available, or set MAX_FD != -1 to use that
 MAX_FD="maximum"
 
+. "$DIRNAME/common.sh"
+
 #
 # Helper to complain.
 #

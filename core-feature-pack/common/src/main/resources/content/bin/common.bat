@@ -2,6 +2,19 @@
 call %*
 goto :eof
 
+:commonConf
+if "x%COMMON_CONF%" == "x" (
+   set "COMMON_CONF=%DIRNAME%common.conf.bat"
+) else (
+   if not exist "%COMMON_CONF%" (
+       echo Config file not found "%COMMON_CONF%"
+   )
+)
+if exist "%COMMON_CONF%" (
+   call "%COMMON_CONF%" %*
+)
+goto :eof
+
 :setModularJdk
     "%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
 goto :eof

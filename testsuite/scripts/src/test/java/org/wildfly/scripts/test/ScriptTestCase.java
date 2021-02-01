@@ -19,11 +19,13 @@
 
 package org.wildfly.scripts.test;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
@@ -57,26 +58,12 @@ public abstract class ScriptTestCase {
 
     static final Map<String, String> MAVEN_JAVA_OPTS = new LinkedHashMap<>();
 
-    private static final String[] POWER_SHELL_PREFIX = {
-            "powershell",
-            "-ExecutionPolicy",
-            "Unrestricted",
-            "-NonInteractive",
-            "-File"
-    };
-
     private final String scriptBaseName;
-    private final Function<ModelControllerClient, Boolean> check;
     private ExecutorService service;
 
 
     ScriptTestCase(final String scriptBaseName) {
-        this(scriptBaseName, null);
-    }
-
-    ScriptTestCase(final String scriptBaseName, final Function<ModelControllerClient, Boolean> check) {
         this.scriptBaseName = scriptBaseName;
-        this.check = check;
     }
 
     @BeforeClass
@@ -100,32 +87,32 @@ public abstract class ScriptTestCase {
 
     @Test
     public void testBatchScript() throws Exception {
-        Assume.assumeTrue(TestSuiteEnvironment.isWindows());
-        executeTests(".bat");
+        Assume.assumeTrue(Shell.BATCH.isSupported());
+        executeTests(Shell.BATCH);
     }
 
     @Test
     public void testPowerShellScript() throws Exception {
-        Assume.assumeTrue(TestSuiteEnvironment.isWindows() && isShellSupported("powershell", "-Help"));
-        executeTests(".ps1", POWER_SHELL_PREFIX);
+        Assume.assumeTrue(TestSuiteEnvironment.isWindows() && Shell.POWERSHELL.isSupported());
+        executeTests(Shell.POWERSHELL);
     }
 
     @Test
     public void testBashScript() throws Exception {
-        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && isShellSupported("bash", "-c", "echo", "test"));
-        executeTests(".sh");
+        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && Shell.BASH.isSupported());
+        executeTests(Shell.BASH);
     }
 
     @Test
     public void testDashScript() throws Exception {
-        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && isShellSupported("dash", "-c", "echo", "test"));
-        executeTests(".sh", "dash");
+        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && Shell.DASH.isSupported());
+        executeTests(Shell.DASH);
     }
 
     @Test
     public void testKshScript() throws Exception {
-        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && isShellSupported("ksh", "-c", "echo", "test"));
-        executeTests(".sh", "ksh");
+        Assume.assumeTrue(!TestSuiteEnvironment.isWindows() && Shell.KSH.isSupported());
+        executeTests(Shell.KSH);
     }
 
     abstract void testScript(ScriptProcess script) throws InterruptedException, TimeoutException, IOException;
@@ -151,11 +138,62 @@ public abstract class ScriptTestCase {
         return executeOperation(client, OperationBuilder.create(op).build());
     }
 
-    private void executeTests(final String scriptExtension, final String... prefixCmds) throws InterruptedException, IOException, TimeoutException {
+    private void executeTests(final Shell shell) throws InterruptedException, IOException, TimeoutException {
         for (Path path : ServerConfigurator.PATHS) {
-            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName + scriptExtension, ServerHelper.TIMEOUT, check, prefixCmds)) {
+            try (ScriptProcess script = new ScriptProcess(path, scriptBaseName, shell, ServerHelper.TIMEOUT)) {
                 testScript(script);
+                script.close();
+                testCommonConf(script, shell);
             }
+        }
+    }
+
+    private void testCommonConf(final ScriptProcess script, final Shell shell) throws InterruptedException, IOException, TimeoutException {
+        testCommonConf(script, true, shell);
+        testCommonConf(script, false, shell);
+    }
+
+    private void testCommonConf(final ScriptProcess script, final boolean useEnvVar, final Shell shell) throws InterruptedException, IOException, TimeoutException {
+        final Map<String, String> env = new HashMap<>();
+        final Path confFile;
+        if (useEnvVar) {
+            confFile = Paths.get(TestSuiteEnvironment.getTmpDir(), "test-common" + shell.getConfExtension());
+            env.put("COMMON_CONF", confFile.toString());
+        } else {
+            confFile = script.getContainerHome().resolve("bin").resolve("common" + shell.getConfExtension());
+        }
+        // Create the common conf file which will simply echo some text and then exit the script
+        final String text = "Test from common configuration to " + confFile.getFileName().toString();
+        try (BufferedWriter writer = Files.newBufferedWriter(confFile, StandardCharsets.UTF_8)) {
+            if (shell == Shell.POWERSHELL) {
+                writer.write("Write-Output \"");
+                writer.write(text);
+                writer.write('"');
+                writer.newLine();
+                writer.write("break");
+            } else {
+                writer.write("echo \"");
+                writer.write(text);
+                writer.write('"');
+                writer.newLine();
+                writer.write("exit");
+            }
+            writer.newLine();
+        }
+        try {
+            script.start(env);
+            if (!script.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
+                Assert.fail(script.getErrorMessage("Failed to exit script from " + confFile));
+            }
+            // Batch scripts print the quotes around the text
+            final String expectedText = (shell == Shell.BATCH ? "\"" + text + "\"" : text);
+            final List<String> lines = script.getStdout();
+            Assert.assertEquals(script.getErrorMessage("There should only be one line logged before the script exited"),
+                    1, lines.size());
+            Assert.assertEquals(expectedText, lines.get(0));
+        } finally {
+            script.close();
+            Files.delete(confFile);
         }
     }
 
@@ -165,32 +203,5 @@ public abstract class ScriptTestCase {
             Assert.fail(String.format("Failed to execute op: %s%nFailure Description: %s", op, Operations.getFailureDescription(result)));
         }
         return Operations.readResult(result);
-    }
-
-    private static boolean isShellSupported(final String name, final String... args) throws IOException, InterruptedException {
-        final List<String> cmd = new ArrayList<>();
-        cmd.add(name);
-        if (args != null && args.length > 0) {
-            cmd.addAll(Arrays.asList(args));
-        }
-        final Path stdout = Files.createTempFile(name + "-supported", ".log");
-        final ProcessBuilder builder = new ProcessBuilder(cmd)
-                .redirectErrorStream(true)
-                .redirectOutput(stdout.toFile());
-        Process process = null;
-        try {
-            process = builder.start();
-            if (!process.waitFor(ServerHelper.TIMEOUT, TimeUnit.SECONDS)) {
-                return false;
-            }
-            return process.exitValue() == 0;
-        } catch (IOException e) {
-            return false;
-        } finally {
-            if (process != null) {
-                process.destroyForcibly();
-            }
-            Files.deleteIfExists(stdout);
-        }
     }
 }
