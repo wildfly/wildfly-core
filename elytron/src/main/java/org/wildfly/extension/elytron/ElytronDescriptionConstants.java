@@ -163,6 +163,7 @@ interface ElytronDescriptionConstants {
     String DEFAULT_AUTHENTICATION_CONTEXT = "default-authentication-context";
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
+    String DEFAULT_RESOLVER = "default-resolver";
     String DEFAULT_SSL_CONTEXT = "default-ssl-context";
     String DELEGATE_REALM = "delegate-realm";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
@@ -183,12 +184,15 @@ interface ElytronDescriptionConstants {
     String ENABLE_CONNECTION_POOLING = "enable-connection-pooling";
     String ENABLING = "enabling";
     String ENCODED = "encoded";
+    String ENCRYPTION = "encryption";
     String ENTRY_TYPE = "entry-type";
     String EVIDENCE_DECODER = "evidence-decoder";
     String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
     String EXPORT_SECRET_KEY = "export-secret-key";
+    String EXPRESSION = "expression";
+    String EXPRESSION_RESOLVER = "expression-resolver";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
@@ -453,6 +457,8 @@ interface ElytronDescriptionConstants {
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
     String REQUISITE = "requisite";
+    String RESOLVER = "resolver";
+    String RESOLVERS = "resolvers";
     String RESPONDER = "responder";
     String RESPONDER_CERTIFICATE = "responder-certificate";
     String RESPONDER_KEYSTORE = "responder-keystore";
@@ -495,6 +501,7 @@ interface ElytronDescriptionConstants {
     String SECURITY_PROPERTIES = "security-properties";
     String SECURITY_PROPERTY = "security-property";
     String SECURITY_REALMS = "security-realms";
+    String SECRET_KEY = "secret-key";
     String SECRET_VALUE = "secret-value";
     String SELECTION_CRITERIA = "selection-criteria";
     String SEED = "seed";

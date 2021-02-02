@@ -48,6 +48,7 @@
             <xs:element name="sasl" type="saslType" minOccurs="0" />
             <xs:element name="tls" type="tlsType" minOccurs="0" />
             <xs:element name="credential-stores" type="credentialStoresType" minOccurs="0" />
+            <xs:element name="expression-resolver" type="expressionResolverType" minOccurs="0" />
             <xs:element name="dir-contexts" type="dirContextsType" minOccurs="0" />
             <xs:element name="policy" type="policyType" minOccurs="0" />
             <xs:element name="jaspi" type="jaspiType" minOccurs="0" />
@@ -5708,6 +5709,64 @@
             </xs:annotation>
         </xs:attribute>
 
+    </xs:complexType>
+
+    <!-- 
+        Expression Resolver Types
+     -->
+
+    <xs:complexType name="expressionResolverType">
+        <xs:annotation>
+            <xs:documentation>
+              An expression resolver backed by a list of sub-expression resolvers which can be used to decrypt encrypted expressions.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="resolver" type="resolverType" minOccurs="1" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="default-resolver" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                  The default resolver to use for expressions which do not specify the name of the resolver.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefix" type="xs:string" use="optional" default="ENC">
+            <xs:annotation>
+                <xs:documentation>
+                  The prefix for expressions that should be resolved using this expression resolver.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="resolverType">
+        <xs:annotation>
+            <xs:documentation>
+                Definition of a single expression resolver.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The unique name of this expression resolver.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="credential-store" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Reference to the credential store which contains the secret key to be used by this resolver.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="secret-key" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The alias of the secret key contained within the credential store.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <!--

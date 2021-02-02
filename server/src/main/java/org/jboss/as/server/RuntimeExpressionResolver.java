@@ -31,6 +31,7 @@ import org.jboss.logging.Logger;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class RuntimeExpressionResolver extends ExpressionResolverImpl {
 

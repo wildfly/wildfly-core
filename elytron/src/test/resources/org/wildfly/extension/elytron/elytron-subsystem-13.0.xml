@@ -358,6 +358,10 @@
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
     </tls>
+    <expression-resolver default-resolver="A" prefix="G">
+        <resolver name="A" credential-store="test1" secret-key="C"/>
+        <resolver name="D" credential-store="test2" secret-key="F"/>
+    </expression-resolver>
     <jaspi>
         <jaspi-configuration name="test" layer="HttpServlet" application-context="default /test" description="Test Definition">
             <server-auth-modules>
