@@ -26,6 +26,11 @@ Write-Debug "MODULE_OPTS: $MODULE_OPTS"
 if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }
+
+if($PRESERVE_JAVA_OPTS -ne 'true') {
+    $JAVA_OPTS = Set-Java-Client-Option $JAVA_OPTS
+}
+
 # Set debug settings if not already set
 if ($global:DEBUG_MODE){
     if ($JAVA_OPTS -notcontains ('-agentlib:jdwp')){

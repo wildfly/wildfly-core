@@ -343,6 +343,24 @@ Function Set-Java-Server-Option ($javaOpts) {
     return $javaOpts
 }
 
+# For stanalone mode, check if client option could be set, if not try to set server option
+Function Set-Java-Client-Option ($javaOpts) {
+    if ( -Not($javaOpts -match '-server') -and -Not($javaOpts -match '-client') ) {
+        # Check user requested JDK 'data model'
+        $version = Get-Java-Version ($javaOpts)
+
+        if ($LASTEXITCODE -eq 1) {
+            Write-Host $version
+        } elseif ($version -match 'Client VM') {
+            $javaOpts = ,"-client" + $javaOpts
+        } elseif ($version -match 'hotspot' -or $version -match 'openJDK' -or $version -match 'IBM J9') {
+            $javaOpts = ,"-server" + $javaOpts
+        }
+    }
+
+    return $javaOpts
+}
+
 Function Set-Global-Variables {
 PARAM(
 [Parameter(Mandatory=$true)]
