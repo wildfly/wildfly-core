@@ -33,6 +33,13 @@ public class ElytronSubsystemParser9_0 extends ElytronSubsystemParser8_0 {
         return ElytronExtension.NAMESPACE_9_0;
     }
 
+
+    @Override
+    PersistentResourceXMLDescription getAuthenticationClientParser() {
+        return new AuthenticationClientParser().parser_9_0;
+    }
+
+
     PersistentResourceXMLDescription getTlsParser() {
         return new TlsParser().tlsParser_9_0;
     }
