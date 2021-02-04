@@ -35,7 +35,7 @@ public class ElytronSubsystemParser12_0 extends ElytronSubsystemParser11_0 {
 
     @Override
     protected PersistentResourceXMLDescription getMapperParser() {
-        return new MapperParser(MapperParser.Version.VERSION_7_0).getParser();
+        return new MapperParser(MapperParser.Version.VERSION_12_0).getParser();
     }
 
 

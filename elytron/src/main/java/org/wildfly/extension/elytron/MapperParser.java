@@ -63,9 +63,9 @@ class MapperParser {
         VERSION_1_1,
         VERSION_3_0, // permission-sets in permission-mappings and constant-permission-mappers
         VERSION_4_0, // mapped-role-mappers
-        VERSION_5_0, // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
-        VERSION_6_0, // source-address-role-decoder, aggregate-role-decoder, regex-role-mapper
-        VERSION_7_0 // case-principal-transformer
+        VERSION_8_0, // x500-subject-evidence-decoder, x509-subject-alt-name-evidence-decoder, custom-evidence-decoder, aggregate-evidence-decoder
+        VERSION_10_0, // source-address-role-decoder, aggregate-role-decoder, regex-role-mapper
+        VERSION_12_0 // case-principal-transformer
     }
 
     private final Version version;
@@ -266,7 +266,7 @@ class MapperParser {
     }
 
     MapperParser() {
-        this.version = Version.VERSION_7_0;
+        this.version = Version.VERSION_12_0;
     }
 
     //1.0 version of parser is different at simple mapperParser
@@ -364,7 +364,7 @@ class MapperParser {
                 .build();
     }
 
-    private PersistentResourceXMLDescription getParser_5_0() {
+    private PersistentResourceXMLDescription getParser_8_0() {
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
@@ -401,7 +401,7 @@ class MapperParser {
                 .build();
     }
 
-    private PersistentResourceXMLDescription getParser_6_0() {
+    private PersistentResourceXMLDescription getParser_10_0() {
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)
@@ -442,18 +442,19 @@ class MapperParser {
     }
 
     public PersistentResourceXMLDescription getParser() {
-        if (version.equals(Version.VERSION_1_0) || version.equals(Version.VERSION_1_1) || version.equals(Version.VERSION_3_0)) {
-            return getParser_1_0_to_3_0();
+        switch (version) {
+            case VERSION_1_0:
+            case VERSION_1_1:
+            case VERSION_3_0:
+                return getParser_1_0_to_3_0();
+            case VERSION_4_0:
+                return getParser_4_0();
+            case VERSION_8_0:
+                return getParser_8_0();
+            case VERSION_10_0:
+                return getParser_10_0();
         }
-        if (version.equals(Version.VERSION_4_0)) {
-            return getParser_4_0();
-        }
-        if (version.equals(Version.VERSION_5_0)) {
-            return getParser_5_0();
-        }
-        if (version.equals(Version.VERSION_6_0)) {
-            return getParser_6_0();
-        }
+
         return decorator(ElytronDescriptionConstants.MAPPERS)
                 .addChild(getCustomComponentParser(CUSTOM_PERMISSION_MAPPER))
                 .addChild(logicalPermissionMapper)

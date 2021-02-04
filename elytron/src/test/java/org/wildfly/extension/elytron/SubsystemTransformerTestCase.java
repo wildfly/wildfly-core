@@ -194,6 +194,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(DISTRIBUTED_REALM, "DistributedRealm")), REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, "RegexRoleMapper")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER, "CasePrincipalTransformer")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE, "test.keystore")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER, "LazyKeyManager")),

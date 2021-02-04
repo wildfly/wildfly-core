@@ -36,6 +36,7 @@
             <role-decoder name="regexRoleDecoder"/>
         </aggregate-role-decoder>
         <regex-role-mapper name="RegexRoleMapper" pattern=".*-[a-z]*" replacement="$1"/>
+        <case-principal-transformer name="CasePrincipalTransformer" />
     </mappers>
     <tls>
         <key-stores>
