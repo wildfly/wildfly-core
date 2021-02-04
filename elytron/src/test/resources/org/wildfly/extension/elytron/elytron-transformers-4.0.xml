@@ -1,4 +1,8 @@
-<subsystem xmlns="urn:wildfly:elytron:13.0" register-jaspi-factory="false">
+<!-- 
+    Configuration to test transforming the model from 8.0 (WildFly 18 / EAP 7.3) to 4.0 (WildFly 14 / EAP 7.2)
+ -->
+
+<subsystem xmlns="urn:wildfly:elytron:8.0" register-jaspi-factory="false">
     <authentication-client>
         <authentication-configuration name="test">
             <mechanism-properties>

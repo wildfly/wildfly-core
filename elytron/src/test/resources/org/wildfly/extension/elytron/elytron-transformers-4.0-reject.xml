@@ -1,11 +1,9 @@
-<subsystem xmlns="urn:wildfly:elytron:13.0" default-ssl-context="ClientContext">
+<!-- 
+    Configuration to test transforming the model from 8.0 (WildFly 18 / EAP 7.3) to 4.0 (WildFly 14 / EAP 7.2)
+ -->
+
+<subsystem xmlns="urn:wildfly:elytron:8.0" default-ssl-context="ClientContext">
     <authentication-client>
-        <authentication-configuration name="test">
-            <mechanism-properties>
-                <property name="test" value="test"/>
-            </mechanism-properties>
-            <webservices ws-security-type="UsernameToken" http-mechanism="BASIC" />
-        </authentication-configuration>
         <authentication-configuration name="authWithCredentialReference"
                                       security-domain="TestDomain"
                                       forwarding-mode="authorization">
@@ -15,9 +13,6 @@
     <credential-stores>
         <credential-store name="store1" location="path/to/store_file" >
             <credential-reference clear-text="STOREPASSWORD"/>
-        </credential-store>
-        <credential-store name="store2" location="path/to/store_file2" >
-            <credential-reference store="store1" clear-text="STOREPASSWORD"/>
         </credential-store>
     </credential-stores>
     <jaspi>
@@ -45,14 +40,10 @@
         <security-domain name="TestDomain" default-realm="FileRealm">
             <realm name="FileRealm" />
         </security-domain>
-        <security-domain name="AggregateDomain" default-realm="FileRealm" role-decoder="aggregateRoleDecoder">
-            <realm name="FileRealm"/>
-        </security-domain>
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="JdbcBcryptHashHex" authorization-realms="JdbcBcryptSaltHex JdbcScramHashHex" />
         <aggregate-realm name="AggregateTwo" authentication-realm="JdbcBcryptHashHex" authorization-realm="JdbcBcryptSaltHex" principal-transformer ="RegexOne"/>
-        <failover-realm name="FailoverRealm" delegate-realm="JdbcBcryptHashHex" failover-realm="JdbcBcryptSaltHex"/>
         <jdbc-realm name="JdbcBcryptHashHex">
             <principal-query sql="SELECT role, password, salt, ic FROM User WHERE username = ?" data-source="ExampleDS">
                 <bcrypt-mapper password-index="2" salt-index="3" iteration-count-index="4" hash-encoding="hex"/>
@@ -103,8 +94,7 @@
         </token-realm>
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
-        </filesystem-realm>
-        <distributed-realm name="DistributedRealm" realms="SslTokenRealm FileRealm"/>
+        </filesystem-realm>        
     </security-realms>
     <mappers>
         <x500-subject-evidence-decoder name="subjectDecoder" />
@@ -115,13 +105,6 @@
             <evidence-decoder name="subjectDecoder"/>
         </aggregate-evidence-decoder>
         <regex-principal-transformer name="RegexOne" pattern="a" replacement="b" />
-        <source-address-role-decoder name="ipRoleDecoder" source-address="10.12.14.16" roles="admin user"/>
-        <source-address-role-decoder name="regexRoleDecoder" pattern="10\.12\.14\.\d+$" roles="employee"/>
-        <aggregate-role-decoder name="aggregateRoleDecoder">
-            <role-decoder name="ipRoleDecoder"/>
-            <role-decoder name="regexRoleDecoder"/>
-        </aggregate-role-decoder>
-        <regex-role-mapper name="RegexRoleMapper" pattern=".*-[a-z]*" replacement="$1"/>
     </mappers>
     <tls>
         <key-stores>
@@ -135,11 +118,6 @@
                 <implementation/>
                 <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
             </key-store>
-            <key-store name="test.keystore">
-                <credential-reference store="store1" clear-text="elytron"/>
-                <implementation type="JKS"/>
-                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
-            </key-store>
         </key-stores>
         <key-managers>
             <key-manager name="key1" key-store="accounts.keystore">
@@ -148,20 +126,15 @@
             <key-manager name="key2" key-store="accounts.keystore">
                 <credential-reference store="store1" clear-text="supersecret!"/>
             </key-manager>
-            <key-manager name="LazyKeyManager" key-store="test.keystore" generate-self-signed-certificate-host="localhost">
-                <credential-reference clear-text="elytron"/>
-            </key-manager>
         </key-managers>
         <server-ssl-contexts>
             <server-ssl-context name="ctx" key-manager="key1"/>
-            <server-ssl-context name="ctxTLS13" key-manager="key1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"/>
         </server-ssl-contexts>
         <server-ssl-sni-contexts>
             <server-ssl-sni-context name="test" default-ssl-context="ctx"></server-ssl-sni-context>
         </server-ssl-sni-contexts>
         <client-ssl-contexts>
             <client-ssl-context name="ClientContext"/>
-            <client-ssl-context name="ClientContextTLS13" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"/>
         </client-ssl-contexts>
         <certificate-authorities>
             <certificate-authority name="testCA" url="http://www.test.com"/>

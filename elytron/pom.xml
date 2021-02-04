@@ -319,6 +319,7 @@
                             </includes>
                             <excludes>
                                 <exclude>*-1.*.xml</exclude>
+                                <exclude>*-4.*.xml</exclude>
                                 <exclude>custom-policies.xml</exclude>
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
