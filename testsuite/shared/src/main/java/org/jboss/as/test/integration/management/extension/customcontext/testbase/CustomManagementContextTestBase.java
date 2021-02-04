@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -210,8 +211,7 @@ public abstract class CustomManagementContextTestBase {
             assertEquals(200, resp.getStatusLine().getStatusCode());
             ModelNode respNode = ModelNode.fromJSONString(EntityUtils.toString(resp.getEntity()));
             assertEquals(respNode.toString(), CustomContextExtension.EXTENSION_NAME, respNode.get("module").asString());
-            assertTrue(respNode.toString(), respNode.hasDefined("subsystem"));
-            assertTrue(respNode.toString(), respNode.get("subsystem").has(CustomContextExtension.SUBSYSTEM_NAME));
+            assertFalse(respNode.toString(), respNode.hasDefined("subsystem"));
             resp.close();
 
             resp = client.execute(new HttpGet(staticUrl));
