@@ -18,8 +18,6 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ENCRYPTION;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXPRESSION;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.EXPRESSION_RESOLVER;
@@ -43,6 +41,12 @@ public class ElytronSubsystemParser13_0 extends ElytronSubsystemParser12_0 {
         return ElytronExtension.NAMESPACE_13_0;
     }
 
+    @Override
+    PersistentResourceXMLDescription getCredentialStoresParser() {
+        return new CredentialStoreParser().getCredentialStoresParser_13().build();
+    }
+
+    // New
     PersistentResourceXMLDescription getExpressionResolverParser() {
         return PersistentResourceXMLDescription.builder(
                 PathElement.pathElement(EXPRESSION, ENCRYPTION))
@@ -73,7 +77,7 @@ public class ElytronSubsystemParser13_0 extends ElytronSubsystemParser12_0 {
                 .addChild(getHttpParser())
                 .addChild(getSaslParser())
                 .addChild(getTlsParser())
-                .addChild(decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().parser))
+                .addChild(getCredentialStoresParser())
                 .addChild(getExpressionResolverParser()) // New
                 .addChild(getDirContextParser())
                 .addChild(getPolicyParser())

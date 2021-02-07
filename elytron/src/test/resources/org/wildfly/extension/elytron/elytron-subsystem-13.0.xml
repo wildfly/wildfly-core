@@ -358,6 +358,19 @@
             </server-ssl-sni-context>
         </server-ssl-sni-contexts>
     </tls>
+    <credential-stores>
+        <credential-store name="test1" relative-to="jboss.server.data.dir" location="test1.store" create="true">
+            <implementation-properties>
+                <property name="keyStoreType" value="JCEKS"/>
+                <property name="keyAlias" value="adminKey"/>
+            </implementation-properties>
+            <credential-reference clear-text="secret2"/>
+        </credential-store>
+        <credential-store name="test2" relative-to="jboss.server.data.dir" modifiable="true">
+            <credential-reference store="test1" alias="to_open_test2"/>
+        </credential-store>
+        <secret-key-credential-store name="test3" relative-to="jboss.server.data.dir" path="test3.cs" create="false" populate="false" key-size="192" default-alias="test3" />
+    </credential-stores>
     <expression-resolver default-resolver="A" prefix="G">
         <resolver name="A" credential-store="test1" secret-key="C"/>
         <resolver name="D" credential-store="test2" secret-key="F"/>
@@ -385,16 +398,4 @@
             </server-auth-modules>
         </jaspi-configuration>
     </jaspi>
-    <credential-stores>
-        <credential-store name="test1" relative-to="jboss.server.data.dir" location="test1.store" create="true">
-            <implementation-properties>
-                <property name="keyStoreType" value="JCEKS"/>
-                <property name="keyAlias" value="adminKey"/>
-            </implementation-properties>
-            <credential-reference clear-text="secret2"/>
-        </credential-store>
-        <credential-store name="test2" relative-to="jboss.server.data.dir" modifiable="true">
-            <credential-reference store="test1" alias="to_open_test2"/>
-        </credential-store>
-    </credential-stores>
 </subsystem>

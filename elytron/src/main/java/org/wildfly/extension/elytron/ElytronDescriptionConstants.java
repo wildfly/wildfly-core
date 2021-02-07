@@ -160,6 +160,7 @@ interface ElytronDescriptionConstants {
     String DAYS_TO_EXPIRY = "days-to-expiry";
     String DEACTIVATE_ACCOUNT = "deactivate-account";
     String DEBUG = "debug";
+    String DEFAULT_ALIAS = "default-alias";
     String DEFAULT_AUTHENTICATION_CONTEXT = "default-authentication-context";
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
@@ -397,6 +398,7 @@ interface ElytronDescriptionConstants {
     String PERMISSION_SETS = "permission-sets";
     String PLAIN_TEXT = "plain-text";
     String POLICY = "policy";
+    String POPULATE = "populate";
     String PORT = "port";
     String POST_REALM_PRINCIPAL_TRANSFORMER = "post-realm-principal-transformer";
     String PRE_REALM_PRINCIPAL_TRANSFORMER = "pre-realm-principal-transformer";
@@ -502,6 +504,7 @@ interface ElytronDescriptionConstants {
     String SECURITY_PROPERTY = "security-property";
     String SECURITY_REALMS = "security-realms";
     String SECRET_KEY = "secret-key";
+    String SECRET_KEY_CREDENTIAL_STORE = "secret-key-credential-store";
     String SECRET_VALUE = "secret-value";
     String SELECTION_CRITERIA = "selection-criteria";
     String SEED = "seed";

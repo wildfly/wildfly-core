@@ -302,6 +302,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         // Credential Store Block
         resourceRegistration.registerSubModel(new CredentialStoreResourceDefinition());
+        resourceRegistration.registerSubModel(new SecretKeyCredentialStoreDefinition());
 
         // Dir-Context
         resourceRegistration.registerSubModel(new DirContextDefinition());
