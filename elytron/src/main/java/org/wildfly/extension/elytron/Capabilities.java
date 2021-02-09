@@ -93,6 +93,12 @@ class Capabilities {
 
     static final String CREDENTIAL_STORE_CAPABILITY = CAPABILITY_BASE + "credential-store";
 
+    /*
+     * A variant of the credential-store capability which also provides access to the underlying
+     * {@code CredentialStore} as a runtime API from a {@code Supplier<CredentialStore>}.
+     */
+    static final String CREDENTIAL_STORE_API_CAPABILITY = CAPABILITY_BASE + "credential-store-api";
+
     static final RuntimeCapability<Void> CREDENTIAL_STORE_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(CREDENTIAL_STORE_CAPABILITY, true, CredentialStore.class)
             .build();

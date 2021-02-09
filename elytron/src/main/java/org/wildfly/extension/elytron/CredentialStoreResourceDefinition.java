@@ -31,9 +31,7 @@ import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,11 +81,7 @@ import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
-import org.wildfly.security.credential.store.UnsupportedCredentialTypeException;
 import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
-import org.wildfly.security.password.PasswordFactory;
-import org.wildfly.security.password.interfaces.ClearPassword;
-import org.wildfly.security.password.spec.ClearPasswordSpec;
 
 /**
  * A {@link ResourceDefinition} for a CredentialStore.
@@ -172,18 +166,12 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
 
     // Operations parameters
-    static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
-            .setMinSize(1)
-            .build();
+
 
     static final SimpleAttributeDefinition KEY_SIZE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY_SIZE, ModelType.INT, true)
             .setMinSize(1)
             .setDefaultValue(new ModelNode(256))
             .setAllowedValues(128, 192, 256)
-            .build();
-
-    static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
-            .setMinSize(1)
             .build();
 
     static final SimpleAttributeDefinition ADD_ENTRY_TYPE;
@@ -241,7 +229,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setRuntimeOnly()
             .build();
 
-    private static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, RESOURCE_RESOLVER)
+    static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, RESOURCE_RESOLVER)
             .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
@@ -542,6 +530,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                     }
                     break;
                 default:
+                    // TODO - Why does this report a single expected operation name?
                     throw ROOT_LOGGER.invalidOperationName(operationName, ElytronDescriptionConstants.LOAD);
             }
         }
@@ -587,52 +576,6 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         return credentialStoreName;
     }
 
-    /**
-     * Convert {@code char[]} password to {@code PasswordCredential}
-     * @param password to convert
-     * @return new {@code PasswordCredential}
-     * @throws UnsupportedCredentialTypeException should never happen as we have only supported types and algorithms
-     */
-    private static PasswordCredential createCredentialFromPassword(char[] password) throws UnsupportedCredentialTypeException {
-        try {
-            PasswordFactory passwordFactory = PasswordFactory.getInstance(ClearPassword.ALGORITHM_CLEAR);
-            return new PasswordCredential(passwordFactory.generatePassword(new ClearPasswordSpec(password)));
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new UnsupportedCredentialTypeException(e);
-        }
-    }
-
-    private static void storeSecret(CredentialStore credentialStore, String alias, String secretValue) throws CredentialStoreException {
-        char[] secret = secretValue != null ? secretValue.toCharArray() : new char[0];
-        storeCredential(credentialStore, alias, createCredentialFromPassword(secret));
-    }
-
-    private static void storeSecretKey(CredentialStore credentialStore, String alias, SecretKey secretKey) throws CredentialStoreException {
-        storeCredential(credentialStore, alias, new SecretKeyCredential(secretKey));
-    }
-
-    private static void storeCredential(CredentialStore credentialStore, String alias, Credential credential) throws CredentialStoreException {
-        credentialStore.store(alias, credential);
-        try {
-            credentialStore.flush();
-        } catch (CredentialStoreException e) {
-            // operation fails, remove the entry from the store, to avoid an inconsistency between
-            // the store on the FS and in the memory
-            credentialStore.remove(alias, PasswordCredential.class);
-            throw e;
-        }
-    }
-
-    private static String dumpCause(Throwable e) {
-        StringBuffer sb = new StringBuffer().append(e.getLocalizedMessage());
-        Throwable c = e.getCause();
-        int depth = 0;
-        while(c != null && depth++ < 10) {
-            sb.append("->").append(c.getLocalizedMessage());
-            c = c.getCause() == c ? null : c.getCause();
-        }
-        return sb.toString();
-    }
 
     private static Class<? extends Credential> fromEntryType(final String entryTyoe) {
         if (PasswordCredential.class.getCanonicalName().equals(entryTyoe) || PasswordCredential.class.getSimpleName().equals(entryTyoe)) {
