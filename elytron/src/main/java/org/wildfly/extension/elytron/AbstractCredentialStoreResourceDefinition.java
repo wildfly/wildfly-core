@@ -25,6 +25,7 @@ import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -163,7 +164,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
                 ModelNode result = context.getResult();
                 result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
-            } catch (CredentialStoreException e) {
+            } catch (GeneralSecurityException e) {
                 throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
             }
         } catch (RuntimeException e) {
@@ -182,7 +183,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
                 storeSecretKey(credentialStore, alias, secretKey);
 
-            } catch (CredentialStoreException e) {
+            } catch (GeneralSecurityException e) {
                 throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
             }
         } catch (RuntimeException e) {
@@ -198,7 +199,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
                 SecretKey secretKey = generateSecretKey(keySize);
                 storeSecretKey(credentialStore, alias, secretKey);
 
-            } catch (CredentialStoreException e) {
+            } catch (GeneralSecurityException e) {
                 throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
             }
         } catch (RuntimeException e) {

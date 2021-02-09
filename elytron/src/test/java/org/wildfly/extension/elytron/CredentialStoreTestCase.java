@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
 import java.security.AccessController;
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
@@ -91,31 +92,31 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
     // Test Contents of dynamically initialised credential stores
 
     @Test
-    public void testDefaultContentTest() {
+    public void testDefaultContentTest() throws GeneralSecurityException {
         testDefaultContent("credential-store", "test", null, -1);
     }
 
     @Test
-    public void testDefaultContentTestEmpty() {
+    public void testDefaultContentTestEmpty() throws GeneralSecurityException {
         testDefaultContent("secret-key-credential-store", "testEmpty", null, -1);
     }
 
     @Test
-    public void testDefaultContentTest128() {
+    public void testDefaultContentTest128() throws GeneralSecurityException {
         testDefaultContent("secret-key-credential-store", "test128", "key", 128);
     }
 
     @Test
-    public void testDefaultContentTest192() {
+    public void testDefaultContentTest192() throws GeneralSecurityException {
         testDefaultContent("secret-key-credential-store", "test192", "192", 192);
     }
 
     @Test
-    public void testDefaultContentTest256() {
+    public void testDefaultContentTest256() throws GeneralSecurityException {
         testDefaultContent("secret-key-credential-store", "test256", "key", 256);
     }
 
-    private void testDefaultContent(final String storeType, final String storeName, String expectedAlias, int expectedKeySize) {
+    private void testDefaultContent(final String storeType, final String storeName, String expectedAlias, int expectedKeySize) throws GeneralSecurityException {
         // First Check The Default Aliases
         ModelNode readAliases = new ModelNode();
         readAliases.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(storeType, storeName);
@@ -145,7 +146,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
     // Add SecretKey Flow for secret-key-credential-store but take into account the resource also has a default key size.
 
     @Test
-    public void testSecretKeyFlowDefault() {
+    public void testSecretKeyFlowDefault() throws GeneralSecurityException {
         testSecretKeyGenerateExportImport("credential-store", "test", 256, true, true);
         testSecretKeyGenerateExportImport("secret-key-credential-store", "test128", 128, true, false);
         testSecretKeyGenerateExportImport("secret-key-credential-store", "test192", 192, true, false);
@@ -153,28 +154,28 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
     }
 
     @Test
-    public void testSecretKeyFlow128() {
+    public void testSecretKeyFlow128() throws GeneralSecurityException {
         testSecretKeyGenerateExportImport("credential-store", "test", 128, false, true);
         // Use a store which does not default to 128 bits.
         testSecretKeyGenerateExportImport("secret-key-credential-store", "test256", 128, false, false);
     }
 
     @Test
-    public void testSecretKeyFlow192() {
+    public void testSecretKeyFlow192() throws GeneralSecurityException {
         testSecretKeyGenerateExportImport("credential-store", "test", 192, false, true);
         // Use a store which does not default to 192 bits.
         testSecretKeyGenerateExportImport("secret-key-credential-store", "test256", 192, false, false);
     }
 
     @Test
-    public void testSecretKeyFlow256() {
+    public void testSecretKeyFlow256() throws GeneralSecurityException {
         testSecretKeyGenerateExportImport("credential-store", "test", 256, false, true);
         // Use a store which does not default to 256 bits.
         testSecretKeyGenerateExportImport("secret-key-credential-store", "test128", 256, false, false);
     }
 
     private void testSecretKeyGenerateExportImport(final String storeType, final String storeName, final int keySize,
-            boolean omitKeySize, boolean entryTypeRequired) {
+            boolean omitKeySize, boolean entryTypeRequired) throws GeneralSecurityException {
         final String alias = "test";
 
         // Generate and store a new SecretKey using the specified keySize.

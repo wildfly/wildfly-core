@@ -27,7 +27,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 
 import java.io.File;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -62,7 +62,6 @@ import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
-import org.wildfly.security.credential.store.CredentialStoreException;
 
 /**
  * A resource definitions for a simple credential store which just supports the storage of
@@ -332,7 +331,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                     }
 
                     return credentialStore;
-                } catch (NoSuchAlgorithmException | CredentialStoreException e) {
+                } catch (GeneralSecurityException e) {
                     throw ROOT_LOGGER.unableToStartService(e);
                 }
             });

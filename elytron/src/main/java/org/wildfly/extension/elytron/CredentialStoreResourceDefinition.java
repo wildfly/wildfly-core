@@ -31,6 +31,7 @@ import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
 import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
+import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -498,7 +499,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                         SecretKey secretKey = generateSecretKey(keySize);
                         storeSecretKey(credentialStore, alias, secretKey);
 
-                    } catch (CredentialStoreException e) {
+                    } catch (GeneralSecurityException e) {
                         throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
@@ -511,7 +512,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                         String exportedKey = exportSecretKey(secretKey);
 
                         result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
-                    } catch (CredentialStoreException e) {
+                    } catch (GeneralSecurityException e) {
                         throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
@@ -525,7 +526,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                         CredentialStore credentialStore = credentialStoreService.getValue();
                         storeSecretKey(credentialStore, alias, secretKey);
 
-                    } catch (CredentialStoreException e) {
+                    } catch (GeneralSecurityException e) {
                         throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
                     }
                     break;
