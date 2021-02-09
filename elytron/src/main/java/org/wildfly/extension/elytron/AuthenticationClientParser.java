@@ -39,6 +39,12 @@ class AuthenticationClientParser {
             .addAttributes(AuthenticationClientDefinitions.AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES)
             .addAttribute(AuthenticationClientDefinitions.MECHANISM_PROPERTIES, AttributeParser.PROPERTIES_PARSER, AttributeMarshaller.PROPERTIES_MARSHALLER)
             .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getMarshaller())
+            .build();
+
+    private final PersistentResourceXMLDescription authenticationConfigurationParser_9_0 = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION), null)
+            .addAttributes(AuthenticationClientDefinitions.AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES)
+            .addAttribute(AuthenticationClientDefinitions.MECHANISM_PROPERTIES, AttributeParser.PROPERTIES_PARSER, AttributeMarshaller.PROPERTIES_MARSHALLER)
+            .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getMarshaller())
             .addAttribute(AuthenticationClientDefinitions.WEBSERVICES)
             .build();
 
@@ -46,10 +52,15 @@ class AuthenticationClientParser {
             .addAttribute(AuthenticationClientDefinitions.CONTEXT_EXTENDS)
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
+
     final PersistentResourceXMLDescription parser = decorator(ElytronDescriptionConstants.AUTHENTICATION_CLIENT)
             .addChild(authenticationConfigurationParser)
             .addChild(authenticationContextParser)
             .build();
 
+    final PersistentResourceXMLDescription parser_9_0 = decorator(ElytronDescriptionConstants.AUTHENTICATION_CLIENT)
+            .addChild(authenticationConfigurationParser_9_0)
+            .addChild(authenticationContextParser)
+            .build();
 
 }

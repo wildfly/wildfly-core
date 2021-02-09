@@ -19,6 +19,7 @@ package org.wildfly.extension.elytron;
 import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECTED_RESOURCE;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_3_0;
 import static org.junit.Assert.assertTrue;
 
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
@@ -61,13 +62,16 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("elytron-transformers-4.0.xml");
+        return readResource("elytron-transformers-8.0.xml");
     }
 
     protected String getSubsystemXml(final String subsystemFile) throws IOException {
         return readResource(subsystemFile);
     }
 
+    /**
+     * Test case testing resources and attributes are appropriately rejected when transforming to EAP 7.1.
+     */
     @Test
     public void testRejectingTransformersEAP710() throws Exception {
         testRejectingTransformers(EAP_7_1_0, "elytron-transformers-1.2-reject.xml", new FailedOperationTransformationConfig()
@@ -91,33 +95,20 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 ));
     }
 
+    /**
+     * Test case testing resources and attributes are appropriately rejected when transforming to EAP 7.2.
+     */
     @Test
     public void testRejectingTransformersEAP720() throws Exception {
         testRejectingTransformers(EAP_7_2_0, "elytron-transformers-4.0-reject.xml", new FailedOperationTransformationConfig()
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.AUTHENTICATION_CONFIGURATION, "authWithCredentialReference")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE, "test.keystore")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER, "key2")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CERTIFICATE_AUTHORITY_ACCOUNT, "testCAA2")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE, "store2")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT, "dirContext")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER, "ipRoleDecoder")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER, "regexRoleDecoder")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER, "aggregateRoleDecoder")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN, "AggregateDomain")),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(DomainDefinition.ROLE_DECODER))
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT)),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT)),
-                        new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.X500_SUBJECT_EVIDENCE_DECODER, "subjectDecoder")),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.X509_SUBJECT_ALT_NAME_EVIDENCE_DECODER, "rfc822Decoder")),
@@ -180,24 +171,64 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(AGGREGATE_REALM, "AggregateTwo")), REJECTED_RESOURCE)
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.WEBSERVICES)),
                         FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, "RegexRoleMapper")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(DISTRIBUTED_REALM, "DistributedRealm")), REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(FAILOVER_REALM, "FailoverRealm")), REJECTED_RESOURCE)
-                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER, "LazyKeyManager")),
-                        FailedOperationTransformationConfig.REJECTED_RESOURCE
-                )
                 );
     }
 
+    /**
+     * Test case testing resources and attributes are appropriately rejected when transforming to EAP 7.3.
+     */
+    @Test
+    public void testRejectingTransformersEAP730() throws Exception {
+        testRejectingTransformers(EAP_7_3_0, "elytron-transformers-8.0-reject.xml", new FailedOperationTransformationConfig()
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE, "store2")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN, "AggregateDomain")),
+                    new FailedOperationTransformationConfig.NewAttributesConfig(DomainDefinition.ROLE_DECODER))
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER, "aggregateRoleDecoder")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER, "ipRoleDecoder")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SOURCE_ADDRESS_ROLE_DECODER, "regexRoleDecoder")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(FAILOVER_REALM, "FailoverRealm")), REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(DISTRIBUTED_REALM, "DistributedRealm")), REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.REGEX_ROLE_MAPPER, "RegexRoleMapper")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER, "CasePrincipalTransformer")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE, "test.keystore")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.KEY_MANAGER, "LazyKeyManager")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT)),
+                    new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT)),
+                    new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
+        );
+    }
+
+    /**
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.1.
+     */
     @Test
     public void testTransformerEAP710() throws Exception {
         testTransformation(EAP_7_1_0, getSubsystemXml("elytron-transformers-1.2.xml"));
     }
 
+    /**
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.2.
+     */
     @Test
     public void testTransformerEAP720() throws Exception {
-        testTransformation(EAP_7_2_0);
+        testTransformation(EAP_7_2_0, getSubsystemXml("elytron-transformers-4.0.xml"));
+    }
+
+    /**
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.3.
+     */
+    @Test
+    public void testTransformerEAP730() throws Exception {
+        testTransformation(EAP_7_3_0);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {

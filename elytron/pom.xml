@@ -319,11 +319,12 @@
                             </includes>
                             <excludes>
                                 <exclude>*-1.*.xml</exclude>
+                                <exclude>*-4.*.xml</exclude>
                                 <exclude>custom-policies.xml</exclude>
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>
                             </excludes>
-                            <systemId>src/main/resources/schema/wildfly-elytron_12_0.xsd</systemId>
+                            <systemId>src/main/resources/schema/wildfly-elytron_13_0.xsd</systemId>
                         </validationSet>
                         <validationSet>
                             <dir>src/main/resources/subsystem-templates</dir>

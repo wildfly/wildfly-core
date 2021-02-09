@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2019 Red Hat, Inc., and individual contributors
+ * Copyright 2021 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,30 +18,17 @@
 
 package org.wildfly.extension.elytron;
 
-import org.jboss.as.controller.PersistentResourceXMLDescription;
-
 /**
  * The subsystem parser, which uses stax to read and write to and from xml.
  *
- * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
- * @since 11.0
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @since 15.0
  */
-public class ElytronSubsystemParser9_0 extends ElytronSubsystemParser8_0 {
+public class ElytronSubsystemParser13_0 extends ElytronSubsystemParser12_0 {
 
     @Override
     String getNameSpace() {
-        return ElytronExtension.NAMESPACE_9_0;
-    }
-
-
-    @Override
-    PersistentResourceXMLDescription getAuthenticationClientParser() {
-        return new AuthenticationClientParser().parser_9_0;
-    }
-
-
-    PersistentResourceXMLDescription getTlsParser() {
-        return new TlsParser().tlsParser_9_0;
+        return ElytronExtension.NAMESPACE_13_0;
     }
 
 }

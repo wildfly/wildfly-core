@@ -1,3 +1,7 @@
+<!-- 
+    Configuration to test transforming the model from 4.0 (WildFly 14 / EAP 7.2) to 1.2 (WildFly 11 / EAP 7.1)
+ -->
+
 <subsystem xmlns="urn:wildfly:elytron:4.0">
     <authentication-client>
         <authentication-configuration name="base" anonymous="true" />
