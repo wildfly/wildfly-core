@@ -42,6 +42,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.credential.SecretKeyCredential;
+import org.wildfly.security.encryption.CipherUtil;
 
 /**
  * Test case testing operations against a credential store using the management operations.
@@ -52,6 +53,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
 
     private static final Provider PROVIDER = new WildFlyElytronProvider();
 
+    private static final String CLEAR_TEXT = "Lorem ipsum dolor sit amet";
     private static final String CONFIGURATION = "credential-store.xml";
 
     private KernelServices services = null;
@@ -242,6 +244,43 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         }
         remove2.get(ElytronDescriptionConstants.ALIAS).set(importAlias);
         assertSuccess(services.executeOperation(remove2));
+    }
+
+    @Test
+    public void testCreateExpression() throws Exception {
+        // First obtain the generated SecretKey as we will want this to test any expressions can be decrypted.
+        ModelNode export = new ModelNode();
+        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("secret-key-credential-store", "test256");
+        export.get(ClientConstants.OP).set("export-secret-key");
+        export.get(ElytronDescriptionConstants.ALIAS).set("key");
+        ModelNode exportResult = assertSuccess(services.executeOperation(export));
+
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
+
+        SecretKey secretKey = importSecretKey(key);
+
+        ModelNode createExpression = new ModelNode();
+        createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("expression", "encryption");
+        createExpression.get(ClientConstants.OP).set("create-expression");
+        createExpression.get(ElytronDescriptionConstants.RESOLVER).set("A");
+        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+        ModelNode createExpressionResult = assertSuccess(services.executeOperation(createExpression));
+
+        String expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
+        assertEquals("Expected Expression Prefix", "${CIPHER::A:", expression.substring(0, 12));
+        String cipherTextToken = expression.substring(12, expression.length() - 1);
+        assertEquals("Decrypted value", CLEAR_TEXT, CipherUtil.decrypt(cipherTextToken, secretKey));
+
+        createExpression = new ModelNode();
+        createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add("expression", "encryption");
+        createExpression.get(ClientConstants.OP).set("create-expression");
+        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+        createExpressionResult = assertSuccess(services.executeOperation(createExpression));
+
+        expression = createExpressionResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
+        assertEquals("Expected Expression Prefix", "${CIPHER::", expression.substring(0, 10));
+        cipherTextToken = expression.substring(10, expression.length() - 1);
+        assertEquals("Decrypted value", CLEAR_TEXT, CipherUtil.decrypt(cipherTextToken, secretKey));
     }
 
     private ModelNode assertSuccess(ModelNode response) {
