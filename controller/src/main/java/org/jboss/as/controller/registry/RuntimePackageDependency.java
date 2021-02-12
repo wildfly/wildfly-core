@@ -21,7 +21,8 @@
  */
 package org.jboss.as.controller.registry;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 
 /**
  * A runtime package dependency expresses a dependency to a galleon package. A
@@ -43,10 +44,8 @@ public final class RuntimePackageDependency {
     private final TYPE type;
 
     private RuntimePackageDependency(String name, TYPE type) {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(type);
-        this.name = name;
-        this.type = type;
+        this.name = checkNotNullParamWithNullPointerException("name", name);
+        this.type = checkNotNullParamWithNullPointerException("type", type);
     }
 
     /**

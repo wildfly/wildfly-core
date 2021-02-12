@@ -55,7 +55,8 @@ final class Arguments {
     private Path deployment;
 
     static Arguments parseArguments(final List<String> args, final BootableEnvironment environment) throws Exception {
-        Objects.requireNonNull(args);
+        Objects.requireNonNull(args, "Parameter args cannot be null");
+        Objects.requireNonNull(environment, "Parameter environment cannot be null");
         Arguments arguments = new Arguments(environment);
         arguments.handleArguments(args);
         return arguments;

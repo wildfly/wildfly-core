@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,7 +41,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -834,7 +835,7 @@ public class Util {
     }
 
     public static List<String> getDeploymentRuntimeNames(ModelControllerClient client) {
-        Objects.requireNonNull(client);
+        checkNotNullParamWithNullPointerException("client", client);
         final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
         final ModelNode request;
         try {
@@ -1843,7 +1844,7 @@ public class Util {
      * @return A single line containing the multi lines ModelNode.toString() content.
      */
     public static String compactToString(ModelNode node) {
-        Objects.requireNonNull(node);
+        checkNotNullParamWithNullPointerException("node", node);
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter writer = new PrintWriter(stringWriter, true);
         node.writeString(writer, true);

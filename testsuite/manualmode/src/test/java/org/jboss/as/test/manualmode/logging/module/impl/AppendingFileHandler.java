@@ -50,7 +50,7 @@ public class AppendingFileHandler extends Handler {
     public void publish(final LogRecord record) {
         if (isLoggable(record)) {
             synchronized (lock) {
-                final String text = Objects.requireNonNull(resolver).resolve(PROPERTY_KEY);
+                final String text = Objects.requireNonNull(resolver, "resolver cannot be null").resolve(PROPERTY_KEY);
                 record.setMessage(record.getMessage() + text);
                 final String line = getFormatter().format(record);
                 try {

@@ -16,13 +16,13 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -49,7 +49,7 @@ public class SimpleConfigurableSaslServerFactory extends AbstractConfigurableEle
         this.filters = builder.filters;
         this.properties = builder.properties;
         this.protocol = builder.protocol;
-        this.saslServerFactory = Objects.requireNonNull(builder.saslServerFactory, "saslServerFactory must not be null");
+        this.saslServerFactory = checkNotNullParamWithNullPointerException("builder.saslServerFactory", builder.saslServerFactory);
         this.serverName = builder.serverName;
     }
 

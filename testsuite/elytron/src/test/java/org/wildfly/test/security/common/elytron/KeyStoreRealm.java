@@ -16,7 +16,7 @@
 package org.wildfly.test.security.common.elytron;
 
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
@@ -32,7 +32,7 @@ public class KeyStoreRealm extends AbstractConfigurableElement {
 
     private KeyStoreRealm(Builder builder) {
         super(builder);
-        this.keyStore = Objects.requireNonNull(builder.keyStore, "Key-store name has to be provided");
+        this.keyStore = checkNotNullParamWithNullPointerException("builder.keyStore", builder.keyStore);
     }
 
     @Override

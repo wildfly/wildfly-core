@@ -16,7 +16,7 @@
 
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -39,7 +39,7 @@ public class ConstantRoleMapper extends AbstractConfigurableElement {
 
     private ConstantRoleMapper(Builder builder) {
         super(builder);
-        this.roles = Objects.requireNonNull(builder.roles, "Roles must be provided");
+        this.roles = checkNotNullParamWithNullPointerException("builder.roles", builder.roles);
     }
 
     @Override

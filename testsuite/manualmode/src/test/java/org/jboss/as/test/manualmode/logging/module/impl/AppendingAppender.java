@@ -63,7 +63,7 @@ public class AppendingAppender extends AppenderSkeleton {
     protected void append(final LoggingEvent event) {
         if (isAsSevereAsThreshold(event.getLevel())) {
             synchronized (lock) {
-                final String text = Objects.requireNonNull(resolver).resolve(PROPERTY_KEY);
+                final String text = Objects.requireNonNull(resolver, "resolver cannot be null").resolve(PROPERTY_KEY);
                 final LoggingEvent changed = new LoggingEvent(event.getFQNOfLoggerClass(), event.getLogger(),
                         event.getTimeStamp(), event.getLevel(), event.getMessage() + text, event.getThreadName(),
                         event.getThrowableInformation(), event.getNDC(), event.getLocationInformation(), event.getProperties());

@@ -21,8 +21,10 @@
  */
 package org.jboss.as.cli;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.List;
-import java.util.Objects;
+
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -35,11 +37,8 @@ public final class RequestWithAttachments {
     private final ModelNode request;
 
     public RequestWithAttachments(ModelNode request, Attachments attachments) {
-        Objects.requireNonNull(request);
-        Objects.requireNonNull(attachments);
-
-        this.request = request;
-        this.attachments = attachments;
+        this.request = checkNotNullParamWithNullPointerException("request", request);
+        this.attachments = checkNotNullParamWithNullPointerException("attachments", attachments);
     }
 
     public ModelNode getRequest() {

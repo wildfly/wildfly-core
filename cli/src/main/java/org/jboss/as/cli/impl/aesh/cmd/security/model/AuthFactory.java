@@ -15,10 +15,12 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+
 
 /**
  * Models an authentication factory.
@@ -33,12 +35,9 @@ public class AuthFactory {
     private final AuthFactorySpec spec;
 
     public AuthFactory(String name, SecurityDomain domain, AuthFactorySpec spec) {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(domain);
-        Objects.requireNonNull(spec);
-        this.name = name;
-        this.domain = domain;
-        this.spec = spec;
+        this.name = checkNotNullParamWithNullPointerException("name", name);
+        this.domain = checkNotNullParamWithNullPointerException("domain", domain);
+        this.spec = checkNotNullParamWithNullPointerException("spec", spec);
     }
 
     public AuthFactorySpec getSpec() {
@@ -60,7 +59,7 @@ public class AuthFactory {
     }
 
     public void addMechanism(AuthMechanism mec) {
-        Objects.requireNonNull(mec);
+        checkNotNullParamWithNullPointerException("mec", mec);
         mechanisms.add(mec);
     }
 

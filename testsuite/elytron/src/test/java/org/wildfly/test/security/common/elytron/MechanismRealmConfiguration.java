@@ -16,9 +16,8 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
-
-import java.util.Objects;
 
 import org.jboss.dmr.ModelNode;
 
@@ -33,7 +32,7 @@ public class MechanismRealmConfiguration extends AbstractMechanismConfiguration 
 
     private MechanismRealmConfiguration(Builder builder) {
         super(builder);
-        this.realmName = Objects.requireNonNull(builder.realmName, "Realm name must not be null.");
+        this.realmName = checkNotNullParamWithNullPointerException("builder.realmName", builder.realmName);
     }
 
     public String getRealmName() {

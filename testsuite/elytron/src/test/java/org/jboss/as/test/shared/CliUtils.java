@@ -16,7 +16,7 @@
 
 package org.jboss.as.test.shared;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 /**
  * CLI helper methods.
@@ -32,6 +32,6 @@ public class CliUtils {
      * @return escaped path
      */
     public static String escapePath(String path) {
-        return Objects.requireNonNull(path, "Path to escape can't be null.").replace("\\", "\\\\");
+        return checkNotNullParamWithNullPointerException("path", path).replace("\\", "\\\\");
     }
 }
