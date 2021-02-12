@@ -17,7 +17,16 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.EXPRESSION_RESOLVER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.encryption.CipherUtil.encrypt;
+
+import java.security.GeneralSecurityException;
+import java.util.function.Supplier;
+
+import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -29,10 +38,13 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -42,6 +54,9 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver;
+import org.wildfly.security.credential.SecretKeyCredential;
+import org.wildfly.security.credential.store.CredentialStore;
+import org.wildfly.security.credential.store.CredentialStoreException;
 
 /**
  * The {@link ResourceDefinition} for the expression resolver resource.
@@ -105,6 +120,21 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {RESOLVERS, DEFAULT_RESOLVER, PREFIX};
 
+    // Operation and Parameters
+
+    static final SimpleAttributeDefinition RESOLVER_PARAM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESOLVER, ModelType.STRING, true)
+            .setMinSize(1)
+            .build();
+
+    static final SimpleAttributeDefinition CLEAR_TEXT = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CLEAR_TEXT, ModelType.STRING, false)
+            .setMinSize(1)
+            .build();
+
+    static final SimpleOperationDefinition CREATE_EXPRESSION = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.CREATE_EXPRESSION, RESOURCE_RESOLVER)
+            .setParameters(RESOLVER_PARAM, CLEAR_TEXT)
+            .setRuntimeOnly()
+            .build();
+
     private final ElytronExpressionResolver expressionResolver;
 
     ExpressionResolverResourceDefinition(OperationStepHandler add, OperationStepHandler remove,
@@ -125,6 +155,14 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
         OperationStepHandler write = new ElytronReloadRequiredWriteAttributeHandler(ATTRIBUTES);
         for (AttributeDefinition current : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, write);
+        }
+    }
+
+    @Override
+    public void registerOperations(ManagementResourceRegistration resourceRegistration) {
+        super.registerOperations(resourceRegistration); // Needed for add / remove.
+        if (isServerOrHostController(resourceRegistration)) {
+            resourceRegistration.registerOperationHandler(CREATE_EXPRESSION, new CreateExpressionHandler());
         }
     }
 
@@ -153,4 +191,64 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
         }
 
     }
+
+    private static class CreateExpressionHandler extends ElytronRuntimeOnlyHandler {
+
+        @Override
+        protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+            String resolver = RESOLVER_PARAM.resolveModelAttribute(context, operation).asStringOrNull();
+            String clearText = CLEAR_TEXT.resolveModelAttribute(context, operation).asString();
+
+            ModelNode expressionEncryption = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
+            String prefix = PREFIX.resolveModelAttribute(context, expressionEncryption).asString();
+            boolean defaultResolver = false;
+            if (resolver == null) {
+                resolver = DEFAULT_RESOLVER.resolveModelAttribute(context, expressionEncryption).asStringOrNull();
+                defaultResolver = true;
+                if (resolver == null) {
+                    throw ROOT_LOGGER.noResolverSpecifiedAndNoDefault();
+                }
+            }
+
+            String credentialStoreName = null;
+            String alias = null;
+            for (ModelNode currentResolver : RESOLVERS.resolveModelAttribute(context, expressionEncryption).asList()) {
+                String name = NAME.resolveModelAttribute(context, currentResolver).asString();
+                if (name.equals(resolver)) {
+                    credentialStoreName = CREDENTIAL_STORE.resolveModelAttribute(context, currentResolver).asString();
+                    alias = SECRET_KEY.resolveModelAttribute(context, currentResolver).asString();
+                    break;
+                }
+            }
+
+            if (credentialStoreName == null || alias == null) {
+                throw ROOT_LOGGER.noResolverWithSpecifiedName(resolver);
+            }
+
+            Supplier<CredentialStore> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
+                    credentialStoreName, Supplier.class);
+            CredentialStore credentialStore = credentialStoreApi.get();
+            SecretKey secretKey;
+            try {
+                SecretKeyCredential credential = credentialStore.retrieve(alias, SecretKeyCredential.class);
+                secretKey = credential.getSecretKey();
+            } catch (CredentialStoreException e) {
+                throw ROOT_LOGGER.unableToLoadCredential(e);
+            }
+
+            String cipherTextToken;
+            try {
+                cipherTextToken = encrypt(clearText, secretKey);
+            } catch (GeneralSecurityException e) {
+                throw ROOT_LOGGER.unableToEncryptClearText(e);
+            }
+
+            String expression = defaultResolver ? String.format("${%s::%s}", prefix, cipherTextToken)
+                    : String.format("${%s::%s:%s}", prefix, resolver, cipherTextToken);
+
+            context.getResult().get(ElytronDescriptionConstants.EXPRESSION).set(expression);
+        }
+
+    }
+
 }

@@ -111,6 +111,7 @@ interface ElytronDescriptionConstants {
     String CLEAR = "clear";
     String CLEAR_CACHE = "clear-cache";
     String CLEAR_PASSWORD_MAPPER = "clear-password-mapper";
+    String CLEAR_TEXT = "clear-text";
     String CLIENT_ID = "client-id";
     String CLIENT_SECRET = "client-secret";
     String CLIENT_SSL_CONTEXT = "client-ssl-context";
@@ -133,6 +134,7 @@ interface ElytronDescriptionConstants {
     String CONVERT = "convert";
     String CREATE = "create";
     String CREATE_ACCOUNT = "create-account";
+    String CREATE_EXPRESSION = "create-expression";
     String CREATION_DATE = "creation-date";
     String CREATION_TIME = "creation-time";
     String CREDENTIAL = "credential";

@@ -609,4 +609,18 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1085, value = "Generated self-signed certificate at %s. Please note that self-signed certificates are not secure and should only be used for testing purposes. Do not use this self-signed certificate in production.\nSHA-1 fingerprint of the generated key is %s\nSHA-256 fingerprint of the generated key is %s")
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
+
+    @Message(id = 1086, value = "The name of the resolver to use was not specified and no default-resolver has been defined.")
+    OperationFailedException noResolverSpecifiedAndNoDefault();
+
+    @Message(id = 1087, value = "No expression resolver has been defined with the name '%s'.")
+    OperationFailedException noResolverWithSpecifiedName(String name);
+
+    @Message(id = 1088, value = "Unable to load credential from credential store.")
+    OperationFailedException unableToLoadCredential(@Cause Throwable cause);
+
+    @Message(id = 1089, value = "Unable to encrypt the supplied clear text.")
+    OperationFailedException unableToEncryptClearText(@Cause Throwable cause);
+
+
 }
