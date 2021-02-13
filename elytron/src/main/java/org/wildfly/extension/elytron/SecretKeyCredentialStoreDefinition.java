@@ -16,9 +16,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -30,7 +28,6 @@ import java.io.File;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.crypto.SecretKey;
@@ -39,7 +36,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
@@ -48,18 +44,13 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.StartException;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 
@@ -176,6 +167,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
         boolean isServerOrHostController = isServerOrHostController(resourceRegistration);
         Map<String, CredentialStoreRuntimeOperation> operationMethods = new HashMap<>();
+
         operationMethods.put(ElytronDescriptionConstants.READ_ALIASES, this::readAliasesOperation);
         if (isServerOrHostController) {
             operationMethods.put(ElytronDescriptionConstants.REMOVE_ALIAS, this::removeAliasOperation);
@@ -184,7 +176,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             operationMethods.put(ElytronDescriptionConstants.IMPORT_SECRET_KEY, this::importSecretKeyOperation);
         }
 
-        OperationStepHandler operationHandler = new SecretKeyCredentialStoreRuntimeHandler(operationMethods);
+        OperationStepHandler operationHandler = new CredentialStoreRuntimeHandler(operationMethods);
         resourceRegistration.registerOperationHandler(READ_ALIASES, operationHandler);
         if (isServerOrHostController) {
             resourceRegistration.registerOperationHandler(REMOVE_ALIAS, operationHandler);
@@ -217,78 +209,23 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         generateSecretKeyOperation(context, operation, credentialStore, keySize);
     }
 
-
-
-    class SecretKeyCredentialStoreRuntimeHandler extends CredentialStoreRuntimeHandler {
-
-        protected SecretKeyCredentialStoreRuntimeHandler(Map<String, CredentialStoreRuntimeOperation> definedOperations) {
-            super(definedOperations);
-        }
-
-        @Override
-        protected CredentialStore getCredentialStore(OperationContext context) throws OperationFailedException {
-            final Supplier<CredentialStore> credentialStoreApi = context
-                    .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, context.getCurrentAddressValue(), Supplier.class);
-
-            return credentialStoreApi.get();
-        }
-
-    }
-
-    private static class RutimeApiMapper {
-
-        private final Map<String, Consumer<Supplier<CredentialStore>>> mapping = new HashMap<>();
-
-        void require(final String name, final Consumer<Supplier<CredentialStore>> consumer) {
-            mapping.put(name, consumer);
-        }
-
-        void provide(final String name, Supplier<CredentialStore> supplier) {
-            Consumer<Supplier<CredentialStore>> consumer = mapping.remove(name);
-            consumer.accept(supplier);
-        }
-
-    }
-
-    private static class SecretKeyCredentialStoreAddHandler extends BaseAddHandler {
-
-        private static final AttachmentKey<RutimeApiMapper> API_MAPPER_KEY = AttachmentKey.create(RutimeApiMapper.class);
+    static class SecretKeyCredentialStoreAddHandler extends BaseCredentialStoreAddHandler {
 
         private SecretKeyCredentialStoreAddHandler() {
             super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
         }
 
-        @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
-            // Just add one capability to allow access to the CredentialStore using the runtime API.
-            RutimeApiMapper apiMapper = context.getAttachment(API_MAPPER_KEY);
-            if (apiMapper == null) {
-                apiMapper = new RutimeApiMapper();
-                context.attach(API_MAPPER_KEY, apiMapper);
-            }
-
-            CredentialStoreSupplier credentialStoreSupplier = new CredentialStoreSupplier();
-            context.registerCapability(RuntimeCapability.Builder
-                    .<Supplier<CredentialStore>>of(CREDENTIAL_STORE_API_CAPABILITY, true, credentialStoreSupplier).build()
-                    .fromBaseCapability(context.getCurrentAddressValue()));
-            apiMapper.require(context.getCurrentAddressValue(), credentialStoreSupplier::setDelegate);
-        }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            final String name = context.getCurrentAddressValue();
+        protected OneTimeValueSupplier createCredentialStoreSupplier(CapabilityServiceBuilder<?> serviceBuilder,
+                OperationContext context, ModelNode model) throws OperationFailedException {
 
-            ModelNode model = resource.getModel();
             final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
             final String path = PATH.resolveModelAttribute(context, model).asString();
             final boolean create = CREATE.resolveModelAttribute(context, model).asBoolean();
             final boolean populate = POPULATE.resolveModelAttribute(context, model).asBoolean();
             final int keySize = KEY_SIZE.resolveModelAttribute(context, model).asInt();
             final String defaultAlias = DEFAULT_ALIAS.resolveModelAttribute(context, model).asString();
-
-            CapabilityServiceBuilder<?> serviceBuilder = context.getCapabilityServiceTarget().addCapability(CREDENTIAL_STORE_RUNTIME_CAPABILITY);
 
             final Supplier<PathManagerService> pathManager;
             if (relativeTo != null) {
@@ -298,12 +235,6 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                 pathManager = null;
             }
 
-            Consumer<CredentialStore> valueConsumer = serviceBuilder.provides(CREDENTIAL_STORE_RUNTIME_CAPABILITY); // Does this
-                                                                                                                    // take into
-                                                                                                                    // account
-                                                                                                                    // the
-                                                                                                                    // dynamic
-                                                                                                                    // portion?
             final OneTimeValueSupplier oneTimeSupplier = new OneTimeValueSupplier(() -> {
                 try {
                     CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
@@ -335,43 +266,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                     throw ROOT_LOGGER.unableToStartService(e);
                 }
             });
-            final TrivialService<CredentialStore> trivialService = new TrivialService<>(oneTimeSupplier, valueConsumer);
 
-            context.getAttachment(API_MAPPER_KEY).provide(context.getCurrentAddressValue(), oneTimeSupplier::getUnchecked);
-
-            commonDependencies(serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService)).install();
-        }
-
-    }
-
-    private static class OneTimeValueSupplier implements ValueSupplier<CredentialStore> {
-
-        private final ValueSupplier<CredentialStore> rawSupplier;
-        private volatile CredentialStore value = null;
-
-        OneTimeValueSupplier(ValueSupplier<CredentialStore> rawSupplier) {
-            this.rawSupplier = rawSupplier;
-        }
-
-        @Override
-        public CredentialStore get() throws StartException {
-            if (value == null) {
-                synchronized(this) {
-                    if (value == null) {
-                        value = rawSupplier.get();
-                    }
-                }
-            }
-
-            return value;
-        }
-
-        public CredentialStore getUnchecked() {
-            try {
-                return get();
-            } catch (StartException e) {
-                throw new IllegalStateException(e);
-            }
+            return oneTimeSupplier;
         }
 
     }

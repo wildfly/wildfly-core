@@ -23,30 +23,26 @@ import static org.jboss.as.controller.security.CredentialReference.rollbackCrede
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.security.encryption.SecretKeyUtil.exportSecretKey;
-import static org.wildfly.security.encryption.SecretKeyUtil.generateSecretKey;
-import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
-import java.security.GeneralSecurityException;
+import java.io.File;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
-import javax.crypto.SecretKey;
-
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -66,20 +62,20 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.security.CredentialReference;
-import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.Mode;
-import org.jboss.msc.service.ServiceController.State;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
+import org.wildfly.security.EmptyProvider;
+import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
+import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
 import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
@@ -94,8 +90,6 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
     // KeyStore backed credential store supported attributes
     private static final String CS_KEY_STORE_TYPE_ATTRIBUTE = "keyStoreType";
     private static final List<String> filebasedKeystoreTypes = Collections.unmodifiableList(Arrays.asList("JKS", "JCEKS", "PKCS12"));
-
-
 
     static final SimpleAttributeDefinition LOCATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOCATION, ModelType.STRING, true)
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
@@ -258,20 +252,102 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
-        super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(RELOAD, CredentialStoreHandler.INSTANCE);
-        resourceRegistration.registerOperationHandler(READ_ALIASES, CredentialStoreReadAliasesHandler.INSTANCE);
-        if (isServerOrHostController(resourceRegistration)) {
-            resourceRegistration.registerOperationHandler(ADD_ALIAS, CredentialStoreHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(REMOVE_ALIAS, CredentialStoreHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(SET_SECRET, CredentialStoreHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, CredentialStoreHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, CredentialStoreHandler.INSTANCE);
-            resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, CredentialStoreHandler.INSTANCE);
+        super.registerOperations(resourceRegistration); // Always needed to register add / remove.
+
+        boolean isServerOrHostController = isServerOrHostController(resourceRegistration);
+        Map<String, CredentialStoreRuntimeOperation> operationMethods = new HashMap<>();
+
+        operationMethods.put(ElytronDescriptionConstants.READ_ALIASES, this::readAliasesOperation);
+        if (isServerOrHostController) {
+            operationMethods.put(ElytronDescriptionConstants.ADD_ALIAS, this::addAliasOperation);
+            operationMethods.put(ElytronDescriptionConstants.REMOVE_ALIAS, this::removeAliasOperation);
+            operationMethods.put(ElytronDescriptionConstants.SET_SECRET, this::setSecretOperation);
+            operationMethods.put(ElytronDescriptionConstants.EXPORT_SECRET_KEY, this::exportSecretKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.GENERATE_SECRET_KEY, this::generateSecretKeyOperation);
+            operationMethods.put(ElytronDescriptionConstants.IMPORT_SECRET_KEY, this::importSecretKeyOperation);
+        }
+
+        OperationStepHandler operationHandler = new CredentialStoreRuntimeHandler(operationMethods);
+        resourceRegistration.registerOperationHandler(READ_ALIASES, operationHandler); // MAPPED
+        if (isServerOrHostController) {
+            resourceRegistration.registerOperationHandler(ADD_ALIAS, operationHandler); // Mapped
+            resourceRegistration.registerOperationHandler(REMOVE_ALIAS, operationHandler); // Mapped
+            resourceRegistration.registerOperationHandler(SET_SECRET, operationHandler); // Mapped
+            resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, operationHandler);
+            resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, operationHandler);
+            resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, operationHandler);
+        }
+
+     // TODO - Need to add reload but TBH the original implementation on CredentialStoreResourceDefinition is not great.
+        //resourceRegistration.registerOperationHandler(RELOAD, CredentialStoreHandler.INSTANCE);
+    }
+
+    /*
+     * Operation Handler Methods
+     */
+
+    void addAliasOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        try {
+            try {
+                String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+                String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
+                if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
+                    if (credentialStore.exists(alias, PasswordCredential.class)) {
+                        throw ROOT_LOGGER.credentialAlreadyExists(alias, PasswordCredential.class.getName());
+                    }
+                    storeSecret(credentialStore, alias, secretValue);
+                } else {
+                    String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
+                    throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
+                }
+            } catch (CredentialStoreException e) {
+                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+            }
+        } catch (RuntimeException e) {
+            throw new OperationFailedException(e);
         }
     }
 
-    private static class CredentialStoreAddHandler extends BaseAddHandler {
+    void removeAliasOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        String entryType = REMOVE_ENTRY_TYPE.resolveModelAttribute(context, operation).asString();
+        Class<? extends Credential> credentialType = fromEntryType(entryType);
+
+        super.removeAliasOperation(context, operation, credentialStore, credentialType);
+    }
+
+    void setSecretOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        try {
+            try {
+                String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+                String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
+                String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
+
+                if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
+                    if ( ! credentialStore.exists(alias, PasswordCredential.class)) {
+                        throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
+                    }
+                    storeSecret(credentialStore, alias, secretValue);
+                    context.addResponseWarning(Level.WARNING, ROOT_LOGGER.reloadDependantServices());
+                } else {
+                    String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
+                    throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
+                }
+            } catch (CredentialStoreException e) {
+                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+            }
+        } catch (RuntimeException e) {
+            throw new OperationFailedException(e);
+        }
+    }
+
+    protected void generateSecretKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException {
+        final int keySize = KEY_SIZE.resolveModelAttribute(context, operation).asInt();
+
+        generateSecretKeyOperation(context, operation, credentialStore, keySize);
+    }
+
+    private static class CredentialStoreAddHandler extends BaseCredentialStoreAddHandler {
 
         private CredentialStoreAddHandler() {
             super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
@@ -284,278 +360,157 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-
-            ModelNode model = resource.getModel();
+        protected OneTimeValueSupplier createCredentialStoreSupplier(CapabilityServiceBuilder<?> serviceBuilder,
+                OperationContext context, ModelNode model) throws OperationFailedException {
+            String name = context.getCurrentAddressValue();
             String location = LOCATION.resolveModelAttribute(context, model).asStringOrNull();
+
+            final Map<String, String> credentialStoreAttributes = new HashMap<>();
             boolean modifiable =  MODIFIABLE.resolveModelAttribute(context, model).asBoolean();
+            credentialStoreAttributes.put(ElytronDescriptionConstants.MODIFIABLE, Boolean.toString(modifiable));
             boolean create = CREATE.resolveModelAttribute(context, model).asBoolean();
-            final Map<String, String> implementationAttributes = new HashMap<>();
+            credentialStoreAttributes.put(ElytronDescriptionConstants.CREATE, Boolean.toString(create));
             ModelNode implAttrModel = IMPLEMENTATION_PROPERTIES.resolveModelAttribute(context, model);
             if (implAttrModel.isDefined()) {
                 for (String s : implAttrModel.keys()) {
-                    implementationAttributes.put(s, implAttrModel.require(s).asString());
+                    credentialStoreAttributes.put(s, implAttrModel.require(s).asString());
                 }
             }
             String type = TYPE.resolveModelAttribute(context, model).asStringOrNull();
             String providers = PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             String otherProviders = OTHER_PROVIDERS.resolveModelAttribute(context, model).asStringOrNull();
             String providerName = PROVIDER_NAME.resolveModelAttribute(context, model).asStringOrNull();
-            String name = credentialStoreName(operation);
             String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
-            ServiceTarget serviceTarget = context.getServiceTarget();
 
             if (type == null || type.equals(KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE)) {
-                implementationAttributes.putIfAbsent(CS_KEY_STORE_TYPE_ATTRIBUTE, "JCEKS");
+                credentialStoreAttributes.putIfAbsent(CS_KEY_STORE_TYPE_ATTRIBUTE, "JCEKS");
             }
 
-            String implAttrKeyStoreType = implementationAttributes.get(CS_KEY_STORE_TYPE_ATTRIBUTE);
+            String implAttrKeyStoreType = credentialStoreAttributes.get(CS_KEY_STORE_TYPE_ATTRIBUTE);
             if (location == null && implAttrKeyStoreType != null && filebasedKeystoreTypes.contains(implAttrKeyStoreType.toUpperCase(Locale.ENGLISH))) {
                 throw ROOT_LOGGER.filebasedKeystoreLocationMissing(implAttrKeyStoreType);
             }
 
-            // ----------- credential store service ----------------
-            final CredentialStoreService csService;
-            try {
-                csService = CredentialStoreService.createCredentialStoreService(name, location, modifiable, create, implementationAttributes, type, providerName, relativeTo, providers, otherProviders);
-            } catch (CredentialStoreException e) {
-                throw new OperationFailedException(e);
-            }
-            ServiceName credentialStoreServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
-            ServiceBuilder<CredentialStore> credentialStoreServiceBuilder = serviceTarget.addService(credentialStoreServiceName, csService)
-                    .setInitialMode(Mode.ACTIVE);
-
+            final Supplier<PathManagerService> pathManager;
             if (relativeTo != null) {
-                credentialStoreServiceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, csService.getPathManagerInjector());
-                credentialStoreServiceBuilder.requires(pathName(relativeTo));
+                pathManager = serviceBuilder.requires(PathManagerService.SERVICE_NAME);
+                serviceBuilder.requires(pathName(relativeTo));
+            } else {
+                pathManager = null;
             }
+
+            final Supplier<Provider[]> providerSupplier;
             if (providers != null) {
                 String providersCapabilityName = RuntimeCapability.buildDynamicCapabilityName(PROVIDERS_CAPABILITY, providers);
                 ServiceName providerLoaderServiceName = context.getCapabilityServiceName(providersCapabilityName, Provider[].class);
-                credentialStoreServiceBuilder.addDependency(providerLoaderServiceName, Provider[].class, csService.getProvidersInjector());
+
+                providerSupplier = serviceBuilder.requires(providerLoaderServiceName);
+            } else {
+                providerSupplier = null;
             }
+
+            final Supplier<Provider[]> otherProviderSupplier;
             if (otherProviders != null) {
                 String providersCapabilityName = RuntimeCapability.buildDynamicCapabilityName(PROVIDERS_CAPABILITY, otherProviders);
                 ServiceName otherProvidersLoaderServiceName = context.getCapabilityServiceName(providersCapabilityName, Provider[].class);
-                credentialStoreServiceBuilder.addDependency(otherProvidersLoaderServiceName, Provider[].class, csService.getOtherProvidersInjector());
+
+                otherProviderSupplier = serviceBuilder.requires(otherProvidersLoaderServiceName);
+            } else {
+                otherProviderSupplier = null;
             }
 
-            csService.getCredentialSourceSupplierInjector()
-                    .inject(CredentialReference.getCredentialSourceSupplier(context, CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE, model, credentialStoreServiceBuilder));
+            ExceptionSupplier<CredentialSource, Exception> credentialSourceSupplier = CredentialReference
+                    .getCredentialSourceSupplier(context, CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE, model,
+                            serviceBuilder);
 
-            commonDependencies(credentialStoreServiceBuilder).install();
+            final OneTimeValueSupplier oneTimeValueSupplier = new OneTimeValueSupplier(new ValueSupplier<CredentialStore>() {
+
+                @Override
+                public CredentialStore get() throws StartException {
+                    try {
+                        if (location != null) {
+                            PathResolver pathResolver = pathResolver();
+                            pathResolver.path(location);
+                            if (relativeTo != null) {
+                                pathResolver.relativeTo(relativeTo, pathManager.get());
+                            }
+                            File resolved = pathResolver.resolve();
+                            pathResolver.clear();
+                            credentialStoreAttributes.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
+                        } else {
+                            credentialStoreAttributes.put(ElytronDescriptionConstants.LOCATION, null);
+                        }
+
+                        ROOT_LOGGER.tracef("starting CredentialStore:  name = %s", name);
+
+                        CredentialStore cs = getCredentialStoreInstance();
+                        Provider[] otherProvidersArr = otherProviderSupplier != null ? otherProviderSupplier.get() : null;
+                        if (ROOT_LOGGER.isTraceEnabled()) {
+                            ROOT_LOGGER.tracef(
+                                    "initializing CredentialStore:  name = %s  type = %s  provider = %s  otherProviders = %s  attributes = %s",
+                                    name, type, providerName, Arrays.toString(otherProvidersArr), credentialStoreAttributes
+                            );
+                        }
+
+                        synchronized (EmptyProvider.getInstance()) {
+                            cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(), otherProvidersArr);
+                        }
+
+                        return cs;
+                    } catch (Exception e) {
+                        throw ROOT_LOGGER.unableToStartService(e);
+                    }
+                }
+
+                private CredentialStore getCredentialStoreInstance() throws CredentialStoreException, NoSuchAlgorithmException, NoSuchProviderException {
+                    String resolvedType = type != null ? type : KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE;
+                    if (providerName != null) {
+                        // directly specified provider
+                        return CredentialStore.getInstance(resolvedType, providerName);
+                    }
+
+                    Provider[] injectedProviders = providerSupplier != null ? providerSupplier.get() : null;
+                    if (ROOT_LOGGER.isTraceEnabled()) {
+                        ROOT_LOGGER.tracef("obtaining CredentialStore %s from providers %s", name, Arrays.toString(injectedProviders));
+                    }
+                    if (injectedProviders != null) {
+                        // injected provider list, select the first provider with corresponding type
+                        for (Provider p : injectedProviders) {
+                            try {
+                                return CredentialStore.getInstance(resolvedType, p);
+                            } catch (NoSuchAlgorithmException ignore) {
+                            }
+                        }
+                        throw ROOT_LOGGER.providerLoaderCannotSupplyProvider(providers, resolvedType);
+                    } else {
+                        // default provider
+                        return CredentialStore.getInstance(resolvedType);
+                    }
+                }
+
+                private CredentialStore.CredentialSourceProtectionParameter resolveCredentialStoreProtectionParameter() throws Exception {
+                    CredentialSource cs = credentialSourceSupplier != null ? credentialSourceSupplier.get() : null;
+                    if (cs != null) {
+                        Credential credential = cs.getCredential(PasswordCredential.class);
+                        ROOT_LOGGER.tracef("resolving CredentialStore %s ProtectionParameter from %s", name, credential);
+                        return credentialToCredentialSourceProtectionParameter(credential);
+                    } else {
+                        throw ROOT_LOGGER.credentialStoreProtectionParameterCannotBeResolved(name);
+                    }
+                }
+
+                private CredentialStore.CredentialSourceProtectionParameter credentialToCredentialSourceProtectionParameter(Credential credential) {
+                    return new CredentialStore.CredentialSourceProtectionParameter(IdentityCredentials.NONE.withCredential(credential));
+                }
+
+            });
+
+            return oneTimeValueSupplier;
         }
 
         @Override
         protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
             rollbackCredentialStoreUpdate(CREDENTIAL_REFERENCE, context, resource);
-        }
-    }
-
-    /*
-     * Runtime Attribute and Operation Handlers
-     */
-
-    abstract static class CredentialStoreRuntimeOnlyHandler extends ElytronRuntimeOnlyHandler {
-
-        private final boolean serviceMustBeUp;
-        private final boolean writeAccess;
-
-        CredentialStoreRuntimeOnlyHandler(final boolean serviceMustBeUp, final boolean writeAccess) {
-            this.serviceMustBeUp = serviceMustBeUp;
-            this.writeAccess = writeAccess;
-        }
-
-        CredentialStoreRuntimeOnlyHandler(final boolean serviceMustBeUp) {
-            this(serviceMustBeUp, false);
-        }
-
-
-        @Override
-        protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ServiceName credentialStoreServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
-            ServiceController<?> credentialStoreServiceController = context.getServiceRegistry(writeAccess).getRequiredService(credentialStoreServiceName);
-            State serviceState;
-            if ((serviceState = credentialStoreServiceController.getState()) != State.UP) {
-                if (serviceMustBeUp) {
-                    try {
-                        // give it another chance to wait at most 500 mill-seconds
-                        credentialStoreServiceController.awaitValue(500, TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException | IllegalStateException | TimeoutException e) {
-                        throw ROOT_LOGGER.requiredServiceNotUp(credentialStoreServiceName, credentialStoreServiceController.getState());
-                    }
-                }
-                serviceState = credentialStoreServiceController.getState();
-                if (serviceState != State.UP) {
-                    if (serviceMustBeUp) {
-                        throw ROOT_LOGGER.requiredServiceNotUp(credentialStoreServiceName, serviceState);
-                    }
-                    return;
-                }
-            }
-            CredentialStoreService service = (CredentialStoreService) credentialStoreServiceController.getService();
-            performRuntime(context.getResult(), context, operation, service);
-        }
-
-        protected abstract void performRuntime(ModelNode result, OperationContext context, ModelNode operation,  CredentialStoreService credentialStoreService) throws OperationFailedException ;
-
-    }
-
-
-    private static class CredentialStoreHandler extends CredentialStoreRuntimeOnlyHandler {
-
-        private static final CredentialStoreHandler INSTANCE = new CredentialStoreHandler();
-
-        private CredentialStoreHandler() {
-            super(true, true);
-        }
-
-        @Override
-        protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
-
-            String operationName = operation.require(ModelDescriptionConstants.OP).asString();
-            switch (operationName) {
-                case ElytronDescriptionConstants.RELOAD:
-                    try {
-                        credentialStoreService.stop(null);
-                        credentialStoreService.start(null);
-                    } catch (StartException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-
-                case ElytronDescriptionConstants.ADD_ALIAS:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
-                        String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-                        if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
-                            if (credentialStore.exists(alias, PasswordCredential.class)) {
-                                throw ROOT_LOGGER.credentialAlreadyExists(alias, PasswordCredential.class.getName());
-                            }
-                            storeSecret(credentialStore, alias, secretValue);
-                        } else {
-                            String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
-                            throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
-                        }
-                    } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-
-                case ElytronDescriptionConstants.REMOVE_ALIAS:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = REMOVE_ENTRY_TYPE.resolveModelAttribute(context, operation).asString();
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-                        Class<? extends Credential> credentialType = fromEntryType(entryType);
-                        Credential retrieved = credentialStore.retrieve(alias, credentialType);
-                        if (retrieved == null) {
-                            throw ROOT_LOGGER.credentialDoesNotExist(alias, entryType);
-                        }
-                        credentialStore.remove(alias, credentialType);
-                        context.addResponseWarning(Level.WARNING, ROOT_LOGGER.updateDependantServices(alias));
-                        try {
-                            credentialStore.flush();
-                        } catch (CredentialStoreException e) {
-                            // the operation fails, return removed entry back to the store to avoid an inconsistency
-                            // between the store on the FS and in the memory
-                            credentialStore.store(alias, retrieved);
-                            throw e;
-                        }
-                    } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-
-                case ElytronDescriptionConstants.SET_SECRET:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String entryType = ADD_ENTRY_TYPE.resolveModelAttribute(context, operation).asStringOrNull();
-                        String secretValue = SECRET_VALUE.resolveModelAttribute(context, operation).asStringOrNull();
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-
-                        if (entryType == null || entryType.equals(PasswordCredential.class.getCanonicalName())) {
-                            if ( ! credentialStore.exists(alias, PasswordCredential.class)) {
-                                throw ROOT_LOGGER.credentialDoesNotExist(alias, PasswordCredential.class.getName());
-                            }
-                            storeSecret(credentialStore, alias, secretValue);
-                            context.addResponseWarning(Level.WARNING, ROOT_LOGGER.reloadDependantServices());
-                        } else {
-                            String credentialStoreName = CredentialStoreResourceDefinition.credentialStoreName(operation);
-                            throw ROOT_LOGGER.credentialStoreEntryTypeNotSupported(credentialStoreName, entryType);
-                        }
-                    } catch (CredentialStoreException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-                case ElytronDescriptionConstants.GENERATE_SECRET_KEY:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        int keySize = KEY_SIZE.resolveModelAttribute(context, operation).asInt();
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-
-                        SecretKey secretKey = generateSecretKey(keySize);
-                        storeSecretKey(credentialStore, alias, secretKey);
-
-                    } catch (GeneralSecurityException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-                case ElytronDescriptionConstants.EXPORT_SECRET_KEY:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-                        SecretKey secretKey = credentialStore.retrieve(alias, SecretKeyCredential.class).getSecretKey();
-                        String exportedKey = exportSecretKey(secretKey);
-
-                        result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
-                    } catch (GeneralSecurityException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-                case ElytronDescriptionConstants.IMPORT_SECRET_KEY:
-                    try {
-                        String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                        String rawKey = KEY.resolveModelAttribute(context, operation).asString();
-
-                        SecretKey secretKey = importSecretKey(rawKey);
-
-                        CredentialStore credentialStore = credentialStoreService.getValue();
-                        storeSecretKey(credentialStore, alias, secretKey);
-
-                    } catch (GeneralSecurityException e) {
-                        throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-                    }
-                    break;
-                default:
-                    // TODO - Why does this report a single expected operation name?
-                    throw ROOT_LOGGER.invalidOperationName(operationName, ElytronDescriptionConstants.LOAD);
-            }
-        }
-    }
-
-    private static class CredentialStoreReadAliasesHandler extends CredentialStoreRuntimeOnlyHandler {
-        private static final CredentialStoreReadAliasesHandler INSTANCE = new CredentialStoreReadAliasesHandler();
-
-        private CredentialStoreReadAliasesHandler() {
-            super(true);
-        }
-
-        @Override
-        protected void performRuntime(ModelNode result, OperationContext context, ModelNode operation, CredentialStoreService credentialStoreService) throws OperationFailedException {
-            try {
-                List<ModelNode> list = new ArrayList<>();
-                for (String s : credentialStoreService.getValue().getAliases()) {
-                    ModelNode modelNode = new ModelNode(s);
-                    list.add(modelNode);
-                }
-                result.set(list);
-            } catch (CredentialStoreException e) {
-                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
-            }
         }
     }
 
@@ -576,7 +531,6 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
 
         return credentialStoreName;
     }
-
 
     private static Class<? extends Credential> fromEntryType(final String entryTyoe) {
         if (PasswordCredential.class.getCanonicalName().equals(entryTyoe) || PasswordCredential.class.getSimpleName().equals(entryTyoe)) {
