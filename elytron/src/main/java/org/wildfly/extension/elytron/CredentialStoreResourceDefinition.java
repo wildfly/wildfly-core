@@ -566,6 +566,13 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                 }
 
             };
+
+        }
+
+        @Override
+        protected CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException {
+            // TODO Still to be implemented but we have some more complex dependencies to fix.
+            throw new IllegalStateException("Not yet implemented");
         }
 
 

@@ -370,7 +370,12 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         public final CredentialStore apply(final OperationContext foreignContext) throws OperationFailedException {
             // The apply method is assumed to be called from the runtime API - i.e. MSC dependencies are not available.
             if (credentialStore == null) {
-                throw new IllegalStateException("No CredentialStore yet.");
+                synchronized(this) {
+                    if (credentialStore == null) {
+                        resolveRuntime(foreignContext);
+                        credentialStore = createImmediately(foreignContext);
+                    }
+                }
             }
 
             return credentialStore;
@@ -409,6 +414,8 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         protected abstract void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException;
 
         protected abstract ExceptionSupplier<CredentialStore, StartException> prepareServiceSupplier(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException;
+
+        protected abstract CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException;
 
     }
 }

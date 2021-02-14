@@ -47,6 +47,7 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
+import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -264,8 +265,6 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                 @Override
                 public CredentialStore get() throws StartException {
                     try {
-                        CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
-
                         PathResolver pathResolver = pathResolver();
                         pathResolver.path(path);
                         if (relativeTo != null) {
@@ -274,21 +273,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                         File resolved = pathResolver.resolve();
                         pathResolver.clear();
 
-                        Map<String, String> configuration = new HashMap<>();
-                        configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
-                        if (create) {
-                            configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
-                        }
-                        credentialStore.initialize(configuration);
-                        if (populate && !credentialStore.getAliases().contains(defaultAlias)) {
-                            SecretKey secretKey = generateSecretKey(keySize);
-                            SecretKeyCredential credential = new SecretKeyCredential(secretKey);
-
-                            credentialStore.store(defaultAlias, credential);
-                            credentialStore.flush();
-                        }
-
-                        return credentialStore;
+                        return createCredentialStore(resolved);
                     } catch (GeneralSecurityException e) {
                         throw ROOT_LOGGER.unableToStartService(e);
                     }
@@ -296,9 +281,45 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             };
         }
 
+        @Override
+        protected CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException {
+            try {
+                PathResolver pathResolver = pathResolver();
+                pathResolver.path(path);
+                if (relativeTo != null) {
+                    PathManager pathManager = (PathManager) foreignContext.getServiceRegistry(false)
+                            .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
+                    pathResolver.relativeTo(relativeTo, pathManager);
+                }
+                File resolved = pathResolver.resolve();
+                pathResolver.clear();
 
+                return createCredentialStore(resolved);
+            } catch (GeneralSecurityException e) {
+                // TODO Convert to a real error.
+                throw new OperationFailedException(e);
+            }
+        }
 
+        private CredentialStore createCredentialStore(final File resolved) throws GeneralSecurityException {
+            CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
 
+            Map<String, String> configuration = new HashMap<>();
+            configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
+            if (create) {
+                configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
+            }
+            credentialStore.initialize(configuration);
+            if (populate && !credentialStore.getAliases().contains(defaultAlias)) {
+                SecretKey secretKey = generateSecretKey(keySize);
+                SecretKeyCredential credential = new SecretKeyCredential(secretKey);
+
+                credentialStore.store(defaultAlias, credential);
+                credentialStore.flush();
+            }
+
+            return credentialStore;
+        }
 
     }
 
