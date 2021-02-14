@@ -23,7 +23,6 @@ import static org.wildfly.security.encryption.CipherUtil.encrypt;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import javax.crypto.SecretKey;
 
@@ -32,6 +31,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.function.ExceptionBiConsumer;
+import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
@@ -91,9 +91,9 @@ public class ElytronExpressionResolver implements ExpressionResolver {
             throw ROOT_LOGGER.noResolverWithSpecifiedName(resolvedResolver);
         }
 
-        Supplier<CredentialStore> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
-                resolverConfiguration.getCredentialStore(), Supplier.class);
-        CredentialStore credentialStore = credentialStoreApi.get();
+        ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
+                resolverConfiguration.getCredentialStore(), ExceptionFunction.class);
+        CredentialStore credentialStore = credentialStoreApi.apply(context);
         SecretKey secretKey;
         try {
             SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(), SecretKeyCredential.class);

@@ -50,6 +50,8 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.msc.service.StartException;
+import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
@@ -215,17 +217,39 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
         }
 
+        @Override
+        protected BaseCredentialStoreDoohickey createDoohickey(PathAddress resourceAddress) {
+            return new SecretKeyDoohickey(resourceAddress);
+        }
+
+    }
+
+    static class SecretKeyDoohickey extends BaseCredentialStoreDoohickey {
+
+        private volatile String relativeTo;
+        private volatile String path;
+        private volatile boolean create;
+        private volatile boolean populate;
+        private volatile int keySize;
+        private volatile String defaultAlias;
+
+        protected SecretKeyDoohickey(PathAddress resourceAddress) {
+            super(resourceAddress);
+        }
 
         @Override
-        protected OneTimeValueSupplier createCredentialStoreSupplier(CapabilityServiceBuilder<?> serviceBuilder,
-                OperationContext context, ModelNode model) throws OperationFailedException {
+        protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
+            relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
+            path = PATH.resolveModelAttribute(context, model).asString();
+            create = CREATE.resolveModelAttribute(context, model).asBoolean();
+            populate = POPULATE.resolveModelAttribute(context, model).asBoolean();
+            keySize = KEY_SIZE.resolveModelAttribute(context, model).asInt();
+            defaultAlias = DEFAULT_ALIAS.resolveModelAttribute(context, model).asString();
+        }
 
-            final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
-            final String path = PATH.resolveModelAttribute(context, model).asString();
-            final boolean create = CREATE.resolveModelAttribute(context, model).asBoolean();
-            final boolean populate = POPULATE.resolveModelAttribute(context, model).asBoolean();
-            final int keySize = KEY_SIZE.resolveModelAttribute(context, model).asInt();
-            final String defaultAlias = DEFAULT_ALIAS.resolveModelAttribute(context, model).asString();
+        @Override
+        protected ExceptionSupplier<CredentialStore, StartException> prepareServiceSupplier(OperationContext context,
+                CapabilityServiceBuilder<?> serviceBuilder) {
 
             final Supplier<PathManagerService> pathManager;
             if (relativeTo != null) {
@@ -235,40 +259,46 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
                 pathManager = null;
             }
 
-            final OneTimeValueSupplier oneTimeSupplier = new OneTimeValueSupplier(() -> {
-                try {
-                    CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
+            return new ExceptionSupplier<CredentialStore, StartException>() {
 
-                    PathResolver pathResolver = pathResolver();
-                    pathResolver.path(path);
-                    if (relativeTo != null) {
-                        pathResolver.relativeTo(relativeTo, pathManager.get());
+                @Override
+                public CredentialStore get() throws StartException {
+                    try {
+                        CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
+
+                        PathResolver pathResolver = pathResolver();
+                        pathResolver.path(path);
+                        if (relativeTo != null) {
+                            pathResolver.relativeTo(relativeTo, pathManager.get());
+                        }
+                        File resolved = pathResolver.resolve();
+                        pathResolver.clear();
+
+                        Map<String, String> configuration = new HashMap<>();
+                        configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
+                        if (create) {
+                            configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
+                        }
+                        credentialStore.initialize(configuration);
+                        if (populate && !credentialStore.getAliases().contains(defaultAlias)) {
+                            SecretKey secretKey = generateSecretKey(keySize);
+                            SecretKeyCredential credential = new SecretKeyCredential(secretKey);
+
+                            credentialStore.store(defaultAlias, credential);
+                            credentialStore.flush();
+                        }
+
+                        return credentialStore;
+                    } catch (GeneralSecurityException e) {
+                        throw ROOT_LOGGER.unableToStartService(e);
                     }
-                    File resolved = pathResolver.resolve();
-                    pathResolver.clear();
-
-                    Map<String, String> configuration = new HashMap<>();
-                    configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
-                    if (create) {
-                        configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
-                    }
-                    credentialStore.initialize(configuration);
-                    if (populate && !credentialStore.getAliases().contains(defaultAlias)) {
-                        SecretKey secretKey = generateSecretKey(keySize);
-                        SecretKeyCredential credential = new SecretKeyCredential(secretKey);
-
-                        credentialStore.store(defaultAlias, credential);
-                        credentialStore.flush();
-                    }
-
-                    return credentialStore;
-                } catch (GeneralSecurityException e) {
-                    throw ROOT_LOGGER.unableToStartService(e);
                 }
-            });
-
-            return oneTimeSupplier;
+            };
         }
+
+
+
+
 
     }
 
