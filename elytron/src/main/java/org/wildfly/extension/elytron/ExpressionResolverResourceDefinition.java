@@ -16,17 +16,13 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.EXPRESSION_RESOLVER_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
-import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
-import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
-import static org.wildfly.security.encryption.CipherUtil.encrypt;
+import static org.wildfly.extension.elytron.Capabilities.EXPRESSION_RESOLVER_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronExtension.SUBSYSTEM_PATH;
+import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 
-import java.security.GeneralSecurityException;
-import java.util.function.Supplier;
-
-import javax.crypto.SecretKey;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -54,9 +50,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver;
-import org.wildfly.security.credential.SecretKeyCredential;
-import org.wildfly.security.credential.store.CredentialStore;
-import org.wildfly.security.credential.store.CredentialStoreException;
+import org.wildfly.extension.elytron.expression.ElytronExpressionResolver.ResolverConfiguration;
 
 /**
  * The {@link ResourceDefinition} for the expression resolver resource.
@@ -64,6 +58,8 @@ import org.wildfly.security.credential.store.CredentialStoreException;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
+
+    private static final PathAddress RESOURCE_ADDRESS =PathAddress.pathAddress(SUBSYSTEM_PATH, PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION));
 
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER =
@@ -166,8 +162,30 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
+    static void configureExpressionResolver(ElytronExpressionResolver expressionResolver, OperationContext context) throws OperationFailedException {
+        // The OperationContext could be for any resource across the management model.
+        ModelNode expressionEncryption = context.readResourceFromRoot(RESOURCE_ADDRESS).getModel();
+
+        String prefix = PREFIX.resolveModelAttribute(context, expressionEncryption).asString();
+        // TODO During Stage.MODEL we should verify the default does map to a resolver, likely as an end of stage OSH.
+        String defaultResolver = DEFAULT_RESOLVER.resolveModelAttribute(context, expressionEncryption).asStringOrNull();
+
+        Map<String, ResolverConfiguration> resolverConfigurations = new HashMap<>();
+        for (ModelNode currentResolver : RESOLVERS.resolveModelAttribute(context, expressionEncryption).asList()) {
+            String name = NAME.resolveModelAttribute(context, currentResolver).asString();
+            String credentialStoreName = CREDENTIAL_STORE.resolveModelAttribute(context, currentResolver).asString();
+            String alias = SECRET_KEY.resolveModelAttribute(context, currentResolver).asString();
+
+            resolverConfigurations.put(name, new ResolverConfiguration(credentialStoreName, alias));
+        }
+
+        expressionResolver.setPrefix(prefix)
+            .setDefaultResolver(defaultResolver)
+            .setResolverConfigurations(resolverConfigurations);
+    }
+
     static ResourceDefinition getExpressionResolverDefinition() {
-        ElytronExpressionResolver expressionResolver = new ElytronExpressionResolver();
+        ElytronExpressionResolver expressionResolver = new ElytronExpressionResolver(ExpressionResolverResourceDefinition::configureExpressionResolver);
         RuntimeCapability<ExpressionResolver> expressionResolverRuntimeCapability =  RuntimeCapability
                 .Builder.<ExpressionResolver>of(EXPRESSION_RESOLVER_CAPABILITY, false, expressionResolver)
                 .build();
@@ -199,52 +217,8 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             String resolver = RESOLVER_PARAM.resolveModelAttribute(context, operation).asStringOrNull();
             String clearText = CLEAR_TEXT.resolveModelAttribute(context, operation).asString();
 
-            ModelNode expressionEncryption = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
-            String prefix = PREFIX.resolveModelAttribute(context, expressionEncryption).asString();
-            boolean defaultResolver = false;
-            if (resolver == null) {
-                resolver = DEFAULT_RESOLVER.resolveModelAttribute(context, expressionEncryption).asStringOrNull();
-                defaultResolver = true;
-                if (resolver == null) {
-                    throw ROOT_LOGGER.noResolverSpecifiedAndNoDefault();
-                }
-            }
-
-            String credentialStoreName = null;
-            String alias = null;
-            for (ModelNode currentResolver : RESOLVERS.resolveModelAttribute(context, expressionEncryption).asList()) {
-                String name = NAME.resolveModelAttribute(context, currentResolver).asString();
-                if (name.equals(resolver)) {
-                    credentialStoreName = CREDENTIAL_STORE.resolveModelAttribute(context, currentResolver).asString();
-                    alias = SECRET_KEY.resolveModelAttribute(context, currentResolver).asString();
-                    break;
-                }
-            }
-
-            if (credentialStoreName == null || alias == null) {
-                throw ROOT_LOGGER.noResolverWithSpecifiedName(resolver);
-            }
-
-            Supplier<CredentialStore> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
-                    credentialStoreName, Supplier.class);
-            CredentialStore credentialStore = credentialStoreApi.get();
-            SecretKey secretKey;
-            try {
-                SecretKeyCredential credential = credentialStore.retrieve(alias, SecretKeyCredential.class);
-                secretKey = credential.getSecretKey();
-            } catch (CredentialStoreException e) {
-                throw ROOT_LOGGER.unableToLoadCredential(e);
-            }
-
-            String cipherTextToken;
-            try {
-                cipherTextToken = encrypt(clearText, secretKey);
-            } catch (GeneralSecurityException e) {
-                throw ROOT_LOGGER.unableToEncryptClearText(e);
-            }
-
-            String expression = defaultResolver ? String.format("${%s::%s}", prefix, cipherTextToken)
-                    : String.format("${%s::%s:%s}", prefix, resolver, cipherTextToken);
+            ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolver.class);
+            String expression = ((ElytronExpressionResolver) expressionResolver).createExpression(resolver, clearText, context);
 
             context.getResult().get(ElytronDescriptionConstants.EXPRESSION).set(expression);
         }

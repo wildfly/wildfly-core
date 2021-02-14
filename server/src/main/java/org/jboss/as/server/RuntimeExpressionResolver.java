@@ -87,16 +87,17 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl {
              * Step 2 - Use ExpressionResolver capability if available.
              */
 
+            // TODO The second condition can be removed.
             if (context != null && expressionValue.startsWith("ENC")) {
                 try {
                     ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY,
                                                                                             ExpressionResolver.class);
-                    System.out.println("Have an expression resolver.");
                     ModelNode result = expressionResolver.resolveExpressions(node);
                     if (result != null) {
                         node.set(result.asString());
                     }
                 } catch (IllegalStateException | IllegalArgumentException e) {
+                    // TODO Clean up error handling.
                     System.out.println("Capability not available " + e.getMessage());
                 }
             }

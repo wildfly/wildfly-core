@@ -16,9 +16,25 @@
 
 package org.wildfly.extension.elytron.expression;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.encryption.CipherUtil.encrypt;
+
+import java.security.GeneralSecurityException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.crypto.SecretKey;
+
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.wildfly.common.function.ExceptionBiConsumer;
+import org.wildfly.security.credential.SecretKeyCredential;
+import org.wildfly.security.credential.store.CredentialStore;
+import org.wildfly.security.credential.store.CredentialStoreException;
 
 /**
  * An Elytron backed {@code ExpressionResolver} implementation to handle the decryption of encrypted expressions.
@@ -27,12 +43,127 @@ import org.jboss.dmr.ModelNode;
  */
 public class ElytronExpressionResolver implements ExpressionResolver {
 
+    private static final String CREDENTIAL_STORE_API_CAPABILITY = "org.wildfly.security.credential-store-api";
+
+    private volatile boolean initialised = false;
+
+    private final ExceptionBiConsumer<ElytronExpressionResolver, OperationContext, OperationFailedException> configurator;
+
+    private volatile String prefix;
+    private volatile String defaultResolver;
+    private volatile Map<String, ResolverConfiguration> resolverConfigurations;
+
+    public ElytronExpressionResolver(ExceptionBiConsumer<ElytronExpressionResolver, OperationContext, OperationFailedException> configurator) {
+        this.configurator = configurator;
+    }
     @Override
     public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
+        // We know this will fail but it is an internal bug if we come in this way.
+        return resolveExpressions(node, null);
+    }
+
+    @Override
+    public ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
+        checkNotNullParam("context", context);
+
         String expression = node.asString();
         System.out.println(String.format("Being asked to resolve expression '%s'", expression));
 
+        // TODO We can quickly check the format i.e. Prefix::Resolver:Token or Prefix::Token and return as 100% not for us.
+        ensureInitialised(context);  // TODO - We need to detect a cycle here otherwise as the initiating Thread holds the lock
+                                     //        we would pass straight back into the configurator!  In the case of
+
+
+
+
         return null;
     }
+
+    public String createExpression(final String resolver, final String clearText, OperationContext context) throws OperationFailedException {
+        ensureInitialised(context);
+        String resolvedResolver = resolver != null ? resolver : defaultResolver;
+        if (resolvedResolver == null) {
+            throw ROOT_LOGGER.noResolverSpecifiedAndNoDefault();
+        }
+
+        ResolverConfiguration resolverConfiguration = resolverConfigurations.get(resolvedResolver);
+        if (resolverConfiguration == null) {
+            throw ROOT_LOGGER.noResolverWithSpecifiedName(resolvedResolver);
+        }
+
+        Supplier<CredentialStore> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
+                resolverConfiguration.getCredentialStore(), Supplier.class);
+        CredentialStore credentialStore = credentialStoreApi.get();
+        SecretKey secretKey;
+        try {
+            SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(), SecretKeyCredential.class);
+            secretKey = credential.getSecretKey();
+        } catch (CredentialStoreException e) {
+            throw ROOT_LOGGER.unableToLoadCredential(e);
+        }
+
+        String cipherTextToken;
+        try {
+            cipherTextToken = encrypt(clearText, secretKey);
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.unableToEncryptClearText(e);
+        }
+
+        String expression = resolver == null ? String.format("${%s::%s}", prefix, cipherTextToken)
+                : String.format("${%s::%s:%s}", prefix, resolvedResolver, cipherTextToken);
+
+        return expression;
+    }
+
+    public ElytronExpressionResolver setPrefix(final String prefix) {
+        this.prefix = prefix;
+
+        return this;
+    }
+
+    public ElytronExpressionResolver setDefaultResolver(final String defaultResolver) {
+        this.defaultResolver = defaultResolver;
+
+        return this;
+    }
+
+    public ElytronExpressionResolver setResolverConfigurations(final Map<String, ResolverConfiguration> resolverConfigurations) {
+        this.resolverConfigurations = Collections.unmodifiableMap(resolverConfigurations);
+
+        return this;
+    }
+
+    private void ensureInitialised(OperationContext context) throws OperationFailedException {
+        if (initialised == false) {
+            synchronized (this) {
+                if (initialised == false) {
+                    configurator.accept(this, context);
+                    // TODO Do we need to track the failure and prevent further attempts?
+                    initialised = true;
+                }
+            }
+        }
+    }
+
+    public static class ResolverConfiguration {
+
+        private final String credentialStore;
+        private final String alias;
+
+        public ResolverConfiguration(final String credentialStore, final String alias) {
+            this.credentialStore = checkNotNullParam("credentialStore", credentialStore);
+            this.alias = checkNotNullParam("alias", alias);
+        }
+
+        public String getCredentialStore() {
+            return credentialStore;
+        }
+
+        public String getAlias() {
+            return alias;
+        }
+    }
+
+
 
 }
