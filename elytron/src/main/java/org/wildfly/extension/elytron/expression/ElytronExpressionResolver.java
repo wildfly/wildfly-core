@@ -18,6 +18,7 @@ package org.wildfly.extension.elytron.expression;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.wildfly.security.encryption.CipherUtil.decrypt;
 import static org.wildfly.security.encryption.CipherUtil.encrypt;
 
 import java.security.GeneralSecurityException;
@@ -50,6 +51,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
     private final ExceptionBiConsumer<ElytronExpressionResolver, OperationContext, OperationFailedException> configurator;
 
     private volatile String prefix;
+    private volatile String completePrefix;
     private volatile String defaultResolver;
     private volatile Map<String, ResolverConfiguration> resolverConfigurations;
 
@@ -67,15 +69,52 @@ public class ElytronExpressionResolver implements ExpressionResolver {
         checkNotNullParam("context", context);
 
         String expression = node.asString();
-        System.out.println(String.format("Being asked to resolve expression '%s'", expression));
+        if (expression.length() > 3) {
+            System.out.println(String.format("Being asked to resolve expression '%s'", expression));
+            expression = expression.substring(2, expression.length() - 1);
 
-        // TODO We can quickly check the format i.e. Prefix::Resolver:Token or Prefix::Token and return as 100% not for us.
-        ensureInitialised(context);  // TODO - We need to detect a cycle here otherwise as the initiating Thread holds the lock
-                                     //        we would pass straight back into the configurator!  In the case of
+            ensureInitialised(context); // TODO - We need to detect a cycle here otherwise as the initiating Thread holds the
+                                        // lock we would pass straight back into the configurator! In the case of a cycle.
+            if (expression.startsWith(completePrefix)) {
+                int delimiter = expression.indexOf(':', completePrefix.length());
+                String resolver = delimiter > 0 ? expression.substring(completePrefix.length(), delimiter) : defaultResolver;
+                System.out.println("Resolver = " + resolver);
+                if (resolver == null) {
+                    throw new IllegalStateException("No resolver specified.");
+                }
 
+                ResolverConfiguration resolverConfiguration = resolverConfigurations.get(resolver);
+                if (resolverConfiguration == null) {
+                    throw new IllegalStateException("Resolver configuration not found");
+                }
 
+                ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
+                        .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, resolverConfiguration.getCredentialStore(),
+                                ExceptionFunction.class);
+                CredentialStore credentialStore = credentialStoreApi.apply(context);
+                SecretKey secretKey;
+                try {
+                    SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(),
+                            SecretKeyCredential.class);
+                    secretKey = credential.getSecretKey();
+                } catch (CredentialStoreException e) {
+                    throw ROOT_LOGGER.unableToLoadCredential(e);
+                }
 
+                String token = expression.substring(expression.lastIndexOf(':') + 1);
+                System.out.println("Token = " + token);
 
+                try {
+                    String clearText = decrypt(token, secretKey);
+                    System.out.println("Clear Text = " + clearText);
+
+                    return new ModelNode(clearText);
+                } catch (GeneralSecurityException e) {
+                    throw new OperationFailedException(e);
+                }
+
+            }
+        }
         return null;
     }
 
@@ -117,6 +156,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
 
     public ElytronExpressionResolver setPrefix(final String prefix) {
         this.prefix = prefix;
+        this.completePrefix = prefix + "::";
 
         return this;
     }
