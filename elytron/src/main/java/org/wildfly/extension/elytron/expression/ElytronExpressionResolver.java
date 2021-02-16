@@ -72,7 +72,6 @@ public class ElytronExpressionResolver implements ExpressionResolver {
 
         String fullExpression = node.asString();
         if (fullExpression.length() > 3) {
-            System.out.println(String.format("Being asked to resolve expression '%s'", fullExpression));
             String expression = fullExpression.substring(2, fullExpression.length() - 1);
 
             ensureInitialised(fullExpression, context);
@@ -80,16 +79,17 @@ public class ElytronExpressionResolver implements ExpressionResolver {
             if (expression.startsWith(completePrefix)) {
                 int delimiter = expression.indexOf(':', completePrefix.length());
                 String resolver = delimiter > 0 ? expression.substring(completePrefix.length(), delimiter) : defaultResolver;
-                System.out.println("Resolver = " + resolver);
                 if (resolver == null) {
-                    throw new IllegalStateException("No resolver specified.");
+                    throw ROOT_LOGGER.expressionResolutionWithoutResolver(fullExpression);
                 }
 
                 ResolverConfiguration resolverConfiguration = resolverConfigurations.get(resolver);
                 if (resolverConfiguration == null) {
-                    throw new IllegalStateException("Resolver configuration not found");
+                    throw ROOT_LOGGER.invalidResolver(fullExpression);
                 }
 
+                ROOT_LOGGER.tracef("Attemting to decrypt expression '%s' using credential store '%s' and alias '%s'.",
+                        fullExpression, resolverConfiguration.credentialStore, resolverConfiguration.alias);
                 ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
                         .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, resolverConfiguration.getCredentialStore(),
                                 ExceptionFunction.class);
@@ -104,15 +104,13 @@ public class ElytronExpressionResolver implements ExpressionResolver {
                 }
 
                 String token = expression.substring(expression.lastIndexOf(':') + 1);
-                System.out.println("Token = " + token);
 
                 try {
                     String clearText = decrypt(token, secretKey);
-                    System.out.println("Clear Text = " + clearText);
 
                     return new ModelNode(clearText);
                 } catch (GeneralSecurityException e) {
-                    throw new OperationFailedException(e);
+                    throw ROOT_LOGGER.unableToDecyptExpression(fullExpression, e);
                 }
 
             }

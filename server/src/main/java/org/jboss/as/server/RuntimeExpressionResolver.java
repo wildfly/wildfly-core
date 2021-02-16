@@ -62,7 +62,7 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl {
                 // This is common in WildFly Core itself as the org.picketbox module is not present
                 // to allow loading the standard RuntimeVaultReader impl
 
-                // Just check for a picektbox vault pattern and if present reject
+                // Just check for a PicketBox vault pattern and if present reject
                 // We don't want to let vault expressions pass as other resolvers will treat the ":'
                 // as a system property name vs default value delimiter
                 if (VaultReader.STANDARD_VAULT_PATTERN.matcher(expressionValue).matches()) {
@@ -89,15 +89,14 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl {
 
             if (context != null) {
                 try {
-                    ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY,
-                                                                                            ExpressionResolver.class);
+                    ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolver.class);
                     ModelNode result = expressionResolver.resolveExpressions(node, context);
                     if (result != null) {
                         node.set(result.asString());
                     }
-                } catch (IllegalStateException | IllegalArgumentException e) {
-                    // TODO Clean up error handling.
-                    //System.out.println("Capability not available " + e.getMessage());
+                } catch (IllegalStateException e) {
+                    // We can't cache this state as it could be added in a later operation.
+                    log.tracef("Not resolving %s -- runtime capability not available.", expressionValue);
                 }
             }
         }

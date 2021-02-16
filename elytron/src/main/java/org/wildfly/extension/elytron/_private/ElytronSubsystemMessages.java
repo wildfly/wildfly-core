@@ -638,6 +638,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1203, value = "Expression resolver initialisation has already failed.")
     OperationFailedException expressionResolverInitialisationAlreadyFailed(@Cause Throwable cause);
 
+    @Message(id = 1204, value = "The expression '%s' does not specify a resolver and no default is defined.")
+    OperationFailedException expressionResolutionWithoutResolver(String expression);
+
+    @Message(id = 1205, value = "The expression '%s' specifies a resolver configuration which does not exist.")
+    OperationFailedException invalidResolver(String expression);
+
+    @Message(id = 1206, value = "Unable to decrypt expression '%s'.")
+    OperationFailedException unableToDecyptExpression(String expression, @Cause Throwable cause);
+
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
