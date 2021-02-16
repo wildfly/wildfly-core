@@ -48,7 +48,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -285,17 +284,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         @Override
         protected CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException {
             try {
-                PathResolver pathResolver = pathResolver();
-                pathResolver.path(path);
-                if (relativeTo != null) {
-                    PathManager pathManager = (PathManager) foreignContext.getServiceRegistry(false)
-                            .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
-                    pathResolver.relativeTo(relativeTo, pathManager);
-                }
-                File resolved = pathResolver.resolve();
-                pathResolver.clear();
-
-                return createCredentialStore(resolved);
+                return createCredentialStore(resolveRelativeToImmediately(path, relativeTo, foreignContext));
             } catch (GeneralSecurityException e) {
                 throw ROOT_LOGGER.unableToCreateCredentialStoreImmediately(e);
             }

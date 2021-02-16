@@ -17,15 +17,21 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+
+import java.io.File;
 
 import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 
 /**
  * The {@code Doohickey} is the central point for resource initialisation allowing a resource to be
@@ -89,6 +95,20 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
                 }
             }
         }
+    }
+
+    protected File resolveRelativeToImmediately(String path, String relativeTo, OperationContext foreignContext) {
+        PathResolver pathResolver = pathResolver();
+        pathResolver.path(path);
+        if (relativeTo != null) {
+            PathManager pathManager = (PathManager) foreignContext.getServiceRegistry(false)
+                    .getRequiredService(PathManagerService.SERVICE_NAME).getValue();
+            pathResolver.relativeTo(relativeTo, pathManager);
+        }
+        File resolved = pathResolver.resolve();
+        pathResolver.clear();
+
+        return resolved;
     }
 
     protected abstract void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException;

@@ -77,7 +77,11 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
 
         final TrivialService<T> trivialService = new TrivialService<>(doohickey::get, valueConsumer);
 
-        commonDependencies(serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService)).install();
+        commonDependencies(serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService), true, dependOnProviderRegistration()).install();
+    }
+
+    protected boolean dependOnProviderRegistration() {
+        return true;
     }
 
     protected abstract ElytronDoohickey<T> createDoohickey(final PathAddress resourceAddress);
