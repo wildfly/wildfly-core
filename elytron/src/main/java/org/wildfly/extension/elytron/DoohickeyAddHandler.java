@@ -84,6 +84,10 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
         return true;
     }
 
+    protected Mode getInitialMode() {
+        return Mode.ACTIVE;
+    }
+
     protected abstract ElytronDoohickey<T> createDoohickey(final PathAddress resourceAddress);
 
 }

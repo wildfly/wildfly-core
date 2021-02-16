@@ -19,12 +19,10 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_API_CAPABILITY;
-import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAMES;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
-import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.LOADED_PROVIDERS;
@@ -67,9 +65,6 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.State;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionConsumer;
 import org.wildfly.common.function.ExceptionFunction;
@@ -113,7 +108,7 @@ class ProviderDefinitions {
             .build();
 
     private static final AggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = AggregateComponentDefinition.create(Provider[].class,
-            ElytronDescriptionConstants.AGGREGATE_PROVIDERS, ElytronDescriptionConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, ProviderDefinitions::aggregate, false);
+            ElytronDescriptionConstants.AGGREGATE_PROVIDERS, ElytronDescriptionConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY, ProviderDefinitions::aggregate, false);
 
     static final ListAttributeDefinition REFERENCES = AGGREGATE_PROVIDERS.getReferencesAttribute();
 
@@ -308,7 +303,7 @@ class ProviderDefinitions {
                 .setRuntimeCapabilities(PROVIDERS_RUNTIME_CAPABILITY);
 
         if (serverOrHostController) {
-            builder.addReadOnlyAttribute(LOADED_PROVIDERS, new NewLoadedProvidersAttributeHandler());
+            builder.addReadOnlyAttribute(LOADED_PROVIDERS, new LoadedProvidersAttributeHandler());
         }
 
         return builder.build();
@@ -353,21 +348,6 @@ class ProviderDefinitions {
     }
 
     private static class LoadedProvidersAttributeHandler extends ElytronRuntimeOnlyHandler {
-
-        @Override
-        protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ServiceName providerLoaderName = context.getCapabilityServiceName(PROVIDERS_CAPABILITY, context.getCurrentAddressValue(), Provider[].class);
-            ServiceController<Provider[]> serviceContainer = getRequiredService(context.getServiceRegistry(false), providerLoaderName, Provider[].class);
-            if (serviceContainer.getState() != State.UP) {
-                return;
-            }
-
-            populateProviders(context.getResult(), serviceContainer.getValue());
-        }
-
-    }
-
-    private static class NewLoadedProvidersAttributeHandler extends ElytronRuntimeOnlyHandler {
 
         @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
