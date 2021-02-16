@@ -47,6 +47,8 @@ public class ElytronExpressionResolver implements ExpressionResolver {
     private static final String CREDENTIAL_STORE_API_CAPABILITY = "org.wildfly.security.credential-store-api";
 
     private volatile boolean initialised = false;
+    private final ThreadLocal<String> initialisingFor = new ThreadLocal<>();
+    private volatile OperationFailedException firstFailure = null;
 
     private final ExceptionBiConsumer<ElytronExpressionResolver, OperationContext, OperationFailedException> configurator;
 
@@ -68,13 +70,13 @@ public class ElytronExpressionResolver implements ExpressionResolver {
     public ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
         checkNotNullParam("context", context);
 
-        String expression = node.asString();
-        if (expression.length() > 3) {
-            System.out.println(String.format("Being asked to resolve expression '%s'", expression));
-            expression = expression.substring(2, expression.length() - 1);
+        String fullExpression = node.asString();
+        if (fullExpression.length() > 3) {
+            System.out.println(String.format("Being asked to resolve expression '%s'", fullExpression));
+            String expression = fullExpression.substring(2, fullExpression.length() - 1);
 
-            ensureInitialised(context); // TODO - We need to detect a cycle here otherwise as the initiating Thread holds the
-                                        // lock we would pass straight back into the configurator! In the case of a cycle.
+            ensureInitialised(fullExpression, context);
+
             if (expression.startsWith(completePrefix)) {
                 int delimiter = expression.indexOf(':', completePrefix.length());
                 String resolver = delimiter > 0 ? expression.substring(completePrefix.length(), delimiter) : defaultResolver;
@@ -119,7 +121,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
     }
 
     public String createExpression(final String resolver, final String clearText, OperationContext context) throws OperationFailedException {
-        ensureInitialised(context);
+        ensureInitialised(null, context);
         String resolvedResolver = resolver != null ? resolver : defaultResolver;
         if (resolvedResolver == null) {
             throw ROOT_LOGGER.noResolverSpecifiedAndNoDefault();
@@ -173,13 +175,35 @@ public class ElytronExpressionResolver implements ExpressionResolver {
         return this;
     }
 
-    private void ensureInitialised(OperationContext context) throws OperationFailedException {
+    private void ensureInitialised(String initialisingFor, OperationContext context) throws OperationFailedException {
         if (initialised == false) {
+
+            if (firstFailure != null) {
+                // We wrap the original Exception to ensure we have an appropriate stack trace on the
+                // subsequent error.
+                throw ROOT_LOGGER.expressionResolverInitialisationAlreadyFailed(firstFailure);
+            }
+
+            if (initialisingFor != null) {
+                String existingInitialisation = this.initialisingFor.get();
+                if (existingInitialisation != null) {
+                    throw ROOT_LOGGER.cycleDetectedInitialisingExpressionResolver(existingInitialisation,
+                            existingInitialisation);
+                }
+            }
+
             synchronized (this) {
                 if (initialised == false) {
-                    configurator.accept(this, context);
-                    // TODO Do we need to track the failure and prevent further attempts?
-                    initialised = true;
+                    try {
+                        this.initialisingFor.set(initialisingFor);
+                        configurator.accept(this, context);
+                        initialised = true;
+                    } catch (OperationFailedException e) {
+                        firstFailure = e;
+                        throw e;
+                    } finally {
+                        this.initialisingFor.set(null);
+                    }
                 }
             }
         }

@@ -632,6 +632,12 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1201, value = "No expression resolver has been defined with the name '%s'.")
     OperationFailedException noResolverWithSpecifiedName(String name);
 
+    @Message(id = 1202, value = "A cycle has been detected initialising the expression resolver for '%s' and '%s'.")
+    OperationFailedException cycleDetectedInitialisingExpressionResolver(String firstExpression, String secondExpression);
+
+    @Message(id = 1203, value = "Expression resolver initialisation has already failed.")
+    OperationFailedException expressionResolverInitialisationAlreadyFailed(@Cause Throwable cause);
+
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
