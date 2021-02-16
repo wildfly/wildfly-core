@@ -16,10 +16,8 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
-import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.STATE;
 import static org.wildfly.extension.elytron.ServiceStateDefinition.populateResponse;
@@ -35,32 +33,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
-import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -298,124 +288,10 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
     }
 
-    protected abstract static class BaseCredentialStoreAddHandler extends BaseAddHandler {
-
-
-        public BaseCredentialStoreAddHandler(RuntimeCapability<Void> credentialStoreRuntimeCapability,
-                AttributeDefinition[] configAttributes) {
-            super(credentialStoreRuntimeCapability, configAttributes);
-        }
-
-        @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
-
-            // Just add one capability to allow access to the CredentialStore using the runtime API.
-            BaseCredentialStoreDoohickey credentialStoreDoohickey = createDoohickey(context.getCurrentAddress());
-
-            context.registerCapability(RuntimeCapability.Builder
-                    .<ExceptionFunction<OperationContext, CredentialStore, OperationFailedException>> of(CREDENTIAL_STORE_API_CAPABILITY, true, credentialStoreDoohickey).build()
-                    .fromBaseCapability(context.getCurrentAddressValue()));
-        }
-
-        @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            final String name = context.getCurrentAddressValue();
-            ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
-                    name, ExceptionFunction.class);
-
-            BaseCredentialStoreDoohickey doohickey = (BaseCredentialStoreDoohickey) credentialStoreApi;
-            doohickey.resolveRuntime(context); // Must call parent 'resolveRuntime' as it handles the synchronization.
-
-            CapabilityServiceBuilder<?> serviceBuilder = context.getCapabilityServiceTarget().addCapability(CREDENTIAL_STORE_RUNTIME_CAPABILITY);
-
-            Consumer<CredentialStore> valueConsumer = serviceBuilder.provides(CREDENTIAL_STORE_RUNTIME_CAPABILITY);
-            doohickey.prepareService(context, serviceBuilder);
-
-            final TrivialService<CredentialStore> trivialService = new TrivialService<>(doohickey::get, valueConsumer);
-
-            commonDependencies(serviceBuilder.setInitialMode(Mode.ACTIVE).setInstance(trivialService)).install();
-        }
-
-        protected abstract BaseCredentialStoreDoohickey createDoohickey(final PathAddress resourceAddress);
-
-    }
-
     @FunctionalInterface
     interface CredentialStoreRuntimeOperation {
 
         void handle(OperationContext context, ModelNode operation, CredentialStore credentialStore) throws OperationFailedException;
-
-    }
-
-    /**
-     * The {@code Doohickey} is the central point for resource initialisation allowing a resource to be
-     * initialised for it's runtime API, as a service or a combination of them both.
-     */
-    protected abstract static class BaseCredentialStoreDoohickey implements ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> {
-
-        private final PathAddress resourceAddress;
-
-        private volatile boolean modelResolved = false;
-        private volatile ExceptionSupplier<CredentialStore, StartException> serviceValueSupplier;
-
-        private volatile CredentialStore credentialStore;
-
-        protected BaseCredentialStoreDoohickey(final PathAddress resourceAddress) {
-            this.resourceAddress = checkNotNullParam("resourceAddress", resourceAddress);
-        }
-
-        @Override
-        public final CredentialStore apply(final OperationContext foreignContext) throws OperationFailedException {
-            // The apply method is assumed to be called from the runtime API - i.e. MSC dependencies are not available.
-            if (credentialStore == null) {
-                synchronized(this) {
-                    if (credentialStore == null) {
-                        resolveRuntime(foreignContext);
-                        credentialStore = createImmediately(foreignContext);
-                    }
-                }
-            }
-
-            return credentialStore;
-        }
-
-        public final CredentialStore get() throws StartException {
-            // The get method is assumed to be called as part of the MSC lifecycle.
-            if (credentialStore == null) {
-                synchronized(this) {
-                    if (credentialStore == null) {
-                        credentialStore = serviceValueSupplier.get();
-                    }
-                }
-            }
-            return credentialStore;
-        }
-
-        public final void prepareService(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
-            // If we know we have been initialised i.e. an early expression resolution do we want to skip the service wiring?
-            serviceValueSupplier = prepareServiceSupplier(context, serviceBuilder);
-        }
-
-        public final void resolveRuntime(final OperationContext foreignContext) throws OperationFailedException {
-            // The OperationContext may not be foreign but treat it as though it is.
-            if (modelResolved == false) {
-                synchronized(this) {
-                    if (modelResolved == false) {
-                        ModelNode model = foreignContext.readResourceFromRoot(resourceAddress).getModel();
-                        resolveRuntime(model, foreignContext);
-                        modelResolved = true;
-                    }
-                }
-            }
-        }
-
-        protected abstract void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException;
-
-        protected abstract ExceptionSupplier<CredentialStore, StartException> prepareServiceSupplier(OperationContext context, CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException;
-
-        protected abstract CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException;
 
     }
 }

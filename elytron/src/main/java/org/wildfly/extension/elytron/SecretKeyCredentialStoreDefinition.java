@@ -16,6 +16,7 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
@@ -212,20 +213,20 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         generateSecretKeyOperation(context, operation, credentialStore, keySize);
     }
 
-    static class SecretKeyCredentialStoreAddHandler extends BaseCredentialStoreAddHandler {
+    static class SecretKeyCredentialStoreAddHandler extends DoohickeyAddHandler<CredentialStore> {
 
         private SecretKeyCredentialStoreAddHandler() {
-            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
+            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES, CREDENTIAL_STORE_API_CAPABILITY);
         }
 
         @Override
-        protected BaseCredentialStoreDoohickey createDoohickey(PathAddress resourceAddress) {
+        protected ElytronDoohickey<CredentialStore> createDoohickey(PathAddress resourceAddress) {
             return new SecretKeyDoohickey(resourceAddress);
         }
 
     }
 
-    static class SecretKeyDoohickey extends BaseCredentialStoreDoohickey {
+    static class SecretKeyDoohickey extends ElytronDoohickey<CredentialStore> {
 
         private volatile String relativeTo;
         private volatile String path;

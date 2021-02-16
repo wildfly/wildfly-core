@@ -20,6 +20,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
@@ -374,10 +375,10 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         return null;
     }
 
-    private static class CredentialStoreAddHandler extends BaseCredentialStoreAddHandler {
+    private static class CredentialStoreAddHandler extends DoohickeyAddHandler<CredentialStore> {
 
         private CredentialStoreAddHandler() {
-            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES);
+            super(CREDENTIAL_STORE_RUNTIME_CAPABILITY, CONFIG_ATTRIBUTES, CREDENTIAL_STORE_API_CAPABILITY);
         }
 
         @Override
@@ -387,7 +388,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         }
 
         @Override
-        protected BaseCredentialStoreDoohickey createDoohickey(PathAddress resourceAddress) {
+        protected ElytronDoohickey<CredentialStore> createDoohickey(PathAddress resourceAddress) {
             return new CredentialStoreDoohickey(resourceAddress);
         }
 
@@ -397,7 +398,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         }
     }
 
-    static class CredentialStoreDoohickey extends BaseCredentialStoreDoohickey {
+    static class CredentialStoreDoohickey extends ElytronDoohickey<CredentialStore> {
 
         private final String name;
         private volatile String location;
