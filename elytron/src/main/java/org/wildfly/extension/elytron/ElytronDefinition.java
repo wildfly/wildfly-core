@@ -176,7 +176,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         final boolean serverOrHostController = isServerOrHostController(resourceRegistration);
 
         // Expression Resolver
-        resourceRegistration.registerSubModel(ExpressionResolverResourceDefinition.getExpressionResolverDefinition());
+        resourceRegistration.registerSubModel(ExpressionResolverResourceDefinition.getExpressionResolverDefinition(resourceRegistration.getPathAddress()));
 
         // Provider Loader
         resourceRegistration.registerSubModel(ProviderDefinitions.getAggregateProvidersDefinition());
