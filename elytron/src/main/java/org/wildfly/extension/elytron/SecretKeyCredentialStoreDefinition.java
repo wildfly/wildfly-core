@@ -296,8 +296,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
                 return createCredentialStore(resolved);
             } catch (GeneralSecurityException e) {
-                // TODO Convert to a real error.
-                throw new OperationFailedException(e);
+                throw ROOT_LOGGER.unableToCreateCredentialStoreImmediately(e);
             }
         }
 

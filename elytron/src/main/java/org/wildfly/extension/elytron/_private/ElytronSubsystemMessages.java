@@ -329,7 +329,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 42, value = "Unable to transform multiple 'authorization-realms' to the single value")
     String unableToTransformMultipleRealms();
 
-    // CREDENTIAL_STORE section
+    /*
+     * Credential Store Section.
+     */
+
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
@@ -369,6 +372,15 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Update dependent resources as alias '%s' does not exist anymore")
     String updateDependantServices(String alias);
+
+    @Message(id = 922, value = "Unable to load credential from credential store.")
+    OperationFailedException unableToLoadCredential(@Cause Throwable cause);
+
+    @Message(id = 923, value = "Unable to encrypt the supplied clear text.")
+    OperationFailedException unableToEncryptClearText(@Cause Throwable cause);
+
+    @Message(id = 924, value = "Unable to create immediately available credential store.")
+    OperationFailedException unableToCreateCredentialStoreImmediately(@Cause Throwable cause);
 
     /*
      * Identity Resource Messages - 1000
@@ -610,17 +622,21 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
 
-    @Message(id = 1086, value = "The name of the resolver to use was not specified and no default-resolver has been defined.")
+    /*
+     * Expression Resolver Section
+     */
+
+    @Message(id = 1200, value = "The name of the resolver to use was not specified and no default-resolver has been defined.")
     OperationFailedException noResolverSpecifiedAndNoDefault();
 
-    @Message(id = 1087, value = "No expression resolver has been defined with the name '%s'.")
+    @Message(id = 1201, value = "No expression resolver has been defined with the name '%s'.")
     OperationFailedException noResolverWithSpecifiedName(String name);
 
-    @Message(id = 1088, value = "Unable to load credential from credential store.")
-    OperationFailedException unableToLoadCredential(@Cause Throwable cause);
-
-    @Message(id = 1089, value = "Unable to encrypt the supplied clear text.")
-    OperationFailedException unableToEncryptClearText(@Cause Throwable cause);
+    /*
+     * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
+     *
+     * If no suitable section is available add a new section.
+     */
 
 
 }
