@@ -69,7 +69,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
             .setDeprecated(ModelVersion.create(7,0,0))
             .build();
 
-    public static final SimpleAttributeDefinition CORE_MBEAN_SENSITIVITY = new SimpleAttributeDefinitionBuilder(CommonAttributes.NON_CORE_MBEAN_SENSITIVITY, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition NON_CORE_MBEAN_SENSITIVITY = new SimpleAttributeDefinitionBuilder(CommonAttributes.NON_CORE_MBEAN_SENSITIVITY, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.ACCESS_CONTROL)
             .setXmlName(CommonAttributes.NON_CORE_MBEANS)
@@ -109,7 +109,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         resourceRegistration.registerReadWriteAttribute(SHOW_MODEL_ALIAS, ShowModelAliasReadHandler.INSTANCE, ShowModelAliasWriteHandler.INSTANCE);
-        resourceRegistration.registerReadWriteAttribute(CORE_MBEAN_SENSITIVITY, null, CoreMBeansSensitivityWriteHandler.INSTANCE);
+        resourceRegistration.registerReadWriteAttribute(NON_CORE_MBEAN_SENSITIVITY, null, CoreMBeansSensitivityWriteHandler.INSTANCE);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
         static final CoreMBeansSensitivityWriteHandler INSTANCE = new CoreMBeansSensitivityWriteHandler();
 
         private CoreMBeansSensitivityWriteHandler() {
-            super(CORE_MBEAN_SENSITIVITY);
+            super(NON_CORE_MBEAN_SENSITIVITY);
 
         }
         @Override
