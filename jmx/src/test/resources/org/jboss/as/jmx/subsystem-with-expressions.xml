@@ -1,0 +1,28 @@
+<!--
+  ~ JBoss, Home of Professional Open Source
+  ~ Copyright 2021, JBoss Inc., and individual contributors as indicated
+  ~ by the @authors tag.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<subsystem xmlns="urn:jboss:domain:jmx:1.3">
+    <expose-resolved-model domain-name="${resolved-domain.prop:jboss.RESOLVED}" proper-property-format="false"/>
+    <expose-expression-model domain-name="${expression-domain.prop:jboss.EXPRESSION}"/>
+    <remoting-connector use-management-endpoint="${mgmt-endpoint:true}"/>
+    <audit-log log-boot="${log-boot.prop:true}" log-read-only="${log-read-only.prop:false}" enabled="${enabled.prop:false}">
+        <handlers>
+            <handler name="test"/>
+        </handlers>
+    </audit-log>
+    <sensitivity non-core-mbeans="${non-core-mbeans.prop:true}"/>
+</subsystem>

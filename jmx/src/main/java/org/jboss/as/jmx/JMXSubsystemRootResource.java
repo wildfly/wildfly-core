@@ -132,7 +132,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
                     OperationStepHandler handler = context.getResourceRegistration().getOperationEntry(PathAddress.pathAddress(ExposeModelResourceResolved.PATH_ELEMENT), ADD).getOperationHandler();
                     ModelNode addOp = new ModelNode();
                     addOp.get(OP).set(ADD);
-                    addOp.get(OP_ADDR).set(PathAddress.pathAddress(operation.get(OP_ADDR)).append(ExposeModelResourceResolved.PATH_ELEMENT).toModelNode());
+                    addOp.get(OP_ADDR).set(context.getCurrentAddress().append(ExposeModelResourceResolved.PATH_ELEMENT).toModelNode());
                     context.addStep(addOp, handler, Stage.MODEL, true);
                 }
             } else {
@@ -140,7 +140,7 @@ public class JMXSubsystemRootResource extends SimpleResourceDefinition {
                     OperationStepHandler handler = context.getResourceRegistration().getOperationEntry(PathAddress.pathAddress(ExposeModelResourceResolved.PATH_ELEMENT), REMOVE).getOperationHandler();
                     ModelNode addOp = new ModelNode();
                     addOp.get(OP).set(REMOVE);
-                    addOp.get(OP_ADDR).set(PathAddress.pathAddress(operation.get(OP_ADDR)).append(ExposeModelResourceResolved.PATH_ELEMENT).toModelNode());
+                    addOp.get(OP_ADDR).set(context.getCurrentAddress().append(ExposeModelResourceResolved.PATH_ELEMENT).toModelNode());
                     context.addStep(addOp, handler, Stage.MODEL, true);
                 }
             }
