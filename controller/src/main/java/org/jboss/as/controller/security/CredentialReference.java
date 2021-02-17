@@ -52,6 +52,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
+import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.credential.Credential;
@@ -125,6 +126,7 @@ public final class CredentialReference {
     /** Uses credentialStoreAttributeWithCapabilityReference */
     private static final ObjectTypeAttributeDefinition credentialReferenceADWithCapabilityReference;
 
+    private static final String CREDENTIAL_STORE_API_CAPABILITY = "org.wildfly.security.credential-store-api";
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -407,22 +409,6 @@ public final class CredentialReference {
 
         return new ExceptionSupplier<CredentialSource, Exception>() {
 
-            private String[] parseCommand(String command, String delimiter) {
-                // comma can be back slashed
-                final String[] parsedCommand = command.split("(?<!\\\\)" + delimiter);
-                for (int k = 0; k < parsedCommand.length; k++) {
-                    if (parsedCommand[k].indexOf('\\') != -1)
-                        parsedCommand[k] = parsedCommand[k].replaceAll("\\\\" + delimiter, delimiter);
-                }
-                return parsedCommand;
-            }
-
-            private String stripType(String commandSpec) {
-                StringTokenizer tokenizer = new StringTokenizer(commandSpec, "{}");
-                tokenizer.nextToken();
-                return tokenizer.nextToken();
-            }
-
             /**
              * Gets a Credential Store Supplier.
              *
@@ -458,59 +444,83 @@ public final class CredentialReference {
                     return command.build();
                 } else if (secret != null && secret.startsWith("MASK-")) {
                     // simple MASK- string with PicketBox compatibility and fixed algorithm and initial key material
-                    return new CredentialSource() {
-                        @Override
-                        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                            return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
-                        }
-
-                        @Override
-                        public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                            String[] part = secret.substring(5).split(";");  // strip "MASK-" and split by ';'
-                            if (part.length != 3) {
-                                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
-                            }
-                            String salt = part[1];
-                            final int iterationCount;
-                            try {
-                                iterationCount = Integer.parseInt(part[2]);
-                            } catch (NumberFormatException e) {
-                                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
-                            }
-                            try {
-                                PasswordBasedEncryptionUtil decryptUtil = new PasswordBasedEncryptionUtil.Builder()
-                                        .picketBoxCompatibility()
-                                        .salt(salt)
-                                        .iteration(iterationCount)
-                                        .decryptMode()
-                                        .build();
-                                return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR,
-                                        decryptUtil.decodeAndDecrypt(part[0]))));
-                            } catch (GeneralSecurityException e) {
-                                throw new IOException(e);
-                            }
-                        }
-                    };
+                    return new MaskCredentialSource(secret);
                 } else {
                     if (secret != null) {
                         // clear text password
-                        return new CredentialSource() {
-                            @Override
-                            public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                                return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
-                            }
-
-                            @Override
-                            public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
-                                return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, secret.toCharArray())));
-                            }
-                        };
+                        return new ClearTextCredentialSource(secret);
                     } else {
                         return null;  // this indicates use of original method to get password from configuration
                     }
                 }
             }
         };
+    }
+
+    static String[] parseCommand(String command, String delimiter) {
+        // comma can be back slashed
+        final String[] parsedCommand = command.split("(?<!\\\\)" + delimiter);
+        for (int k = 0; k < parsedCommand.length; k++) {
+            if (parsedCommand[k].indexOf('\\') != -1)
+                parsedCommand[k] = parsedCommand[k].replaceAll("\\\\" + delimiter, delimiter);
+        }
+        return parsedCommand;
+    }
+
+    static String stripType(String commandSpec) {
+        StringTokenizer tokenizer = new StringTokenizer(commandSpec, "{}");
+        tokenizer.nextToken();
+        return tokenizer.nextToken();
+    }
+
+    public static CredentialSource getCredentialSource(OperationContext context, ObjectTypeAttributeDefinition credentialReferenceAttributeDefinition, ModelNode model) throws OperationFailedException {
+        ModelNode value = credentialReferenceAttributeDefinition.resolveModelAttribute(context, model);
+
+        final String credentialStoreName = value.isDefined() ? credentialReferencePartAsStringIfDefined(value, CredentialReference.STORE) : null;
+        final String credentialAlias = value.isDefined() ? credentialReferencePartAsStringIfDefined(value, CredentialReference.ALIAS) : null;
+        final String credentialType = value.isDefined() ? credentialReferencePartAsStringIfDefined(value, CredentialReference.TYPE) : null;
+        final String clearText = value.isDefined() && value.hasDefined(CredentialReference.CLEAR_TEXT) ? value.get(CredentialReference.CLEAR_TEXT).asString() : null;
+
+        if (clearText != null) {
+            if ("COMMAND".equals(credentialType)) {
+                CommandCredentialSource.Builder command = CommandCredentialSource.builder();
+                String commandSpec = clearText.trim();
+                String[] parts;
+                if (commandSpec.startsWith("{EXT")) {
+                    parts = parseCommand(stripType(commandSpec), " ");  // space delimited
+                } else if (commandSpec.startsWith("{CMD")) {
+                    parts = parseCommand(stripType(commandSpec), ",");  // comma delimited
+                } else {
+                    parts = parseCommand(commandSpec, " ");
+                }
+                for(String part: parts) {
+                    command.addCommand(part);
+                }
+
+                try {
+                    return command.build();
+                } catch (GeneralSecurityException e) {
+                    // TODO Convert to numbered error.
+                    throw new OperationFailedException(e);
+                }
+            }
+
+            if (clearText.startsWith("MASK-")) {
+                return new MaskCredentialSource(clearText);
+            }
+
+            return new ClearTextCredentialSource(clearText);
+        }
+        if (credentialStoreName != null && credentialAlias != null) {
+            ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
+                    .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStoreName,
+                            ExceptionFunction.class);
+            final CredentialStore credentialStore = credentialStoreApi.apply(context);
+
+            return new CredentialStoreCredentialSource(() -> credentialStore, credentialAlias);
+        }
+
+        return null;
     }
 
     static CredentialStore getCredentialStore(ServiceRegistry serviceRegistry, ServiceName serviceName) {
@@ -764,4 +774,67 @@ public final class CredentialReference {
             }
         }
     }
+
+    static class MaskCredentialSource implements CredentialSource {
+
+        private final String secret;
+
+        MaskCredentialSource(final String secret) {
+            this.secret = secret;
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+            return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+            String[] part = secret.substring(5).split(";");  // strip "MASK-" and split by ';'
+            if (part.length != 3) {
+                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
+            }
+            String salt = part[1];
+            final int iterationCount;
+            try {
+                iterationCount = Integer.parseInt(part[2]);
+            } catch (NumberFormatException e) {
+                throw ControllerLogger.ROOT_LOGGER.wrongMaskedPasswordFormat();
+            }
+            try {
+                PasswordBasedEncryptionUtil decryptUtil = new PasswordBasedEncryptionUtil.Builder()
+                        .picketBoxCompatibility()
+                        .salt(salt)
+                        .iteration(iterationCount)
+                        .decryptMode()
+                        .build();
+                return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR,
+                        decryptUtil.decodeAndDecrypt(part[0]))));
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e);
+            }
+        }
+    }
+
+    static class ClearTextCredentialSource implements CredentialSource {
+
+        private final String secret;
+
+        ClearTextCredentialSource(final String secret) {
+            this.secret = secret;
+        }
+
+        @Override
+        public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+            return credentialType == PasswordCredential.class ? SupportLevel.SUPPORTED : SupportLevel.UNSUPPORTED;
+        }
+
+        @Override
+        public <C extends Credential> C getCredential(Class<C> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec) throws IOException {
+            return credentialType.cast(new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, secret.toCharArray())));
+        }
+
+    }
+
+
 }

@@ -233,7 +233,7 @@ class AggregateComponentDefinition<T> extends SimpleResourceDefinition {
                     List<T> loadedTypes = new ArrayList<>(aggregates.size());
                     for (String current : aggregates) {
                         final ExceptionFunction<OperationContext, T, OperationFailedException> typeApi = foreignContext
-                                .getCapabilityRuntimeAPI(apiCapabilityName, foreignContext.getCurrentAddressValue(), ExceptionFunction.class);
+                                .getCapabilityRuntimeAPI(apiCapabilityName, current, ExceptionFunction.class);
                         loadedTypes.add(typeApi.apply(foreignContext));
                     }
 

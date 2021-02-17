@@ -56,7 +56,7 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
     public final T apply(final OperationContext foreignContext) throws OperationFailedException {
         // The apply method is assumed to be called from the runtime API - i.e. MSC dependencies are not available.
         if (value == null) {
-            synchronized(this) {
+            synchronized(this) { // TODO Do we need to detect a cycle here.
                 if (value == null) {
                     resolveRuntime(foreignContext);
                     value = createImmediately(foreignContext);
@@ -87,7 +87,7 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
     public final void resolveRuntime(final OperationContext foreignContext) throws OperationFailedException {
         // The OperationContext may not be foreign but treat it as though it is.
         if (modelResolved == false) {
-            synchronized(this) {
+            synchronized(this) { // TODO Do we need to detect a cycle here.
                 if (modelResolved == false) {
                     ModelNode model = foreignContext.readResourceFromRoot(resourceAddress).getModel();
                     resolveRuntime(model, foreignContext);

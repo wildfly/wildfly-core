@@ -18,11 +18,13 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.security.CredentialReference.getCredentialSource;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
@@ -68,6 +70,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
+import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.EmptyProvider;
@@ -77,6 +80,7 @@ import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.credential.store.CredentialStore;
+import org.wildfly.security.credential.store.CredentialStore.CredentialSourceProtectionParameter;
 import org.wildfly.security.credential.store.CredentialStoreException;
 import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
 
@@ -410,7 +414,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         private volatile String providerName;
         private volatile String relativeTo;
         private volatile Map<String, String> credentialStoreAttributes;
-        private volatile ModelNode model; // TODO Temporary
+        private volatile ModelNode model; // TODO Temporary(ish)
 
         protected CredentialStoreDoohickey(PathAddress resourceAddress) {
             super(resourceAddress);
@@ -506,7 +510,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
 
                         ROOT_LOGGER.tracef("starting CredentialStore:  name = %s", name);
 
-                        CredentialStore cs = getCredentialStoreInstance();
+                        CredentialStore cs = getCredentialStoreInstance(providerSupplier != null ? providerSupplier.get() : null);
                         Provider[] otherProvidersArr = otherProviderSupplier != null ? otherProviderSupplier.get() : null;
                         if (ROOT_LOGGER.isTraceEnabled()) {
                             ROOT_LOGGER.tracef(
@@ -514,9 +518,10 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                                     name, type, providerName, Arrays.toString(otherProvidersArr), credentialStoreAttributes);
                         }
 
+                        CredentialSourceProtectionParameter credentialSource = resolveCredentialStoreProtectionParameter(
+                                credentialSourceSupplier != null ? credentialSourceSupplier.get() : null);
                         synchronized (EmptyProvider.getInstance()) {
-                            cs.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(),
-                                    otherProvidersArr);
+                            cs.initialize(credentialStoreAttributes, credentialSource, otherProvidersArr);
                         }
 
                         return cs;
@@ -525,57 +530,88 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                     }
                 }
 
-                private CredentialStore getCredentialStoreInstance() throws CredentialStoreException, NoSuchAlgorithmException, NoSuchProviderException {
-                    String resolvedType = type != null ? type : KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE;
-                    if (providerName != null) {
-                        // directly specified provider
-                        return CredentialStore.getInstance(resolvedType, providerName);
-                    }
-
-                    Provider[] injectedProviders = providerSupplier != null ? providerSupplier.get() : null;
-                    if (ROOT_LOGGER.isTraceEnabled()) {
-                        ROOT_LOGGER.tracef("obtaining CredentialStore %s from providers %s", name, Arrays.toString(injectedProviders));
-                    }
-                    if (injectedProviders != null) {
-                        // injected provider list, select the first provider with corresponding type
-                        for (Provider p : injectedProviders) {
-                            try {
-                                return CredentialStore.getInstance(resolvedType, p);
-                            } catch (NoSuchAlgorithmException ignore) {
-                            }
-                        }
-                        throw ROOT_LOGGER.providerLoaderCannotSupplyProvider(providers, resolvedType);
-                    } else {
-                        // default provider
-                        return CredentialStore.getInstance(resolvedType);
-                    }
-                }
-
-                private CredentialStore.CredentialSourceProtectionParameter resolveCredentialStoreProtectionParameter() throws Exception {
-                    CredentialSource cs = credentialSourceSupplier != null ? credentialSourceSupplier.get() : null;
-                    if (cs != null) {
-                        Credential credential = cs.getCredential(PasswordCredential.class);
-                        ROOT_LOGGER.tracef("resolving CredentialStore %s ProtectionParameter from %s", name, credential);
-                        return credentialToCredentialSourceProtectionParameter(credential);
-                    } else {
-                        throw ROOT_LOGGER.credentialStoreProtectionParameterCannotBeResolved(name);
-                    }
-                }
-
-                private CredentialStore.CredentialSourceProtectionParameter credentialToCredentialSourceProtectionParameter(Credential credential) {
-                    return new CredentialStore.CredentialSourceProtectionParameter(IdentityCredentials.NONE.withCredential(credential));
-                }
-
             };
 
         }
 
         @Override
         protected CredentialStore createImmediately(OperationContext foreignContext) throws OperationFailedException {
-            // TODO Still to be implemented but we have some more complex dependencies to fix.
-            throw new IllegalStateException("Not yet implemented");
+            File resolvedPath = null;
+            if (location != null) {
+                resolvedPath = resolveRelativeToImmediately(location, relativeTo, foreignContext);
+            }
+
+            Provider[] providers = null;
+            if (this.providers != null) {
+                ExceptionFunction<OperationContext, Provider[], OperationFailedException> providerApi = foreignContext
+                        .getCapabilityRuntimeAPI(PROVIDERS_API_CAPABILITY, this.providers, ExceptionFunction.class);
+                providers = providerApi.apply(foreignContext);
+            }
+
+            Provider[] otherProviders = null;
+            if (this.otherProviders != null) {
+                ExceptionFunction<OperationContext, Provider[], OperationFailedException> providerApi = foreignContext
+                        .getCapabilityRuntimeAPI(PROVIDERS_API_CAPABILITY, this.otherProviders, ExceptionFunction.class);
+                otherProviders = providerApi.apply(foreignContext);
+            }
+
+            CredentialSource credentialSource = getCredentialSource(foreignContext, CREDENTIAL_REFERENCE, model);
+
+            try {
+                CredentialStore credentialStore = getCredentialStoreInstance(providers);
+
+                synchronized (EmptyProvider.getInstance()) {
+                    credentialStore.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(credentialSource), otherProviders);
+                }
+
+                return credentialStore;
+            } catch (Exception e) {
+                // TODO Convert to real error with code.
+                throw new OperationFailedException(e);
+            }
+
         }
 
+        private CredentialStore getCredentialStoreInstance(Provider[] injectedProviders) throws CredentialStoreException, NoSuchAlgorithmException, NoSuchProviderException {
+            String resolvedType = type != null ? type : KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE;
+            if (providerName != null) {
+                // directly specified provider
+                return CredentialStore.getInstance(resolvedType, providerName);
+            }
+
+            if (ROOT_LOGGER.isTraceEnabled()) {
+                ROOT_LOGGER.tracef("obtaining CredentialStore %s from providers %s", name, Arrays.toString(injectedProviders));
+            }
+            if (injectedProviders != null) {
+                // injected provider list, select the first provider with corresponding type
+                for (Provider p : injectedProviders) {
+                    try {
+                        return CredentialStore.getInstance(resolvedType, p);
+                    } catch (NoSuchAlgorithmException ignore) {
+                    }
+                }
+                // TODO This method could be static if it was not for this error reporting.
+                throw ROOT_LOGGER.providerLoaderCannotSupplyProvider(providers, resolvedType);
+            } else {
+                // default provider
+                return CredentialStore.getInstance(resolvedType);
+            }
+        }
+
+        private CredentialStore.CredentialSourceProtectionParameter resolveCredentialStoreProtectionParameter(CredentialSource cs) throws Exception {
+            if (cs != null) {
+                Credential credential = cs.getCredential(PasswordCredential.class);
+                // TODO This method could be static if it was not for this TRACE logging.
+                ROOT_LOGGER.tracef("resolving CredentialStore %s ProtectionParameter from %s", name, credential);
+                return credentialToCredentialSourceProtectionParameter(credential);
+            } else {
+                throw ROOT_LOGGER.credentialStoreProtectionParameterCannotBeResolved(name);
+            }
+        }
+
+        private static CredentialStore.CredentialSourceProtectionParameter credentialToCredentialSourceProtectionParameter(Credential credential) {
+            return new CredentialStore.CredentialSourceProtectionParameter(IdentityCredentials.NONE.withCredential(credential));
+        }
 
     }
 }
