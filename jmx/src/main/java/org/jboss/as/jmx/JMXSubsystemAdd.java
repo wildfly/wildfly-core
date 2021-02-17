@@ -52,7 +52,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
     JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier,  RuntimeHostControllerInfoAccessor hostInfoAccessor) {
-        super(JMXSubsystemRootResource.JMX_CAPABILITY, JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY);
+        super(JMXSubsystemRootResource.JMX_CAPABILITY, JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
         this.securityIdentitySupplier = securityIdentitySupplier;
@@ -73,7 +73,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
         if (model.hasDefined(CommonAttributes.PROPER_PROPERTY_FORMAT)) {
             legacyWithProperPropertyFormat = ExposeModelResourceExpression.DOMAIN_NAME.resolveModelAttribute(context, model).asBoolean();
         }
-        boolean coreMBeanSensitivity = JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.resolveModelAttribute(context, model).asBoolean();
+        boolean coreMBeanSensitivity = JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY.resolveModelAttribute(context, model).asBoolean();
         final boolean isMasterHc;
         if (context.getProcessType().isHostController()) {
             isMasterHc = hostInfoAccessor.getHostControllerInfo(context).isMasterHc();

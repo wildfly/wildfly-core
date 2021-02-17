@@ -420,7 +420,7 @@ public class JMXExtension implements Extension {
                 final String attribute = reader.getAttributeLocalName(i);
                 switch (attribute) {
                     case CommonAttributes.NON_CORE_MBEANS:
-                        JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.parseAndSetParameter(value, add, reader);
+                        JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY.parseAndSetParameter(value, add, reader);
                         break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
@@ -565,9 +565,9 @@ public class JMXExtension implements Extension {
 
                 writer.writeEndElement();
             }
-            if (node.hasDefined(JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.getName())) {
+            if (node.hasDefined(JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY.getName())) {
                 writer.writeStartElement(CommonAttributes.SENSITIVITY);
-                JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.marshallAsAttribute(node, writer);
+                JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY.marshallAsAttribute(node, writer);
                 writer.writeEndElement();
             }
             writer.writeEndElement();
