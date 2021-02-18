@@ -176,6 +176,11 @@ class KeyStoreService implements ModifiableKeyStoreService {
                         keyStore = AtomicLoadKeyStore.atomize(detected);
                     }
                 } else {
+                    if (keyStore == null) {
+                        ROOT_LOGGER.keyStoreNotExistsDefaultWillBeUsed();
+                        keyStore = AtomicLoadKeyStore.newInstance(KeyStore.getDefaultType());
+                    }
+
                     synchronized (EmptyProvider.getInstance()) {
                         keyStore.load(null, password);
                     }

@@ -609,4 +609,8 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1085, value = "Generated self-signed certificate at %s. Please note that self-signed certificates are not secure and should only be used for testing purposes. Do not use this self-signed certificate in production.\nSHA-1 fingerprint of the generated key is %s\nSHA-256 fingerprint of the generated key is %s")
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
+
+    @Message(id = 1086, value = "KeyStore does not exist. Used default.")
+    @LogMessage(level = WARN)
+    void keyStoreNotExistsDefaultWillBeUsed();
 }
