@@ -18,6 +18,7 @@
 package org.jboss.as.controller.security;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -500,8 +501,7 @@ public final class CredentialReference {
                 try {
                     return command.build();
                 } catch (GeneralSecurityException e) {
-                    // TODO Convert to numbered error.
-                    throw new OperationFailedException(e);
+                    throw MGMT_OP_LOGGER.unableToBuildCommandCredentialSource(e);
                 }
             }
 

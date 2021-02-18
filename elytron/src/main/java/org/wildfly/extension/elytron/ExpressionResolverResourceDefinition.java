@@ -160,7 +160,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
         ModelNode expressionEncryption = context.readResourceFromRoot(resourceAddress).getModel();
 
         String prefix = PREFIX.resolveModelAttribute(context, expressionEncryption).asString();
-        // TODO During Stage.MODEL we should verify the default does map to a resolver, likely as an end of stage OSH.
+
         String defaultResolver = DEFAULT_RESOLVER.resolveModelAttribute(context, expressionEncryption).asStringOrNull();
 
         Map<String, ResolverConfiguration> resolverConfigurations = new HashMap<>();

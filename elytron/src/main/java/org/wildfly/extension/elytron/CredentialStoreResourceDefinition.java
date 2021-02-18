@@ -32,6 +32,7 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolve
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -196,42 +197,24 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .build();
 
     // Operations
-    private static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
-            .setRuntimeOnly()
-            .build();
 
-    private static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
-            .setRuntimeOnly()
-            .setReadOnly()
-            .build();
-
-    private static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition ADD_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.ADD_ALIAS, OPERATION_RESOLVER)
             .setParameters(ALIAS, ADD_ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
-    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, OPERATION_RESOLVER)
             .setParameters(ALIAS, REMOVE_ENTRY_TYPE)
             .setRuntimeOnly()
             .build();
 
-    private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition SET_SECRET = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.SET_SECRET, OPERATION_RESOLVER)
             .setParameters(ALIAS, ADD_ENTRY_TYPE, SECRET_VALUE)
             .setRuntimeOnly()
             .build();
 
-    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, OPERATION_RESOLVER)
             .setParameters(ALIAS, KEY_SIZE)
-            .setRuntimeOnly()
-            .build();
-
-    private static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_SECRET_KEY, RESOURCE_RESOLVER)
-            .setParameters(ALIAS, KEY)
-            .setRuntimeOnly()
-            .build();
-
-    static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, RESOURCE_RESOLVER)
-            .setParameters(ALIAS)
             .setRuntimeOnly()
             .build();
 
@@ -413,7 +396,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         private volatile String providerName;
         private volatile String relativeTo;
         private volatile Map<String, String> credentialStoreAttributes;
-        private volatile ModelNode model; // TODO Temporary(ish)
+        private volatile ModelNode model; // It would be nice to eliminate but credential reference performs resolution
+                                          // and use of values in a single step.
 
         private volatile ExceptionRunnable<GeneralSecurityException> reloader;
 
@@ -519,7 +503,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                                     name, type, providerName, Arrays.toString(otherProvidersArr), credentialStoreAttributes);
                         }
 
-                        CredentialSourceProtectionParameter credentialSource = resolveCredentialStoreProtectionParameter(
+                        CredentialSourceProtectionParameter credentialSource = resolveCredentialStoreProtectionParameter(name,
                                 credentialSourceSupplier != null ? credentialSourceSupplier.get() : null);
                         reloader = new ExceptionRunnable<GeneralSecurityException>() {
 
@@ -571,7 +555,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             try {
                 CredentialStore credentialStore = getCredentialStoreInstance(providers);
 
-                CredentialSourceProtectionParameter protectionParamter = resolveCredentialStoreProtectionParameter(credentialSource);
+                CredentialSourceProtectionParameter protectionParamter = resolveCredentialStoreProtectionParameter(name, credentialSource);
                 reloader = new ExceptionRunnable<GeneralSecurityException>() {
 
                     @Override
@@ -583,11 +567,9 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                 };
                 reloader.run();
 
-
                 return credentialStore;
-            } catch (Exception e) {
-                // TODO Convert to real error with code.
-                throw new OperationFailedException(e);
+            } catch (GeneralSecurityException | IOException e) {
+                throw ROOT_LOGGER.unableToInitialiseCredentialStore(e);
             }
 
         }
@@ -619,7 +601,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                     } catch (NoSuchAlgorithmException ignore) {
                     }
                 }
-                // TODO This method could be static if it was not for this error reporting.
+
                 throw ROOT_LOGGER.providerLoaderCannotSupplyProvider(providers, resolvedType);
             } else {
                 // default provider
@@ -627,10 +609,10 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             }
         }
 
-        private CredentialStore.CredentialSourceProtectionParameter resolveCredentialStoreProtectionParameter(CredentialSource cs) throws Exception {
+        private static CredentialStore.CredentialSourceProtectionParameter resolveCredentialStoreProtectionParameter(String name, CredentialSource cs) throws IOException {
             if (cs != null) {
                 Credential credential = cs.getCredential(PasswordCredential.class);
-                // TODO This method could be static if it was not for this TRACE logging.
+
                 ROOT_LOGGER.tracef("resolving CredentialStore %s ProtectionParameter from %s", name, credential);
                 return credentialToCredentialSourceProtectionParameter(credential);
             } else {

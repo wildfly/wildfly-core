@@ -45,8 +45,11 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleOperationDefinition;
+import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -73,7 +76,16 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
     static final ServiceUtil<CredentialStore> CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CREDENTIAL_STORE, CredentialStore.class);
 
-    // Operation Parameters
+    // Operations
+
+    static final StandardResourceDescriptionResolver OPERATION_RESOLVER = ElytronExtension
+            .getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE,
+                    ElytronDescriptionConstants.OPERATIONS);
+
+    static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, OPERATION_RESOLVER)
+            .setRuntimeOnly()
+            .setReadOnly()
+            .build();
 
     static final SimpleAttributeDefinition ALIAS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.ALIAS, ModelType.STRING, false)
             .setMinSize(1)
@@ -81,6 +93,20 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
     static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
             .setMinSize(1)
+            .build();
+
+    static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, OPERATION_RESOLVER)
+            .setParameters(ALIAS)
+            .setRuntimeOnly()
+            .build();
+
+    static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_SECRET_KEY, OPERATION_RESOLVER)
+            .setParameters(ALIAS, KEY)
+            .setRuntimeOnly()
+            .build();
+
+    static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, OPERATION_RESOLVER)
+            .setRuntimeOnly()
             .build();
 
     static final OperationStepHandler RELOAD_HANDLER = new CredentialStoreReloadHandler();

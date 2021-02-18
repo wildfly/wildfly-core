@@ -117,24 +117,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     // Operation Definitions and Parameters
 
-    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition REMOVE_ALIAS = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.REMOVE_ALIAS, OPERATION_RESOLVER)
             .setParameters(ALIAS)
-            .setRuntimeOnly()
-            .build();
-
-    // TODO Can we move up if we switch to a common ResourceResolver?
-    private static final SimpleOperationDefinition READ_ALIASES = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.READ_ALIASES, RESOURCE_RESOLVER)
-            .setRuntimeOnly()
-            .setReadOnly()
-            .build();
-
-    private static final SimpleOperationDefinition EXPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.EXPORT_SECRET_KEY, RESOURCE_RESOLVER)
-            .setParameters(ALIAS)
-            .setRuntimeOnly()
-            .build();
-
-    private static final SimpleOperationDefinition IMPORT_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.IMPORT_SECRET_KEY, RESOURCE_RESOLVER)
-            .setParameters(ALIAS, KEY)
             .setRuntimeOnly()
             .build();
 
@@ -144,12 +128,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             .setRestartAllServices()
             .build();
 
-    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, RESOURCE_RESOLVER)
+    private static final SimpleOperationDefinition GENERATE_SECRET_KEY = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.GENERATE_SECRET_KEY, OPERATION_RESOLVER)
             .setParameters(ALIAS, KEY_SIZE_PARAMETER)
-            .setRuntimeOnly()
-            .build();
-
-    private static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
             .setRuntimeOnly()
             .build();
 

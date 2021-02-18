@@ -385,6 +385,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 925, value = "Unable to reload the credential store.")
     OperationFailedException unableToReloadCredentialStore(@Cause Throwable cause);
 
+    @Message(id = 926, value = "Unable to initialize the credential store.")
+    OperationFailedException unableToInitialiseCredentialStore(@Cause Throwable cause);
+
     /*
      * Identity Resource Messages - 1000
      */

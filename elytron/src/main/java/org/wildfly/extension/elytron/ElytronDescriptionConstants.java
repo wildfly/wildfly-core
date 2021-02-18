@@ -369,6 +369,7 @@ interface ElytronDescriptionConstants {
     String OCSP = "ocsp";
     String OID = "oid";
     String ONLY_LEAF_CERT = "only-leaf-cert";
+    String OPERATIONS = "operations";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
