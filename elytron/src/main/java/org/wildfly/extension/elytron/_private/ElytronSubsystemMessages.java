@@ -329,6 +329,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 42, value = "Unable to transform multiple 'authorization-realms' to the single value")
     String unableToTransformMultipleRealms();
 
+    @Message(id = 43, value = "A cycle has been detected initialising the resources - %s")
+    OperationFailedException cycleDetected(String cycle);
+
     /*
      * Credential Store Section.
      */
