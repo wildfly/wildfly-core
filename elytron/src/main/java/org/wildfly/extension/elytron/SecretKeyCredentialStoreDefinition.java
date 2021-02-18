@@ -52,6 +52,7 @@ import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.StartException;
+import org.wildfly.common.function.ExceptionRunnable;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -148,6 +149,10 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             .setRuntimeOnly()
             .build();
 
+    private static final SimpleOperationDefinition RELOAD = new SimpleOperationDefinitionBuilder(ElytronDescriptionConstants.RELOAD, RESOURCE_RESOLVER)
+            .setRuntimeOnly()
+            .build();
+
     SecretKeyCredentialStoreDefinition() {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE), RESOURCE_RESOLVER)
                 .setAddHandler(ADD)
@@ -186,9 +191,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, operationHandler);
+            resourceRegistration.registerOperationHandler(RELOAD, RELOAD_HANDLER);
         }
-
-        // TODO - Need to add reload but TBH the implementation on CredentialStoreResourceDefinition is not great.
     }
 
     /*
@@ -225,7 +229,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     }
 
-    static class SecretKeyDoohickey extends ElytronDoohickey<CredentialStore> {
+    static class SecretKeyDoohickey extends AbstractCredentialStoreDoohickey {
 
         private volatile String relativeTo;
         private volatile String path;
@@ -233,6 +237,8 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         private volatile boolean populate;
         private volatile int keySize;
         private volatile String defaultAlias;
+
+        private volatile ExceptionRunnable<GeneralSecurityException> reloader;
 
         protected SecretKeyDoohickey(PathAddress resourceAddress) {
             super(resourceAddress);
@@ -293,12 +299,21 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
         private CredentialStore createCredentialStore(final File resolved) throws GeneralSecurityException {
             CredentialStore credentialStore = CredentialStore.getInstance(CREDENTIAL_STORE_TYPE);
 
-            Map<String, String> configuration = new HashMap<>();
+            final Map<String, String> configuration = new HashMap<>();
             configuration.put(ElytronDescriptionConstants.LOCATION, resolved.getAbsolutePath());
             if (create) {
                 configuration.put(ElytronDescriptionConstants.CREATE, Boolean.TRUE.toString());
             }
-            credentialStore.initialize(configuration);
+
+            reloader = new ExceptionRunnable<GeneralSecurityException>() {
+
+                @Override
+                public void run() throws GeneralSecurityException {
+                        credentialStore.initialize(configuration);
+                }
+            };
+            reloader.run();
+
             if (populate && !credentialStore.getAliases().contains(defaultAlias)) {
                 SecretKey secretKey = generateSecretKey(keySize);
                 SecretKeyCredential credential = new SecretKeyCredential(secretKey);
@@ -308,6 +323,15 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             }
 
             return credentialStore;
+        }
+
+        @Override
+        protected void reload(OperationContext context) throws GeneralSecurityException, OperationFailedException {
+            if (reloader != null) {
+                reloader.run();
+            } else {
+                super.apply(context);
+            }
         }
 
     }

@@ -32,6 +32,7 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolve
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -71,6 +72,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
+import org.wildfly.common.function.ExceptionRunnable;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.EmptyProvider;
@@ -280,10 +282,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             resourceRegistration.registerOperationHandler(GENERATE_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(EXPORT_SECRET_KEY, operationHandler);
             resourceRegistration.registerOperationHandler(IMPORT_SECRET_KEY, operationHandler);
+            resourceRegistration.registerOperationHandler(RELOAD, RELOAD_HANDLER);
         }
-
-     // TODO - Need to add reload but TBH the original implementation on CredentialStoreResourceDefinition is not great.
-        //resourceRegistration.registerOperationHandler(RELOAD, CredentialStoreHandler.INSTANCE);
     }
 
     /*
@@ -402,12 +402,11 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         }
     }
 
-    static class CredentialStoreDoohickey extends ElytronDoohickey<CredentialStore> {
+    static class CredentialStoreDoohickey extends AbstractCredentialStoreDoohickey {
 
         private final String name;
         private volatile String location;
         private volatile boolean modifiable;
-        private volatile boolean create;
         private volatile String type;
         private volatile String providers;
         private volatile String otherProviders;
@@ -415,6 +414,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
         private volatile String relativeTo;
         private volatile Map<String, String> credentialStoreAttributes;
         private volatile ModelNode model; // TODO Temporary(ish)
+
+        private volatile ExceptionRunnable<GeneralSecurityException> reloader;
 
         protected CredentialStoreDoohickey(PathAddress resourceAddress) {
             super(resourceAddress);
@@ -520,9 +521,16 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
 
                         CredentialSourceProtectionParameter credentialSource = resolveCredentialStoreProtectionParameter(
                                 credentialSourceSupplier != null ? credentialSourceSupplier.get() : null);
-                        synchronized (EmptyProvider.getInstance()) {
-                            cs.initialize(credentialStoreAttributes, credentialSource, otherProvidersArr);
-                        }
+                        reloader = new ExceptionRunnable<GeneralSecurityException>() {
+
+                            @Override
+                            public void run() throws GeneralSecurityException {
+                                synchronized (EmptyProvider.getInstance()) {
+                                    cs.initialize(credentialStoreAttributes, credentialSource, otherProvidersArr);
+                                }
+                            }
+                        };
+                        reloader.run();
 
                         return cs;
                     } catch (Exception e) {
@@ -539,6 +547,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             File resolvedPath = null;
             if (location != null) {
                 resolvedPath = resolveRelativeToImmediately(location, relativeTo, foreignContext);
+                credentialStoreAttributes.put(ElytronDescriptionConstants.LOCATION, resolvedPath.getAbsolutePath());
             }
 
             Provider[] providers = null;
@@ -548,11 +557,13 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                 providers = providerApi.apply(foreignContext);
             }
 
-            Provider[] otherProviders = null;
+            Provider[] otherProviders;
             if (this.otherProviders != null) {
                 ExceptionFunction<OperationContext, Provider[], OperationFailedException> providerApi = foreignContext
                         .getCapabilityRuntimeAPI(PROVIDERS_API_CAPABILITY, this.otherProviders, ExceptionFunction.class);
                 otherProviders = providerApi.apply(foreignContext);
+            } else {
+                otherProviders = null;
             }
 
             CredentialSource credentialSource = getCredentialSource(foreignContext, CREDENTIAL_REFERENCE, model);
@@ -560,9 +571,18 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             try {
                 CredentialStore credentialStore = getCredentialStoreInstance(providers);
 
-                synchronized (EmptyProvider.getInstance()) {
-                    credentialStore.initialize(credentialStoreAttributes, resolveCredentialStoreProtectionParameter(credentialSource), otherProviders);
-                }
+                CredentialSourceProtectionParameter protectionParamter = resolveCredentialStoreProtectionParameter(credentialSource);
+                reloader = new ExceptionRunnable<GeneralSecurityException>() {
+
+                    @Override
+                    public void run() throws GeneralSecurityException {
+                        synchronized (EmptyProvider.getInstance()) {
+                            credentialStore.initialize(credentialStoreAttributes, protectionParamter, otherProviders);
+                        }
+                    }
+                };
+                reloader.run();
+
 
                 return credentialStore;
             } catch (Exception e) {
@@ -570,6 +590,15 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
                 throw new OperationFailedException(e);
             }
 
+        }
+
+        @Override
+        protected void reload(OperationContext context) throws GeneralSecurityException, OperationFailedException {
+            if (reloader != null) {
+                reloader.run();
+            } else {
+                super.apply(context);
+            }
         }
 
         private CredentialStore getCredentialStoreInstance(Provider[] injectedProviders) throws CredentialStoreException, NoSuchAlgorithmException, NoSuchProviderException {

@@ -382,6 +382,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 924, value = "Unable to create immediately available credential store.")
     OperationFailedException unableToCreateCredentialStoreImmediately(@Cause Throwable cause);
 
+    @Message(id = 925, value = "Unable to reload the credential store.")
+    OperationFailedException unableToReloadCredentialStore(@Cause Throwable cause);
+
     /*
      * Identity Resource Messages - 1000
      */

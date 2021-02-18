@@ -41,6 +41,8 @@ import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.OperationStepHandler;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
@@ -51,6 +53,7 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.function.ExceptionFunction;
+import org.wildfly.extension.elytron.CredentialStoreResourceDefinition.CredentialStoreDoohickey;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -79,6 +82,8 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
     static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEY, ModelType.STRING, false)
             .setMinSize(1)
             .build();
+
+    static final OperationStepHandler RELOAD_HANDLER = new CredentialStoreReloadHandler();
 
     protected AbstractCredentialStoreResourceDefinition(Parameters parameters) {
         super(parameters);
@@ -255,6 +260,16 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         return sb.toString();
     }
 
+    protected abstract static class AbstractCredentialStoreDoohickey extends ElytronDoohickey<CredentialStore> {
+
+        protected AbstractCredentialStoreDoohickey(PathAddress resourceAddress) {
+            super(resourceAddress);
+        }
+
+        protected abstract void reload(OperationContext context) throws GeneralSecurityException, OperationFailedException;
+
+    }
+
     protected class CredentialStoreRuntimeHandler extends ElytronRuntimeOnlyHandler {
 
         private final Map<String, CredentialStoreRuntimeOperation> definedOperations;
@@ -284,6 +299,25 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
                     .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, context.getCurrentAddressValue(), ExceptionFunction.class);
 
             return credentialStoreApi.apply(context);
+        }
+
+    }
+
+    static class CredentialStoreReloadHandler extends ElytronRuntimeOnlyHandler {
+
+        @Override
+        protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
+            final ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
+                    .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, context.getCurrentAddressValue(), ExceptionFunction.class);
+
+            CredentialStoreDoohickey doohickey = (CredentialStoreDoohickey) credentialStoreApi;
+
+            try {
+                doohickey.reload(context);
+            } catch (GeneralSecurityException e) {
+                throw ROOT_LOGGER.unableToReloadCredentialStore(e);
+            }
+
         }
 
     }
