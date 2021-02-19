@@ -484,6 +484,10 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
                             ServerGroupResourceDefinition.PROFILE.parseAndSetParameter(value, groupAddOp, reader);
                             break;
                         }
+                        case GRACEFUL_STARTUP: {
+                            ServerGroupResourceDefinition.GRACEFUL_STARTUP.parseAndSetParameter(value, groupAddOp, reader);
+                            break;
+                        }
                         case MANAGEMENT_SUBSYSTEM_ENDPOINT: {
                             ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT.parseAndSetParameter(value, groupAddOp, reader);
                             break;
@@ -747,6 +751,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
         writer.writeAttribute(Attribute.NAME.getLocalName(), groupName);
 
         ServerGroupResourceDefinition.PROFILE.marshallAsAttribute(group, writer);
+        ServerGroupResourceDefinition.GRACEFUL_STARTUP.marshallAsAttribute(group, writer);
         ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT.marshallAsAttribute(group, writer);
 
         // JVM

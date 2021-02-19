@@ -124,9 +124,12 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
     private final boolean suspend;
+    private final boolean gracefulStartup;
     private JvmType jvmType;
 
-    public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel, final HostControllerEnvironment environment, final ExpressionResolver expressionResolver, boolean suspend) {
+    public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel,
+                                       final HostControllerEnvironment environment, final ExpressionResolver expressionResolver,
+                                       final boolean suspend) {
         this.serverName = serverName;
         this.domainModel = domainModel;
         this.hostModel = hostModel;
@@ -177,6 +180,12 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 resolveNilableExpressions(serverVM, expressionResolver, false));
 
         this.sslContextSupplier = createSSLContextSupplier(serverModel, expressionResolver);
+
+        try {
+            this.gracefulStartup = ServerGroupResourceDefinition.GRACEFUL_STARTUP.resolveModelAttribute(expressionResolver, serverGroup).asBoolean();
+        } catch (OperationFailedException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     private static ModelNode resolveNilableExpressions(final ModelNode unresolved, final ExpressionResolver expressionResolver, boolean excludePostBootSystemProps) {
@@ -392,6 +401,10 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         command.addAll(jvmElement.getModuleOptions().getOptions());
         command.add("org.jboss.as.server");
 
+        if (!isGracefulStartup()) {
+            command.add(CommandLineConstants.GRACEFUL_STARTUP + "=false");
+        }
+
         if(suspend) {
             command.add(CommandLineConstants.START_MODE + "=" + CommandLineConstants.SUSPEND_MODE);
         }
@@ -446,6 +459,11 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     @Override
     public boolean isSuspended() {
         return suspend;
+    }
+
+    @Override
+    public boolean isGracefulStartup() {
+        return gracefulStartup;
     }
 
     @Override

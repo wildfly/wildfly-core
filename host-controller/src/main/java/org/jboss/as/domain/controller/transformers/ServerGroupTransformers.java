@@ -47,29 +47,36 @@ class ServerGroupTransformers {
         //////////////////////////////////
         //The EAP/AS 7.x chains
 
-        // module-options was introduced in 13, WildFly 20
-        ResourceTransformationDescriptionBuilder currentTo13 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_13_0);
-        JvmTransformers.registerTransformers13_AndBelow(currentTo13);
+        // graceful-startup attribute was introduced in Kernel 16 (Wildfly 23)
+        ResourceTransformationDescriptionBuilder currentTo15 = createBuilderFromCurrent(chainedBuilder, KernelAPIVersion.VERSION_15_0)
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.DEFAULT_VALUE, ServerGroupResourceDefinition.GRACEFUL_STARTUP)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.GRACEFUL_STARTUP)
+                .end();
 
-        //timeout attribute renamed to suspend-timeout in Version 9.0. Must be renamed for 8.0 and below
+        // module-options was introduced in Kernel API 14 (WildFly Core 13, WildFly 21)
+        ResourceTransformationDescriptionBuilder builder15to13 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_15_0, KernelAPIVersion.VERSION_13_0);
+        JvmTransformers.registerTransformers13_AndBelow(builder15to13);
+
+        //timeout attribute renamed to suspend-timeout in Version Kernel 9.0 (WildFly Core 7, WildFly 15). Must be renamed for 8.0 and below
         ResourceTransformationDescriptionBuilder builder10to8 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_10_0, KernelAPIVersion.VERSION_8_0);
         DomainServerLifecycleHandlers.registerTimeoutToSuspendTimeoutRename(builder10to8);
 
-        // kill-servers and destroy-servers are rejected since 5.0 and below
+        // kill-servers and destroy-servers are rejected for Kernel 5.0 (WildFly Core 3, WildFly 11) and below
         ResourceTransformationDescriptionBuilder builder60to50 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_6_0, KernelAPIVersion.VERSION_5_0);
         DomainServerLifecycleHandlers.registerKillDestroyTransformers(builder60to50);
 
-        // The use of default-interface attribute in socket-binding-group is rejected since 1.8 and below
+        // The use of default-interface attribute in socket-binding-group is rejected for 1.8 and below
         ResourceTransformationDescriptionBuilder builder20to18 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_2_0, KernelAPIVersion.VERSION_1_8)
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE)
                 .end();
 
-        //suspend and resume servers are rejected since 1.8 and below
+        //suspend and resume servers are rejected for Kernel 1.8 (EAP 6.4.0 CP07) and below
         DomainServerLifecycleHandlers.registerServerLifeCycleOperationsTransformers(builder20to18);
 
-        // The use of launch-command is rejected since 2.1 and below
+        // The use of launch-command is rejected since Kernel 2.1 (WildFly 8.1.0) and below
         ResourceTransformationDescriptionBuilder builder30To21 = createBuilder(chainedBuilder, KernelAPIVersion.VERSION_3_0, KernelAPIVersion.VERSION_2_1);
         JvmTransformers.registerTransformers2_1_AndBelow(builder30To21);
 

@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIM
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.MANAGEMENT_SUBSYSTEM_ENDPOINT;
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_DEFAULT_INTERFACE;
 import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.SOCKET_BINDING_PORT_OFFSET;
+import static org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition.GRACEFUL_STARTUP;
 import static org.jboss.as.host.controller.model.jvm.JvmAttributes.MODULE_OPTIONS;
 
 import java.util.List;
@@ -102,7 +103,6 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
 
     }
 
-
     @Test
     public void testRejectTransformersEAP() throws Exception {
         if (modelVersion.getMajor() > 1) {
@@ -121,9 +121,10 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         List<ModelNode> ops = builder.parseXmlResource("servergroup.xml");
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(serverGroupAddress,
-                        FailedOperationTransformationConfig.ChainedConfig.createBuilder(MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE)
+                        FailedOperationTransformationConfig.ChainedConfig.createBuilder(MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE, GRACEFUL_STARTUP)
                                 .addConfig(new FailedOperationTransformationConfig.RejectExpressionsConfig(MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET))
                                 .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(SOCKET_BINDING_DEFAULT_INTERFACE))
+                                .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(GRACEFUL_STARTUP))
                                 .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT))
                 .addFailedAttribute(serverGroupAddress.append("jvm", "full"), new FailedOperationTransformationConfig.NewAttributesConfig(MODULE_OPTIONS)));
 
@@ -170,10 +171,11 @@ public class DomainServerGroupTransformersTestCase extends AbstractCoreModelTest
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, modelVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP)),
                         FailedOperationTransformationConfig.ChainedConfig.createBuilder(
-                                MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE)
+                                MANAGEMENT_SUBSYSTEM_ENDPOINT, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE, GRACEFUL_STARTUP)
                                 .addConfig(new FailedOperationTransformationConfig.RejectExpressionsConfig(MANAGEMENT_SUBSYSTEM_ENDPOINT,
                                         SOCKET_BINDING_PORT_OFFSET))
                                 .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(SOCKET_BINDING_DEFAULT_INTERFACE))
+                                .addConfig(new FailedOperationTransformationConfig.NewAttributesConfig(GRACEFUL_STARTUP))
                                 .build().setReadOnly(MANAGEMENT_SUBSYSTEM_ENDPOINT)));
 
     }

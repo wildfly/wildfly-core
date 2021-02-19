@@ -77,10 +77,12 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
     static final AttributeDefinition QUALIFIED_HOST_NAME = SimpleAttributeDefinitionBuilder.create("qualified-host-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     public static final AttributeDefinition SERVER_NAME = SimpleAttributeDefinitionBuilder.create("server-name", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
     static final AttributeDefinition TEMP_DIR = SimpleAttributeDefinitionBuilder.create("temp-dir", ModelType.STRING).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    public static final AttributeDefinition START_SUSPENDED = SimpleAttributeDefinitionBuilder.create("start-suspended", ModelType.BOOLEAN).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
+    public static final AttributeDefinition GRACEFUL_STARTUP = SimpleAttributeDefinitionBuilder.create("start-gracefully", ModelType.BOOLEAN).setFlags(AttributeAccess.Flag.STORAGE_RUNTIME).build();
 
     private static final AttributeDefinition[] SERVER_ENV_ATTRIBUTES = {BASE_DIR, CONFIG_DIR, CONFIG_FILE, CONTENT_DIR, DATA_DIR,
             DEPLOY_DIR, EXT_DIRS, HOME_DIR, HOST_NAME, INITIAL_RUNNING_MODE, LAUNCH_TYPE, LOG_DIR, MODULES_DIR, NODE_NAME,
-            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR};
+            QUALIFIED_HOST_NAME, SERVER_NAME, TEMP_DIR, START_SUSPENDED, GRACEFUL_STARTUP};
 
     private final ServerEnvironmentReadHandler osh;
 
@@ -194,6 +196,12 @@ public class ServerEnvironmentResourceDescription extends SimpleResourceDefiniti
             }
             if (equals(name, TEMP_DIR)) {
                 set(result, environment.getServerTempDir());
+            }
+            if (equals(name, START_SUSPENDED)) {
+                result.set(environment.isStartSuspended());
+            }
+            if (equals(name, GRACEFUL_STARTUP)) {
+                result.set(environment.isStartGracefully());
             }
         }
 

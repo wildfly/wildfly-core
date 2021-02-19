@@ -84,10 +84,11 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
     private final int initialOperationID;
     private final Properties properties = new Properties();
     private final boolean suspend;
+    private final boolean gracefulStartup;
 
     public ServerStartTask(final String hostControllerName, final String serverName, final int portOffset, final int initialOperationID,
                            final List<ServiceActivator> startServices, final List<ModelNode> updates, final Map<String, String> launchProperties,
-                           boolean suspend) {
+                           boolean suspend, boolean gracefulStartup) {
         assert serverName != null && serverName.length() > 0  : "Server name \"" + serverName + "\" is invalid; cannot be null or blank";
         assert hostControllerName != null && hostControllerName.length() > 0 : "Host Controller name \"" + hostControllerName + "\" is invalid; cannot be null or blank";
 
@@ -98,6 +99,7 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         this.initialOperationID = initialOperationID;
         this.hostControllerName = hostControllerName;
         this.suspend = suspend;
+        this.gracefulStartup = gracefulStartup;
 
         this.home = WildFlySecurityManager.getPropertyPrivileged("jboss.home.dir", null);
         String serverBaseDir = WildFlySecurityManager.getPropertyPrivileged("jboss.domain.servers.dir", null) + File.separatorChar + serverName;
@@ -131,7 +133,7 @@ public final class ServerStartTask implements ServerTask, Serializable, ObjectIn
         // Create server environment on the server, so that the system properties are getting initialized on the right side
         final ServerEnvironment providedEnvironment = new ServerEnvironment(hostControllerName, properties,
                 WildFlySecurityManager.getSystemEnvironmentPrivileged(), null, null, ServerEnvironment.LaunchType.DOMAIN,
-                RunningMode.NORMAL, productConfig, Module.getStartTime(), suspend, null, null, null);
+                RunningMode.NORMAL, productConfig, Module.getStartTime(), suspend, gracefulStartup, null, null, null);
         DomainServerCommunicationServices.updateOperationID(initialOperationID);
 
         // TODO perhaps have ConfigurationPersisterFactory as a Service

@@ -573,6 +573,14 @@ public interface ServerLogger extends BasicLogger {
     String argStartMode();
 
     /**
+     * Instructions for the {@link CommandLineConstants#GRACEFUL_STARTUP} command line argument
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value ="Start the server gracefully, queuing or cleanly rejecting requests until the server is fully started")
+    String argGracefulStartup();
+
+    /**
      * Instructions for the {@link CommandLineConstants#GIT_REPO} command line argument.
      *
      * @return the message
@@ -1359,6 +1367,14 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 281, value = "System property %s is set. This should only be used for standalone clients. Setting this on the server will override your profile configuration.")
     void wildflyConfigUrlIsSet(String property);
+
+    @LogMessage(level = INFO)
+    @Message(id = 282, value = "Server is starting with graceful startup disabled; external requests may receive failure responses until startup completes.")
+    void startingNonGraceful();
+
+    @LogMessage(level = INFO)
+    @Message(id = 283, value = "A non-graceful startup was requested in conjunction with a suspended startup. The server will start suspended.")
+    void disregardingNonGraceful();
 
     ////////////////////////////////////////////////
     //Messages without IDs

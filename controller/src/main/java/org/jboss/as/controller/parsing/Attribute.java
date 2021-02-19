@@ -93,6 +93,7 @@ public enum Attribute {
     FORCE("force"),
     FORMATTER("formatter"),
     GENERATE_SELF_SIGNED_CERTIFICATE_HOST("generate-self-signed-certificate-host"),
+    GRACEFUL_STARTUP("graceful-startup"),
     GROUP("group"),
     GROUP_ATTRIBUTE("group-attribute"),
     GROUP_DN_ATTRIBUTE("group-dn-attribute"),

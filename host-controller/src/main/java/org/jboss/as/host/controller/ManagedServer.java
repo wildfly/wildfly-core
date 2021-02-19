@@ -844,7 +844,9 @@ class ManagedServer {
             final ModelNode endpointConfig = bootConfiguration.getSubsystemEndpointConfiguration();
             // Send std.in
             final ServiceActivator hostControllerCommActivator = DomainServerCommunicationServices.create(endpointConfig, managementURI, serverName, serverProcessName, authKey, useSubsystemEndpoint, bootConfiguration.getSSLContextSupplier());
-            final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID, Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties, bootConfiguration.isSuspended());
+            final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID,
+                    Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties,
+                    bootConfiguration.isSuspended(), bootConfiguration.isGracefulStartup());
             final Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
             final OutputStream os = processControllerClient.sendStdin(serverProcessName);
             marshaller.start(Marshalling.createByteOutput(os));
