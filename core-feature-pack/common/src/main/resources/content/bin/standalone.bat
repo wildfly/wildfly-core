@@ -16,7 +16,6 @@ set DEBUG_PORT_VAR=8787
 rem Set to all parameters by default
 set "SERVER_OPTS=%*"
 
-
 if NOT "x%DEBUG%" == "x" (
   set "DEBUG_MODE=%DEBUG%
 )
@@ -34,6 +33,7 @@ if "%OS%" == "Windows_NT" (
   set DIRNAME=.\
 )
 setlocal EnableDelayedExpansion
+call "!DIRNAME!common.bat" :commonConf
 rem check for the security manager system property
 echo(!SERVER_OPTS! | findstr /r /c:"-Djava.security.manager" > nul
 if not errorlevel == 1 (

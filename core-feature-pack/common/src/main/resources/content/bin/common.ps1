@@ -30,6 +30,16 @@ Function Get-Env-Boolean{
   return $args[1]
 }
 
+$COMMOM_CONF_FILE = $SCRIPTS_HOME + '\common.conf.ps1'
+$COMMOM_CONF_FILE = Get-Env COMMON_CONF $COMMOM_CONF_FILE
+if ([System.IO.File]::Exists($COMMOM_CONF_FILE)) {
+    . $COMMOM_CONF_FILE
+} else {
+    if (Test-Path env:COMMON_CONF) {
+        Write-Output "Config file not found $env:COMMON_CONF"
+    }
+}
+
 $global:SECMGR = Get-Env-Boolean SECMGR $false
 $global:DEBUG_MODE=Get-Env DEBUG $false
 $global:DEBUG_PORT=Get-Env DEBUG_PORT 8787

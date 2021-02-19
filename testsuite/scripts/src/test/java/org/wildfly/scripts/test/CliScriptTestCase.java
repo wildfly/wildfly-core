@@ -19,10 +19,7 @@
 
 package org.wildfly.scripts.test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -58,19 +55,12 @@ public class CliScriptTestCase extends ScriptTestCase {
 
         StringBuilder builder = new StringBuilder();
         // Read the output lines which should be valid DMR
-        try (BufferedReader reader = Files.newBufferedReader(script.getStdout(), StandardCharsets.UTF_8)) {
-            String line = reader.readLine();
+        for (String line : script.getStdout()) {
             // Skip lines like: "Picked up _JAVA_OPTIONS: ..."
-            while (line.startsWith("Picked up _JAVA_")) {
-                line = reader.readLine();
+            if (line.startsWith("Picked up _JAVA_") || line.startsWith("WARNING")) {
+                continue;
             }
-            while (line.startsWith("WARNING")) {
-                line = reader.readLine();
-            }
-            while (line != null) {
-                builder.append(line);
-                line = reader.readLine();
-            }
+            builder.append(line);
         }
         final ModelNode result = ModelNode.fromString(builder.toString());
         if (!Operations.isSuccessfulOutcome(result)) {

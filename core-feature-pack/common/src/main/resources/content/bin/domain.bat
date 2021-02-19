@@ -20,7 +20,7 @@ pushd "%DIRNAME%.."
 set "RESOLVED_JBOSS_HOME=%CD%"
 popd
 
-
+call "%DIRNAME%common.bat" :commonConf
 
 setlocal EnableDelayedExpansion
 rem check for the security manager system property
