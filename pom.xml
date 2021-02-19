@@ -226,8 +226,8 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.14.2.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.8.0.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron>1.15.0.CR1</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web>1.9.0.CR1</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
        
     </properties>
@@ -1797,6 +1797,11 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-digest</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-encryption</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
             <dependency>
