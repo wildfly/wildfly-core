@@ -53,12 +53,15 @@ abstract class DoohickeyAddHandler<T> extends BaseAddHandler {
             throws OperationFailedException {
         super.recordCapabilitiesAndRequirements(context, operation, resource);
 
-        // Just add one capability to allow access to the CredentialStore using the runtime API.
-        ElytronDoohickey<T> elytronDoohickey = createDoohickey(context.getCurrentAddress());
+        if (requiresRuntime(context)) {
+            // Just add one capability to allow access to the CredentialStore using the runtime API.
+            ElytronDoohickey<T> elytronDoohickey = createDoohickey(context.getCurrentAddress());
 
-        context.registerCapability(RuntimeCapability.Builder
-                .<ExceptionFunction<OperationContext, T, OperationFailedException>> of(apiCapabilityName, true, elytronDoohickey).build()
-                .fromBaseCapability(context.getCurrentAddressValue()));
+            context.registerCapability(RuntimeCapability.Builder
+                    .<ExceptionFunction<OperationContext, T, OperationFailedException>> of(apiCapabilityName, true,
+                            elytronDoohickey)
+                    .build().fromBaseCapability(context.getCurrentAddressValue()));
+        }
     }
 
     @Override
