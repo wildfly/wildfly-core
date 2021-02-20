@@ -32,8 +32,8 @@ import javax.security.sasl.SaslServerFactory;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.msc.service.ServiceBuilder;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
-import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
+import org.wildfly.extension.elytron.capabilities._private.DirContextSupplier;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -92,6 +92,12 @@ class Capabilities {
             .build();
 
     static final String CREDENTIAL_STORE_CAPABILITY = CAPABILITY_BASE + "credential-store";
+
+    /*
+     * A variant of the credential-store capability which also provides access to the underlying
+     * {@code CredentialStore} as a runtime API from a {@code ExceptionFunction<OperationContext, CredentialStore, OperationFailedException>}.
+     */
+    static final String CREDENTIAL_STORE_API_CAPABILITY = CAPABILITY_BASE + "credential-store-api";
 
     static final RuntimeCapability<Void> CREDENTIAL_STORE_RUNTIME_CAPABILITY =  RuntimeCapability
             .Builder.of(CREDENTIAL_STORE_CAPABILITY, true, CredentialStore.class)
@@ -162,6 +168,12 @@ class Capabilities {
         .build();
 
     static final String PROVIDERS_CAPABILITY = CAPABILITY_BASE + "providers";
+
+    /*
+     * A variant of the credential-store capability which also provides access to the underlying
+     * {@code CredentialStore} as a runtime API from a {@code ExceptionFunction<OperationContext, Provider[], OperationFailedException>}.
+     */
+    static final String PROVIDERS_API_CAPABILITY = CAPABILITY_BASE + "providers-api";
 
     static final RuntimeCapability<Void> PROVIDERS_RUNTIME_CAPABILITY =  RuntimeCapability
         .Builder.of(PROVIDERS_CAPABILITY, true, Provider[].class)
@@ -271,4 +283,7 @@ class Capabilities {
      * Required by the {@link JdbcRealmDefinition}.
      */
     static final String DATA_SOURCE_CAPABILITY_NAME = "org.wildfly.data-source";
+
+    static final String EXPRESSION_RESOLVER_CAPABILITY = "org.wildfly.controller.expression-resolver";
+
 }

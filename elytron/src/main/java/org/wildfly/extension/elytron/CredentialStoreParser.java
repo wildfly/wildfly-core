@@ -18,18 +18,22 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
+import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.jboss.as.controller.PersistentResourceXMLDescription.PersistentResourceXMLBuilder;
 
 /**
  * A parser for Credential Store definition.
  *
  * @author <a href="mailto:pskopek@redhat.com">Peter Skopek</a>
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class CredentialStoreParser {
 
-    final PersistentResourceXMLDescription parser = builder(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
+    final PersistentResourceXMLDescription credentialStoreParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
             .setUseElementsForGroups(false)
             .addAttribute(CredentialStoreResourceDefinition.TYPE)
             .addAttribute(CredentialStoreResourceDefinition.PROVIDER_NAME)
@@ -43,6 +47,18 @@ class CredentialStoreParser {
             .addAttribute(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE)
             .build();
 
+    final PersistentResourceXMLDescription secretKeyCredentialStoreParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE))
+            .setUseElementsForGroups(false)
+            .addAttributes(SecretKeyCredentialStoreDefinition.CONFIG_ATTRIBUTES)
+            .build();
+
+    PersistentResourceXMLBuilder getCredentialStoresParser() {
+        return decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().credentialStoreParser);
+    }
+
+    PersistentResourceXMLBuilder getCredentialStoresParser_13() {
+        return getCredentialStoresParser().addChild(secretKeyCredentialStoreParser);
+    }
 
     CredentialStoreParser() {
     }

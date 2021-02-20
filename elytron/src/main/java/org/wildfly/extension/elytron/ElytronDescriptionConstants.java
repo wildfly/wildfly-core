@@ -111,6 +111,7 @@ interface ElytronDescriptionConstants {
     String CLEAR = "clear";
     String CLEAR_CACHE = "clear-cache";
     String CLEAR_PASSWORD_MAPPER = "clear-password-mapper";
+    String CLEAR_TEXT = "clear-text";
     String CLIENT_ID = "client-id";
     String CLIENT_SECRET = "client-secret";
     String CLIENT_SSL_CONTEXT = "client-ssl-context";
@@ -133,6 +134,7 @@ interface ElytronDescriptionConstants {
     String CONVERT = "convert";
     String CREATE = "create";
     String CREATE_ACCOUNT = "create-account";
+    String CREATE_EXPRESSION = "create-expression";
     String CREATION_DATE = "creation-date";
     String CREATION_TIME = "creation-time";
     String CREDENTIAL = "credential";
@@ -160,9 +162,11 @@ interface ElytronDescriptionConstants {
     String DAYS_TO_EXPIRY = "days-to-expiry";
     String DEACTIVATE_ACCOUNT = "deactivate-account";
     String DEBUG = "debug";
+    String DEFAULT_ALIAS = "default-alias";
     String DEFAULT_AUTHENTICATION_CONTEXT = "default-authentication-context";
     String DEFAULT_POLICY = "default-policy";
     String DEFAULT_REALM = "default-realm";
+    String DEFAULT_RESOLVER = "default-resolver";
     String DEFAULT_SSL_CONTEXT = "default-ssl-context";
     String DELEGATE_REALM = "delegate-realm";
     String DELEGATE_REALM_MAPPER = "delegate-realm-mapper";
@@ -183,11 +187,15 @@ interface ElytronDescriptionConstants {
     String ENABLE_CONNECTION_POOLING = "enable-connection-pooling";
     String ENABLING = "enabling";
     String ENCODED = "encoded";
+    String ENCRYPTION = "encryption";
     String ENTRY_TYPE = "entry-type";
     String EVIDENCE_DECODER = "evidence-decoder";
     String EVIDENCE_DECODERS = "evidence-decoders";
     String EXPIRATION = "expiration";
     String EXPORT_CERTIFICATE = "export-certificate";
+    String EXPORT_SECRET_KEY = "export-secret-key";
+    String EXPRESSION = "expression";
+    String EXPRESSION_RESOLVER = "expression-resolver";
     String EXTERNAL_ACCOUNT_REQUIRED = "external-account-required";
     String EXTRACT_RDN = "extract-rdn";
     String EXTENDS = "extends";
@@ -217,6 +225,7 @@ interface ElytronDescriptionConstants {
 
     String GENERATE_CERTIFICATE_SIGNING_REQUEST = "generate-certificate-signing-request";
     String GENERATE_KEY_PAIR = "generate-key-pair";
+    String GENERATE_SECRET_KEY = "generate-secret-key";
     String GENERATE_SELF_SIGNED_CERTIFICATE_HOST = "generate-self-signed-certificate-host";
     String GET_METADATA = "get-metadata";
     String GREATER_THAN = "greater-than";
@@ -243,6 +252,7 @@ interface ElytronDescriptionConstants {
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";
+    String IMPORT_SECRET_KEY = "import-secret-key";
     String INDEX = "index";
     String INFO = "info";
     String INIT = "init";
@@ -359,6 +369,7 @@ interface ElytronDescriptionConstants {
     String OCSP = "ocsp";
     String OID = "oid";
     String ONLY_LEAF_CERT = "only-leaf-cert";
+    String OPERATIONS = "operations";
     String OTHER_PROVIDERS = "other-providers";
     String OTP = "otp";
     String OTP_CREDENTIAL_MAPPER = "otp-credential-mapper";
@@ -390,6 +401,7 @@ interface ElytronDescriptionConstants {
     String PERMISSION_SETS = "permission-sets";
     String PLAIN_TEXT = "plain-text";
     String POLICY = "policy";
+    String POPULATE = "populate";
     String PORT = "port";
     String POST_REALM_PRINCIPAL_TRANSFORMER = "post-realm-principal-transformer";
     String PRE_REALM_PRINCIPAL_TRANSFORMER = "pre-realm-principal-transformer";
@@ -450,6 +462,8 @@ interface ElytronDescriptionConstants {
     String REQUIRED_OIDS = "required-oids";
     String REQUIRED_ATTRIBUTES = "required-attributes";
     String REQUISITE = "requisite";
+    String RESOLVER = "resolver";
+    String RESOLVERS = "resolvers";
     String RESPONDER = "responder";
     String RESPONDER_CERTIFICATE = "responder-certificate";
     String RESPONDER_KEYSTORE = "responder-keystore";
@@ -492,6 +506,8 @@ interface ElytronDescriptionConstants {
     String SECURITY_PROPERTIES = "security-properties";
     String SECURITY_PROPERTY = "security-property";
     String SECURITY_REALMS = "security-realms";
+    String SECRET_KEY = "secret-key";
+    String SECRET_KEY_CREDENTIAL_STORE = "secret-key-credential-store";
     String SECRET_VALUE = "secret-value";
     String SELECTION_CRITERIA = "selection-criteria";
     String SEED = "seed";

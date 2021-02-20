@@ -10,6 +10,7 @@
         <credential-store name="store2" location="path/to/store_file2" >
             <credential-reference store="store1" clear-text="STOREPASSWORD"/>
         </credential-store>
+        <secret-key-credential-store name="store3" path="test3.cs" />
     </credential-stores>
     <security-domains>
         <security-domain name="AggregateDomain" default-realm="FileRealmOne" role-decoder="aggregateRoleDecoder">
@@ -66,4 +67,7 @@
             <client-ssl-context name="ClientContextTLS13" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"/>
         </client-ssl-contexts>
     </tls>
+    <expression-resolver default-resolver="A" prefix="G">
+        <resolver name="A" credential-store="store1" secret-key="C"/>
+    </expression-resolver>
 </subsystem>

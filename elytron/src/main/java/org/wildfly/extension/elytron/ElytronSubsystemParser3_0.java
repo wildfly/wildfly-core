@@ -18,8 +18,6 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERMISSION_SETS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
 import static org.wildfly.extension.elytron.PermissionMapperDefinitions.PERMISSIONS;
@@ -65,7 +63,7 @@ class ElytronSubsystemParser3_0 extends ElytronSubsystemParser2_0 {
                 .addChild(getHttpParser())
                 .addChild(getSaslParser())
                 .addChild(getTlsParser())
-                .addChild(decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().parser))
+                .addChild(getCredentialStoresParser())
                 .addChild(getDirContextParser())
                 .addChild(getPolicyParser())
                 .build();

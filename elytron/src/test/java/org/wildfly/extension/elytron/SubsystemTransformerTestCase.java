@@ -182,6 +182,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
         testRejectingTransformers(EAP_7_3_0, "elytron-transformers-8.0-reject.xml", new FailedOperationTransformationConfig()
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE, "store2")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "store3")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SECURITY_DOMAIN, "AggregateDomain")),
                     new FailedOperationTransformationConfig.NewAttributesConfig(DomainDefinition.ROLE_DECODER))
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.AGGREGATE_ROLE_DECODER, "aggregateRoleDecoder")),
@@ -204,6 +206,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                     new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT)),
                     new FailedOperationTransformationConfig.NewAttributesConfig(SSLDefinitions.CIPHER_SUITE_NAMES))
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION)),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
         );
     }
 

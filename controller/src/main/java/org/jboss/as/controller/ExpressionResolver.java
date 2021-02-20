@@ -39,8 +39,11 @@ public interface ExpressionResolver {
 
     /**
      * Resolves any expressions in the passed in ModelNode.
-     * Expressions may either represent system properties or vaulted date. For vaulted data the format is
-     * ${VAULT::vault_block::attribute_name::sharedKey}
+     *
+     * Expressions may represent system properties, vaulted date, or a custom format to be handled by an
+     * ExpressionResolver registered using the "org.wildfly.controller.expression-resolver" capability.
+     *
+     * For vaulted data the format is ${VAULT::vault_block::attribute_name::sharedKey}
      *
      * @param node the ModelNode containing expressions.
      * @return a copy of the node with expressions resolved
@@ -51,6 +54,27 @@ public interface ExpressionResolver {
      *            access to the relevant system property or environment variable
      */
     ModelNode resolveExpressions(ModelNode node) throws OperationFailedException;
+
+    /**
+     * Resolves any expressions in the passed in ModelNode.
+     *
+     * Expressions may represent system properties, vaulted date, or a custom format to be handled by an
+     * ExpressionResolver registered using the "org.wildfly.controller.expression-resolver" capability.
+     *
+     * For vaulted data the format is ${VAULT::vault_block::attribute_name::sharedKey}
+     *
+     * @param node the ModelNode containing expressions.
+     * @param context the current {@code OperationContext} to provide additional contextual information.
+     * @return a copy of the node with expressions resolved
+     *
+     * @throws OperationFailedException if there is a value of type {@link org.jboss.dmr.ModelType#EXPRESSION} in the node tree and
+     *            there is no system property or environment variable that matches the expression, or if a security
+     *            manager exists and its {@link SecurityManager#checkPermission checkPermission} method doesn't allow
+     *            access to the relevant system property or environment variable
+     */
+    default ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
+        return resolveExpressions(node);
+    }
 
     /**
      * An {@code ExpressionResolver} that can only resolve from system properties
@@ -80,7 +104,7 @@ public interface ExpressionResolver {
      */
     ExpressionResolver REJECTING = new ExpressionResolverImpl() {
         @Override
-        protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
+        protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
             String expression = node.asString();
             if (EXPRESSION_PATTERN.matcher(expression).matches()) {
                 throw ControllerLogger.ROOT_LOGGER.illegalUnresolvedModel(expression);

@@ -18,8 +18,6 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JASPI;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JASPI_CONFIGURATION;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_PROPERTY;
@@ -67,7 +65,7 @@ public class ElytronSubsystemParser5_0 extends ElytronSubsystemParser4_0 {
                 .addChild(getHttpParser())
                 .addChild(getSaslParser())
                 .addChild(getTlsParser())
-                .addChild(decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().parser))
+                .addChild(getCredentialStoresParser())
                 .addChild(getDirContextParser())
                 .addChild(getPolicyParser())
                 .addChild(jaspiConfigurationParser) // new

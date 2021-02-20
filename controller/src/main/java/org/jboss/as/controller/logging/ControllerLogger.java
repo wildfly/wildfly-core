@@ -3632,4 +3632,8 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 477, value = "Parameter name '%s' is invalid.")
     IllegalArgumentException invalidParameterName(String parameterName);
+
+    @Message(id = 478, value = "Unable to create command based CredentialSource for credential reference.")
+    OperationFailedException unableToBuildCommandCredentialSource(@Cause Throwable throwable);
+
 }

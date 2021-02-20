@@ -18,13 +18,13 @@
 
 package org.wildfly.extension.elytron;
 
-import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_API_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.PROVIDERS_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.CLASS_NAMES;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.MODULE;
 import static org.wildfly.extension.elytron.ClassLoadingAttributeDefinitions.resolveClassLoader;
-import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.LOADED_PROVIDERS;
 import static org.wildfly.extension.elytron.ProviderAttributeDefinition.populateProviders;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
@@ -52,32 +52,25 @@ import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.CapabilityServiceBuilder;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
-import org.jboss.as.controller.services.path.PathEntry;
-import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.services.path.PathManager.Callback;
-import org.jboss.as.controller.services.path.PathManager.Callback.Handle;
-import org.jboss.as.controller.services.path.PathManager.Event;
-import org.jboss.as.controller.services.path.PathManager.PathEventContext;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.modules.ModuleClassLoader;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceController.State;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartException;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionConsumer;
+import org.wildfly.common.function.ExceptionFunction;
+import org.wildfly.common.function.ExceptionSupplier;
+import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.extension.elytron.TrivialResourceDefinition.Builder;
-import org.wildfly.extension.elytron.TrivialService.ValueSupplier;
 
 
 /**
@@ -115,7 +108,7 @@ class ProviderDefinitions {
             .build();
 
     private static final AggregateComponentDefinition<Provider[]> AGGREGATE_PROVIDERS = AggregateComponentDefinition.create(Provider[].class,
-            ElytronDescriptionConstants.AGGREGATE_PROVIDERS, ElytronDescriptionConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, ProviderDefinitions::aggregate, false);
+            ElytronDescriptionConstants.AGGREGATE_PROVIDERS, ElytronDescriptionConstants.PROVIDERS, PROVIDERS_RUNTIME_CAPABILITY, PROVIDERS_API_CAPABILITY, ProviderDefinitions::aggregate, false);
 
     static final ListAttributeDefinition REFERENCES = AGGREGATE_PROVIDERS.getReferencesAttribute();
 
@@ -125,81 +118,124 @@ class ProviderDefinitions {
 
     static ResourceDefinition getProviderLoaderDefinition(boolean serverOrHostController) {
         AttributeDefinition[] attributes = new AttributeDefinition[] { MODULE, CLASS_NAMES, PATH, RELATIVE_TO, ARGUMENT, CONFIGURATION };
-        AbstractAddStepHandler add = new TrivialAddHandler<Provider[]>(Provider[].class, attributes, PROVIDERS_RUNTIME_CAPABILITY) {
+
+        AbstractAddStepHandler add = new DoohickeyAddHandler<Provider[]>(PROVIDERS_RUNTIME_CAPABILITY, attributes, PROVIDERS_API_CAPABILITY) {
 
             @Override
-            protected boolean dependOnProviderRegistration() {
-                return false;
-            }
+            protected ElytronDoohickey<Provider[]> createDoohickey(PathAddress resourceAddress) {
+                return new ElytronDoohickey<Provider[]>(resourceAddress) {
 
-            @Override
-            protected ValueSupplier<Provider[]> getValueSupplier(ServiceBuilder<Provider[]> serviceBuilder, OperationContext context, ModelNode model) throws OperationFailedException {
-                final String module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
-
-                final String[] classNames;
-                ModelNode classNamesNode = CLASS_NAMES.resolveModelAttribute(context, model);
-                if (classNamesNode.isDefined()) {
-                    List<ModelNode> values = classNamesNode.asList();
-                    classNames = new String[values.size()];
-                    for (int i = 0; i < classNames.length; i++) {
-                        classNames[i] = values.get(i).asString();
-                    }
-                } else {
-                    classNames = null;
-                }
-
-                final String path = PATH.resolveModelAttribute(context, model).asStringOrNull();
-                final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
-                final String argument = ARGUMENT.resolveModelAttribute(context, model).asStringOrNull();
-
-                final Properties properties;
-                ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
-                if (configuration.isDefined()) {
-                    properties = new Properties();
-                    for (String s : configuration.keys()) {
-                        properties.setProperty(s, configuration.require(s).asString());
-                    }
-                } else {
-                    properties = null;
-                }
-
-                final InjectedValue<PathManager> pathManager = new InjectedValue<>();
-
-                if (relativeTo != null) {
-                    serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManager);
-                    serviceBuilder.requires(pathName(relativeTo));
-                }
-
-                return new ValueSupplier<Provider[]>() {
-
-                    private volatile Handle handle = null;
+                    private volatile String module;
+                    private volatile String[] classNames;
+                    private volatile String path;
+                    private volatile String relativeTo;
+                    private volatile String argument;
+                    private volatile Properties properties;
 
                     @Override
-                    public Provider[] get() throws StartException {
+                    protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
+                        module = MODULE.resolveModelAttribute(context, model).asStringOrNull();
+                        ModelNode classNamesNode = CLASS_NAMES.resolveModelAttribute(context, model);
+                        if (classNamesNode.isDefined()) {
+                            List<ModelNode> values = classNamesNode.asList();
+                            classNames = new String[values.size()];
+                            for (int i = 0; i < classNames.length; i++) {
+                                classNames[i] = values.get(i).asString();
+                            }
+                        } else {
+                            classNames = null;
+                        }
+                        path = PATH.resolveModelAttribute(context, model).asStringOrNull();
+                        relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
+                        argument = ARGUMENT.resolveModelAttribute(context, model).asStringOrNull();
+                        ModelNode configuration = CONFIGURATION.resolveModelAttribute(context, model);
+                        if (configuration.isDefined()) {
+                            properties = new Properties();
+                            for (String s : configuration.keys()) {
+                                properties.setProperty(s, configuration.require(s).asString());
+                            }
+                        } else {
+                            properties = null;
+                        }
+                    }
+
+                    @Override
+                    protected ExceptionSupplier<Provider[], StartException> prepareServiceSupplier(OperationContext context,
+                            CapabilityServiceBuilder<?> serviceBuilder) throws OperationFailedException {
+                        final Supplier<PathManagerService> pathManager;
+                        if (properties == null && relativeTo != null) {
+                            pathManager = serviceBuilder.requires(PathManagerService.SERVICE_NAME);
+                            serviceBuilder.requires(pathName(relativeTo));
+                        } else {
+                            pathManager = null;
+                        }
+
+                        return new ExceptionSupplier<Provider[], StartException>() {
+
+                            @Override
+                            public Provider[] get() throws StartException {
+                                File resolved = null;
+                                if (properties == null && relativeTo != null) {
+                                    PathResolver pathResolver = pathResolver();
+                                    pathResolver.path(path);
+                                    if (relativeTo != null) {
+                                        pathResolver.relativeTo(relativeTo, pathManager.get());
+                                    }
+                                    resolved = pathResolver.resolve();
+                                    pathResolver.clear();
+                                }
+
+                                return loadProviders(resolved);
+                            }
+                        };
+                    }
+
+                    @Override
+                    protected Provider[] createImmediately(OperationContext foreignContext) throws OperationFailedException {
+                        File resolvedPath = null;
+                        if (properties == null && path != null) {
+                            resolvedPath = resolveRelativeToImmediately(path, relativeTo, foreignContext);
+                        }
+
+                        try {
+                            return loadProviders(resolvedPath);
+                        } catch (StartException e) {
+                            throw new OperationFailedException(e);
+                        }
+                    }
+
+                    private Provider[] loadProviders(final File resolvedPath) throws StartException {
                         final Supplier<InputStream> configSupplier;
                         if (properties != null) {
                             configSupplier = getConfigurationSupplier(properties);
-                        } else if (path != null) {
-                            configSupplier = getConfigurationSupplier(resolveConfigLocation());
+                        } else if (resolvedPath != null) {
+                            configSupplier = getConfigurationSupplier(resolvedPath);
                         } else {
                             configSupplier = null;
                         }
 
                         try {
                             Collection<ExceptionConsumer<InputStream, IOException>> deferred = new ArrayList<>();
-                            ClassLoader classLoader = doPrivileged((PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
+                            ClassLoader classLoader = doPrivileged(
+                                    (PrivilegedExceptionAction<ClassLoader>) () -> resolveClassLoader(module));
                             final List<Provider> loadedProviders;
                             if (classNames != null) {
                                 loadedProviders = new ArrayList<>(classNames.length);
                                 for (String className : classNames) {
-                                    Class<? extends Provider> providerClazz = classLoader.loadClass(className).asSubclass(Provider.class);
+                                    Class<? extends Provider> providerClazz = classLoader.loadClass(className)
+                                            .asSubclass(Provider.class);
                                     if (argument != null) {
-                                        Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(String.class));
+                                        Constructor<? extends Provider> constructor = doPrivileged(
+                                                (PrivilegedExceptionAction<Constructor<? extends Provider>>) () -> providerClazz
+                                                        .getConstructor(String.class));
                                         loadedProviders.add(constructor.newInstance(new Object[] { argument }));
                                     } else if (configSupplier != null) {
-                                        // Try and find a constructor that takes an input stream and use it - or use default constructor and enable deferred initialisation.
+                                        // Try and find a constructor that takes an input stream and use it - or use default
+                                        // constructor and enable deferred initialisation.
                                         try {
-                                            Constructor<? extends Provider> constructor = doPrivileged((PrivilegedExceptionAction<Constructor<? extends Provider>>) () ->  providerClazz.getConstructor(InputStream.class));
+                                            Constructor<? extends Provider> constructor = doPrivileged(
+                                                    (PrivilegedExceptionAction<Constructor<? extends Provider>>) () -> providerClazz
+                                                            .getConstructor(InputStream.class));
                                             loadedProviders.add(constructor.newInstance(new Object[] { configSupplier.get() }));
                                         } catch (NoSuchMethodException ignored) {
                                             Provider provider = providerClazz.newInstance();
@@ -211,13 +247,15 @@ class ProviderDefinitions {
                                     }
                                 }
                             } else {
-                                //todo look into why we get also system / jdk providers here, it slows down boot
+                                // todo look into why we get also system / jdk providers here, it slows down boot
                                 loadedProviders = new ArrayList<>();
                                 ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
                                 Iterator<Provider> iterator = loader.iterator();
-                                for (; ; ) {
+                                for (;;) {
                                     try {
-                                        if (!(iterator.hasNext())) { break; }
+                                        if (!(iterator.hasNext())) {
+                                            break;
+                                        }
                                         final Provider p = iterator.next();
                                         // We don't want to pick up JDK services resolved via JPMS definitions.
                                         if (p.getClass().getClassLoader() instanceof ModuleClassLoader) {
@@ -248,42 +286,14 @@ class ProviderDefinitions {
                             throw new StartException(e);
                         }
                     }
-
-                    @Override
-                    public void dispose() {
-                        if (handle != null) {
-                            handle.remove();
-                            handle = null;
-                        }
-                    }
-
-                    private File resolveConfigLocation() {
-                        final File resolvedPath;
-                        if (relativeTo != null) {
-                            PathManager pm = pathManager.getValue();
-                            resolvedPath = new File(pm.resolveRelativePathEntry(path, relativeTo));
-                            handle = pm.registerCallback(relativeTo, new Callback() {
-
-                                @Override
-                                public void pathModelEvent(PathEventContext eventContext, String name) {
-                                    if (eventContext.isResourceServiceRestartAllowed() == false) {
-                                        eventContext.reloadRequired();
-                                    }
-                                }
-
-                                @Override
-                                public void pathEvent(Event event, PathEntry pathEntry) {
-                                    // Service dependencies should trigger a stop and start.
-                                }
-                            }, Event.REMOVED, Event.UPDATED);
-                        } else {
-                            resolvedPath = new File(path);
-                        }
-                        return resolvedPath;
-                    }
-
                 };
             }
+
+            @Override
+            protected boolean dependOnProviderRegistration() {
+                return false;
+            }
+
         };
 
         Builder builder = TrivialResourceDefinition.builder()
@@ -341,13 +351,10 @@ class ProviderDefinitions {
 
         @Override
         protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ServiceName providerLoaderName = context.getCapabilityServiceName(PROVIDERS_CAPABILITY, context.getCurrentAddressValue(), Provider[].class);
-            ServiceController<Provider[]> serviceContainer = getRequiredService(context.getServiceRegistry(false), providerLoaderName, Provider[].class);
-            if (serviceContainer.getState() != State.UP) {
-                return;
-            }
+            final ExceptionFunction<OperationContext, Provider[], OperationFailedException> providerApi = context
+                    .getCapabilityRuntimeAPI(PROVIDERS_API_CAPABILITY, context.getCurrentAddressValue(), ExceptionFunction.class);
 
-            populateProviders(context.getResult(), serviceContainer.getValue());
+            populateProviders(context.getResult(), providerApi.apply(context));
         }
 
     }

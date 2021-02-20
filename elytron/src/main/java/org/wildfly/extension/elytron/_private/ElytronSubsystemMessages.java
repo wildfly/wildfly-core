@@ -329,7 +329,13 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 42, value = "Unable to transform multiple 'authorization-realms' to the single value")
     String unableToTransformMultipleRealms();
 
-    // CREDENTIAL_STORE section
+    @Message(id = 43, value = "A cycle has been detected initialising the resources - %s")
+    OperationFailedException cycleDetected(String cycle);
+
+    /*
+     * Credential Store Section.
+     */
+
     @Message(id = 909, value = "Credential store '%s' does not support given credential store entry type '%s'")
     OperationFailedException credentialStoreEntryTypeNotSupported(String credentialStoreName, String entryType);
 
@@ -369,6 +375,21 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Update dependent resources as alias '%s' does not exist anymore")
     String updateDependantServices(String alias);
+
+    @Message(id = 922, value = "Unable to load credential from credential store.")
+    OperationFailedException unableToLoadCredential(@Cause Throwable cause);
+
+    @Message(id = 923, value = "Unable to encrypt the supplied clear text.")
+    OperationFailedException unableToEncryptClearText(@Cause Throwable cause);
+
+    @Message(id = 924, value = "Unable to create immediately available credential store.")
+    OperationFailedException unableToCreateCredentialStoreImmediately(@Cause Throwable cause);
+
+    @Message(id = 925, value = "Unable to reload the credential store.")
+    OperationFailedException unableToReloadCredentialStore(@Cause Throwable cause);
+
+    @Message(id = 926, value = "Unable to initialize the credential store.")
+    OperationFailedException unableToInitialiseCredentialStore(@Cause Throwable cause);
 
     /*
      * Identity Resource Messages - 1000
@@ -609,4 +630,37 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1085, value = "Generated self-signed certificate at %s. Please note that self-signed certificates are not secure and should only be used for testing purposes. Do not use this self-signed certificate in production.\nSHA-1 fingerprint of the generated key is %s\nSHA-256 fingerprint of the generated key is %s")
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
+
+    /*
+     * Expression Resolver Section
+     */
+
+    @Message(id = 1200, value = "The name of the resolver to use was not specified and no default-resolver has been defined.")
+    OperationFailedException noResolverSpecifiedAndNoDefault();
+
+    @Message(id = 1201, value = "No expression resolver has been defined with the name '%s'.")
+    OperationFailedException noResolverWithSpecifiedName(String name);
+
+    @Message(id = 1202, value = "A cycle has been detected initialising the expression resolver for '%s' and '%s'.")
+    OperationFailedException cycleDetectedInitialisingExpressionResolver(String firstExpression, String secondExpression);
+
+    @Message(id = 1203, value = "Expression resolver initialisation has already failed.")
+    OperationFailedException expressionResolverInitialisationAlreadyFailed(@Cause Throwable cause);
+
+    @Message(id = 1204, value = "The expression '%s' does not specify a resolver and no default is defined.")
+    OperationFailedException expressionResolutionWithoutResolver(String expression);
+
+    @Message(id = 1205, value = "The expression '%s' specifies a resolver configuration which does not exist.")
+    OperationFailedException invalidResolver(String expression);
+
+    @Message(id = 1206, value = "Unable to decrypt expression '%s'.")
+    OperationFailedException unableToDecyptExpression(String expression, @Cause Throwable cause);
+
+    /*
+     * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
+     *
+     * If no suitable section is available add a new section.
+     */
+
+
 }

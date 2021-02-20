@@ -19,8 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
-import static org.jboss.as.controller.PersistentResourceXMLDescription.decorator;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORES;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DIR_CONTEXTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POLICY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
@@ -92,10 +90,13 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
         return new MapperParser(MapperParser.Version.VERSION_1_0).getParser();
     }
 
+    PersistentResourceXMLDescription getCredentialStoresParser() {
+        return new CredentialStoreParser().getCredentialStoresParser().build();
+    }
+
     PersistentResourceXMLDescription getDomainParser() {
         return domainParser;
     }
-
 
     PersistentResourceXMLDescription getDirContextParser() {
         return dirContextParser;
@@ -104,7 +105,6 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
     PersistentResourceXMLDescription getPolicyParser() {
         return policyParser;
     }
-
 
     PersistentResourceXMLDescription getHttpParser() {
         return new HttpParser().parser;
@@ -159,7 +159,7 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
                 .addChild(getMapperParser())
                 .addChild(getTlsParser())
                 .addChild(getDirContextParser())
-                .addChild(decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().parser))
+                .addChild(getCredentialStoresParser())
                 .addChild(getSaslParser())
                 .addChild(getHttpParser())
                 .addChild(getPolicyParser())

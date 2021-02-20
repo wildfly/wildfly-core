@@ -896,8 +896,8 @@ class ModelControllerImpl implements ModelController {
         return notificationSupport;
     }
 
-    ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-        return expressionResolver.resolveExpressions(node);
+    ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
+        return expressionResolver.resolveExpressions(node, context);
     }
 
     Authorizer getAuthorizer() {

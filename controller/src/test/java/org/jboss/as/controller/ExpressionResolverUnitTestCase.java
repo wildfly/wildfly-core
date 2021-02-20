@@ -99,7 +99,7 @@ public class ExpressionResolverUnitTestCase {
     public void testPluggableExpressionResolverRecursive() throws OperationFailedException {
         ModelNode node = new ExpressionResolverImpl() {
             @Override
-            protected void resolvePluggableExpression(ModelNode node) {
+            protected void resolvePluggableExpression(ModelNode node, OperationContext context) {
                 String s = node.asString();
                 if (s.equals("${test.prop.expr}")) {
                     node.set("${test.prop.expr.inner}");
@@ -127,7 +127,7 @@ public class ExpressionResolverUnitTestCase {
     public void testPluggableExpressionResolver() throws OperationFailedException {
         ModelNode node = new ExpressionResolverImpl() {
             @Override
-            protected void resolvePluggableExpression(ModelNode node) {
+            protected void resolvePluggableExpression(ModelNode node, OperationContext context) {
                 String s = node.asString();
                 if (s.equals("${test.prop.expr}")) {
                     node.set("EXPR");
@@ -154,7 +154,7 @@ public class ExpressionResolverUnitTestCase {
         ModelNode unresolved = createModelNode();
         new ExpressionResolverImpl() {
             @Override
-            protected void resolvePluggableExpression(ModelNode node) {
+            protected void resolvePluggableExpression(ModelNode node, OperationContext context) {
             }
 
         }.resolveExpressions(unresolved);
@@ -170,7 +170,7 @@ public class ExpressionResolverUnitTestCase {
         try {
             ModelNode node = new ExpressionResolverImpl() {
                 @Override
-                protected void resolvePluggableExpression(ModelNode node) {
+                protected void resolvePluggableExpression(ModelNode node, OperationContext context) {
                     String s = node.asString();
                     if (s.equals("${test.prop.expr}")) {
                         node.set("EXPR");
@@ -229,7 +229,7 @@ public class ExpressionResolverUnitTestCase {
         try {
             ModelNode node = new ExpressionResolverImpl() {
                 @Override
-                protected void resolvePluggableExpression(ModelNode node) {
+                protected void resolvePluggableExpression(ModelNode node, OperationContext context) {
                     String s = node.asString();
                     if (s.equals("${test.prop.expr}")) {
                         node.set("EXPR");

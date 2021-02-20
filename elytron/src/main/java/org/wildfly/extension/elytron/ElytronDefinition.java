@@ -175,6 +175,9 @@ class ElytronDefinition extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
         final boolean serverOrHostController = isServerOrHostController(resourceRegistration);
 
+        // Expression Resolver
+        resourceRegistration.registerSubModel(ExpressionResolverResourceDefinition.getExpressionResolverDefinition(resourceRegistration.getPathAddress()));
+
         // Provider Loader
         resourceRegistration.registerSubModel(ProviderDefinitions.getAggregateProvidersDefinition());
         resourceRegistration.registerSubModel(ProviderDefinitions.getProviderLoaderDefinition(serverOrHostController));
@@ -299,6 +302,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         // Credential Store Block
         resourceRegistration.registerSubModel(new CredentialStoreResourceDefinition());
+        resourceRegistration.registerSubModel(new SecretKeyCredentialStoreDefinition());
 
         // Dir-Context
         resourceRegistration.registerSubModel(new DirContextDefinition());

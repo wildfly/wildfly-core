@@ -21,7 +21,9 @@
 */
 package org.jboss.as.server;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.VaultReader;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -31,10 +33,13 @@ import org.jboss.logging.Logger;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 public class RuntimeExpressionResolver extends ExpressionResolverImpl {
 
     private static final Logger log = Logger.getLogger(RuntimeExpressionResolver.class);
+
+    private static final String EXPRESSION_RESOLVER_CAPABILITY = "org.wildfly.controller.expression-resolver";
 
     private final VaultReader vaultReader;
 
@@ -43,33 +48,56 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl {
     }
 
     @Override
-    protected void resolvePluggableExpression(ModelNode node) throws OperationFailedException {
+    protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
         String expression = node.asString();
         if (expression.length() > 3) {
-            String vaultedData = expression.substring(2, expression.length() -1);
+            String expressionValue = expression.substring(2, expression.length() -1);
+
+            /*
+             * Step 1 - Attempt to resolve using the VaultReader.
+             */
+
             if (vaultReader == null) {
                 // No VaultReader was configured or could be loaded given the modules on the classpath
                 // This is common in WildFly Core itself as the org.picketbox module is not present
                 // to allow loading the standard RuntimeVaultReader impl
 
-                // Just check for a picektbox vault pattern and if present reject
+                // Just check for a PicketBox vault pattern and if present reject
                 // We don't want to let vault expressions pass as other resolvers will treat the ":'
                 // as a system property name vs default value delimiter
-                if (VaultReader.STANDARD_VAULT_PATTERN.matcher(vaultedData).matches()) {
-                    log.tracef("Cannot resolve %s -- it is in the default vault format but no vault reader is available", vaultedData);
+                if (VaultReader.STANDARD_VAULT_PATTERN.matcher(expressionValue).matches()) {
+                    log.tracef("Cannot resolve %s -- it is in the default vault format but no vault reader is available", expressionValue);
                     throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
                 }
-                log.tracef("Not resolving %s -- no vault reader available and not in default vault format", vaultedData);
-            } else if (vaultReader.isVaultFormat(vaultedData)) {
+                log.tracef("Not resolving %s -- no vault reader available and not in default vault format", expressionValue);
+            } else if (vaultReader.isVaultFormat(expressionValue)) {
                 try {
-                    String retrieved = vaultReader.retrieveFromVault(vaultedData);
-                    log.tracef("Retrieved %s from vault for %s", retrieved, vaultedData);
+                    String retrieved = vaultReader.retrieveFromVault(expressionValue);
+                    log.tracef("Retrieved %s from vault for %s", retrieved, expressionValue);
                     node.set(retrieved);
+                    return;
                 } catch (VaultReader.NoSuchItemException nsie) {
                     throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
                 }
             } else {
-                log.tracef("Not resolving %s -- not in vault format", vaultedData);
+                log.tracef("Not resolving %s -- not in vault format", expressionValue);
+            }
+
+            /*
+             * Step 2 - Use ExpressionResolver capability if available.
+             */
+
+            if (context != null) {
+                try {
+                    ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolver.class);
+                    ModelNode result = expressionResolver.resolveExpressions(node, context);
+                    if (result != null) {
+                        node.set(result.asString());
+                    }
+                } catch (IllegalStateException e) {
+                    // We can't cache this state as it could be added in a later operation.
+                    log.tracef("Not resolving %s -- runtime capability not available.", expressionValue);
+                }
             }
         }
     }
