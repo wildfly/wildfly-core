@@ -450,7 +450,7 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return a {@link String} for the message.
      */
-    @Message(id = Message.NONE, value = "Is this new user going to be used for one AS process to connect to another AS process? %ne.g. for a slave host controller connecting to the master or for a Remoting connection for server to server EJB calls.")
+    @Message(id = Message.NONE, value = "Is this new user going to be used for one AS process to connect to another AS process? %ne.g. for a slave host controller connecting to the master or for a Remoting connection for server to server Jakarta Enterprise Beans calls.")
     String serverUser();
 
     /**

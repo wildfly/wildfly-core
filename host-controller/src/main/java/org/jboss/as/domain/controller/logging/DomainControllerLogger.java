@@ -661,12 +661,12 @@ public interface DomainControllerLogger extends BasicLogger {
     OperationFailedException failedToLoadModule(@Cause ModuleLoadException e,String module);
 
     /**
-     * Warning messages when a transformer detects that the JSF subsystem uses a non-default value to setup on a legacy host controller.
+     * Warning messages when a transformer detects that the Jakarta Server Faces subsystem uses a non-default value to setup on a legacy host controller.
      *
      * @param slot the non-default value of the slot attribute
      * @return the message
      */
-    @Message(id = 60, value = "Invalid JSF slot value: '%s'. The host controller is not able to use a JSF slot value different from its default. This resource will be ignored on that host")
+    @Message(id = 60, value = "Invalid Jakarta Server Faces slot value: '%s'. The host controller is not able to use a Jakarta Server Faces slot value different from its default. This resource will be ignored on that host")
     String invalidJSFSlotValue(String slot);
 
     /**
