@@ -56,7 +56,6 @@ import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.wildfly.common.function.ExceptionFunction;
-import org.wildfly.extension.elytron.CredentialStoreResourceDefinition.CredentialStoreDoohickey;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -336,7 +335,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
             final ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
                     .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, context.getCurrentAddressValue(), ExceptionFunction.class);
 
-            CredentialStoreDoohickey doohickey = (CredentialStoreDoohickey) credentialStoreApi;
+            AbstractCredentialStoreDoohickey doohickey = (AbstractCredentialStoreDoohickey) credentialStoreApi;
 
             try {
                 doohickey.reload(context);
