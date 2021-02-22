@@ -177,11 +177,12 @@ class KeyStoreService implements ModifiableKeyStoreService {
                     }
                 } else {
                     if (keyStore == null) {
+                        String defaultType = KeyStore.getDefaultType();
                         ROOT_LOGGER.debugf(
-                                "KeyStore: provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s does not exist. New keystore with default type will be created.",
-                                provider, path, resolvedPath, password != null, aliasFilter
+                                "KeyStore: provider = %s  path = %s  resolvedPath = %s  password = %b  aliasFilter = %s does not exist. New keystore of %s type will be created.",
+                                provider, path, resolvedPath, password != null, aliasFilter, defaultType
                         );
-                        keyStore = AtomicLoadKeyStore.newInstance(KeyStore.getDefaultType());
+                        keyStore = AtomicLoadKeyStore.newInstance(defaultType);
                     }
 
                     synchronized (EmptyProvider.getInstance()) {
