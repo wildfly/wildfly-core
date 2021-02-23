@@ -22,11 +22,8 @@
 
 package org.jboss.as.remoting;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -43,8 +40,7 @@ public class ConnectorRemove extends AbstractRemoveStepHandler {
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
-        final PathAddress address = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final String name = address.getLastElement().getValue();
+        final String name = context.getCurrentAddressValue();
         RemotingServices.removeConnectorServices(context, name);
     }
 

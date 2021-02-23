@@ -282,7 +282,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
         if (sensitiveMBeans) {
             ModelNode sensitiveMBeansOp = Util.getWriteAttributeOperation(
                     PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, JMXExtension.SUBSYSTEM_NAME),
-                    JMXSubsystemRootResource.CORE_MBEAN_SENSITIVITY.getName(),
+                    JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY.getName(),
                     new ModelNode(sensitiveMBeans));
             executeForResult(sensitiveMBeansOp);
         }

@@ -26,7 +26,6 @@ import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -47,7 +46,7 @@ class RemoteOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler
     @Override
     protected boolean applyUpdateToRuntime(OperationContext context, ModelNode operation, String attributeName, ModelNode resolvedValue, ModelNode currentValue, HandbackHolder<Boolean> handbackHolder) throws OperationFailedException {
         final ModelNode model = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
-        boolean handback = applyModelToRuntime(context, operation, model);
+        boolean handback = applyModelToRuntime(context, model);
         handbackHolder.setHandback(handback);
         return handback;
 
@@ -58,14 +57,14 @@ class RemoteOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler
         if (handback != null && !handback.booleanValue()) {
             final ModelNode restored = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
             restored.get(attributeName).set(valueToRestore);
-            applyModelToRuntime(context, operation, restored);
+            applyModelToRuntime(context, restored);
         }
     }
 
-    private boolean applyModelToRuntime(OperationContext context, ModelNode operation, ModelNode fullModel) throws OperationFailedException {
+    private boolean applyModelToRuntime(OperationContext context, ModelNode fullModel) throws OperationFailedException {
 
         boolean reloadRequired = false;
-        final String connectionName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)).getLastElement().getValue();
+        final String connectionName = context.getCurrentAddressValue();
         final ServiceName serviceName = RemoteOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         final ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController sc = registry.getService(serviceName);
@@ -75,7 +74,7 @@ class RemoteOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler
             // Service isn't up so we can bounce it
             context.removeService(serviceName); // safe even if the service doesn't exist
             // install the service with new values
-            RemoteOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation, fullModel);
+            RemoteOutboundConnectionAdd.INSTANCE.installRuntimeService(context, fullModel);
         }
 
         return reloadRequired;

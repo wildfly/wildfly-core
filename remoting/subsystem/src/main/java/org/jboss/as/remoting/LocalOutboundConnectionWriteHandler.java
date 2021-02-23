@@ -26,7 +26,6 @@ import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -56,23 +55,23 @@ class LocalOutboundConnectionWriteHandler extends AbstractWriteAttributeHandler<
         if (handback != null && !handback.booleanValue()) {
             final ModelNode restored = Resource.Tools.readModel(context.readResource(PathAddress.EMPTY_ADDRESS));
             restored.get(attributeName).set(valueToRestore);
-            applyModelToRuntime(context, operation);
+            applyModelToRuntime(context, restored);
         } // else we didn't update the runtime in applyUpdateToRuntime
     }
 
-    private boolean applyModelToRuntime(OperationContext context, ModelNode operation) throws OperationFailedException {
+    private boolean applyModelToRuntime(OperationContext context, ModelNode fullModel) throws OperationFailedException {
         boolean reloadRequired = false;
-        final String connectionName = PathAddress.pathAddress(operation.get(ModelDescriptionConstants.OP_ADDR)).getLastElement().getValue();
+        final String connectionName = context.getCurrentAddressValue();
         final ServiceName serviceName = LocalOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
         final ServiceRegistry registry = context.getServiceRegistry(true);
         ServiceController sc = registry.getService(serviceName);
         if (sc != null && sc.getState() == ServiceController.State.UP) {
-                reloadRequired = true;
+            reloadRequired = true;
         } else {
             // Service isn't up so we can bounce it
             context.removeService(serviceName); // safe even if the service doesn't exist
             // install the service with new values
-            LocalOutboundConnectionAdd.INSTANCE.installRuntimeService(context, operation);
+            LocalOutboundConnectionAdd.INSTANCE.installRuntimeService(context, fullModel);
         }
         return reloadRequired;
     }

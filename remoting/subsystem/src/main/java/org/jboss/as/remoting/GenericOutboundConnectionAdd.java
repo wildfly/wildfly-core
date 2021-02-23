@@ -22,7 +22,6 @@
 
 package org.jboss.as.remoting;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.remoting.AbstractOutboundConnectionResourceDefinition.OUTBOUND_CONNECTION_CAPABILITY;
 
 import java.net.URI;
@@ -73,15 +72,15 @@ class GenericOutboundConnectionAdd extends AbstractAddStepHandler {
     protected void performRuntime(OperationContext context, ModelNode operation, Resource resource)
             throws OperationFailedException {
         final ModelNode fullModel = Resource.Tools.readModel(resource);
-        installRuntimeService(context, operation, fullModel);
+        installRuntimeService(context, fullModel);
     }
 
-    void installRuntimeService(final OperationContext context, final ModelNode operation, final ModelNode fullModel) throws OperationFailedException {
-        final PathAddress pathAddress = PathAddress.pathAddress(operation.require(OP_ADDR));
-        final String connectionName = pathAddress.getLastElement().getValue();
+    void installRuntimeService(final OperationContext context, final ModelNode fullModel) throws OperationFailedException {
+
+        final String connectionName = context.getCurrentAddressValue();
 
         // Get the destination URI
-        final URI uri = getDestinationURI(context, operation);
+        final URI uri = getDestinationURI(context, fullModel);
 
         // create the service
         final ServiceName serviceName = OUTBOUND_CONNECTION_CAPABILITY.getCapabilityServiceName(connectionName);
