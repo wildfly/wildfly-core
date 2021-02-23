@@ -5692,6 +5692,15 @@
             <xs:annotation>
                 <xs:documentation>
                     File name of credential store storage.
+
+                    Deprecated: Use "path" attribute instead.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    File name of credential store storage.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
