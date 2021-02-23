@@ -37,6 +37,7 @@ import org.jboss.as.test.manualmode.vault.module.TestVaultResolveExpressionHandl
 import org.jboss.as.test.manualmode.vault.module.TestVaultSubsystemResourceDescription;
 import org.jboss.as.test.module.util.TestModule;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
 import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
@@ -80,6 +81,42 @@ public class CustomVaultInModuleTestCase {
 
         op = createResolveExpressionOp("${VAULT::Nothing::is::here}");
         ModelTestUtils.checkFailed(client.execute(op));
+    }
+
+    @Test
+    public void testStandardRemoteExpressionResolution() throws Exception {
+        ModelControllerClient client = containerController.getClient().getControllerClient();
+
+        ModelNode op = Util.createEmptyOperation("resolve-expression", PathAddress.EMPTY_ADDRESS);
+        op.get("expression").set("${VAULT::Testing::Stuff::thing}");
+        ModelNode response = client.execute(op);
+        Assert.assertEquals(response.toString(), "${VAULT::Testing::Stuff::thing}", response.get("result").asString());
+        String responseHeaders = response.get("response-headers").asString();
+        Assert.assertTrue(response.toString(), responseHeaders.contains("${VAULT::Testing::Stuff::thing}"));
+        Assert.assertTrue(response.toString(), responseHeaders.contains("WFLYCTL0480"));
+
+        PathAddress address = PathAddress.pathAddress(TestVaultSubsystemResourceDescription.PATH);
+
+        op = Util.getReadAttributeOperation(address, "attribute");
+        op.get("resolve-expressions").set(true);
+        response = client.execute(op);
+        ModelNode attrValue = response.get("result");
+        Assert.assertEquals(response.toString(), ModelType.EXPRESSION, attrValue.getType());
+        Assert.assertEquals(response.toString(), "${VAULT::Testing::Stuff::thing}", attrValue.asString());
+        responseHeaders = response.get("response-headers").asString();
+        Assert.assertTrue(response.toString(), responseHeaders.contains("${VAULT::Testing::Stuff::thing}"));
+        Assert.assertTrue(response.toString(), responseHeaders.contains("WFLYCTL0479"));
+
+        op = Util.createEmptyOperation("read-resource", address);
+        op.get("resolve-expressions").set(true);
+        response = client.execute(op);
+        attrValue = response.get("result", "attribute");
+        Assert.assertEquals(response.toString(), ModelType.EXPRESSION, attrValue.getType());
+        Assert.assertEquals(response.toString(), "${VAULT::Testing::Stuff::thing}", attrValue.asString());
+        // TODO uncomment when WFCORE-5305 is resolved
+        //responseHeaders = response.get("response-headers").asString();
+        //Assert.assertTrue(response.toString(), responseHeaders.contains("${VAULT::Testing::Stuff::thing}"));
+        //Assert.assertTrue(response.toString(), responseHeaders.contains("WFLYCTL0479"));
     }
 
     @BeforeClass
@@ -147,6 +184,7 @@ public class CustomVaultInModuleTestCase {
         ModelTestUtils.checkOutcome(client.execute(addExtension));
 
         final ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(TestVaultSubsystemResourceDescription.PATH));
+        addSubsystem.get("attribute").set("${VAULT::Testing::Stuff::thing}");
         ModelTestUtils.checkOutcome(client.execute(addSubsystem));
     }
 

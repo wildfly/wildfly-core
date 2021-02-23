@@ -22,12 +22,16 @@
 
 package org.jboss.as.test.manualmode.vault.module;
 
+import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelOnlyAddStepHandler;
+import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.dmr.ModelType;
 
 /**
  *
@@ -37,8 +41,13 @@ public class TestVaultSubsystemResourceDescription extends SimpleResourceDefinit
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, TestVaultExtension.SUBSYSTEM_NAME);
 
+    private static final AttributeDefinition ATTR = SimpleAttributeDefinitionBuilder.create("attribute", ModelType.STRING)
+            .setAllowExpression(true)
+            .setRequired(false)
+            .build();
+
     public TestVaultSubsystemResourceDescription() {
-        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(), new TestVaultRemoveHandler());
+        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(ATTR), new TestVaultRemoveHandler());
     }
 
     @Override
@@ -47,6 +56,10 @@ public class TestVaultSubsystemResourceDescription extends SimpleResourceDefinit
         resourceRegistration.registerOperationHandler(TestVaultResolveExpressionHandler.RESOLVE, new TestVaultResolveExpressionHandler());
     }
 
+    @Override
+    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+        resourceRegistration.registerReadWriteAttribute(ATTR, null, new ModelOnlyWriteAttributeHandler(ATTR));
+    }
 
 
 }

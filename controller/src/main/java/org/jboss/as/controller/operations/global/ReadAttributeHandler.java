@@ -28,6 +28,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.containsEnhancedSyntax;
 import static org.jboss.as.controller.operations.global.EnhancedSyntaxSupport.extractAttributeName;
 
+import java.util.logging.Level;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
@@ -263,7 +265,7 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ModelNode result = context.hasResult() ? context.getResult().clone() : new ModelNode();
+            ModelNode unresolvedResult = context.hasResult() ? context.getResult().clone() : new ModelNode();
             // For now, don't use the context to resolve, as we don't want to support vault resolution
             // from a remote management client. The purpose of the vault is to require someone to have
             // access to both the config (i.e. the expression) and to the vault itself in order to read, and
@@ -271,8 +273,24 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
             //ModelNode resolved = context.resolveExpressions(result);
             // Instead we use a resolver that will not complain about unresolvable stuff (i.e. vault expressions),
             // simply returning them unresolved.
-            ModelNode resolved = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(result);
-            context.getResult().set(resolved);
+            ModelNode answer = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(unresolvedResult);
+            if (!answer.equals(unresolvedResult)) {
+                // SIMPLE_LENIENT will not resolve everything the context can, e.g. vault or credential store expressions.
+                // And we don't want to provide such resolution, as that kind of security-sensitive resolution should
+                // not escape the server process by being sent in a management op response. But if the true
+                // resolution differs from what SIMPLE_LENIENT did, we should just not resolve in our response and
+                // include a warning to that effect.
+                ModelNode fullyResolved = context.resolveExpressions(unresolvedResult);
+                if (!answer.equals(fullyResolved)) {
+                    answer = unresolvedResult;
+                    context.addResponseWarning(Level.WARNING,
+                            ControllerLogger.MGMT_OP_LOGGER.attributeUnresolvableUsingSimpleResolution(
+                                    operation.get(NAME).asString(),
+                                    context.getCurrentAddress().toCLIStyleString(),
+                                    unresolvedResult));
+                }
+            }
+            context.getResult().set(answer);
         }
     }
 
