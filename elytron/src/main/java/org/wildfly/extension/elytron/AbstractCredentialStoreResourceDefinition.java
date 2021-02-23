@@ -189,7 +189,12 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         try {
             String alias = ALIAS.resolveModelAttribute(context, operation).asString();
 
-            SecretKey secretKey = credentialStore.retrieve(alias, SecretKeyCredential.class).getSecretKey();
+            SecretKeyCredential credential = credentialStore.retrieve(alias, SecretKeyCredential.class);
+            if (credential == null) {
+                throw ROOT_LOGGER.credentialDoesNotExist(alias, SecretKeyCredential.class.getSimpleName());
+            }
+
+            SecretKey secretKey = credential.getSecretKey();
             String exportedKey = exportSecretKey(secretKey);
 
             ModelNode result = context.getResult();
