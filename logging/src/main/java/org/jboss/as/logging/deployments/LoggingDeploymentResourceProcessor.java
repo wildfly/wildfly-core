@@ -23,7 +23,9 @@
 package org.jboss.as.logging.deployments;
 
 import org.jboss.as.logging.CommonAttributes;
+import org.jboss.as.logging.LoggingModuleDependency;
 import org.jboss.as.logging.deployments.resources.LoggingDeploymentResources;
+import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -35,6 +37,7 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.PropertyConfigurator;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -65,6 +68,11 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
             } else {
                 // Get the module
                 final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
+                if(!isJulToSlf4jStubbed(module)) {
+                    //this will potentially log for multiple modules in deployment.
+                    LoggingLogger.ROOT_LOGGER.customJULToSLF4JDetected(module.getName());
+                }
+
                 // Set the deployments class loader to ensure we get the correct log context
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 try {
@@ -94,5 +102,20 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
 
     @Override
     public final void undeploy(final DeploymentUnit context) {
+    }
+
+    private boolean isJulToSlf4jStubbed(Module module) {
+        try {
+            final Class<?> julOffendingClazz = module.getClassLoader().loadClass("org.slf4j.bridge.SLF4JBridgeHandler");
+            final ModuleClassLoader mcl = (ModuleClassLoader) julOffendingClazz.getClassLoader();
+            if(mcl.getName().startsWith(LoggingModuleDependency.JUL_TO_SLF4J.getModuleName())) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (ClassNotFoundException e) {
+            //ignore
+        }
+        return true;
     }
 }

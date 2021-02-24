@@ -1029,4 +1029,13 @@ public interface LoggingLogger extends BasicLogger {
 //     */
 //    @Message(id = 98, value = "Cannot remove filter %s as it's assigned to: %s")
 //    OperationFailedException cannotRemoveFilter(String name, Collection<String> references);
+    /**
+     * Log message indicating that some module contain jul class loaded not from our stubbed binary.
+     *
+     * @param module in which it was detected( deployment )
+     */
+    @Once
+    @LogMessage(level = WARN)
+    @Message(id = 99, value = "Detected non-stubbed version of 'jul-to-slf4j' in '%s'. If 'removeHandlersForRootLogger' is invoked, it will corrupt logging!")
+    void customJULToSLF4JDetected(final String module);
 }
