@@ -165,16 +165,16 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
             MAX_OPERATION_COUNT.validateAndSet(operation, model);
         }
 
-        protected InMemoryAuditLogHander createHandler(final OperationContext context, final ModelNode operation) throws OperationFailedException {
-            final String name = Util.getNameFromAddress(operation.require(OP_ADDR));
-            final int maxHistory = MAX_OPERATION_COUNT.resolveModelAttribute(context, operation).asInt();
+        private InMemoryAuditLogHander createHandler(final OperationContext context, final ModelNode model) throws OperationFailedException {
+            final String name = context.getCurrentAddressValue();
+            final int maxHistory = MAX_OPERATION_COUNT.resolveModelAttribute(context, model).asInt();
             return new InMemoryAuditLogHander(name, maxHistory);
         }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
-            InMemoryAuditLogHander handler = createHandler(context, operation);
+            InMemoryAuditLogHander handler = createHandler(context, model);
             auditLogger.getUpdater().addHandler(handler);
             auditLogger.addFormatter(handler.getFormatter());
         }

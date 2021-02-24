@@ -59,7 +59,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
@@ -126,9 +125,8 @@ public class LegacyConfigurationChangeResourceDefinition extends SimpleResourceD
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
-            super.performRuntime(context, operation, resource);
-            ModelNode maxHistory = MAX_HISTORY.resolveModelAttribute(context, operation);
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            ModelNode maxHistory = MAX_HISTORY.resolveModelAttribute(context, model);
             context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName()).setInstance(Service.NULL).install();
             ConfigurationChangesCollector.INSTANCE.setMaxHistory(maxHistory.asInt());
         }
