@@ -37,6 +37,8 @@ import java.util.Set;
 import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.client.helpers.ClientConstants;
+import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -233,8 +235,6 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
 
             String extracted = expression.substring(expectedPrefix.length(), expression.length() - 1);
 
-            System.out.println(extracted);
-
             String decrypted = CipherUtil.decrypt(extracted, secretKey);
             assertEquals("Successful descryption", CLEAR_TEXT, decrypted);
         } else {
@@ -265,15 +265,75 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
         return sb.toString();
     }
 
-
     @Test
-    public void testExpressionEncryptionCycle() {
-        // Create 3 Credential Stores, each with a secret key. (Offline)
-        // Create an expression=encryption with 3 resolvers, one for each key.
+    public void testExpressionEncryptionCycle() throws Exception {
+        SecretKey keyOne = SecretKeyUtil.generateSecretKey(128);
+        SecretKey keyTwo = SecretKeyUtil.generateSecretKey(192);
+        SecretKey keyThree = SecretKeyUtil.generateSecretKey(256);
+
+        // Uses key from two
+        String passwordForone = "${ENC::ResolverTwo:" + CipherUtil.encrypt(CredentialStoreUtility.DEFAULT_PASSWORD, keyTwo) + "}";
+        // Uses key from three
+        String passwordForTwo = "${ENC::ResolverThree:" + CipherUtil.encrypt(CredentialStoreUtility.DEFAULT_PASSWORD, keyThree) + "}";
+        // Uses key from one
+        String passwordForThree = "${ENC::ResolverOne:" + CipherUtil.encrypt(CredentialStoreUtility.DEFAULT_PASSWORD, keyOne) + "}";
 
         // Define the credential store resources in a single composite operation, a cycle should be detected which
         // prevents them from coming up.
+        ModelNode composite = Operations.createCompositeOperation();
+        ModelNode steps = composite.get(ClientConstants.STEPS);
 
+        // Create 3 Credential Stores, each with a secret key. (Offline)
+        CredentialStoreUtility csUtilOne = createCredentialStoreUtility("target/cycle-store-one.cs", steps, "store-one", passwordForone);
+        csUtilOne.addEntry("key", keyOne);
+        CredentialStoreUtility csUtilTwo = createCredentialStoreUtility("target/cycle-store-two.cs", steps, "store-two", passwordForTwo);
+        csUtilTwo.addEntry("key", keyTwo);
+        CredentialStoreUtility csUtilThree = createCredentialStoreUtility("target/cycle-store-three.cs", steps, "store-three", passwordForThree);
+        csUtilThree.addEntry("key", keyThree);
+
+        // Create an expression=encryption with 3 resolvers, one for each key.
+        ModelNode addEE = new ModelNode();
+        addEE.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+        addEE.get(ClientConstants.OP).set(ClientConstants.ADD);
+
+        ModelNode resolvers = new ModelNode();
+        resolvers.add(resolver("ResolverOne", "store-one", "key"));
+        resolvers.add(resolver("ResolverTwo", "store-two", "key"));
+        resolvers.add(resolver("ResolverThree", "store-three", "key"));
+        addEE.get(ElytronDescriptionConstants.RESOLVERS).set(resolvers);
+        steps.add(addEE);
+
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(emptySubsystemXml()).build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ModelNode result = services.executeOperation(composite);
+        assertTrue("Failure expected", result.get(OUTCOME).asString().equals(ClientConstants.FAILED));
+        assertTrue("Expected Error Code (Cycle Detected)",
+                result.get(ClientConstants.FAILURE_DESCRIPTION).asString().contains("WFLYELY00043:"));
+
+        csUtilOne.cleanUp();
+        csUtilTwo.cleanUp();
+        csUtilThree.cleanUp();
+    }
+
+    private CredentialStoreUtility createCredentialStoreUtility(final String path, final ModelNode steps, final String storeName,
+            final String clearPassword) {
+        File storeFile = new File(path);
+        if (storeFile.exists()) {
+            storeFile.delete();
+        }
+
+        ModelNode add = new ModelNode();
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.CREDENTIAL_STORE, storeName);
+        add.get(ClientConstants.OP).set(ClientConstants.ADD);
+        add.get(ElytronDescriptionConstants.PATH).set(path);
+        add.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set(clearPassword);
+
+        steps.add(add);
+
+        return new CredentialStoreUtility(path);
     }
 
 }
