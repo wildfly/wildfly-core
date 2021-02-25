@@ -22,6 +22,10 @@
 
 package org.jboss.as.controller.operations.common;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+
+import java.util.logging.Level;
+
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.OperationContext;
@@ -76,10 +80,24 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                     toResolve = ParseUtils.parsePossibleExpression(toResolve.asString());
                 }
                 try {
-                    ModelNode resolved = ExpressionResolver.SIMPLE.resolveExpressions(toResolve);
+                    ModelNode answer = ExpressionResolver.SIMPLE.resolveExpressions(toResolve);
+                    if (!answer.equals(toResolve)) {
+                        // SIMPLE will not resolve everything the context can, e.g. vault or credential store expressions.
+                        // And we don't want to provide such resolution, as that kind of security-sensitive resolution should
+                        // not escape the server process by being sent in a management op response. But if the true
+                        // resolution differs from what SIMPLE did, we should just not resolve in our response and
+                        // include a warning to that effect.
+                        ModelNode fullyResolved = context.resolveExpressions(toResolve);
+                        if (!answer.equals(fullyResolved)) {
+                            answer = toResolve;
+                            context.addResponseWarning(Level.WARNING,
+                                    ControllerLogger.MGMT_OP_LOGGER.expressionUnresolvableUsingSimpleResolution(
+                                            toResolve, operation.get(OP).asString()));
+                        }
+                    }
                     ModelNode result = context.getResult();
-                    if (resolved.isDefined()) {
-                        result.set(resolved.asString());
+                    if (answer.isDefined()) {
+                        result.set(answer.asString());
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 } catch (SecurityException e) {
