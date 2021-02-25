@@ -211,6 +211,10 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
                 String alias = ALIAS.resolveModelAttribute(context, operation).asString();
                 String rawKey = KEY.resolveModelAttribute(context, operation).asString();
 
+                if (credentialStore.exists(alias, SecretKeyCredential.class)) {
+                    throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
+                }
+
                 SecretKey secretKey = importSecretKey(rawKey);
 
                 storeSecretKey(credentialStore, alias, secretKey);
@@ -227,6 +231,10 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
         try {
             try {
                 String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+
+                if (credentialStore.exists(alias, SecretKeyCredential.class)) {
+                    throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
+                }
 
                 SecretKey secretKey = generateSecretKey(keySize);
                 storeSecretKey(credentialStore, alias, secretKey);
