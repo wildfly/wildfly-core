@@ -369,6 +369,9 @@
         <credential-store name="test2" relative-to="jboss.server.data.dir" modifiable="true">
             <credential-reference store="test1" alias="to_open_test2"/>
         </credential-store>
+        <credential-store name="test4" relative-to="jboss.server.data.dir" path="test1.store" create="true">
+            <credential-reference clear-text="secret2"/>
+        </credential-store>
         <secret-key-credential-store name="test3" relative-to="jboss.server.data.dir" path="test3.cs" create="false" populate="false" key-size="192" default-alias="test3" />
     </credential-stores>
     <expression-resolver default-resolver="A" prefix="G">
