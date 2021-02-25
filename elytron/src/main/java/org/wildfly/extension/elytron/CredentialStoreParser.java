@@ -47,6 +47,21 @@ class CredentialStoreParser {
             .addAttribute(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE)
             .build();
 
+    final PersistentResourceXMLDescription credentialStoreParser_13 = builder(PathElement.pathElement(ElytronDescriptionConstants.CREDENTIAL_STORE))
+            .setUseElementsForGroups(false)
+            .addAttribute(CredentialStoreResourceDefinition.TYPE)
+            .addAttribute(CredentialStoreResourceDefinition.PROVIDER_NAME)
+            .addAttribute(CredentialStoreResourceDefinition.PROVIDERS)
+            .addAttribute(CredentialStoreResourceDefinition.OTHER_PROVIDERS)
+            .addAttribute(CredentialStoreResourceDefinition.RELATIVE_TO)
+            .addAttribute(CredentialStoreResourceDefinition.LOCATION)
+            .addAttribute(CredentialStoreResourceDefinition.PATH)
+            .addAttribute(CredentialStoreResourceDefinition.MODIFIABLE)
+            .addAttribute(CredentialStoreResourceDefinition.CREATE)
+            .addAttribute(CredentialStoreResourceDefinition.IMPLEMENTATION_PROPERTIES)
+            .addAttribute(CredentialStoreResourceDefinition.CREDENTIAL_REFERENCE)
+            .build();
+
     final PersistentResourceXMLDescription secretKeyCredentialStoreParser = builder(PathElement.pathElement(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE))
             .setUseElementsForGroups(false)
             .addAttributes(SecretKeyCredentialStoreDefinition.CONFIG_ATTRIBUTES)
@@ -57,7 +72,8 @@ class CredentialStoreParser {
     }
 
     PersistentResourceXMLBuilder getCredentialStoresParser_13() {
-        return getCredentialStoresParser().addChild(secretKeyCredentialStoreParser);
+        return decorator(CREDENTIAL_STORES).addChild(new CredentialStoreParser().credentialStoreParser_13)
+                .addChild(secretKeyCredentialStoreParser);
     }
 
     CredentialStoreParser() {

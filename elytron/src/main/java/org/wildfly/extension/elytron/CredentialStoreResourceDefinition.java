@@ -48,6 +48,7 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityServiceBuilder;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -103,6 +104,8 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setAllowExpression(true)
             .setMinSize(1)
             .setRestartAllServices()
+            .setDeprecated(ModelVersion.create(13))
+            .setAlternatives(ElytronDescriptionConstants.PATH)
             .build();
 
     static final SimpleAttributeDefinition MODIFIABLE = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.MODIFIABLE, ModelType.BOOLEAN, true)
@@ -164,6 +167,14 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setRestartAllServices()
             .build();
 
+    static final SimpleAttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, ModelType.STRING, true)
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setAttributeGroup(ElytronDescriptionConstants.FILE)
+            .setRestartAllServices()
+            .setAlternatives(ElytronDescriptionConstants.LOCATION)
+            .build();
+
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER = ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.CREDENTIAL_STORE);
 
@@ -218,7 +229,7 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
             .setRuntimeOnly()
             .build();
 
-    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {LOCATION, CREATE, MODIFIABLE, IMPLEMENTATION_PROPERTIES, CREDENTIAL_REFERENCE, TYPE, PROVIDER_NAME, PROVIDERS, OTHER_PROVIDERS, RELATIVE_TO};
+    private static final AttributeDefinition[] CONFIG_ATTRIBUTES = new AttributeDefinition[] {LOCATION, PATH, CREATE, MODIFIABLE, IMPLEMENTATION_PROPERTIES, CREDENTIAL_REFERENCE, TYPE, PROVIDER_NAME, PROVIDERS, OTHER_PROVIDERS, RELATIVE_TO};
 
     private static final CredentialStoreAddHandler ADD = new CredentialStoreAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, CREDENTIAL_STORE_RUNTIME_CAPABILITY);
@@ -408,7 +419,10 @@ final class CredentialStoreResourceDefinition extends AbstractCredentialStoreRes
 
         @Override
         protected void resolveRuntime(ModelNode model, OperationContext context) throws OperationFailedException {
-            location = LOCATION.resolveModelAttribute(context, model).asStringOrNull();
+            location = PATH.resolveModelAttribute(context, model).asStringOrNull();
+            if (location == null) {
+                location = LOCATION.resolveModelAttribute(context, model).asStringOrNull();
+            }
             credentialStoreAttributes = new HashMap<>();
             modifiable =  MODIFIABLE.resolveModelAttribute(context, model).asBoolean();
             credentialStoreAttributes.put(ElytronDescriptionConstants.MODIFIABLE, Boolean.toString(modifiable));

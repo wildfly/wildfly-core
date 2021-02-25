@@ -136,6 +136,9 @@ public class ElytronExpressionResolver implements ExpressionResolver {
         SecretKey secretKey;
         try {
             SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(), SecretKeyCredential.class);
+            if (credential == null) {
+                throw ROOT_LOGGER.credentialDoesNotExist(resolverConfiguration.getAlias(), SecretKeyCredential.class.getSimpleName());
+            }
             secretKey = credential.getSecretKey();
         } catch (CredentialStoreException e) {
             throw ROOT_LOGGER.unableToLoadCredential(e);

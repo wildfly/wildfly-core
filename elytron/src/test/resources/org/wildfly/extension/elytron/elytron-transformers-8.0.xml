@@ -11,4 +11,9 @@
             <webservices ws-security-type="UsernameToken" http-mechanism="BASIC" />
         </authentication-configuration>
     </authentication-client>
+    <credential-stores>
+        <credential-store name="store1" path="path/to/store_file" >
+            <credential-reference clear-text="STOREPASSWORD"/>
+        </credential-store>
+    </credential-stores>
 </subsystem>
