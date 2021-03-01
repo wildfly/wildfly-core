@@ -84,9 +84,14 @@ JAVA_OPTS="$JAVA_OPTS -Dcom.ibm.jsse2.overrideDefaultTLS=true"
 JBOSS_MODULEPATH=$(eval echo \"${JBOSS_MODULEPATH}\")
 
 LOG_CONF=`echo $JAVA_OPTS | grep "logging.configuration"`
+
+# WFCORE-5241 convert $JAVA_OPTS into array and quote each element to allow exec them with whitespace inside.
+java_opts_array=()
+eval 'for arg in '$JAVA_OPTS'; do java_opts_array+=("$arg"); done'
+
 if [ "x$LOG_CONF" = "x" ]; then
-    exec "$JAVA" $JAVA_OPTS -Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
+    exec "$JAVA" "${java_opts_array[@]}" -Dlogging.configuration=file:"$JBOSS_HOME"/bin/jboss-cli-logging.properties -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
 else
     echo "logging.configuration already set in JAVA_OPTS"
-    exec "$JAVA" $JAVA_OPTS -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
+    exec "$JAVA" "${java_opts_array[@]}" -jar "$JBOSS_HOME"/jboss-modules.jar -mp "${JBOSS_MODULEPATH}" org.jboss.as.cli "$@"
 fi
