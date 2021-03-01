@@ -52,6 +52,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -469,6 +470,19 @@ public class TlsTestCase extends AbstractSubsystemTest {
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
         Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
+    }
+
+
+    /**
+     * Verifies accepted issuers are sent when CRLs are configured.
+     * Verifies ELY-2057 (No acceptedIssuers sent when CRLs are configured) is resolved.
+     */
+    @Test
+    public void testAcceptedIssuersWithCRLs() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+        Assert.assertTrue(((X509TrustManager) trustManager).getAcceptedIssuers().length > 0);
     }
 
     @Test
