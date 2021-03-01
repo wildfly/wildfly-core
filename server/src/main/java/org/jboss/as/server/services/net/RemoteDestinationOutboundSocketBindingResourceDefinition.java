@@ -55,7 +55,7 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
-    public static final SimpleAttributeDefinition[] ATTRIBUTES = {HOST, PORT, SOURCE_INTERFACE, SOURCE_PORT, FIXED_SOURCE_PORT};
+    public static final SimpleAttributeDefinition[] ATTRIBUTES = {HOST, PORT, SOURCE_PORT, SOURCE_INTERFACE, FIXED_SOURCE_PORT};
 
     public static final RemoteDestinationOutboundSocketBindingResourceDefinition INSTANCE = new RemoteDestinationOutboundSocketBindingResourceDefinition();
 
@@ -69,8 +69,8 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        super.registerAttributes(resourceRegistration);
-        resourceRegistration.registerReadWriteAttribute(HOST, null, new OutboundSocketBindingWriteHandler(HOST, true));
-        resourceRegistration.registerReadWriteAttribute(PORT, null, new OutboundSocketBindingWriteHandler(PORT, true));
+        for (SimpleAttributeDefinition ad : ATTRIBUTES) {
+            resourceRegistration.registerReadWriteAttribute(ad, null, new OutboundSocketBindingWriteHandler(ad, true));
+        }
     }
 }
