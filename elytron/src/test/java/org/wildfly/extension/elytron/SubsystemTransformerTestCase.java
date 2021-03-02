@@ -217,7 +217,9 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testRejectingTransformersEAP740() throws Exception {
         testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
-
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.HOST_CONTEXT_MAP)
+                )
         );
     }
     /**

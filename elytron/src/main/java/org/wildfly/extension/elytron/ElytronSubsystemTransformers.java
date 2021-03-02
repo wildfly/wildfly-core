@@ -125,7 +125,27 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+                    @Override
+                    protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+                        if (value.isDefined()) {
+                            for (String hostname : value.keys()) {
+                                // character '^' was not allowed in older versions
+                                if (hostname.contains("^")) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
 
+                    @Override
+                    public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+                        return ROOT_LOGGER.hostContextMapHostnameContainsCaret().getMessage();
+                    }
+                }, ElytronDescriptionConstants.HOST_CONTEXT_MAP);
     }
 
     private static void from13(ChainedTransformationDescriptionBuilder chainedBuilder) {

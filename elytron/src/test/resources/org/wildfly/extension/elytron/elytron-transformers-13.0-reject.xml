@@ -5,5 +5,29 @@
  -->
 
 <subsystem xmlns="urn:wildfly:elytron:14.0">
-
+    <tls>
+        <key-stores>
+            <key-store name="jks_store" alias-filter="one,two,three">
+                <credential-reference clear-text="password"/>
+                <implementation type="jks"/>
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="serverKey" algorithm="SunX509" key-store="jks_store">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+        </key-managers>
+        <trust-managers>
+            <trust-manager name="serverTrust" algorithm="SunX509" key-store="jks_store"/>
+        </trust-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="server" protocols="TLSv1.2" key-manager="serverKey" trust-manager="serverTrust"/>
+        </server-ssl-contexts>
+        <server-ssl-sni-contexts>
+            <server-ssl-sni-context name="SNIwithCaret" default-ssl-context="server">
+                <sni-mapping host="[^.]*\.example\.com" ssl-context="server"/>
+            </server-ssl-sni-context>
+        </server-ssl-sni-contexts>
+    </tls>
 </subsystem>
