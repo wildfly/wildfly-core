@@ -21,7 +21,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUC
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -32,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.crypto.SecretKey;
+
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -41,6 +45,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.credential.store.WildFlyElytronCredentialStoreProvider;
+import org.wildfly.security.encryption.CipherUtil;
+import org.wildfly.security.encryption.SecretKeyUtil;
 
 /**
  * A test case to test expression resolution using the expression=encryption resource.
@@ -50,6 +56,8 @@ import org.wildfly.security.credential.store.WildFlyElytronCredentialStoreProvid
 public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
 
     private static final Provider PROVIDER = new WildFlyElytronCredentialStoreProvider();
+    private static final String CLEAR_TEXT = "Lorem ipsum dolor sit amet";
+
 
     @BeforeClass
     public static void initTests() throws Exception {
@@ -122,11 +130,150 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
         }
     }
 
+    @Test
+    public void testExpressionEncryptionOperations() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(emptySubsystemXml()).build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        String testStorePath = "target/secret-key-store.cs";
+        File testStoreFile = new File(testStorePath);
+        if (testStoreFile.exists()) {
+            testStoreFile.delete();
+        }
+
+        // Start with an empty subsystem and define a secret key credential store with two keys
+        ModelNode add = new ModelNode();
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        add.get(ClientConstants.OP).set(ClientConstants.ADD);
+        add.get(ElytronDescriptionConstants.PATH).set(testStorePath);
+        add.get(ElytronDescriptionConstants.POPULATE).set(false);
+
+        assertSuccess(services.executeOperation(add));
+
+          // Generate one and export it.
+        ModelNode generate = new ModelNode();
+        generate.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        generate.get(ClientConstants.OP).set(ElytronDescriptionConstants.GENERATE_SECRET_KEY);
+        generate.get(ElytronDescriptionConstants.ALIAS).set("TestKeyOne");
+
+        assertSuccess(services.executeOperation(generate));
+
+        ModelNode export = new ModelNode();
+        export.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        export.get(ClientConstants.OP).set(ElytronDescriptionConstants.EXPORT_SECRET_KEY);
+        export.get(ElytronDescriptionConstants.ALIAS).set("TestKeyOne");
+
+        ModelNode exportResult = assertSuccess(services.executeOperation(export));
+
+        final String key = exportResult.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.KEY).asString();
+
+        SecretKey testKeyOne = importSecretKey(key);
+
+          // Generate one in test and import it.
+        SecretKey testKeyTwo = SecretKeyUtil.generateSecretKey(192);
+
+        ModelNode importOP = new ModelNode();
+        importOP.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store");
+        importOP.get(ClientConstants.OP).set(ElytronDescriptionConstants.IMPORT_SECRET_KEY);
+        importOP.get(ElytronDescriptionConstants.ALIAS).set("TestKeyTwo");
+        importOP.get(ElytronDescriptionConstants.KEY).set(SecretKeyUtil.exportSecretKey(testKeyTwo));
+
+        assertSuccess(services.executeOperation(importOP));
+
+          // Test read-aliases
+        testExpectedAliases(services, ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, "my-test-store", "testkeyone", "testkeytwo");
+
+        // Define an expression=encryption resource with three resolvers (one for each key and one for a missing key)
+        add = new ModelNode();
+        add.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+        add.get(ClientConstants.OP).set(ClientConstants.ADD);
+
+        ModelNode resolvers = new ModelNode();
+        resolvers.add(resolver("ResolverOne", "my-test-store", "testkeyone"));
+        resolvers.add(resolver("ResolverTwo", "my-test-store", "testkeytwo"));
+        resolvers.add(resolver("ResolverThree", "my-test-store", "testkeythree"));
+        add.get(ElytronDescriptionConstants.RESOLVERS).set(resolvers);
+
+        add.get(ElytronDescriptionConstants.DEFAULT_RESOLVER).set("ResolverTwo");
+
+        assertSuccess(services.executeOperation(add));
+
+        // Test generation fails for the resolver with the invalid key.
+        // Do this first to check it doesn't break anything.
+        testCreateExpression(services, null, "ResolverThree");
+        // Test generation using both resolvers by specifying name.
+        testCreateExpression(services, testKeyOne, "ResolverOne");
+        testCreateExpression(services, testKeyTwo, "ResolverTwo");
+        // Test generation using the default resolver.
+        testCreateExpression(services, testKeyTwo, null);
+
+        // It would also be a bug if anything that handled this file during the test run had not closed it.
+        testStoreFile.delete();
+    }
+
+    private static void testCreateExpression(KernelServices services, SecretKey secretKey, String resolver) throws Exception {
+        ModelNode createExpression = new ModelNode();
+        createExpression.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
+        createExpression.get(ClientConstants.OP).set(ElytronDescriptionConstants.CREATE_EXPRESSION);
+        if (resolver != null) {
+            createExpression.get(ElytronDescriptionConstants.RESOLVER).set(resolver);
+        }
+        createExpression.get(ElytronDescriptionConstants.CLEAR_TEXT).set(CLEAR_TEXT);
+
+        ModelNode result = services.executeOperation(createExpression);
+
+        if (secretKey != null) {
+            assertSuccess(result);
+            String expression = result.get(ClientConstants.RESULT).get(ElytronDescriptionConstants.EXPRESSION).asString();
+
+            String expectedPrefix = resolver != null ? "${ENC::" + resolver + ":" : "${ENC::";
+            assertTrue("Expected Prefix", expression.startsWith(expectedPrefix));
+
+            String extracted = expression.substring(expectedPrefix.length(), expression.length() - 1);
+
+            System.out.println(extracted);
+
+            String decrypted = CipherUtil.decrypt(extracted, secretKey);
+            assertEquals("Successful descryption", CLEAR_TEXT, decrypted);
+        } else {
+            assertTrue("Failure expected", result.get(OUTCOME).asString().equals(ClientConstants.FAILED));
+            assertTrue("Expected Error Code", result.get(ClientConstants.FAILURE_DESCRIPTION).asString().contains("WFLYELY00920:"));
+        }
+    }
+
+    private static ModelNode resolver(final String name, final String credentialStore, final String secretKey) {
+        ModelNode resolver = new ModelNode();
+        resolver.get(ElytronDescriptionConstants.NAME).set(name);
+        resolver.get(ElytronDescriptionConstants.CREDENTIAL_STORE).set(credentialStore);
+        resolver.get(ElytronDescriptionConstants.SECRET_KEY).set(secretKey);
+        return resolver;
+    }
     private static ModelNode assertSuccess(ModelNode response) {
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
             Assert.fail(response.toJSONString(false));
         }
         return response;
+    }
+
+    private static String emptySubsystemXml() {
+        StringBuffer sb = new StringBuffer("<subsystem xmlns=\"");
+        sb.append(ElytronExtension.CURRENT_NAMESPACE);
+        sb.append("\"></subsystem>");
+
+        return sb.toString();
+    }
+
+
+    @Test
+    public void testExpressionEncryptionCycle() {
+        // Create 3 Credential Stores, each with a secret key. (Offline)
+        // Create an expression=encryption with 3 resolvers, one for each key.
+
+        // Define the credential store resources in a single composite operation, a cycle should be detected which
+        // prevents them from coming up.
+
     }
 
 }
