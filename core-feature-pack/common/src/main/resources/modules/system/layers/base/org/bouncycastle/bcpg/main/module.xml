@@ -28,4 +28,8 @@
     <resources>
         <artifact name="${org.bouncycastle:bcpg-jdk15on}"/>
     </resources>
+
+    <dependencies>
+        <module name="org.bouncycastle.bcprov" export="true" services="export"/>
+    </dependencies>
 </module>
