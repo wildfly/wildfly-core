@@ -47,6 +47,7 @@ public class ClientConstants {
     public static final String EMPTY = "empty";
     public static final String EXPLODE = "explode";
     public static final String EXTENSION = "extension";
+    public static final String FAILED = "failed";
     public static final String FILE = "file";
     public static final String FAILURE_DESCRIPTION = "failure-description";
     public static final String GROUP = "group";

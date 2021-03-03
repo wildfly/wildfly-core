@@ -66,6 +66,8 @@ public class ElytronExtension implements Extension {
     static final String NAMESPACE_12_0 = "urn:wildfly:elytron:12.0";
     static final String NAMESPACE_13_0 = "urn:wildfly:elytron:13.0";
 
+    static final String CURRENT_NAMESPACE = NAMESPACE_13_0;
+
     /**
      * The name of our subsystem within the model.
      */

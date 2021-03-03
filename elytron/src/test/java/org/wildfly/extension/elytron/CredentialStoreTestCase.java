@@ -283,7 +283,7 @@ public class CredentialStoreTestCase extends AbstractSubsystemTest {
         assertEquals("Decrypted value", CLEAR_TEXT, CipherUtil.decrypt(cipherTextToken, secretKey));
     }
 
-    private ModelNode assertSuccess(ModelNode response) {
+    private static ModelNode assertSuccess(ModelNode response) {
         if (!response.get(OUTCOME).asString().equals(SUCCESS)) {
             Assert.fail(response.toJSONString(false));
         }

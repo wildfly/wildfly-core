@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
@@ -90,9 +91,10 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
                                             final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
                                             final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
-                                            final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers, CapabilityRegistry capabilityRegistry) {
+                                            final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
+                                            final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
            super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
-                   new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , new ControlledProcessState(true),capabilityRegistry);
+                   new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , expressionResolver, new ControlledProcessState(true),capabilityRegistry);
            this.mainExtension = mainExtension;
            this.additionalInit = additionalInit;
            this.controllerInitializer = controllerInitializer;
@@ -105,10 +107,10 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     static TestModelControllerService create(final Extension mainExtension, final ControllerInitializer controllerInitializer,
                                              final AdditionalInitialization additionalInit, final ExtensionRegistry extensionRegistry,
                                              final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
-                                             final boolean registerTransformers, CapabilityRegistry capabilityRegistry) {
+                                             final boolean registerTransformers, final ExpressionResolver expressionResolver, final CapabilityRegistry capabilityRegistry) {
         return new TestModelControllerService(mainExtension, controllerInitializer, additionalInit,
                 new RunningModeControl(additionalInit.getRunningMode()), extensionRegistry, persister, validateOpsFilter,
-                registerTransformers,capabilityRegistry);
+                registerTransformers, expressionResolver, capabilityRegistry);
     }
 
     @Override
