@@ -30,6 +30,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.bouncycastle.bcprov" export="true" services="export"/>
+        <module name="org.bouncycastle.bcprov"/>
     </dependencies>
 </module>
