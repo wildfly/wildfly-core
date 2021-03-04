@@ -177,6 +177,7 @@ public class Server {
     protected void start(PrintStream out) {
         try {
             CommandBuilder cbuilder = null;
+            boolean needNormalModeCheck = false;
             if (isBootableJar) {
                 final Path bootableJarPath = Paths.get(bootableJar);
                 if (Files.notExists(bootableJarPath) || Files.isDirectory(bootableJarPath)) {
@@ -199,7 +200,14 @@ public class Server {
                         .setBindAddressHint("management", managementAddress);
 
                 if (jbossArgs != null) {
-                    commandBuilder.addServerArguments(jbossArgs.split("\\s+"));
+                    String[] args = jbossArgs.split("\\s+");
+                    for (String a : args) {
+                        if (a.startsWith("--cli-script=")) {
+                            needNormalModeCheck = true;
+                            break;
+                        }
+                    }
+                    commandBuilder.addServerArguments(args);
                 }
                 commandBuilder.addServerArgument("-D[Standalone]");
             } else {
@@ -272,6 +280,9 @@ public class Server {
             while (timeout > 0 && !serverAvailable) {
                 long before = System.currentTimeMillis();
                 serverAvailable = client.isServerInRunningState();
+                if (serverAvailable && needNormalModeCheck) {
+                    serverAvailable = client.isServerInNormalMode();
+                }
                 timeout -= (System.currentTimeMillis() - before);
                 if (!serverAvailable) {
                     if (processHasDied(proc))

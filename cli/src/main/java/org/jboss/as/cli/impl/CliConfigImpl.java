@@ -91,9 +91,10 @@ class CliConfigImpl implements CliConfig {
 
     private static final Logger log = Logger.getLogger(CliConfig.class);
 
-    static CliConfig newBootConfig() throws CliInitializationException {
+    static CliConfig newBootConfig(boolean echoCommand) throws CliInitializationException {
         CliConfigImpl config = new CliConfigImpl();
         config.validateOperationRequests = false;
+        config.echoCommand = echoCommand;
         return config;
     }
 

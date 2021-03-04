@@ -44,6 +44,7 @@ class BootableEnvironment {
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows");
     private final Path jbossHome;
     private final Path serverDir;
+    private final Path tmpDir;
     private final Collection<String> ignoredProperties;
     private final PropertyUpdater propertyUpdater;
     private final String pidFileName;
@@ -53,6 +54,7 @@ class BootableEnvironment {
                                 final PropertyUpdater propertyUpdater) {
         this.jbossHome = jbossHome;
         serverDir = jbossHome.resolve("standalone");
+        tmpDir = resolvePath(serverDir, "tmp");
         this.ignoredProperties = ignoredProperties;
         this.propertyUpdater = propertyUpdater;
         String pidFileName = System.getProperty("org.wildfly.core.bootable.jar.pidFile");
@@ -110,6 +112,15 @@ class BootableEnvironment {
      */
     Path getJBossHome() {
         return jbossHome;
+    }
+
+    /**
+     * Returns the server tmp dir.
+     *
+     * @return the server tmp dir.
+     */
+    Path getTmpDir() {
+        return tmpDir;
     }
 
     /**
@@ -188,6 +199,8 @@ class BootableEnvironment {
      * <p>
      * Note there are a set of system properties that will not be set and are determined based on the JBoss Home
      * directory.
+     * Special case for {@code jboss.server.log.dir} that can be set as an argument. If not set, then a value is  determined based on the JBoss Home
+     * directory.
      * </p>
      *
      * @param properties the properties to set
@@ -200,6 +213,11 @@ class BootableEnvironment {
         }
         for (Map.Entry<String, String> entry : local.entrySet()) {
             setSystemProperty(entry.getKey(), entry.getValue());
+        }
+        // Handle server log dir.
+        if (System.getProperty("jboss.server.log.dir") == null) {
+            Path p = resolvePath(serverDir, "log");
+            propertyUpdater.setProperty("jboss.server.log.dir", p.toString());
         }
     }
 
@@ -241,7 +259,6 @@ class BootableEnvironment {
         setSystemProperty(propertyUpdater, "jboss.server.data.dir", dataDir, propertyNames);
         setSystemProperty(propertyUpdater, "jboss.server.config.dir", resolvePath(serverBaseDir, "configuration"), propertyNames);
         setSystemProperty(propertyUpdater, "jboss.server.deploy.dir", resolvePath(dataDir, "content"), propertyNames);
-        setSystemProperty(propertyUpdater, "jboss.server.log.dir", resolvePath(serverBaseDir, "log"), propertyNames);
         setSystemProperty(propertyUpdater, "jboss.server.temp.dir", resolvePath(serverBaseDir, "tmp"), propertyNames);
         return propertyNames;
     }
