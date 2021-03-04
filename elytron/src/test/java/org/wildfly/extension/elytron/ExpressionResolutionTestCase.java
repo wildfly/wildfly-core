@@ -44,6 +44,7 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.credential.store.WildFlyElytronCredentialStoreProvider;
@@ -63,6 +64,7 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
 
     @BeforeClass
     public static void initTests() throws Exception {
+        Assume.assumeFalse("Excluding test on IBM JDK due to https://issues.jboss.org/browse/WFCORE-5328", JdkUtils.isIbmJdk());
         AccessController.doPrivileged(new PrivilegedAction<Integer>() {
             public Integer run() {
                 return Security.insertProviderAt(PROVIDER, 1);
