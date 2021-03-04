@@ -25,10 +25,13 @@ import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.SecretKey;
+
 import org.jboss.logging.Logger;
 import org.wildfly.common.Assert;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.PasswordCredential;
+import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
@@ -45,7 +48,7 @@ public class CredentialStoreUtility {
 
     private final String credentialStoreFileName;
     private final CredentialStore credentialStore;
-    private static final String DEFAULT_PASSWORD = "super_secret";
+    static final String DEFAULT_PASSWORD = "super_secret";
 
     /**
      * Create Credential Store.
@@ -116,6 +119,21 @@ public class CredentialStoreUtility {
     public void addEntry(String alias, String clearTextPassword) {
         try {
             credentialStore.store(alias, new PasswordCredential(ClearPassword.createRaw(ClearPassword.ALGORITHM_CLEAR, clearTextPassword.toCharArray())));
+            credentialStore.flush();
+        } catch (Exception e) {
+            LOGGER.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Add new entry to credential store and perform all conversions.
+     * @param alias of the entry
+     * @param clearTextPassword password
+     */
+    public void addEntry(String alias, SecretKey secretKey) {
+        try {
+            credentialStore.store(alias, new SecretKeyCredential(secretKey));
             credentialStore.flush();
         } catch (Exception e) {
             LOGGER.error(e);

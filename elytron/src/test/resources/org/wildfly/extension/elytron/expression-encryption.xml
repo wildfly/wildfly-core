@@ -1,0 +1,32 @@
+<!-- Initial configuration as used by the ExpressionResolutionTestCase -->
+<subsystem xmlns="urn:wildfly:elytron:13.0">
+    <tls>
+        <key-stores>
+            <key-store name="KeyStoreOne">
+                <credential-reference store="CredentialStoreOne" alias="ksone"/>
+                <implementation type="jks" />
+                <file path="target/key-store-one.ks" />
+            </key-store>
+            <key-store name="KeyStoreTwo">
+                <credential-reference clear-text="${ENC::RUxZAUMQAR0sjDUg2IrglcxXWT9MLa+HPmfopnnwkzbgsepmXd8=}"/>
+                <implementation type="jks" />
+                <file path="target/key-store-two.ks" />
+            </key-store>
+        </key-stores>
+    </tls>
+    <credential-stores>
+        <credential-store name="CredentialStoreOne" location="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-one.cs">
+            <credential-reference store="CredentialStoreTwo" alias="csone"/>
+        </credential-store>
+        <credential-store name="CredentialStoreTwo" location="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-two.cs">
+            <credential-reference clear-text="${ENC::Initial:RUxZAUMQXUj3qP1hbXyO5PpmsbgkepjoscIf3tKXvGiPDXYqNAc=}"/>
+        </credential-store>
+        <secret-key-credential-store name="CredentialStoreThree" 
+            path="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-three.cs" 
+            create="false" />
+    </credential-stores>
+    <expression-resolver default-resolver="Default">
+        <resolver name="Initial" credential-store="CredentialStoreThree" secret-key="testkey"/>
+        <resolver name="Default" credential-store="CredentialStoreOne" secret-key="securekey"/>
+    </expression-resolver>
+</subsystem>

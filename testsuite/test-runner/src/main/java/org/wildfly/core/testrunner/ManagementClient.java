@@ -37,6 +37,7 @@ import java.util.List;
 import javax.management.remote.JMXServiceURL;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import static org.jboss.as.controller.client.helpers.ClientConstants.RUNNING_STATE_NORMAL;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -133,6 +134,22 @@ public class ManagementClient implements AutoCloseable, Closeable {
             return SUCCESS.equals(rsp.get(OUTCOME).asString())
                     && !CONTROLLER_PROCESS_STATE_STARTING.equals(rsp.get(RESULT).asString())
                     && !CONTROLLER_PROCESS_STATE_STOPPING.equals(rsp.get(RESULT).asString());
+        } catch (RuntimeException rte) {
+            throw rte;
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+
+    public boolean isServerInNormalMode() {
+        try {
+            ModelNode op = new ModelNode();
+            op.get(OP).set(READ_ATTRIBUTE_OPERATION);
+            op.get(OP_ADDR).setEmptyList();
+            op.get(NAME).set("running-mode");
+            ModelNode rsp = client.execute(op);
+            return SUCCESS.equals(rsp.get(OUTCOME).asString())
+                    && RUNNING_STATE_NORMAL.toUpperCase().equals(rsp.get(RESULT).asString());
         } catch (RuntimeException rte) {
             throw rte;
         } catch (IOException ex) {

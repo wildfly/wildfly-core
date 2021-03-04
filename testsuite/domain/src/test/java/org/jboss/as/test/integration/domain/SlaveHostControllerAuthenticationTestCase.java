@@ -64,7 +64,9 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
     private static final String VAULT_BLOCK = "ds_TestDS";
     private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
     private static final String CREDENTIAL_STORE_NAME = "SlaveHostControllerAuthenticationTestCase";
+    private static final String SECRET_KEY_CREDENTIAL_STORE_NAME = "SlaveHostControllerAuthenticationTestCase-secretkey";
     private static final Path CREDNETIAL_STORE_STORAGE_FILE = Paths.get("target1/", CREDENTIAL_STORE_NAME + ".jceks");
+    private static final Path SECRET_KEY_CREDNETIAL_STORE_STORAGE_FILE = Paths.get("target1/", SECRET_KEY_CREDENTIAL_STORE_NAME + ".cs");
     private static final String ALIAS_NAME = "aliasName";
 
     private static ModelControllerClient domainMasterClient;
@@ -122,6 +124,19 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
         } finally {
             slaveWithDefaultSecretValue();
             removeCredentialStore(CREDENTIAL_STORE_NAME, CREDNETIAL_STORE_STORAGE_FILE);
+        }
+    }
+
+    @Test
+    public void testSlaveRegistrationExpressionResolver() throws Exception {
+        try {
+            createSecretKeyCredentialStore(SECRET_KEY_CREDENTIAL_STORE_NAME, SECRET_KEY_CREDNETIAL_STORE_STORAGE_FILE);
+            createExpressionResolver(SECRET_KEY_CREDENTIAL_STORE_NAME);
+
+            slaveWithExpressionResolverTest();
+        } finally {
+            slaveWithDefaultSecretValue();
+            removeSecretKeyCredentialStore(SECRET_KEY_CREDENTIAL_STORE_NAME, SECRET_KEY_CREDNETIAL_STORE_STORAGE_FILE);
         }
     }
 
@@ -237,6 +252,22 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
         readHostControllerStatus(domainMasterClient);
     }
 
+    private void slaveWithExpressionResolverTest() throws Exception {
+        ModelNode op = new ModelNode();
+        op.get(OP).set("create-expression");
+        op.get(OP_ADDR).add(HOST, "slave").add(SUBSYSTEM, "elytron").add("expression", "encryption");
+        op.get("clear-text").set(RIGHT_PASSWORD);
+        ModelNode encryptedExpressionResult = getDomainSlaveClient().execute(new OperationBuilder(op).build());
+        String encryptedExpression = encryptedExpressionResult.get("result").get("expression").asString();
+
+        setSlaveSecret(encryptedExpression);
+
+        reloadSlave();
+        testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
+        // Validate that it joined the master
+        readHostControllerStatus(domainMasterClient);
+    }
+
     private void createCredentialStore(String storeName, Path storageFile) throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set(ADD);
@@ -251,12 +282,47 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
         getDomainSlaveClient().execute(new OperationBuilder(op).build());
     }
 
+    private void createSecretKeyCredentialStore(String storeName, Path storageFile) throws IOException {
+        ModelNode op = new ModelNode();
+        op.get(OP).set(ADD);
+        op.get(OP_ADDR).add(HOST, "slave").add(SUBSYSTEM, "elytron").add("secret-key-credential-store", storeName);
+        op.get("path").set(storageFile.toAbsolutePath().toString());
+        op.get("create").set(true);
+        getDomainSlaveClient().execute(new OperationBuilder(op).build());
+    }
+
+    private void createExpressionResolver(String storeName) throws IOException {
+        ModelNode resolvers = new ModelNode().setEmptyList();
+        ModelNode defaultResolver = new ModelNode();
+        defaultResolver.get("name").set("default");
+        defaultResolver.get("secret-key").set("key");
+        defaultResolver.get("credential-store").set(storeName);
+        resolvers.add(defaultResolver);
+
+        ModelNode op = new ModelNode();
+        op.get(OP).set(ADD);
+        op.get(OP_ADDR).add(HOST, "slave").add(SUBSYSTEM, "elytron").add("expression", "encryption");
+        op.get("default-resolver").set("default");
+        op.get("resolvers").set(resolvers);
+        getDomainSlaveClient().execute(new OperationBuilder(op).build());
+    }
+
     private void removeCredentialStore(String storeName, Path storageFile) throws Exception {
         ModelNode op = new ModelNode();
         op.get(OP).set(REMOVE);
         op.get(OP_ADDR).add(HOST, "slave").add(SUBSYSTEM, "elytron").add("credential-store", storeName);
         getDomainSlaveClient().execute(new OperationBuilder(op).build());
-        Files.deleteIfExists(CREDNETIAL_STORE_STORAGE_FILE);
+        Files.deleteIfExists(storageFile);
+        reloadSlave();
+        testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
+    }
+
+    private void removeSecretKeyCredentialStore(String storeName, Path storageFile) throws Exception {
+        ModelNode op = new ModelNode();
+        op.get(OP).set(REMOVE);
+        op.get(OP_ADDR).add(HOST, "slave").add(SUBSYSTEM, "elytron").add("secret-key-credential-store", storeName);
+        getDomainSlaveClient().execute(new OperationBuilder(op).build());
+        Files.deleteIfExists(storageFile);
         reloadSlave();
         testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
     }

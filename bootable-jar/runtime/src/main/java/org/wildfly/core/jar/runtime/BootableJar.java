@@ -230,6 +230,18 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     public void run() throws Exception {
+        Path script = arguments.getCLIScript();
+        if (script != null) {
+            long id = System.currentTimeMillis();
+            Path markerDir = environment.getTmpDir().resolve(id + "-cli-boot-hook-dir");
+            Path outputFile = environment.getTmpDir().resolve(id + "-cli-boot-hook-output-file.txt");
+            Files.createDirectories(markerDir);
+            startServerArgs.add("--start-mode=admin-only");
+            startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.script=" + script.toAbsolutePath().toString());
+            startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.marker.dir=" + markerDir.toAbsolutePath().toString());
+            startServerArgs.add("-Dorg.wildfly.internal.cli.boot.hook.script.output.file=" + outputFile.toAbsolutePath().toString());
+        }
+
         Runtime.getRuntime().addShutdownHook(new ShutdownHook());
         server = buildServer(startServerArgs);
 

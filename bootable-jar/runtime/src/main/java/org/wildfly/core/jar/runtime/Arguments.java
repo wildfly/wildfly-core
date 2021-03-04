@@ -53,6 +53,7 @@ final class Arguments {
     private final List<String> serverArguments = new ArrayList<>();
     private final BootableEnvironment environment;
     private Path deployment;
+    private Path cliScript;
 
     static Arguments parseArguments(final List<String> args, final BootableEnvironment environment) throws Exception {
         Objects.requireNonNull(args);
@@ -101,6 +102,11 @@ final class Arguments {
                 serverArguments.add(a);
             } else if (CommandLineConstants.HELP.equals(a)) {
                 isHelp = true;
+            } else if (a.startsWith("--cli-script")) {
+                cliScript = Paths.get(getValue(a));
+                if (!Files.exists(cliScript) || !Files.isReadable(cliScript)) {
+                    throw new Exception("File doesn't exist or is not readable: " + cliScript);
+                }
             } else {
                 throw BootableJarLogger.ROOT_LOGGER.unknownArgument(a);
             }
@@ -151,6 +157,10 @@ final class Arguments {
      */
     public Path getDeployment() {
         return deployment;
+    }
+
+    public Path getCLIScript() {
+        return cliScript;
     }
 
     private static void addSystemProperty(final String arg, final Map<String, String> properties) {

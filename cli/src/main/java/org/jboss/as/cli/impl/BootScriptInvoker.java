@@ -30,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 import org.jboss.as.cli.CommandContext;
+import org.jboss.as.cli.CommandLineException;
 import static org.jboss.as.cli.impl._private.BootScriptInvokerLogger.ROOT_LOGGER;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
@@ -87,11 +88,6 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
         } catch (Exception ex) {
             try {
                 ROOT_LOGGER.errorProcessingScript(file);
-                StringBuilder errBuilder = new StringBuilder();
-                for (String line : Files.readAllLines(file.toPath())) {
-                    errBuilder.append(line).append("\n");
-                }
-                ROOT_LOGGER.error(errBuilder.toString());
                 if (logFile != null) {
                     ROOT_LOGGER.cliOutput();
                     StringBuilder logBuilder = new StringBuilder();
@@ -116,13 +112,16 @@ public class BootScriptInvoker implements AdditionalBootCliScriptInvoker {
     }
 
     private static void processFile(File file, final CommandContext cmdCtx) throws IOException {
+        String opline = null;
         try ( BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line = reader.readLine();
-            while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && line != null) {
-                ROOT_LOGGER.executeCommand(line.trim());
-                cmdCtx.handle(line.trim());
-                line = reader.readLine();
+            opline = reader.readLine();
+            while (cmdCtx.getExitCode() == 0 && !cmdCtx.isTerminated() && opline != null) {
+                ROOT_LOGGER.executeCommand(opline.trim());
+                cmdCtx.handle(opline.trim());
+                opline = reader.readLine();
             }
+        } catch (CommandLineException ex) {
+            throw ROOT_LOGGER.unexpectedCommandException(ex, opline, file);
         } catch (Throwable e) {
             throw ROOT_LOGGER.unexpectedException(e, file);
         }

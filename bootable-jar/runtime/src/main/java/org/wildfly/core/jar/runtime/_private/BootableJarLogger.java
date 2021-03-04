@@ -162,4 +162,7 @@ public interface BootableJarLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Display the content of the Galleon configuration used to build this bootable JAR")
     String argDisplayGalleonConfig();
+
+    @Message(id = Message.NONE, value = "Path to a CLI script to execute when starting the Bootable JAR")
+    String argCliScript();
 }

@@ -114,4 +114,17 @@ public interface BootScriptInvokerLogger extends BasicLogger {
     @Message(id = 8, value = "Error processing CLI script %s. The Operations were executed but "
             + "there were unexpected values. See list of errors in %s")
     IllegalStateException unexpectedErrors(File script, File errors);
+
+    /**
+     * Logs an error message to advertise that an unexpected exception was
+     * thrown.
+     *
+     * @param cause
+     * @param cmd
+     * @param file CLI script file
+     * @return Exception to throw
+     */
+    @Message(id = 9, value = "Unexpected exception while processing CLI command %s from %s")
+    IllegalStateException unexpectedCommandException(@Cause Throwable cause, String cmd, File file);
+
 }
