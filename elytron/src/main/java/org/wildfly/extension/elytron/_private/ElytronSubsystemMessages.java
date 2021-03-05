@@ -391,6 +391,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 926, value = "Unable to initialize the credential store.")
     OperationFailedException unableToInitialiseCredentialStore(@Cause Throwable cause);
 
+    @Message(id = 927, value = "The secret key operation '%s' failed to complete due to '%s'.")
+    OperationFailedException secretKeyOperationFailed(String operationName, String error, @Cause Throwable cause);
+
     /*
      * Identity Resource Messages - 1000
      */
