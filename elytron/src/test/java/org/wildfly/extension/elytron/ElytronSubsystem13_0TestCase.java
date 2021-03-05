@@ -56,4 +56,3 @@ public class ElytronSubsystem13_0TestCase extends AbstractSubsystemBaseTest {
     }
 
 }
-
