@@ -187,62 +187,56 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
     protected void exportSecretKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore)
             throws OperationFailedException {
         try {
-            try {
-                String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
 
-                SecretKey secretKey = credentialStore.retrieve(alias, SecretKeyCredential.class).getSecretKey();
-                String exportedKey = exportSecretKey(secretKey);
-
-                ModelNode result = context.getResult();
-                result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
-            } catch (GeneralSecurityException e) {
-                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+            SecretKeyCredential credential = credentialStore.retrieve(alias, SecretKeyCredential.class);
+            if (credential == null) {
+                throw ROOT_LOGGER.credentialDoesNotExist(alias, SecretKeyCredential.class.getSimpleName());
             }
-        } catch (RuntimeException e) {
-            throw new OperationFailedException(e);
+
+            SecretKey secretKey = credential.getSecretKey();
+            String exportedKey = exportSecretKey(secretKey);
+
+            ModelNode result = context.getResult();
+            result.get(ElytronDescriptionConstants.KEY).set(exportedKey);
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.EXPORT_SECRET_KEY, dumpCause(e), e);
         }
     }
 
     protected void importSecretKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore)
             throws OperationFailedException {
         try {
-            try {
-                String alias = ALIAS.resolveModelAttribute(context, operation).asString();
-                String rawKey = KEY.resolveModelAttribute(context, operation).asString();
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            String rawKey = KEY.resolveModelAttribute(context, operation).asString();
 
-                if (credentialStore.exists(alias, SecretKeyCredential.class)) {
-                    throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
-                }
-
-                SecretKey secretKey = importSecretKey(rawKey);
-
-                storeSecretKey(credentialStore, alias, secretKey);
-
-            } catch (GeneralSecurityException e) {
-                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+            if (credentialStore.exists(alias, SecretKeyCredential.class)) {
+                throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
             }
-        } catch (RuntimeException e) {
-            throw new OperationFailedException(e);
+
+            SecretKey secretKey = importSecretKey(rawKey);
+
+            storeSecretKey(credentialStore, alias, secretKey);
+
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.IMPORT_SECRET_KEY, dumpCause(e), e);
         }
     }
 
-    protected void generateSecretKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore, int keySize) throws OperationFailedException {
+    protected void generateSecretKeyOperation(OperationContext context, ModelNode operation, CredentialStore credentialStore,
+            int keySize) throws OperationFailedException {
         try {
-            try {
-                String alias = ALIAS.resolveModelAttribute(context, operation).asString();
+            String alias = ALIAS.resolveModelAttribute(context, operation).asString();
 
-                if (credentialStore.exists(alias, SecretKeyCredential.class)) {
-                    throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
-                }
-
-                SecretKey secretKey = generateSecretKey(keySize);
-                storeSecretKey(credentialStore, alias, secretKey);
-
-            } catch (GeneralSecurityException e) {
-                throw ROOT_LOGGER.unableToCompleteOperation(e, dumpCause(e));
+            if (credentialStore.exists(alias, SecretKeyCredential.class)) {
+                throw ROOT_LOGGER.credentialAlreadyExists(alias, SecretKeyCredential.class.getName());
             }
-        } catch (RuntimeException e) {
-            throw new OperationFailedException(e);
+
+            SecretKey secretKey = generateSecretKey(keySize);
+            storeSecretKey(credentialStore, alias, secretKey);
+
+        } catch (GeneralSecurityException e) {
+            throw ROOT_LOGGER.secretKeyOperationFailed(ElytronDescriptionConstants.GENERATE_SECRET_KEY, dumpCause(e), e);
         }
     }
 
