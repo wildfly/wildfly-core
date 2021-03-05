@@ -25,7 +25,7 @@
 <module xmlns="urn:jboss:module:1.9" name="org.wildfly.security.elytron">
 
     <dependencies>
-        <module name="org.wildfly.security.elytron-private" services="export" export="true">
+        <module name="org.wildfly.security.elytron-private" services="export">
             <exports>
                 <include-set>
                     <path name="org/wildfly/security"/>
