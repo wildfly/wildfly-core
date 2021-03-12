@@ -432,7 +432,7 @@
                  </file>
              </activation>
              <properties>
-                 <exclude.tests>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java,org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.java</exclude.tests>
+                 <exclude.tests>org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase.java</exclude.tests>
              </properties>
              <build>
                  <plugins>
