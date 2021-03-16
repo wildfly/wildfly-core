@@ -45,14 +45,6 @@ public class CliScriptTestCase extends ScriptTestCase {
         if (!TestSuiteEnvironment.isWindows()) {
             // WFCORE-5216
             env.put("JBOSS_MODULEPATH", "$JBOSS_HOME/modules:$HOME");
-
-            // WFCORE-5241 For jboss-cli.sh, test with JAVA_OPTS parameter including whitespace
-            String javaOpts = env.get("JAVA_OPTS");
-            if (javaOpts != null) {
-                env.put("JAVA_OPTS", javaOpts + " -Dtestparameter=\"something with space\"");
-            } else {
-                env.put("JAVA_OPTS", "-Dtestparameter=\"something with space\"");
-            }
         }
         // Read an attribute
         script.start(env, "--commands=embed-server,:read-attribute(name=server-state),exit");
