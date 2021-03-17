@@ -185,7 +185,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * @param className the class name of the custom component implementation being loaded.
      * @return The {@link StartException} for the error.
      */
-    @Message(id = 15, value = "The custom component implementation '%s' doe not implement method initialize(Map<String, String>), however configuration has been supplied.")
+    @Message(id = 15, value = "The custom component implementation '%s' does not implement method initialize(Map<String, String>), however configuration has been supplied.")
     StartException componentNotConfigurable(final String className, @Cause Exception cause);
 
     /**
