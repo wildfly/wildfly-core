@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import javax.inject.Inject;
 
@@ -48,6 +50,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -94,12 +97,20 @@ public class VaultPasswordsInCLITestCase {
     private static final ManagementInterfacesSetup managementInterfacesSetup = new ManagementInterfacesSetup();
     private static final ManagemenCLIRealmSetup managementCLICliRealmSetup = new ManagemenCLIRealmSetup();
 
+    private static final boolean isElytronSetup = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+        @Override
+        public Boolean run() {
+            return System.getProperty("elytron") != null;
+        }
+    });
+
     @Inject
     private static ServerController containerController;
 
 
     @BeforeClass
     public static void prepareServer() throws Exception {
+        Assume.assumeFalse("Assume elytron setup is not in place", isElytronSetup);
 
         LOGGER.trace("*** starting server");
         containerController.startInAdminMode();
@@ -144,6 +155,11 @@ public class VaultPasswordsInCLITestCase {
 
     @AfterClass
     public static void resetConfigurationForNativeInterface() throws Exception {
+
+        if (isElytronSetup) {
+            // do nothing, skipped test
+            return;
+        }
 
         LOGGER.info("*** reseting test configuration");
 
