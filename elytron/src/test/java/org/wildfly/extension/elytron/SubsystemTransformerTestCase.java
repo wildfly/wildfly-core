@@ -62,7 +62,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("elytron-transformers-8.0.xml");
+        return readResource("elytron-transformers-13.0.xml");
     }
 
     protected String getSubsystemXml(final String subsystemFile) throws IOException {
@@ -212,6 +212,15 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     }
 
     /**
+     * Test case testing resources and attributes are appropriately rejected when transforming to EAP 7.4.
+     */
+    @Test
+    public void testRejectingTransformersEAP740() throws Exception {
+        testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
+
+        );
+    }
+    /**
      * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.1.
      */
     @Test
@@ -232,6 +241,14 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
      */
     @Test
     public void testTransformerEAP730() throws Exception {
+        testTransformation(EAP_7_3_0, getSubsystemXml("elytron-transformers-8.0.xml"));
+    }
+
+    /**
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.4.
+     */
+    @Test
+    public void testTransformerEAP740() throws Exception {
         testTransformation(EAP_7_3_0);
     }
 
