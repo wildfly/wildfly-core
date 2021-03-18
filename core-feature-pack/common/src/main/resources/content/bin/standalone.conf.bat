@@ -45,8 +45,11 @@ rem # Specify options to pass to the Java VM. Note, there are some additional
 rem # options that are always passed by run.bat.
 rem #
 
-rem # JVM memory allocation pool parameters - modify as appropriate.
-set "JAVA_OPTS=-Xms64M -Xmx512M -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m"
+if "x%JBOSS_JAVA_SIZING%" == "x" (
+    rem # JVM memory allocation pool parameters - modify as appropriate.
+    set "JBOSS_JAVA_SIZING=-Xms64M -Xmx512M -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m"
+)
+set "JAVA_OPTS=%JBOSS_JAVA_SIZING%"
 
 rem # Prefer IPv4
 set "JAVA_OPTS=%JAVA_OPTS% -Djava.net.preferIPv4Stack=true"
