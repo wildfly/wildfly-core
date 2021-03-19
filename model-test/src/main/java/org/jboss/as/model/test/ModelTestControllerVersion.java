@@ -48,6 +48,10 @@ public enum ModelTestControllerVersion {
     // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
     EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.11.Final-redhat-00001", "7.2.0"),
     EAP_7_3_0("7.3.0.GA-redhat-00004", true, "18.0.0", "10.1.2.Final-redhat-00001", "7.3.0"),
+    // We use a 7.4.0_TEMP version which is based on WF23. Once we get 7.4.0.GA out, we will replace this by:
+    // EAP_7_4_0("7.4.0.GA-redhat-?????", true, "23.0.0", "15.0.0.Final-redhat-?????", "7.4.0"),
+    // See https://issues.redhat.com/browse/WFCORE-5347
+    EAP_7_4_0_TEMP("23.0.0.Final", false, "23.0.0", "15.0.0.Final", "wf23"),
     ;
 
     private final String mavenGavVersion;
