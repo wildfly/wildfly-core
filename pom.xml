@@ -2276,6 +2276,13 @@
                 <version>${version.xalan}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-tests-common</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
