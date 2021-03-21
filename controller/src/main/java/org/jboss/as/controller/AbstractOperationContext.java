@@ -1017,7 +1017,12 @@ abstract class AbstractOperationContext implements OperationContext {
             if (isRollbackOnRuntimeFailure() && activeStep.response.hasDefined(FAILURE_DESCRIPTION)) {
                 attach(ReadResourceHandler.ROLLBACKED_FAILURE_DESC, activeStep.response.get(FAILURE_DESCRIPTION));
             }
-            resultAction = ResultAction.ROLLBACK;
+
+            if (getAttachment(ServiceVerificationHelper.DEFFERED_ROLLBACK_ATTACHMENT) == null) {
+                resultAction = ResultAction.ROLLBACK;
+            } else {
+                detach(ServiceVerificationHelper.DEFFERED_ROLLBACK_ATTACHMENT);
+            }
             ControllerLogger.MGMT_OP_LOGGER.tracef("Rolling back on failed response %s to operation %s on address %s in stage %s",
                     activeStep.response, activeStep.operationId.name, activeStep.operationId.address, currentStage);
         } else if (activeStep != null && activeStep.hasFailed()) {
