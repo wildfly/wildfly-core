@@ -36,8 +36,8 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
-import org.jboss.modules.security.ModularPermissionFactory;
 import org.jboss.modules.security.PermissionFactory;
+import org.wildfly.extension.security.manager.DeferredPermissionFactory;
 import org.wildfly.extension.security.manager.logging.SecurityManagerLogger;
 
 /**
@@ -152,8 +152,8 @@ public class PermissionsParser {
                         throw missingRequiredElement(reader, requiredElements);
 
                     // build a permission and add it to the list.
-                    PermissionFactory factory = new ModularPermissionFactory(loader, identifier, permissionClass,
-                            permissionName, permissionActions);
+                    PermissionFactory factory = new DeferredPermissionFactory(DeferredPermissionFactory.Type.DEPLOYMENT,
+                            loader, identifier.toString(), permissionClass, permissionName, permissionActions);
                     return factory;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
