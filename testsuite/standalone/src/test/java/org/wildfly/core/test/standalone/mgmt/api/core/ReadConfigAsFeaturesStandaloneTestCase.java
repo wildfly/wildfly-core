@@ -118,11 +118,11 @@ public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeatures
     @Test
     public void removeChildrenTest() throws UnsuccessfulOperationException {
         ModelNode removeChildrenOperation = Util.createRemoveOperation(
-                PathAddress.pathAddress(SUBSYSTEM, "elytron").append(HTTP_AUTHENTICATION_FACTORY, "management-http-authentication"));
+                PathAddress.pathAddress(SUBSYSTEM, "elytron").append("file-audit-log", "local-audit"));
 
         ModelNode expectedConfigAsFeatures = defaultConfigAsFeatures.clone();
         ModelNode elytronSubsystem = getFeatureNodeChild(expectedConfigAsFeatures.get(0), "subsystem.elytron");
-        int httpAuthenticationFactoryIndex = getFeatureNodeChildIndex(elytronSubsystem, "subsystem.elytron.http-authentication-factory");
+        int httpAuthenticationFactoryIndex = getFeatureNodeChildIndex(elytronSubsystem, "subsystem.elytron.file-audit-log");
         elytronSubsystem.get(CHILDREN).remove(httpAuthenticationFactoryIndex);
 
         doTest(Collections.singletonList(removeChildrenOperation), expectedConfigAsFeatures);
