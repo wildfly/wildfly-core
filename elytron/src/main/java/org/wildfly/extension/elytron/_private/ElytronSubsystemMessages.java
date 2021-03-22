@@ -660,7 +660,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     OperationFailedException invalidResolver(String expression);
 
     @Message(id = 1206, value = "Unable to decrypt expression '%s'.")
-    OperationFailedException unableToDecyptExpression(String expression, @Cause Throwable cause);
+    OperationFailedException unableToDecryptExpression(String expression, @Cause Throwable cause);
 
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.

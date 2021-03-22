@@ -110,7 +110,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
 
                     return new ModelNode(clearText);
                 } catch (GeneralSecurityException e) {
-                    throw ROOT_LOGGER.unableToDecyptExpression(fullExpression, e);
+                    throw ROOT_LOGGER.unableToDecryptExpression(fullExpression, e);
                 }
 
             }
