@@ -34,6 +34,7 @@ import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
+import org.wildfly.security.credential.store.impl.PropertiesCredentialStore;
 import org.wildfly.security.password.interfaces.ClearPassword;
 
 /**
@@ -58,31 +59,38 @@ public class CredentialStoreUtility {
      * @param adminKeyPassword a password (clear text) for protecting admin key
      * @param createStorageFirst flag whether to create storage first and then initialize Credential Store
      */
-    public CredentialStoreUtility(String credentialStoreFileName, String storePassword, String adminKeyPassword, boolean createStorageFirst) {
-        Assert.checkNotNullParam("credentialStoreFileName", credentialStoreFileName);
-        Assert.checkNotNullParam("storePassword", storePassword);
-        Assert.checkNotNullParam("adminKeyPassword", adminKeyPassword);
-        this.credentialStoreFileName = credentialStoreFileName;
+    public CredentialStoreUtility(String credentialStoreFileName, String storePassword, String adminKeyPassword, boolean createStorageFirst, boolean propertiesStore) {
+        this.credentialStoreFileName = Assert.checkNotNullParam("credentialStoreFileName", credentialStoreFileName);
+        if (!propertiesStore) {
+            Assert.checkNotNullParam("storePassword", storePassword);
+            Assert.checkNotNullParam("adminKeyPassword", adminKeyPassword);
+        }
 
         try {
             Map<String, String> attributes = new HashMap<>();
-            if (createStorageFirst) {
-                createKeyStore("JCEKS", storePassword.toCharArray());
-            }
-            credentialStore = CredentialStore.getInstance(KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE);
-            attributes.put("location", credentialStoreFileName);
-            attributes.put("keyStoreType", "JCEKS");
-            attributes.put("modifiable", "true");
-            if (!createStorageFirst) {
-                File storage = new File(credentialStoreFileName);
-                if (storage.exists()) {
-                    storage.delete();
+            if (propertiesStore) {
+                credentialStore = CredentialStore.getInstance(PropertiesCredentialStore.NAME);
+                attributes.put("location", credentialStoreFileName);
+                attributes.put("create", "true");
+                credentialStore.initialize(attributes);
+            } else {
+                if (createStorageFirst) {
+                    createKeyStore("JCEKS", storePassword.toCharArray());
                 }
-            }
+                credentialStore = CredentialStore.getInstance(KeyStoreCredentialStore.KEY_STORE_CREDENTIAL_STORE);
+                attributes.put("location", credentialStoreFileName);
+                attributes.put("keyStoreType", "JCEKS");
+                attributes.put("modifiable", "true");
+                if (!createStorageFirst) {
+                    File storage = new File(credentialStoreFileName);
+                    if (storage.exists()) {
+                        storage.delete();
+                    }
+                }
 
-            credentialStore.initialize(attributes, new CredentialStore.CredentialSourceProtectionParameter(
-                    IdentityCredentials.NONE.withCredential(convertToPasswordCredential(storePassword.toCharArray()))
-                    ));
+                credentialStore.initialize(attributes, new CredentialStore.CredentialSourceProtectionParameter(
+                        IdentityCredentials.NONE.withCredential(convertToPasswordCredential(storePassword.toCharArray()))));
+            }
         } catch (Throwable t) {
             LOGGER.error(t);
             throw new RuntimeException(t);
@@ -98,7 +106,7 @@ public class CredentialStoreUtility {
      * @param storePassword master password (clear text) to open the credential store
      */
     public CredentialStoreUtility(String credentialStoreFileName, String storePassword) {
-        this(credentialStoreFileName, storePassword, storePassword, true);
+        this(credentialStoreFileName, storePassword, storePassword, true, false);
     }
 
     /**
@@ -109,6 +117,16 @@ public class CredentialStoreUtility {
      */
     public CredentialStoreUtility(String credentialStoreFileName) {
         this(credentialStoreFileName, DEFAULT_PASSWORD);
+    }
+
+    /**
+     * Create Credential Store with default password.
+     * Automatically create underlying KeyStore.
+     *
+     * @param credentialStoreFileName name of file to hold credentials
+     */
+    public CredentialStoreUtility(String credentialStoreFileName, boolean propertiesCredentialStore) {
+        this(credentialStoreFileName, DEFAULT_PASSWORD, DEFAULT_PASSWORD, true, propertiesCredentialStore);
     }
 
     /**

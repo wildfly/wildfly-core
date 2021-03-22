@@ -26,6 +26,7 @@ import static org.wildfly.security.encryption.SecretKeyUtil.importSecretKey;
 import java.io.File;
 import java.io.IOException;
 import java.security.AccessController;
+import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
@@ -58,6 +59,10 @@ import org.wildfly.security.encryption.SecretKeyUtil;
 public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
 
     private static final Provider PROVIDER = new WildFlyElytronCredentialStoreProvider();
+
+    private static final String CSONE_SECURE_KEY = "RUxZAUsXHVcDh99zAdxGEzTBK1h2qjW+sZg2+37w7ijhDEiJEw==";
+    private static final String CSTHREE_TEST_KEY = "RUxZAUv5+IwidHJCNNG/cEe2GmWvieV3Ecg7M4xZaJiSULKlBQ==";
+
     private static final String CLEAR_TEXT = "Lorem ipsum dolor sit amet";
 
 
@@ -92,17 +97,56 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
 
     @Test
     public void testPreConfiguredHierarchy() throws Exception {
-        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("expression-encryption.xml").build();
-        if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
-        }
+        CredentialStoreUtility csOne = null;
+        CredentialStoreUtility csTwo = null;
+        CredentialStoreUtility csThree = null;
+        try {
+            csOne = createCredentialStoreOne();
+            csTwo = createCredentialStoreTwo();
+            csThree = createCredentialStoreThree();
 
-        testExpectedAliases(services, "secret-key-credential-store", "CredentialStoreThree", "testkey", "key");
-        testExpectedAliases(services, "credential-store", "CredentialStoreTwo", "csone");
-        testExpectedAliases(services, "credential-store", "CredentialStoreOne", "ksone", "securekey");
-        // No aliases in the key stores but we want them to be up to be queried.
-        testExpectedAliases(services, "key-store", "KeyStoreOne");
-        testExpectedAliases(services, "key-store", "KeyStoreTwo");
+            KernelServices services = super.createKernelServicesBuilder(new TestEnvironment())
+                    .setSubsystemXmlResource("expression-encryption.xml").build();
+            if (!services.isSuccessfulBoot()) {
+                Assert.fail(services.getBootError().toString());
+            }
+
+            testExpectedAliases(services, "secret-key-credential-store", "CredentialStoreThree", "testkey", "key");
+            testExpectedAliases(services, "credential-store", "CredentialStoreTwo", "csone");
+            testExpectedAliases(services, "credential-store", "CredentialStoreOne", "ksone", "securekey");
+            // No aliases in the key stores but we want them to be up to be queried.
+            testExpectedAliases(services, "key-store", "KeyStoreOne");
+            testExpectedAliases(services, "key-store", "KeyStoreTwo");
+        } finally {
+            cleanUp(csOne);
+            cleanUp(csTwo);
+            cleanUp(csThree);
+        }
+    }
+
+    private static void cleanUp(CredentialStoreUtility csUtil) {
+        if (csUtil != null) {
+            csUtil.cleanUp();
+        }
+    }
+
+    private static CredentialStoreUtility createCredentialStoreOne() throws GeneralSecurityException {
+        CredentialStoreUtility csOne = new CredentialStoreUtility("target/credential-store-one.cs", "CSOnePassword");
+        csOne.addEntry("ksone", "KSOnePassword");
+        csOne.addEntry("securekey", SecretKeyUtil.importSecretKey(CSONE_SECURE_KEY));
+        return csOne;
+    }
+
+    private static CredentialStoreUtility createCredentialStoreTwo() throws GeneralSecurityException {
+        CredentialStoreUtility csTwo = new CredentialStoreUtility("target/credential-store-two.cs", "CSTwoPassword");
+        csTwo.addEntry("csone", "CSOnePassword");
+        return csTwo;
+    }
+
+    private static CredentialStoreUtility createCredentialStoreThree() throws GeneralSecurityException {
+        CredentialStoreUtility csTwo = new CredentialStoreUtility("target/credential-store-three.cs", true);
+        csTwo.addEntry("testkey", SecretKeyUtil.importSecretKey(CSTHREE_TEST_KEY));
+        return csTwo;
     }
 
     private void testExpectedAliases(KernelServices services, String resourceType, String resourceName,

@@ -15,14 +15,14 @@
         </key-stores>
     </tls>
     <credential-stores>
-        <credential-store name="CredentialStoreOne" location="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-one.cs">
+        <credential-store name="CredentialStoreOne" location="target/credential-store-one.cs">
             <credential-reference store="CredentialStoreTwo" alias="csone"/>
         </credential-store>
-        <credential-store name="CredentialStoreTwo" location="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-two.cs">
+        <credential-store name="CredentialStoreTwo" location="target/credential-store-two.cs">
             <credential-reference clear-text="${ENC::Initial:RUxZAUMQXUj3qP1hbXyO5PpmsbgkepjoscIf3tKXvGiPDXYqNAc=}"/>
         </credential-store>
         <secret-key-credential-store name="CredentialStoreThree" 
-            path="target/test-classes/org/wildfly/extension/elytron/expression-resolution/credential-store-three.cs" 
+            path="target/credential-store-three.cs" 
             create="false" />
     </credential-stores>
     <expression-resolver default-resolver="Default">
