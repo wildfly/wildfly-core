@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc.
+ * Copyright 2021 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DIR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DISCOVERY_OPTIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_CONTROLLER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
@@ -31,7 +32,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IGN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IS_DOMAIN_CONTROLLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOOPBACK;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMES;
@@ -48,7 +51,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_PORT_OFFSET;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
@@ -87,6 +93,7 @@ import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
 import org.jboss.as.controller.parsing.WriteUtils;
+import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
@@ -98,6 +105,7 @@ import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.operations.DomainControllerWriteAttributeHandler;
 import org.jboss.as.host.controller.operations.HostAddHandler;
+import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.resources.HttpManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.NativeManagementResourceDefinition;
 import org.jboss.as.host.controller.resources.ServerConfigResourceDefinition;
@@ -113,13 +121,13 @@ import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
- * Parser and marshaller for host controller configuration xml documents (e.g. host.xml) that use the urn:jboss:domain:16.0 schema.
+ * Parser and marshaller for host controller configuration xml documents (e.g. host.xml) that use the urn:jboss:domain:17.0 schema.
  *
  * @author Brian Stansberry
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:jperkins@jboss.com">James R. Perkins</a>
  */
-final class HostXml_16 extends CommonXml implements ManagementXmlDelegate {
+final class HostXml_17 extends CommonXml implements ManagementXmlDelegate {
 
     private final AuditLogXml auditLogDelegate;
 
@@ -130,7 +138,7 @@ final class HostXml_16 extends CommonXml implements ManagementXmlDelegate {
     private final ExtensionXml extensionXml;
     private final Namespace namespace;
 
-    HostXml_16(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
+    HostXml_17(String defaultHostControllerName, RunningMode runningMode, boolean isCachedDC,
                final ExtensionRegistry extensionRegistry, final ExtensionXml extensionXml, final Namespace namespace) {
         super(new SocketBindingsXml.HostSocketBindingsXml());
         this.auditLogDelegate = AuditLogXml.newInstance(namespace, true);
@@ -158,6 +166,103 @@ final class HostXml_16 extends CommonXml implements ManagementXmlDelegate {
             }
         }
         throw unexpectedElement(reader);
+    }
+
+    void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+            throws XMLStreamException {
+
+        final ModelNode modelNode = context.getModelNode();
+
+        writer.writeStartDocument();
+        writer.writeStartElement(Element.HOST.getLocalName());
+
+        writer.writeDefaultNamespace(Namespace.CURRENT.getUriString());
+        writeNamespaces(writer, modelNode);
+        writeSchemaLocation(writer, modelNode);
+
+        if (modelNode.hasDefined(NAME)) {
+            HostResourceDefinition.NAME.marshallAsAttribute(modelNode, writer);
+        }
+        if (modelNode.hasDefined(ORGANIZATION)) {
+            HostResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, writer);
+        }
+
+        if (modelNode.hasDefined(EXTENSION)) {
+            extensionXml.writeExtensions(writer, modelNode.get(EXTENSION));
+        }
+
+        if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
+            writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, false);
+        }
+
+        if (modelNode.hasDefined(PATH)) {
+            writePaths(writer, modelNode.get(PATH), false);
+        }
+
+        boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
+        if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
+            writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
+        }
+
+        if (hasCoreServices) {
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
+            managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
+        }
+
+        if (modelNode.hasDefined(DOMAIN_CONTROLLER)) {
+            ModelNode ignoredResources = null;
+            ModelNode discoveryOptions = null;
+            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(IGNORED_RESOURCES)
+                    && modelNode.get(CORE_SERVICE, IGNORED_RESOURCES).hasDefined(IGNORED_RESOURCE_TYPE)) {
+                ignoredResources = modelNode.get(CORE_SERVICE, IGNORED_RESOURCES, IGNORED_RESOURCE_TYPE);
+            }
+            if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(DISCOVERY_OPTIONS)
+                    && modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS).hasDefined(ModelDescriptionConstants.OPTIONS)) {
+                // List of discovery option types and names, in the order they were provided
+                discoveryOptions = modelNode.get(CORE_SERVICE, DISCOVERY_OPTIONS, ModelDescriptionConstants.OPTIONS);
+            }
+            writeDomainController(writer, modelNode.get(DOMAIN_CONTROLLER), ignoredResources, discoveryOptions);
+        }
+
+        if (modelNode.hasDefined(INTERFACE)) {
+            writeInterfaces(writer, modelNode.get(INTERFACE));
+        }
+        if (modelNode.hasDefined(JVM)) {
+            writer.writeStartElement(Element.JVMS.getLocalName());
+            ModelNode jvms = modelNode.get(JVM);
+            for (final String jvm : jvms.keys()) {
+                JvmXml.writeJVMElement(writer, jvm, jvms.get(jvm));
+            }
+            writer.writeEndElement();
+        }
+
+        if (modelNode.hasDefined(SERVER_CONFIG)) {
+            writer.writeStartElement(Element.SERVERS.getLocalName());
+            // Write the directory grouping
+            HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
+            writeServers(writer, modelNode.get(SERVER_CONFIG));
+            writer.writeEndElement();
+        } else if (modelNode.hasDefined(DIRECTORY_GROUPING)) {
+            // In case there are no servers defined, write an empty element, preserving the directory grouping
+            writer.writeEmptyElement(Element.SERVERS.getLocalName());
+            HostResourceDefinition.DIRECTORY_GROUPING.marshallAsAttribute(modelNode, writer);
+        }
+
+        writeHostProfile(writer, context);
+
+        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
+            Set<String> groups = modelNode.get(SOCKET_BINDING_GROUP).keys();
+            if (groups.size() > 1) {
+                throw ControllerLogger.ROOT_LOGGER.multipleModelNodes(SOCKET_BINDING_GROUP);
+            }
+            for (String group : groups) {
+                writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
+            }
+        }
+
+
+        writer.writeEndElement();
+        writer.writeEndDocument();
     }
 
     private void readHostElement(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> list)
@@ -1407,6 +1512,40 @@ final class HostXml_16 extends CommonXml implements ManagementXmlDelegate {
         }
     }
 
+    private void writeDomainController(final XMLExtendedStreamWriter writer, final ModelNode modelNode, ModelNode ignoredResources,
+                                       ModelNode discoveryOptions) throws XMLStreamException {
+        writer.writeStartElement(Element.DOMAIN_CONTROLLER.getLocalName());
+        if (modelNode.hasDefined(LOCAL)) {
+            if (discoveryOptions != null) {
+                writer.writeStartElement(Element.LOCAL.getLocalName());
+                writeDiscoveryOptions(writer, discoveryOptions);
+                writer.writeEndElement();
+            } else {
+                writer.writeEmptyElement(Element.LOCAL.getLocalName());
+            }
+        } else if (modelNode.hasDefined(REMOTE)) {
+            writer.writeStartElement(Element.REMOTE.getLocalName());
+            final ModelNode remote = modelNode.get(REMOTE);
+            RemoteDomainControllerAddHandler.PROTOCOL.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.HOST.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.PORT.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.AUTHENTICATION_CONTEXT.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.SECURITY_REALM.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.USERNAME.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.IGNORE_UNUSED_CONFIG.marshallAsAttribute(remote, writer);
+            RemoteDomainControllerAddHandler.ADMIN_ONLY_POLICY.marshallAsAttribute(remote, writer);
+
+            if (ignoredResources != null) {
+                writeIgnoredResources(writer, ignoredResources);
+            }
+            if (discoveryOptions != null) {
+                writeDiscoveryOptions(writer, discoveryOptions);
+            }
+            writer.writeEndElement();
+        }
+        writer.writeEndElement();
+    }
+
     private void writeIgnoredResources(XMLExtendedStreamWriter writer, ModelNode ignoredTypes) throws XMLStreamException {
         for (String ignoredName : ignoredTypes.keys()) {
 
@@ -1525,6 +1664,20 @@ final class HostXml_16 extends CommonXml implements ManagementXmlDelegate {
 
             writer.writeEndElement();
         }
+    }
+
+    private void writeHostProfile(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+            throws XMLStreamException {
+
+        final ModelNode profileNode = context.getModelNode();
+        // In case there are no subsystems defined
+        if (!profileNode.hasDefined(SUBSYSTEM)) {
+            return;
+        }
+
+        writer.writeStartElement(Element.PROFILE.getLocalName());
+        writeSubsystems(profileNode, writer, context);
+        writer.writeEndElement();
     }
 
     /*
