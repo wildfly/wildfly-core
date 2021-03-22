@@ -185,7 +185,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
      * @param className the class name of the custom component implementation being loaded.
      * @return The {@link StartException} for the error.
      */
-    @Message(id = 15, value = "The custom component implementation '%s' doe not implement method initialize(Map<String, String>), however configuration has been supplied.")
+    @Message(id = 15, value = "The custom component implementation '%s' does not implement method initialize(Map<String, String>), however configuration has been supplied.")
     StartException componentNotConfigurable(final String className, @Cause Exception cause);
 
     /**
@@ -634,6 +634,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @LogMessage(level = WARN)
     void selfSignedCertificateHasBeenCreated(String file, String sha1, String sha256);
 
+    @Message(id=1086, value = "Unable to initialize Elytron JACC support while legacy JACC support is enabled.")
+    IllegalStateException unableToEnableJaccSupport();
+
     /*
      * Expression Resolver Section
      */
@@ -657,13 +660,12 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     OperationFailedException invalidResolver(String expression);
 
     @Message(id = 1206, value = "Unable to decrypt expression '%s'.")
-    OperationFailedException unableToDecyptExpression(String expression, @Cause Throwable cause);
+    OperationFailedException unableToDecryptExpression(String expression, @Cause Throwable cause);
 
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
      * If no suitable section is available add a new section.
      */
-
 
 }

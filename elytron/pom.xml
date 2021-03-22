@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>15.0.1.Final-SNAPSHOT</version>
+        <version>16.0.0.Beta1-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-elytron-integration</artifactId>
@@ -321,6 +321,7 @@
                                 <exclude>*-1.*.xml</exclude>
                                 <exclude>*-4.*.xml</exclude>
                                 <exclude>*-8.*.xml</exclude>
+                                <exclude>elytron-expressions.xml</exclude>
                                 <exclude>custom-policies.xml</exclude>
                                 <exclude>jacc-with-providers.xml</exclude>
                                 <exclude>legacy*.xml</exclude>

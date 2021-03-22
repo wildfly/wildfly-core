@@ -47,7 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -64,6 +64,7 @@ import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.modules.Module;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionConsumer;
@@ -247,23 +248,21 @@ class ProviderDefinitions {
                                     }
                                 }
                             } else {
-                                // todo look into why we get also system / jdk providers here, it slows down boot
                                 loadedProviders = new ArrayList<>();
-                                ServiceLoader<Provider> loader = ServiceLoader.load(Provider.class, classLoader);
-                                Iterator<Provider> iterator = loader.iterator();
-                                for (;;) {
-                                    try {
-                                        if (!(iterator.hasNext())) {
-                                            break;
-                                        }
-                                        final Provider p = iterator.next();
+                                // find our providers
+                                Iterable<Provider> providers = Module.findServices(Provider.class, new Predicate<Class<?>>() {
+                                    @Override
+                                    public boolean test(final Class<?> providerClass) {
                                         // We don't want to pick up JDK services resolved via JPMS definitions.
-                                        if (p.getClass().getClassLoader() instanceof ModuleClassLoader) {
-                                            if (configSupplier != null) {
-                                                deferred.add(p::load);
-                                            }
-                                            loadedProviders.add(p);
-                                        }
+                                        return providerClass.getClassLoader() instanceof ModuleClassLoader;
+                                    }
+                                }, classLoader);
+                                // collect our providers
+                                Iterator<Provider> i = providers.iterator();
+                                while (true) {
+                                    try {
+                                        if (!i.hasNext()) break;
+                                        loadedProviders.add(i.next());
                                     } catch (ServiceConfigurationError | RuntimeException e) {
                                         ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
                                     }

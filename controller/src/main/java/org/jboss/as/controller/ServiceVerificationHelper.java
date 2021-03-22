@@ -50,6 +50,8 @@ import org.jboss.msc.service.StartException;
  */
 class ServiceVerificationHelper implements OperationStepHandler {
 
+    static final OperationContext.AttachmentKey<Boolean> DEFFERED_ROLLBACK_ATTACHMENT = OperationContext.AttachmentKey.create(Boolean.class);
+
     private final StabilityMonitor monitor = new StabilityMonitor();
 
     StabilityMonitor getMonitor() {
@@ -120,7 +122,18 @@ class ServiceVerificationHelper implements OperationStepHandler {
             reportImmediateDependants(problemList, failureDescription);
 
             if (context.isRollbackOnRuntimeFailure()) {
-                context.setRollbackOnly();
+                // Registering new VERIFY step to be executed after all ServiceVerificationHadlers.
+                // This way other failing services have a chance to report missing dependencies before rollback.
+                // DEFFERED_ROLLBACK_ATTACHMENT notifies AbstractOperationContext that the operation will be
+                // rolled back at later point so that it doesn't force rollback due to failure description
+                // being present.
+                context.attach(DEFFERED_ROLLBACK_ATTACHMENT, Boolean.TRUE);
+                context.addStep(new OperationStepHandler() {
+                    @Override
+                    public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                        context.setRollbackOnly();
+                    }
+                }, OperationContext.Stage.VERIFY);
             }
 
             // Notify ContainerStateVerificationHandler that we've reported an issue so it

@@ -30,6 +30,8 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
@@ -146,4 +148,16 @@ public interface SecurityManagerLogger extends BasicLogger {
     @Message(id = 11, value = "Unexpected content of type %s")
     XMLStreamException unexpectedContentType(String type, @Param Location location);
 
+    /**
+     * Log message to warn that a permission returned null and was invalid. The permission
+     * will be ignored in the passed list (maximum-set, minimum-set or deployment).
+     *
+     * @param type The type of the permission (maximum-set, minimum-set or deployment)
+     * @param permissionClass The permission class
+     * @param permissionName The permission name
+     * @param permissionActions The permission actions
+     */
+    @LogMessage(level = Level.WARN)
+    @Message(id = 12, value = "The following permission could not be constructed and will be ignored in the %s: (class=\"%s\" name=\"%s\" actions=\"%s\")")
+    void ignoredPermission(String type, String permissionClass, String permissionName, String permissionActions);
 }

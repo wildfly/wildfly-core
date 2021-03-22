@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>15.0.1.Final-SNAPSHOT</version>
+    <version>16.0.0.Beta1-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -118,7 +118,7 @@
         <version.org.wildfly.galleon-plugins>5.1.0.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
-        <version.org.wildfly.jar.plugin>3.0.0.Final</version.org.wildfly.jar.plugin>
+        <version.org.wildfly.jar.plugin>4.0.0.Final</version.org.wildfly.jar.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.2.0.Final</version.org.wildfly.plugins>
@@ -193,7 +193,7 @@
         <version.org.jboss.logmanager.jboss-logmanager>2.1.18.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.2.0.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
         <version.org.jboss.logmanager.log4j2-jboss-logmanager>1.0.0.Final</version.org.jboss.logmanager.log4j2-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.10.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.marshalling.jboss-marshalling>2.0.11.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.11.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.4.12.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.20.Final</version.org.jboss.remoting>
@@ -226,7 +226,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.15.1.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.15.2.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.9.0.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-5</version.xalan>
        
@@ -2274,6 +2274,13 @@
                 <groupId>xalan</groupId>
                 <artifactId>xalan</artifactId>
                 <version>${version.xalan}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-tests-common</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
         </dependencies>

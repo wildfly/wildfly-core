@@ -20,15 +20,8 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
@@ -36,13 +29,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
-import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
@@ -53,7 +41,6 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
-import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,14 +64,11 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
-import org.jboss.as.controller.parsing.WriteUtils;
-import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
-import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
@@ -715,120 +699,6 @@ final class StandaloneXml_16 extends CommonXml implements ManagementXmlDelegate 
             final ModelNode update = Util.getWriteAttributeOperation(address, NAME, value);
             operationList.add(update);
         }
-    }
-
-    void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-
-        ModelNode modelNode = context.getModelNode();
-        writer.writeStartDocument();
-        writer.writeStartElement(Element.SERVER.getLocalName());
-
-        if (modelNode.hasDefined(NAME)) {
-            ServerRootResourceDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
-        }
-
-        if (modelNode.hasDefined(ORGANIZATION_IDENTIFIER.getName())) {
-            ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, false, writer);
-        }
-
-        writer.writeDefaultNamespace(CURRENT.getUriString());
-        writeNamespaces(writer, modelNode);
-        writeSchemaLocation(writer, modelNode);
-
-        if (modelNode.hasDefined(EXTENSION)) {
-            extensionHandler.writeExtensions(writer, modelNode.get(EXTENSION));
-        }
-
-        if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
-            writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, true);
-        }
-
-        if (modelNode.hasDefined(PATH)) {
-            writePaths(writer, modelNode.get(PATH), false);
-        }
-
-        if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
-            writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-        }
-
-        if (modelNode.hasDefined(CORE_SERVICE)) {
-            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
-            managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
-        }
-
-        writeServerProfile(writer, context);
-
-        if (modelNode.hasDefined(INTERFACE)) {
-            writeInterfaces(writer, modelNode.get(INTERFACE));
-        }
-
-        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
-            Set<String> groups = modelNode.get(SOCKET_BINDING_GROUP).keys();
-            if (groups.size() > 1) {
-                throw ControllerLogger.ROOT_LOGGER.multipleModelNodes(SOCKET_BINDING_GROUP);
-            }
-            for (String group : groups) {
-                writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
-            }
-        }
-
-        if (modelNode.hasDefined(DEPLOYMENT)) {
-            writeServerDeployments(writer, modelNode.get(DEPLOYMENT));
-            WriteUtils.writeNewLine(writer);
-        }
-
-        if (modelNode.hasDefined(DEPLOYMENT_OVERLAY)) {
-            writeDeploymentOverlays(writer, modelNode.get(DEPLOYMENT_OVERLAY));
-            WriteUtils.writeNewLine(writer);
-        }
-        writer.writeEndElement();
-        writer.writeEndDocument();
-    }
-
-    private void writeServerDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode)
-            throws XMLStreamException {
-
-        boolean deploymentWritten = false;
-        for (String deploymentName : modelNode.keys()) {
-
-            final ModelNode deployment = modelNode.get(deploymentName);
-            if (!deployment.isDefined()) {
-                continue;
-            }
-
-            if (!deploymentWritten) {
-                writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
-                deploymentWritten = true;
-            }
-
-            writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
-            WriteUtils.writeAttribute(writer, Attribute.NAME, deploymentName);
-            DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
-            DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
-            final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
-            for (ModelNode contentItem : contentItems) {
-                writeContentItem(writer, contentItem);
-            }
-            writer.writeEndElement();
-        }
-        if (deploymentWritten) {
-            writer.writeEndElement();
-        }
-    }
-
-    private void writeServerProfile(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
-            throws XMLStreamException {
-
-        final ModelNode profileNode = context.getModelNode();
-        // In case there are no subsystems defined
-        if (!profileNode.hasDefined(SUBSYSTEM)) {
-            return;
-        }
-
-        writer.writeStartElement(Element.PROFILE.getLocalName());
-        writeSubsystems(profileNode, writer, context);
-        writer.writeEndElement();
     }
 
     /*
