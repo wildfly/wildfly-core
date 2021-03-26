@@ -122,4 +122,13 @@
         <cve>CVE-2020-1757</cve>
     </suppress>
 
+    <!-- This is a false positive because the core itself does not use the velocity-engine library. Velocity is used by mockserver-netty in test (wildfly-core-testsuite-share) module. -->
+    <suppress>
+        <notes><![CDATA[
+   file name: velocity-engine-core-2.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.velocity/velocity\-engine\-core@.*$</packageUrl>
+        <cve>CVE-2020-13936</cve>
+    </suppress>
+
 </suppressions>
