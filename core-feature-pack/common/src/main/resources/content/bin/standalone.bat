@@ -142,16 +142,46 @@ if "x%JAVA_HOME%" == "x" (
 
 "%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
 
+setlocal EnableDelayedExpansion
+
 if not "%PRESERVE_JAVA_OPTS%" == "true" (
-  rem Add -client to the JVM options, if supported (32 bit VM), and not overriden
-  echo "%JAVA_OPTS%" | findstr /I \-server > nul
-  if errorlevel == 1 (
-    "%JAVA%" -client -version 2>&1 | findstr /I /C:"Client VM" > nul
-    if not errorlevel == 1 (
-      set "JAVA_OPTS=-client %JAVA_OPTS%"
+    rem Add -client to the JVM options, if supported (32 bit VM), and not overriden
+    echo "%JAVA_OPTS%" | findstr /I "\-client \-server" > nul
+    if errorlevel == 1 (
+        set JVM_OPTVERSION=-version
+        echo "%JAVA_OPTS%" | findstr /I \-d64 > nul
+        if not errorlevel == 1 (
+            set "JVM_OPTVERSION=-d64 !JVM_OPTVERSION!"
+            goto :CHECK_VERSION
+        )
+        echo "%JAVA_OPTS%" | findstr /I \-d32 > nul
+        if not errorlevel == 1 (
+            set "JVM_OPTVERSION=-d32 !JVM_OPTVERSION!"
+            goto :CHECK_VERSION
+        )
+        goto :CHECK_SUPPORTED
+
+        :CHECK_VERSION
+        "%JAVA%" !JVM_OPTVERSION! 2>&1 | findstr /I /C:"Unrecognized option" > nul
+        if not errorlevel == 1 (
+            set JVM_OPTVERSION=-version
+        )
+
+        :CHECK_SUPPORTED
+        "%JAVA%" !JVM_OPTVERSION! 2>&1 | findstr /I /C:"Client VM" > nul
+        if not errorlevel == 1 (
+            set "JAVA_OPTS=-client %JAVA_OPTS%"
+            goto :SET_SERVER_END
+        )
+        "%JAVA%" !JVM_OPTVERSION! 2>&1 | findstr /I /C:"hotspot" /C:"openJDK" /C:"IBM J9" > nul
+        if not errorlevel == 1 (
+            set "JAVA_OPTS=-server %JAVA_OPTS%"
+        )
     )
-  )
 )
+:SET_SERVER_END
+
+setlocal DisableDelayedExpansion
 
 rem Find jboss-modules.jar, or we can't continue
 if exist "%JBOSS_HOME%\jboss-modules.jar" (
