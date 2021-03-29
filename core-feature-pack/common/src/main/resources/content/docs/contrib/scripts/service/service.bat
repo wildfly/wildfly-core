@@ -532,7 +532,7 @@ if /I "%IS_DOMAIN%" == "true" (
   if "%CONFIG%"=="" set CONFIG=domain.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=domain.bat
   set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.domain.base.dir=!BASE!#--domain-config=!CONFIG!#--host-config=!HOSTCONFIG!"
-  set STOPPARAM="/c %STOP_SCRIPT% --controller=%CONTROLLER% --connect %CREDENTIALS% --command=/host=!DC_HOST!:shutdown"
+  set STOPPARAM="/c set NOPAUSE=Y && %STOP_SCRIPT% --controller=%CONTROLLER% --connect %CREDENTIALS% --command=/host=!DC_HOST!:shutdown"
 ) else (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\standalone"
   if "%CONFIG%"=="" set CONFIG=standalone.xml
@@ -543,7 +543,7 @@ if /I "%IS_DOMAIN%" == "true" (
     set "PROPS=#--properties=%PROPSPATH%"
   )
   set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!!PROPS!"
-  set STOPPARAM="/c !STOP_SCRIPT! --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown"
+  set STOPPARAM="/c set NOPAUSE=Y && !STOP_SCRIPT! --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown"
 )
 
 if "%LOGPATH%"=="" set LOGPATH="!BASE!\log"
