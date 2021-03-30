@@ -126,8 +126,9 @@
     <suppress>
         <notes><![CDATA[
    file name: velocity-engine-core-2.1.jar
+   file name: velocity-engine-scripting-2.1.jar
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.velocity/velocity\-engine\-core@.*$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.velocity/velocity\-engine\-.*$</packageUrl>
         <cve>CVE-2020-13936</cve>
     </suppress>
 
