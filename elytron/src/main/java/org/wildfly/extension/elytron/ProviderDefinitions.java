@@ -33,9 +33,12 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -237,11 +240,23 @@ class ProviderDefinitions {
                                             Constructor<? extends Provider> constructor = doPrivileged(
                                                     (PrivilegedExceptionAction<Constructor<? extends Provider>>) () -> providerClazz
                                                             .getConstructor(InputStream.class));
-                                            loadedProviders.add(constructor.newInstance(new Object[] { configSupplier.get() }));
-                                        } catch (NoSuchMethodException ignored) {
-                                            Provider provider = providerClazz.newInstance();
-                                            loadedProviders.add(provider);
-                                            deferred.add(provider::load);
+                                            loadedProviders.add(constructor.newInstance(new Object[]{configSupplier.get()}));
+                                        } catch (NoSuchMethodException constructorDoesNotExist) {
+                                            File tempFile = null;
+                                            try {
+                                                Method configureMethod = doPrivileged((PrivilegedExceptionAction<Method>) () -> providerClazz.getMethod("configure", String.class));
+                                                Provider provider = providerClazz.newInstance();
+                                                tempFile = inputStreamToFile(configSupplier);
+                                                loadedProviders.add((Provider) configureMethod.invoke(provider, tempFile.getAbsolutePath()));
+                                            } catch (NoSuchMethodException configureMethodDoesNotExist) {
+                                                Provider provider = providerClazz.newInstance();
+                                                loadedProviders.add(provider);
+                                                deferred.add(provider::load);
+                                            } finally {
+                                                if (tempFile != null) {
+                                                    tempFile.delete();
+                                                }
+                                            }
                                         }
                                     } else {
                                         loadedProviders.add(providerClazz.newInstance());
@@ -344,6 +359,17 @@ class ProviderDefinitions {
         } catch (IOException e) {
             throw ROOT_LOGGER.unableToStartService(e);
         }
+    }
+
+    private static File inputStreamToFile(Supplier<InputStream> configSupplier) throws IOException {
+        File tempFile = new File(Files.createTempFile("temp", "cfg").toString());
+        InputStream inputStream = configSupplier.get();
+        byte[] buffer = new byte[inputStream.available()];
+        inputStream.read(buffer);
+        OutputStream outStream = new FileOutputStream(tempFile);
+        outStream.write(buffer);
+        outStream.close();
+        return tempFile;
     }
 
     private static class LoadedProvidersAttributeHandler extends ElytronRuntimeOnlyHandler {
