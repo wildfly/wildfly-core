@@ -16,11 +16,11 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -43,9 +43,9 @@ public class SimpleSaslAuthenticationFactory extends AbstractConfigurableElement
 
     private SimpleSaslAuthenticationFactory(Builder builder) {
         super(builder);
-        this.mechanismConfigurations = new ArrayList<>(builder.mechanismConfigurations);
-        this.saslServerFactory = Objects.requireNonNull(builder.saslServerFactory,"saslServerFactory must be not-null");
-        this.securityDomain = Objects.requireNonNull(builder.securityDomain,"securityDomain must be not-null");
+        this.mechanismConfigurations = new ArrayList<>(checkNotNullParamWithNullPointerException("builder.mechanismConfigurations", builder.mechanismConfigurations));
+        this.saslServerFactory = checkNotNullParamWithNullPointerException("builder.saslServerFactory", builder.saslServerFactory);
+        this.securityDomain = checkNotNullParamWithNullPointerException("builder.securityDomain", builder.securityDomain);
     }
 
 

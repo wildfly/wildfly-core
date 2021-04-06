@@ -16,9 +16,10 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -33,9 +34,9 @@ public class UserWithRoles {
     private final Set<String> roles;
 
     private UserWithRoles(Builder builder) {
-        this.name = Objects.requireNonNull(builder.name, "Username must be not-null");
+        this.name = checkNotNullParamWithNullPointerException("builder.name", builder.name);
         this.password = builder.password != null ? builder.password : builder.name;
-        this.roles = new HashSet<>(builder.roles);
+        this.roles = new HashSet<>(checkNotNullParamWithNullPointerException("builder.roles", builder.roles));
     }
 
     /**

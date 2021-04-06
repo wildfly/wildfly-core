@@ -16,9 +16,8 @@
 
 package org.wildfly.test.security.common.other;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
-
-import java.util.Objects;
 
 import org.jboss.dmr.ModelNode;
 
@@ -35,7 +34,7 @@ public class ClientMapping {
 
     private ClientMapping(Builder builder) {
         this.sourceNetwork = builder.sourceNetwork;
-        this.destinationAddress = Objects.requireNonNull(builder.destinationAddress, "Destination address has to be provided");
+        this.destinationAddress = checkNotNullParamWithNullPointerException("builder.destinationAddress", builder.destinationAddress);
         this.destinationPort = builder.destinationPort;
     }
 

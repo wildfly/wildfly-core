@@ -16,11 +16,11 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import org.jboss.dmr.ModelNode;
 
@@ -45,7 +45,7 @@ public class IdentityMapping implements ModelNodeConvertable {
 
 
     private IdentityMapping(Builder builder) {
-        this.rdnIdentifier = Objects.requireNonNull(builder.rdnIdentifier, "The rdn-identifier has to be provided in identity-mapping.");
+        this.rdnIdentifier = checkNotNullParamWithNullPointerException("builder.rdnIdentifier", builder.rdnIdentifier);
         this.useRecursiveSearch = builder.useRecursiveSearch;
         this.searchBaseDn = builder.searchBaseDn;
         this.attributeMapping = builder.attributeMapping.toArray(new AttributeMapping[builder.attributeMapping.size()]);

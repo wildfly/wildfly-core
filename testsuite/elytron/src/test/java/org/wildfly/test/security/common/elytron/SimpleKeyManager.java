@@ -15,9 +15,8 @@
  */
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
-
-import java.util.Objects;
 
 import javax.net.ssl.KeyManagerFactory;
 
@@ -36,7 +35,7 @@ public class SimpleKeyManager extends AbstractConfigurableElement {
 
     private SimpleKeyManager(Builder builder) {
         super(builder);
-        this.keyStore = Objects.requireNonNull(builder.keyStore, "Key-store name has to be provided");
+        this.keyStore = checkNotNullParamWithNullPointerException("builder.keyStore", builder.keyStore);
         this.credentialReference = defaultIfNull(builder.credentialReference, CredentialReference.EMPTY);
     }
 

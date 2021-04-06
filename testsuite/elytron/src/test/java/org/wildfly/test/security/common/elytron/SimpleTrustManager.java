@@ -15,7 +15,7 @@
  */
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import javax.net.ssl.KeyManagerFactory;
 
@@ -33,7 +33,7 @@ public class SimpleTrustManager extends AbstractConfigurableElement {
 
     private SimpleTrustManager(Builder builder) {
         super(builder);
-        this.keyStore = Objects.requireNonNull(builder.keyStore, "Key-store name has to be provided");
+        this.keyStore = checkNotNullParamWithNullPointerException("builder.keyStore", builder.keyStore);
     }
 
     @Override

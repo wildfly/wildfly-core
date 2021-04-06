@@ -16,9 +16,8 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
-
-import java.util.Objects;
 
 import org.jboss.dmr.ModelNode;
 
@@ -35,10 +34,10 @@ public class OtpCredentialMapper implements ModelNodeConvertable {
     private final String sequenceFrom;
 
     private OtpCredentialMapper(Builder builder) {
-        this.algorithmFrom = Objects.requireNonNull(builder.algorithmFrom);
-        this.hashFrom = Objects.requireNonNull(builder.hashFrom);
-        this.seedFrom = Objects.requireNonNull(builder.seedFrom);
-        this.sequenceFrom = Objects.requireNonNull(builder.sequenceFrom);
+        this.algorithmFrom = checkNotNullParamWithNullPointerException("builder.algorithmFrom", builder.algorithmFrom);
+        this.hashFrom = checkNotNullParamWithNullPointerException("builder.hashFrom", builder.hashFrom);
+        this.seedFrom = checkNotNullParamWithNullPointerException("builder.seedFrom", builder.seedFrom);
+        this.sequenceFrom = checkNotNullParamWithNullPointerException("builder.sequenceFrom", builder.sequenceFrom);
     }
 
     @Override
