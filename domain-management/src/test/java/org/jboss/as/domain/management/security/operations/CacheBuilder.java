@@ -31,6 +31,7 @@ import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.EVICTION_TIME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.CACHE_FAILURES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.MAX_CACHE_SIZE;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import org.jboss.dmr.ModelNode;
 
@@ -58,10 +59,8 @@ public class CacheBuilder<T extends ParentBuilder<?>> extends Builder<T> {
 
     public CacheBuilder<T> setBy(final By by) {
         assertNotBuilt();
-        if (by == null) {
-            throw new IllegalArgumentException("By can not be null.");
-        }
-        this.by = by;
+
+        this.by = checkNotNullParam("by", by);
 
         return this;
     }

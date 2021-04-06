@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security.password.simple;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
@@ -89,9 +91,7 @@ public class SimpleKeyboard implements Keyboard {
     }
 
     public boolean siblings(String word, int index, int isSiblingIndex) {
-        if (word == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("word", word);
         if (index >= isSiblingIndex) {
             throw new IllegalArgumentException();
         }

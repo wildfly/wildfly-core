@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security.password.simple;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -83,10 +85,7 @@ public class SimplePasswordStrengthChecker implements PasswordStrengthChecker {
 
     public SimplePasswordStrengthChecker(final List<PasswordRestriction> initRestrictions, final Dictionary dictionary,
             final Keyboard keyboard) {
-        if (initRestrictions == null) {
-            throw new IllegalArgumentException("Initial restrictions must not be null.");
-        }
-        this.restrictionsInPlace = Collections.unmodifiableList(initRestrictions);
+        this.restrictionsInPlace = Collections.unmodifiableList(checkNotNullParam("initRestrictions", initRestrictions));
         this.dictionary = dictionary;
         this.keyboard = keyboard;
     }
