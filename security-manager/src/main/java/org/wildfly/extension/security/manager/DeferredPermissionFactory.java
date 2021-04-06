@@ -16,6 +16,8 @@
 
 package org.wildfly.extension.security.manager;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.security.Permission;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.security.LoadedPermissionFactory;
@@ -47,19 +49,10 @@ public class DeferredPermissionFactory implements PermissionFactory {
     };
 
     public DeferredPermissionFactory(Type type, ModuleLoader moduleLoader, String moduleName, String permissionClass, String permissionName, String permissionActions) {
-        if (type == null) {
-            throw new IllegalArgumentException("type argument is null");
-        }
-        if (moduleLoader == null) {
-            throw new IllegalArgumentException("moduleLoader argument is null");
-        }
-        if (permissionClass == null) {
-            throw new IllegalArgumentException("permissionClass argument is null");
-        }
-        this.type = type;
-        this.moduleLoader = moduleLoader;
+        this.type = checkNotNullParam("type", type);
+        this.moduleLoader = checkNotNullParam("moduleLoader", moduleLoader);
         this.moduleName = moduleName;
-        this.permissionClass = permissionClass;
+        this.permissionClass = checkNotNullParam("permissionClass", permissionClass);
         this.permissionName = permissionName;
         this.permissionActions = permissionActions;
         this.factory = null;
