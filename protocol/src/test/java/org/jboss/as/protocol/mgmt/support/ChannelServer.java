@@ -21,6 +21,8 @@
  */
 package org.jboss.as.protocol.mgmt.support;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -65,10 +67,7 @@ public class ChannelServer implements Closeable {
     }
 
     public static ChannelServer create(final Configuration configuration) throws IOException {
-        if (configuration == null) {
-            throw new IllegalArgumentException("Null configuration");
-        }
-        configuration.validate();
+        checkNotNullParam("configuration", configuration).validate();
 
         // Hack WFCORE-3302/REM3-303 workaround
         if (firstCreate) {
@@ -150,15 +149,9 @@ public class ChannelServer implements Closeable {
         }
 
         void validate() {
-            if (endpointName == null) {
-                throw new IllegalArgumentException("Null endpoint name");
-            }
-            if (uriScheme == null) {
-                throw new IllegalArgumentException("Null protocol name");
-            }
-            if (bindAddress == null) {
-                throw new IllegalArgumentException("Null bind address");
-            }
+            checkNotNullParam("endpointName", endpointName);
+            checkNotNullParam("uriScheme", uriScheme);
+            checkNotNullParam("bindAddress", bindAddress);
         }
 
         public void setEndpointName(String endpointName) {
