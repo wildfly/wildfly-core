@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,9 +80,7 @@ public class CommandRegistry {
     }
 
     public CommandHandler remove(String cmdName) {
-        if(cmdName == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("cmdName", cmdName);
         CommandHandler handler = handlers.remove(cmdName);
         if(handler != null) {
             tabCompletionCommands.remove(cmdName);

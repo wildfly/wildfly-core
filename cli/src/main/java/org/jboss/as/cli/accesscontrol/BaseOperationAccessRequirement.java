@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.operation.OperationRequestAddress;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestAddress;
 import org.jboss.as.cli.operation.impl.DefaultPrefixFormatter;
@@ -40,18 +42,12 @@ public abstract class BaseOperationAccessRequirement extends AddressAccessRequir
 
     BaseOperationAccessRequirement(String address, String operation) {
         super(address);
-        if(operation == null) {
-            throw new IllegalArgumentException("operation is null");
-        }
-        this.operation = operation;
+        this.operation = checkNotNullParam("operation", operation);
     }
 
     BaseOperationAccessRequirement(OperationRequestAddress address, String operation) {
         super(address);
-        if(operation == null) {
-            throw new IllegalArgumentException("operation is null");
-        }
-        this.operation = operation;
+        this.operation = checkNotNullParam("operation", operation);
     }
 
     protected String toString;

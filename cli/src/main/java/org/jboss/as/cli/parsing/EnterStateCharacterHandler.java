@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.parsing;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandFormatException;
 
 /**
@@ -32,10 +34,7 @@ public class EnterStateCharacterHandler implements CharacterHandler {
     protected final ParsingState state;
 
     public EnterStateCharacterHandler(ParsingState state) {
-        if(state == null) {
-            throw new IllegalArgumentException("State can't be null.");
-        }
-        this.state = state;
+        this.state = checkNotNullParam("state", state);
     }
 
     @Override

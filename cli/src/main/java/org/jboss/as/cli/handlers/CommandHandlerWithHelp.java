@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -53,9 +55,7 @@ public abstract class CommandHandlerWithHelp extends CommandHandlerWithArguments
     }
 
     public CommandHandlerWithHelp(String command, boolean connectionRequired) {
-        if(command == null) {
-            throw new IllegalArgumentException("command can't be null");
-        }
+        checkNotNullParam("command", command);
         this.filename = "help/" + command + ".txt";
         this.connectionRequired = connectionRequired;
         this.helpArg.setExclusive(true);

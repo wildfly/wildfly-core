@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.operation.impl;
 
+import static org.wildfly.common.Assert.checkNotEmptyParam;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,10 +58,7 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     }
 
     public SingleRolloutPlanGroup(String groupName) {
-        if(groupName == null || groupName.isEmpty()) {
-            throw new IllegalArgumentException("Invalid group name: " + groupName);
-        }
-        this.groupName = groupName;
+        this.groupName = checkNotEmptyParam("groupName", groupName);
     }
 
     public String getGroupName() {
@@ -86,12 +85,8 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
 
     // TODO perhaps add a list of allowed properties and their values
     public void addProperty(String name, String value, int valueIndex) {
-        if(name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property name: " + name);
-        }
-        if(value == null || value.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property value: " + value);
-        }
+        checkNotEmptyParam("name", name);
+        checkNotEmptyParam("value", value);
         if(props == null) {
             props = new HashMap<String,String>();
         }
@@ -103,9 +98,7 @@ public class SingleRolloutPlanGroup implements RolloutPlanGroup {
     }
 
     public void addProperty(String name, int index) {
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property name: " + name);
-        }
+        checkNotEmptyParam("name", name);
         // Property name without a value. can be an implicit value.
         if (props == null) {
             props = new HashMap<String, String>();

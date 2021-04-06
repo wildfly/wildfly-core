@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineCompleter;
@@ -39,10 +40,7 @@ public class RequestParamArgWithValue extends ArgumentWithValue implements Reque
 
     public RequestParamArgWithValue(String paramName, CommandHandlerWithArguments handler, CommandLineCompleter valueCompleter) {
         super(handler, valueCompleter, "--" + paramName);
-        if(paramName == null) {
-            throw new IllegalArgumentException("Parameter name is null.");
-        }
-        this.paramName = paramName;
+        this.paramName = checkNotNullParam("paramName", paramName);
     }
 
     public RequestParamArgWithValue(String paramName, CommandHandlerWithArguments handler) {
@@ -51,18 +49,12 @@ public class RequestParamArgWithValue extends ArgumentWithValue implements Reque
 
     public RequestParamArgWithValue(String paramName, CommandHandlerWithArguments handler, String fullArgName) {
         super(handler, fullArgName);
-        if(paramName == null) {
-            throw new IllegalArgumentException("Parameter name is null.");
-        }
-        this.paramName = paramName;
+        this.paramName = checkNotNullParam("paramName", paramName);
     }
 
     public RequestParamArgWithValue(String paramName, CommandHandlerWithArguments handler, String fullArgName, CommandLineCompleter completer) {
         super(handler, completer, fullArgName);
-        if(paramName == null) {
-            throw new IllegalArgumentException("Parameter name is null.");
-        }
-        this.paramName = paramName;
+        this.paramName = checkNotNullParam("paramName", paramName);
     }
 
     public void set(ParsedCommandLine args, ModelNode request) throws CommandFormatException {

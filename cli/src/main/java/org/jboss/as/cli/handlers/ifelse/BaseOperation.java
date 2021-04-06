@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.ifelse;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,10 +40,7 @@ abstract class BaseOperation implements Operation, Comparable<Operation> {
     private final List<Operand> operands;
 
     BaseOperation(String name, int priority) {
-        if(name == null) {
-            throw new IllegalArgumentException("name is null.");
-        }
-        this.name = name;
+        this.name = checkNotNullParam("name", name);
         this.priority = priority;
         operands = new ArrayList<Operand>();
     }
@@ -74,10 +73,7 @@ abstract class BaseOperation implements Operation, Comparable<Operation> {
     }
 
     void addOperand(Operand operand) throws CommandLineException {
-        if(operand == null) {
-            throw new IllegalArgumentException("operand can't be null.");
-        }
-        operands.add(operand);
+        operands.add(checkNotNullParam("operand", operand));
     }
 
     Operand getLastOperand() {
@@ -94,9 +90,7 @@ abstract class BaseOperation implements Operation, Comparable<Operation> {
 
     @Override
     public int compareTo(Operation o) {
-        if(o == null) {
-            throw new IllegalArgumentException("can't compare to null.");
-        }
+        checkNotNullParam("o", o);
         return priority < o.getPriority() ? -1 : (priority > o.getPriority() ? 1 : 0);
     }
 

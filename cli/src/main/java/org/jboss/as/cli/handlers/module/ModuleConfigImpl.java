@@ -21,6 +21,9 @@
  */
 package org.jboss.as.cli.handlers.module;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
+
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,11 +70,7 @@ public class ModuleConfigImpl implements ModuleConfig {
     private Map<String, String> properties;
 
     public ModuleConfigImpl(String moduleName) {
-        if(moduleName == null || moduleName.isEmpty()) {
-            throw new IllegalArgumentException("Module name can't be null");
-        }
-
-        this.moduleName = moduleName;
+        this.moduleName = checkNotEmptyParam("moduleName", moduleName);
     }
 
     /* (non-Javadoc)
@@ -117,9 +116,7 @@ public class ModuleConfigImpl implements ModuleConfig {
     }
 
     public void addResource(Resource res) {
-        if(res == null) {
-            throw new IllegalArgumentException("Resource cannot be null.");
-        }
+        checkNotNullParam("res", res);
         if(resources == null) {
             resources = new ArrayList<Resource>();
         }
@@ -135,9 +132,7 @@ public class ModuleConfigImpl implements ModuleConfig {
     }
 
     public void addDependency(Dependency dep) {
-        if(dep == null) {
-            throw new IllegalArgumentException("Dependency cannot be null.");
-        }
+        checkNotNullParam("dep", dep);
         if(dependencies == null) {
             dependencies = new ArrayList<Dependency>();
         }
@@ -153,12 +148,8 @@ public class ModuleConfigImpl implements ModuleConfig {
     }
 
     public void setProperty(String name, String value) {
-        if(name == null) {
-            throw new IllegalArgumentException("Property name can't be null.");
-        }
-        if(value == null) {
-            throw new IllegalArgumentException("Property value can't be null.");
-        }
+        checkNotNullParam("name", name);
+        checkNotNullParam("value", value);
         if(properties == null) {
             properties = new HashMap<String, String>();
         }

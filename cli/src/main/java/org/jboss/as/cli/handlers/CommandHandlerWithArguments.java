@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -47,13 +49,11 @@ public abstract class CommandHandlerWithArguments implements CommandHandler {
     private List<CommandArgument> argList = Collections.emptyList();
 
     public void addArgument(CommandArgument arg) {
+        checkNotNullParam("arg", arg);
         if(arg.getIndex() > -1) {
             maxArgumentIndex = arg.getIndex() > maxArgumentIndex ? arg.getIndex() : maxArgumentIndex;
         }
-
-        if(arg.getFullName() == null) {
-            throw new IllegalArgumentException("Full name can't be null");
-        }
+        checkNotNullParam("arg.getFullName()", arg.getFullName());
 
         switch(argList.size()) {
             case 0:

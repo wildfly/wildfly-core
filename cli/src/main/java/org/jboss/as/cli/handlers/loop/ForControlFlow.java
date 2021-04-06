@@ -15,6 +15,8 @@ limitations under the License.
  */
 package org.jboss.as.cli.handlers.loop;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,12 +52,10 @@ class ForControlFlow implements CommandLineRedirection {
     private final String varName;
 
     ForControlFlow(CommandContext ctx, String varName, String iterable) throws CommandLineException {
-        if (varName == null) {
-            throw new IllegalArgumentException("Variable is null");
-        }
-        if (iterable == null) {
-            throw new IllegalArgumentException("Iterable is null");
-        }
+        checkNotNullParam("ctx", ctx);
+        checkNotNullParam("varName", varName);
+        checkNotNullParam("iterable", iterable);
+
         if (ctx.getVariable(varName) != null) {
             throw new CommandFormatException("Variable " + varName + " already exists.");
         }

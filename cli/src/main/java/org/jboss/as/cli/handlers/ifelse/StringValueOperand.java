@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.ifelse;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.dmr.ModelNode;
@@ -34,9 +36,7 @@ public class StringValueOperand implements Operand {
     private final ModelNode value;
 
     public StringValueOperand(String value) {
-        if(value == null) {
-            throw new IllegalArgumentException("value is null.");
-        }
+        checkNotNullParam("value", value);
         ModelNode node;
         try {
             node = ModelNode.fromString(value);

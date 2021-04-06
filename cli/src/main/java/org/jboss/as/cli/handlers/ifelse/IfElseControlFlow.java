@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.handlers.ifelse;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,14 +61,9 @@ class IfElseControlFlow implements CommandLineRedirection {
     private boolean inElse;
 
     IfElseControlFlow(CommandContext ctx, Operation ifCondition, String ifRequest) throws CommandLineException {
-        if(ifCondition == null) {
-            throw new IllegalArgumentException("Condition is null");
-        }
-        if(ifRequest == null) {
-            throw new IllegalArgumentException("Condition request is null");
-        }
-        this.ifCondition = ifCondition;
-        this.ifRequest = ctx.buildRequest(ifRequest);
+        checkNotNullParam("ctx", ctx);
+        this.ifCondition = checkNotNullParam("ifCondition", ifCondition);
+        this.ifRequest = ctx.buildRequest(checkNotNullParam("ifRequest", ifRequest));
         ctx.set(Scope.CONTEXT, CTX_KEY, this);
     }
 

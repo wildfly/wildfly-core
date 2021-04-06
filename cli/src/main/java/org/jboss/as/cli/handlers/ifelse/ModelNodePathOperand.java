@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.ifelse;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
@@ -35,9 +37,7 @@ public class ModelNodePathOperand implements Operand {
     private final String[] path;
 
     public ModelNodePathOperand(String pathStr) throws CommandFormatException {
-        if(pathStr == null) {
-            throw new IllegalArgumentException("path is null.");
-        }
+        checkNotNullParam("pathStr", pathStr);
         path = pathStr.split("\\.");
         if(path.length == 0) {
             throw new CommandFormatException("The path in the if condition is empty: '" + pathStr + "'");

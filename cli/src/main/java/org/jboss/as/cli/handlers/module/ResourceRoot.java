@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.module;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.cli.handlers.module.ModuleConfig.Resource;
@@ -35,10 +37,7 @@ public class ResourceRoot implements Resource {
     private final String path;
 
     public ResourceRoot(String path) {
-        if(path == null) {
-            throw new IllegalArgumentException("path can't be null");
-        }
-        this.path = path;
+        this.path = checkNotNullParam("path", path);
     }
 
     /* (non-Javadoc)

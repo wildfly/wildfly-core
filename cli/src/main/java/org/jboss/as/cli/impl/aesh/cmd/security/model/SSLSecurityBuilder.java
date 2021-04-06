@@ -15,12 +15,13 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.File;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import org.aesh.command.CommandException;
@@ -141,8 +142,8 @@ public abstract class SSLSecurityBuilder implements SecurityCommand.FailureConsu
     }
 
     public void addStep(ModelNode step, FailureDescProvider ex) {
-        Objects.requireNonNull(step);
-        Objects.requireNonNull(ex);
+        checkNotNullParamWithNullPointerException("step", step);
+        checkNotNullParamWithNullPointerException("ex", ex);
         composite.get(Util.STEPS).add(step);
         providers.add(ex);
     }

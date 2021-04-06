@@ -15,6 +15,8 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.Iterator;
 import java.util.function.Function;
 import org.aesh.command.Command;
@@ -53,9 +55,7 @@ public abstract class AbstractControlledCommand implements Command<CLICommandInv
     }
 
     protected final void addRequiredPath(String requiredPath) {
-        if (requiredPath == null) {
-            throw new IllegalArgumentException("Required path can't be null.");
-        }
+        checkNotNullParam("requiredPath", requiredPath);
         DefaultOperationRequestAddress requiredAddress = new DefaultOperationRequestAddress();
         CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(requiredAddress);
         try {
@@ -74,9 +74,7 @@ public abstract class AbstractControlledCommand implements Command<CLICommandInv
      * command can be used.
      */
     protected void addRequiredPath(OperationRequestAddress requiredPath) {
-        if (requiredPath == null) {
-            throw new IllegalArgumentException("Required path can't be null.");
-        }
+        checkNotNullParam("requiredPath", requiredPath);
         // there perhaps could be more but for now only one is allowed
         if (requiredAddress != null) {
             throw new IllegalStateException("Only one required address is allowed, atm.");

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -352,8 +354,8 @@ public class ValueTypeCompleter implements CommandLineCompleter {
     }
 
     public ValueTypeCompleter(ModelNode propDescr, OperationRequestAddress address, CapabilityCompleterFactory factory) {
-        if(propDescr == null || !propDescr.isDefined()) {
-            throw new IllegalArgumentException("property description is null or undefined.");
+        if(!checkNotNullParam("propDescr", propDescr).isDefined()) {
+            throw new IllegalArgumentException("property description is undefined.");
         }
         this.propDescr = propDescr;
         this.address = address;

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -177,9 +179,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
 
         this.isChildNode = isChildNode;
 
-        if(nodeType == null || nodeType.isEmpty()) {
-            throw new IllegalArgumentException("Node type is " + (nodeType == null ? "null." : "empty."));
-        }
+        checkNotEmptyParam("nodeType", nodeType);
 
         if(nodeType.startsWith("/profile=") || nodeType.startsWith("profile=")) {
             int nextSep = nodeType.indexOf('/', 7);
@@ -1234,9 +1234,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
         protected Map<String, CommandArgument> args = Collections.emptyMap();
 
         void addArgument(CommandArgument arg) {
-            if(arg == null) {
-                throw new IllegalArgumentException("Argument can't be null.");
-            }
+            checkNotNullParam("arg", arg);
             if(args.isEmpty()) {
                 args = new HashMap<String, CommandArgument>();
             }
@@ -1351,10 +1349,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
 
         OpHandler(String opName) {
             super();
-            if(opName == null || opName.isEmpty()) {
-                throw new IllegalArgumentException("Operation name must a be non-null non-empty string.");
-            }
-            this.opName = opName;
+            this.opName = checkNotEmptyParam("opName", opName);
         }
 
         @Override

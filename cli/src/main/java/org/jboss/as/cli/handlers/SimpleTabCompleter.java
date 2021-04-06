@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,10 +42,7 @@ public class SimpleTabCompleter implements CommandLineCompleter {
     private final List<String> all;
 
     public SimpleTabCompleter(String[] candidates) {
-        if(candidates == null) {
-            throw new IllegalArgumentException("Candidates can't be null");
-        }
-        all = Arrays.asList(candidates);
+        all = Arrays.asList(checkNotNullParam("candidates", candidates));
         Collections.sort(all);
     }
 

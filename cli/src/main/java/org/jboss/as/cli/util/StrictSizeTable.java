@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.util;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -56,9 +58,7 @@ public class StrictSizeTable {
     }
 
     public void addCell(String header, String value) {
-        if(header == null) {
-            throw new IllegalArgumentException("Header can't be null.");
-        }
+        checkNotNullParam("header", header);
         Column column = columns.get(header);
         if(column == null) {
             column = new Column(header);

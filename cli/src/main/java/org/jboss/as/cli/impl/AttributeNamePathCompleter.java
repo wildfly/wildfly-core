@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -188,10 +190,7 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
     }
 
     public AttributeNamePathCompleter(OperationRequestAddress address, boolean writeOnly, AttributeFilter filter) {
-        if (address == null) {
-            throw new IllegalArgumentException("address is null");
-        }
-        this.address = address;
+        this.address = checkNotNullParam("address", address);
         this.attrDescr = null;
         this.writeOnly = writeOnly;
         this.filter = filter == null ? DEFAULT_FILTER : filter;
@@ -202,10 +201,7 @@ public class AttributeNamePathCompleter implements CommandLineCompleter {
     }
 
     public AttributeNamePathCompleter(ModelNode typeDescr, AttributeFilter filter) {
-        if (typeDescr == null) {
-            throw new IllegalArgumentException("typeDescr is null");
-        }
-        this.attrDescr = typeDescr;
+        this.attrDescr = checkNotNullParam("typeDescr", typeDescr);
         this.address = null;
         this.writeOnly = false;
         this.filter = filter == null ? DEFAULT_FILTER : filter;

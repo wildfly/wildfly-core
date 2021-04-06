@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.operation.CommandLineParser;
 import org.jboss.as.cli.operation.OperationRequestAddress;
@@ -54,10 +56,7 @@ public abstract class AddressAccessRequirement extends BaseAccessRequirement {
     }
 
     AddressAccessRequirement(OperationRequestAddress address) {
-        if(address == null) {
-            throw new IllegalArgumentException("address is null");
-        }
-        this.address = address;
+        this.address = checkNotNullParam("address", address);
     }
 
     protected OperationRequestAddress getAddress() {
