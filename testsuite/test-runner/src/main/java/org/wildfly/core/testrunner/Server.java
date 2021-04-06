@@ -6,6 +6,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
 import static org.jboss.as.controller.client.helpers.ClientConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SERVER_CONFIG;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -19,7 +20,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -159,9 +159,7 @@ public class Server {
      * @param gitAuthConfig
      */
     public void setGitRepository(final String gitRepository, final String gitBranch, final String gitAuthConfig) {
-        Objects.requireNonNull(gitRepository);
-
-        this.gitRepository = gitRepository;
+        this.gitRepository = checkNotNullParamWithNullPointerException("gitRepository", gitRepository);
         this.gitBranch = gitBranch;
         this.gitAuthConfiguration = gitAuthConfig;
     }
