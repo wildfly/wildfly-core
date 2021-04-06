@@ -42,6 +42,7 @@ import static org.jboss.as.domain.http.server.DomainUtil.getStreamIndex;
 import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.DomainUtil.writeStreamResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -296,8 +297,7 @@ class DomainApiHandler implements HttpHandler {
     }
 
     private ArrayList<String> decodePath(String path) {
-        if (path == null)
-            throw new IllegalArgumentException();
+        checkNotNullParam("path", path);
 
         ArrayList<String> segments = new ArrayList<String>();
 
