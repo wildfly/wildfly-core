@@ -22,6 +22,9 @@
 
 package org.jboss.as.network;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -295,9 +298,7 @@ public class NetworkUtils {
      * @return
      */
     public static String formatIPAddressForURI(InetAddress inet){
-        if(inet == null){
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("inet", inet);
         if(inet instanceof Inet4Address){
             return inet.getHostAddress();
         } else if (inet instanceof Inet6Address){
@@ -315,9 +316,7 @@ public class NetworkUtils {
      * @return
      */
     public static String formatAddress(InetAddress inet){
-        if(inet == null){
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("inet", inet);
         if(inet instanceof Inet4Address){
             return inet.getHostAddress();
         } else if (inet instanceof Inet6Address){
@@ -346,9 +345,7 @@ public class NetworkUtils {
      * @return
      */
     public static String formatAddress(InetSocketAddress inet){
-        if(inet == null){
-            throw new NullPointerException();
-        }
+        checkNotNullParamWithNullPointerException("inet", inet);
         StringBuilder result = new StringBuilder();
         if(inet.isUnresolved()){
             result.append(inet.getHostName());
@@ -365,9 +362,7 @@ public class NetworkUtils {
      * @return
      */
     private static String formatAddress6(int[] hexRepresentation){
-       if(hexRepresentation == null){
-           throw new NullPointerException();
-       }
+       checkNotNullParamWithNullPointerException("hexRepresentation", hexRepresentation);
        if(hexRepresentation.length != IPV6_LEN){
            throw new IllegalArgumentException();
        }
