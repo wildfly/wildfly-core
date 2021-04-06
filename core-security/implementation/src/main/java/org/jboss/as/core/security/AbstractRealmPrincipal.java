@@ -22,6 +22,8 @@
 
 package org.jboss.as.core.security;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 /**
  * A base {@link Principal} where a realm is also associated.
  *
@@ -41,10 +43,7 @@ abstract class AbstractRealmPrincipal extends SecurityRealmPrincipal implements 
 
     public AbstractRealmPrincipal(final String realm, final String name) {
         super(name);
-        if (realm == null) {
-            throw new IllegalArgumentException("realm is null");
-        }
-        this.realm = realm;
+        this.realm = checkNotNullParam("realm", realm);
     }
 
     public String getRealm() {
