@@ -19,6 +19,8 @@
 
 package org.jboss.as.test.manualmode.logging.module.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -50,7 +51,7 @@ public class AppendingFileHandler extends Handler {
     public void publish(final LogRecord record) {
         if (isLoggable(record)) {
             synchronized (lock) {
-                final String text = Objects.requireNonNull(resolver).resolve(PROPERTY_KEY);
+                final String text = checkNotNullParamWithNullPointerException("resolver cannot be null", resolver).resolve(PROPERTY_KEY);
                 record.setMessage(record.getMessage() + text);
                 final String line = getFormatter().format(record);
                 try {
