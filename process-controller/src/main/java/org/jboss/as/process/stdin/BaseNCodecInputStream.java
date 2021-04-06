@@ -18,6 +18,7 @@
 package org.jboss.as.process.stdin;
 
 import static org.jboss.as.process.stdin.BaseNCodec.EOF;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -129,9 +130,8 @@ class BaseNCodecInputStream extends FilterInputStream {
      */
     @Override
     public int read(final byte[] b, final int offset, final int len) throws IOException {
-        if (b == null) {
-            throw new NullPointerException();
-        } else if (offset < 0 || len < 0) {
+        checkNotNullParamWithNullPointerException("b", b);
+        if (offset < 0 || len < 0) {
             throw new IndexOutOfBoundsException();
         } else if (offset > b.length || offset + len > b.length) {
             throw new IndexOutOfBoundsException();
