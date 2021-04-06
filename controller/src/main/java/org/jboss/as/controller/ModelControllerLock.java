@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
@@ -43,12 +45,10 @@ class ModelControllerLock {
      * Attempts to acquire in exclusive mode. This will allow any other consumers using the same {@code permit} to
      * also acquire. This is typically used for a write lock.
      * @param permit - the permit Integer for this operation. May not be {@code null}.
-     * @throws IllegalStateException - if the permit is null.
+     * @throws IllegalArgumentException if {@code permit} is null.
      */
     void lock(final Integer permit) {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.acquire(permit);
     }
 
@@ -57,11 +57,10 @@ class ModelControllerLock {
      * of different permit holders, and blocking the exclusive look from being acquired. Typically used for read locks to
      * allow multiple readers concurrently.
      * @param permit - the permit Integer for this operation. May not be {@code null}.
+     * @throws IllegalArgumentException if {@code permit} is null.
      */
     void lockShared(final Integer permit) {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.acquireShared(permit);
     }
 
@@ -104,9 +103,7 @@ class ModelControllerLock {
      * @throws IllegalArgumentException if {@code permit} is null.
      */
     void lockInterruptibly(final Integer permit) throws InterruptedException {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.acquireInterruptibly(permit);
     }
 
@@ -117,9 +114,7 @@ class ModelControllerLock {
      * @throws IllegalArgumentException if {@code permit} is null.
      */
     void lockSharedInterruptibly(final Integer permit) throws InterruptedException {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.acquireSharedInterruptibly(permit);
     }
 
@@ -130,12 +125,11 @@ class ModelControllerLock {
      * @param unit - see {@code TimeUnit} for quantities.
      * @return {@code boolean} true on successful acquire.
      * @throws InterruptedException - if the acquiring thread was interrupted.
-     * @throws IllegalArgumentException if {@code permit} is null.
+     * @throws IllegalArgumentException if {@code permit} or {@code unit} is null.
      */
     boolean lockInterruptibly(final Integer permit, final long timeout, final TimeUnit unit) throws InterruptedException {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
+        checkNotNullParam("unit", unit);
         return sync.tryAcquireNanos(permit, unit.toNanos(timeout));
     }
 
@@ -146,12 +140,11 @@ class ModelControllerLock {
      * @param unit - see {@code TimeUnit} for quantities.
      * @return {@code boolean} true on successful acquire.
      * @throws InterruptedException - if the acquiring thread was interrupted.
-     * @throws IllegalArgumentException if {@code permit} is null.
+     * @throws IllegalArgumentException if {@code permit} or {@code unit} is null.
      */
     boolean lockSharedInterruptibly(final Integer permit, final long timeout, final TimeUnit unit) throws InterruptedException {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
+        checkNotNullParam("unit", unit);
         return sync.tryAcquireSharedNanos(permit, unit.toNanos(timeout));
     }
 
@@ -162,9 +155,7 @@ class ModelControllerLock {
      * @throws IllegalArgumentException if {@code permit} is null.
      */
     void unlock(final Integer permit) {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.release(permit);
     }
 
@@ -177,9 +168,7 @@ class ModelControllerLock {
      * @throws IllegalArgumentException if {@code permit} is null.
      */
     void unlockShared(final Integer permit) {
-        if (permit == null) {
-            throw new IllegalArgumentException();
-        }
+        checkNotNullParam("permit", permit);
         sync.releaseShared(permit);
     }
 

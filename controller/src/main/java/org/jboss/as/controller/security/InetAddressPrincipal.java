@@ -21,6 +21,8 @@
  */
 package org.jboss.as.controller.security;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -43,9 +45,7 @@ public final class InetAddressPrincipal implements Principal, Cloneable, Seriali
      * @param inetAddress the address
      */
     public InetAddressPrincipal(final InetAddress inetAddress) {
-        if (inetAddress == null) {
-            throw new IllegalArgumentException("inetAddress is null");
-        }
+        checkNotNullParam("inetAddress", inetAddress);
         try {
             this.inetAddress = InetAddress.getByAddress(inetAddress.getHostAddress(), inetAddress.getAddress());
         } catch (UnknownHostException e) {

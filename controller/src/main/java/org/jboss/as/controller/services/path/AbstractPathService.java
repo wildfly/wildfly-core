@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.services.path;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.function.Consumer;
 
 import org.jboss.msc.service.Service;
@@ -46,9 +48,7 @@ public abstract class AbstractPathService implements Service<String> {
     }
 
     public static ServiceName pathNameOf(final String pathName) {
-        if (pathName == null) {
-            throw new IllegalArgumentException("pathName is null");
-        }
+        checkNotNullParam("pathName", pathName);
         return SERVICE_NAME_BASE.append(pathName);
     }
 

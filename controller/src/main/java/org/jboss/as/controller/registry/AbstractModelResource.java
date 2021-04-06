@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.registry;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -355,10 +357,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
     abstract static class DelegateResource implements ResourceEntry {
         final Resource delegate;
         protected DelegateResource(Resource delegate) {
-            if(delegate == null) {
-                throw new IllegalArgumentException();
-            }
-            this.delegate = delegate;
+            this.delegate = checkNotNullParam("delegate", delegate);
         }
 
         @Override
