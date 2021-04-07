@@ -26,11 +26,9 @@ import static org.eclipse.jgit.lib.Constants.R_REMOTES;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.Set;
@@ -55,6 +53,7 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
+import org.jboss.as.repository.PathUtil;
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.client.config.ConfigXMLParseException;
 
@@ -132,7 +131,9 @@ public class GitRepository implements Closeable {
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
                 }
             } else {
-                clearExistingFiles(basePath, gitConfig.getRepository());
+                Path atticPath = basePath.getParent().resolve("attic");
+                Files.createDirectories(atticPath);
+                Files.move(basePath, atticPath, StandardCopyOption.REPLACE_EXISTING);
                 try (Git git = Git.init().setDirectory(baseDir).call()) {
                     String remoteName = UUID.randomUUID().toString();
                     StoredConfig config = git.getRepository().getConfig();
@@ -147,7 +148,11 @@ public class GitRepository implements Closeable {
                         git.commit().setMessage(ServerLogger.ROOT_LOGGER.addingIgnored()).call();
                     }
                 } catch (GitAPIException ex) {
+                    PathUtil.deleteRecursively(basePath);
+                    Files.move(atticPath, basePath, StandardCopyOption.REPLACE_EXISTING);
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
+                } finally {
+                    PathUtil.deleteSilentlyRecursively(atticPath);
                 }
             }
             repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
@@ -181,56 +186,6 @@ public class GitRepository implements Closeable {
         checkout.call();
         if (checkout.getResult().getStatus() == CheckoutResult.Status.ERROR) {
             throw ServerLogger.ROOT_LOGGER.failedToPullRepository(null, defaultRemoteRepository);
-        }
-    }
-
-    private void clearExistingFiles(Path root, String gitRepository) {
-        try {
-            Files.walkFileTree(root, new FileVisitor<Path>() {
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                    if (!ignored.contains(dir.getFileName().toString() + '/')) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    return FileVisitResult.SKIP_SUBTREE;
-                }
-
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    try {
-                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", file);
-                        Files.delete(file);
-                    } catch (IOException ioex) {
-                        ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-                @Override
-                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                    if (exc != null) {
-                        throw exc;
-                    }
-                    return FileVisitResult.TERMINATE;
-                }
-
-                @Override
-                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                    if (exc != null) {
-                        throw exc;
-                    }
-                    try {
-                        ServerLogger.ROOT_LOGGER.debugf("Deleting file %s", dir);
-                        Files.delete(dir);
-                    } catch (IOException ioex) {
-                        ServerLogger.ROOT_LOGGER.debug(ioex.getMessage(), ioex);
-                    }
-                    return FileVisitResult.CONTINUE;
-                }
-
-            });
-        } catch (IOException ex) {
-            throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitRepository);
         }
     }
 

@@ -1376,6 +1376,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 283, value = "A non-graceful startup was requested in conjunction with a suspended startup. The server will start suspended.")
     void disregardingNonGraceful();
 
+    @Message(id = 284, value = "Failed to restore the configuration after failing to initialize the repository %s")
+    RuntimeException failedToRestoreConfiguration(@Cause Exception cause, String repository);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
