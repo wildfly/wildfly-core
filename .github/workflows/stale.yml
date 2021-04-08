@@ -12,7 +12,7 @@ jobs:
     - uses: actions/stale@v3
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-pr-message: 'There has been no activity on this PR for 30 days. It will be auto-closed after 90 days.'
+        stale-pr-message: 'There has been no activity on this PR for 45 days. It will be auto-closed after 90 days.'
         close-pr-message: 'There has been no activity on this PR for 90 days and it has been closed automatically.'
-        days-before-stale: 30
+        days-before-stale: 45
         days-before-close: 90
