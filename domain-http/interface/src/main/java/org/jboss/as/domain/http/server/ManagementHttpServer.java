@@ -140,18 +140,20 @@ public class ManagementHttpServer {
     private final HttpAuthenticationFactory httpAuthenticationFactory;
     private final SecurityRealm securityRealm;
     private final ExtensionHandlers extensionHandlers;
+    private final Executor managementExecutor;
 
-    private ManagementHttpServer(HttpOpenListener openListener, InetSocketAddress httpAddress, InetSocketAddress secureAddress, SSLContext sslContext,
-                                 SslClientAuthMode sslClientAuthMode, XnioWorker worker, HttpAuthenticationFactory httpAuthenticationFactory, SecurityRealm securityRealm, ExtensionHandlers extensionExtensionHandlers) {
+    private ManagementHttpServer(HttpOpenListener openListener, Builder builder, SSLContext sslContext,
+                                 SslClientAuthMode sslClientAuthMode, ExtensionHandlers extensionExtensionHandlers) {
         this.openListener = openListener;
-        this.httpAddress = httpAddress;
-        this.secureAddress = secureAddress;
+        this.httpAddress = builder.bindAddress;
+        this.secureAddress = builder.secureBindAddress;
         this.sslContext = sslContext;
         this.sslClientAuthMode = sslClientAuthMode;
-        this.worker = worker;
-        this.httpAuthenticationFactory = httpAuthenticationFactory;
-        this.securityRealm = securityRealm;
+        this.worker = builder.worker;
+        this.httpAuthenticationFactory = builder.httpAuthenticationFactory;
+        this.securityRealm = builder.securityRealm;
         this.extensionHandlers = extensionExtensionHandlers;
+        this.managementExecutor = builder.executor;
     }
 
     public void start() {
@@ -209,7 +211,7 @@ public class ManagementHttpServer {
         final Function<HttpServerExchange, Boolean> readyFunction;
         if (requireSecurity) {
             readyFunction = extensionHandlers.readyFunction;
-            managementHandler = secureDomainAccess(managementHandler, securityRealm, httpAuthenticationFactory);
+            managementHandler = secureDomainAccess(associateIdentity(managementHandler), securityRealm, httpAuthenticationFactory);
         } else {
             readyFunction = ALWAYS_READY;
         }
@@ -277,7 +279,7 @@ public class ManagementHttpServer {
         }
 
         final ExtensionHandlers extensionHandlers = setupOpenListener(openListener, secureRedirectPort, builder);
-        return new ManagementHttpServer(openListener, builder.bindAddress, builder.secureBindAddress, sslContext, sslClientAuthMode, builder.worker, builder.httpAuthenticationFactory, builder.securityRealm, extensionHandlers);
+        return new ManagementHttpServer(openListener, builder, sslContext, sslClientAuthMode, extensionHandlers);
     }
 
     private static Function<HttpServerExchange, Boolean> createReadyFunction(Builder builder) {
@@ -409,7 +411,7 @@ public class ManagementHttpServer {
                 InExecutorHandler.wrap(
                     builder.executor,
                     associateIdentity(new DomainApiCheckHandler(builder.modelController,
-                        builder.allowedOrigins, builder.consoleAvailability), builder)
+                        builder.allowedOrigins, builder.consoleAvailability))
                 )));
 
         final Function<HttpServerExchange, Boolean> readyFunction = createReadyFunction(builder);
@@ -425,7 +427,7 @@ public class ManagementHttpServer {
         return new ExtensionHandlers(pathHandler, readinessHandler, readyFunction, consoleHandler);
     }
 
-    private static HttpHandler associateIdentity(HttpHandler domainHandler, final Builder builder) {
+    private static HttpHandler associateIdentity(HttpHandler domainHandler) {
         domainHandler = new ElytronIdentityHandler(domainHandler);
 
         return new BlockingHandler(domainHandler);
