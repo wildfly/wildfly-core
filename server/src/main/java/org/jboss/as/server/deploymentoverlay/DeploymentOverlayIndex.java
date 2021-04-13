@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deploymentoverlay;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
@@ -119,9 +121,8 @@ public class DeploymentOverlayIndex {
     }
 
     private static String wildcardToJavaRegexp(String expr) {
-        if(expr == null) {
-            throw new IllegalArgumentException("expr is null");
-        }
+        checkNotNullParam("expr", expr);
+
         String regex = expr.replaceAll("([(){}\\[\\].+^$])", "\\\\$1"); // escape regex characters
         regex = regex.replaceAll("\\*", ".*"); // replace * with .*
         regex = regex.replaceAll("\\?", "."); // replace ? with .
