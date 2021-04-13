@@ -21,6 +21,9 @@
  */
 package org.jboss.as.cli.util;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,9 +44,7 @@ public class SimpleTable {
 
     public SimpleTable(String[] header, int terminalWidth) {
         this.terminalWidth = terminalWidth;
-        if(header == null || header.length == 0) {
-            throw new IllegalArgumentException("header can't be null or empty.");
-        }
+        checkNotEmptyParam("header", header);
         this.header = new String[header.length];
         columnLengths = new int[header.length];
         for(int i = 0; i < header.length; ++i) {
@@ -67,9 +68,7 @@ public class SimpleTable {
     }
 
     public void addLine(String... line) {
-        if(line == null) {
-           throw new IllegalArgumentException("The line can't be null.");
-        }
+        checkNotNullParam("line", line);
         if(line.length != columnLengths.length) {
             throw new IllegalArgumentException("Line length " + line.length + " doesn't match headers' length " + header.length);
         }

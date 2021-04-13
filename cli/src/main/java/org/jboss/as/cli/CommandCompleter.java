@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,9 +51,7 @@ public class CommandCompleter implements CommandLineCompleter, Completer {
     private final CLICommandCompleter cliCompleter = new CLICommandCompleter();
 
     public CommandCompleter(CommandRegistry cmdRegistry) {
-        if(cmdRegistry == null)
-            throw new IllegalArgumentException("Command registry can't be null.");
-        this.cmdRegistry = cmdRegistry;
+        this.cmdRegistry = checkNotNullParam("cmdRegistry", cmdRegistry);
         this.cmdProvider = new CommandCandidatesProvider(cmdRegistry);
     }
 

@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,9 +38,7 @@ public abstract class AccessRequirementSet extends BaseAccessRequirement {
     protected List<AccessRequirement> requirements = Collections.emptyList();
 
     public void add(AccessRequirement requirement) {
-        if(requirement == null) {
-            throw new IllegalArgumentException("Requirement is null");
-        }
+        checkNotNullParam("requirement", requirement);
 
         if(requirements.isEmpty()) {
             requirements = Collections.singletonList(requirement);

@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.operation.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.Iterator;
 
 import org.jboss.as.cli.Util;
@@ -44,10 +46,7 @@ public class DefaultOperationRequestBuilder implements OperationRequestBuilder {
     }
 
     public DefaultOperationRequestBuilder(OperationRequestAddress prefix) {
-        if(prefix == null) {
-            throw new IllegalArgumentException("Prefix can't be null");
-        }
-        this.prefix = new DefaultOperationRequestAddress(prefix);
+        this.prefix = new DefaultOperationRequestAddress(checkNotNullParam("prefix", prefix));
     }
 
     public OperationRequestAddress getAddress() {

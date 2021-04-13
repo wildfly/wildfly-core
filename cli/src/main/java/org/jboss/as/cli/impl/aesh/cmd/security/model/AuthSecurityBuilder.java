@@ -15,9 +15,10 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 import org.aesh.command.CommandException;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
@@ -45,20 +46,17 @@ public class AuthSecurityBuilder {
     private final String securityDomain;
 
     public AuthSecurityBuilder(AuthMechanism mechanism, AuthFactorySpec spec) throws CommandException {
-        Objects.requireNonNull(mechanism);
-        Objects.requireNonNull(spec);
-        this.mechanism = mechanism;
+        this.mechanism = checkNotNullParamWithNullPointerException("mechanism", mechanism);
         ootbFactory = null;
         order = null;
         securityDomain = null;
-        this.spec = spec;
+        this.spec = checkNotNullParamWithNullPointerException("spec", spec);
         init();
     }
 
     public AuthSecurityBuilder(AuthFactory ootbFactory) throws CommandException {
-        Objects.requireNonNull(ootbFactory);
         mechanism = null;
-        this.ootbFactory = ootbFactory;
+        this.ootbFactory = checkNotNullParamWithNullPointerException("ootbFactory", ootbFactory);
         order = null;
         securityDomain = null;
         spec = ootbFactory.getSpec();
@@ -66,8 +64,7 @@ public class AuthSecurityBuilder {
     }
 
     public AuthSecurityBuilder(String securityDomain) throws CommandException {
-        Objects.requireNonNull(securityDomain);
-        this.securityDomain = securityDomain;
+        this.securityDomain = checkNotNullParamWithNullPointerException("securityDomain", securityDomain);
         order = null;
         mechanism = null;
         ootbFactory = null;
@@ -76,8 +73,7 @@ public class AuthSecurityBuilder {
     }
 
     public AuthSecurityBuilder(List<String> order) {
-        Objects.requireNonNull(order);
-        this.order = order;
+        this.order = checkNotNullParamWithNullPointerException("order", order);
         mechanism = null;
         this.ootbFactory = null;
         init();

@@ -15,10 +15,11 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Security Domain model.
@@ -40,7 +41,7 @@ public class SecurityDomain {
     }
 
     void addRealm(Realm realm) {
-        Objects.requireNonNull(realm);
+        checkNotNullParamWithNullPointerException("realm", realm);
         realms.add(realm);
     }
 

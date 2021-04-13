@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,30 +59,20 @@ public class ArgumentWithoutValue implements CommandArgument {
     }
 
     public ArgumentWithoutValue(CommandHandlerWithArguments handler, String fullName, String shortName) {
-        if(fullName == null || fullName.length() < 1) {
-            throw new IllegalArgumentException("Full name is null or an empty string.");
-        }
-        this.fullName = fullName;
+        checkNotNullParam("handler", handler);
+        this.fullName = checkNotEmptyParam("fullName", fullName);
         this.shortName = shortName;
         this.index = -1;
 
-        if(handler == null) {
-            throw new IllegalArgumentException("Command handler is null");
-        }
         handler.addArgument(this);
     }
 
     public ArgumentWithoutValue(CommandHandlerWithArguments handler, int index, String fullName) {
-        if(fullName == null || fullName.length() < 1) {
-            throw new IllegalArgumentException("Full name is null or an empty string.");
-        }
-        this.fullName = fullName;
+        checkNotNullParam("handler", handler);
+        this.fullName = checkNotEmptyParam("fullName", fullName);
         this.shortName = null;
         this.index = index;
 
-        if(handler == null) {
-            throw new IllegalArgumentException("Command handler is null");
-        }
         handler.addArgument(this);
     }
 
@@ -93,9 +85,7 @@ public class ArgumentWithoutValue implements CommandArgument {
     }
 
     public void addRequiredPreceding(CommandArgument arg) {
-        if(arg == null) {
-            throw new IllegalArgumentException("The argument is null.");
-        }
+        checkNotNullParam("arg", arg);
         if(requiredPreceding == null) {
             requiredPreceding = Collections.singletonList(arg);
             return;
@@ -264,9 +254,6 @@ public class ArgumentWithoutValue implements CommandArgument {
     }
 
     public void setAccessRequirement(AccessRequirement access) {
-        if(access == null) {
-            throw new IllegalArgumentException("access requirement is null");
-        }
-        this.access = access;
+        this.access = checkNotNullParam("access", access);
     }
 }

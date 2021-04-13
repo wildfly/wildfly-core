@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -46,10 +48,7 @@ public class PerNodeOperationAccess extends BaseOperationAccessRequirement {
 
     PerNodeOperationAccess(String nodeType, String operation) {
         super(operation);
-        if(nodeType == null) {
-            throw new IllegalArgumentException(nodeType);
-        }
-        this.nodeType = nodeType;
+        this.nodeType = checkNotNullParam("nodeType", nodeType);
     }
 
     public PerNodeOperationAccess(CommandContext ctx, String nodeType, String address, String operation) {
@@ -59,18 +58,12 @@ public class PerNodeOperationAccess extends BaseOperationAccessRequirement {
 
     PerNodeOperationAccess(String nodeType, String address, String operation) {
         super(address, operation);
-        if(nodeType == null) {
-            throw new IllegalArgumentException(nodeType);
-        }
-        this.nodeType = nodeType;
+        this.nodeType = checkNotNullParam("nodeType", nodeType);
     }
 
     PerNodeOperationAccess(String nodeType, OperationRequestAddress address, String operation) {
         super(address, operation);
-        if(nodeType == null) {
-            throw new IllegalArgumentException(nodeType);
-        }
-        this.nodeType = nodeType;
+        this.nodeType = checkNotNullParam("nodeType", nodeType);
     }
 
     @Override

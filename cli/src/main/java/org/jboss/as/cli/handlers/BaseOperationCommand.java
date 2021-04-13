@@ -21,6 +21,7 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.File;
 import java.io.IOException;
@@ -98,9 +99,7 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
      * @param requiredPath  node path which is required to exist before the command can be used.
      */
     protected void addRequiredPath(String requiredPath) {
-        if(requiredPath == null) {
-            throw new IllegalArgumentException("Required path can't be null.");
-        }
+        checkNotNullParam("requiredPath", requiredPath);
         DefaultOperationRequestAddress requiredAddress = new DefaultOperationRequestAddress();
         CommandLineParser.CallbackHandler handler = new DefaultCallbackHandler(requiredAddress);
         try {
@@ -116,9 +115,7 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
      * @param requiredPath  node path which is required to exist before the command can be used.
      */
     protected void addRequiredPath(OperationRequestAddress requiredPath) {
-        if(requiredPath == null) {
-            throw new IllegalArgumentException("Required path can't be null.");
-        }
+        checkNotNullParam("requiredPath", requiredPath);
         // there perhaps could be more but for now only one is allowed
         if(requiredAddress != null) {
             throw new IllegalStateException("Only one required address is allowed, atm.");

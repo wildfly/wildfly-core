@@ -21,6 +21,9 @@
  */
 package org.jboss.as.cli.operation.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,9 +91,7 @@ public class ParsedRolloutPlanHeader implements ParsedOperationRequestHeader {
     }
 
     public void setPlanRef(int index, String planRef) {
-        if(planRef == null || planRef.isEmpty()) {
-            throw new IllegalArgumentException("Plan ref is null or empty.");
-        }
+        checkNotEmptyParam("planRef", planRef);
         if(groups != null) {
             throw new IllegalStateException("Plan ref can't be specified when groups are specified.");
         }
@@ -109,9 +110,7 @@ public class ParsedRolloutPlanHeader implements ParsedOperationRequestHeader {
     }
 
     public void addGroup(SingleRolloutPlanGroup group) {
-        if(group == null) {
-            throw new IllegalArgumentException("group is null");
-        }
+        checkNotNullParam("group", group);
         if(planRef != null) {
             throw new IllegalStateException("Groups can't be added if the plan ref is specified.");
         }
@@ -128,9 +127,7 @@ public class ParsedRolloutPlanHeader implements ParsedOperationRequestHeader {
     }
 
     public void addConcurrentGroup(SingleRolloutPlanGroup group) {
-        if(group == null) {
-            throw new IllegalArgumentException("group is null");
-        }
+        checkNotNullParam("group", group);
         if(planRef != null) {
             throw new IllegalStateException("Groups can't be added if the plan ref is specified.");
         }
@@ -161,12 +158,8 @@ public class ParsedRolloutPlanHeader implements ParsedOperationRequestHeader {
 
     // TODO perhaps add a list of allowed properties and their values
     public void addProperty(String name, String value, int valueIndex) {
-        if(name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property name: " + name);
-        }
-        if(value == null || value.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property value: " + value);
-        }
+        checkNotEmptyParam("name", name);
+        checkNotEmptyParam("value", value);
         if(props == null) {
             props = new HashMap<String,String>();
         }
@@ -180,9 +173,7 @@ public class ParsedRolloutPlanHeader implements ParsedOperationRequestHeader {
     }
 
     public void addProperty(String name, int index) {
-        if(name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Invalid property name: " + name);
-        }
+        checkNotEmptyParam("name", name);
         if(props == null) {
             props = new HashMap<String,String>();
         }

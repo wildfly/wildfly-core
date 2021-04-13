@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.operation.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,9 +39,7 @@ public class ConcurrentRolloutPlanGroup implements RolloutPlanGroup {
     private final List<SingleRolloutPlanGroup> groups = new ArrayList<SingleRolloutPlanGroup>();
 
     public void addGroup(RolloutPlanGroup group) {
-        if(group == null) {
-            throw new IllegalArgumentException("group is null");
-        }
+        checkNotNullParam("group", group);
         if(!(group instanceof SingleRolloutPlanGroup)) {
             throw new IllegalArgumentException("Expected a single group but got " + group);
         }

@@ -21,6 +21,9 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.UUID;
@@ -1204,8 +1206,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void set(Scope scope, String key, Object value) {
-        Objects.requireNonNull(scope);
-        Objects.requireNonNull(key);
+        checkNotNullParamWithNullPointerException("scope", scope);
+        checkNotNullParamWithNullPointerException("key", key);
         Map<String, Object> store = map.get(scope);
         if (store == null) {
             store = new HashMap<>();
@@ -1216,8 +1218,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public Object get(Scope scope, String key) {
-        Objects.requireNonNull(scope);
-        Objects.requireNonNull(key);
+        checkNotNullParamWithNullPointerException("scope", scope);
+        checkNotNullParamWithNullPointerException("key", key);
         Map<String, Object> store = map.get(scope);
         Object value = null;
         if (store != null) {
@@ -1228,7 +1230,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void clear(Scope scope) {
-        Objects.requireNonNull(scope);
+        checkNotNullParamWithNullPointerException("scope", scope);
         Map<String, Object> store = map.remove(scope);
         if (store != null) {
             store.clear();
@@ -1237,7 +1239,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public Object remove(Scope scope, String key) {
-        Objects.requireNonNull(scope);
+        checkNotNullParamWithNullPointerException("scope", scope);
         Map<String, Object> store = map.get(scope);
         Object value = null;
         if (store != null) {
@@ -1393,10 +1395,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void setCurrentDir(File dir) {
-        if(dir == null) {
-            throw new IllegalArgumentException("dir is null");
-        }
-        this.currentDir = dir;
+        this.currentDir = checkNotNullParam("dir", dir);
     }
 
     @Override
@@ -1933,10 +1932,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     @Override
     public void addEventListener(CliEventListener listener) {
-        if (listener == null) {
-            throw new IllegalArgumentException("Listener is null.");
-        }
-        listeners.add(listener);
+        listeners.add(checkNotNullParam("listener", listener));
     }
 
     @Override
@@ -2473,10 +2469,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         CommandLineRedirection target;
 
         CommandLineRedirectionRegistration(CommandLineRedirection redirection) {
-            if(redirection == null) {
-                throw new IllegalArgumentException("Redirection is null");
-            }
-            this.target = redirection;
+            this.target = checkNotNullParam("redirection", redirection);
         }
 
         @Override

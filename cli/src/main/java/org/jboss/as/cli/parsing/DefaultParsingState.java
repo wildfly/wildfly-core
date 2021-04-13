@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.parsing;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandFormatException;
 
 
@@ -81,10 +83,7 @@ public class DefaultParsingState extends BaseParsingState {
     }
 
     public void setDefaultHandler(CharacterHandler handler) {
-        if(handler == null) {
-            throw new IllegalArgumentException("Default handler can't be null.");
-        }
-        this.defaultHandler = handler;
+        this.defaultHandler = checkNotNullParam("handler", handler);
     }
 
     public CharacterHandler getDefaultHandler() {

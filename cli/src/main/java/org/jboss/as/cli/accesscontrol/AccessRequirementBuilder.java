@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.operation.OperationRequestAddress;
@@ -235,9 +237,7 @@ public interface AccessRequirementBuilder {
 
             @Override
             public RequirementSetBuilder requirement(AccessRequirement requirement) {
-                if(requirement == null) {
-                    throw new IllegalArgumentException("requirement is null");
-                }
+                checkNotNullParam("requirement", requirement);
                 set.add(requirement);
                 return this;
             }

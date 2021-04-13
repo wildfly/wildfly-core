@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.module;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.cli.handlers.module.ModuleConfig.Dependency;
@@ -40,10 +42,7 @@ public class ModuleDependency implements Dependency {
     }
 
     public ModuleDependency(String name, boolean export) {
-        if(name == null) {
-            throw new IllegalArgumentException("Module name can't be null.");
-        }
-        this.name = name;
+        this.name = checkNotNullParam("name", name);
         this.export = export;
     }
 

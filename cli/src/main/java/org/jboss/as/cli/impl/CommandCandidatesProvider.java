@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,10 +47,7 @@ public class CommandCandidatesProvider implements OperationCandidatesProvider {
     private final CommandRegistry registry;
 
     public CommandCandidatesProvider(CommandRegistry registry) {
-        if(registry == null) {
-            throw new IllegalArgumentException("Command registry can't be null.");
-        }
-        this.registry = registry;
+        this.registry = checkNotNullParam("registry", registry);
     }
 
     @Override

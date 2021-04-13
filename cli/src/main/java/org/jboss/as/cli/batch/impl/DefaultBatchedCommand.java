@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.batch.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.batch.BatchedCommand;
@@ -40,18 +42,9 @@ public class DefaultBatchedCommand implements BatchedCommand {
     private final ResponseHandler handler;
 
     public DefaultBatchedCommand(CommandContext ctx, String command, ModelNode request, ResponseHandler handler) {
-        if (command == null) {
-            throw new IllegalArgumentException("Command is null.");
-        }
-        this.command = command;
-        if(request == null) {
-            throw new IllegalArgumentException("Request is null.");
-        }
-        this.request = request;
-        if (ctx == null) {
-            throw new IllegalArgumentException("Context is null.");
-        }
-        this.ctx = ctx;
+        this.command = checkNotNullParam("command", command);
+        this.request = checkNotNullParam("request", request);
+        this.ctx = checkNotNullParam("ctx", ctx);
         // Keep a ref on description to speedup validation.
         description = (ModelNode) ctx.get(CommandContext.Scope.REQUEST,
                 Util.DESCRIPTION_RESPONSE);

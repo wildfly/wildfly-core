@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.completion.mock;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -55,7 +57,7 @@ public class MockOperationCandidatesProvider implements OperationCandidatesProvi
 
     @Override
     public List<String> getNodeNames(CommandContext ctx, OperationRequestAddress prefix) {
-
+        checkNotNullParam("prefix", prefix);
         if(prefix.isEmpty()) {
             throw new IllegalArgumentException("Can't call getNodeNames() with an empty prefix.");
         }

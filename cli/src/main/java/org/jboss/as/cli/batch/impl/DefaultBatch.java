@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.batch.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.jboss.as.cli.Attachments;
@@ -52,9 +54,7 @@ public class DefaultBatch implements Batch {
 
     @Override
     public void add(BatchedCommand cmd) {
-        if(cmd == null) {
-            throw new IllegalArgumentException("Null argument.");
-        }
+        checkNotNullParam("cmd", cmd);
         commands.add(cmd);
     }
 

@@ -21,11 +21,13 @@
  */
 package org.jboss.as.cli.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
@@ -44,10 +46,7 @@ public abstract class FilenameTabCompleter implements CommandLineCompleter {
     private final CommandContext ctx;
 
     public FilenameTabCompleter(CommandContext ctx) {
-        if(ctx == null) {
-            throw new IllegalArgumentException("ctx is null");
-        }
-        this.ctx = ctx;
+        this.ctx = checkNotNullParam("ctx", ctx);
     }
 
     protected int getCandidates(String buffer, List<String> candidates) {
@@ -171,7 +170,7 @@ public abstract class FilenameTabCompleter implements CommandLineCompleter {
    }
 
     public static String expand(String path) throws IOException {
-        Objects.requireNonNull(path);
+        checkNotNullParamWithNullPointerException("path", path);
         // Can be found on any platform (Windows powershell or shell).
         if (path.startsWith("~")) {
             String home = System.getProperty("user.home");

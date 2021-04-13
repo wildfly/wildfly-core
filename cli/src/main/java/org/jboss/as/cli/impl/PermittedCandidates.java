@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,14 +43,8 @@ public abstract class PermittedCandidates implements DefaultCompleter.Candidates
         private final AccessRequirement requirement;
 
         public ValueWithAccessRequirement(String value, AccessRequirement requirement) {
-            if(value == null) {
-                throw new IllegalArgumentException("Value is null");
-            }
-            if(requirement == null) {
-                throw new IllegalArgumentException("access requirement is null");
-            }
-            this.value = value;
-            this.requirement = requirement;
+            this.value = checkNotNullParam("value", value);
+            this.requirement = checkNotNullParam("requirement", requirement);
         }
 
         void visit(CommandContext ctx, List<String> allowed) {

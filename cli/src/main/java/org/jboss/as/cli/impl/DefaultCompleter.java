@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -41,10 +43,7 @@ public class DefaultCompleter implements CommandLineCompleter {
     private final CandidatesProvider candidatesProvider;
 
     public DefaultCompleter(CandidatesProvider candidatesProvider) {
-        if(candidatesProvider == null) {
-            throw new IllegalArgumentException("candidatesProvider can't be null.");
-        }
-        this.candidatesProvider = candidatesProvider;
+        this.candidatesProvider = checkNotNullParam("candidatesProvider", candidatesProvider);
     }
 
     /* (non-Javadoc)

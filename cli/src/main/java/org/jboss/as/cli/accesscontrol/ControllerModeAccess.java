@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.accesscontrol;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 
 /**
@@ -38,17 +40,11 @@ public class ControllerModeAccess extends BaseAccessRequirement {
     private AccessRequirement requirement = AccessRequirement.NONE;
 
     ControllerModeAccess(Mode mode) {
-        if(mode == null) {
-            throw new IllegalArgumentException("mode is null");
-        }
-        this.mode = mode;
+        this.mode = checkNotNullParam("mode", mode);
     }
 
     public void setRequirement(AccessRequirement requirement) {
-        if(requirement == null) {
-            throw new IllegalArgumentException("Requirement is null");
-        }
-        this.requirement = requirement;
+        this.requirement = checkNotNullParam("requirement", requirement);
     }
 
     @Override
