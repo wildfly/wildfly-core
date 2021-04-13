@@ -22,6 +22,8 @@
 
 package org.jboss.as.core.security;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Serializable;
 import java.security.Principal;
 
@@ -37,10 +39,7 @@ public abstract class SecurityRealmPrincipal implements Principal, Serializable 
     private final String name;
 
     SecurityRealmPrincipal(final String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("name is null");
-        }
-        this.name = name;
+        this.name = checkNotNullParam("name", name);
     }
 
     /**
