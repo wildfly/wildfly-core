@@ -19,6 +19,8 @@
 
 package org.jboss.as.test.manualmode.logging.module.impl;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Objects;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.helpers.LogLog;
@@ -63,7 +64,7 @@ public class AppendingAppender extends AppenderSkeleton {
     protected void append(final LoggingEvent event) {
         if (isAsSevereAsThreshold(event.getLevel())) {
             synchronized (lock) {
-                final String text = Objects.requireNonNull(resolver).resolve(PROPERTY_KEY);
+                final String text = checkNotNullParamWithNullPointerException("resolver", resolver).resolve(PROPERTY_KEY);
                 final LoggingEvent changed = new LoggingEvent(event.getFQNOfLoggerClass(), event.getLogger(),
                         event.getTimeStamp(), event.getLevel(), event.getMessage() + text, event.getThreadName(),
                         event.getThrowableInformation(), event.getNDC(), event.getLocationInformation(), event.getProperties());
