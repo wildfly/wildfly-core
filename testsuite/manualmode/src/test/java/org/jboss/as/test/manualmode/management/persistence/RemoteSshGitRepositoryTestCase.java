@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jboss.as.test.manualmode.management.persistence;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -84,32 +83,33 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     private static Repository remoteRepository;
     private static SSHServer sshServer;
     protected static int port;
-    private static String SSH_DIR = Paths.get("src","test", "resources", "git-persistence", ".ssh").toAbsolutePath().toString();
-    private String AUTH_FILE = Paths.get("src","test", "resources", "git-persistence", "wildfly-config.xml").toUri().toString();
-    private String RSA_USER = "testRSA";
-    private String RSA_PUBKEY = "id_rsa.pub";
-    private static String EC_USER = "testEC";
-    private static String EC_PUBKEY = "id_ecdsa.pub";
-    private String PKCS_USER = "testPKCS";
-    private String PKCS_PUBKEY = "id_ecdsa_pkcs.pub";
-    private String CS_REF_USER = "testCSRef";
-    private String UNKNOWN_HOSTS_USER = "testUnknownHost";
-    private static String CS_REF_PUBKEY = "id_rsa_cred_store.pub";
+    private static final Path SSH_DIR = Paths.get("src", "test", "resources", "git-persistence", ".ssh").toAbsolutePath();
+    private final String AUTH_FILE = Paths.get("src", "test", "resources", "git-persistence", "wildfly-config.xml").toUri().toString();
+    private final String RSA_USER = "testRSA";
+    private final String RSA_PUBKEY = "id_rsa.pub";
+    private static final String EC_USER = "testEC";
+    private static final String EC_PUBKEY = "id_ecdsa.pub";
+    private final String PKCS_USER = "testPKCS";
+    private final String PKCS_PUBKEY = "id_ecdsa_pkcs.pub";
+    private final String CS_REF_USER = "testCSRef";
+    private final String UNKNOWN_HOSTS_USER = "testUnknownHost";
+    private static final String CS_REF_PUBKEY = "id_rsa_cred_store.pub";
     private static File KNOWN_HOSTS;
     private static Path CS_PUBKEY;
-
 
     private static final Provider CREDENTIAL_STORE_PROVIDER = new WildFlyElytronCredentialStoreProvider();
 
     private static final char[] CREDENTIAL_STORE_PASSWORD = "Elytron".toCharArray();
 
-    private static Map<String, String> stores = new HashMap<>();
-    private static String BASE_STORE_DIRECTORY = "target/ks-cred-stores";
+    private static final Map<String, String> stores = new HashMap<>();
+    private static final String BASE_STORE_DIRECTORY = "target/ks-cred-stores";
+
     static {
         stores.put("ONE", BASE_STORE_DIRECTORY + "/openssh-keys-test.jceks");
     }
 
     static final class Data {
+
         private String alias;
         private Credential credential;
         private CredentialStore.ProtectionParameter protectionParameter;
@@ -147,7 +147,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         keyPairGenerator.initialize(3072, new SecureRandom());
         KeyPairCredential keyPairCredential = new KeyPairCredential(keyPairGenerator.generateKeyPair());
 
-        CS_PUBKEY = new File(SSH_DIR, CS_REF_PUBKEY).toPath();
+        CS_PUBKEY = SSH_DIR.resolve(CS_REF_PUBKEY);
         Files.write(CS_PUBKEY, Collections.singleton(PublicKeyEntry.toString(keyPairCredential.getKeyPair().getPublic())));
 
         data.add(new Data("RSAKey", keyPairCredential, null));
@@ -160,7 +160,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         final Map<String, String> map = new HashMap<>();
         map.put("location", file);
         map.put("create", Boolean.TRUE.toString());
-        if (type != null) map.put("keyStoreType", type);
+        map.put("keyStoreType", type);
         storeImpl.initialize(
                 map,
                 new CredentialStore.CredentialSourceProtectionParameter(
@@ -199,7 +199,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         Path jbossConfigDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone").resolve("configuration");
         PathUtil.copyRecursively(jbossConfigDir, repoConfigDir, true);
         Path properties = repoConfigDir.resolve("logging.properties");
-        if(Files.exists(properties)) {
+        if (Files.exists(properties)) {
             Files.delete(properties);
         }
         File gitDir = new File(baseDir, Constants.DOT_GIT);
@@ -220,14 +220,14 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         hostPrivateKey.flush();
         hostKeyPair.writePublicKey(publicHostKey, "");
 
-        sshServer = new SSHServer(EC_USER, Paths.get(SSH_DIR +'/' + EC_PUBKEY),
+        sshServer = new SSHServer(EC_USER, SSH_DIR.resolve(EC_PUBKEY),
                 remoteRepository, hostPrivateKey.toByteArray()); //create key pair gen
         port = sshServer.start();
 
         //Add new server to known_hosts
-        KNOWN_HOSTS = new File(SSH_DIR, "known_hosts");
+        KNOWN_HOSTS = SSH_DIR.resolve("known_hosts").toFile();
 
-        FileWriter fileWritter = new FileWriter(KNOWN_HOSTS,true);
+        FileWriter fileWritter = new FileWriter(KNOWN_HOSTS, true);
         String knownHostTemplate = "[%s]:" + port + ' ' + publicHostKey.toString(US_ASCII.name()) + "\n";
         try (BufferedWriter bw = new BufferedWriter(fileWritter)) {
             bw.write(String.format(knownHostTemplate, "127.0.0.1"));
@@ -267,14 +267,14 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         PathUtil.deleteRecursively(configuration);
         Files.createDirectories(configuration);
 
-        PathUtil.copyRecursively(backupRoot,  getJbossServerBaseDir().resolve("configuration"), true);
+        PathUtil.copyRecursively(backupRoot, getJbossServerBaseDir().resolve("configuration"), true);
     }
 
     @Test
     public void startGitRepoRemoteSSHAuthTest() throws Exception {
         //add user to server
         sshServer.setTestUser(EC_USER);
-        sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + EC_PUBKEY));
+        sshServer.setTestUserPublicKey(SSH_DIR.resolve(EC_PUBKEY));
 
         // start with remote repository containing configuration
         //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
@@ -319,7 +319,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     public void startGitRepoRemoteSSHPKCSAuthTest() throws Exception {
         //add user to server
         sshServer.setTestUser(PKCS_USER);
-        sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + PKCS_PUBKEY));
+        sshServer.setTestUserPublicKey(SSH_DIR.resolve(PKCS_PUBKEY));
 
         // start with remote repository containing configuration
         //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
@@ -364,12 +364,12 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     public void startGitRepoRemoteSshAuthRSATest() throws Exception {
         //add user to server
         sshServer.setTestUser(RSA_USER);
-        sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + RSA_PUBKEY));
+        sshServer.setTestUserPublicKey(SSH_DIR.resolve(RSA_PUBKEY));
 
         // start with remote repository containing configuration
         //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
         //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
-         container.startGitBackedConfiguration("ssh://" + RSA_USER + "@127.0.0.1:" + port + "/doesntmatter",
+        container.startGitBackedConfiguration("ssh://" + RSA_USER + "@127.0.0.1:" + port + "/doesntmatter",
                 Constants.MASTER, AUTH_FILE);
         Assert.assertTrue("Directory not found " + getDotGitDir(), Files.exists(getDotGitDir()));
         Assert.assertTrue("File not found " + getDotGitIgnore(), Files.exists(getDotGitIgnore()));
@@ -454,7 +454,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     public void startGitRepoRemoteSSHFailedAuthTest() throws Exception {
         //add user to server
         sshServer.setTestUser(EC_USER);
-        sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + RSA_PUBKEY)); //incorrect public key
+        sshServer.setTestUserPublicKey(SSH_DIR.resolve(RSA_PUBKEY)); //incorrect public key
 
         try {
             // start with remote repository containing configuration
@@ -472,12 +472,12 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
     @Test
     public void startGitRepoRemoteUnknownHostTest() throws Exception {
         //Create new empty known hosts file
-        Path emptyHosts = new File(SSH_DIR, "empty_hosts").toPath();
+        Path emptyHosts = SSH_DIR.resolve("empty_hosts");
         Files.write(emptyHosts, Collections.singleton("[localhost]:"));
 
         //add user to server
         sshServer.setTestUser(UNKNOWN_HOSTS_USER);
-        sshServer.setTestUserPublicKey(Paths.get(SSH_DIR +'/' + RSA_PUBKEY));
+        sshServer.setTestUserPublicKey(SSH_DIR.resolve(RSA_PUBKEY));
 
         try {
             // start with remote repository containing configuration
@@ -490,18 +490,19 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
             Path serverLog = Paths.get(getJbossServerBaseDir().resolve("log").toString(), "server.log");
             assertLogContains(serverLog, "The authenticity of host", true);
             assertLogContains(serverLog, "cannot be established", true);
+        } finally {
+            //Delete empty known_hosts file
+            FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
         }
 
-        //Delete empty known_hosts file
-        FileUtils.delete(emptyHosts.toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
     }
 
     private static class SSHServer extends SshTestGitServer {
+
         @NotNull
         protected String testUser;
         @NotNull
         protected Repository repository;
-
 
         public SSHServer(String testUser, Path testKey, Repository repository, byte[] hostKey) throws IOException, GeneralSecurityException {
             super(testUser, testKey, repository, hostKey);
@@ -546,7 +547,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         File dir = new File(BASE_STORE_DIRECTORY);
         dir.mkdirs();
 
-        for (String f: stores.values()) {
+        for (String f : stores.values()) {
             File file = new File(f);
             file.delete();
         }
