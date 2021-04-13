@@ -47,6 +47,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotEmptyParam;
+import static org.wildfly.common.Assert.checkNotNullArrayParam;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -2651,13 +2654,14 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public <V> Consumer<V> provides(final RuntimeCapability<?>... capabilities) {
-            if (capabilities == null || capabilities.length == 0)  throw new IllegalArgumentException();
+            checkNotEmptyParam("capabilities", capabilities);
             return provides(capabilities, null);
         }
 
         @Override
         public <V> Consumer<V> provides(final RuntimeCapability<?> capability, final ServiceName alias, final ServiceName... aliases) {
-            if (capability == null || alias == null) throw new IllegalArgumentException();
+            checkNotNullParam("capability", capability);
+            checkNotNullParam("alias", alias);
             final int aliasesLength = aliases == null ? 0 : aliases.length;
             final ServiceName[] serviceNames = new ServiceName[2 + aliasesLength];
             if (capability.isDynamicallyNamed()) {
@@ -2675,7 +2679,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         @Override
         public <V> Consumer<V> provides(final RuntimeCapability<?>[] capabilities, final ServiceName[] aliases) {
             if (capabilities == null || capabilities.length == 0) {
-                if (aliases == null || aliases.length == 0) throw new IllegalArgumentException();
+                checkNotEmptyParam("aliases", aliases);
             }
 
             if (capabilities == null || capabilities.length == 0) {
@@ -2685,7 +2689,7 @@ final class OperationContextImpl extends AbstractOperationContext {
             if (aliases == null || aliases.length == 0) {
                 final ServiceName[] serviceNames = new ServiceName[capabilities.length];
                 for (int i = 0; i < capabilities.length; i++) {
-                    if (capabilities[i] == null) throw new IllegalArgumentException();
+                    checkNotNullArrayParam("capabilities", i, capabilities[i]);
                     if (capabilities[i].isDynamicallyNamed()) {
                         serviceNames[i] = capabilities[i].getCapabilityServiceName(targetAddress);
                     } else {
@@ -2697,7 +2701,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
             final ServiceName[] serviceNames = new ServiceName[capabilities.length + aliases.length];
             for (int i = 0; i < capabilities.length; i++) {
-                if (capabilities[i] == null) throw new IllegalArgumentException();
+                checkNotNullArrayParam("capabilities", i, capabilities[i]);
                 if (capabilities[i].isDynamicallyNamed()) {
                     serviceNames[i] = capabilities[i].getCapabilityServiceName(targetAddress);
                 } else {
@@ -2705,8 +2709,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 }
             }
             for (int i = 0; i < aliases.length; i++) {
-                if (aliases[i] == null) throw new IllegalArgumentException();
-                serviceNames[i + capabilities.length] = aliases[i];
+                serviceNames[i + capabilities.length] = checkNotNullArrayParam("aliases", i, aliases[i]);
             }
             return super.provides(serviceNames);
         }
