@@ -21,6 +21,8 @@
 */
 package org.jboss.as.network;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -56,9 +58,8 @@ public interface ManagedBinding extends Closeable {
 
     final class Factory {
         public static ManagedBinding createSimpleManagedBinding(final String name, final InetSocketAddress socketAddress, final Closeable closeable) {
-            if (socketAddress == null) {
-                throw new IllegalArgumentException("socketAddress is null");
-            }
+            checkNotNullParam("socketAddress", socketAddress);
+
             return new ManagedBinding() {
 
                 @Override
@@ -81,9 +82,8 @@ public interface ManagedBinding extends Closeable {
         }
 
         public static ManagedBinding createSimpleManagedBinding(final SocketBinding socketBinding) {
-            if (socketBinding == null) {
-                throw new IllegalArgumentException("socketBinding is null");
-            }
+            checkNotNullParam("socketBinding", socketBinding);
+
             return new ManagedBinding() {
 
                 @Override
