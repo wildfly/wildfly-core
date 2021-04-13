@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.File;
 import java.io.IOException;
@@ -273,9 +274,8 @@ public abstract class PatchOperationTarget {
 
         @Override
         protected ModelNode info(String streamName, String patchId, boolean verbose) throws PatchingException {
-            if(patchId == null) {
-                throw new IllegalArgumentException("patchId is null");
-            }
+            checkNotNullParam("patchId", patchId);
+
             final PatchingHistory history = tool.getPatchingHistory(streamName);
             try {
                 final PatchingHistory.Iterator iterator = history.iterator();

@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -99,13 +100,7 @@ public class ControllerInitializer {
      * @param value the system property value
      */
     public void addSystemProperty(String key, String value) {
-        if (key == null) {
-            throw new IllegalArgumentException("Null key");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("Null value");
-        }
-        systemProperties.put(key, value);
+        systemProperties.put(checkNotNullParam("key", key), checkNotNullParam("value", value));
     }
 
     /**
@@ -115,10 +110,7 @@ public class ControllerInitializer {
      * @param address the default bind address
      */
     public void setBindAddress(String address) {
-        if (address == null) {
-            throw new IllegalArgumentException("Null address");
-        }
-        bindAddress = address;
+        bindAddress = checkNotNullParam("address", address);
     }
 
     /**
@@ -129,9 +121,7 @@ public class ControllerInitializer {
      * @param port the socket binding port
      */
     public void addSocketBinding(String name, int port) {
-        if (name == null) {
-            throw new IllegalArgumentException("Null name");
-        }
+        checkNotNullParam("name", name);
         if (port < 0) {
             throw new IllegalArgumentException("Null port");
         }
@@ -147,9 +137,7 @@ public class ControllerInitializer {
      * @param destinationPort the destination port
      */
     public void addRemoteOutboundSocketBinding(final String name, final String destinationHost, final int destinationPort) {
-        if (name == null) {
-            throw new IllegalArgumentException("Null name");
-        }
+        checkNotNullParam("name", name);
         if (destinationPort < 0) {
             throw new IllegalArgumentException("Negative destination port");
         }
@@ -169,12 +157,8 @@ public class ControllerInitializer {
      * @param relativeTo a path relative to {@code path}
      */
     public void addPath(String name, String path, String relativeTo) {
-        if (name == null) {
-            throw new IllegalArgumentException("Null name");
-        }
-        if (path == null) {
-            throw new IllegalArgumentException("Null path");
-        }
+        checkNotNullParam("name", name);
+        checkNotNullParam("path", path);
 
         PathInfo pathInfo = new PathInfo(name, path, relativeTo);
         paths.put(name, pathInfo);

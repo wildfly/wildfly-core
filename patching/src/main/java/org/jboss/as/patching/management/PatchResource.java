@@ -22,6 +22,8 @@
 
 package org.jboss.as.patching.management;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -161,10 +163,7 @@ class PatchResource extends AbstractModelResource {
         protected final ServiceController<InstallationManager> imController;
 
         PatchingChildResourceProvider(ServiceController<InstallationManager> imController) {
-            if (imController == null) {
-                throw new IllegalArgumentException("Installation manager service controller is null"); // internal wrong usage, no i18n
-            }
-            this.imController = imController;
+            this.imController = checkNotNullParam("imController", imController);
         }
 
         @Override
