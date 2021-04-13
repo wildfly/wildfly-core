@@ -16,11 +16,11 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -51,7 +51,7 @@ public class DirContext extends AbstractConfigurableElement {
 
     private DirContext(Builder builder) {
         super(builder);
-        this.url = Objects.requireNonNull(builder.url, "URL in Elytron dir-context configuration has to be provided.");
+        this.url = checkNotNullParamWithNullPointerException("builder.url", builder.url);
         this.authenticationContext = builder.authenticationContext;
         this.authenticationLevel = builder.authenticationLevel;
         this.connectionTimeout = builder.connectionTimeout;

@@ -16,7 +16,7 @@
 
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import org.jboss.dmr.ModelNode;
 
@@ -31,8 +31,8 @@ public class NameValue implements ModelNodeConvertable {
     private final String value;
 
     private NameValue(Builder builder) {
-        this.name = Objects.requireNonNull(builder.name, "Value of 'name' attribute has to be provided.");
-        this.value = Objects.requireNonNull(builder.value, "Value of 'value' attribute has to be provided.");
+        this.name = checkNotNullParamWithNullPointerException("builder.name", builder.name);
+        this.value = checkNotNullParamWithNullPointerException("builder.value", builder.value);
     }
 
     @Override

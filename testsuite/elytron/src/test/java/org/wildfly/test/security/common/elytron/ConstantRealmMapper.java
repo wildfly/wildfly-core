@@ -16,7 +16,7 @@
 
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -39,7 +39,7 @@ public class ConstantRealmMapper extends AbstractConfigurableElement {
 
     private ConstantRealmMapper(Builder builder) {
         super(builder);
-        this.realm = Objects.requireNonNull(builder.realm, "Realm name must be provided");
+        this.realm = checkNotNullParamWithNullPointerException("builder.realm", builder.realm);
     }
 
     @Override

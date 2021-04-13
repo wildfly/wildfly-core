@@ -16,9 +16,8 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
-
-import java.util.Objects;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -42,9 +41,9 @@ public class LdapRealm extends AbstractConfigurableElement {
     private LdapRealm(Builder builder) {
         super(builder);
         this.allowBlankPassword = builder.allowBlankPassword;
-        this.dirContext = Objects.requireNonNull(builder.dirContext, "The 'dir-context' has to be provided.");
+        this.dirContext = checkNotNullParamWithNullPointerException("builder.dirContext", builder.dirContext);
         this.directVerification = builder.directVerification;
-        this.identityMapping = Objects.requireNonNull(builder.identityMapping, "The 'identity-mapping' has to be provided.");
+        this.identityMapping = checkNotNullParamWithNullPointerException("builder.identityMapping", builder.identityMapping);
     }
 
     @Override

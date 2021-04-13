@@ -15,7 +15,7 @@
  */
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
@@ -31,7 +31,7 @@ public abstract class AbstractConstantHelper extends AbstractConfigurableElement
 
     protected AbstractConstantHelper(Builder<?> builder) {
         super(builder);
-        this.constant = Objects.requireNonNull(builder.constant, "Constant has to be provided");
+        this.constant = checkNotNullParamWithNullPointerException("builder.constant", builder.constant);
     }
 
     @Override

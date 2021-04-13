@@ -16,10 +16,11 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Abstract parent for {@link ConfigurableElement} implementations which are able to configure (and provide) users and roles.
@@ -56,7 +57,7 @@ public abstract class AbstractUserRolesCapableElement extends AbstractConfigurab
          * @param userWithRoles not-null {@link UserWithRoles} instance
          */
         public final T withUser(UserWithRoles userWithRoles) {
-            this.usersWithRoles.add(Objects.requireNonNull(userWithRoles, "Provided user must not be null."));
+            this.usersWithRoles.add(checkNotNullParamWithNullPointerException("userWithRoles", userWithRoles));
             return self();
         }
 

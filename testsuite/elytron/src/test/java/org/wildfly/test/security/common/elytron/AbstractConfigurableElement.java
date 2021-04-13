@@ -16,7 +16,7 @@
 
 package org.wildfly.test.security.common.elytron;
 
-import java.util.Objects;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 /**
  * Abstract parent for {@link ConfigurableElement} implementations. It just holds common fields and provides parent for
@@ -29,7 +29,8 @@ public abstract class AbstractConfigurableElement implements ConfigurableElement
     protected final String name;
 
     protected AbstractConfigurableElement(Builder<?> builder) {
-        this.name = Objects.requireNonNull(builder.name, "Configuration name must not be null");
+        checkNotNullParamWithNullPointerException("builder", builder);
+        this.name = checkNotNullParamWithNullPointerException("builder.name", builder.name);
     }
 
     @Override

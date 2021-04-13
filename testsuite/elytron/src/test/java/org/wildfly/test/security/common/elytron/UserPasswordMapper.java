@@ -16,9 +16,8 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 import static org.wildfly.test.security.common.ModelNodeUtil.setIfNotNull;
-
-import java.util.Objects;
 
 import org.jboss.dmr.ModelNode;
 
@@ -34,7 +33,7 @@ public class UserPasswordMapper implements ModelNodeConvertable {
     private final Boolean verifiable;
 
     private UserPasswordMapper(Builder builder) {
-        this.from = Objects.requireNonNull(builder.from, "The 'from' attribute has to be provided.");
+        this.from = checkNotNullParamWithNullPointerException("builder.from", builder.from);
         this.writable = builder.writable;
         this.verifiable = builder.verifiable;
     }
