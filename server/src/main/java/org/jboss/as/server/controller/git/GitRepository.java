@@ -30,6 +30,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -55,6 +56,7 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.CredentialsProvider;
 import org.eclipse.jgit.transport.SshSessionFactory;
 import org.eclipse.jgit.transport.sshd.SshdSessionFactory;
+import org.jboss.as.repository.PathUtil;
 import org.jboss.as.server.logging.ServerLogger;
 import org.wildfly.client.config.ConfigXMLParseException;
 
@@ -132,6 +134,8 @@ public class GitRepository implements Closeable {
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
                 }
             } else {
+                Path atticPath = basePath.getParent().resolve("attic");
+                Files.copy(basePath, atticPath, StandardCopyOption.REPLACE_EXISTING);
                 clearExistingFiles(basePath, gitConfig.getRepository());
                 try (Git git = Git.init().setDirectory(baseDir).call()) {
                     String remoteName = UUID.randomUUID().toString();
@@ -147,41 +151,18 @@ public class GitRepository implements Closeable {
                         git.commit().setMessage(ServerLogger.ROOT_LOGGER.addingIgnored()).call();
                     }
                 } catch (GitAPIException ex) {
+                    try (Stream<Path> names = Files.list(basePath)) {
+                        names.filter(p -> ! "log".equals(p.getFileName().toString())).forEach(PathUtil::deleteSilentlyRecursively);
+                    }
+                    Files.copy(atticPath, basePath, StandardCopyOption.REPLACE_EXISTING);
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
+                } finally {
+                    PathUtil.deleteSilentlyRecursively(atticPath);
                 }
             }
             repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
         }
         ServerLogger.ROOT_LOGGER.usingGit();
-    }
-
-    public GitRepository(Repository repository) {
-        this.repository = repository;
-        this.ignored = Collections.emptySet();
-        this.defaultRemoteRepository = DEFAULT_REMOTE_NAME;
-        this.branch = MASTER;
-        if (repository.isBare()) {
-            this.basePath = repository.getDirectory().toPath();
-        } else {
-            this.basePath = repository.getDirectory().toPath().getParent();
-        }
-        ServerLogger.ROOT_LOGGER.usingGit();
-        sshdSessionFactory = null;
-    }
-
-    private void checkoutToSelectedBranch(final Git git) throws IOException, GitAPIException {
-        boolean createBranch = !ObjectId.isId(branch);
-        if (createBranch) {
-            Ref ref = git.getRepository().exactRef(R_HEADS + branch);
-            if (ref != null) {
-                createBranch = false;
-            }
-        }
-        CheckoutCommand checkout = git.checkout().setCreateBranch(createBranch).setName(branch);
-        checkout.call();
-        if (checkout.getResult().getStatus() == CheckoutResult.Status.ERROR) {
-            throw ServerLogger.ROOT_LOGGER.failedToPullRepository(null, defaultRemoteRepository);
-        }
     }
 
     private void clearExistingFiles(Path root, String gitRepository) {
@@ -231,6 +212,34 @@ public class GitRepository implements Closeable {
             });
         } catch (IOException ex) {
             throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitRepository);
+        }
+    }
+    public GitRepository(Repository repository) {
+        this.repository = repository;
+        this.ignored = Collections.emptySet();
+        this.defaultRemoteRepository = DEFAULT_REMOTE_NAME;
+        this.branch = MASTER;
+        if (repository.isBare()) {
+            this.basePath = repository.getDirectory().toPath();
+        } else {
+            this.basePath = repository.getDirectory().toPath().getParent();
+        }
+        ServerLogger.ROOT_LOGGER.usingGit();
+        sshdSessionFactory = null;
+    }
+
+    private void checkoutToSelectedBranch(final Git git) throws IOException, GitAPIException {
+        boolean createBranch = !ObjectId.isId(branch);
+        if (createBranch) {
+            Ref ref = git.getRepository().exactRef(R_HEADS + branch);
+            if (ref != null) {
+                createBranch = false;
+            }
+        }
+        CheckoutCommand checkout = git.checkout().setCreateBranch(createBranch).setName(branch);
+        checkout.call();
+        if (checkout.getResult().getStatus() == CheckoutResult.Status.ERROR) {
+            throw ServerLogger.ROOT_LOGGER.failedToPullRepository(null, defaultRemoteRepository);
         }
     }
 
