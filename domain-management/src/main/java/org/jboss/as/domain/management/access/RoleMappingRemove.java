@@ -33,6 +33,8 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.management.WritableAuthorizerConfiguration;
+import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -57,14 +59,17 @@ public class RoleMappingRemove implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        context.removeResource(PathAddress.EMPTY_ADDRESS);
+        final Resource resource = context.removeResource(PathAddress.EMPTY_ADDRESS);
+        if (resource == null) {
+            throw ControllerLogger.ROOT_LOGGER.managementResourceNotFound(context.getCurrentAddress());
+        } else {
+            PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
+            final String roleName = address.getLastElement().getValue();
 
-        PathAddress address = PathAddress.pathAddress(operation.get(OP_ADDR));
-        final String roleName = address.getLastElement().getValue();
+            RbacSanityCheckOperation.addOperation(context);
 
-        RbacSanityCheckOperation.addOperation(context);
-
-        registerRuntimeRemove(context, roleName.toUpperCase(Locale.ENGLISH));
+            registerRuntimeRemove(context, roleName.toUpperCase(Locale.ENGLISH));
+        }
     }
 
     private void registerRuntimeRemove(final OperationContext context, final String roleName) {
