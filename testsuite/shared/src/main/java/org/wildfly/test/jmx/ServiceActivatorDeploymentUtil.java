@@ -114,6 +114,8 @@ public class ServiceActivatorDeploymentUtil {
                 new FilePermission(targetPath.toAbsolutePath().toString(), "read"),
                 new FilePermission(targetPath.resolve("notifications").toAbsolutePath().toString(), "read, write"),
                 new FilePermission(targetPath.resolve("notifications").toAbsolutePath().toString() + File.separatorChar + '-', "read, write"),
+                new FilePermission(targetPath.resolve("wildfly-core").resolve("target").toAbsolutePath().toString(), "read, write"),
+                new FilePermission(targetPath.resolve("wildfly-core").resolve("target").toAbsolutePath().toString() + File.separatorChar + '-', "read, write"),
                 getMBeanPermission(RunningStateJmx.class, targetName, "addNotificationListener"),
                 getMBeanPermission(RunningStateJmx.class, targetName, "removeNotificationListener"),
                 new PropertyPermission("user.dir", "read")
