@@ -36,6 +36,7 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses ({
+        SyncModelOperationTestCase.class,
         AuditLogTestCase.class,
         IgnoredResourcesProfileCloneTestCase.class,
         CapabilityReloadRequiredUnitTestCase.class,
