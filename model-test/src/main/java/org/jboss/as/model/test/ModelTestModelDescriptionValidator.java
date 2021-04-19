@@ -73,6 +73,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYP
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WEB_URL;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -216,15 +217,9 @@ public class ModelTestModelDescriptionValidator {
     }
 
     private ModelTestModelDescriptionValidator(List<ValidationFailure> errors, ModelNode address, ModelNode description, ValidationConfiguration validationConfiguration) {
-        if (address == null) {
-            throw new IllegalArgumentException("Null address");
-        }
-        if (description == null) {
-            throw new IllegalArgumentException("Null address");
-        }
         this.errors = errors;
-        this.address = address;
-        this.description = description;
+        this.address = checkNotNullParam("address", address);
+        this.description = checkNotNullParam("description", description);
         this.validationConfiguration = validationConfiguration == null ? new ValidationConfiguration() : validationConfiguration;
     }
 

@@ -16,6 +16,8 @@ limitations under the License.
 
 package org.jboss.as.test.deployment;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
@@ -304,10 +306,7 @@ public class DeploymentInfoUtils {
         private String goalStr;
 
         private CheckArguments(DeploymentInfoResult result) {
-            if (result == null) {
-                throw new IllegalArgumentException("Could not set null command result!");
-            }
-            this.result = result;
+            this.result = checkNotNullParam("result", result);
             name = null;
             expectedState = UNKNOWN;
             searchType = SearchType.EXIST;
@@ -566,9 +565,7 @@ public class DeploymentInfoUtils {
      * @param result Instance of DeploymentInfoResult with command output
      */
     public static void checkEmpty(DeploymentInfoResult result) {
-        if (result == null) {
-            throw new IllegalArgumentException("Cant check null to void!");
-        }
+        checkNotNullParam("result", result);
         assertThat("Command output contains some deployments! Checking a void FAILED", result.isOutputEmpty(), is(true));
     }
 

@@ -21,6 +21,8 @@
 */
 package org.jboss.as.model.test;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -109,9 +111,7 @@ class MavenUtil {
 
     URL createMavenGavURL(String artifactGav) throws MalformedURLException {
         Artifact artifact = new DefaultArtifact(artifactGav);
-        if (artifact.getVersion() == null) {
-            throw new IllegalArgumentException("Null version");
-        }
+        checkNotNullParam("artifact.getVersion", artifact.getVersion());
 
         VersionScheme versionScheme = new GenericVersionScheme();
         try {
@@ -149,9 +149,7 @@ class MavenUtil {
 
     List<URL> createMavenGavRecursiveURLs(String artifactGav, String... excludes) throws MalformedURLException, DependencyCollectionException, DependencyResolutionException {
         Artifact artifact = new DefaultArtifact(artifactGav);
-        if (artifact.getVersion() == null) {
-            throw new IllegalArgumentException("Null version");
-        }
+        checkNotNullParam("artifact.getVersion", artifact.getVersion());
 
         VersionScheme versionScheme = new GenericVersionScheme();
         try {

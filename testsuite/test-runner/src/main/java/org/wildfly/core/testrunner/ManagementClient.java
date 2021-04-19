@@ -28,6 +28,7 @@ import static org.jboss.as.controller.client.helpers.ClientConstants.READ_RESOUR
 import static org.jboss.as.controller.client.helpers.ClientConstants.RECURSIVE;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.SUCCESS;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -72,10 +73,7 @@ public class ManagementClient implements AutoCloseable, Closeable {
 
 
     public ManagementClient(ModelControllerClient client, final String mgmtAddress, final int managementPort, final String protocol) {
-        if (client == null) {
-            throw new IllegalArgumentException("Client must be specified");
-        }
-        this.client = client;
+        this.client = checkNotNullParam("client", client);
         this.mgmtAddress = mgmtAddress;
         this.mgmtPort = managementPort;
         this.mgmtProtocol = protocol;

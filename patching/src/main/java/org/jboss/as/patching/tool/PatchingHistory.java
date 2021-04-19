@@ -25,6 +25,7 @@ package org.jboss.as.patching.tool;
 import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.metadata.Patch.PatchType.CUMULATIVE;
 import static org.jboss.as.patching.metadata.Patch.PatchType.ONE_OFF;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.File;
 import java.io.IOException;
@@ -212,10 +213,7 @@ public interface PatchingHistory {
         }
 
         public static Iterator iterator(final InstalledIdentity mgr, final PatchableTarget.TargetInfo info, boolean excludeAgedOut) {
-            if(info == null) {
-                throw new IllegalArgumentException("target info is null");
-            }
-            return new IteratorImpl(info, mgr, excludeAgedOut);
+            return new IteratorImpl(checkNotNullParam("info", info), mgr, excludeAgedOut);
         }
 
         public static PatchingHistory getHistory(final InstalledIdentity installedIdentity) {

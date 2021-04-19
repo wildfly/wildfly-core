@@ -21,6 +21,8 @@
 */
 package org.jboss.as.core.model.test;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Serializable;
 
 import org.jboss.as.controller.PathAddress;
@@ -41,11 +43,8 @@ public class LegacyModelInitializerEntry implements Serializable {
     private final String[] capabilities;
 
     public LegacyModelInitializerEntry(PathAddress parentAddress, PathElement relativeResourceAddress, ModelNode model, String... capabilities) {
-        if (relativeResourceAddress == null) {
-            throw new IllegalArgumentException("Null relativeResourceAddress");
-        }
         this.parentAddress = parentAddress;
-        this.relativeResourceAddress = relativeResourceAddress;
+        this.relativeResourceAddress = checkNotNullParam("relativeResourceAddress", relativeResourceAddress);
         this.model = model;
         this.capabilities = capabilities == null || capabilities.length == 0 ? null : capabilities;
     }

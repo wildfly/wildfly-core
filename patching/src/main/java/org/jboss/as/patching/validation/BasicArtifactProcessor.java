@@ -22,6 +22,8 @@
 
 package org.jboss.as.patching.validation;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import org.jboss.as.patching.installation.InstalledIdentity;
 
 /**
@@ -60,10 +62,7 @@ class BasicArtifactProcessor implements PatchingArtifactProcessor {
 
             @Override
             public void setCurrentPatchIdentity(InstalledIdentity currentPatchIdentity) {
-                if(currentPatchIdentity == null) {
-                    throw new IllegalArgumentException();
-                }
-                next = currentPatchIdentity;
+                next = checkNotNullParam("currentPatchIdentity", currentPatchIdentity);
             }
 
         };

@@ -17,6 +17,7 @@ limitations under the License.
 package org.jboss.as.domain.controller.resources;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST_EXCLUDE;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,11 +92,8 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
         }
 
         private static KnownRelease fromName(String name) {
-            KnownRelease kr = map.get(name.toUpperCase(Locale.ENGLISH));
-            if (kr == null) {
-                throw new IllegalArgumentException(name);
-            }
-            return kr;
+            checkNotNullParam("name", name);
+            return checkNotNullParam(name, map.get(name.toUpperCase(Locale.ENGLISH)));
         }
 
         private final String name;
