@@ -34,7 +34,8 @@
 
 
     <dependencies>
-        <module name="javax.api"/>
+        <module name="java.naming"/>
+        <module name="java.security.jgss"/>
         <module name="org.apache.commons.logging"/>
         <!-- Following module is available in WildFly full -->
         <module name="org.apache.commons.codec" optional="true"/>
