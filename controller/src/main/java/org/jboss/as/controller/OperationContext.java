@@ -1037,7 +1037,7 @@ public interface OperationContext extends ExpressionResolver {
     /**
      * Gets the name of a service associated with a given capability, if there is one.
      * @param capabilityName the name of the capability. Cannot be {@code null}
-     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Can be null.
      * @return the name of the service. Will not return {@code null}
      *
      * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
@@ -1053,7 +1053,7 @@ public interface OperationContext extends ExpressionResolver {
      *
      * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
      * @param dynamicPart the dynamic part of the capability name. Cannot be {@code null}
-     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Can be null.
      * @return the name of the service. Will not return {@code null}
      *
      * @throws java.lang.IllegalStateException if {@link #getCurrentStage() the current stage} is {@link Stage#MODEL}. The
@@ -1069,7 +1069,7 @@ public interface OperationContext extends ExpressionResolver {
      * capability, if there is one.
      *
      * @param capabilityBaseName the base name of the capability. Cannot be {@code null}
-     * @param serviceType class of the java type that exposes by the service. Cannot be {@code null}
+     * @param serviceType class of the java type that exposes by the service. Can be null.
      * @param dynamicParts the dynamic parts of the capability name. Cannot be {@code null}
      * @return the name of the service. Will not return {@code null}
      *
