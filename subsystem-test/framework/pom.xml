@@ -157,5 +157,15 @@
             <groupId>xalan</groupId>
             <artifactId>xalan</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-realm</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-security-manager</artifactId>
+        </dependency>
     </dependencies>
 </project>
