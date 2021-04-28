@@ -60,7 +60,7 @@
 
         <dependency>
             <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-credential-source-deprecated</artifactId>
+            <artifactId>wildfly-elytron-credential-source-impl</artifactId>
         </dependency>
 
         <dependency>
