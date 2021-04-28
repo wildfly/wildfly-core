@@ -49,7 +49,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.ServiceConfigurationError;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -264,23 +263,24 @@ class ProviderDefinitions {
                                 }
                             } else {
                                 loadedProviders = new ArrayList<>();
-                                // find our providers
-                                Iterable<Provider> providers = Module.findServices(Provider.class, new Predicate<Class<?>>() {
-                                    @Override
-                                    public boolean test(final Class<?> providerClass) {
-                                        // We don't want to pick up JDK services resolved via JPMS definitions.
-                                        return providerClass.getClassLoader() instanceof ModuleClassLoader;
+                                try {
+                                    Iterable<Provider> providers = Module.findServices(Provider.class, new Predicate<Class<?>>() {
+                                        @Override
+                                        public boolean test(final Class<?> providerClass) {
+                                            // We don't want to pick up JDK services resolved via JPMS definitions.
+                                            return providerClass.getClassLoader() instanceof ModuleClassLoader;
+                                        }
+                                    }, classLoader);
+                                    Iterator<Provider> iterator = providers.iterator();
+                                    while (iterator.hasNext()) {
+                                        final Provider p = iterator.next();
+                                        if (configSupplier != null) {
+                                            deferred.add(p::load);
+                                        }
+                                        loadedProviders.add(p);
                                     }
-                                }, classLoader);
-                                // collect our providers
-                                Iterator<Provider> i = providers.iterator();
-                                while (true) {
-                                    try {
-                                        if (!i.hasNext()) break;
-                                        loadedProviders.add(i.next());
-                                    } catch (ServiceConfigurationError | RuntimeException e) {
-                                        ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
-                                    }
+                                } catch (Exception e) {
+                                    ROOT_LOGGER.tracef(e, "Failed to initialize a security provider");
                                 }
                             }
 
