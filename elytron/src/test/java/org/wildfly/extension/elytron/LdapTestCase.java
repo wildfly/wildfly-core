@@ -61,6 +61,7 @@ import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -87,6 +88,7 @@ public class LdapTestCase extends AbstractSubsystemTest {
     private static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA ");
     private static final X500Principal SCARAB_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Scarab");
     private static X509Certificate SCARAB_CERTIFICATE;
+    private static String keyProtectionAlgorithm;
 
     private static X509Certificate createScarabCertificate() throws Exception {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -146,12 +148,19 @@ public class LdapTestCase extends AbstractSubsystemTest {
     public static void startLdapService() throws Exception {
         loadResources();
         TestEnvironment.startLdapService();
+        keyProtectionAlgorithm = Security.getProperty("keystore.PKCS12.keyProtectionAlgorithm");
+        Security.setProperty("keystore.PKCS12.keyProtectionAlgorithm", "PBEWithHmacSHA256AndAES_128");
     }
 
     @AfterClass
     public static void restoreLdif() throws Exception {
         Files.copy(Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION + ".bak"), Paths.get(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION), StandardCopyOption.REPLACE_EXISTING);
         new File(WORKING_DIRECTORY_LOCATION + LDIF_LOCATION + ".bak").delete();
+        if (keyProtectionAlgorithm != null) {
+            Security.setProperty("keystore.PKCS12.keyProtectionAlgorithm", keyProtectionAlgorithm);
+        } else {
+            Security.setProperty("keystore.PKCS12.keyProtectionAlgorithm", "");
+        }
     }
 
     public LdapTestCase() {
