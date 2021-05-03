@@ -143,7 +143,7 @@ public abstract class AbstractControllerTestBase {
         if (container != null) {
             container.shutdown();
             try {
-                container.awaitTermination(5, TimeUnit.SECONDS);
+                container.awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             } finally {

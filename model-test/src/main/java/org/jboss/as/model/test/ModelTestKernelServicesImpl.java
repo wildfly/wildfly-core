@@ -293,7 +293,7 @@ public abstract class ModelTestKernelServicesImpl<T extends ModelTestKernelServi
         if (container != null) {
             container.shutdown();
             try {
-                container.awaitTermination(5, TimeUnit.SECONDS);
+                container.awaitTermination(30, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
