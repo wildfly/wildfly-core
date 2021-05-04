@@ -54,13 +54,15 @@ import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
+import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.model.host.HostResourceDefinition;
 import org.jboss.as.host.controller.model.jvm.JvmElement;
 import org.jboss.as.host.controller.model.jvm.JvmOptionsBuilderFactory;
 import org.jboss.as.host.controller.resources.SslLoopbackResourceDefinition;
-import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.process.CommandLineConstants;
 import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.server.ServerEnvironment;
@@ -120,12 +122,15 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     private final HostControllerEnvironment environment;
     private final boolean managementSubsystemEndpoint;
     private final ModelNode endpointConfig = new ModelNode();
-    private final ExpressionResolver expressionResolver;
+    private final ManagedServerExprResolver expressionResolver;
     private final DirectoryGrouping directoryGrouping;
     private final Supplier<SSLContext> sslContextSupplier;
     private final boolean suspend;
     private final boolean gracefulStartup;
     private JvmType jvmType;
+    private final String logDir;
+    private final String tmpDir;
+    private final String dataDir;
 
     public ManagedServerBootCmdFactory(final String serverName, final ModelNode domainModel, final ModelNode hostModel,
                                        final HostControllerEnvironment environment, final ExpressionResolver expressionResolver,
@@ -134,12 +139,12 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.environment = environment;
-        this.expressionResolver = expressionResolver;
+        this.expressionResolver = new ManagedServerExprResolver(expressionResolver, this.serverName);
         this.suspend = suspend;
-        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), expressionResolver, true);
-        this.directoryGrouping = resolveDirectoryGrouping(hostModel, expressionResolver);
+        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), this.expressionResolver, true);
+        this.directoryGrouping = resolveDirectoryGrouping(hostModel, this.expressionResolver);
         final String serverGroupName = serverModel.require(GROUP).asString();
-        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), expressionResolver, true);
+        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), this.expressionResolver, true);
 
         String serverVMName = null;
         ModelNode serverVM = null;
@@ -171,18 +176,36 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
             }
         }
 
+        Map<String, String> bootTimeProperties = getAllSystemProperties(true);
+        // Use the directory grouping type to set props controlling the server data/log/tmp dirs
+        String serverDirProp = bootTimeProperties.get(ServerEnvironment.SERVER_BASE_DIR);
+        File serverDir = serverDirProp == null ? new File(environment.getDomainServersDir(), serverName) : new File(serverDirProp);
+        this.logDir = addPathProperty("log", ServerEnvironment.SERVER_LOG_DIR, bootTimeProperties,
+                directoryGrouping, environment.getDomainLogDir(), serverDir);
+        this.tmpDir = addPathProperty("tmp", ServerEnvironment.SERVER_TEMP_DIR, bootTimeProperties,
+                directoryGrouping, environment.getDomainTempDir(), serverDir);
+        this.dataDir = addPathProperty("data", ServerEnvironment.SERVER_DATA_DIR, bootTimeProperties,
+                directoryGrouping, environment.getDomainDataDir(), serverDir);
+
+        new File(this.logDir).mkdirs();
+
+        this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_BASE_DIR, serverDir.getAbsolutePath());
+        this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_LOG_DIR, logDir);
+        this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_TEMP_DIR, tmpDir);
+        this.expressionResolver.addResolvableValue(ServerEnvironment.SERVER_DATA_DIR, dataDir);
+
         final String jvmName = serverVMName != null ? serverVMName : groupVMName;
         final ModelNode hostVM = jvmName != null ? hostModel.get(JVM, jvmName) : null;
 
         this.jvmElement = new JvmElement(jvmName,
-                resolveNilableExpressions(hostVM, expressionResolver, false),
-                resolveNilableExpressions(groupVM, expressionResolver, false),
-                resolveNilableExpressions(serverVM, expressionResolver, false));
+                resolveNilableExpressions(hostVM, this.expressionResolver, false),
+                resolveNilableExpressions(groupVM, this.expressionResolver, false),
+                resolveNilableExpressions(serverVM, this.expressionResolver, false));
 
-        this.sslContextSupplier = createSSLContextSupplier(serverModel, expressionResolver);
+        this.sslContextSupplier = createSSLContextSupplier(serverModel, this.expressionResolver);
 
         try {
-            this.gracefulStartup = ServerGroupResourceDefinition.GRACEFUL_STARTUP.resolveModelAttribute(expressionResolver, serverGroup).asBoolean();
+            this.gracefulStartup = ServerGroupResourceDefinition.GRACEFUL_STARTUP.resolveModelAttribute(this.expressionResolver, serverGroup).asBoolean();
         } catch (OperationFailedException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
@@ -347,15 +370,10 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.add(sb.toString());
             }
         }
-        // Use the directory grouping type to set props controlling the server data/log/tmp dirs
-        String serverDirProp = bootTimeProperties.get(ServerEnvironment.SERVER_BASE_DIR);
-        File serverDir = serverDirProp == null ? new File(environment.getDomainServersDir(), serverName) : new File(serverDirProp);
-        final String logDir = addPathProperty(command, "log", ServerEnvironment.SERVER_LOG_DIR, bootTimeProperties,
-                directoryGrouping, environment.getDomainLogDir(), serverDir);
-        addPathProperty(command, "tmp", ServerEnvironment.SERVER_TEMP_DIR, bootTimeProperties,
-                directoryGrouping, environment.getDomainTempDir(), serverDir);
-        final String dataDir = addPathProperty(command, "data", ServerEnvironment.SERVER_DATA_DIR, bootTimeProperties,
-                directoryGrouping, environment.getDomainDataDir(), serverDir);
+
+        command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_LOG_DIR, this.logDir));
+        command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_TEMP_DIR, this.tmpDir));
+        command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_DATA_DIR, this.dataDir));
 
         final File loggingConfig = new File(dataDir, "logging.properties");
         final File path;
@@ -544,7 +562,6 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
     /**
      * Adds the absolute path to command.
      *
-     * @param command           the command to add the arguments to.
      * @param typeName          the type of directory.
      * @param propertyName      the name of the property.
      * @param properties        the properties where the path may already be defined.
@@ -553,7 +570,7 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
      * @param serverDir         the root directory for the server, to be used for 'by-server' grouping
      * @return the absolute path that was added.
      */
-    private String addPathProperty(final List<String> command, final String typeName, final String propertyName, final Map<String, String> properties, final DirectoryGrouping directoryGrouping,
+    private String addPathProperty(final String typeName, final String propertyName, final Map<String, String> properties, final DirectoryGrouping directoryGrouping,
                                    final File typeDir, File serverDir) {
         final String result;
         final String value = properties.get(propertyName);
@@ -580,7 +597,6 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                     break;
             }
         }
-        command.add(String.format("-D%s=%s", propertyName, result));
         return result;
     }
 
@@ -611,4 +627,46 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
         return result;
     }
 
+    static class ManagedServerExprResolver extends ExpressionResolverImpl {
+        final ExpressionResolver delegate;
+        final String serverName;
+        final Map<String, String> resolvableData;
+
+        public ManagedServerExprResolver(ExpressionResolver delegate, String serverName) {
+            super(true);
+            this.delegate = delegate;
+            this.serverName = serverName;
+            this.resolvableData = new HashMap<String, String>() {{
+                put(ServerEnvironment.SERVER_BASE_DIR, null);
+                put(ServerEnvironment.SERVER_DATA_DIR, null);
+                put(ServerEnvironment.SERVER_LOG_DIR, null);
+                put(ServerEnvironment.SERVER_TEMP_DIR, null);
+            }};
+        }
+
+        @Override
+        protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
+            String expression = node.asString();
+            if (expression.length() > 3) {
+                String expressionValue = expression.substring(2, expression.length() - 1);
+                if (resolvableData.containsKey(expressionValue)) {
+                    String resolved = resolvableData.get(expressionValue);
+                    if (resolved == null) {
+                        return;
+                    } else {
+                        node.set(resolved);
+                    }
+                } else {
+                    node.set(delegate.resolveExpressions(node, context));
+                }
+            }
+        }
+
+        public void addResolvableValue(String property, String value) {
+            if (! resolvableData.containsKey(property)) {
+                throw new IllegalStateException();
+            }
+            resolvableData.put(property, value);
+        }
+    }
 }

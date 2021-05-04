@@ -201,10 +201,11 @@ public final class ManagedServerOperationsFactory {
         this.domainModel = domainModel;
         this.hostModel = hostModel;
         this.domainController = domainController;
-        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), expressionResolver, true);
+        ManagedServerBootCmdFactory.ManagedServerExprResolver managedServerExpResolver = new ManagedServerBootCmdFactory.ManagedServerExprResolver(expressionResolver, this.serverName);
+        this.serverModel = resolveExpressions(hostModel.require(SERVER_CONFIG).require(serverName), managedServerExpResolver, true);
 
         this.serverGroupName = serverModel.require(GROUP).asString();
-        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), expressionResolver, true);
+        this.serverGroup = resolveExpressions(domainModel.require(SERVER_GROUP).require(serverGroupName), managedServerExpResolver, true);
         this.profileName = serverGroup.require(PROFILE).asString();
     }
 
