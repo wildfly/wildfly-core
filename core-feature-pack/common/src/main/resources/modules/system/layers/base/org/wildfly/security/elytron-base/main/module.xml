@@ -64,7 +64,6 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-http-spnego}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-sso}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-http-util}"/>
-        <artifact name="${org.wildfly.security:wildfly-elytron-jacc}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-json-util}"/>
         <!-- <artifact name="${org.wildfly.security:wildfly-elytron-jwt}"/> To be added as independent module in WildFly -->
         <artifact name="${org.wildfly.security:wildfly-elytron-keystore}"/>
@@ -121,7 +120,6 @@
         <module name="org.jboss.logmanager"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
-        <module name="javax.security.jacc.api" optional="true"/>
         <module name="org.wildfly.common"/>
         <module name="javax.xml.ws.api" optional="true"/>
         <module name="org.jboss.ws.spi" optional="true"/>
