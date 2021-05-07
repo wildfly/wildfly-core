@@ -3639,10 +3639,12 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 479, value = "Attribute '%s' at resource '%s' with unresolved value '%s' cannot be resolved using the non-security-sensitive sources resolution supported by the 'resolve' parameter. Response will report the unresolved value.")
     String attributeUnresolvableUsingSimpleResolution(String attribute, String address, ModelNode unresolved);
 
-    @Message(id = 480, value = "Expression '%s' cannot be resolved using the non-security-sensitive sources resolution supported by the '%s' operatiob. Response will report the unresolved value.")
+    @Message(id = 480, value = "Expression '%s' cannot be resolved using the non-security-sensitive sources resolution supported by the '%s' operation. Response will report the unresolved value.")
     String expressionUnresolvableUsingSimpleResolution(ModelNode unresolved, String opName);
 
-
+    @LogMessage(level = WARN)
+    @Message(id = 481, value = "The runtime dependency package '%s' is already registered at location '%s'")
+    void runtimePackageDependencyAlreadyRegistered(String pckg, String location);
 
 
 }

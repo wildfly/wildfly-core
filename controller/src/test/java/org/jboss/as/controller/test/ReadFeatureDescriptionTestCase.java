@@ -612,7 +612,7 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         private static final RuntimeCapability MAIN_RESOURCE_CAPABILITY =
                 RuntimeCapability.Builder.of(MAIN_RESOURCE_CAPABILITY_NAME, true)
-                        .addAdditionalRequiredPackages(MAIN_RESOURCE_PACKAGE_NAME)
+                        .addAdditionalRequiredPackages(MAIN_RESOURCE_PACKAGE_NAME, MAIN_RESOURCE_PACKAGE_NAME)
                         .build();
 
         private static final AttributeDefinition OPTIONAL_ATTRIBUTE =
