@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,6 +70,7 @@ public class CommandExecutor {
 
     private static final String CANCEL_MSG = "Cancelling running operation...";
     private static final String TIMEOUT_CANCEL_MSG = "Timeout. " + CANCEL_MSG;
+    private static final String CANCELED_MSG = "Command timeout, task has been canceled";
 
     public interface Executable {
         void execute() throws CommandLineException;
@@ -182,7 +184,10 @@ public class CommandExecutor {
             private OperationResponse doExecuteOperation(Operation operation, OperationMessageHandler messageHandler) throws IOException {
                 AsyncFuture<OperationResponse> task;
                 task = wrapped.executeOperationAsync(operation, messageHandler);
-                setLastHandlerTask(task);
+                boolean canceled = setLastHandlerTask(task);
+                if (canceled) {
+                    throw new CancellationException(CANCELED_MSG);
+                }
                 try {
                     return task.get();
                 } catch (InterruptedException ex) {
@@ -211,7 +216,10 @@ public class CommandExecutor {
                 try {
                     Future<ModelNode> task
                             = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
-                    setLastHandlerTask(task);
+                    boolean canceled = setLastHandlerTask(task);
+                    if (canceled) {
+                        throw new CancellationException(CANCELED_MSG);
+                    }
                     return task.get();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
@@ -227,7 +235,10 @@ public class CommandExecutor {
                 try {
                     Future<ModelNode> task
                             = wrapped.executeAsync(operation, OperationMessageHandler.DISCARD);
-                    setLastHandlerTask(task);
+                    boolean canceled = setLastHandlerTask(task);
+                    if (canceled) {
+                        throw new CancellationException(CANCELED_MSG);
+                    }
                     return task.get();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
@@ -243,7 +254,10 @@ public class CommandExecutor {
                 try {
                     Future<ModelNode> task
                             = wrapped.executeAsync(operation, handler);
-                    setLastHandlerTask(task);
+                    boolean canceled = setLastHandlerTask(task);
+                    if (canceled) {
+                        throw new CancellationException(CANCELED_MSG);
+                    }
                     return task.get();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
@@ -260,7 +274,10 @@ public class CommandExecutor {
                 try {
                     Future<ModelNode> task
                             = wrapped.executeAsync(operation, handler);
-                    setLastHandlerTask(task);
+                    boolean canceled = setLastHandlerTask(task);
+                    if (canceled) {
+                        throw new CancellationException(CANCELED_MSG);
+                    }
                     return task.get();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
@@ -305,12 +322,14 @@ public class CommandExecutor {
          *
          * @param handlerTask The task to cancel if a timeout occurs.
          */
-        public synchronized void setLastHandlerTask(Future<?> handlerTask) {
+        public synchronized boolean setLastHandlerTask(Future<?> handlerTask) {
+            boolean ret = false;
             if (timeout) {
-                cancelTask(handlerTask, wrapped, CANCEL_MSG);
+                ret = cancelTask(handlerTask, wrapped, CANCEL_MSG);
             } else {
                 this.handlerTask = handlerTask;
             }
+            return ret;
         }
 
         // For testing purpose.
@@ -738,7 +757,7 @@ public class CommandExecutor {
         }
     }
 
-    private static void cancelTask(Future<?> task, CommandContext ctx, String msg) {
+    private static boolean cancelTask(Future<?> task, CommandContext ctx, String msg) {
         if (task != null && !(task.isDone()
                 && task.isCancelled())) {
             try {
@@ -749,7 +768,9 @@ public class CommandExecutor {
             } catch (Exception cex) {
                 // XXX OK, task could be already canceled or done.
             }
+            return true;
         }
+        return false;
     }
 
     void cancel() {
