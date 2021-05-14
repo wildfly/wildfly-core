@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  ~
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ Copyright 2021, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -19,6 +20,7 @@
   ~ License along with this software; if not, write to the Free
   ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  ~
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -30,41 +32,40 @@
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
         <version>16.0.0.Beta4-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>wildfly-subsystem-test-parent</artifactId>
+    <artifactId>wildfly-core-testbom</artifactId>
     <packaging>pom</packaging>
-    <name>WildFly: Core Model Test Parent</name>
 
-    <modules>
-        <module>framework</module>
-	<module>test-controller-optional</module>
-        <module>tests</module>
-    </modules>
+    <name>WildFly: Core BOM of Test Dependencies</name>
+
+    <properties>
+        <version.com.fasterxml.jackson.core.jackson-databind>2.11.3</version.com.fasterxml.jackson.core.jackson-databind>
+        <version.commons-io>2.5</version.commons-io>
+        <version.xalan>2.7.1.jbossorg-5</version.xalan>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-testbom</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.commons-io}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${version.com.fasterxml.jackson.core.jackson-databind}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>xalan</groupId>
+                <artifactId>xalan</artifactId>
+                <version>${version.xalan}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-           <groupId>org.wildfly.core</groupId>
-           <artifactId>wildfly-model-test</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.marshalling</groupId>
-            <artifactId>jboss-marshalling-river</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 
 </project>

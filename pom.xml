@@ -142,14 +142,12 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <version.com.fasterxml.jackson.core.jackson-databind>2.11.3</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.8</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>30.1.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
         <version.com.jcraft.jsch>0.1.54</version.com.jcraft.jsch>
-        <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.io.undertow>2.2.6.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0.3</version.jakarta.inject.jakarta.inject-api>
@@ -228,11 +226,11 @@
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
         <version.org.wildfly.security.elytron>1.15.3.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.9.0.Final</version.org.wildfly.security.elytron-web>
-        <version.xalan>2.7.1.jbossorg-5</version.xalan>
-       
+
     </properties>
 
     <modules>
+        <module>testbom</module>
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
@@ -733,11 +731,6 @@
                         <artifactId>mockserver-netty</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.commons-io}</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -2174,12 +2167,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${version.com.fasterxml.jackson.core.jackson-databind}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-all</artifactId>
                 <version>${version.org.apache.ds}</version>
@@ -2278,12 +2265,6 @@
                 <groupId>org.syslog4j</groupId>
                 <artifactId>syslog4j</artifactId>
                 <version>${version.org.syslog4j}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>xalan</groupId>
-                <artifactId>xalan</artifactId>
-                <version>${version.xalan}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
