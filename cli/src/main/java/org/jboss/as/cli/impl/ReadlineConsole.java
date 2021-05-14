@@ -696,6 +696,10 @@ public class ReadlineConsole {
     }
 
     public String readLine(Prompt prompt, Completion completer) throws InterruptedException, IOException {
+        if (closed) {
+            LOG.tracef("Console already closed, ignoring readLine");
+            return null;
+        }
         if (started) {
             // If there are some output collected, flush it.
             printCollectedOutput();

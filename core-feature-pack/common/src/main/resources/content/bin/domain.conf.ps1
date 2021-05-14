@@ -32,10 +32,10 @@ if (-Not $JAVA_OPTS) {
 
     $JAVA_OPTS = @()
 
-    # JVM memory allocation pool parameters - modify as appropriate.
-    $JAVA_OPTS += '-Xms64M'
-    $JAVA_OPTS += '-Xmx512M'
-    $JAVA_OPTS += '-XX:MaxMetaspaceSize=256m'
+    if (-Not(test-path env:JBOSS_JAVA_SIZING)) {
+        $env:JBOSS_JAVA_SIZING = "-Xms64M -Xmx512M -XX:MaxMetaspaceSize=256m"
+    }
+    $JAVA_OPTS += String-To-Array($env:JBOSS_JAVA_SIZING)
 
     # Reduce the RMI GCs to once per hour for Sun JVMs.
     # $JAVA_OPTS += '-Dsun.rmi.dgc.client.gcInterval=3600000'

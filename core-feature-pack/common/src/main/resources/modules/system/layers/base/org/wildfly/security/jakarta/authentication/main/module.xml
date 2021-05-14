@@ -18,7 +18,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<module xmlns="urn:jboss:module:1.9" name="org.wildfly.security.elytron-private">
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.security.jakarta.authentication">
     <properties>
         <!--
              Although this module is private see the module 'org.wildfly.security.elytron' for the re-exported public API.
@@ -26,18 +26,21 @@
         <property name="jboss.api" value="private"/>
     </properties>
 
+    <exports>
+        <exclude path="org/wildfly/security/auth/jaspi/_private"/>
+    </exports>
+
     <resources>
+        <artifact name="${org.wildfly.security:wildfly-elytron-jaspi}"/>
     </resources>
 
     <dependencies>
-        <!--
-        This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other
-        modules use the parser, they need to have visibility to this module.
-        -->
-        <module name="org.wildfly.client.config" export="true"/>
-        <!-- The artifacts in these dependencies were previously exported by this module. -->
-        <module name="org.wildfly.security.elytron-base" services="export" export="true"/>
-        <module name="org.wildfly.security.jakarta.authentication" export="true"/>
-        <module name="org.wildfly.security.jakarta.authorization" export="true"/>
+        <module name="jdk.security.auth"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.logmanager"/>
+        <module name="javax.security.auth.message.api"/>
+        <module name="javax.servlet.api" optional="true"/>
+        <module name="org.wildfly.common"/>
+        <module name="org.wildfly.security.elytron-base"/>
     </dependencies>
 </module>

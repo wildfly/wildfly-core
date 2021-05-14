@@ -112,36 +112,42 @@ public final class SyncModelOperationHandlerWrapper implements OperationStepHand
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-        // The backup of the original domain model, before we tinker with it
-        final Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
-
-        // Execute the delegate
-        delegate.execute(context, operation);
-
         // Just a safety check
         assert context.isBooting() == false;
         if (context.isBooting()) {
             return;
         }
 
-        // Validate references on the new model
-        final Resource domain = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+        // The backup of the original domain model, before we tinker with it
+        final Resource original = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
 
-        if (syncWithMaster(domain, hostElement)) {
-            MasterDomainControllerClient masterDomainControllerClient = null;
-            try {
-                masterDomainControllerClient = (MasterDomainControllerClient) context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
-            } catch (ServiceNotFoundException e) {
-                // running in admin-only we shouldn't fail if the MDCC isn't available
-                if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
-                    return;
+        final OperationStepHandler syncStep = new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                // Validate references on the new model
+                final Resource domain = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS);
+
+                if (syncWithMaster(domain, hostElement)) {
+                    MasterDomainControllerClient masterDomainControllerClient = null;
+                    try {
+                        masterDomainControllerClient = (MasterDomainControllerClient) context.getServiceRegistry(false).getRequiredService(MasterDomainControllerClient.SERVICE_NAME).getValue();
+                    } catch (ServiceNotFoundException e) {
+                        // running in admin-only we shouldn't fail if the MDCC isn't available
+                        if (context.getRunningMode() == RunningMode.ADMIN_ONLY) {
+                            return;
+                        }
+                        throw e;
+                    }
+                    // This adds an immediate step to synchronize the model configuration before any other step will be executed
+                    masterDomainControllerClient.fetchAndSyncMissingConfiguration(context, original);
                 }
-                throw e;
             }
-            // This adds an immediate step to synchronize the model configuration before any other step will be executed
-            masterDomainControllerClient.fetchAndSyncMissingConfiguration(context, original);
-        }
+        };
+
+        context.addStep(syncStep, context.getCurrentStage(), true);
+
+        // Execute the delegate
+        delegate.execute(context, operation);
     }
 
     /**

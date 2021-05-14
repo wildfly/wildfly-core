@@ -73,6 +73,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
@@ -197,9 +198,12 @@ public class ReadFeatureDescriptionHandler extends GlobalOperationHandlers.Abstr
                 extensionParam.get(DEFAULT).set(extension);
                 feature.get(FEATURE).get(PARAMS).add(extensionParam);
                 ModelNode packages = feature.get(FEATURE).get(PACKAGES);
-                ModelNode packageNode = new ModelNode();
-                packageNode.get(PACKAGE).set(extension);
-                packages.add(packageNode);
+                Set<String> alreadyRegisteredPackages = packages.isDefined() ? packages.asList().stream().map(node -> node.get(PACKAGE).asString()).collect(Collectors.toSet()) : new HashSet<>();
+                if (!alreadyRegisteredPackages.contains(extension)) {
+                    ModelNode pkgNode = new ModelNode();
+                    pkgNode.get(PACKAGE).set(extension);
+                    packages.add(pkgNode);
+                }
             }
         }
         final Map<PathElement, ModelNode> childResources = recursive ? new HashMap<>() : Collections.<PathElement, ModelNode>emptyMap();
