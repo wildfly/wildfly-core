@@ -56,9 +56,16 @@ public final class JvmType {
         JAVA_EXECUTABLE = os.contains("win") ? "java.exe" : "java";
 
         final ArrayList<String> modularJavaOpts = new ArrayList<>();
-        modularJavaOpts.add("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
-        modularJavaOpts.add("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED");
-        modularJavaOpts.add("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED");
+        // Additions to these should include good explanations why in the relevant JIRA
+        // Keep them alphabetical to avoid the code history getting confused by reordering commits
+        modularJavaOpts.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.security=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.util=ALL-UNNAMEDD");
+        modularJavaOpts.add("--add-opens=java.management/javax.management=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.naming/javax.naming=ALL-UNNAMED");
         DEFAULT_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
     }
 

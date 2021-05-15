@@ -139,9 +139,23 @@ Param(
                   }
               }
         }
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"
-        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"
+        # Set default modular jdk options
+        # Needed by the iiop-openjdk subsystem
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.desktop/sun.awt=ALL-UNNAMED"
+        # Needed if Hibernate applications use Javassist
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
+        # Needed by the MicroProfile REST Client subsystem
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+        # Needed by JBoss Marshalling
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.io=ALL-UNNAMED"
+        # Needed by WildFly Security Manager
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.security=ALL-UNNAMED"
+        # Needed for marshalling of enum maps
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util=ALL-UNNAMED"
+        # EE integration with sar mbeans requires deep reflection in javax.management
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
+        # InitialContext proxy generation requires deep reflection in javax.naming
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.naming/javax.naming=ALL-UNNAMED"
     }
     return $DEFAULT_MODULAR_JVM_OPTIONS
 }
