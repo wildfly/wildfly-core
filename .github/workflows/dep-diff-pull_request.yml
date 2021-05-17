@@ -8,7 +8,7 @@ on:
     - master
 env:
   # The modules to check for dependencies. If there is more than one they are comma separated
-  MODULES_TO_CHECK: core-feature-pack/common
+  MODULES_TO_CHECK: testbom,core-feature-pack/common
 jobs:
   check:
     runs-on: ubuntu-latest
