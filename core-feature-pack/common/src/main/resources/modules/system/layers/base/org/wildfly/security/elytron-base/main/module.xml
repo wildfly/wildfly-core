@@ -48,7 +48,6 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-base}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-client}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential}"/>
-        <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-deprecated}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-source-impl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-credential-store}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-digest}"/>
@@ -83,7 +82,6 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl-auth-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl-anonymous}"/>
-        <artifact name="${org.wildfly.security:wildfly-elytron-sasl-deprecated}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl-digest}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl-entity}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-sasl-external}"/>
@@ -102,7 +100,6 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert-acme}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert-util}"/>
-        <artifact name="${org.wildfly.security:wildfly-elytron-x500-deprecated}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500-principal}"/>
     </resources>
 
