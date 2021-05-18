@@ -54,7 +54,7 @@ import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.security.asn1.OidsUtil;
 import org.wildfly.security.auth.server.PrincipalDecoder;
-import org.wildfly.security.x500.X500AttributePrincipalDecoder;
+import org.wildfly.security.x500.principal.X500AttributePrincipalDecoder;
 
 
 /**
