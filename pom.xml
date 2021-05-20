@@ -2332,11 +2332,9 @@
                 <!-- match 9+ -->
             </activation>
             <properties>
-              <modular.jdk.args>
-		--add-exports=java.base/sun.nio.ch=ALL-UNNAMED
-	        --add-opens=java.base/java.security=ALL-UNNAMED
-                --add-modules=java.se
-	      </modular.jdk.args>
+                <modular.jdk.args>
+	            --add-opens=java.base/java.security=ALL-UNNAMED
+                </modular.jdk.args>
             </properties>
         </profile>
         <!--
