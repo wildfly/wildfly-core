@@ -149,7 +149,7 @@ class ModelControllerImpl implements ModelController {
     private final AbstractControllerService.PartialModelIndicator partialModelIndicator;
     private final AbstractControllerService.ControllerInstabilityListener instabilityListener;
 
-    private volatile ModelControllerClientFactory clientFactory;
+    private volatile ModelControllerClientFactoryImpl clientFactory;
 
     private PathAddress modelControllerResourceAddress;
 
@@ -210,7 +210,7 @@ class ModelControllerImpl implements ModelController {
         auditLogger.startBoot();
     }
 
-    ModelControllerClientFactory getClientFactory() {
+    private ModelControllerClientFactoryImpl getClientFactory() {
         if (clientFactory == null) {
             // In a race this could result in > 1 factories being instantiated but that is harmless
             this.clientFactory = new ModelControllerClientFactoryImpl(this, securityIdentitySupplier);
@@ -228,10 +228,17 @@ class ModelControllerImpl implements ModelController {
      */
     @Override
     public ModelNode execute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control, final OperationAttachments attachments) {
-        SecurityIdentity securityIdentity = securityIdentitySupplier.get();
-        OperationResponse or = securityIdentity.runAs((PrivilegedAction<OperationResponse>) () -> internalExecute(operation,
-                handler, control, attachments, prepareStep, false, partialModelIndicator.isModelPartial()));
+        return executeOperation(operation, handler, control, attachments, false);
+    }
 
+    @Override
+    public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
+        return executeOperation(operation, handler, control, false);
+    }
+
+    final ModelNode executeOperation(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control,
+                            final OperationAttachments attachments, final boolean forBoot) {
+        OperationResponse or = executeForResponse(operation, handler, control, attachments, forBoot);
         ModelNode result = or.getResponseNode();
         try {
             or.close();
@@ -242,11 +249,15 @@ class ModelControllerImpl implements ModelController {
         return result;
     }
 
-    @Override
-    public OperationResponse execute(Operation operation, OperationMessageHandler handler, OperationTransactionControl control) {
+    final OperationResponse executeOperation(Operation operation, OperationMessageHandler handler, OperationTransactionControl control, boolean forBoot) {
+        return executeForResponse(operation.getOperation(), handler, control, operation, forBoot);
+    }
+
+    final OperationResponse executeForResponse(final ModelNode operation, OperationMessageHandler handler, OperationTransactionControl control,
+                                         final OperationAttachments attachments, final boolean forBoot) {
         SecurityIdentity securityIdentity = securityIdentitySupplier.get();
-        return securityIdentity.runAs((PrivilegedAction<OperationResponse>) () -> internalExecute(operation.getOperation(),
-                handler, control, operation, prepareStep, false, partialModelIndicator.isModelPartial()));
+        return securityIdentity.runAs((PrivilegedAction<OperationResponse>) () -> internalExecute(operation,
+                handler, control, attachments, prepareStep, false, partialModelIndicator.isModelPartial(), forBoot));
     }
 
     private AbstractOperationContext getDelegateContext(final int operationId) {
@@ -342,6 +353,12 @@ class ModelControllerImpl implements ModelController {
      */
     protected OperationResponse internalExecute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control,
                                                 final OperationAttachments attachments, final OperationStepHandler prepareStep, final boolean attemptLock, boolean partialModel) {
+        return internalExecute(operation, handler, control, attachments, prepareStep, attemptLock, partialModel, false);
+    }
+
+    private OperationResponse internalExecute(final ModelNode operation, final OperationMessageHandler handler, final OperationTransactionControl control,
+                                              final OperationAttachments attachments, final OperationStepHandler prepareStep,
+                                              final boolean attemptLock, final boolean partialModel, final boolean forBoot) {
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -409,7 +426,7 @@ class ModelControllerImpl implements ModelController {
             final OperationContextImpl context = new OperationContextImpl(operationID, operation.get(OP).asString(),
                     operation.get(OP_ADDR), this, processType, runningModeControl.getRunningMode(),
                     headers, handler, attachments, managementModel.get(), originalResultTxControl, processState, auditLogger,
-                    bootingFlag.get(), hostServerGroupTracker, accessContext, notificationSupport,
+                    bootingFlag.get(), forBoot, hostServerGroupTracker, accessContext, notificationSupport,
                     false, extraValidationStepHandler, partialModel, securityIdentitySupplier);
             // Try again if the operation-id is already taken
             if(activeOperations.putIfAbsent(operationID, context) == null) {
@@ -488,7 +505,7 @@ class ModelControllerImpl implements ModelController {
         //For the initial operations the model will not be complete, so defer the validation
         final AbstractOperationContext context = new OperationContextImpl(operationID, INITIAL_BOOT_OPERATION, EMPTY_ADDRESS,
                 this, processType, runningModeControl.getRunningMode(),
-                headers, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(),
+                headers, handler, null, managementModel.get(), control, processState, auditLogger, bootingFlag.get(), true,
                 hostServerGroupTracker, null, notificationSupport, true, extraValidationStepHandler, true, securityIdentitySupplier);
 
         // Add to the context all ops prior to the first ExtensionAddHandler as well as all ExtensionAddHandlers; save the rest.
@@ -507,7 +524,7 @@ class ModelControllerImpl implements ModelController {
             final AbstractOperationContext postExtContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                     EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                     headers, handler, null, managementModel.get(), control, processState, auditLogger,
-                            bootingFlag.get(), hostServerGroupTracker, null, notificationSupport, true,
+                            bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, true,
                             extraValidationStepHandler, partialModel, securityIdentitySupplier);
 
             for (ParsedBootOp parsedOp : bootOperations.postExtensionOps) {
@@ -537,7 +554,7 @@ class ModelControllerImpl implements ModelController {
                 final AbstractOperationContext validateContext = new OperationContextImpl(operationID, POST_EXTENSION_BOOT_OPERATION,
                         EMPTY_ADDRESS, this, processType, runningModeControl.getRunningMode(),
                         headers, handler, null, managementModel.get(), control, processState, auditLogger,
-                                bootingFlag.get(), hostServerGroupTracker, null, notificationSupport, false,
+                                bootingFlag.get(), true, hostServerGroupTracker, null, notificationSupport, false,
                                 extraValidationStepHandler, partialModel, securityIdentitySupplier);
                 validateContext.addModifiedResourcesForModelValidation(validateAddresses);
                 resultAction = validateContext.executeOperation();
@@ -714,6 +731,10 @@ class ModelControllerImpl implements ModelController {
     @Override
     public ModelControllerClient createClient(final Executor executor) {
         return getClientFactory().createSuperUserClient(executor, false);
+    }
+
+    ModelControllerClient createBootClient(final Executor executor) {
+        return getClientFactory().createBootClient(executor);
     }
 
     ConfigurationPersister.PersistenceResource writeModel(final ManagementModelImpl model, final Set<PathAddress> affectedAddresses,

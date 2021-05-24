@@ -58,24 +58,36 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 final class ModelControllerClientFactoryImpl implements ModelControllerClientFactory {
 
-    private final ModelController modelController;
+    private final ModelControllerImpl modelController;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
 
-    ModelControllerClientFactoryImpl(ModelController modelController, Supplier<SecurityIdentity> securityIdentitySupplier) {
+    ModelControllerClientFactoryImpl(ModelControllerImpl modelController, Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.modelController = modelController;
         this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
     @Override
     public LocalModelControllerClient createClient(Executor executor) {
-        return createLocalClient(executor, true);
+        return createLocalClient(executor, true, false);
     }
 
     @Override
     public LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls) {
+        return createSuperUserClient(executor, forUserCalls, false);
+    }
+
+    /**
+     * Creates a superuser client that can execute calls that are to be regarded as part of process boot.
+     * Package protected as this facility should only be made available to kernel code.
+     */
+    final LocalModelControllerClient createBootClient(Executor executor) {
+        return createSuperUserClient(executor, false, true);
+    }
+
+    private LocalModelControllerClient createSuperUserClient(Executor executor, boolean forUserCalls, boolean forBoot) {
         // Wrap a standard LocalClient returned for non-SuperUser calls with
         // one that provides superuser privileges
-        final LocalClient delegate = createLocalClient(executor, forUserCalls);
+        final LocalClient delegate = createLocalClient(executor, forUserCalls, forBoot);
         return new LocalModelControllerClient() {
             @Override
             public OperationResponse executeOperation(final Operation operation, final OperationMessageHandler messageHandler) {
@@ -99,13 +111,13 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
         };
     }
 
-    private LocalClient createLocalClient(Executor executor, boolean forUserCalls) {
+    private LocalClient createLocalClient(Executor executor, boolean forUserCalls, boolean forBoot) {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(ModelController.ACCESS_PERMISSION);
         }
 
-        return new LocalClient(modelController, securityIdentitySupplier, executor, forUserCalls);
+        return new LocalClient(modelController, securityIdentitySupplier, executor, forUserCalls, forBoot);
     }
 
     /**
@@ -113,17 +125,21 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
      */
     private static class LocalClient implements LocalModelControllerClient {
 
-        private final ModelController modelController;
+        private final ModelControllerImpl modelController;
         private final Supplier<SecurityIdentity> securityIdentitySupplier;
         private final Executor executor;
         private final boolean forUserCalls;
+        private final boolean forBoot;
         private final Set<AtomicReference<Thread>> threads = Collections.synchronizedSet(new HashSet<>());
 
-        private LocalClient(ModelController modelController, Supplier<SecurityIdentity> securityIdentitySupplier, Executor executor, boolean forUserCalls) {
+        private LocalClient(ModelControllerImpl modelController, Supplier<SecurityIdentity> securityIdentitySupplier,
+                            Executor executor, boolean forUserCalls, boolean forBoot) {
+            assert !forBoot || !forUserCalls; // clients running boot calls are not allowed to do so on behalf of users
             this.modelController = modelController;
             this.securityIdentitySupplier = securityIdentitySupplier;
             this.executor = executor;
             this.forUserCalls = forUserCalls;
+            this.forBoot = forBoot;
         }
 
         @Override
@@ -149,12 +165,12 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
                     @Override
                     public OperationResponse run() {
                         SecurityActions.currentAccessAuditContext().setAccessMechanism(AccessMechanism.IN_VM_USER);
-                        return executeInModelControllerCl(modelController::execute, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                        return executeInModelControllerCl(modelController::executeOperation, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT, forBoot);
                     }
                 });
 
             }  else {
-                response = executeInModelControllerCl(modelController::execute, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                response = executeInModelControllerCl(modelController::executeOperation, toExecute, messageHandler, ModelController.OperationTransactionControl.COMMIT, forBoot);
             }
             return response;
         }
@@ -246,24 +262,24 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             Operation op = attachments == null ? Operation.Factory.create(operation) : Operation.Factory.create(operation, attachments.getInputStreams(),
                     attachments.isAutoCloseStreams());
             if (inVmCall) {
-                return SecurityActions.runInVm(() -> executeInModelControllerCl(modelController::execute, op, messageHandler, ModelController.OperationTransactionControl.COMMIT));
+                return SecurityActions.runInVm(() -> executeInModelControllerCl(modelController::executeOperation, op, messageHandler, ModelController.OperationTransactionControl.COMMIT, forBoot));
             } else {
-                return executeInModelControllerCl(modelController::execute, op, messageHandler, ModelController.OperationTransactionControl.COMMIT);
+                return executeInModelControllerCl(modelController::executeOperation, op, messageHandler, ModelController.OperationTransactionControl.COMMIT, forBoot);
             }
         }
 
-        private <T, U, V, R> R executeInModelControllerCl(TriFunction<T, U, V, R> function, T t, U u, V v) {
+        private <T, U, V, B, R> R executeInModelControllerCl(QuadFunction<T, U, V, B, R> function, T t, U u, V v, B b) {
             final ClassLoader tccl = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
             try {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(modelController.getClass().getClassLoader());
-                return function.apply(t,u,v);
+                return function.apply(t,u,v,b);
             } finally {
                 WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(tccl);
             }
         }
 
-        private interface TriFunction<T, U, V, R> {
-            R apply(T t, U u, V v);
+        private interface QuadFunction<T, U, V, B, R> {
+            R apply(T t, U u, V v, B b);
         }
     }
 

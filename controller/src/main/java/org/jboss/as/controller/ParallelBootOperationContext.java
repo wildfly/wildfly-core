@@ -134,6 +134,11 @@ class ParallelBootOperationContext extends AbstractOperationContext {
     }
 
     @Override
+    boolean isBootOperation() {
+        return true;
+    }
+
+    @Override
     public InputStream getAttachmentStream(int index) {
         return primaryContext.getAttachmentStream(index);
     }

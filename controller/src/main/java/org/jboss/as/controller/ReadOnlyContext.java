@@ -127,6 +127,15 @@ class ReadOnlyContext extends AbstractOperationContext {
     }
 
     @Override
+    boolean isBootOperation() {
+        // Read only context is used in a domain-mode controlling process in various call patterns related
+        // to synchronize another process' config with the controlling process. Whether its use
+        // counts as a 'boot operation' for the controlling process depends on whether that process
+        // is itself booting.
+        return isBooting();
+    }
+
+    @Override
     public InputStream getAttachmentStream(int index) {
         throw readOnlyContext();
     }

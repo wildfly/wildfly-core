@@ -947,7 +947,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
             ROOT_LOGGER.checkingForPresenceOfRestartMarkerFile();
             if (restartInitiated != null && restartInitiated.exists()) {
                 ROOT_LOGGER.foundRestartMarkerFile(restartInitiated);
-                try (ModelControllerClient client = controllerService.controller.createClient(controllerService.executorService.get())) {
+                try (ModelControllerClient client = controllerService.controller.createBootClient(controllerService.executorService.get())) {
                     // The shutdown takes us back to admin-only mode, we now need to reload into normal mode
                     // remove the marker first
                     deleteFile(restartInitiated);
@@ -977,7 +977,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
                     assert loader.getInvoker() != null : "No invoker found";
 
-                    try ( ModelControllerClient client = controllerService.controller.createClient(controllerService.executorService.get())) {
+                    try ( ModelControllerClient client = controllerService.controller.createBootClient(controllerService.executorService.get())) {
 
                         ROOT_LOGGER.executingBootCliScript(additionalBootCliScript);
 
