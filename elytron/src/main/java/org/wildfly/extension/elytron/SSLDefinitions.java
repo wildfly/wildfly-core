@@ -591,7 +591,7 @@ class SSLDefinitions {
                         throw new StartException(e);
                     }
 
-                    if (((KeyStoreService) keyStoreService).shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost)) {
+                    if ((keyStoreService instanceof KeyStoreService) && ((KeyStoreService) keyStoreService).shouldAutoGenerateSelfSignedCertificate(generateSelfSignedCertificateHost)) {
                         ROOT_LOGGER.selfSignedCertificateWillBeCreated(((KeyStoreService) keyStoreService).getResolvedAbsolutePath(), generateSelfSignedCertificateHost);
                         return new LazyDelegatingKeyManager(keyStoreService, password, keyManagerFactory,
                                 generateSelfSignedCertificateHost, aliasFilter);
