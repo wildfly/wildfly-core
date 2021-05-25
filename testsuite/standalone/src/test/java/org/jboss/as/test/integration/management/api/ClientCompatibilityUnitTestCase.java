@@ -18,6 +18,7 @@
 
 package org.jboss.as.test.integration.management.api;
 
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
@@ -32,6 +33,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Emanuel Muckenhuber
  */
 @RunWith(WildflyTestRunner.class)
+@Ignore
 @ServerSetup(ClientCompatibilityUnitTestCase.ClientCompatibilityUnitTestCaseServerSetup.class)
 public class ClientCompatibilityUnitTestCase extends ClientCompatibilityUnitTestBase {
     static class ClientCompatibilityUnitTestCaseServerSetup extends ClientCompatibilityUnitTestBase.ClientCompatibilityServerSetup implements ServerSetupTask {
