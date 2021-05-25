@@ -2334,6 +2334,7 @@
             <properties>
                 <modular.jdk.args>
 	            --add-opens=java.base/java.security=ALL-UNNAMED
+				--illegal-access=deny
                 </modular.jdk.args>
             </properties>
         </profile>

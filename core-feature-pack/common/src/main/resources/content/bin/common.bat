@@ -41,6 +41,7 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.management/javax.management=ALL-UNNAMED"
       rem InitialContext proxy generation requires deep reflection in javax.naming
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.naming/javax.naming=ALL-UNNAMED"
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --illegal-access=deny"
     ) else (
       set "DEFAULT_MODULAR_JVM_OPTIONS="
     )

@@ -266,6 +266,7 @@ public class CommandBuilderTest {
             assertArgumentExists(command, "--add-opens=java.management/javax.management=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.naming/javax.naming=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-modules=java.se", expectedCount);
+            assertArgumentExists(command, "--illegal-access=deny", expectedCount);
         } else {
             Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.awt=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-exports=java.base/sun.awt=ALL-UNNAMED"));
@@ -284,6 +285,7 @@ public class CommandBuilderTest {
             Assert.assertFalse("Did not expect \"--add-opens=java.naming/javax.naming=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.naming/javax.naming=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-modules=java.se\" to be in the command list", command.contains("--add-modules=java.se"));
+            Assert.assertFalse("Did not expect \"--illegal-access=deny\" to be in the command list", command.contains("--illegal-access=deny"));
         }
     }
 

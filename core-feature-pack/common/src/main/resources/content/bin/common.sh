@@ -38,6 +38,7 @@ setDefaultModularJvmOptions() {
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.management/javax.management=ALL-UNNAMED"
       # InitialContext proxy generation requires deep reflection in javax.naming
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-opens=java.naming/javax.naming=ALL-UNNAMED"
+      DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --illegal-access=deny"
     else
       DEFAULT_MODULAR_JVM_OPTIONS=""
     fi
