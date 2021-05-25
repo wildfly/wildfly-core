@@ -64,6 +64,11 @@
             <attribute-mapping alias-attribute="sn" certificate-attribute="usercertificate" certificate-chain-attribute="userSMIMECertificate" certificate-chain-encoding="PKCS7" certificate-type="X.509"/>
          </ldap-key-store>
       </key-stores>
+      <key-managers>
+         <key-manager name="LdapKeyManager" key-store="LdapKeyStoreMaximal">
+            <credential-reference clear-text="Elytron"/>
+         </key-manager>
+      </key-managers>
       <trust-managers>
          <trust-manager key-store="ElytronCaTruststore" name="ElytronTrustManager"/>
       </trust-managers>
