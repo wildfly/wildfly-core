@@ -45,6 +45,7 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
+import javax.net.ssl.KeyManager;
 import javax.security.auth.x500.X500Principal;
 
 import java.io.File;
@@ -315,6 +316,13 @@ public class LdapTestCase extends AbstractSubsystemTest {
         Certificate[] chain = keyStore.getCertificateChain(alias);
         Assert.assertEquals("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly", ((X509Certificate) chain[0]).getSubjectDN().getName());
         Assert.assertEquals("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA", ((X509Certificate) chain[1]).getSubjectDN().getName());
+    }
+
+    @Test
+    public void testLdapKeyManagerService() {
+        ServiceName keyManagerServiceName = Capabilities.KEY_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapKeyManager");
+        KeyManager keyManager = (KeyManager) services.getContainer().getService(keyManagerServiceName).getValue();
+        Assert.assertNotNull(keyManager);
     }
 
     @Test
