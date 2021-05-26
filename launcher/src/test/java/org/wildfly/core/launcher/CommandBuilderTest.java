@@ -258,17 +258,31 @@ public class CommandBuilderTest {
     private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {
         // If we're using Java 9+ ensure the modular JDK options were added
         if (Jvm.current().isModular()) {
-            assertArgumentExists(command, "--add-exports=java.base/sun.nio.ch=ALL-UNNAMED", expectedCount);
-            assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED", expectedCount);
-            assertArgumentExists(command, "--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.io=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.security=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.util=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.management/javax.management=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.naming/javax.naming=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-modules=java.se", expectedCount);
         } else {
-            Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.nio.ch=ALL-UNNAMED\" to be in the command list",
-                    command.contains("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED"));
-            Assert.assertFalse("Did not expect \"--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED\" to be in the command list",
-                    command.contains("--add-exports=jdk.unsupported/sun.reflect=ALL-UNNAMED"));
-            Assert.assertFalse("Did not expect \"--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED\" to be in the command list",
-                    command.contains("--add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.awt=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=java.base/sun.awt=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.lang=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang.invoke=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.io=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.io=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.security=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.security=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.util=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.util=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.management/javax.management=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.management/javax.management=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.naming/javax.naming=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.naming/javax.naming=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-modules=java.se\" to be in the command list", command.contains("--add-modules=java.se"));
         }
     }
