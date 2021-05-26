@@ -203,7 +203,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.io7m.xom</groupId>
+            <groupId>xom</groupId>
             <artifactId>xom</artifactId>
         </dependency>
         <dependency>
