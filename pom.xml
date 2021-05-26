@@ -1817,11 +1817,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-http-deprecated</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-digest</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
