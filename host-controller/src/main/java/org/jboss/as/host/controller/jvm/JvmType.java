@@ -63,7 +63,7 @@ public final class JvmType {
         modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.security=ALL-UNNAMED");
-        modularJavaOpts.add("--add-opens=java.base/java.util=ALL-UNNAMEDD");
+        modularJavaOpts.add("--add-opens=java.base/java.util=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.management/javax.management=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.naming/javax.naming=ALL-UNNAMED");
         DEFAULT_MODULAR_JVM_ARGUMENTS = Collections.unmodifiableList(modularJavaOpts);
