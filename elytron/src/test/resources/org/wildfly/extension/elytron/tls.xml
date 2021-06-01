@@ -51,6 +51,12 @@
             <trust-manager name="trust-with-ocsp-simple" algorithm="PKIX" key-store="jks_store">
                 <ocsp/>
             </trust-manager>
+            <trust-manager name="trust-with-multiple-crls" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list path="crl.pem" relative-to="jboss.server.config.dir"/>
+                    <certificate-revocation-list path="crl-new.pem" relative-to="jboss.server.config.dir" />
+                </certificate-revocation-lists>
+            </trust-manager>
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" authentication-optional="true" use-cipher-suites-order="false" maximum-session-cache-size="10"

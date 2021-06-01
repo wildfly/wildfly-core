@@ -128,6 +128,20 @@ class TlsParser {
             .addAttribute(SSLDefinitions.SOFT_FAIL)
             .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH);
 
+    private PersistentResourceXMLBuilder trustManagerParser_14_0 = PersistentResourceXMLDescription.builder(PathElement.pathElement(TRUST_MANAGER))
+            .setXmlWrapperElement(TRUST_MANAGERS)
+            .addAttribute(SSLDefinitions.ALGORITHM)
+            .addAttribute(SSLDefinitions.KEYSTORE)
+            .addAttribute(SSLDefinitions.ALIAS_FILTER)
+            .addAttribute(SSLDefinitions.PROVIDERS)
+            .addAttribute(SSLDefinitions.PROVIDER_NAME)
+            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LIST)
+            .addAttribute(SSLDefinitions.OCSP)
+            .addAttribute(SSLDefinitions.ONLY_LEAF_CERT)
+            .addAttribute(SSLDefinitions.SOFT_FAIL)
+            .addAttribute(SSLDefinitions.MAXIMUM_CERT_PATH)
+            .addAttribute(SSLDefinitions.CERTIFICATE_REVOCATION_LISTS); // new
+
     private PersistentResourceXMLBuilder filteringKeyStoreParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(FILTERING_KEY_STORE))
             .addAttribute(FilteringKeyStoreDefinition.KEY_STORE)
             .addAttribute(FilteringKeyStoreDefinition.ALIAS_FILTER);
@@ -327,6 +341,21 @@ class TlsParser {
             )
             .addChild(keyManagerParser_12_0)
             .addChild(trustManagerParser)
+            .addChild(serverSslContextParser_9_0)
+            .addChild(clientSslContextParser_9_0)
+            .addChild(certificateAuthorityParser)
+            .addChild(certificateAuthorityAccountParser)
+            .addChild(serverSslSniContextParser)
+            .build();
+
+    final PersistentResourceXMLDescription tlsParser_14_0 = decorator(TLS)
+            .addChild(decorator(KEY_STORES)
+                    .addChild(keyStoreParser)
+                    .addChild(ldapKeyStoreParser)
+                    .addChild(filteringKeyStoreParser)
+            )
+            .addChild(keyManagerParser_12_0)
+            .addChild(trustManagerParser_14_0) // new certificate-revocation-lists attribute
             .addChild(serverSslContextParser_9_0)
             .addChild(clientSslContextParser_9_0)
             .addChild(certificateAuthorityParser)

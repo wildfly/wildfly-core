@@ -5,5 +5,22 @@
  -->
 
 <subsystem xmlns="urn:wildfly:elytron:14.0">
-
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+            </key-store>
+        </key-stores>
+        <trust-managers>
+            <trust-manager name="TestingTrustManagerCrls" key-store="accounts.keystore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list path="groups.properties"/>
+                </certificate-revocation-lists>
+            </trust-manager>
+            <trust-manager name="TestingTrustManagerEmptyCrls" key-store="accounts.keystore">
+                <certificate-revocation-lists/>
+            </trust-manager>
+        </trust-managers>
+    </tls>
 </subsystem>

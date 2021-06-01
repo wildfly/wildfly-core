@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBU
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FAILOVER_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
 import java.io.IOException;
 import java.util.List;
@@ -228,6 +229,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(TRUST_MANAGER, "TrustManagerCrls")), REJECTED_RESOURCE)
         );
     }
     /**

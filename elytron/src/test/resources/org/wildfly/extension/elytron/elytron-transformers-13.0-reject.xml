@@ -7,6 +7,11 @@
 <subsystem xmlns="urn:wildfly:elytron:14.0">
     <tls>
         <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
             <key-store name="jks_store" alias-filter="one,two,three">
                 <credential-reference clear-text="password"/>
                 <implementation type="jks"/>
@@ -20,6 +25,12 @@
         </key-managers>
         <trust-managers>
             <trust-manager name="serverTrust" algorithm="SunX509" key-store="jks_store"/>
+            <trust-manager name="TrustManagerCrls" key-store="accounts.keystore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list />
+                    <certificate-revocation-list />
+                </certificate-revocation-lists>
+            </trust-manager>            
         </trust-managers>
         <server-ssl-contexts>
             <server-ssl-context name="server" protocols="TLSv1.2" key-manager="serverKey" trust-manager="serverTrust"/>

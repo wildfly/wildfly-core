@@ -31,6 +31,7 @@ import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.Provider;
@@ -54,12 +55,9 @@ import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CRLReason;
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509v2CRLBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -98,6 +96,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
     private static final char[] GENERATED_KEYSTORE_PASSWORD = "Elytron".toCharArray();
     private static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA ");
+    private static final X500Principal OTHER_ISSUER_DN = new X500Principal("O= Other Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=WildFly, CN=WildFly CA ");
     private static final X500Principal FIREFLY_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly");
     private static final X500Principal LOCALHOST_DN = new X500Principal("OU=Elytron, O=Elytron, C=CZ, ST=Elytron, CN=localhost");
     private static final X500Principal MUNERASOFT_DN = new X500Principal("C=BR, ST=DF, O=MuneraSoft.io, CN=MuneraSoft.io Intermediate CA, emailAddress=contact@munerasoft.com");
@@ -106,6 +105,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final File FIREFLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly.keystore");
     private static final File LOCALHOST_FILE = new File(WORKING_DIRECTORY_LOCATION, "localhost.keystore");
     private static final File CRL_FILE = new File(WORKING_DIRECTORY_LOCATION, "crl.pem");
+    private static final File CRL_FILE_NEW = new File(WORKING_DIRECTORY_LOCATION, "crl-new.pem");
 
     private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
     private static final String INIT_TEST_TRUSTSTORE = "myTS";
@@ -123,9 +123,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return ks;
     }
 
-    private static SelfSignedX509CertificateAndSigningKey createIssuer() {
+    private static SelfSignedX509CertificateAndSigningKey createIssuer(X500Principal issuerDN) {
         return SelfSignedX509CertificateAndSigningKey.builder()
-                .setDn(ISSUER_DN)
+                .setDn(issuerDN)
                 .setKeyAlgorithmName("RSA")
                 .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
@@ -190,16 +190,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return localhostKeyStore;
     }
 
-    private static X509CRLHolder createCRL() throws Exception {
+    private static X509CRLHolder createCRL(SelfSignedX509CertificateAndSigningKey issuerCertificateAndSigningKey,
+                                           String[] serialNumbers) throws Exception {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
-        SelfSignedX509CertificateAndSigningKey muneraSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
-                .setDn(MUNERASOFT_DN)
-                .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA256withRSA")
-                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
-                .build();
-        X509Certificate muneraCertificate = muneraSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
 
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
@@ -210,30 +203,38 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Date revokeDate = calendar.getTime();
 
         X509v2CRLBuilder crlBuilder = new X509v2CRLBuilder(
-                new X500Name(MUNERASOFT_DN.getName()),
+                convertSunStyleToBCStyle(issuerCertificateAndSigningKey.getSelfSignedCertificate().getSubjectDN()),
                 currentDate
         );
-        crlBuilder.addExtension(
-                Extension.authorityKeyIdentifier, false, new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(muneraCertificate.getPublicKey())
-        );
-        crlBuilder.addExtension(
-                Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(4110))
-        );
-        crlBuilder.addCRLEntry(
-                new BigInteger("1005"),
-                revokeDate,
-                CRLReason.unspecified
-        );
-        crlBuilder.addCRLEntry(
-                new BigInteger("1006"),
-                revokeDate,
-                CRLReason.unspecified
-        );
+
+        for (String serialNumber : serialNumbers) {
+            crlBuilder.addCRLEntry(
+                    new BigInteger(serialNumber),
+                    revokeDate,
+                    CRLReason.unspecified
+            );
+        }
+
         return crlBuilder.setNextUpdate(nextYear).build(
                 new JcaContentSignerBuilder("SHA256withRSA")
                         .setProvider("BC")
-                        .build(muneraSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                        .build(issuerCertificateAndSigningKey.getSigningKey())
         );
+
+    }
+
+    private static org.bouncycastle.asn1.x500.X500Name convertSunStyleToBCStyle(Principal dn) {
+        String dnName = dn.getName();
+        String[] dnComponents = dnName.split(", ");
+        StringBuilder dnBuffer = new StringBuilder(dnName.length());
+
+        dnBuffer.append(dnComponents[dnComponents.length-1]);
+        for(int i = dnComponents.length-2; i >= 0; i--){
+            dnBuffer.append(',');
+            dnBuffer.append(dnComponents[i]);
+        }
+
+        return new X500Name(dnBuffer.toString());
     }
 
     private static void createTemporaryCRLFile(X509CRLHolder crlHolder, File outputFile) throws Exception {
@@ -254,7 +255,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
             workingDir.mkdirs();
         }
 
-        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer();
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer(ISSUER_DN);
+        SelfSignedX509CertificateAndSigningKey secondIssuerSelfSignedX509CertificateAndSigningKey = createIssuer(OTHER_ISSUER_DN);
         KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
 
         KeyStore fireflyKeyStore = createFireflyKeyStore(issuerSelfSignedX509CertificateAndSigningKey);
@@ -264,8 +266,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
         createTemporaryKeyStoreFile(fireflyKeyStore, FIREFLY_FILE);
         createTemporaryKeyStoreFile(localhostKeyStore, LOCALHOST_FILE);
 
-        X509CRLHolder crlHolder = createCRL();
+        // Create CRL for LOCALHOST
+        String[] serialNumbers = new String[]{"3"};
+        X509CRLHolder crlHolder = createCRL(issuerSelfSignedX509CertificateAndSigningKey, serialNumbers);
         createTemporaryCRLFile(crlHolder, CRL_FILE);
+
+        // Create empty CRL for some other CA to test multiple CRLs
+        serialNumbers = new String[]{};
+        X509CRLHolder crlHolderNew = createCRL(secondIssuerSelfSignedX509CertificateAndSigningKey, serialNumbers);
+        createTemporaryCRLFile(crlHolderNew, CRL_FILE_NEW);
     }
 
     private static void deleteKeyStoreFiles() {
@@ -273,7 +282,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 TRUST_FILE,
                 FIREFLY_FILE,
                 LOCALHOST_FILE,
-                CRL_FILE
+                CRL_FILE,
+                CRL_FILE_NEW
         };
         for (File file : testFiles) {
             if (file.exists()) {
@@ -401,6 +411,29 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testMultipleRevocationLists() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-multiple-crls");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-multiple-crls");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
+        Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(SUCCESS));
+    }
+
+    /**
+     * Tests communication fails when server sends a certificate present in one of the CRLs
+     * configured by the client.
+     */
+    @Test(expected = SSLHandshakeException.class)
+    public void testRevocationWithMultipleCrls() throws Throwable {
+        testCommunication("ServerSslContextNoAuth", "ClientWithMultipleCRLs",
+                false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                null);
+    }
+
+    @Test
     public void testRevocationListsDp() throws Throwable {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
@@ -408,6 +441,21 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
+        Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
+    }
+
+    /**
+     * Tests distribution points work using certificate-revocation-lists attribute
+     */
+    @Test
+    public void testCertificateRevocationListsDp() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crls-dp");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crls-dp");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
         Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
     }

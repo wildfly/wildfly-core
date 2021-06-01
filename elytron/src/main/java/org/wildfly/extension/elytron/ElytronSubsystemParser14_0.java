@@ -38,5 +38,9 @@ public class ElytronSubsystemParser14_0 extends ElytronSubsystemParser13_0 {
         return new RealmParser().realmParser_14_0;
     }
 
+    PersistentResourceXMLDescription getTlsParser() {
+        return new TlsParser().tlsParser_14_0;
+    }
+
 }
 
