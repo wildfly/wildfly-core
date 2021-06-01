@@ -552,6 +552,7 @@ interface ElytronDescriptionConstants {
     String SSL_CONTEXT = "ssl-context";
     String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
+    String SSL_V2_HELLO = "SSLv2Hello";
     String SNI_MAPPING = "sni-mapping";
     String SOFT_FAIL = "soft-fail";
     String SOURCE_ADDRESS = "source-address";

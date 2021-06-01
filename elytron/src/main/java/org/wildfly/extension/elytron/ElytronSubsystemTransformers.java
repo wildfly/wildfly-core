@@ -157,7 +157,14 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
-
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
         builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)

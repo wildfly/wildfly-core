@@ -38,9 +38,14 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -81,6 +86,8 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -106,10 +113,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final File LOCALHOST_FILE = new File(WORKING_DIRECTORY_LOCATION, "localhost.keystore");
     private static final File CRL_FILE = new File(WORKING_DIRECTORY_LOCATION, "crl.pem");
     private static final File CRL_FILE_NEW = new File(WORKING_DIRECTORY_LOCATION, "crl-new.pem");
+    private static final String PROTOCOLS_SERVER = "enabledProtocolsServer";
+    private static final String PROTOCOLS_CLIENT = "enabledProtocolsClient";
+    private static final String NEGOTIATED_PROTOCOL = "negotiatedProtocol";
 
     private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
     private static final String INIT_TEST_TRUSTSTORE = "myTS";
     private static final String INIT_TEST_TRUSTMANAGER = "myTM";
+    public static String disabledAlgorithms;
+
 
     public TlsTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
@@ -303,6 +315,12 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @BeforeClass
     public static void initTests() throws Exception {
+        disabledAlgorithms = Security.getProperty("jdk.tls.disabledAlgorithms");
+        if (disabledAlgorithms != null && (disabledAlgorithms.contains("TLSv1") || disabledAlgorithms.contains("TLSv1.1"))) {
+            // reset the disabled algorithms to make sure that the protocols required in this test are available
+            Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        }
+
         if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         setUpKeyStores();
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
@@ -313,6 +331,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @AfterClass
     public static void cleanUpTests() {
+        if (disabledAlgorithms != null) {
+            Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
+        }
         if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         deleteKeyStoreFiles();
         csUtil.cleanUp();
@@ -360,6 +381,103 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 JdkUtils.getJavaSpecVersion() >= 11);
         testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                 "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2Hello() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2Hello", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2HelloOneWay() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2HelloOneWay", "ClientSslContextSSLv2HelloOneWay", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                null, null, false, protocolChecker);
+
+    }
+
+    @Test
+    public void testSslServiceAuthProtocolMismatchSSLv2Hello() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        try {
+            testCommunication("ServerSslContextTLS12Only", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                    "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
+            fail("Excepted SSLHandshakeException not thrown");
+        } catch (SSLHandshakeException e) {
+
+        }
+    }
+
+    @Test
+    public void testSslServiceAuthProtocolOnlyServerSupportsSSLv2Hello() throws Throwable {
+        String[] serverEnabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1"} : new String[]{"SSLv2Hello", "TLSv1"};
+        String[] clientEnabledProtocols = new String[]{"TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, serverEnabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, clientEnabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2Hello", "ClientSslContextOnlyTLS1", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+    }
+
+    /**
+     * Uses default protocols enabled.
+     */
+    @Test
+    public void testSslServiceAuthProtocolNoSSLv2HelloOnServerOrClient() throws Throwable {
+        String[] enabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"} : new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1.2"});
+
+        testCommunication("ServerSslContextDefaultProtocols", "ClientSslContextDefaultProtocols", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2HelloOpenSsl() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+
+        ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(
+                "SeverSslContextSSLv2HelloOpenSsl");
+        SSLContext sslContext = (SSLContext) services.getContainer().getService(serviceName).getValue();
+        Assume.assumeTrue("Skipping testSslServiceAuthSSLv2HelloOpenSSL as WildFly OpenSSL Provider " +
+                "isn't being used as specified in WFCORE-5219", sslContext != null);
+
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("SeverSslContextSSLv2HelloOpenSsl", "ClientSslContextSSLv2HelloOpenSsl", false,
+                "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
     }
 
     @Test
@@ -565,6 +683,10 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test) throws Throwable {
+        testCommunication(serverContextName, clientContextName, defaultClient, expectedServerPrincipal, expectedClientPrincipal, expectedCipherSuite, tls13Test, null);
+    }
+
+    private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test, Map<String, String[]> protocolChecker) throws Throwable{
         boolean testSessions = ! (JdkUtils.getJavaSpecVersion() >= 11); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
@@ -619,6 +741,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
                 Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());
             }
+            if (protocolChecker != null) { // Check enabled protocols match what we configured
+                checkProtocolConfiguration(protocolChecker, serverSocket, clientSocket);
+            }
             if (tls13Test) {
                 Assert.assertEquals("TLSv1.3", serverSocket.getSession().getProtocol());
                 Assert.assertEquals("TLSv1.3", clientSocket.getSession().getProtocol());
@@ -637,6 +762,21 @@ public class TlsTestCase extends AbstractSubsystemTest {
             clientSocket.close();
             listeningSocket.close();
         }
+    }
+
+    private void checkProtocolConfiguration(Map<String, String[]> protocolChecker, SSLSocket serverSocket, SSLSocket clientSocket) {
+        Set<String> serverProtocols = new HashSet<>(Arrays.asList(serverSocket.getEnabledProtocols()));
+        Set<String> clientProtocols = new HashSet<>(Arrays.asList(clientSocket.getEnabledProtocols()));
+        Set<String> enabledServer = new HashSet<>(Arrays.asList(protocolChecker.get(PROTOCOLS_SERVER)));
+        Set<String> enabledClient = new HashSet<>(Arrays.asList(protocolChecker.get(PROTOCOLS_CLIENT)));
+
+        // Check enabled protocols match the ones we configured
+        assertTrue(enabledServer.equals(serverProtocols));
+        assertTrue(enabledClient.equals(clientProtocols));
+
+        // Check negotiated protocol is the one we expected
+        assertEquals(protocolChecker.get(NEGOTIATED_PROTOCOL)[0], serverSocket.getSession().getProtocol());
+        assertEquals(protocolChecker.get(NEGOTIATED_PROTOCOL)[0], clientSocket.getSession().getProtocol());
     }
 
     private void testSessionsReading(String serverContextName, String clientContextName, String expectedServerPrincipal, String expectedClientPrincipal) {
