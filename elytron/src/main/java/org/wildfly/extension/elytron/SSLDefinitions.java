@@ -444,7 +444,7 @@ class SSLDefinitions {
         // Hostnames can contain ASCII letters a-z (case-insensitive), digits 0-9, hyphens and dots.
         // This pattern allows also [,],*,? characters to make regular expressions possible. Non-escaped dot represents any character, escaped dot is delimeter.
         static Pattern hostnameRegexPattern = Pattern.compile("[0-9a-zA-Z\\[.*]" + // first character can be digit, letter, left square bracket, non-escaped dot or asterisk
-                "([0-9a-zA-Z*.\\[\\]?-]" + // any combination of digits, letters, asterisks, non-escaped dots, square brackets, question marks and hyphens
+                "([0-9a-zA-Z*.\\[\\]?^-]" + // any combination of digits, letters, asterisks, non-escaped dots, square brackets, question marks, hyphens and carets
                 "|" +                       // OR
                 "(?<!\\\\\\.)\\\\\\.)*" +   // if there is an escaped dot, there cannot be another escaped dot right behind it
                 // backslash must be escaped, so '\\\\' translates to literally slash, and '\\.' translates to literally dot

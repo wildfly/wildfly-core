@@ -1,0 +1,9 @@
+<!-- 
+    Configuration to test transforming the model from 14.0 (WildFly 24) to 13.0 (WildFly 23 / EAP 7.4)
+
+    TODO Keep the from version up to date with later releases.
+ -->
+
+<subsystem xmlns="urn:wildfly:elytron:14.0">
+
+</subsystem>

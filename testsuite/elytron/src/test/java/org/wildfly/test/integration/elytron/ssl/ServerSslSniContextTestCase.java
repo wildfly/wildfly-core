@@ -74,6 +74,8 @@ public class ServerSslSniContextTestCase {
         Assert.assertTrue(success);
         success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"valid\\\\.example\\\\.com\"=exampleSslContext})", true);
         Assert.assertTrue(success);
+        success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"[^.]*\\\\.example\\\\.com\"=exampleSslContext})", true);
+        Assert.assertTrue(success);
     }
 
     private void removeTestResources() {
