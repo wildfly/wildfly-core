@@ -39,6 +39,18 @@
         <security-domain name="UpperCasePrincipalTransformerDomain" pre-realm-principal-transformer="myCasePrincipalTransformerUpper" default-realm="ClearPropRealm" permission-mapper="LoginPermissionMapper">
             <realm name="ClearPropRealm" />
         </security-domain>
+        <security-domain name="PropEncodingDomain" default-realm="HashedPropertyRealmBase64Encoded" permission-mapper="LoginPermissionMapper">
+            <realm name="HashedPropertyRealmBase64Encoded" />
+        </security-domain>
+        <security-domain name="PropEncodingCharsetDomain" default-realm="HashedPropertyRealmBase64EncodedCharset" permission-mapper="LoginPermissionMapper">
+            <realm name="HashedPropertyRealmBase64EncodedCharset" />
+        </security-domain>
+        <security-domain  name="FilesystemEncodingDomain" default-realm="FilesystemRealm3" permission-mapper="LoginPermissionMapper" >
+            <realm name="FilesystemRealm3" />
+        </security-domain>
+        <security-domain  name="FilesystemEncodingCharsetDomain" default-realm="FilesystemRealm4" permission-mapper="LoginPermissionMapper" >
+            <realm name="FilesystemRealm4" />
+        </security-domain>
     </security-domains>
     <security-realms>
         <properties-realm name="PropRealm">
@@ -54,8 +66,20 @@
         <properties-realm name="ClearPropRealm">
             <users-properties path="users-clear.properties" relative-to="jboss.server.config.dir" plain-text="true"/>
         </properties-realm>
+        <properties-realm name="HashedPropertyRealmBase64Encoded" hash-encoding="base64">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64.properties" digest-realm-name="ManagementRealm" />
+        </properties-realm>
+        <properties-realm name="HashedPropertyRealmBase64EncodedCharset" hash-encoding="base64" hash-charset="GB2312">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm" />
+        </properties-realm>
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+        <filesystem-realm name="FilesystemRealm3" levels="1" encoded="true" hash-encoding="hex">
+            <file path="filesystem-realm-3" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+        <filesystem-realm name="FilesystemRealm4" levels="1" encoded="true" hash-encoding="hex" hash-charset="GB2312">
+            <file path="filesystem-realm-4" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
     </security-realms>
     <mappers>

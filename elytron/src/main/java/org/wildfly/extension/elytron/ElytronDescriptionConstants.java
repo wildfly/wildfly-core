@@ -237,6 +237,7 @@ interface ElytronDescriptionConstants {
     String HOST_CONTEXT_MAP = "host-context-map";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
+    String HASH_CHARSET = "hash-charset";
     String HASH_ENCODING = "hash-encoding";
     String HASH_FROM = "hash-from";
     String HEX = "hex";
@@ -588,6 +589,7 @@ interface ElytronDescriptionConstants {
     String USE_CIPHER_SUITES_ORDER = "use-cipher-suites-order";
     String USERS_PROPERTIES = "users-properties";
     String USER_PASSWORD_MAPPER = "user-password-mapper";
+    String UTF_8 = "UTF-8";
 
     String VALID = "valid";
     String VALIDATE = "validate";

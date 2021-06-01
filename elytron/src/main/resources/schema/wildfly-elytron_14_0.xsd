@@ -1243,6 +1243,14 @@
                 <xs:sequence>
                     <xs:element name="principal-query" type="authenticationQueryType" maxOccurs="unbounded"/>
                 </xs:sequence>
+                <xs:attribute name="hash-charset" default="UTF-8" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The character set to use when converting the password string
+                            to a byte array.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1702,6 +1710,28 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="hash-encoding" default="hex" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The string format for the password in the properties file if they are not
+                            stored in plain text.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="base64"/>
+                            <xs:enumeration value="hex"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="hash-charset" default="UTF-8" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The character set to use when converting the password string
+                            to a byte array.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1740,6 +1770,28 @@
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
+                <xs:attribute name="hash-encoding" default="base64" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The string format for the password in the properties file if they are not
+                            stored in plain text.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="base64"/>
+                            <xs:enumeration value="hex"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="hash-charset" default="UTF-8" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The character set to use when converting the password string
+                            to a byte array.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1773,6 +1825,28 @@
                     <xs:annotation>
                         <xs:documentation>
                             Whether the identity names should be stored encoded (Base32) in file names.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="hash-encoding" default="base64" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The string format for the password in the properties file if they are not
+                            stored in plain text.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="base64"/>
+                            <xs:enumeration value="hex"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="hash-charset" default="UTF-8" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The character set to use when converting the password string
+                            to a byte array.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>

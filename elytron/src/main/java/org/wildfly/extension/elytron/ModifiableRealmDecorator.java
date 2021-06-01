@@ -64,6 +64,8 @@ import org.wildfly.security.password.spec.OneTimePasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 import org.wildfly.security.password.spec.SaltedPasswordAlgorithmSpec;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -72,6 +74,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostController;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
@@ -543,6 +546,13 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
         }
 
         private Password createPassword(final OperationContext parentContext, final String principalName, String passwordType, ModelNode passwordNode) throws OperationFailedException, NoSuchAlgorithmException, InvalidKeySpecException  {
+
+            ModelNode modifiableRealm = parentContext.readResource(PathAddress.EMPTY_ADDRESS, false).getModel();
+            Charset hashCharset = StandardCharsets.UTF_8;
+            if (modifiableRealm.get(HASH_CHARSET).isDefined()) {
+                hashCharset = Charset.forName(modifiableRealm.get(HASH_CHARSET).asString());
+            }
+
             final String password = PASSWORD.resolveModelAttribute(parentContext, passwordNode).asString();
             final PasswordSpec passwordSpec;
             final String algorithm;
@@ -550,7 +560,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
             if (passwordType.equals(ElytronDescriptionConstants.BCRYPT)) {
                 byte[] salt = Bcrypt.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 int iterationCount = Bcrypt.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
-                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt));
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt), hashCharset);
                 algorithm = Bcrypt.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.CLEAR)) {
@@ -558,26 +568,26 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 algorithm = Clear.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.SIMPLE_DIGEST)) {
-                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), null);
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), null, hashCharset);
                 algorithm = SimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST)) {
                 byte[] salt = SaltedSimpleDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 SaltedPasswordAlgorithmSpec spec = new SaltedPasswordAlgorithmSpec(salt);
-                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec);
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), spec, hashCharset);
                 algorithm = SaltedSimpleDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.SCRAM_DIGEST)) {
                 byte[] salt = ScramDigest.SALT.resolveModelAttribute(parentContext, passwordNode).asBytes();
                 int iterationCount = ScramDigest.ITERATION_COUNT.resolveModelAttribute(parentContext, passwordNode).asInt();
-                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt));
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new IteratedSaltedPasswordAlgorithmSpec(iterationCount, salt), hashCharset);
                 algorithm = ScramDigest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
 
             } else if (passwordType.equals(ElytronDescriptionConstants.DIGEST)) {
                 String realm = Digest.REALM.resolveModelAttribute(parentContext, passwordNode).asString();
                 algorithm = Digest.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();
                 DigestPasswordAlgorithmSpec dpas = new DigestPasswordAlgorithmSpec(principalName, realm);
-                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), dpas);
+                passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), dpas, hashCharset);
 
             } else if (passwordType.equals(ElytronDescriptionConstants.OTP)) {
                 algorithm = OTPassword.ALGORITHM.resolveModelAttribute(parentContext, passwordNode).asString();

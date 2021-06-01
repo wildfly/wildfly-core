@@ -244,6 +244,32 @@ public class LdapTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testLdapRealmWithHashCharset() throws Exception {
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmCharset");
+        ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityRealm);
+
+        RealmIdentity identity1 = securityRealm.getRealmIdentity(new NamePrincipal("ssha512UserCharset"));
+        Assert.assertTrue(identity1.exists());
+
+        Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence("password密码".toCharArray())));
+        identity1.dispose();
+    }
+
+    @Test
+    public void testLdapRealmWithHashCharsetAndHexEncoding() throws Exception {
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealmEncodingCharset");
+        ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(securityRealm);
+
+        RealmIdentity identity1 = securityRealm.getRealmIdentity(new NamePrincipal("ssha512UserCharsetHex"));
+        Assert.assertTrue(identity1.exists());
+
+        Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence("password密码".toCharArray())));
+        identity1.dispose();
+    }
+
+    @Test
     public void testLdapRealmIterating() throws Exception {
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("LdapRealm");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
