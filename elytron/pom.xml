@@ -458,6 +458,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <reuseForks>false</reuseForks>
                     <argLine>-javaagent:${org.jmockit:jmockit:jar} ${surefire.jacoco.args} ${modular.jdk.args} -Dorg.wildfly.extension.elytron.restore-default-ssl-context=true -Dauthconfigprovider.factory=org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory</argLine>
                 </configuration>
             </plugin>
