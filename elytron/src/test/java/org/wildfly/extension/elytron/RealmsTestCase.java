@@ -31,12 +31,18 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.EncryptablePasswordSpec;
+import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.OneTimePasswordSpec;
 
 import java.io.IOException;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.spec.KeySpec;
 import java.util.Iterator;
@@ -65,6 +71,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
             Assert.fail(services.getBootError().toString());
         }
 
+        // hex encoded using UTF-8
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealm");
         SecurityRealm securityRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
         testAbstractPropertyRealm(securityRealm);
@@ -73,10 +80,36 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         SecurityRealm securityRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
         testAbstractPropertyRealm(securityRealm2);
 
+        // base64 encoded using UTF-8
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64Encoded");
+        SecurityRealm securityRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
+        performHashedFileTest(securityRealm3, "elytron","passwd12#$");
+
+        // base64 encoded using charset GB2312
+        ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64EncodedCharset");
+        SecurityRealm securityRealm4 = (SecurityRealm) services.getContainer().getService(serviceName4).getValue();
+        performHashedFileTest(securityRealm4, "elytron4", "password密码");
+
         RealmIdentity identity1 = securityRealm2.getRealmIdentity(fromName("user1"));
         Object[] groups = identity1.getAuthorizationIdentity().getAttributes().get("groupAttr").toArray();
         Assert.assertArrayEquals(new Object[]{"firstGroup","secondGroup"}, groups);
     }
+
+    private void performHashedFileTest(SecurityRealm realm, String username, String password) throws Exception{
+        Assert.assertNotNull(realm);
+
+        RealmIdentity identity1 = realm.getRealmIdentity(fromName(username));
+        Assert.assertTrue(identity1.exists());
+        Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
+        Assert.assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
+        identity1.dispose();
+
+        RealmIdentity identity9 = realm.getRealmIdentity(fromName("user9"));
+        Assert.assertFalse(identity9.exists());
+        Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
+        identity9.dispose();
+    }
+
 
     private void testAbstractPropertyRealm(SecurityRealm securityRealm) throws Exception {
         Assert.assertNotNull(securityRealm);
@@ -115,6 +148,88 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         identity1.dispose();
 
         testModifiability(securityRealm);
+    }
+
+    /**
+     * Test the filesystem realm can handle identities with hashed passwords using string encodings and different character
+     * sets
+     */
+    @Test
+    public void testFileSystemRealmEncodingAndCharset() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        // Testing filesystem realm hex encoded using UTF-8 charset
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm3");
+        ModifiableSecurityRealm securityRealm3 = (ModifiableSecurityRealm) services.getContainer().getService(serviceName3).getValue();
+        testAbstractFilesystemRealm(securityRealm3, "plainUser", "secretPassword");
+        testAddingAndDeletingEncodedHash(securityRealm3, StandardCharsets.UTF_8, "secretPassword");
+
+
+        // Testing filesystem realm hex encoded using GB2312 charset
+        ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm4");
+        ModifiableSecurityRealm securityRealm4 = (ModifiableSecurityRealm) services.getContainer().getService(serviceName4).getValue();
+        testAbstractFilesystemRealm(securityRealm4, "plainUser", "password密码");
+        testAddingAndDeletingEncodedHash(securityRealm4, Charset.forName("gb2312"), "password密码");
+
+    }
+
+    private void testAbstractFilesystemRealm(SecurityRealm securityRealm, String username, String password) throws Exception {
+        Assert.assertNotNull(securityRealm);
+
+        RealmIdentity identity1 = securityRealm.getRealmIdentity(fromName(username));
+        Assert.assertTrue(identity1.exists());
+        Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
+        Assert.assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
+        identity1.dispose();
+
+        RealmIdentity identity9 = securityRealm.getRealmIdentity(fromName("user9"));
+        Assert.assertFalse(identity9.exists());
+        Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
+        identity9.dispose();
+    }
+
+
+    private void testAddingAndDeletingEncodedHash(ModifiableSecurityRealm securityRealm, Charset hashCharset, String password) throws Exception {
+
+        // obtain original count of identities
+        int oldCount = getRealmIdentityCount(securityRealm);
+        Assert.assertTrue(oldCount > 0);
+
+        // create identity
+        ModifiableRealmIdentity identity1 = securityRealm.getRealmIdentityForUpdate(fromName("createdUser"));
+        Assert.assertFalse(identity1.exists());
+        identity1.create();
+        Assert.assertTrue(identity1.exists());
+
+        // write password credential
+        List<Credential> credentials = new LinkedList<>();
+
+        PasswordFactory passwordFactory = PasswordFactory.getInstance(BCryptPassword.ALGORITHM_BCRYPT);
+        char[] actualPassword = password.toCharArray();
+        byte[] salt = {(byte) 0x49, (byte) 0x3a, (byte) 0x6c, (byte) 0x23, (byte) 0x4d, (byte) 0x51, (byte) 0x9a, (byte) 0x54, (byte) 0x17,
+                (byte) 0x87, (byte) 0xad, (byte) 0x37, (byte) 0x51, (byte) 0x98, (byte) 0x51, (byte) 0x76};
+        BCryptPassword bCryptPassword = (BCryptPassword) passwordFactory.generatePassword(
+                new EncryptablePasswordSpec(actualPassword, new IteratedSaltedPasswordAlgorithmSpec(10, salt), hashCharset));
+
+        credentials.add(new PasswordCredential(bCryptPassword));
+
+        identity1.setCredentials(credentials);
+        identity1.dispose();
+
+        // read created identity
+        ModifiableRealmIdentity identity2 = securityRealm.getRealmIdentityForUpdate(fromName("createdUser"));
+        Assert.assertTrue(identity2.exists());
+
+        // verify password
+        Assert.assertTrue(identity2.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
+
+        // delete identity
+        identity1.delete();
+        Assert.assertFalse(identity1.exists());
+        identity1.dispose();
     }
 
     @Test

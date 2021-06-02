@@ -42,6 +42,7 @@ import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.RO
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.Socket;
@@ -83,6 +84,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -227,7 +229,7 @@ class SSLDefinitions {
             //.setDefaultValue(new ModelNode(CipherSuiteSelector.OPENSSL_DEFAULT_CIPHER_SUITE_NAMES))
             .build();
 
-    private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
+    private static final String[] ALLOWED_PROTOCOLS = { "SSLv2", "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3" };
 
     static final StringListAttributeDefinition PROTOCOLS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.PROTOCOLS)
             .setAllowExpression(true)
@@ -317,7 +319,20 @@ class SSLDefinitions {
     static final ObjectTypeAttributeDefinition CERTIFICATE_REVOCATION_LIST = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST, PATH, RELATIVE_TO, MAXIMUM_CERT_PATH_CRL)
             .setRequired(false)
             .setRestartAllServices()
+            .setAlternatives(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
             .build();
+
+    static final ObjectTypeAttributeDefinition CERTIFICATE_REVOCATION_LIST_NO_MAX_CERT_PATH = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST, PATH, RELATIVE_TO)
+            .setRequired(false)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectListAttributeDefinition CERTIFICATE_REVOCATION_LISTS = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS, CERTIFICATE_REVOCATION_LIST_NO_MAX_CERT_PATH)
+            .setRequired(false)
+            .setRestartAllServices()
+            .setAlternatives(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+            .build();
+
 
     static final SimpleAttributeDefinition RESPONDER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.RESPONDER, ModelType.STRING, true)
             .setAllowExpression(true)
@@ -444,7 +459,7 @@ class SSLDefinitions {
         // Hostnames can contain ASCII letters a-z (case-insensitive), digits 0-9, hyphens and dots.
         // This pattern allows also [,],*,? characters to make regular expressions possible. Non-escaped dot represents any character, escaped dot is delimeter.
         static Pattern hostnameRegexPattern = Pattern.compile("[0-9a-zA-Z\\[.*]" + // first character can be digit, letter, left square bracket, non-escaped dot or asterisk
-                "([0-9a-zA-Z*.\\[\\]?-]" + // any combination of digits, letters, asterisks, non-escaped dots, square brackets, question marks and hyphens
+                "([0-9a-zA-Z*.\\[\\]?^-]" + // any combination of digits, letters, asterisks, non-escaped dots, square brackets, question marks, hyphens and carets
                 "|" +                       // OR
                 "(?<!\\\\\\.)\\\\\\.)*" +   // if there is an escaped dot, there cannot be another escaped dot right behind it
                 // backslash must be escaped, so '\\\\' translates to literally slash, and '\\.' translates to literally dot
@@ -647,7 +662,7 @@ class SSLDefinitions {
                 .build();
 
 
-        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, OCSP, SOFT_FAIL, ONLY_LEAF_CERT, MAXIMUM_CERT_PATH};
+        AttributeDefinition[] attributes = new AttributeDefinition[]{ALGORITHM, providersDefinition, PROVIDER_NAME, keystoreDefinition, ALIAS_FILTER, CERTIFICATE_REVOCATION_LIST, CERTIFICATE_REVOCATION_LISTS, OCSP, SOFT_FAIL, ONLY_LEAF_CERT, MAXIMUM_CERT_PATH};
 
         AbstractAddStepHandler add = new TrivialAddHandler<TrustManager>(TrustManager.class, attributes, TRUST_MANAGER_RUNTIME_CAPABILITY) {
 
@@ -679,9 +694,10 @@ class SSLDefinitions {
                 ModelNode ocspNode = OCSP.resolveModelAttribute(context, model);
                 boolean softFail = SOFT_FAIL.resolveModelAttribute(context, model).asBoolean();
                 Integer maxCertPath = MAXIMUM_CERT_PATH.resolveModelAttribute(context, model).asIntOrNull();
+                ModelNode multipleCrlsNode = CERTIFICATE_REVOCATION_LISTS.resolveModelAttribute(context, model);
 
-                if (crlNode.isDefined() || ocspNode.isDefined()) {
-                    return createX509RevocationTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, softFail, crlNode, ocspNode, maxCertPath, aliasFilter);
+                if (crlNode.isDefined() || ocspNode.isDefined() || multipleCrlsNode.isDefined()) {
+                        return createX509RevocationTrustManager(serviceBuilder, context, algorithm, providerName, providersInjector, keyStoreInjector, softFail, crlNode, multipleCrlsNode, ocspNode, maxCertPath, aliasFilter);
                 }
 
                 DelegatingTrustManager delegatingTrustManager = new DelegatingTrustManager();
@@ -719,8 +735,7 @@ class SSLDefinitions {
                 };
             }
 
-            private ValueSupplier<TrustManager> createX509RevocationTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, boolean softFail, ModelNode crlNode, ModelNode ocspNode, Integer maxCertPath, String aliasFilter) throws OperationFailedException {
-
+            private ValueSupplier<TrustManager> createX509RevocationTrustManager(ServiceBuilder<TrustManager> serviceBuilder, OperationContext context, String algorithm, String providerName, InjectedValue<Provider[]> providersInjector, InjectedValue<KeyStore> keyStoreInjector, boolean softFail, ModelNode crlNode, ModelNode multipleCrlsNode, ModelNode ocspNode, Integer maxCertPath, String aliasFilter) throws OperationFailedException {
 
                 //BW compatibility, max cert path is now in trust-manager
                 @Deprecated
@@ -735,7 +750,8 @@ class SSLDefinitions {
 
                 String crlPath = null;
                 String crlRelativeTo = null;
-                final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
+                InjectedValue<PathManager> pathManagerInjector = new InjectedValue();
+                List<CrlFile> crlFiles = new ArrayList<>();
 
                 if (crlNode.isDefined()) {
                     crlPath = PATH.resolveModelAttribute(context, crlNode).asStringOrNull();
@@ -747,7 +763,23 @@ class SSLDefinitions {
                             serviceBuilder.requires(pathName(crlRelativeTo));
                         }
                     }
+
+                    crlFiles.add(new CrlFile(crlPath, crlRelativeTo, pathManagerInjector));
+
+                } else if (multipleCrlsNode.isDefined()) {
+                    // certificate-revocation-lists and certificate-revocation-list are mutually exclusive
+                    for (ModelNode crl : multipleCrlsNode.asList()) {
+                        crlPath = PATH.resolveModelAttribute(context, crl).asStringOrNull();
+                        crlRelativeTo = RELATIVE_TO.resolveModelAttribute(context, crl).asStringOrNull();
+                        pathManagerInjector = new InjectedValue();
+                        if (crlPath != null && crlRelativeTo != null) {
+                            serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
+                            serviceBuilder.requires(pathName(crlRelativeTo));
+                        }
+                        crlFiles.add(new CrlFile(crlPath, crlRelativeTo, pathManagerInjector));
+                    }
                 }
+
                 boolean preferCrls = PREFER_CRLS.resolveModelAttribute(context, ocspNode).asBoolean(false);
                 String responder = RESPONDER.resolveModelAttribute(context, ocspNode).asStringOrNull();
                 String responderCertAlias = RESPONDER_CERTIFICATE.resolveModelAttribute(context, ocspNode).asStringOrNull();
@@ -789,10 +821,7 @@ class SSLDefinitions {
                         builder.setPreferCrls(preferCrls);
                     }
                 }
-
-                final String finalCrlPath = crlPath;
-                final String finalCrlRelativeTo = crlRelativeTo;
-
+                final List<CrlFile> finalCrlFiles = crlFiles;
                 return () -> {
                     TrustManagerFactory trustManagerFactory = createTrustManagerFactory(providersInjector.getOptionalValue(), providerName, algorithm);
                     KeyStore keyStore = keyStoreInjector.getOptionalValue();
@@ -817,20 +846,28 @@ class SSLDefinitions {
                     builder.setTrustStore(keyStore);
                     builder.setTrustManagerFactory(trustManagerFactory);
 
-                    if (finalCrlPath != null) {
-                        try {
-                            builder.setCrlStream(new FileInputStream(resolveFileLocation(finalCrlPath, finalCrlRelativeTo, pathManagerInjector)));
-                            return createReloadableX509CRLTrustManager(finalCrlPath, finalCrlRelativeTo, pathManagerInjector, builder);
-                        } catch (FileNotFoundException e) {
-                            throw ElytronSubsystemMessages.ROOT_LOGGER.unableToAccessCRL(e);
-                        }
+                    if (! finalCrlFiles.isEmpty()) {
+                        List<InputStream> finalCrlStreams = getCrlStreams(finalCrlFiles);
+                        builder.setCrlStreams(finalCrlStreams);
+                        return createReloadableX509CRLTrustManager(finalCrlFiles, builder);
                     }
-
                     return builder.build();
                 };
             }
 
-            private TrustManager createReloadableX509CRLTrustManager(final String crlPath, final String crlRelativeTo, final InjectedValue<PathManager> pathManagerInjector, final X509RevocationTrustManager.Builder builder) {
+            private List<InputStream> getCrlStreams(List<CrlFile> crlFiles) throws StartException {
+                List<InputStream> crlStreams = new ArrayList<>();
+                for (CrlFile crl : crlFiles) {
+                    try {
+                        crlStreams.add(new FileInputStream(resolveFileLocation(crl.getCrlPath(), crl.getRelativeTo(), crl.getPathManagerInjector())));
+                    } catch (FileNotFoundException e) {
+                        throw ROOT_LOGGER.unableToAccessCRL(e);
+                    }
+                }
+                return crlStreams;
+            }
+
+            private TrustManager createReloadableX509CRLTrustManager(final List<CrlFile> crlFiles, final X509RevocationTrustManager.Builder builder) {
                 return new ReloadableX509ExtendedTrustManager() {
 
                     private volatile X509ExtendedTrustManager delegate = builder.build();
@@ -840,9 +877,9 @@ class SSLDefinitions {
                     void reload() {
                         if (reloading.compareAndSet(false, true)) {
                             try {
-                                builder.setCrlStream(new FileInputStream(resolveFileLocation(crlPath, crlRelativeTo, pathManagerInjector)));
+                                builder.setCrlStreams(getCrlStreams(crlFiles));
                                 delegate = builder.build();
-                            } catch (FileNotFoundException cause) {
+                            } catch (StartException cause) {
                                 throw ElytronSubsystemMessages.ROOT_LOGGER.unableToReloadCRL(cause);
                             } finally {
                                 reloading.lazySet(false);
@@ -1571,6 +1608,34 @@ class SSLDefinitions {
         ServiceName serviceName = runtimeCapability.getCapabilityServiceName();
         ServiceController<KeyStore> serviceContainer = getRequiredService(serviceRegistry, serviceName, KeyStore.class);
         return (ModifiableKeyStoreService) serviceContainer.getService();
+    }
+
+    /**
+     * CrlFile contains the necessary information to create a
+     * CRL File Input Stream
+     */
+    static class CrlFile {
+        private String crlPath = null;
+        private String relativeTo = null;
+        private InjectedValue<PathManager> pathManagerInjector = null;
+
+        public CrlFile(final String crlPath, final String relativeTo, InjectedValue<PathManager> pathManagerInjector) {
+            this.crlPath = crlPath;
+            this.relativeTo = relativeTo;
+            this.pathManagerInjector = pathManagerInjector;
+        }
+
+        public String getCrlPath() {
+            return crlPath;
+        }
+
+        public String getRelativeTo() {
+            return relativeTo;
+        }
+
+        public InjectedValue<PathManager> getPathManagerInjector() {
+            return pathManagerInjector;
+        }
     }
 
 }

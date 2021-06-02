@@ -99,6 +99,7 @@ interface ElytronDescriptionConstants {
     String CERTIFICATE_FROM = "certificate-from";
     String CERTIFICATE_TYPE = "certificate-type";
     String CERTIFICATE_REVOCATION_LIST = "certificate-revocation-list";
+    String CERTIFICATE_REVOCATION_LISTS = "certificate-revocation-lists";
     String CHAINED_PRINCIPAL_TRANSFORMER = "chained-principal-transformer";
     String CHANGE_ACCOUNT_KEY = "change-account-key";
     String CHANGE_ALIAS = "change-alias";
@@ -237,6 +238,7 @@ interface ElytronDescriptionConstants {
     String HOST_CONTEXT_MAP = "host-context-map";
     String HOST_NAME = "host-name";
     String HOST_NAME_VERIFICATION_POLICY = "host-name-verification-policy";
+    String HASH_CHARSET = "hash-charset";
     String HASH_ENCODING = "hash-encoding";
     String HASH_FROM = "hash-from";
     String HEX = "hex";
@@ -550,6 +552,7 @@ interface ElytronDescriptionConstants {
     String SSL_CONTEXT = "ssl-context";
     String SSL_CONTEXT_REGISTRATION = "ssl-context-registration";
     String SSL_SESSION = "ssl-session";
+    String SSL_V2_HELLO = "SSLv2Hello";
     String SNI_MAPPING = "sni-mapping";
     String SOFT_FAIL = "soft-fail";
     String SOURCE_ADDRESS = "source-address";
@@ -588,6 +591,7 @@ interface ElytronDescriptionConstants {
     String USE_CIPHER_SUITES_ORDER = "use-cipher-suites-order";
     String USERS_PROPERTIES = "users-properties";
     String USER_PASSWORD_MAPPER = "user-password-mapper";
+    String UTF_8 = "UTF-8";
 
     String VALID = "valid";
     String VALIDATE = "validate";

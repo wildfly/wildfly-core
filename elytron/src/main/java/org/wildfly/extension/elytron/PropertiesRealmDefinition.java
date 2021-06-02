@@ -19,6 +19,9 @@
 package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
@@ -30,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
@@ -48,6 +52,8 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.operations.validation.CharsetValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.services.path.PathEntry;
 import org.jboss.as.controller.services.path.PathManager;
@@ -73,6 +79,7 @@ import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.event.RealmEvent;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.evidence.Evidence;
+import org.wildfly.security.password.spec.Encoding;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} backed by properties files.
@@ -116,7 +123,21 @@ class PropertiesRealmDefinition {
         .setStorageRuntime()
         .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE };
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode(HEX))
+            .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setValidator(new CharsetValidator())
+            .setDefaultValue(new ModelNode(UTF_8))
+            .setAllowExpression(true)
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { USERS_PROPERTIES, GROUPS_PROPERTIES, GROUPS_ATTRIBUTE, HASH_ENCODING, HASH_CHARSET };
 
     // Resource Resolver
 
@@ -141,6 +162,8 @@ class PropertiesRealmDefinition {
             final boolean plainText;
             final String digestRealmName;
             final String groupsAttribute = GROUPS_ATTRIBUTE.resolveModelAttribute(context, model).asString();
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, model).asString();
+            final String hashCharset = HASH_CHARSET.resolveModelAttribute(context, model).asString();
 
             ModelNode usersProperties = USERS_PROPERTIES.resolveModelAttribute(context, model);
             usersPath = PATH.resolveModelAttribute(context, usersProperties).asStringOrNull();
@@ -186,6 +209,8 @@ class PropertiesRealmDefinition {
                                 .setPlainText(plainText)
                                 .setGroupsAttribute(groupsAttribute)
                                 .setDefaultRealm(digestRealmName)
+                                .setHashEncoding(BASE64.equalsIgnoreCase(hashEncoding) ? Encoding.BASE64 : Encoding.HEX)
+                                .setHashCharset(Charset.forName(hashCharset))
                                 .build(), usersFile, groupsFile);
 
                     } catch (FileNotFoundException e) {
@@ -233,7 +258,6 @@ class PropertiesRealmDefinition {
 
             };
         }
-
     };
 
     static ResourceDefinition create(boolean serverOrHostController) {

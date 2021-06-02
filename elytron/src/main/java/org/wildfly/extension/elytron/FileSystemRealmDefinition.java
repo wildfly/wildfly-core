@@ -20,9 +20,13 @@ package org.wildfly.extension.elytron;
 
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
@@ -37,6 +41,9 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.operations.validation.CharsetValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
+import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.services.path.PathManager;
@@ -52,6 +59,7 @@ import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.auth.realm.FileSystemSecurityRealm;
 import org.wildfly.security.auth.server.NameRewriter;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.password.spec.Encoding;
 
 
 /**
@@ -88,7 +96,21 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                     .setRestartAllServices()
                     .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED};
+    static final SimpleAttributeDefinition HASH_ENCODING = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_ENCODING, ModelType.STRING, true)
+            .setDefaultValue(new ModelNode(BASE64))
+            .setValidator(new StringAllowedValuesValidator(BASE64, HEX))
+            .setAllowExpression(true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .build();
+
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setDefaultValue(new ModelNode(UTF_8))
+            .setValidator(new CharsetValidator())
+            .setAllowExpression(true)
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, HASH_ENCODING, HASH_CHARSET};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -133,6 +155,9 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             final String path = PATH.resolveModelAttribute(context, model).asString();
             final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, model).asStringOrNull();
 
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, model).asString();
+            final String hashCharset = HASH_CHARSET.resolveModelAttribute(context, model).asString();
+
             final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
             final InjectedValue<NameRewriter> nameRewriterInjector = new InjectedValue<>();
 
@@ -147,10 +172,12 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                             Path rootPath = pathResolver.path(path).relativeTo(relativeTo, pathManagerInjector.getOptionalValue()).resolve().toPath();
 
                             NameRewriter nameRewriter = nameRewriterInjector.getOptionalValue();
+                            Charset charset = Charset.forName(hashCharset);
+                            Encoding encoding = HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64;
 
                             return nameRewriter != null ?
-                                    new FileSystemSecurityRealm(rootPath, nameRewriter, levels, encoded) :
-                                    new FileSystemSecurityRealm(rootPath, NameRewriter.IDENTITY_REWRITER, levels, encoded);
+                                    new FileSystemSecurityRealm(rootPath, nameRewriter, levels, encoded, encoding, charset) :
+                                    new FileSystemSecurityRealm(rootPath, NameRewriter.IDENTITY_REWRITER, levels, encoded, encoding, charset);
                         }
 
                         @Override

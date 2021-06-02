@@ -62,6 +62,10 @@ class RealmParser {
     private final PersistentResourceXMLDescription jdbcRealmParser_7_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), null)
             .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
+    private final PersistentResourceXMLDescription jdbcRealmParser_14_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM), null)
+            .addAttribute(PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+            .addAttribute(JdbcRealmDefinition.HASH_CHARSET)
+            .build();
     private final PersistentResourceXMLDescription keyStoreRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE_REALM), null)
             .addAttribute(KeyStoreRealmDefinition.KEYSTORE)
             .build();
@@ -70,12 +74,25 @@ class RealmParser {
             .addAttribute(PropertiesRealmDefinition.USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .addAttribute(PropertiesRealmDefinition.GROUPS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
             .build();
+    private final PersistentResourceXMLDescription propertiesRealmParser_14_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM), null)
+            .addAttributes(PropertiesRealmDefinition.GROUPS_ATTRIBUTE)
+            .addAttribute(PropertiesRealmDefinition.USERS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
+            .addAttribute(PropertiesRealmDefinition.GROUPS_PROPERTIES, AttributeParser.OBJECT_PARSER, AttributeMarshaller.ATTRIBUTE_OBJECT)
+            .addAttribute(PropertiesRealmDefinition.HASH_CHARSET)
+            .addAttribute(PropertiesRealmDefinition.HASH_ENCODING)
+            .build();
     private final PersistentResourceXMLDescription ldapRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM), null)
             .addAttributes(LdapRealmDefinition.ATTRIBUTES)
             .build();
     private final PersistentResourceXMLDescription fileSystemRealmDescription = builder(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM), null)
-            .addAttributes(FileSystemRealmDefinition.ATTRIBUTES)
+            .addAttribute(FileSystemRealmDefinition.ENCODED)
+            .addAttribute(FileSystemRealmDefinition.LEVELS)
+            .addAttribute(FileSystemRealmDefinition.PATH)
+            .addAttribute(FileSystemRealmDefinition.RELATIVE_TO)
             .setMarshallDefaultValues(true)
+            .build();
+    private final PersistentResourceXMLDescription filesystemRealmParser_14_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM), null)
+            .addAttributes(FileSystemRealmDefinition.ATTRIBUTES)
             .build();
     private final PersistentResourceXMLDescription tokenRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM), null)
             .addAttributes(TokenRealmDefinition.ATTRIBUTES)
@@ -142,6 +159,22 @@ class RealmParser {
             .addChild(propertiesRealmParser)
             .addChild(ldapRealmParser)
             .addChild(fileSystemRealmDescription)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .addChild(distributedRealmParser)
+            .addChild(failoverRealmParser)
+            .build();
+
+    final PersistentResourceXMLDescription realmParser_14_0 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_14_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser_14_0)
+            .addChild(ldapRealmParser)
+            .addChild(filesystemRealmParser_14_0)
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
             .addChild(distributedRealmParser)

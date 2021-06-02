@@ -31,15 +31,21 @@ import java.security.AccessController;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,12 +60,9 @@ import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CRLReason;
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509v2CRLBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemWriter;
@@ -83,6 +86,8 @@ import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -98,6 +103,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final String WORKING_DIRECTORY_LOCATION = "./target/test-classes/org/wildfly/extension/elytron";
     private static final char[] GENERATED_KEYSTORE_PASSWORD = "Elytron".toCharArray();
     private static final X500Principal ISSUER_DN = new X500Principal("O=Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=Elytron, CN=Elytron CA ");
+    private static final X500Principal OTHER_ISSUER_DN = new X500Principal("O= Other Root Certificate Authority, EMAILADDRESS=elytron@wildfly.org, C=UK, ST=WildFly, CN=WildFly CA ");
     private static final X500Principal FIREFLY_DN = new X500Principal("OU=Elytron, O=Elytron, C=UK, ST=Elytron, CN=Firefly");
     private static final X500Principal LOCALHOST_DN = new X500Principal("OU=Elytron, O=Elytron, C=CZ, ST=Elytron, CN=localhost");
     private static final X500Principal MUNERASOFT_DN = new X500Principal("C=BR, ST=DF, O=MuneraSoft.io, CN=MuneraSoft.io Intermediate CA, emailAddress=contact@munerasoft.com");
@@ -106,10 +112,16 @@ public class TlsTestCase extends AbstractSubsystemTest {
     private static final File FIREFLY_FILE = new File(WORKING_DIRECTORY_LOCATION, "firefly.keystore");
     private static final File LOCALHOST_FILE = new File(WORKING_DIRECTORY_LOCATION, "localhost.keystore");
     private static final File CRL_FILE = new File(WORKING_DIRECTORY_LOCATION, "crl.pem");
+    private static final File CRL_FILE_NEW = new File(WORKING_DIRECTORY_LOCATION, "crl-new.pem");
+    private static final String PROTOCOLS_SERVER = "enabledProtocolsServer";
+    private static final String PROTOCOLS_CLIENT = "enabledProtocolsClient";
+    private static final String NEGOTIATED_PROTOCOL = "negotiatedProtocol";
 
     private static final String INIT_TEST_FILE = "/trust-manager-reload-test.truststore";
     private static final String INIT_TEST_TRUSTSTORE = "myTS";
     private static final String INIT_TEST_TRUSTMANAGER = "myTM";
+    public static String disabledAlgorithms;
+
 
     public TlsTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
@@ -123,9 +135,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return ks;
     }
 
-    private static SelfSignedX509CertificateAndSigningKey createIssuer() {
+    private static SelfSignedX509CertificateAndSigningKey createIssuer(X500Principal issuerDN) {
         return SelfSignedX509CertificateAndSigningKey.builder()
-                .setDn(ISSUER_DN)
+                .setDn(issuerDN)
                 .setKeyAlgorithmName("RSA")
                 .setSignatureAlgorithmName("SHA256withRSA")
                 .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
@@ -190,16 +202,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
         return localhostKeyStore;
     }
 
-    private static X509CRLHolder createCRL() throws Exception {
+    private static X509CRLHolder createCRL(SelfSignedX509CertificateAndSigningKey issuerCertificateAndSigningKey,
+                                           String[] serialNumbers) throws Exception {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
-        SelfSignedX509CertificateAndSigningKey muneraSelfSignedX509CertificateAndSigningKey = SelfSignedX509CertificateAndSigningKey.builder()
-                .setDn(MUNERASOFT_DN)
-                .setKeyAlgorithmName("RSA")
-                .setSignatureAlgorithmName("SHA256withRSA")
-                .addExtension(false, "BasicConstraints", "CA:true,pathlen:2147483647")
-                .build();
-        X509Certificate muneraCertificate = muneraSelfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
 
         Calendar calendar = Calendar.getInstance();
         Date currentDate = calendar.getTime();
@@ -210,30 +215,38 @@ public class TlsTestCase extends AbstractSubsystemTest {
         Date revokeDate = calendar.getTime();
 
         X509v2CRLBuilder crlBuilder = new X509v2CRLBuilder(
-                new X500Name(MUNERASOFT_DN.getName()),
+                convertSunStyleToBCStyle(issuerCertificateAndSigningKey.getSelfSignedCertificate().getSubjectDN()),
                 currentDate
         );
-        crlBuilder.addExtension(
-                Extension.authorityKeyIdentifier, false, new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(muneraCertificate.getPublicKey())
-        );
-        crlBuilder.addExtension(
-                Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(4110))
-        );
-        crlBuilder.addCRLEntry(
-                new BigInteger("1005"),
-                revokeDate,
-                CRLReason.unspecified
-        );
-        crlBuilder.addCRLEntry(
-                new BigInteger("1006"),
-                revokeDate,
-                CRLReason.unspecified
-        );
+
+        for (String serialNumber : serialNumbers) {
+            crlBuilder.addCRLEntry(
+                    new BigInteger(serialNumber),
+                    revokeDate,
+                    CRLReason.unspecified
+            );
+        }
+
         return crlBuilder.setNextUpdate(nextYear).build(
                 new JcaContentSignerBuilder("SHA256withRSA")
                         .setProvider("BC")
-                        .build(muneraSelfSignedX509CertificateAndSigningKey.getSigningKey())
+                        .build(issuerCertificateAndSigningKey.getSigningKey())
         );
+
+    }
+
+    private static org.bouncycastle.asn1.x500.X500Name convertSunStyleToBCStyle(Principal dn) {
+        String dnName = dn.getName();
+        String[] dnComponents = dnName.split(", ");
+        StringBuilder dnBuffer = new StringBuilder(dnName.length());
+
+        dnBuffer.append(dnComponents[dnComponents.length-1]);
+        for(int i = dnComponents.length-2; i >= 0; i--){
+            dnBuffer.append(',');
+            dnBuffer.append(dnComponents[i]);
+        }
+
+        return new X500Name(dnBuffer.toString());
     }
 
     private static void createTemporaryCRLFile(X509CRLHolder crlHolder, File outputFile) throws Exception {
@@ -254,7 +267,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
             workingDir.mkdirs();
         }
 
-        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer();
+        SelfSignedX509CertificateAndSigningKey issuerSelfSignedX509CertificateAndSigningKey = createIssuer(ISSUER_DN);
+        SelfSignedX509CertificateAndSigningKey secondIssuerSelfSignedX509CertificateAndSigningKey = createIssuer(OTHER_ISSUER_DN);
         KeyStore trustStore = createTrustStore(issuerSelfSignedX509CertificateAndSigningKey);
 
         KeyStore fireflyKeyStore = createFireflyKeyStore(issuerSelfSignedX509CertificateAndSigningKey);
@@ -264,8 +278,15 @@ public class TlsTestCase extends AbstractSubsystemTest {
         createTemporaryKeyStoreFile(fireflyKeyStore, FIREFLY_FILE);
         createTemporaryKeyStoreFile(localhostKeyStore, LOCALHOST_FILE);
 
-        X509CRLHolder crlHolder = createCRL();
+        // Create CRL for LOCALHOST
+        String[] serialNumbers = new String[]{"3"};
+        X509CRLHolder crlHolder = createCRL(issuerSelfSignedX509CertificateAndSigningKey, serialNumbers);
         createTemporaryCRLFile(crlHolder, CRL_FILE);
+
+        // Create empty CRL for some other CA to test multiple CRLs
+        serialNumbers = new String[]{};
+        X509CRLHolder crlHolderNew = createCRL(secondIssuerSelfSignedX509CertificateAndSigningKey, serialNumbers);
+        createTemporaryCRLFile(crlHolderNew, CRL_FILE_NEW);
     }
 
     private static void deleteKeyStoreFiles() {
@@ -273,7 +294,8 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 TRUST_FILE,
                 FIREFLY_FILE,
                 LOCALHOST_FILE,
-                CRL_FILE
+                CRL_FILE,
+                CRL_FILE_NEW
         };
         for (File file : testFiles) {
             if (file.exists()) {
@@ -293,6 +315,12 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @BeforeClass
     public static void initTests() throws Exception {
+        disabledAlgorithms = Security.getProperty("jdk.tls.disabledAlgorithms");
+        if (disabledAlgorithms != null && (disabledAlgorithms.contains("TLSv1") || disabledAlgorithms.contains("TLSv1.1"))) {
+            // reset the disabled algorithms to make sure that the protocols required in this test are available
+            Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        }
+
         if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         setUpKeyStores();
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
@@ -303,6 +331,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @AfterClass
     public static void cleanUpTests() {
+        if (disabledAlgorithms != null) {
+            Security.setProperty("jdk.tls.disabledAlgorithms", disabledAlgorithms);
+        }
         if (isJDK14Plus()) return; // TODO: remove this line once WFCORE-4532 is fixed
         deleteKeyStoreFiles();
         csUtil.cleanUp();
@@ -350,6 +381,103 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 JdkUtils.getJavaSpecVersion() >= 11);
         testCommunication("ServerSslContextTLS13", "ClientSslContextTLS13", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                 "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", "TLS_AES_256_GCM_SHA384", true);
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2Hello() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2Hello", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2HelloOneWay() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2HelloOneWay", "ClientSslContextSSLv2HelloOneWay", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                null, null, false, protocolChecker);
+
+    }
+
+    @Test
+    public void testSslServiceAuthProtocolMismatchSSLv2Hello() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+        try {
+            testCommunication("ServerSslContextTLS12Only", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                    "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
+            fail("Excepted SSLHandshakeException not thrown");
+        } catch (SSLHandshakeException e) {
+
+        }
+    }
+
+    @Test
+    public void testSslServiceAuthProtocolOnlyServerSupportsSSLv2Hello() throws Throwable {
+        String[] serverEnabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1"} : new String[]{"SSLv2Hello", "TLSv1"};
+        String[] clientEnabledProtocols = new String[]{"TLSv1"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, serverEnabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, clientEnabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("ServerSslContextSSLv2Hello", "ClientSslContextOnlyTLS1", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+    }
+
+    /**
+     * Uses default protocols enabled.
+     */
+    @Test
+    public void testSslServiceAuthProtocolNoSSLv2HelloOnServerOrClient() throws Throwable {
+        String[] enabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"} : new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1.2"});
+
+        testCommunication("ServerSslContextDefaultProtocols", "ClientSslContextDefaultProtocols", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
+    }
+
+    @Test
+    public void testSslServiceAuthSSLv2HelloOpenSsl() throws Throwable {
+        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
+                "in the client", JdkUtils.isIbmJdk());
+
+        ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(
+                "SeverSslContextSSLv2HelloOpenSsl");
+        SSLContext sslContext = (SSLContext) services.getContainer().getService(serviceName).getValue();
+        Assume.assumeTrue("Skipping testSslServiceAuthSSLv2HelloOpenSSL as WildFly OpenSSL Provider " +
+                "isn't being used as specified in WFCORE-5219", sslContext != null);
+
+        String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
+        HashMap<String, String[]> protocolChecker = new HashMap<>();
+        protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
+        protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
+        protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1"});
+
+        testCommunication("SeverSslContextSSLv2HelloOpenSsl", "ClientSslContextSSLv2HelloOpenSsl", false,
+                "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
     }
 
     @Test
@@ -401,6 +529,29 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     @Test
+    public void testMultipleRevocationLists() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-multiple-crls");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-multiple-crls");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
+        Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(SUCCESS));
+    }
+
+    /**
+     * Tests communication fails when server sends a certificate present in one of the CRLs
+     * configured by the client.
+     */
+    @Test(expected = SSLHandshakeException.class)
+    public void testRevocationWithMultipleCrls() throws Throwable {
+        testCommunication("ServerSslContextNoAuth", "ClientWithMultipleCRLs",
+                false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+                null);
+    }
+
+    @Test
     public void testRevocationListsDp() throws Throwable {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
@@ -408,6 +559,21 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
+        Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
+    }
+
+    /**
+     * Tests distribution points work using certificate-revocation-lists attribute
+     */
+    @Test
+    public void testCertificateRevocationListsDp() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crls-dp");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        Assert.assertNotNull(trustManager);
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crls-dp");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
         Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
     }
@@ -517,6 +683,10 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test) throws Throwable {
+        testCommunication(serverContextName, clientContextName, defaultClient, expectedServerPrincipal, expectedClientPrincipal, expectedCipherSuite, tls13Test, null);
+    }
+
+    private void testCommunication(String serverContextName, String clientContextName, boolean defaultClient, String expectedServerPrincipal, String expectedClientPrincipal, String expectedCipherSuite, boolean tls13Test, Map<String, String[]> protocolChecker) throws Throwable{
         boolean testSessions = ! (JdkUtils.getJavaSpecVersion() >= 11); // session IDs are essentially obsolete in TLSv1.3
         SSLContext serverContext = getSslContext(serverContextName);
         SSLContext clientContext = defaultClient ? SSLContext.getDefault() : getSslContext(clientContextName);
@@ -571,6 +741,9 @@ public class TlsTestCase extends AbstractSubsystemTest {
                 Assert.assertEquals(expectedCipherSuite, serverSocket.getSession().getCipherSuite());
                 Assert.assertEquals(expectedCipherSuite, clientSocket.getSession().getCipherSuite());
             }
+            if (protocolChecker != null) { // Check enabled protocols match what we configured
+                checkProtocolConfiguration(protocolChecker, serverSocket, clientSocket);
+            }
             if (tls13Test) {
                 Assert.assertEquals("TLSv1.3", serverSocket.getSession().getProtocol());
                 Assert.assertEquals("TLSv1.3", clientSocket.getSession().getProtocol());
@@ -589,6 +762,21 @@ public class TlsTestCase extends AbstractSubsystemTest {
             clientSocket.close();
             listeningSocket.close();
         }
+    }
+
+    private void checkProtocolConfiguration(Map<String, String[]> protocolChecker, SSLSocket serverSocket, SSLSocket clientSocket) {
+        Set<String> serverProtocols = new HashSet<>(Arrays.asList(serverSocket.getEnabledProtocols()));
+        Set<String> clientProtocols = new HashSet<>(Arrays.asList(clientSocket.getEnabledProtocols()));
+        Set<String> enabledServer = new HashSet<>(Arrays.asList(protocolChecker.get(PROTOCOLS_SERVER)));
+        Set<String> enabledClient = new HashSet<>(Arrays.asList(protocolChecker.get(PROTOCOLS_CLIENT)));
+
+        // Check enabled protocols match the ones we configured
+        assertTrue(enabledServer.equals(serverProtocols));
+        assertTrue(enabledClient.equals(clientProtocols));
+
+        // Check negotiated protocol is the one we expected
+        assertEquals(protocolChecker.get(NEGOTIATED_PROTOCOL)[0], serverSocket.getSession().getProtocol());
+        assertEquals(protocolChecker.get(NEGOTIATED_PROTOCOL)[0], clientSocket.getSession().getProtocol());
     }
 
     private void testSessionsReading(String serverContextName, String clientContextName, String expectedServerPrincipal, String expectedClientPrincipal) {

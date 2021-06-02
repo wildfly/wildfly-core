@@ -27,7 +27,6 @@
         <filesystem-realm name="FileRealmTwo" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
-        
     </security-realms>
     <mappers>
         <source-address-role-decoder name="ipRoleDecoder" source-address="10.12.14.16" roles="admin user"/>

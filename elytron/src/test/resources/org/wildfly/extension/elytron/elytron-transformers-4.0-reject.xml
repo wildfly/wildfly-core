@@ -1,4 +1,4 @@
-<!-- 
+<!--
     Configuration to test transforming the model from 8.0 (WildFly 18 / EAP 7.3) to 4.0 (WildFly 14 / EAP 7.2)
  -->
 
@@ -94,7 +94,7 @@
         </token-realm>
         <filesystem-realm name="FileRealm" levels="2" encoded="false">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
-        </filesystem-realm>        
+        </filesystem-realm>
     </security-realms>
     <mappers>
         <x500-subject-evidence-decoder name="subjectDecoder" />

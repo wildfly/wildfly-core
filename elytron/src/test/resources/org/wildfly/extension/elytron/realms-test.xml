@@ -1,5 +1,5 @@
 <!-- for needs of RealmsTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:13.0" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:14.0" initial-providers="elytron">
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
@@ -9,6 +9,14 @@
 
         <properties-realm name="HashedPropertyRealm">
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashed.properties" digest-realm-name="Hashed" />
+        </properties-realm>
+
+        <properties-realm name="HashedPropertyRealmBase64Encoded" hash-encoding="base64">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64.properties" digest-realm-name="ManagementRealm" />
+        </properties-realm>
+
+        <properties-realm name="HashedPropertyRealmBase64EncodedCharset" hash-encoding="base64" hash-charset="GB2312">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm" />
         </properties-realm>
 
         <properties-realm name="ClearPropertyRealm" groups-attribute="groupAttr">
@@ -22,6 +30,14 @@
 
         <filesystem-realm name="FilesystemRealm2" levels="2" encoded="false">
             <file path="filesystem-realm-2" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealm3" levels="1" encoded="true" hash-encoding="hex">
+            <file path="filesystem-realm-3" relative-to="jboss.server.config.dir" />
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealm4" levels="1" encoded="true" hash-encoding="hex" hash-charset="GB2312">
+            <file path="filesystem-realm-4" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
 
         <token-realm name="JwtRealm" principal-claim="sub">

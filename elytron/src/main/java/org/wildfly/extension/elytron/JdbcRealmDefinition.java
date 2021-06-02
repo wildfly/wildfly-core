@@ -28,8 +28,10 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
+import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +55,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.operations.validation.CharsetValidator;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -78,6 +81,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
 import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
+import org.wildfly.security.password.spec.Encoding;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} backed by a database using JDBC.
@@ -200,8 +204,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? Encoding.HEX : Encoding.BASE64)
                     .build();
         }
     }
@@ -284,8 +288,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? Encoding.HEX : Encoding.BASE64)
                     .build();
         }
     }
@@ -347,7 +351,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64)
                     .build();
         }
     }
@@ -430,8 +434,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                    .setHashEncoding(HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64)
+                    .setSaltEncoding(HEX.equals(saltEncoding) ? Encoding.HEX : Encoding.BASE64)
                     .build();
         }
     }
@@ -566,7 +570,14 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
     }
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0};
+    static final SimpleAttributeDefinition HASH_CHARSET = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.HASH_CHARSET, ModelType.STRING, true)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setValidator(new CharsetValidator())
+            .setDefaultValue(new ModelNode(UTF_8))
+            .setAllowExpression(true)
+            .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0, HASH_CHARSET};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -601,7 +612,10 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
             RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
             ServiceName realmName = runtimeCapability.getCapabilityServiceName(SecurityRealm.class);
             ModelNode principalQueries = PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0.resolveModelAttribute(context, operation);
+            final String hashCharset = HASH_CHARSET.resolveModelAttribute(context, model).asString();
+            Charset charset = Charset.forName(hashCharset);
             final JdbcSecurityRealmBuilder builder = JdbcSecurityRealm.builder();
+            builder.setHashCharset(charset);
 
             TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(builder::build);
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, service);

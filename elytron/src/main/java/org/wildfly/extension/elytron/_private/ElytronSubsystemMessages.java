@@ -637,6 +637,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id=1086, value = "Unable to initialize Elytron JACC support while legacy JACC support is enabled.")
     IllegalStateException unableToEnableJaccSupport();
 
+    @Message(id = 1087, value = "Hostname in SNI mapping cannot contain ^ character.")
+    OperationFailedException hostContextMapHostnameContainsCaret();
+
     /*
      * Expression Resolver Section
      */

@@ -1,0 +1,75 @@
+<!-- 
+    Configuration to test transforming the model from 14.0 (WildFly 24) to 13.0 (WildFly 23 / EAP 7.4)
+
+    TODO Keep the from version up to date with later releases.
+ -->
+
+<subsystem xmlns="urn:wildfly:elytron:14.0">
+    <tls>
+        <key-stores>
+            <key-store name="accounts.keystore">
+                <credential-reference clear-text="elytron"/>
+                <implementation type="JKS"/>
+                <file path="accounts.keystore.jks" relative-to="jboss.server.config.dir"/>
+            </key-store>
+            <key-store name="jks_store" alias-filter="one,two,three">
+                <credential-reference clear-text="password"/>
+                <implementation type="jks"/>
+                <file relative-to="jboss.server.config.dir" path="keystore.jks" required="true"/>
+            </key-store>
+        </key-stores>
+        <key-managers>
+            <key-manager name="key1" key-store="accounts.keystore">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+            <key-manager name="serverKey" algorithm="SunX509" key-store="jks_store">
+                <credential-reference clear-text="password"/>
+            </key-manager>
+        </key-managers>
+        <trust-managers>
+            <trust-manager name="serverTrust" algorithm="SunX509" key-store="jks_store"/>
+            <trust-manager name="TrustManagerCrls" key-store="accounts.keystore">
+                <certificate-revocation-lists>
+                    <certificate-revocation-list />
+                    <certificate-revocation-list />
+                </certificate-revocation-lists>
+            </trust-manager>            
+        </trust-managers>
+        <server-ssl-contexts>
+            <server-ssl-context name="server" protocols="TLSv1.2" key-manager="serverKey" trust-manager="serverTrust"/>
+            <server-ssl-context name="ctxSSLv2Hello" key-manager="key1" protocols="SSLv2Hello TLSv1" />
+        </server-ssl-contexts>
+        <client-ssl-contexts>
+            <client-ssl-context name="ClientContextSSLv2Hello" protocols="SSLv2Hello TLSv1" />
+        </client-ssl-contexts>
+        <server-ssl-sni-contexts>
+            <server-ssl-sni-context name="SNIwithCaret" default-ssl-context="server">
+                <sni-mapping host="[^.]*\.example\.com" ssl-context="server"/>
+            </server-ssl-sni-context>
+        </server-ssl-sni-contexts>
+    </tls>
+    <credential-stores>
+        <credential-store name="store1" location="path/to/store_file" >
+            <credential-reference clear-text="STOREPASSWORD"/>
+        </credential-store>
+    </credential-stores>
+    <security-realms>
+        <properties-realm name="PropertiesRealmEncodingCharset" hash-charset="GB2312" hash-encoding="base64">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm"/>
+        </properties-realm>
+        <filesystem-realm name="FilesystemRealmEncodingCharset" hash-charset="GB2312" hash-encoding="hex">
+            <file  path="filesystem-realm" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+        <jdbc-realm name="JDBCRealmCharset" hash-charset="GB2312">
+            <principal-query sql="SELECT role, password FROM User WHERE username = ?" data-source="ExampleDS"></principal-query>
+        </jdbc-realm>
+        <ldap-realm name="LDAPRealmEncodingCharset" dir-context="dirContext" hash-encoding="hex" hash-charset="GB2312">
+            <identity-mapping rdn-identifier="uid"></identity-mapping>
+        </ldap-realm>
+    </security-realms>
+    <dir-contexts>
+        <dir-context name="dirContext" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">
+            <credential-reference store="store1" alias="Elytron"/>
+        </dir-context>
+    </dir-contexts>
+</subsystem>

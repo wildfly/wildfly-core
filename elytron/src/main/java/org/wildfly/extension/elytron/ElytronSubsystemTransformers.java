@@ -25,12 +25,17 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
@@ -41,6 +46,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_10_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_11_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_12_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_13_0_0;
+import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_14_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_1_2_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_2_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_3_0_0;
@@ -91,6 +97,8 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
+        // 14.0.0 (WildFly 24) to 13.0.0 (WildFly 23)
+        from14(chainedBuilder);
         // 13.0.0 (WildFly 23) to 12.0.0 (WildFly 22)
         from13(chainedBuilder);
         // 12.0.0 (WildFly 22) to 11.0.0 (WildFly 21)
@@ -116,8 +124,71 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         // 2.0.0 (WildFly 12) to 1.2.0, (WildFly 11 and EAP 7.1.0)
         from2(chainedBuilder);
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_12_0_0, ELYTRON_11_0_0, ELYTRON_10_0_0, ELYTRON_9_0_0, ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[] { ELYTRON_13_0_0, ELYTRON_12_0_0, ELYTRON_11_0_0, ELYTRON_10_0_0, ELYTRON_9_0_0,
+                ELYTRON_8_0_0, ELYTRON_7_0_0, ELYTRON_6_0_0, ELYTRON_5_0_0, ELYTRON_4_0_0, ELYTRON_3_0_0, ELYTRON_2_0_0, ELYTRON_1_2_0 });
+    }
 
+    private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {
+        ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_14_0_0, ELYTRON_13_0_0);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+                    @Override
+                    protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+                        if (value.isDefined()) {
+                            for (String hostname : value.keys()) {
+                                // character '^' was not allowed in older versions
+                                if (hostname.contains("^")) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+                        return ROOT_LOGGER.hostContextMapHostnameContainsCaret().getMessage();
+                    }
+                }, ElytronDescriptionConstants.HOST_CONTEXT_MAP);
+        builder.addChildResource(PathElement.pathElement(PROPERTIES_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT))
+                .getAttributeBuilder()
+                .addRejectCheck(new RejectAttributeChecker.ListRejectAttributeChecker(new RejectAttributeChecker.SimpleRejectAttributeChecker( new ModelNode(ElytronDescriptionConstants.SSL_V2_HELLO))), ElytronDescriptionConstants.PROTOCOLS)
+                .end();
+        builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET);
+
+        builder.addChildResource(PathElement.pathElement(JDBC_REALM))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET);
+
+        builder.addChildResource(PathElement.pathElement(LDAP_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_CHARSET)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, HASH_ENCODING)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_CHARSET)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, HASH_ENCODING);
+        builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.TRUST_MANAGER))
+                .getAttributeBuilder()
+                .addRejectCheck(REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
+                .addRename(ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LIST)
+                .setValueConverter(CERTIFICATE_REVOCATION_LIST_CONVERTER, ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS)
+                .end();
     }
 
     private static void from13(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -137,6 +208,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .addRejectCheck(RejectAttributeChecker.DEFINED, ElytronDescriptionConstants.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SSLDefinitions.GENERATE_SELF_SIGNED_CERTIFICATE_HOST)
                 .end();
+
 
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.CASE_PRINCIPAL_TRANSFORMER));
     }
@@ -422,6 +494,25 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         }
     };
 
+    private static final AttributeConverter CERTIFICATE_REVOCATION_LIST_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            // If we reached this point, we know the attribute was not rejected so CERTIFICATE_REVOCATION_LISTS can have at most one CRL.
+            if (attributeValue.isDefined()) {
+                List<ModelNode> crls = attributeValue.asListOrEmpty();
+                if (crls.size() == 1) {
+                    ModelNode singleCrl = crls.get(0);
+                    attributeValue.clear();
+                    attributeValue.get(ElytronDescriptionConstants.PATH).set(singleCrl.get(ElytronDescriptionConstants.PATH));
+                    attributeValue.get(ElytronDescriptionConstants.RELATIVE_TO).set(singleCrl.get(ElytronDescriptionConstants.RELATIVE_TO));
+                } else if (crls.isEmpty()) {
+                    attributeValue.clear();
+                }
+            }
+        }
+
+    };
+
     private static final RejectAttributeChecker REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
@@ -460,6 +551,23 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         @Override
         public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
             return ROOT_LOGGER.invalidAttributeValue(AUTHORIZATION_REALMS).getMessage();
+        }
+    };
+
+    private static final RejectAttributeChecker REJECT_IF_MULTIPLE_CERTIFICATE_REVOCATION_LISTS = new RejectAttributeChecker.DefaultRejectAttributeChecker() {
+
+        @Override
+        protected boolean rejectAttribute(PathAddress address, String attributeName, ModelNode value, TransformationContext context) {
+            // reject if there is more than one certificate revocation list specified
+            if (value.isDefined()) {
+                List<ModelNode> values = value.asList();
+                return (values.size() > 1);
+            }
+            return false;
+        }
+        @Override
+        public String getRejectionLogMessage(Map<String, ModelNode> attributes) {
+            return ROOT_LOGGER.invalidAttributeValue(CERTIFICATE_REVOCATION_LISTS).getMessage();
         }
     };
 

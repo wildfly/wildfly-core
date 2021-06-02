@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBU
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FAILOVER_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
 import java.io.IOException;
 import java.util.List;
@@ -62,7 +63,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("elytron-transformers-8.0.xml");
+        return readResource("elytron-transformers-13.0.xml");
     }
 
     protected String getSubsystemXml(final String subsystemFile) throws IOException {
@@ -212,6 +213,30 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
     }
 
     /**
+     * Test case testing resources and attributes are appropriately rejected when transforming to EAP 7.4.
+     */
+    @Test
+    public void testRejectingTransformersEAP740() throws Exception {
+        testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
+                        new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.HOST_CONTEXT_MAP)
+                )
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.PROPERTIES_REALM, "PropertiesRealmEncodingCharset")),
+            FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "JDBCRealmCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
+                .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(TRUST_MANAGER, "TrustManagerCrls")), REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_CONTEXT, "ctxSSLv2Hello")),
+                    REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.CLIENT_SSL_CONTEXT, "ClientContextSSLv2Hello")),
+                    REJECTED_RESOURCE)
+        );
+    }
+    /**
      * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.1.
      */
     @Test
@@ -232,6 +257,14 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
      */
     @Test
     public void testTransformerEAP730() throws Exception {
+        testTransformation(EAP_7_3_0, getSubsystemXml("elytron-transformers-8.0.xml"));
+    }
+
+    /**
+     * Test case testing resources and attributes are appropriately transformed when transforming to EAP 7.4.
+     */
+    @Test
+    public void testTransformerEAP740() throws Exception {
         testTransformation(EAP_7_3_0);
     }
 
