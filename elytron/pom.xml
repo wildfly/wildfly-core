@@ -42,11 +42,6 @@
         </dependencies>
     </dependencyManagement>
 
-    <properties>
-        <version.org.apache.directory.api>2.0.0</version.org.apache.directory.api>
-        <version.org.apache.directory.server>2.0.0.AM26</version.org.apache.directory.server>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -67,7 +62,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jboss-dmr</artifactId>
@@ -145,12 +140,12 @@
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-audit</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth</artifactId>
@@ -180,12 +175,12 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-jaspi</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-realm-jdbc</artifactId>
@@ -220,7 +215,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-sasl-scram</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-security-manager</artifactId>
@@ -230,7 +225,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-cert</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-cert-acme</artifactId>
@@ -240,7 +235,7 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-x500-principal</artifactId>
         </dependency>
-
+        
         <!-- TEST Dependencies -->
         <dependency>
             <groupId>org.wildfly.core</groupId>
@@ -286,7 +281,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-standalone</artifactId>
-            <version>${version.org.apache.directory.api}</version>
+            <version>1.0.0</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -298,7 +293,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-codec-core</artifactId>
-            <version>${version.org.apache.directory.api}</version>
+            <version>1.0.0</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -310,7 +305,7 @@
         <dependency>
             <groupId>org.apache.directory.api</groupId>
             <artifactId>api-ldap-net-mina</artifactId>
-            <version>${version.org.apache.directory.api}</version>
+            <version>1.0.0</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -322,7 +317,7 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-core-api</artifactId>
-            <version>${version.org.apache.directory.server}</version>
+            <version>2.0.0-M24</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -334,7 +329,7 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-core-annotations</artifactId>
-            <version>${version.org.apache.directory.server}</version>
+            <version>2.0.0-M24</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -350,7 +345,7 @@
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-protocol-ldap</artifactId>
-            <version>${version.org.apache.directory.server}</version>
+            <version>2.0.0-M24</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
