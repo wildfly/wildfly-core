@@ -60,6 +60,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         // Keep them alphabetical to avoid the code history getting confused by reordering commits
         final ArrayList<String> modularJavaOpts = new ArrayList<>();
         modularJavaOpts.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
+        modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");

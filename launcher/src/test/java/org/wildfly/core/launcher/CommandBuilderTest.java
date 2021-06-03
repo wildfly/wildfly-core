@@ -259,6 +259,7 @@ public class CommandBuilderTest {
         // If we're using Java 9+ ensure the modular JDK options were added
         if (Jvm.current().isModular()) {
             assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.io=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.security=ALL-UNNAMED", expectedCount);
@@ -269,6 +270,8 @@ public class CommandBuilderTest {
         } else {
             Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.awt=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-exports=java.base/sun.awt=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.base/java.lang=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang.invoke=ALL-UNNAMED\" to be in the command list",
