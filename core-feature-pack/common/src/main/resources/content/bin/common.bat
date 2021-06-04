@@ -27,6 +27,9 @@ goto :eof
       rem Set default modular jdk options
       rem Needed by the iiop-openjdk subsystem
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.desktop/sun.awt=ALL-UNNAMED"
+      rem Needed to instantiate the default InitialContextFactory implementation used by the
+      rem Elytron subsystem dir-context and core management ldap-connection resources
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"
       rem Needed if Hibernate applications use Javassist
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang=ALL-UNNAMED"
       rem Needed by the MicroProfile REST Client subsystem

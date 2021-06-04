@@ -59,6 +59,7 @@ public final class JvmType {
         // Additions to these should include good explanations why in the relevant JIRA
         // Keep them alphabetical to avoid the code history getting confused by reordering commits
         modularJavaOpts.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
+        modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");
