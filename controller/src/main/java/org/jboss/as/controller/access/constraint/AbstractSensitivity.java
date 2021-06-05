@@ -129,7 +129,7 @@ public class AbstractSensitivity {
         boolean effectiveAccessPermission = requiresAccessPermission == null ? defaultRequiresAccessPermission : requiresAccessPermission;
         boolean effectiveReadPermission = configuredRequiresReadPermission == null ? defaultRequiresReadPermission : configuredRequiresReadPermission;
         boolean effectiveWritePermission = configuredRequiresWritePermission == null ? defaultRequiresWritePermission : configuredRequiresWritePermission;
-        if (effectiveAccessPermission == true && (effectiveReadPermission == false | effectiveWritePermission == false)) {
+        if (effectiveAccessPermission == true && (effectiveReadPermission == false || effectiveWritePermission == false)) {
             return false;
         } else {
             return true;
@@ -155,7 +155,7 @@ public class AbstractSensitivity {
         boolean effectiveWritePermission = requiresWritePermission == null ? defaultRequiresWritePermission : requiresWritePermission;
         boolean effectiveAccessPermission = configuredRequiresAccessPermission == null ? defaultRequiresAccessPermission : configuredRequiresAccessPermission;
         boolean effectiveReadPermission = configuredRequiresReadPermission == null ? defaultRequiresReadPermission : configuredRequiresReadPermission;
-        if (effectiveWritePermission == false && (effectiveAccessPermission == true | effectiveReadPermission == true)) {
+        if (effectiveWritePermission == false && (effectiveAccessPermission == true || effectiveReadPermission == true)) {
             // write false to configured-requires-write while configured-requires-access or configured-requires-read is true is invalid
             return false;
         } else {
