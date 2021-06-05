@@ -286,15 +286,44 @@ class TemporaryModuleLayer implements Closeable {
                 return Collections.emptyList();
             }
             final InputStream is = new FileInputStream(file);
+            Throwable originalException = null;
+            List<String> retList = null;
             try {
-                return readRefs(is);
+                retList = readRefs(is);
+            } catch (IOException e) {
+                originalException = e;
+            } catch (Throwable ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                originalException = ex;
             } finally {
-                if (is != null) try {
-                    is.close();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                Throwable suppressed = originalException; // OK to be null
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (Exception ex) {
+                        if (originalException != null) {
+                            originalException.addSuppressed(ex);
+                            suppressed = originalException;
+                        } else {
+                            suppressed = new RuntimeException(ex);
+                        }
+                    }
+                }
+                if (suppressed != null) {
+                    if (suppressed instanceof RuntimeException) {
+                        throw (RuntimeException) suppressed;
+                    }
+                    if (suppressed instanceof Error) {
+                        throw (Error) suppressed;
+                    }
+                    if (suppressed instanceof IOException) {
+                        throw (IOException) suppressed;
+                    }
                 }
             }
+            return retList;
         }
 
         static List<String> readRefs(final InputStream is) throws IOException {
