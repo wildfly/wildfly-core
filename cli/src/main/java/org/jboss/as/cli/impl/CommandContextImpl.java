@@ -1469,7 +1469,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             builder.addProperty(Util.NAME, Util.NAME);
 
             final long start = System.currentTimeMillis();
-            final long timeoutMillis = config.getConnectionTimeout() + 1000;
+            final long timeoutMillis = config.getConnectionTimeout() + 1000L;
             boolean tryConnection = true;
             while (tryConnection) {
                 final ModelNode response = client.execute(builder.buildRequest());
