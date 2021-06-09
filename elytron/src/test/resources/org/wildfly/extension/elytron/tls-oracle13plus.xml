@@ -2,6 +2,7 @@
 <subsystem xmlns="urn:wildfly:elytron:14.0" default-ssl-context="ClientSslContextNoAuth">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="sun.security.ssl.SunJSSE"/>
+        <provider-loader name="openssl" module="org.wildfly.openssl"/>
     </providers>
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm">
@@ -93,13 +94,36 @@
             <server-ssl-context name="ServerSslContextAuth" protocols="TLSv1.3 TLSv1.2 TLSv1.1" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" use-cipher-suites-order="false"
                                 providers="ManagerProviderLoader" provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
-            <server-ssl-context name="ServerSslContextSSLv2Hello" protocols="TLSv1 SSLv2Hello"
+            <server-ssl-context name="ServerSslContextTLS13" protocols="TLSv1.3 TLSv1.2 TLSv1.1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
                                 key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
-                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13Only" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
                                 session-timeout="321" maximum-session-cache-size="123"/>
             <server-ssl-context name="ServerSslContextTLS12Only" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
                                 want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="ManagerProviderLoader"
                                 provider-name="SunJSSE" session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13OpenSsl" protocols="TLSv1.3 TLSv1.2 TLSv1.1" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS12OnlyOpenSsl" protocols="TLSv1.2" key-manager="ServerKeyManager" trust-manager="CaTrustManager"
+                                want-client-auth="true" need-client-auth="true" authentication-optional="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextTLS13OnlyOpenSsl" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextNoTLS13CipherSuites" protocols="TLSv1.2 TLSv1.3"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" use-cipher-suites-order="false" providers="openssl"
+                                session-timeout="321" maximum-session-cache-size="123"/>
+            <server-ssl-context name="ServerSslContextSSLv2Hello" protocols="TLSv1 SSLv2Hello"
+                                key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
+                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
+                                session-timeout="321" maximum-session-cache-size="123"/>
             <server-ssl-context name="ServerSslContextDefaultProtocols"
                                 key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
                                 authentication-optional="false" providers="ManagerProviderLoader" provider-name="SunJSSE"
@@ -114,6 +138,16 @@
         <client-ssl-contexts>
             <client-ssl-context name="ClientSslContextNoAuth" trust-manager="CaTrustManager" />
             <client-ssl-context name="ClientSslContextAuth" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" cipher-suite-names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13Only" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_GCM_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
+            <client-ssl-context name="ClientSslContextTLS13OpenSsl" protocols="SSLv2 SSLv3 TLSv1 TLSv1.3 TLSv1.2" cipher-suite-names="TLS_AES_256_GCM_SHA384:TLS_AES_128_CCM_8_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientSslContextTLS13OnlyOpenSsl" protocols="TLSv1.3" cipher-suite-names="TLS_AES_128_GCM_SHA256"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
+            <client-ssl-context name="ClientSslContextNoTLS13CipherSuites" protocols="TLSv1.2 TLSv1.3"
+                                key-manager="ClientKeyManager" trust-manager="CaTrustManager" providers="openssl"/>
             <client-ssl-context name="ClientWithMultipleCRLs" key-manager="ClientKeyManager" trust-manager="trust-with-multiple-crls" />
             <client-ssl-context name="ClientSslContextSSLv2Hello" protocols="SSLv2Hello TLSv1" key-manager="ClientKeyManager"
                                 trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>

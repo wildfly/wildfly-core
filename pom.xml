@@ -2272,8 +2272,12 @@
                 <!-- match 9+ -->
             </activation>
             <properties>
+                <!-- 
+                    java.base/sun.security.ssl - Added as TLS configuration within Elytron loads SunJSSE provider directly.
+                -->
                 <modular.jdk.args>
 	            --add-opens=java.base/java.security=ALL-UNNAMED
+	            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
                 </modular.jdk.args>
             </properties>
         </profile>
