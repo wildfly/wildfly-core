@@ -60,7 +60,10 @@ public class PathUtil {
         Files.walkFileTree(source, new FileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                Files.copy(dir, target.resolve(source.relativize(dir)), options);
+                Path targetDir = target.resolve(source.relativize(dir));
+                if(! Files.exists(targetDir)) {
+                    Files.copy(dir, targetDir, options);
+                }
                 return FileVisitResult.CONTINUE;
             }
 

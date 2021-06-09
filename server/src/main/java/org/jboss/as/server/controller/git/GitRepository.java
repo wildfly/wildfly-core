@@ -154,7 +154,7 @@ public class GitRepository implements Closeable {
                     try (Stream<Path> names = Files.list(basePath)) {
                         names.filter(p -> ! "log".equals(p.getFileName().toString())).forEach(PathUtil::deleteSilentlyRecursively);
                     }
-                    Files.copy(atticPath, basePath, StandardCopyOption.REPLACE_EXISTING);
+                    PathUtil.copyRecursively(atticPath, basePath, true);
                     throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
                 } finally {
                     PathUtil.deleteSilentlyRecursively(atticPath);
