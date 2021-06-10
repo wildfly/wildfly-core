@@ -71,6 +71,7 @@ import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -465,9 +466,10 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
         ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(
                 "SeverSslContextSSLv2HelloOpenSsl");
-        SSLContext sslContext = (SSLContext) services.getContainer().getService(serviceName).getValue();
+
+        ServiceController<?> service = services.getContainer().getService(serviceName);
         Assume.assumeTrue("Skipping testSslServiceAuthSSLv2HelloOpenSSL as WildFly OpenSSL Provider " +
-                "isn't being used as specified in WFCORE-5219", sslContext != null);
+                "isn't being used as specified in WFCORE-5219", service != null && service.getValue() != null);
 
         String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
         HashMap<String, String[]> protocolChecker = new HashMap<>();
