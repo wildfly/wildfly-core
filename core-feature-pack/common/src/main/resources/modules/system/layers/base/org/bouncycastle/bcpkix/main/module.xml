@@ -31,5 +31,6 @@
     
     <dependencies>
         <module name="org.bouncycastle.bcprov" services="import"/>
+        <module name="org.bouncycastle.bcutil"/>
     </dependencies>
 </module>
