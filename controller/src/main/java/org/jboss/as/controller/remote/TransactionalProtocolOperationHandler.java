@@ -192,7 +192,7 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
             // Set the response information
             executeRequestContext.initialize(context);
             final Integer batchId = executeRequestContext.getOperationId();
-            final OperationMessageHandlerProxy messageHandlerProxy = new OperationMessageHandlerProxy(channelAssociation, batchId);
+            final OperationMessageHandler messageHandlerProxy = OperationMessageHandler.DISCARD;
             final ProxyOperationTransactionControl control = new ProxyOperationTransactionControl(executeRequestContext);
             final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(operation, channelAssociation, batchId, attachmentsLength);
             final OperationResponse result;

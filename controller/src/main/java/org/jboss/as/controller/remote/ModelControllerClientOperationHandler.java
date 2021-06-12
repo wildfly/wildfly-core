@@ -60,6 +60,7 @@ import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
@@ -233,7 +234,7 @@ public class ModelControllerClientOperationHandler implements ManagementRequestH
                 }
             } : ModelController.OperationTransactionControl.COMMIT;
 
-            final OperationMessageHandlerProxy messageHandlerProxy = new OperationMessageHandlerProxy(channelAssociation, batchId);
+            final OperationMessageHandler messageHandlerProxy = OperationMessageHandler.DISCARD;
             final OperationAttachmentsProxy attachmentsProxy = OperationAttachmentsProxy.create(operation, channelAssociation, batchId, attachmentsLength);
             try {
                 ROOT_LOGGER.tracef("Executing client request %d(%d)", batchId, header.getRequestId());
