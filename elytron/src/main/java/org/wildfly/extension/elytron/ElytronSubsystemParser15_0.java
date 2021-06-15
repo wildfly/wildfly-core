@@ -18,28 +18,17 @@
 
 package org.wildfly.extension.elytron;
 
-import java.io.IOException;
-
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-
 /**
+ * The subsystem parser, which uses stax to read and write to and from xml.
  *
- * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
+ * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
+ * @since 17.0
  */
-public class ElytronSubsystem14_0TestCase extends AbstractSubsystemBaseTest {
-
-    public ElytronSubsystem14_0TestCase() {
-        super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
-    }
+public class ElytronSubsystemParser15_0 extends ElytronSubsystemParser14_0 {
 
     @Override
-    protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-14.0.xml");
-    }
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
+    String getNameSpace() {
+        return ElytronExtension.NAMESPACE_15_0;
     }
 
 }
