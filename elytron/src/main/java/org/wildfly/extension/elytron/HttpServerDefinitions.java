@@ -91,8 +91,7 @@ class HttpServerDefinitions {
         .setCapabilityReference(PROVIDERS_CAPABILITY, HTTP_SERVER_MECHANISM_FACTORY_CAPABILITY)
         .build();
 
-    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)
-        .setName(ElytronDescriptionConstants.PATTERN_FILTER)
+    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
         .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();
 

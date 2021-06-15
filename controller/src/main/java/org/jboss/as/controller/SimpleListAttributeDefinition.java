@@ -185,15 +185,6 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
             return new SimpleListAttributeDefinition(this, valueType);
         }
 
-        /*
-        --------------------------
-        added for binary compatibility with older versions
-         */
-        @Override
-        public Builder setAllowNull(boolean allowNull) {
-            return super.setAllowNull(allowNull);
-        }
-
         @Override
         public Builder setMaxSize(final int maxSize) {
             return super.setMaxSize(maxSize);
