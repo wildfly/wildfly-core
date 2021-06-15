@@ -501,10 +501,26 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public final void validateAndSet(ModelNode operationObject, final ModelNode model) throws OperationFailedException {
+        final boolean isAttributeBoundToAResource = operationObject.has(ModelDescriptionConstants.OP_ADDR);
+        PathAddress pathAddress = PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR));
         if (operationObject.hasDefined(name) && deprecationData != null && deprecationData.isNotificationUseful()) {
-            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName(),
-                    PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
+            ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName(), pathAddress.toCLIStyleString());
         }
+
+        // overriding the value of an attribute using an env var is performed only when the operation
+        // containers a PathAddress. This method is also used for validating parameters (that are not necessary
+        // providing an address (e.g. AbstractWriteAttributeHandler.execute)
+        if (isAttributeBoundToAResource) {
+            // check if there is an env var that overrides the attribute value
+            String envVar = replaceNonAlphanumericByUnderscoreAndMakeUpperCase(pathAddress, name);
+            String envVarValue = System.getenv(envVar);
+            if (envVarValue != null) {
+                ControllerLogger.ROOT_LOGGER.debugf("The value of the '%s' attribute of the '%s' resource is set by the environment variable '%s'",
+                        name, pathAddress, envVar);
+                operationObject.get(name).set(envVarValue);
+            }
+        }
+
         // AS7-6224 -- convert expression strings to ModelType.EXPRESSION *before* correcting
         ModelNode newValue = convertParameterExpressions(operationObject.get(name));
         final ModelNode correctedValue = correctValue(newValue, model.get(name));
@@ -515,9 +531,31 @@ public abstract class AttributeDefinition {
         if (node.getType() == ModelType.EXPRESSION
                 && (referenceRecorder != null || flags.contains(AttributeAccess.Flag.EXPRESSIONS_DEPRECATED))) {
             ControllerLogger.DEPRECATED_LOGGER.attributeExpressionDeprecated(getName(),
-                PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
+                pathAddress.toCLIStyleString());
         }
         model.get(name).set(node);
+    }
+
+    static String replaceNonAlphanumericByUnderscoreAndMakeUpperCase(final PathAddress address, final String attributeName) {
+        // we use 2 underscores to separate the address from the attribute name:
+        // 1. for readability
+        // 2. to avoid any collusion
+        //   attribute b-c on /resource=a => RESOURCE_A__B_C
+        //   attribute c on /resource=a-b => RESOURCE_A_B__C
+        String name = address.toCLIStyleString().substring(1) + "__" + attributeName;
+        int length = name.length();
+        StringBuilder sb = new StringBuilder();
+        int c;
+        for (int i = 0; i < length; i += Character.charCount(c)) {
+            c = Character.toUpperCase(name.codePointAt(i));
+            if ('A' <= c && c <= 'Z' ||
+                    '0' <= c && c <= '9') {
+                sb.appendCodePoint(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        return sb.toString();
     }
 
     private ModelNode convertToExpectedType(final ModelNode node) {

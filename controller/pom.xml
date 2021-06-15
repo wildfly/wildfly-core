@@ -169,4 +169,19 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <!-- Used in EnvVarAttributeOverrideModelTestCase -->
+                        <!-- This corresponds to the /subsystem=custom resource and its my-attr attribute -->
+                        <SUBSYSTEM_CUSTOM__MY_ATTR>value2</SUBSYSTEM_CUSTOM__MY_ATTR>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
