@@ -1,6 +1,6 @@
 WildFly Core
 ============
-http://wildfly.org
+https://wildfly.org
 
 This project provides the core runtime that is used by the Wildfly application server. This includes:
 
@@ -63,7 +63,7 @@ Using Eclipse
 1. Install the latest version of Eclipse.
 2. Make sure Xmx in Eclipse.ini is at least 1280M, and it's using java 7
 3. Launch Eclipse and install the m2e plugin, make sure it uses your repo configs
-   (get it from: http://www.eclipse.org/m2e/download/
+   (get it from: https://www.eclipse.org/m2e/
    or install "Maven Integration for Eclipse" from the Eclipse Marketplace).
 4. In Eclipse preferences Java->Compiler->Errors/Warnings->Deprecated and restricted
    set forbidden reference to WARNING.
@@ -76,5 +76,5 @@ Using Eclipse
 
 Licenses
 --------
-* [GNU Lesser General Public License Version 2.1](http://www.gnu.org/licenses/lgpl-2.1-standalone.html)
-* [Apache License Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
+* [GNU Lesser General Public License Version 2.1](https://www.gnu.org/licenses/lgpl-2.1-standalone.html)
+* [Apache License Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html)
