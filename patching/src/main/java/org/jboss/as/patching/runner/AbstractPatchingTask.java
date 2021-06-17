@@ -152,7 +152,7 @@ abstract class AbstractPatchingTask<T extends ContentItem> implements PatchingTa
             return;
         }
         final PatchContentLoader contentLoader = description.getLoader();
-        final boolean skip = skipExecution | context.isExcluded(contentItem);
+        final boolean skip = skipExecution || context.isExcluded(contentItem);
         final byte[] contentHash;
         if(skip) {
             contentHash = backupHash; // Reuse the backup hash
