@@ -42,7 +42,6 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.VaultReader;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
@@ -70,35 +69,6 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class SystemPropertiesXml {
-
-    /**
-     * Helper vault reader to detect the presence of vaults in the properties.
-     */
-    private static class PresentVaultReader implements VaultReader {
-
-        private boolean vaultPresent;
-
-        public PresentVaultReader() {
-            vaultPresent = false;
-        }
-
-        @Override
-        public boolean isVaultFormat(String toCheck) {
-            return toCheck != null && VaultReader.STANDARD_VAULT_PATTERN.matcher(toCheck).matches();
-        }
-
-        @Override
-        public String retrieveFromVault(String vaultedData) {
-            if (isVaultFormat(vaultedData)) {
-                vaultPresent = true;
-            }
-            return vaultedData;
-        }
-
-        public boolean isVaultPresent() {
-            return vaultPresent;
-        }
-    };
 
     void parseSystemProperties(final XMLExtendedStreamReader reader, final ModelNode address,
             final Namespace expectedNs, final List<ModelNode> updates, boolean standalone) throws XMLStreamException {
@@ -168,11 +138,10 @@ class SystemPropertiesXml {
             }
 
             try {
-                PresentVaultReader vaultReader = new PresentVaultReader();
-                ExpressionResolver resolver = new RuntimeExpressionResolver(vaultReader);
+                ExpressionResolver resolver = new RuntimeExpressionResolver();
                 String newPropertyValue = SystemPropertyResourceDefinition.VALUE.resolveValue(resolver, op.get(VALUE)).asString();
                 String oldPropertyValue = properties.getProperty(name);
-                if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue) && !vaultReader.isVaultPresent()) {
+                if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue)) {
                     ControllerLogger.ROOT_LOGGER.systemPropertyAlreadyExist(name);
                 }
             } catch (OperationFailedException e) {

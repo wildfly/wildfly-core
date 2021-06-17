@@ -40,7 +40,6 @@ import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -54,16 +53,13 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
 
     private final ContentRepository contentRepository;
 
-    private final AbstractVaultReader vaultReader;
-
-    protected DeploymentReplaceHandler(ContentRepository contentRepository, final AbstractVaultReader vaultReader) {
+    protected DeploymentReplaceHandler(ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
-        this.vaultReader = vaultReader;
     }
 
-    public static DeploymentReplaceHandler create(ContentRepository contentRepository, final AbstractVaultReader vaultReader) {
-        return new DeploymentReplaceHandler(contentRepository, vaultReader);
+    public static DeploymentReplaceHandler create(ContentRepository contentRepository) {
+        return new DeploymentReplaceHandler(contentRepository);
     }
 
     @Override
@@ -131,7 +127,7 @@ public class DeploymentReplaceHandler implements OperationStepHandler {
         replaceNode.get(ENABLED.getName()).set(false);
 
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(deployNode.require(CONTENT));
-        DeploymentHandlerUtil.replace(context, replaceNode, runtimeName, name, replacedName, vaultReader, contents);
+        DeploymentHandlerUtil.replace(context, replaceNode, runtimeName, name, replacedName, contents);
     }
 
     protected void addFromHash(ContentReference reference) throws OperationFailedException {

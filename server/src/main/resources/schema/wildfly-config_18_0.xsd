@@ -86,7 +86,6 @@
                 <xs:element name="extensions" type="extensionsType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="system-properties" type="properties-with-boottime" minOccurs="0"/>
                 <xs:element name="paths" type="specified-pathsType" minOccurs="0" maxOccurs="1" />
-                <xs:element name="vault" type="vaultType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management" type="host-managementType" minOccurs="1" maxOccurs="1"/>
                 <xs:element name="domain-controller" type="domain-controllerType"/>
                 <xs:element name="interfaces" type="specified-interfacesType" minOccurs="0"/>
@@ -134,7 +133,6 @@
                 <xs:element name="extensions" type="extensionsType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="system-properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="paths" type="specified-pathsType" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="vault" type="vaultType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="management" type="server-managementType" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="profile" type="standalone-profileType" minOccurs="0"/>
                 <xs:element name="interfaces" type="specified-interfacesType" minOccurs="0" maxOccurs="1"/>
@@ -4208,23 +4206,6 @@
                 <xs:attribute name="boot-time" type="xs:boolean" default="true"/>
             </xs:extension>
         </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="vaultType">
-        <xs:annotation>
-            <xs:documentation>
-                <![CDATA[
-                    Vault Configuration. If no 'code' and 'module' are supplied the default implementation will be used.
-                    If 'code' is specified but no 'module', it will look for the class named by 'specified' in the picketbox module.
-                    If 'module' is specified, it will look for the class specified by 'code' in the module specified by 'module'.
-                ]]>
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="vault-option" type="propertyType" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="code" type="xs:string" use="optional"/>
-        <xs:attribute name="module" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="management-client-contentType">

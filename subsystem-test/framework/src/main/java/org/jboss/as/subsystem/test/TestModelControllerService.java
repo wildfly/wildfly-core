@@ -149,7 +149,7 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     private void initExtraModelInternal(Resource rootResource, ManagementResourceRegistration rootRegistration) {
         rootResource.getModel().get(SUBSYSTEM);
 
-        rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null, null));
+        rootRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, null));
 
         controllerInitializer.setTestModelControllerAccessor(this);
         controllerInitializer.initializeModel(rootResource, rootRegistration);

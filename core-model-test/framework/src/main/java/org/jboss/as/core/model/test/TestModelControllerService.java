@@ -95,7 +95,6 @@ import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.as.server.ServerPathManagerService;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.controller.resources.VersionModelInitializer;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.as.version.Version;
 import org.jboss.dmr.ModelNode;
@@ -119,14 +118,13 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private final ControlledProcessState processState;
     private final ExtensionRegistry extensionRegistry;
     private final CapabilityRegistry capabilityRegistry;
-    private final AbstractVaultReader vaultReader;
     private volatile Initializer initializer;
 
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, TestDelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
-            AbstractVaultReader vaultReader, CapabilityRegistry capabilityRegistry) {
+            CapabilityRegistry capabilityRegistry) {
         super(processType, runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
-                new RuntimeExpressionResolver(vaultReader), capabilityRegistry);
+                new RuntimeExpressionResolver(), capabilityRegistry);
         this.type = type;
         this.runningModeControl = runningModeControl;
         this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService(capabilityRegistry) : new HostPathManagerService(capabilityRegistry);
@@ -135,7 +133,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
         this.processState = processState;
         this.extensionRegistry = extensionRegistry;
         this.capabilityRegistry = capabilityRegistry;
-        this.vaultReader = vaultReader;
 
         if (type == TestModelType.STANDALONE) {
             initializer = new ServerInitializer();
@@ -149,7 +146,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     static TestModelControllerService create(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry, CapabilityRegistry capabilityRegistry) {
         return new TestModelControllerService(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer,
-                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, new TestVaultReader(), capabilityRegistry);
+                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, capabilityRegistry);
     }
 
     InjectedValue<ContentRepository> getContentRepositoryInjector(){
@@ -417,7 +414,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     environment,
                     processState,
                     runningModeControl,
-                    vaultReader,
                     extensionRegistry,
                     parallelBoot,
                     pathManagerService,
@@ -467,7 +463,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
                             injectedContentRepository.getValue(),
                             domainController,
                             extensionRegistry,
-                            vaultReader,
                             ignoredRegistry,
                             processState,
                             pathManagerService,
@@ -503,7 +498,6 @@ class TestModelControllerService extends ModelTestModelControllerService {
                     domainController,
                     extensionRegistry, //Just use the same for the host as for the domain
                     extensionRegistry,
-                    null /*vaultReader*/,
                     ignoredRegistry,
                     processState,
                     pathManagerService,

@@ -56,7 +56,6 @@ import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deployment.transformation.DeploymentTransformer;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
@@ -72,19 +71,17 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    private final AbstractVaultReader vaultReader;
     @SuppressWarnings("deprecation")
     private final DeploymentTransformer deploymentTransformer;
 
-    protected DeploymentAddHandler(final ContentRepository contentRepository, final AbstractVaultReader vaultReader) {
+    protected DeploymentAddHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
-        this.vaultReader = vaultReader;
         this.deploymentTransformer = loadDeploymentTransformer();
     }
 
-    public static DeploymentAddHandler create(final ContentRepository contentRepository, final AbstractVaultReader vaultReader) {
-        return new DeploymentAddHandler(contentRepository, vaultReader);
+    public static DeploymentAddHandler create(final ContentRepository contentRepository) {
+        return new DeploymentAddHandler(contentRepository);
     }
 
     private static DeploymentTransformer loadDeploymentTransformer() {
@@ -157,7 +154,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         }
 
         if (ENABLED.resolveModelAttribute(context, newModel).asBoolean() && context.isNormalServer()) {
-            DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, vaultReader, contentItem);
+            DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, contentItem);
             DeploymentUtils.enableAttribute(newModel);
         }
 

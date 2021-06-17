@@ -302,10 +302,6 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         DeploymentsXml.writeContentItem(writer, contentItem);
     }
 
-    protected void writeVault(XMLExtendedStreamWriter writer, ModelNode vault) throws XMLStreamException {
-        vaultXml.writeVault(writer, vault);
-    }
-
     /**
      * @deprecated {@see WriteUtils#writeNewLine(XMLExtendedStreamWriter)}
      */

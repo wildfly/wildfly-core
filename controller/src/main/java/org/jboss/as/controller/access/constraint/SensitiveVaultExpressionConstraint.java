@@ -22,8 +22,9 @@
 
 package org.jboss.as.controller.access.constraint;
 
+import java.util.regex.Pattern;
+
 import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.VaultReader;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -44,6 +45,8 @@ import org.jboss.dmr.Property;
 public class SensitiveVaultExpressionConstraint extends AllowAllowNotConstraint {
 
     public static final ConstraintFactory FACTORY = new Factory();
+
+    private static final Pattern STANDARD_VAULT_PATTERN = Pattern.compile("VAULT::.*::.*::.*");
 
     private static final SensitiveVaultExpressionConstraint SENSITIVE = new SensitiveVaultExpressionConstraint(true);
     private static final SensitiveVaultExpressionConstraint NOT_SENSITIVE = new SensitiveVaultExpressionConstraint(false);
@@ -127,7 +130,7 @@ public class SensitiveVaultExpressionConstraint extends AllowAllowNotConstraint 
                     int start = valueString.indexOf("${") + 2;
                     int end = valueString.indexOf("}", start);
                     valueString = valueString.substring(start, end);
-                    return VaultReader.STANDARD_VAULT_PATTERN.matcher(valueString).matches();
+                    return STANDARD_VAULT_PATTERN.matcher(valueString).matches();
                 }
             }
             return false;

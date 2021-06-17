@@ -54,7 +54,6 @@ import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.ExtensionListEntry;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.as.server.services.security.VaultReaderException;
 import org.jboss.as.server.suspend.ServerActivity;
 import org.jboss.invocation.proxy.MethodIdentifier;
 import org.jboss.logging.BasicLogger;
@@ -654,8 +653,8 @@ public interface ServerLogger extends BasicLogger {
      *
      * @return a RuntimeException wrapper
      */
-    @Message(id = 76, value = "Error initializing vault --  %s")
-    VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
+//    @Message(id = 76, value = "Error initializing vault --  %s")
+//    VaultReaderException cannotCreateVault(@Param Throwable cause, Throwable msg);
 
 //    /**
 //     * Creates an error message indicating that connecting to the HC failed.
@@ -1170,8 +1169,8 @@ public interface ServerLogger extends BasicLogger {
      * @param e underlying exception
      * @return {@link org.jboss.as.server.services.security.VaultReaderException}
      */
-    @Message(id = 227, value = "Security exception accessing the vault")
-    VaultReaderException vaultReaderException(@Cause Exception e);
+//    @Message(id = 227, value = "Security exception accessing the vault")
+//    VaultReaderException vaultReaderException(@Cause Exception e);
 
     // No longer used
 //    @Message(id = 228, value = "Security Exception")
@@ -1378,6 +1377,10 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 284, value = "Failed to restore the configuration after failing to initialize the repository %s")
     RuntimeException failedToRestoreConfiguration(@Cause Exception cause, String repository);
+
+    @LogMessage(level = WARN)
+    @Message(id = 285, value = "Vault support has been removed, no vault resources will be initialised.")
+    void vaultSupportRemoved();
 
     ////////////////////////////////////////////////
     //Messages without IDs

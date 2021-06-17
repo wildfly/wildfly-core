@@ -53,7 +53,6 @@ import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
@@ -110,7 +109,7 @@ public class DeploymentHandlerUtil {
     private DeploymentHandlerUtil() {
     }
 
-    public static void deploy(final OperationContext context, final ModelNode operation, final String deploymentUnitName, final String managementName, final AbstractVaultReader vaultReader, final ContentItem... contents) throws OperationFailedException {
+    public static void deploy(final OperationContext context, final ModelNode operation, final String deploymentUnitName, final String managementName, final ContentItem... contents) throws OperationFailedException {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -158,7 +157,7 @@ public class DeploymentHandlerUtil {
                             }
                         });
                     } else {
-                        doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                        doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
 
                         context.completeStep(new OperationContext.ResultHandler() {
                             @Override
@@ -182,7 +181,7 @@ public class DeploymentHandlerUtil {
 
     public static void doDeploy(final OperationContext context, final String deploymentUnitName, final String managementName,
                                 final Resource deploymentResource, final ImmutableManagementResourceRegistration registration,
-                                final ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader, final ContentItem... contents) {
+                                final ManagementResourceRegistration mutableRegistration, final ContentItem... contents) {
 
         final ServiceName deploymentUnitServiceName = Services.deploymentUnitName(deploymentUnitName);
 
@@ -207,7 +206,7 @@ public class DeploymentHandlerUtil {
         DeploymentOverlayIndex overlays = DeploymentOverlayIndex.createDeploymentOverlayIndex(context);
 
         final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null,
-                registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), vaultReader, overlays,
+                registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), overlays,
                 isExplodedContent);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
@@ -228,7 +227,7 @@ public class DeploymentHandlerUtil {
     }
 
     public static void redeploy(final OperationContext context, final String deploymentUnitName,
-                                final String managementName, final AbstractVaultReader vaultReader, final ContentItem... contents) throws OperationFailedException {
+                                final String managementName, final ContentItem... contents) throws OperationFailedException {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -249,7 +248,7 @@ public class DeploymentHandlerUtil {
                     context.addStep(new OperationStepHandler() {
                         @Override
                         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
                             context.completeStep(new OperationContext.ResultHandler() {
                                 @Override
                                 public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
@@ -272,7 +271,7 @@ public class DeploymentHandlerUtil {
                     context.completeStep(new OperationContext.RollbackHandler() {
                         @Override
                         public void handleRollback(OperationContext context, ModelNode operation) {
-                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                            doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
                             if (!logged.get()) {
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(deploymentUnitName, context.getFailureDescription().asString());
@@ -288,7 +287,7 @@ public class DeploymentHandlerUtil {
     }
 
     public static void replace(final OperationContext context, final ModelNode originalDeployment, final String deploymentUnitName, final String managementName,
-                               final String replacedDeploymentUnitName, final AbstractVaultReader vaultReader, final ContentItem... contents) throws OperationFailedException {
+                               final String replacedDeploymentUnitName, final ContentItem... contents) throws OperationFailedException {
         assert contents != null : "contents is null";
 
         if (context.isNormalServer()) {
@@ -307,7 +306,7 @@ public class DeploymentHandlerUtil {
                     context.removeService(replacedContentsServiceName);
                     context.removeService(replacedDeploymentUnitServiceName);
 
-                    doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                    doDeploy(context, deploymentUnitName, managementName, deployment, registration, mutableRegistration, contents);
                     if (originalDeployment.hasDefined(PERSISTENT.getName()) && !PERSISTENT.resolveModelAttribute(context, originalDeployment).asBoolean() && PERSISTENT.resolveModelAttribute(context, operation).asBoolean()) {
                         ModelNode notificationData = new ModelNode();
                         notificationData.get(NAME).set(managementName);
@@ -331,7 +330,7 @@ public class DeploymentHandlerUtil {
                                 DeploymentResourceSupport.cleanup(deployment);
                                 final String runtimeName = originalDeployment.require(RUNTIME_NAME).asString();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(originalDeployment.require(CONTENT));
-                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
 
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.replaceRolledBack(replacedDeploymentUnitName, deploymentUnitName, getFormattedFailureDescription(context));
@@ -348,7 +347,7 @@ public class DeploymentHandlerUtil {
         }
     }
 
-    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName, final AbstractVaultReader vaultReader) {
+    public static void undeploy(final OperationContext context, final ModelNode operation, final String managementName, final String runtimeName) {
         if (context.isNormalServer()) {
             // WFCORE-1577 -- the resource we want may not be at the op address if this is called for full-replace-deployment
             PathAddress resourceAddress = context.getCurrentAddress().size() == 0 ? PathAddress.pathAddress(DEPLOYMENT, managementName) : PathAddress.EMPTY_ADDRESS;
@@ -385,7 +384,7 @@ public class DeploymentHandlerUtil {
 
                                 final ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
                                 final DeploymentHandlerUtil.ContentItem[] contents = getContents(model.require(CONTENT));
-                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+                                doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
 
                                 if (context.hasFailureDescription()) {
                                     ServerLogger.ROOT_LOGGER.undeploymentRolledBack(runtimeName, getFormattedFailureDescription(context));

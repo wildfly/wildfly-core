@@ -30,7 +30,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -41,12 +40,6 @@ import org.jboss.dmr.ModelNode;
 public class DeploymentDeployHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = DEPLOY;
-
-    private final AbstractVaultReader vaultReader;
-
-    public DeploymentDeployHandler(final AbstractVaultReader vaultReader) {
-        this.vaultReader = vaultReader;
-    }
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -59,7 +52,7 @@ public class DeploymentDeployHandler implements OperationStepHandler {
         final String name = address.getLastElement().getValue();
         final String runtimeName = RUNTIME_NAME.resolveModelAttribute(context, model).asString();
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(CONTENT_RESOURCE_ALL.resolveModelAttribute(context, model));
-        DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, vaultReader, contents);
+        DeploymentHandlerUtil.deploy(context, operation, runtimeName, name, contents);
         DeploymentUtils.enableAttribute(model);
     }
 }

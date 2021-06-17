@@ -132,7 +132,6 @@ import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.as.server.services.net.SpecifiedInterfaceAddHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceRemoveHandler;
 import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -272,7 +271,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
     private final ServerEnvironment serverEnvironment;
     private final ControlledProcessState processState;
     private final RunningModeControl runningModeControl;
-    private final AbstractVaultReader vaultReader;
     private final ExtensionRegistry extensionRegistry;
     private final boolean parallelBoot;
     private final PathManagerService pathManager;
@@ -290,7 +288,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             final ServerEnvironment serverEnvironment,
             final ControlledProcessState processState,
             final RunningModeControl runningModeControl,
-            final AbstractVaultReader vaultReader,
             final ExtensionRegistry extensionRegistry,
             final boolean parallelBoot,
             final PathManagerService pathManager,
@@ -315,7 +312,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         this.serverEnvironment = serverEnvironment;
         this.processState = processState;
         this.runningModeControl = runningModeControl;
-        this.vaultReader = vaultReader;
         this.extensionRegistry = extensionRegistry;
         this.parallelBoot = parallelBoot;
         this.pathManager = pathManager;
@@ -366,8 +362,8 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         DeploymentUploadBytesHandler.register(resourceRegistration, contentRepository);
         DeploymentUploadURLHandler.register(resourceRegistration, contentRepository);
         DeploymentUploadStreamAttachmentHandler.register(resourceRegistration, contentRepository);
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.REPLACE_DEPLOYMENT_DEFINITION, DeploymentReplaceHandler.create(contentRepository, vaultReader));
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, DeploymentFullReplaceHandler.create(contentRepository, vaultReader));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.REPLACE_DEPLOYMENT_DEFINITION, DeploymentReplaceHandler.create(contentRepository));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.FULL_REPLACE_DEPLOYMENT_DEFINITION, DeploymentFullReplaceHandler.create(contentRepository));
 
         if (!isDomain) {
             if(serverEnvironment.useGit()) {
@@ -497,9 +493,6 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         // System Properties
         resourceRegistration.registerSubModel(SystemPropertyResourceDefinition.createForStandaloneServer(serverEnvironment));
 
-        //vault
-        resourceRegistration.registerSubModel(new VaultResourceDefinition(vaultReader));
-
         // Central Management
         // Start with the base /core-service=management MNR. The Resource for this is added by ServerService itself, so there is no add/remove op handlers
         final EnvironmentNameReader environmentReader = new EnvironmentNameReader() {
@@ -562,7 +555,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(SocketBindingGroupResourceDefinition.INSTANCE);
 
         // Deployments
-        ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, vaultReader, serverEnvironment));
+        ManagementResourceRegistration deployments = resourceRegistration.registerSubModel(ServerDeploymentResourceDefinition.create(contentRepository, serverEnvironment));
 
         //deployment overlays
         resourceRegistration.registerSubModel(new DeploymentOverlayDefinition(false, contentRepository, null));
