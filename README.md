@@ -2,6 +2,8 @@ WildFly Core
 ============
 https://wildfly.org
 
+CI Test, please ignore!!
+
 This project provides the core runtime that is used by the Wildfly application server. This includes:
 
 * Modular class loading.
