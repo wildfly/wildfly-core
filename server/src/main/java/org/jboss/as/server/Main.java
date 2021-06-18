@@ -147,6 +147,7 @@ public final class Main {
         String gitRepository = null;
         String gitBranch = MASTER;
         String gitAuthConfiguration = null;
+        String yamlFile = null;
         RunningMode runningMode = RunningMode.NORMAL;
         ProductConfig productConfig;
         ConfigurationFile.InteractionPolicy configInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
@@ -390,7 +391,22 @@ public final class Main {
                     } else {
                         gitBranch = arg.substring(idx + 1, arg.length());
                     }
-                }else {
+                } else if(arg.startsWith(CommandLineConstants.YAML_CONFIG) || CommandLineConstants.SHORT_YAML_CONFIG.equals(arg)) {
+                    int idx = arg.indexOf("=");
+                    if (idx == -1) {
+                       final int next = i + 1;
+                        if (next < argsLength) {
+                            yamlFile = args[next];
+                            i++;
+                        } else {
+                            STDERR.println(ServerLogger.ROOT_LOGGER.valueExpectedForCommandLineOption(arg));
+                            usage();
+                            return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                        }
+                    } else {
+                        yamlFile = arg.substring(idx + 1, arg.length());
+                    }
+                } else {
                     STDERR.println(ServerLogger.ROOT_LOGGER.invalidCommandLineOption(arg));
                     usage();
                     return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
@@ -406,7 +422,7 @@ public final class Main {
         productConfig = ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null), systemProperties);
         return new ServerEnvironmentWrapper(new ServerEnvironment(hostControllerName, systemProperties, systemEnvironment,
                 serverConfig, configInteractionPolicy, launchType, runningMode, productConfig, startTime, startSuspended,
-                startGracefully, gitRepository, gitBranch, gitAuthConfiguration));
+                startGracefully, gitRepository, gitBranch, gitAuthConfiguration, yamlFile));
     }
 
     private static void assertSingleConfig(String serverConfig) {

@@ -223,7 +223,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
         <version.org.wildfly.security.elytron>1.16.1.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.9.1.Final</version.org.wildfly.security.elytron-web>
-
+        <version.org.yaml.snakeyaml>1.26</version.org.yaml.snakeyaml>
     </properties>
 
     <modules>
@@ -2070,6 +2070,11 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${version.org.yaml.snakeyaml}</version>
+            </dependency> 
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>

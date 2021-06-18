@@ -77,6 +77,10 @@ public class CommandLineConstants {
     public static final String GIT_BRANCH = "--git-branch";
     public static final String GIT_AUTH = "--git-auth";
 
+    public static final String YAML_CONFIG = "--yaml";
+    public static final String SHORT_YAML_CONFIG = "-y";
+
+
     /** Passed in to a DC to choose the domain.xml file. The location must be relative to the domain configuration directory */
     public static final String OLD_DOMAIN_CONFIG = "-domain-config";
     public static final String DOMAIN_CONFIG = "--domain-config";

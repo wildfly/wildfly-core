@@ -51,8 +51,9 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     }
 
 
-    public ModelType getValueType() {
-        return valueType;
+    @Override
+    public AttributeDefinition getValueType() {
+        return SimpleAttributeDefinitionBuilder.create(getName(), valueType).build();
     }
 
     @Override
@@ -168,7 +169,7 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
 
         public Builder(final PrimitiveListAttributeDefinition basis) {
             super(basis);
-            this.valueType = basis.getValueType();
+            this.valueType = basis.getValueType().getType();
         }
 
         public static Builder of(final String name, final ModelType valueType) {

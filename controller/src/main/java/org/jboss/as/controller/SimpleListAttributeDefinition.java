@@ -54,6 +54,7 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     }
 
 
+    @Override
     public AttributeDefinition getValueType() {
         return valueType;
     }

@@ -604,6 +604,14 @@ public interface ServerLogger extends BasicLogger {
     String argGitAuth();
 
     /**
+     * Instructions for the {@link CommandLineConstants#YAML_CONFIG} command line argument.
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value = "The yaml configuration files for customizing the configuration. Default is 'null'")
+    String argYaml();
+
+    /**
      * Creates an error message indicating a value was expected for the given command line option.
      *
      * @param option the name of the command line option
@@ -1393,6 +1401,9 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 289, value = "Unable to create auth dir %s.")
     IllegalStateException unableToCreateAuthDir(String dir);
+
+    @Message(id = 290, value = "Couldn't find the specified YAML file %s")
+    IllegalArgumentException unableToFindYaml(String file);
 
     ////////////////////////////////////////////////
     //Messages without IDs

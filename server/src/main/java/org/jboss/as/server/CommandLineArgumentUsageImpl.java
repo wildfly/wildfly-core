@@ -88,6 +88,9 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
         addArguments(CommandLineConstants.GIT_AUTH + " <auth_config>", CommandLineConstants.GIT_AUTH + "=<auth_config>");
         instructions.add(ServerLogger.ROOT_LOGGER.argGitAuth());
+
+        addArguments(CommandLineConstants.YAML_CONFIG+ "=[<paths>]", CommandLineConstants.SHORT_YAML_CONFIG + "=[<paths>]");
+        instructions.add(ServerLogger.ROOT_LOGGER.argYaml());
     }
 
     public static void printUsage(final PrintStream out) {

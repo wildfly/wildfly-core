@@ -1,0 +1,185 @@
+wildfly-bootable:
+    extension:
+      org.jboss.as.failure:
+        module: org.jboss.as.failure
+    socket-binding-group:
+        standard-sockets:
+          default-interface: public
+          port-offset: ${jboss.socket.binding.port-offset:99}
+          socket-binding:
+              http:
+                interface: public
+              https:
+          remote-destination-outbound-socket-binding:
+            mail-snmt:  
+              host: foo
+              port: 8081
+            foo2:
+              host: foo2
+              port: 8082
+    system-property:
+      aaa: 
+        value: foo
+      bbb:
+        value: bar
+    # Put it before elytron to force re-ordering due to sasl factory being required.
+    core-service:
+      management:
+        management-interface:
+          http-interface:
+              console-enabled: true
+              http-upgrade:
+                enabled: true
+#                sasl-authentication-factory: example-sasl-auth
+              constant-headers:
+              - path: /foo
+                headers:
+                - name: foo
+                  value: bar
+              - path: /foo2
+                headers:
+                - name: foo2
+                  value: bar 
+        access:
+          authorization:
+            provider: simple
+            use-identity-roles: true
+            constraint:
+              application-classification:
+                type:
+                  logging:
+                    classification:
+                      logger:
+                        configured-application: true
+    subsystem:
+        security:
+          security-domain:
+            other:
+              authentication:
+                classic:    
+                  login-module:
+                    kieLoginModule:
+                      code: org.kie.security.jaas.KieLoginModule
+                      flag: optional
+                      module: deployment.yaml.war
+        microprofile-config-smallrye:
+          config-source:
+            foo:
+              dir: 
+                path: /home/jdenise
+              ordinal: 200
+        microprofile-opentracing-smallrye:
+          default-tracer: toto
+          jaeger-tracer:
+            toto:
+              sampler-param: 30.0
+        weld:
+          require-bean-descriptor: true
+        logging:
+          logger:
+            com.foo:
+              level: ALL
+            com.demo:
+              level: WARN
+          # Put it before pattern-formatter to force re-ordering based on capabilities
+          console-handler:
+            CONSOLE: 
+              named-formatter: COLOR_PATTERN
+              level: !undefine
+          pattern-formatter:
+            PATTERN:
+              pattern: "%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
+            COLOR_PATTERN:
+              pattern: "%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"
+          root-logger:
+            # We can't add FILE and CONSOLE that already exist in the list.
+            # It is located before MYFILE in order to force re-ordering the CLI scripts.
+            ROOT:
+              handlers:
+               - MYFILE
+              level: INFO
+          periodic-rotating-file-handler:
+            MYFILE:
+              file:
+                path: server.log
+              suffix: .yyyy-MM-dd
+              named-formatter: PATTERN
+        metrics:
+        microprofile-jwt-smallrye: !remove 
+        ee:
+          annotation-property-replacement: true
+          spec-descriptor-property-replacement: true
+        jca:
+          workmanager:
+            foo:
+                name: foo
+                short-running-threads:
+                  foo:
+                    core-threads: 50
+                    max-threads: 50
+                    queue-length: 50
+                    keepalive-time:
+                      time: 10
+                      unit: SECONDS
+        elytron:
+          filesystem-realm:
+            exampleFsRealm:
+              path: fs-realm-users
+              relative-to: jboss.server.config.dir
+          security-domain:
+             exampleSD:
+               realms:
+               - realm: exampleFsRealm 
+               permission-mapper: default-permission-mapper
+               default-realm: exampleFsRealm
+          sasl-authentication-factory:
+             example-sasl-auth:
+               sasl-server-factory: global
+               security-domain: exampleSD
+               mechanism-configurations:
+               - mechanism-name: DIGEST
+                 mechanism-realm-configurations:
+                 - realm-name: exampleFsRealm 
+          http-authentication-factory:
+             example-http-auth:
+               http-server-mechanism-factory: global
+               security-domain: exampleSD
+               mechanism-configurations:
+               - mechanism-name: DIGEST
+                 mechanism-realm-configurations:
+                 - realm-name: exampleFsRealm 
+             example-http-auth2:
+               http-server-mechanism-factory: global
+               security-domain: exampleSD
+               mechanism-configurations:
+               - mechanism-name: DIGEST
+                 mechanism-realm-configurations:
+                 - realm-name: exampleFsRealm 
+          properties-realm:
+            MyApplicationRealm:
+              groups-properties:
+                path: application-roles.properties
+                relative-to: jboss.server.config.dir
+              users-properties:
+                path: application-users.properties
+                relative-to: jboss.server.config.dir
+          permission-set:
+           default-permissions: 
+             permissions: !list-add 
+              - class-name: org.wildfly.transaction.client.RemoteTransactionPermission
+                module: org.wildfly.transaction.client
+                target-name: "*"
+                index: 0
+           my-permissions:
+             permissions:
+             - class-name: org.wildfly.transaction.client.RemoteTransactionPermission
+               module: org.wildfly.transaction.client
+               target-name: "*"
+             - class-name: org.wildfly.transaction.client.RemoteTransactionPermission
+               module: org.wildfly.transaction.client
+               target-name: "*"
+
+#User defined elements, must be ignored.
+org:
+    foo:
+        bar: true

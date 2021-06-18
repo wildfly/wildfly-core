@@ -342,6 +342,11 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
             private void setValueType(ModelNode node) {
                 node.get(ModelDescriptionConstants.VALUE_TYPE).set(ModelType.STRING);
             }
+
+            @Override
+            public AttributeDefinition getValueType() {
+                return def;
+            }
         };
         return list;
     }

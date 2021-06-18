@@ -61,6 +61,8 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
         return elementValidator;
     }
 
+    public abstract AttributeDefinition getValueType();
+
     /**
      * Creates and returns a {@link org.jboss.dmr.ModelNode} using the given {@code value} after first validating the node
      * against {@link #getElementValidator() this object's element validator}.

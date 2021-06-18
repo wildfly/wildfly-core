@@ -327,7 +327,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
         super(executorService, null, environment.getProcessType(), runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;

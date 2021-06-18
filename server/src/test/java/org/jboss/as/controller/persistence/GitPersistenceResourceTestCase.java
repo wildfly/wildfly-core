@@ -71,7 +71,7 @@ public class GitPersistenceResourceTestCase extends AbstractGitPersistenceResour
         Assert.assertEquals("Repository initialized", commits.get(0));
         Assert.assertTrue(Files.exists(root));
         Path standard = createFile(root, "standard.xml", "std");
-        ConfigurationFile configurationFile = new ConfigurationFile(root.toFile(), "standard.xml", null, ConfigurationFile.InteractionPolicy.STANDARD, true);
+        ConfigurationFile configurationFile = new ConfigurationFile(root.toFile(), "standard.xml", null, ConfigurationFile.InteractionPolicy.STANDARD, true, null);
         Assert.assertEquals(standard.toAbsolutePath().toString(), configurationFile.getBootFile().getAbsolutePath());
         TestConfigurationFilePersister persister = new TestConfigurationFilePersister(configurationFile, new GitRepository(repository));
         persister.successfulBoot();

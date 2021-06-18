@@ -479,7 +479,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
 
         final String defaultHostConfig = WildFlySecurityManager.getPropertyPrivileged(JBOSS_HOST_DEFAULT_CONFIG, "host.xml");
 
-        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, hostConfigInteractionPolicy, false);
+        hostConfigurationFile = new ConfigurationFile(domainConfigurationDir, defaultHostConfig, initialHostConfig == null ? hostConfig : initialHostConfig, hostConfigInteractionPolicy, false, null);
 
         final Path filePath = this.domainDataDir.toPath().resolve(KERNEL_DIR).resolve(UUID_FILE);
         UUID uuid;

@@ -78,7 +78,7 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
     @Test
     public void testDefaultPersistentConfigurationFile() throws Exception {
         Path standard = createFile(root, "standard.xml", "std");
-        ConfigurationFile configurationFile = new ConfigurationFile(root.toFile(), "standard.xml", null, ConfigurationFile.InteractionPolicy.STANDARD, true);
+        ConfigurationFile configurationFile = new ConfigurationFile(root.toFile(), "standard.xml", null, ConfigurationFile.InteractionPolicy.STANDARD, true, null);
         Assert.assertEquals(standard.toAbsolutePath().toString(), configurationFile.getBootFile().getAbsolutePath());
         GitRepositoryConfiguration.Builder.getInstance()
                 .setBasePath(root)
