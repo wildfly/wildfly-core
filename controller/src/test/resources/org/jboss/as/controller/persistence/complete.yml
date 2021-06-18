@@ -165,7 +165,7 @@ wildfly-bootable:
                 relative-to: jboss.server.config.dir
           permission-set:
            default-permissions: 
-             permissions: !list-add 
+             permissions: !list-add
               - class-name: org.wildfly.transaction.client.RemoteTransactionPermission
                 module: org.wildfly.transaction.client
                 target-name: "*"

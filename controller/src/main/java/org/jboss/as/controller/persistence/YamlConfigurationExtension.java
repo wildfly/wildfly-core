@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +59,11 @@ import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Construct;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
@@ -112,7 +117,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     @SuppressWarnings("unchecked")
     @Override
     public void processOperations(ImmutableManagementResourceRegistration rootRegistration, List<ParsedBootOp> postExtensionOps) {
-        if(needReload) {
+        if (needReload) {
             load();
         }
         MGMT_OP_LOGGER.warn("**** Jean-François We are applying the YAML files to the configuration");
@@ -498,6 +503,116 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             this.yamlConstructors.put(new Tag("!list-add"), new ConstructListAddOperation());
         }
 
+        @Override
+        protected void flattenMapping(MappingNode node) {
+            // perform merging only on nodes containing merge node(s)
+            processDuplicateKeys(node);
+            if (node.isMerged()) {
+                node.setValue(mergeNode(node, false, new HashMap<Object, Integer>(),
+                        new ArrayList<NodeTuple>()));
+            }
+        }
+
+        @Override
+        protected void processDuplicateKeys(MappingNode node) {
+            List<NodeTuple> nodeValue = node.getValue();
+            Map<Object, Integer> keys = new HashMap<>(nodeValue.size());
+            int i = 0;
+            for (NodeTuple tuple : nodeValue) {
+                Node keyNode = tuple.getKeyNode();
+                if (!keyNode.getTag().equals(Tag.MERGE)) {
+                    Object key = constructObject(keyNode);
+                    if (key != null) {
+                        try {
+                            key.hashCode();// check circular dependencies
+                        } catch (Exception e) {
+                        }
+                    }
+
+                    Integer prevIndex = keys.put(key, i);
+                    if (prevIndex != null) {
+                        node.setMerged(true);
+                        System.out.println("Duplicate key found " + key);
+                    }
+                }
+                i += 1;
+            }
+        }
+
+        /**
+         * Does merge for supplied mapping node.
+         *
+         * @param node
+         * where to merge
+         * @param isPreffered
+         * true if keys of node should take precedence over others...
+         * @param key2index
+         * maps already merged keys to index from values
+         * @param values
+         * collects merged NodeTuple
+         * @return list of the merged NodeTuple (to be set as value for the
+         * MappingNode)
+         */
+        private List<NodeTuple> mergeNode(MappingNode node, boolean isPreffered,
+                Map<Object, Integer> key2index, List<NodeTuple> values) {
+            Iterator<NodeTuple> iter = node.getValue().iterator();
+            while (iter.hasNext()) {
+                final NodeTuple nodeTuple = iter.next();
+                final Node keyNode = nodeTuple.getKeyNode();
+                final Node valueNode = nodeTuple.getValueNode();
+                if (keyNode.getTag().equals(Tag.MERGE)) {
+                    iter.remove();
+                    switch (valueNode.getNodeId()) {
+                        case mapping:
+                            MappingNode mn = (MappingNode) valueNode;
+                            mergeNode(mn, false, key2index, values);
+                            break;
+                        case sequence:
+                            SequenceNode sn = (SequenceNode) valueNode;
+                            List<Node> vals = sn.getValue();
+                            for (Node subnode : vals) {
+                                if (!(subnode instanceof MappingNode)) {
+                                    throw new YAMLException("while constructing a mapping" + "; " + node.getStartMark() + "; " + "expected a mapping for merging, but found " + subnode.getNodeId());
+                                }
+                                MappingNode mnode = (MappingNode) subnode;
+                                mergeNode(mnode, false, key2index, values);
+                            }
+                            break;
+                        default:
+                            throw new YAMLException("while constructing a mapping" + "; " + node.getStartMark() + "; " + "expected a mapping or list of mappings for merging, but found "
+                                    + valueNode.getNodeId());
+                    }
+                } else {
+                    // we need to construct keys to avoid duplications
+                    Object key = constructObject(keyNode);
+                    if (!key2index.containsKey(key)) { // 1st time merging key
+                        values.add(nodeTuple);
+                        System.out.println("First key " + key + " " + nodeTuple.getValueNode());
+                        // keep track where tuple for the key is
+                        key2index.put(key, values.size() - 1);
+                    } else if (isPreffered) { // there is value for the key, but we
+                        // need to override it
+                        // change value for the key using saved position
+                        values.set(key2index.get(key), nodeTuple);
+                    } else {
+                        System.out.println("Other value found for key " + key + " " + nodeTuple.getValueNode());
+                        NodeTuple firstTuple = values.get(key2index.get(key));
+                        switch (firstTuple.getValueNode().getNodeId()) {
+                            case mapping:
+                                MappingNode mn1 = (MappingNode) firstTuple.getValueNode();
+                                MappingNode mn = (MappingNode) valueNode;
+                                mergeNode(mn, false, key2index, mn1.getValue());
+                                break;
+                            default:
+                                throw new YAMLException("while constructing a mapping" + "; " + node.getStartMark() + "; " + "expected a mapping or list of mappings for merging, but found "
+                                        + firstTuple.getValueNode().getNodeId());
+                        }
+                    }
+                }
+            }
+            return values;
+        }
+
         private class ConstructRemoveOperation extends AbstractConstruct {
 
             @Override
@@ -516,7 +631,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
 
         private class ConstructListAddOperation implements Construct {
 
-            private Construct delegate = new SafeConstructor.ConstructYamlSeq();
+            private final Construct delegate = new SafeConstructor.ConstructYamlSeq();
 
             @Override
             public Object construct(Node node) {
