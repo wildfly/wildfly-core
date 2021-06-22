@@ -145,7 +145,7 @@ public class YamlConfigurationExtensionTest {
         YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(2, postExtensionOps.size());
+        assertEquals(3, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
         assertTrue(postExtensionOps.get(0).operation.hasDefined("value"));
@@ -154,6 +154,44 @@ public class YamlConfigurationExtensionTest {
         assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
         assertTrue(postExtensionOps.get(1).operation.hasDefined("value"));
         assertEquals("bar", postExtensionOps.get(1).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(2).address);
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(2).operation.get("value").asString());
+    }
+
+    @Test
+    public void testAddResourceOverwrite() throws URISyntaxException {
+        List<ParsedBootOp> postExtensionOps = new ArrayList<>();
+        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_overwrite.yml").toURI()));
+        instance.processOperations(rootRegistration, postExtensionOps);
+        assertFalse(postExtensionOps.isEmpty());
+        assertEquals(2, postExtensionOps.size());
+        assertEquals(ADD, postExtensionOps.get(0).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
+        assertTrue(postExtensionOps.get(0).operation.hasDefined("value"));
+        assertEquals("foo", postExtensionOps.get(0).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(1).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
+        assertTrue(postExtensionOps.get(1).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(1).operation.get("value").asString());
+    }
+
+    @Test
+    public void testRemoveAddNewResources() throws URISyntaxException {
+        List<ParsedBootOp> postExtensionOps = new ArrayList<>();
+        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_delete_add.yml").toURI()));
+        instance.processOperations(rootRegistration, postExtensionOps);
+        assertFalse(postExtensionOps.isEmpty());
+        assertEquals(2, postExtensionOps.size());
+        assertEquals(ADD, postExtensionOps.get(0).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
+        assertTrue(postExtensionOps.get(0).operation.hasDefined("value"));
+        assertEquals("foo", postExtensionOps.get(0).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(1).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(1).address);
+        assertTrue(postExtensionOps.get(1).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(1).operation.get("value").asString());
     }
 
     /**
@@ -169,7 +207,7 @@ public class YamlConfigurationExtensionTest {
         YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(4, postExtensionOps.size());
+        assertEquals(5, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
         assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
@@ -182,6 +220,10 @@ public class YamlConfigurationExtensionTest {
         assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(3).address);
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(3).operationName);
         assertEquals("bar", postExtensionOps.get(3).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(4).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(4).address);
+        assertTrue(postExtensionOps.get(4).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(4).operation.get("value").asString());
     }
 
     /**
@@ -232,6 +274,29 @@ public class YamlConfigurationExtensionTest {
         assertEquals(2, values.size());
         assertEquals("foo", values.get(0).asString());
         assertEquals("bar", values.get(1).asString());
+    }
+
+    /**
+     * Test of processOperations method, of class YamlConfigurationExtension.
+     *
+     * @throws java.net.URISyntaxException
+     */
+    @Test
+    public void testListMergeAttribute() throws URISyntaxException {
+        List<ParsedBootOp> postExtensionOps = new ArrayList<>();
+        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_list_merge.yml").toURI()));
+        instance.processOperations(rootRegistration, postExtensionOps);
+        assertFalse(postExtensionOps.isEmpty());
+        assertEquals(1, postExtensionOps.size());
+        assertEquals(ADD, postExtensionOps.get(0).operationName);
+        assertEquals(PathAddress.pathAddress("list", "my-list"), postExtensionOps.get(0).address);
+        assertTrue(postExtensionOps.get(0).operation.hasDefined("strings"));
+        assertEquals(ModelType.LIST, postExtensionOps.get(0).operation.get("strings").getType());
+        List<ModelNode> values = postExtensionOps.get(0).operation.get("strings").asList();
+        assertEquals(3, values.size());
+        assertEquals("foo", values.get(0).asString());
+        assertEquals("bar", values.get(1).asString());
+        assertEquals("test", values.get(2).asString());
     }
 
     /**

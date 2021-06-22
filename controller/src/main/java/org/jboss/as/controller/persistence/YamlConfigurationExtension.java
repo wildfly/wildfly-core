@@ -62,6 +62,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeId;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.SequenceNode;
 import org.yaml.snakeyaml.nodes.Tag;
@@ -497,10 +498,14 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
 
     private class OperationConstructor extends Constructor {
 
+        private final Tag REMOVE = new Tag("!remove");
+        private final Tag UNDEFINE = new Tag("!undefine");
+        private final Tag ADD = new Tag("!list-add");
+
         public OperationConstructor() {
-            this.yamlConstructors.put(new Tag("!remove"), new ConstructRemoveOperation());
-            this.yamlConstructors.put(new Tag("!undefine"), new ConstructUndefineOperation());
-            this.yamlConstructors.put(new Tag("!list-add"), new ConstructListAddOperation());
+            this.yamlConstructors.put(REMOVE, new ConstructRemoveOperation());
+            this.yamlConstructors.put(UNDEFINE, new ConstructUndefineOperation());
+            this.yamlConstructors.put(ADD, new ConstructListAddOperation());
         }
 
         @Override
@@ -596,12 +601,41 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         values.set(key2index.get(key), nodeTuple);
                     } else {
                         System.out.println("Other value found for key " + key + " " + nodeTuple.getValueNode());
-                        NodeTuple firstTuple = values.get(key2index.get(key));
+                        int index = key2index.get(key);
+                        NodeTuple firstTuple = values.get(index);
                         switch (firstTuple.getValueNode().getNodeId()) {
                             case mapping:
-                                MappingNode mn1 = (MappingNode) firstTuple.getValueNode();
-                                MappingNode mn = (MappingNode) valueNode;
-                                mergeNode(mn, false, key2index, mn1.getValue());
+                                if (firstTuple.getValueNode().getNodeId() == NodeId.mapping) {
+                                    MappingNode mn1 = (MappingNode) firstTuple.getValueNode();
+                                    if (REMOVE.equals(valueNode.getTag())) {
+                                        values.set(key2index.get(key), nodeTuple);
+                                    } else {
+                                        MappingNode mn = (MappingNode) valueNode;
+                                        mergeNode(mn, false, key2index, mn1.getValue());
+                                    }
+                                } else if (REMOVE.equals(firstTuple.getValueNode().getTag())) {
+                                    values.set(key2index.get(key), nodeTuple);
+                                }
+                                break;
+                            case scalar:
+                                values.set(key2index.get(key), nodeTuple);
+                                break;
+                            case sequence:
+                                SequenceNode sn = (SequenceNode) valueNode;
+                                List<Node> vals = sn.getValue();
+                                for (Node subnode : vals) {
+                                    switch (subnode.getNodeId()) {
+                                        case mapping:
+                                            MappingNode mnode = (MappingNode) subnode;
+                                            mergeNode(mnode, false, key2index, values);
+                                            break;
+                                        case scalar:
+                                            ((SequenceNode) values.get(key2index.get(key)).getValueNode()).getValue().add(subnode);
+                                            break;
+                                        default:
+                                            throw new YAMLException("while constructing a mapping" + "; " + node.getStartMark() + "; " + "expected a mapping for merging, but found " + subnode.getNodeId());
+                                    }
+                                }
                                 break;
                             default:
                                 throw new YAMLException("while constructing a mapping" + "; " + node.getStartMark() + "; " + "expected a mapping or list of mappings for merging, but found "
