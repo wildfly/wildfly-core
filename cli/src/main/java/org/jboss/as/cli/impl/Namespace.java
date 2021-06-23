@@ -58,12 +58,14 @@ public enum Namespace {
 
     CLI_3_3("urn:jboss:cli:3.3"),
 
-    CLI_3_4("urn:jboss:cli:3.4");
+    CLI_3_4("urn:jboss:cli:3.4"),
+
+    CLI_4_0("urn:jboss:cli:4.0");
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = CLI_3_4;
+    public static final Namespace CURRENT = CLI_4_0;
 
     private final String name;
 
