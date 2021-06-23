@@ -42,7 +42,7 @@ public class DeploymentAddHandlerTestCase {
 
     @Test (expected = OperationFailedException.class)
     public void testTooMuchContent() throws OperationFailedException {
-        final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
+        final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository);
         final ModelNode operation = new ModelNode();
         //operation.get("address").setEmptyList().get(0).get("deployment").set("test.war");
         operation.get("address").get(0).set("deployment", "test.war");
@@ -59,7 +59,7 @@ public class DeploymentAddHandlerTestCase {
 
     @Test
     public void testValidator() throws OperationFailedException {
-        final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository, null);
+        final DeploymentAddHandler handler = DeploymentAddHandler.create(contentRepository);
         final ModelNode operation = new ModelNode();
         operation.get("content").get(0).get("archive").set("wrong");
         final ModelNode model = operation.clone();
