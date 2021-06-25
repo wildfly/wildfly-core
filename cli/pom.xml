@@ -233,14 +233,6 @@
             <artifactId>jakarta.json</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-            <optional>true</optional>
-            <!-- so it is not included in shaded jar  -->
-            <scope>provided</scope>
-        </dependency>
-
         <!-- Test Dependencies -->
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
