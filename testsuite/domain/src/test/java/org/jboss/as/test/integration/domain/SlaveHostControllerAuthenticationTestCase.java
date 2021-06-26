@@ -27,8 +27,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SEC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_IDENTITY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_OPTIONS;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,18 +48,16 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.wildfly.test.security.VaultHandler;
 
 /**
  * Test a slave HC connecting to the domain using all 3 valid ways of configuring the slave HC's credential:
- * Base64 encoded password, system-property-backed expression, and vault expression.
+ * Base64 encoded password, system-property-backed expression.
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
 public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAuthenticationTestCase {
 
     private static final String DEFAULT_SECRET = "c2xhdmVfdXMzcl9wYXNzd29yZA==";
-    private static final String VAULT_BLOCK = "ds_TestDS";
     private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
     private static final String CREDENTIAL_STORE_NAME = "SlaveHostControllerAuthenticationTestCase";
     private static final String SECRET_KEY_CREDENTIAL_STORE_NAME = "SlaveHostControllerAuthenticationTestCase-secretkey";
@@ -72,9 +68,6 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
     private static ModelControllerClient domainMasterClient;
     private static ModelControllerClient domainSlaveClient;
     private static DomainTestSupport testSupport;
-
-    static final String RESOURCE_LOCATION = SlaveHostControllerAuthenticationTestCase.class.getProtectionDomain().getCodeSource().getLocation().getFile()
-            + "vault-shcatc/";
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -110,7 +103,6 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
     public void testSlaveRegistration() throws Exception {
         slaveWithBase64PasswordTest();
         slaveWithSystemPropertyPasswordTest();
-        slaveWithVaultPasswordTest();
     }
 
     @Test
@@ -154,46 +146,6 @@ public class SlaveHostControllerAuthenticationTestCase extends AbstractSlaveHCAu
         testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
         // Validate that it joined the master
         readHostControllerStatus(domainMasterClient);
-    }
-
-    private void slaveWithVaultPasswordTest() throws Exception {
-
-        VaultHandler.cleanFilesystem(RESOURCE_LOCATION, true);
-
-        // create new vault
-        VaultHandler vaultHandler = new VaultHandler(RESOURCE_LOCATION);
-
-        try {
-
-            // create security attributes
-            String attributeName = "value";
-            String vaultPasswordString = vaultHandler.addSecuredAttribute(VAULT_BLOCK, attributeName,
-                    RIGHT_PASSWORD.toCharArray());
-
-            // create new vault setting in host
-            ModelNode op = new ModelNode();
-            op.get(OP).set(ADD);
-            op.get(OP_ADDR).add(HOST, "slave").add(CORE_SERVICE, VAULT);
-            ModelNode vaultOption = op.get(VAULT_OPTIONS);
-            vaultOption.get("KEYSTORE_URL").set(vaultHandler.getKeyStore());
-            vaultOption.get("KEYSTORE_PASSWORD").set(vaultHandler.getMaskedKeyStorePassword());
-            vaultOption.get("KEYSTORE_ALIAS").set(vaultHandler.getAlias());
-            vaultOption.get("SALT").set(vaultHandler.getSalt());
-            vaultOption.get("ITERATION_COUNT").set(vaultHandler.getIterationCountAsString());
-            vaultOption.get("ENC_FILE_DIR").set(vaultHandler.getEncodedVaultFileDirectory());
-            domainSlaveClient.execute(new OperationBuilder(op).build());
-
-            setSlaveSecret("${" + vaultPasswordString + "}");
-
-            reloadSlave();
-
-            testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
-            // Validate that it joined the master
-            readHostControllerStatus(domainMasterClient);
-        } finally {
-            // remove temporary files
-            vaultHandler.cleanUp();
-        }
     }
 
     private void removeServerIdentity() throws IOException {
