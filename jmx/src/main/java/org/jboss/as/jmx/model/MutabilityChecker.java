@@ -21,8 +21,6 @@
  */
 package org.jboss.as.jmx.model;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 
@@ -37,8 +35,6 @@ abstract class MutabilityChecker {
     static MutabilityChecker create(ProcessType processType, boolean isMasterHc) {
         if (processType == ProcessType.STANDALONE_SERVER) {
             return new StandaloneServerChecker();
-        } else if (processType.isHostController()) {
-            return new HostControllerChecker(isMasterHc);
         }
         return new NonMutableChecker();
     }
@@ -57,29 +53,4 @@ abstract class MutabilityChecker {
         }
     }
 
-    private static class HostControllerChecker extends MutabilityChecker {
-        private final boolean isMaster;
-
-        public HostControllerChecker(boolean isMaster) {
-            this.isMaster = isMaster;
-        }
-
-        @Override
-        boolean mutable(PathAddress address) {
-
-            //Turn off the writes for the host controller while we decide if it is a good idea or not
-            if (true) {
-                return false;
-            }
-
-            if (isMaster) {
-                return true;
-            }
-            if (address.size() == 0) {
-                return false;
-            }
-            return address.getElement(0).getKey().equals(HOST);
-        }
-
-    }
 }
