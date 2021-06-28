@@ -329,13 +329,10 @@ class LdapCacheService<R, K> implements Service<LdapSearcherCache<R, K>> {
                     synchronized (theCache) {
                         boolean removed = executions.remove(key, entry);
 
-                        if(!removed) {
-                            //probably removed/updated by other thread, which transferred entry into cache (or is about to do,
-                            // (If this thread was sleeping so long, that another threads emptied executions and inserted different entry with the same key)
-                            return res;
-                        }
-
-                        if (res != null || (entry.failure != null && cacheFailures)) {
+                        //!removed
+                        //probably removed/updated by other thread, which transferred entry into cache (or is about to do,
+                        // (If this thread was sleeping so long, that another threads emptied executions and inserted different entry with the same key)
+                        if (removed && (res != null || (entry.failure != null && cacheFailures))) {
                             if (maxSize > 0 && theCache.size() + 1 > maxSize) {
                                 boolean trace = SECURITY_LOGGER.isTraceEnabled();
                                 Iterator<Entry<K, CacheEntry>> it = theCache.entrySet().iterator();

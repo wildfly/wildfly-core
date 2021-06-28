@@ -1785,6 +1785,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 if (opLine != null && !opLine.equals(line)) {
                     resetArgs(opLine);
                 }
+
+                Throwable originalException = null;
                 try {
                     // Could be an operation.
                     if (exec.isOperation()) {
@@ -1797,7 +1799,13 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                         handleLegacyCommand(exec.getLine(), handler, false);
                         continue;
                     }
+                } catch (Throwable ex) {
+                    if (ex instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    originalException = ex;
                 } finally {
+                    Throwable suppressed = originalException; //OK to be null
                     // We must close any output redirection, that is automaticaly done
                     // when calling exec.execute something that we are not doing here.
                     if (invContext.getConfiguration().getOutputRedirection() != null) {
@@ -1807,12 +1815,35 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                             // Message must contain the Exception and the localized message.
                             if (ex instanceof AccessDeniedException) {
                                 String message = ex.getMessage();
-                                throw new CommandLineException((message != null ? message : line) + " (Access denied)");
+                                suppressed = new CommandLineException((message != null ? message : line) + " (Access denied)");
+                            } else {
+                                suppressed = new CommandLineException(ex.toString());
                             }
-                            throw new CommandLineException(ex.toString());
+                            if (originalException != null) {
+                                originalException.addSuppressed(suppressed);
+                                suppressed = originalException;
+                            }
+                        }
+                    }
+                    if (suppressed != null) {
+                        if (suppressed instanceof RuntimeException) {
+                            throw (RuntimeException) suppressed;
+                        }
+                        if (suppressed instanceof Error) {
+                            throw (Error) suppressed;
+                        }
+                        if (suppressed instanceof CommandLineException) {
+                            throw (CommandLineException) suppressed;
+                        }
+                        if (suppressed instanceof CommandLineParserException) {
+                            throw (CommandLineParserException) suppressed;
+                        }
+                        if (suppressed instanceof OptionValidatorException) {
+                            throw (OptionValidatorException) suppressed;
                         }
                     }
                 }
+
                 // Needed to have the command be fully parsed and retrieve the
                 // child command. This is caused by aesh 2.0 behavior.
                 if (isBatchMode()) {

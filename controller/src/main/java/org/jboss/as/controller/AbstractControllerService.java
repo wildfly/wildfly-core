@@ -39,6 +39,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -969,6 +970,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
         private void executeAdditionalCliScript() {
             boolean success = false;
+            Throwable originalException = null;
             try {
                 deleteFile(doneMarker);
                 deleteFile(embeddedServerNeedsRestart);
@@ -997,9 +999,15 @@ public abstract class AbstractControllerService implements Service<ModelControll
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                originalException = new UncheckedIOException(e);
+            } catch (Throwable ex) {
+                if (ex instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                originalException = ex;
             } finally {
                 clearProperties();
+                Throwable suppressed = originalException; // OK to be null
                 try {
                     if (doneMarker != null) {
                         doneMarker.createNewFile();
@@ -1008,8 +1016,21 @@ public abstract class AbstractControllerService implements Service<ModelControll
                             writer.write('\n');
                         }
                     }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                } catch (IOException ex) {
+                    if (originalException != null) {
+                        originalException.addSuppressed(ex);
+                        suppressed = originalException;
+                    } else {
+                        suppressed = new UncheckedIOException(ex);
+                    }
+                }
+                if (suppressed != null) {
+                    if (suppressed instanceof RuntimeException) {
+                        throw (RuntimeException) suppressed;
+                    }
+                    if (suppressed instanceof Error) {
+                        throw (Error) suppressed;
+                    }
                 }
             }
         }
