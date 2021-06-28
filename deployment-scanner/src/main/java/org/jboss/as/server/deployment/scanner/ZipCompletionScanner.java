@@ -283,7 +283,7 @@ public class ZipCompletionScanner {
                 break;
             }
             lastChannelPos = channelPos;
-            channelPos -= Math.min(channelPos - bufferPos, CHUNK_SIZE - bufferPos);
+            channelPos -= Math.min(channelPos - bufferPos, (long) CHUNK_SIZE - bufferPos);
         }
 
         return false;

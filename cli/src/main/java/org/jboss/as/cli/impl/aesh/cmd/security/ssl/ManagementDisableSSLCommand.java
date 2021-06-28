@@ -127,7 +127,7 @@ public class ManagementDisableSSLCommand implements Command<CLICommandInvocation
         }
 
         final long start = System.currentTimeMillis();
-        final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000;
+        final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000L;
         Exception exception;
         while (true) {
             try {
