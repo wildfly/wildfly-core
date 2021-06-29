@@ -19,13 +19,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.subsystem.test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -34,8 +36,10 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -54,6 +58,36 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         super(mainSubsystemName, mainExtension, removeOrderComparator);
     }
 
+    private Set<Thread> shutDownHooks = new HashSet<>();
+
+    @Before
+    public void getInitialShutdownHooks() throws Exception {
+        shutDownHooks = getShutdownHooks();
+    }
+
+    @After
+    public void restoreShutdownHooks() {
+        Set<Thread> hooks = getShutdownHooks();
+        hooks.removeAll(shutDownHooks);
+        for (Thread hook : hooks) {
+            Runtime.getRuntime().removeShutdownHook(hook);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Thread> getShutdownHooks() {
+        try {
+            Class<?> applicationShutdownHooksClass = Class.forName("java.lang.ApplicationShutdownHooks");
+            Field hooksField = applicationShutdownHooksClass.getDeclaredField("hooks");
+            hooksField.setAccessible(true);
+            Map<Thread, Thread> hooks = (Map<Thread, Thread>) hooksField.get(null);
+            return hooks.keySet();
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalArgumentException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return Collections.emptySet();
+    }
+
     /**
      * Get the subsystem xml as string.
      *
@@ -67,7 +101,8 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      *
      * If the returned value is not null, the subsystem's XML will be validated against these schemas in #testSchema
      *
-     * By default, this method returns an null (thus disabling the #testSchema and #testSchemaOfSubsystemTemplates tests).
+     * By default, this method returns an null (thus disabling the #testSchema and #testSchemaOfSubsystemTemplates
+     * tests).
      *
      * Note that the XSD validation may fail if the XML contains attributes or text that uses expressions.
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
@@ -78,7 +113,8 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     }
 
     /**
-     * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO subsystem).
+     * Get the paths of the subsystem XML templates (such as <code>/subsystem-templates/io.xml</code> file for the IO
+     * subsystem).
      *
      * If the returned value is not null, the template &lt;subsystem&gt; element will be validated against this schema
      * returned by #getSubsystemXsdPaths in #testSchemaOfSubsystemTemplates.
@@ -160,7 +196,8 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
     }
 
     /**
-     * To enable a test for validation of the subsystem templates, override both {@link #getSubsystemXsdPath()} and {@link #getSubsystemTemplatePaths()}
+     * To enable a test for validation of the subsystem templates, override both {@link #getSubsystemXsdPath()} and
+     * {@link #getSubsystemTemplatePaths()}
      * then add a new test just calling this method.
      */
     protected void testSchemaOfSubsystemTemplates() throws Exception {
@@ -183,8 +220,8 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * operation for the model, create yet another model from executing the results of that describe
      * operation, and compare that model to first model.
      *
-     * @param configId  id to pass to {@link #getSubsystemXml(String)} to get the configuration; if {@code null}
-     *                  {@link #getSubsystemXml()} will be called
+     * @param configId id to pass to {@link #getSubsystemXml(String)} to get the configuration; if {@code null}
+     * {@link #getSubsystemXml()} will be called
      *
      * @throws Exception
      */
@@ -204,7 +241,6 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         return standardSubsystemTest(configId, configIdResolvedModel, compareXml, createAdditionalInitialization());
     }
 
-
     /**
      * Tests the ability to create a model from an xml configuration, marshal the model back to xml,
      * re-read that marshalled model into a new model that matches the first one, execute a "describe"
@@ -213,21 +249,21 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * if configIdResolvedModel is not null compare the model from configId and one from configIdResolvedModel
      * after all expression have been reolved.
      *
-     * @param configId  id to pass to {@link #getSubsystemXml(String)} to get the configuration; if {@code null}
-     *                  {@link #getSubsystemXml()} will be called
-     * @param configIdResolvedModel  id to pass to {@link #getSubsystemXml(String)} to get the configuration;
-     *                               it is the expected result of resolve() on configId if {@code null}
-     ]                               this step is skipped
+     * @param configId id to pass to {@link #getSubsystemXml(String)} to get the configuration; if {@code null}
+     * {@link #getSubsystemXml()} will be called
+     * @param configIdResolvedModel id to pass to {@link #getSubsystemXml(String)} to get the configuration;
+     * it is the expected result of resolve() on configId if {@code null}
+     * ] this step is skipped
      *
      * @param compareXml if {@code true} a comparison of xml output to original input is performed. This can be
-     *                   set to {@code false} if the original input is from an earlier xsd and the current
-     *                   schema has a different output
+     * set to {@code false} if the original input is from an earlier xsd and the current
+     * schema has a different output
      * @param additionalInit service container and model initialization
      *
      * @throws Exception
      */
     protected KernelServices standardSubsystemTest(final String configId, final String configIdResolvedModel,
-                                                   boolean compareXml, final AdditionalInitialization additionalInit) throws Exception {
+            boolean compareXml, final AdditionalInitialization additionalInit) throws Exception {
 
         // Parse the subsystem xml and install into the first controller
         final String subsystemXml = configId == null ? getSubsystemXml() : getSubsystemXml(configId);
@@ -241,7 +277,6 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
         // Test marshaling
         final String marshalled = servicesA.getPersistedSubsystemXml();
         servicesA.shutdown();
-
 
         // validate the the normalized xmls, validate without comparison as well
         String normalizedSubsystem = normalizeXML(subsystemXml);
