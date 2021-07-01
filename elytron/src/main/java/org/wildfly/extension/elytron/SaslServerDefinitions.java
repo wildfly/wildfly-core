@@ -174,8 +174,7 @@ class SaslServerDefinitions {
         .setAlternatives(ElytronDescriptionConstants.PATTERN_FILTER)
         .build();
 
-    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(RegexAttributeDefinitions.PATTERN)
-        .setName(ElytronDescriptionConstants.PATTERN_FILTER)
+    static final SimpleAttributeDefinition PATTERN_FILTER = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATTERN_FILTER, RegexAttributeDefinitions.PATTERN)
         .setAlternatives(ElytronDescriptionConstants.PREDEFINED_FILTER)
         .setXmlName(ElytronDescriptionConstants.PATTERN)
         .build();

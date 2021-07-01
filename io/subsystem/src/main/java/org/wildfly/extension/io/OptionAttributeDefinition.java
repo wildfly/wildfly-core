@@ -95,10 +95,10 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
         }
 
         public Builder(String attributeName, Option<?> option, ModelNode defaultValue) {
-            super(attributeName, ModelType.UNDEFINED, true);
+            super(attributeName, determineModelType(option), true);
             this.option = option;
-            this.defaultValue = defaultValue;
-            setType();
+            this.optionType = determineOptionType(option); // Not happy with the duplicate call :\
+            setDefaultValue(defaultValue);
         }
 
         @Override
@@ -106,7 +106,29 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
             return new OptionAttributeDefinition(this, option, optionType);
         }
 
-        private void setType() {
+        private static ModelType determineModelType(Option<?> option) {
+                Class<?> optionType = determineOptionType(option);
+
+                if (optionType.isAssignableFrom(Integer.class)) {
+                    return ModelType.INT;
+                } else if (optionType.isAssignableFrom(Long.class)) {
+                    return ModelType.LONG;
+                } else if (optionType.isAssignableFrom(BigInteger.class)) {
+                    return ModelType.BIG_INTEGER;
+                } else if (optionType.isAssignableFrom(Double.class)) {
+                    return ModelType.DOUBLE;
+                } else if (optionType.isAssignableFrom(BigDecimal.class)) {
+                    return ModelType.BIG_DECIMAL;
+                } else if (optionType.isEnum() || optionType.isAssignableFrom(String.class)) {
+                    return ModelType.STRING;
+                } else if (optionType.isAssignableFrom(Boolean.class)) {
+                    return ModelType.BOOLEAN;
+                } else {
+                    return ModelType.UNDEFINED;
+                }
+        }
+
+        private static Class<?> determineOptionType(Option<?> option) {
             try {
                 final Field typeField;
                 if (option.getClass().getSimpleName().equals("SequenceOption")) {
@@ -116,26 +138,8 @@ public class OptionAttributeDefinition extends SimpleAttributeDefinition {
                 }
 
                 typeField.setAccessible(true);
-                optionType = (Class<?>) typeField.get(option);
-
-                if (optionType.isAssignableFrom(Integer.class)) {
-                    type = ModelType.INT;
-                } else if (optionType.isAssignableFrom(Long.class)) {
-                    type = ModelType.LONG;
-                } else if (optionType.isAssignableFrom(BigInteger.class)) {
-                    type = ModelType.BIG_INTEGER;
-                } else if (optionType.isAssignableFrom(Double.class)) {
-                    type = ModelType.DOUBLE;
-                } else if (optionType.isAssignableFrom(BigDecimal.class)) {
-                    type = ModelType.BIG_DECIMAL;
-                } else if (optionType.isEnum() || optionType.isAssignableFrom(String.class)) {
-                    type = ModelType.STRING;
-                } else if (optionType.isAssignableFrom(Boolean.class)) {
-                    type = ModelType.BOOLEAN;
-                } else {
-                    type = ModelType.UNDEFINED;
-                }
-
+                Class<?> optionType = (Class<?>) typeField.get(option);
+                return optionType;
             } catch (Exception e) {
                 throw new IllegalArgumentException(e);
             }

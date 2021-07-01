@@ -141,8 +141,7 @@ class AuthenticationClientDefinitions {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    static final PropertiesAttributeDefinition MECHANISM_PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.PROPERTIES, true)
-            .setName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
+    static final PropertiesAttributeDefinition MECHANISM_PROPERTIES = new PropertiesAttributeDefinition.Builder(ElytronDescriptionConstants.MECHANISM_PROPERTIES, true)
             .setXmlName(ElytronDescriptionConstants.MECHANISM_PROPERTIES)
             .setRestartAllServices()
             .build();

@@ -278,15 +278,6 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
             }
             return new ObjectListAttributeDefinition(this);
         }
-
-        /*
-       --------------------------
-       added for binary compatibility for running compatibility tests
-        */
-        @Override
-        public Builder setAllowNull(boolean allowNull) {
-            return super.setAllowNull(allowNull);
-        }
     }
 
     private static class ListParameterCorrector implements ParameterCorrector {
