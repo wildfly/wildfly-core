@@ -444,18 +444,18 @@ public class TlsTestCase extends AbstractSubsystemTest {
     }
 
     /**
-     * Uses default protocols enabled.
+     * Enables multiple protocols in the client and server excluding SSLv2Hello
      */
     @Test
     public void testSslServiceAuthProtocolNoSSLv2HelloOnServerOrClient() throws Throwable {
-        String[] enabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"} : new String[]{"TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
+        String[] enabledProtocols = new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"};
 
         HashMap<String, String[]> protocolChecker = new HashMap<>();
         protocolChecker.put(PROTOCOLS_SERVER, enabledProtocols);
         protocolChecker.put(PROTOCOLS_CLIENT, enabledProtocols);
         protocolChecker.put(NEGOTIATED_PROTOCOL, new String[]{"TLSv1.2"});
 
-        testCommunication("ServerSslContextDefaultProtocols", "ClientSslContextDefaultProtocols", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
+        testCommunication("ServerSslContextMultipleProtocolsNoSSLv2Hello", "ClientSslContextMultipleProtocolsNoSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                 "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly", null, false, protocolChecker);
     }
 
