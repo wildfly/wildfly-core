@@ -41,7 +41,7 @@
 
     <properties>
         <version.com.fasterxml.jackson>2.11.3</version.com.fasterxml.jackson>
-        <version.commons-io>2.5</version.commons-io>
+        <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.63.Final</version.io.netty>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
