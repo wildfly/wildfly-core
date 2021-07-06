@@ -16,12 +16,12 @@
 # Description:          WildFly startup/shutdown script
 ### END INIT INFO
 
-NAME=$(readlink -f ${0} | xargs basename)
+NAME=$(readlink -f "${0}" | xargs basename)
 DESC="WildFly Application Server"
 DEFAULT="/etc/default/$NAME"
 
 # Check privileges
-if [ `id -u` -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
 	echo "You need root privileges to run this script"
 	exit 1
 fi
@@ -78,14 +78,13 @@ if [ -z "$JBOSS_USER" ]; then
 fi
 
 # Check wildfly user
-id $JBOSS_USER > /dev/null 2>&1
-if [ $? -ne 0 -o -z "$JBOSS_USER" ]; then
+if ! id $JBOSS_USER > /dev/null 2>&1 || [ -z "$JBOSS_USER" ]; then
 	log_failure_msg "User \"$JBOSS_USER\" does not exist..."
 	exit 1
 fi
 
 # Check owner of JBOSS_HOME
-if [ ! $(stat -L -c "%U" "$JBOSS_HOME") = $JBOSS_USER ]; then
+if [ ! "$(stat -L -c "%U" "$JBOSS_HOME")" = $JBOSS_USER ]; then
 	log_failure_msg "The user \"$JBOSS_USER\" is not owner of \"$JBOSS_HOME\""
 	exit 1
 fi
@@ -167,21 +166,21 @@ case "$1" in
 	check_status
 	status_start=$?
 	if [ $status_start -eq 3 ]; then
-		mkdir -p $(dirname "$JBOSS_PIDFILE")
-		mkdir -p $(dirname "$JBOSS_CONSOLE_LOG")
-		chown $JBOSS_USER $(dirname "$JBOSS_PIDFILE") || true
+		mkdir -p "$(dirname "$JBOSS_PIDFILE")"
+		mkdir -p "$(dirname "$JBOSS_CONSOLE_LOG")"
+		chown $JBOSS_USER "$(dirname "$JBOSS_PIDFILE")" || true
 		cat /dev/null > "$JBOSS_CONSOLE_LOG"
 		currenttime=$(date +%s%N | cut -b1-13)
 
 		if [ "$JBOSS_MODE" = "standalone" ]; then
 			start-stop-daemon --start --user "$JBOSS_USER" \
 			--chuid "$JBOSS_USER" --chdir "$JBOSS_HOME" --pidfile "$JBOSS_PIDFILE" \
-			--exec "$JBOSS_SCRIPT" -- -c $JBOSS_CONFIG $JBOSS_OPTS >> "$JBOSS_CONSOLE_LOG" 2>&1 &
+			--exec "$JBOSS_SCRIPT" -- -c $JBOSS_CONFIG "$JBOSS_OPTS" >> "$JBOSS_CONSOLE_LOG" 2>&1 &
 		else
 			start-stop-daemon --start --user "$JBOSS_USER" \
 			--chuid "$JBOSS_USER" --chdir "$JBOSS_HOME" --pidfile "$JBOSS_PIDFILE" \
 			--exec "$JBOSS_SCRIPT" -- --domain-config=$JBOSS_DOMAIN_CONFIG \
-			--host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS >> "$JBOSS_CONSOLE_LOG" 2>&1 &
+			--host-config=$JBOSS_HOST_CONFIG "$JBOSS_OPTS" >> "$JBOSS_CONSOLE_LOG" 2>&1 &
 		fi
 
 		count=0
@@ -192,13 +191,11 @@ case "$1" in
 			if [ -f "$JBOSS_MARKERFILE" ]; then
 				markerfiletimestamp=$(grep -o '[0-9]*' "$JBOSS_MARKERFILE") > /dev/null
 				if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
-					grep -i 'success:' "$JBOSS_MARKERFILE" > /dev/null
-					if [ $? -eq 0 ]; then
+					if ! grep -i 'success:' "$JBOSS_MARKERFILE" > /dev/null; then
 						log_end_msg 0
 						exit 0
 					fi
-					grep -i 'error:' "$JBOSS_MARKERFILE" > /dev/null
-					if [ $? -eq 0 ]; then
+					if ! grep -i 'error:' "$JBOSS_MARKERFILE" > /dev/null; then
 						log_end_msg 255
 						log_warning_msg "$DESC started with errors, please see server log for details."
 						exit 0
@@ -228,10 +225,10 @@ case "$1" in
 	check_status
 	status_stop=$?
 	if [ $status_stop -eq 0 ]; then
-		read kpid < "$JBOSS_PIDFILE"
+		read -r kpid < "$JBOSS_PIDFILE"
 		log_daemon_msg "Stopping $DESC" "$NAME"
 
-		children_pids=$(pgrep -P $kpid)
+		children_pids=$(pgrep -P "$kpid")
 
 		start-stop-daemon --stop --quiet --pidfile "$JBOSS_PIDFILE" \
 		--user "$JBOSS_USER" --retry=TERM/$SHUTDOWN_WAIT/KILL/5 \
@@ -243,13 +240,13 @@ case "$1" in
 		fi
 
 		for child in $children_pids; do
-			/bin/kill -9 $child >/dev/null 2>&1
+			/bin/kill -9 "$child" >/dev/null 2>&1
 		done
 
 		log_end_msg 0
 	elif [ $status_stop -eq 1 ]; then
 		log_action_msg "$DESC is not running but the pid file exists, cleaning up"
-		rm -f $JBOSS_PIDFILE
+		rm -f "$JBOSS_PIDFILE"
 	elif [ $status_stop -eq 3 ]; then
 		log_action_msg "$DESC is not running"
 	fi
@@ -272,10 +269,10 @@ case "$1" in
 			RELOAD_CMD=":reload"; else
 			RELOAD_CMD=":reload-servers"; fi
 
-		start-stop-daemon --start --chuid "$JBOSS_USER" \
-		--exec "$JBOSS_CLI" -- --connect --command=$RELOAD_CMD >/dev/null 2>&1
+		
 
-		if [ $? -eq 0 ]; then
+		if ! start-stop-daemon --start --chuid "$JBOSS_USER" \
+		--exec "$JBOSS_CLI" -- --connect --command=$RELOAD_CMD >/dev/null 2>&1; then
 			log_end_msg 0
 		else
 			log_end_msg 1
@@ -288,7 +285,7 @@ case "$1" in
 	check_status
 	status=$?
 	if [ $status -eq 0 ]; then
-		read pid < $JBOSS_PIDFILE
+		read -r pid < "$JBOSS_PIDFILE"
 		log_action_msg "$DESC is running with pid $pid"
 		exit 0
 	elif [ $status -eq 1 ]; then
