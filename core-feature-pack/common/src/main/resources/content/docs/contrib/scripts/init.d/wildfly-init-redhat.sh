@@ -20,10 +20,10 @@
 # Source function library.
 . /etc/init.d/functions
 
-NAME=$(readlink -f ${0} | xargs basename)
+NAME=$(readlink -f "${0}" | xargs basename)
 
 # Check privileges
-if [ `id -u` -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
 	echo "You need root privileges to run this script"
 	exit 1
 fi
@@ -70,16 +70,15 @@ if [ -z "$JBOSS_USER" ]; then
 fi
 
 # Check wildfly user
-id $JBOSS_USER > /dev/null 2>&1
-if [ $? -ne 0 -o -z "$JBOSS_USER" ]; then
+if ! id $JBOSS_USER > /dev/null 2>&1 || [ -z "$JBOSS_USER" ]; then
 	echo "User \"$JBOSS_USER\" does not exist..."
 	exit 1
 fi
 
 # Check owner of JBOSS_HOME
-if [ ! $(stat -L -c "%U" "$JBOSS_HOME") = $JBOSS_USER ]; then
-	echo "The user \"$JBOSS_USER\" is not owner of \"$(readlink -f $JBOSS_HOME)\""
-	echo "Try: chown -R $JBOSS_USER:$JBOSS_USER \"$(readlink -f $JBOSS_HOME)\""
+if [ ! "$(stat -L -c "%U" "$JBOSS_HOME")" = $JBOSS_USER ]; then
+	echo "The user \"$JBOSS_USER\" is not owner of \"$(readlink -f "$JBOSS_HOME")\""
+	echo "Try: chown -R $JBOSS_USER:$JBOSS_USER \"$(readlink -f "$JBOSS_HOME")\""
 	exit 1
 fi
 
@@ -140,51 +139,50 @@ fi
 
 # Helper function to check status of wildfly service
 check_status() {
-	status -p "$JBOSS_PIDFILE" -l $(basename "$JBOSS_LOCKFILE") "$NAME" >/dev/null 2>&1
+	status -p "$JBOSS_PIDFILE" -l "$(basename "$JBOSS_LOCKFILE")" "$NAME" >/dev/null 2>&1
 }
 
 start() {
-	echo -n $"Starting $NAME: "
+	printf "%s\n" $"Starting $NAME: "
 	check_status
 	status_start=$?
 	if [ $status_start -eq 3 ]; then
-		mkdir -p $(dirname "$JBOSS_PIDFILE")
-		mkdir -p $(dirname "$JBOSS_CONSOLE_LOG")
-		chown $JBOSS_USER $(dirname "$JBOSS_PIDFILE") || true
+		mkdir -p "$(dirname "$JBOSS_PIDFILE")"
+		mkdir -p "$(dirname "$JBOSS_CONSOLE_LOG")"
+		chown $JBOSS_USER "$(dirname "$JBOSS_PIDFILE")" || true
 		cat /dev/null > "$JBOSS_CONSOLE_LOG"
 		currenttime=$(date +%s%N | cut -b1-13)
 
 		if [ "$JBOSS_MODE" = "standalone" ]; then
-			cd $JBOSS_HOME >/dev/null 2>&1
-			daemon --user=$JBOSS_USER --pidfile=$JBOSS_PIDFILE LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE=$JBOSS_PIDFILE "$JBOSS_SCRIPT -c $JBOSS_CONFIG $JBOSS_OPTS &" >> $JBOSS_CONSOLE_LOG 2>&1
-			cd - >/dev/null 2>&1
+			cd "$JBOSS_HOME" >/dev/null 2>&1 || exit
+			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT -c $JBOSS_CONFIG $JBOSS_OPTS &" >> "$JBOSS_CONSOLE_LOG" 2>&1
+			cd - >/dev/null 2>&1 || exit
 		else
-			cd $JBOSS_HOME >/dev/null 2>&1
-			daemon --user=$JBOSS_USER --pidfile=$JBOSS_PIDFILE LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE=$JBOSS_PIDFILE "$JBOSS_SCRIPT --domain-config=$JBOSS_DOMAIN_CONFIG --host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS &" >> $JBOSS_CONSOLE_LOG 2>&1
-			cd - >/dev/null 2>&1
+			cd "$JBOSS_HOME" >/dev/null 2>&1 || exit
+			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT --domain-config=$JBOSS_DOMAIN_CONFIG --host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS &" >> "$JBOSS_CONSOLE_LOG" 2>&1
+			cd - >/dev/null 2>&1 || exit
 		fi
 
 		count=0
 		until [ $count -gt $STARTUP_WAIT ]
 		do
 			sleep 1
-			let count=$count+1;
-			if [ -f $JBOSS_MARKERFILE ]; then
-				markerfiletimestamp=$(grep -o '[0-9]\+' $JBOSS_MARKERFILE) > /dev/null
+			count=$($count+1);
+			if [ -f "$JBOSS_MARKERFILE" ]; then
+				markerfiletimestamp=$(grep -o '[0-9]\+' "$JBOSS_MARKERFILE") > /dev/null
 				if [ "$markerfiletimestamp" -gt "$currenttime" ] ; then
-					grep -i 'success:' $JBOSS_MARKERFILE > /dev/null
-					if [ $? -eq 0 ]; then
+					if ! grep -i 'success:' "$JBOSS_MARKERFILE" > /dev/null; then
 						success
 						echo
-						touch $JBOSS_LOCKFILE
+						touch "$JBOSS_LOCKFILE"
 						exit 0
 					fi
-					grep -i 'error:' $JBOSS_MARKERFILE > /dev/null
-					if [ $? -eq 0 ]; then
+					
+					if ! grep -i 'error:' "$JBOSS_MARKERFILE" > /dev/null; then
 						warning
 						echo
 						echo "$NAME started with errors, please see server log for details."
-						touch $JBOSS_LOCKFILE
+						touch "$JBOSS_LOCKFILE"
 						exit 0
 					fi
 				fi
@@ -195,7 +193,7 @@ start() {
 			warning
 			echo
 			echo "$NAME hasn't started within the timeout allowed."
-			touch $JBOSS_LOCKFILE
+			touch "$JBOSS_LOCKFILE"
 			exit 0
 		else
 			failure
@@ -211,26 +209,25 @@ start() {
 }
 
 stop() {
-	echo -n $"Shutting down $NAME: "
+	printf "%s\n" $"Shutting down $NAME: "
 	check_status
 	status_stop=$?
 	if [ $status_stop -eq 0 ]; then
 		count=0;
-		if [ -f $JBOSS_PIDFILE ]; then
-			read kpid < $JBOSS_PIDFILE
-			let kwait=$SHUTDOWN_WAIT
+		if [ -f "$JBOSS_PIDFILE" ]; then
+			read -r kpid < "$JBOSS_PIDFILE"
+			kwait=$($SHUTDOWN_WAIT)
 
 			# Try issuing SIGTERM
 			su -s /bin/sh -c "kill -15 $kpid" $JBOSS_USER
-			until [ `ps --pid $kpid 2> /dev/null | grep -c $kpid 2> /dev/null` -eq '0' ] || [ $count -gt $kwait ]
+			until [ "$(pgrep --pid "$kpid" 2> /dev/null | grep -c "$kpid" 2> /dev/null)" -eq '0' ] || [ $count -gt "$kwait" ]
 				do
 				sleep 1
-				let count=$count+1;
+				count=$($count+1);
 			done
 
-			if [ $count -gt $kwait ]; then
-				su -s /bin/sh -c "kill -9 $kpid" $JBOSS_USER 2> /dev/null
-				if [ "$?" != 0 ]; then
+			if [ "$count" -gt "$kwait" ]; then
+				if ! su -s /bin/sh -c "kill -9 $kpid" $JBOSS_USER 2> /dev/null; then
 				        failure
 				        exit 1
 				fi
@@ -239,16 +236,16 @@ stop() {
 		success
 	elif [ $status_stop -eq 1 ]; then
 		echo
-		echo -n "$NAME dead but pid file exists, cleaning up"
+		printf "%s\n" "$NAME dead but pid file exists, cleaning up"
 	elif [ $status_stop -eq 2 ]; then
 		echo
-		echo -n "$NAME dead but subsys locked, cleaning up"
+		printf "%s\n" "$NAME dead but subsys locked, cleaning up"
 	elif [ $status_stop -eq 3 ]; then
 		echo
-		echo -n $"$NAME is already stopped"
+		printf "%s\n" $"$NAME is already stopped"
 	fi
-	rm -f $JBOSS_PIDFILE
-	rm -f $JBOSS_LOCKFILE
+	rm -f "$JBOSS_PIDFILE"
+	rm -f "$JBOSS_LOCKFILE"
 	echo
 }
 
@@ -264,7 +261,7 @@ case "$1" in
 		$0 start
 		;;
 	status)
-		status -p "$JBOSS_PIDFILE" -l $(basename "$JBOSS_LOCKFILE") "$NAME"
+		status -p "$JBOSS_PIDFILE" -l "$(basename "$JBOSS_LOCKFILE")" "$NAME"
 		;;
 	*)
 		## If no parameters are given, print which are avaiable.
