@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>org.jboss.xnio</groupId>
+  <artifactId>xnio-nio</artifactId>
+  <versioning>
+    <versions>
+      <version>3.8.5.Final-SNAPSHOT</version>
+    </versions>
+    <lastUpdated>20210707190315</lastUpdated>
+  </versioning>
+</metadata>

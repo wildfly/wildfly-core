@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.jboss.xnio</groupId>
+  <artifactId>xnio-api</artifactId>
+  <version>3.8.5.Final-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <localCopy>true</localCopy>
+    </snapshot>
+    <lastUpdated>20210707190303</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>3.8.5.Final-SNAPSHOT</value>
+        <updated>20210707190303</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>3.8.5.Final-SNAPSHOT</value>
+        <updated>20210707190303</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
