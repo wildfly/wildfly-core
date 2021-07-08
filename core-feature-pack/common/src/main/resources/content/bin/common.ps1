@@ -352,7 +352,7 @@ Function Get-Java-Version ($javaOpts) {
 }
 
 # Check if can set option to use HotSpot VM
-Function Set-Java-Server-Option ($javaOpts) {
+Function Is-Java-Server-Option ($javaOpts) {
     if ( -Not ($javaOpts -match '-server') ) {
         # Check user requested JDK 'data model'
         $version = Get-Java-Version ($javaOpts)
@@ -363,11 +363,11 @@ Function Set-Java-Server-Option ($javaOpts) {
         if ($LASTEXITCODE -eq 1) {
             Write-Host $version
         } elseif ($version -match 'HotSpot' -or $version -match 'OpenJDK' -or $version -match 'IBM J9') {
-            $javaOpts = "-server $javaOpts"
+            return $true
         }
     }
 
-    return $javaOpts
+    return $false
 }
 
 # For stanalone mode, check if client option could be set, if not try to set server option
