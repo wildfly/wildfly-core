@@ -57,12 +57,7 @@ public class ReloadRequiredWriteAttributeHandler extends AbstractWriteAttributeH
 
     private ModelNode convertToType(String attributeName, ModelNode resolvedValue) {
         AttributeDefinition attributeDefinition = getAttributeDefinition(attributeName);
-        ModelType type;
-        if (attributeDefinition != null) {
-            type = attributeDefinition.getType();
-        } else {
-            type = ModelType.STRING;
-        }
+        ModelType type = attributeDefinition.getType();
         ModelNode converted = resolvedValue.clone();
         try {
             switch (type) {
