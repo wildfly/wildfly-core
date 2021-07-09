@@ -40,7 +40,6 @@
         <module>galleon-common</module>
         <module>galleon-pruned</module>
         <module>galleon-feature-pack</module>
-        <module>legacy-feature-pack</module>
     </modules>
 
 

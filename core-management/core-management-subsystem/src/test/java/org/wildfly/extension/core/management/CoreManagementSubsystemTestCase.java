@@ -46,18 +46,6 @@ public class CoreManagementSubsystemTestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-core-management_1_0.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] {
-                "/subsystem-templates/core-management.xml"
-        };
-    }
-
-    @Override
     protected AdditionalInitialization createAdditionalInitialization() {
         return new AdditionalInitialization() {
 

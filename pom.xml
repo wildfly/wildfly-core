@@ -234,9 +234,7 @@
         <module>controller-client</module>
         <module>bootable-jar</module>
         <module>build</module>
-        <module>build-legacy</module>
         <module>dist</module>
-        <module>dist-legacy</module>
         <module>component-matrix-builder</module>
         <module>core-feature-pack</module>
         <module>core-management</module>

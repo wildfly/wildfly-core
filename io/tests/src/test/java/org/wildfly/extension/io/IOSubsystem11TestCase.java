@@ -58,18 +58,6 @@ public class IOSubsystem11TestCase extends AbstractSubsystemBaseTest {
         return readResource("io-1.1.xml");
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_1_1.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/io.xml"
-        };
-    }
-
     protected void standardSubsystemTest(final String configId) throws Exception {
         standardSubsystemTest(configId, false);
     }

@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>wildfly-script-tests</artifactId>
-    <description>WildFly Core: Script Tests</description>
+    <name>WildFly Core: Script Tests</name>
 
     <properties>
         <!-- By default the scripts and configurations expect an IPv4 address so we should use one by default -->
@@ -94,18 +94,34 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <groupId>org.jboss.galleon</groupId>
+                <artifactId>galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>server-provisioning</id>
                         <goals>
-                            <goal>build</goal>
+                            <goal>provision</goal>
                         </goals>
                         <phase>process-test-resources</phase>
                         <configuration>
-                            <config-file>server-provisioning.xml</config-file>
-                            <server-name>${server.name}</server-name>
+                            <install-dir>${project.build.directory}/${server.output.dir.prefix}</install-dir>
+                            <record-state>false</record-state>
+                            <log-time>${galleon.log.time}</log-time>
+                            <offline>true</offline>
+                            <plugin-options>
+                                <jboss-maven-dist/>
+                                <jboss-fork-embedded>${galleon.fork.embedded}</jboss-fork-embedded>
+                            </plugin-options>
+                            <feature-packs>
+                                <feature-pack>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
+                                    <version>${project.version}</version>
+                                    <excluded-packages>
+                                        <param>product.conf</param>
+                                    </excluded-packages>
+                                </feature-pack>
+                            </feature-packs>
                         </configuration>
                     </execution>
                 </executions>
