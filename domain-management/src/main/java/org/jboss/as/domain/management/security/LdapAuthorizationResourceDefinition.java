@@ -145,7 +145,7 @@ public class LdapAuthorizationResourceDefinition extends LdapResourceDefinition 
                 throw DomainManagementLogger.ROOT_LOGGER.multipleUsernameToDnConfigurationsDefined(realmName, invalid);
             }
             children = resource.getChildrenNames(ModelDescriptionConstants.GROUP_SEARCH);
-            if (children.size() == 0) {
+            if (children.isEmpty()) {
                 String realmName = ManagementUtil.getSecurityRealmName(operation);
                 throw DomainManagementLogger.ROOT_LOGGER.noGroupSearchDefined(realmName);
             } else if (children.size() > 1) {

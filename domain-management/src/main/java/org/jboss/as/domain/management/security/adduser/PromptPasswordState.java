@@ -57,7 +57,7 @@ public class PromptPasswordState implements State {
                 RestrictionLevel level = stateValues.getOptions().getCheckUtil().getRestrictionLevel();
                 if (!RestrictionLevel.RELAX.equals(level)) {
                     final List<PasswordRestriction> passwordRestrictions = stateValues.getOptions().getCheckUtil().getPasswordRestrictions();
-                    if (passwordRestrictions.size() > 0) {
+                    if (!passwordRestrictions.isEmpty()) {
                         if (level == RestrictionLevel.REJECT) {
                             theConsole.printf(DomainManagementLogger.ROOT_LOGGER.passwordRequirements());
                         } else {

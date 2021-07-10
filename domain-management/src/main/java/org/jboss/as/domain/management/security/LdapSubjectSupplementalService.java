@@ -322,13 +322,13 @@ public class LdapSubjectSupplementalService implements Service, SubjectSupplemen
             @Override
             public boolean exists() throws RealmUnavailableException {
                 Set<String> groups = getGroups();
-                return groups != null && groups.size() > 0;
+                return groups != null && !groups.isEmpty();
             }
 
             @Override
             public AuthorizationIdentity getAuthorizationIdentity() throws RealmUnavailableException {
                 Set<String> groups = getGroups();
-                if (groups != null && groups.size() > 0) {
+                if (groups != null && !groups.isEmpty()) {
                     Map<String, Set<String>> groupsAttributeMap = new HashMap<String, Set<String>>();
                     groupsAttributeMap.put("GROUPS",Collections.unmodifiableSet(groups));
 

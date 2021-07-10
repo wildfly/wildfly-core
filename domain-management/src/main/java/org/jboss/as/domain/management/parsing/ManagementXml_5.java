@@ -385,7 +385,7 @@ final class ManagementXml_5 implements ManagementXml {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -450,7 +450,7 @@ final class ManagementXml_5 implements ManagementXml {
                         }
                     }
 
-                    if (required.size() > 0) {
+                    if (!required.isEmpty()) {
                         throw missingRequired(reader, required);
                     }
                     requireNoContent(reader);
@@ -1037,7 +1037,7 @@ final class ManagementXml_5 implements ManagementXml {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
     }
@@ -2425,7 +2425,7 @@ final class ManagementXml_5 implements ManagementXml {
             if (connection.hasDefined(PROPERTY)) {
                 ModelNode properties = connection.get(PROPERTY);
                 Set<String> propertySet = properties.keys();
-                if (propertySet.size() > 0) {
+                if (!propertySet.isEmpty()) {
                     writer.writeStartElement(PROPERTIES);
                     for (String current : propertySet) {
                         writer.writeEmptyElement(PROPERTY);

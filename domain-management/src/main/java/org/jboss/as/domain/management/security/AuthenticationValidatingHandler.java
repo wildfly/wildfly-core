@@ -85,7 +85,7 @@ class AuthenticationValidatingHandler implements OperationStepHandler {
 
         if (children.contains(KERBEROS)) {
             Resource kerberosIdentity = resource.getChild(PathElement.pathElement(SERVER_IDENTITY, KERBEROS));
-            if (kerberosIdentity == null || kerberosIdentity.getChildrenNames(KEYTAB).size() < 1) {
+            if (kerberosIdentity == null || kerberosIdentity.getChildrenNames(KEYTAB).isEmpty()) {
                 throw DomainManagementLogger.ROOT_LOGGER.kerberosWithoutKeytab(realmName);
             }
         }
