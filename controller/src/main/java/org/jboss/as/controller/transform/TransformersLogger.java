@@ -280,7 +280,7 @@ public class TransformersLogger {
         }
 
         private AttributeLogEntry(PathAddress address, ModelNode operation, String message, Set<String> attributes) {
-            assert message != null || (attributes != null && attributes.size() > 0) : "a message must be provided or a list of attributes or both";
+            assert message != null || (attributes != null && !attributes.isEmpty()) : "a message must be provided or a list of attributes or both";
             this.address = address;
             this.operation = operation;
             this.message = message;
@@ -292,7 +292,7 @@ public class TransformersLogger {
             final String subsystemName = findSubsystemName(address);
             final ModelVersion usedVersion = subsystemName == null ? coreVersion : target.getSubsystemVersion(subsystemName);
             String msg = message == null ? ControllerLogger.ROOT_LOGGER.attributesAreNotUnderstoodAndMustBeIgnored() : message;
-            String attributeSet = attributes != null && attributes.size() > 0 ? ControllerLogger.ROOT_LOGGER.attributeNames(attributes) : "";
+            String attributeSet = attributes != null && !attributes.isEmpty() ? ControllerLogger.ROOT_LOGGER.attributeNames(attributes) : "";
             if (operation == null) {//resource transformation
                 if (subsystemName != null) {
                     return ControllerLogger.ROOT_LOGGER.transformerLoggerSubsystemModelResourceTransformerAttributes(address, subsystemName, usedVersion, attributeSet, msg);

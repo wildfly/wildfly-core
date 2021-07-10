@@ -872,7 +872,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             final AuditLogHandler handler = config.getConfiguredHandler(name);
             if (handler != null){
                 Set<PathAddress> references = handler.getReferences();
-                if (references.size() > 0){
+                if (!references.isEmpty()){
                     if (!references.containsAll(removedReferences)){
                         Set<PathAddress> activeReferences = new HashSet<PathAddress>(references);
                         activeReferences.removeAll(removedReferences);
@@ -917,7 +917,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         }
 
         void rollbackChanges(){
-            if (addedReferences != null && addedReferences.size() > 0){
+            if (addedReferences != null && !addedReferences.isEmpty()){
                 for (PathAddress address : addedReferences) {
                     final String name = org.jboss.as.controller.operations.common.Util.getNameFromAddress(address);
                     config.removeHandlerReference(name);
@@ -935,7 +935,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
         }
 
         void applyChanges() {
-            if (removedHandlers != null && removedHandlers.size() > 0){
+            if (removedHandlers != null && !removedHandlers.isEmpty()){
                 for (String name : removedHandlers) {
                     AuditLogHandler handler = config.removeConfiguredHandler(name);
                     if (handler != null){
@@ -959,7 +959,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
                     handler.setFormatter(config.getFormatter(handler.getFormatterName()));
                 }
             }
-            if (removedReferences != null && removedReferences.size() > 0){
+            if (removedReferences != null && !removedReferences.isEmpty()){
                 for (PathAddress referenceAddress : removedReferences){
                     final String name = org.jboss.as.controller.operations.common.Util.getNameFromAddress(referenceAddress);
                     final AuditLogHandler handler = config.getConfiguredHandler(name);

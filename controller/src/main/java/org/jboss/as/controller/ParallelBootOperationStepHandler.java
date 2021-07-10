@@ -145,7 +145,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
             // Execute the subsystem's ops in another thread
             List<ParsedBootOp> bootOps = entry.getValue();
-            ParallelBootOperationContext pboc = bootOps.size() == 0
+            ParallelBootOperationContext pboc = bootOps.isEmpty()
                     ? null
                     : createOperationContext(primaryContext, bootSecurityDomain, txControl, subsystemRuntimeOps);
             ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.MODEL, txControl, pboc);
@@ -296,7 +296,7 @@ public class ParallelBootOperationStepHandler implements OperationStepHandler {
 
                     // Execute the subsystem's ops in another thread
                     List<ParsedBootOp> bootOps = entry.getValue();
-                    ParallelBootOperationContext pboc = bootOps.size() == 0
+                    ParallelBootOperationContext pboc = bootOps.isEmpty()
                         ? null
                         : createOperationContext(primaryContext, bootSecurityDomain, txControl, null);
                     ParallelBootTask subsystemTask = new ParallelBootTask(subsystemName, bootOps, OperationContext.Stage.RUNTIME, txControl, pboc);

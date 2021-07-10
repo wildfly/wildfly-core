@@ -105,9 +105,9 @@ public class NotInterfaceCriteria implements InterfaceCriteria {
         for (Map.Entry<NetworkInterface, Set<InetAddress>> entry : candidates.entrySet()) {
             Set<InetAddress> retained = new HashSet<InetAddress>(entry.getValue());
             Set<InetAddress> badAddresses = toRemove.get(entry.getKey());
-            if (badAddresses != null && badAddresses.size() > 0) {
+            if (badAddresses != null && !badAddresses.isEmpty()) {
                 retained.removeAll(badAddresses);
-                if (retained.size() > 0) {
+                if (!retained.isEmpty()) {
                     result.put(entry.getKey(), retained);
                 }
             } else {

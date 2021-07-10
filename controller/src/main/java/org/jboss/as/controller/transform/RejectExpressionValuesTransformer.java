@@ -101,7 +101,7 @@ public class RejectExpressionValuesTransformer implements ResourceTransformer, O
     public TransformedOperation transformOperation(final TransformationContext context, final PathAddress address, final ModelNode operation) throws OperationFailedException {
         // Check the model
         final Set<String> attributes = checkModel(operation, context);
-        final boolean reject = attributes.size() > 0;
+        final boolean reject = !attributes.isEmpty();
         final OperationRejectionPolicy rejectPolicy;
         if (reject) {
             rejectPolicy = new OperationRejectionPolicy() {
@@ -129,7 +129,7 @@ public class RejectExpressionValuesTransformer implements ResourceTransformer, O
         // Check the model
         final ModelNode model = resource.getModel();
         final Set<String> attributes = checkModel(model, context);
-        if (attributes.size() > 0) {
+        if (!attributes.isEmpty()) {
             if (context.getTarget().isIgnoredResourceListAvailableAtRegistration()) {
                 // Slave is 7.2.x or higher and we know this resource is not ignored
                 List<String> msg = Collections.singletonList(context.getLogger().getAttributeWarning(address, null, ControllerLogger.ROOT_LOGGER.attributesDontSupportExpressions(), attributes));

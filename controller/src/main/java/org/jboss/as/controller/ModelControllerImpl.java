@@ -512,7 +512,7 @@ class ModelControllerImpl implements ModelController {
         // This gets extensions registered before proceeding to other ops that count on these registrations
         BootOperations bootOperations = organizeBootOperations(bootList, operationID, parallelBootRootResourceRegistrationProvider);
         OperationContext.ResultAction resultAction = bootOperations.invalid ? OperationContext.ResultAction.ROLLBACK : OperationContext.ResultAction.KEEP;
-        if (bootOperations.initialOps.size() > 0) {
+        if (!bootOperations.initialOps.isEmpty()) {
             // Run the steps up to the last ExtensionAddHandler
             for (ParsedBootOp initialOp : bootOperations.initialOps) {
                 context.addBootStep(initialOp);
@@ -953,7 +953,7 @@ class ModelControllerImpl implements ModelController {
         if (modelControllerResourceAddress == null) {
             Set<String> hosts = managementModel.getRootResource().getChildrenNames(HOST);
             // if we don't actually have a host name yet (e.g. --empty-host-config) we return null for now.
-            if (hosts.size() == 0) {
+            if (hosts.isEmpty()) {
                 return null;
             }
             String hostName = hosts.iterator().next();

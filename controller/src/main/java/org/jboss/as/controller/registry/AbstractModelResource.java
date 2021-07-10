@@ -72,7 +72,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         this.runtimeOnly = runtimeOnly;
         this.orderedChildTypes = safe && orderedChildTypes != null
                 ? orderedChildTypes
-                : (orderedChildTypes == null || orderedChildTypes.size() == 0)
+                : (orderedChildTypes == null || orderedChildTypes.isEmpty())
                     ? Collections.<String>emptySet()
                     : Collections.unmodifiableSet(new HashSet<>(orderedChildTypes));
     }

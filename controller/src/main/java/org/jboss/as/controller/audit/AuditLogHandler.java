@@ -111,7 +111,7 @@ abstract class AuditLogHandler {
 
     void removeReference(PathAddress address){
         references.remove(address);
-        if (references.size() == 0){
+        if (references.isEmpty()){
             stop();
         }
     }

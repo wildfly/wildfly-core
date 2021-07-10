@@ -206,7 +206,7 @@ public abstract class MapAttributeDefinition extends AttributeDefinition {
                 if (newValue.getType() == ModelType.LIST) {
                     int listSize = newValue.asList().size();
                     List<Property> propertyList = newValue.asPropertyList();
-                    if (propertyList.size() == 0) {
+                    if (propertyList.isEmpty()) {
                         //The list cannot be converted to a map
                         if (listSize == 0) {
                             return new ModelNode();

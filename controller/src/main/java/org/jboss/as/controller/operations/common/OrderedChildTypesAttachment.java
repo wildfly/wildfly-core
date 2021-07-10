@@ -31,7 +31,7 @@ public class OrderedChildTypesAttachment {
      */
     public void addOrderedChildResourceTypes(PathAddress resourceAddress, Resource resource) {
         Set<String> orderedChildTypes = resource.getOrderedChildTypes();
-        if (orderedChildTypes.size() > 0) {
+        if (!orderedChildTypes.isEmpty()) {
             orderedChildren.put(resourceAddress, resource.getOrderedChildTypes());
         }
     }

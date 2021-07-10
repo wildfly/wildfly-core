@@ -345,7 +345,7 @@ final class ValidateModelStepHandler implements OperationStepHandler {
                 }
             }
         }
-        return result.size() == 0 ? null : result.toArray(new String[result.size()]);
+        return result.isEmpty() ? null : result.toArray(new String[result.size()]);
     }
 
     private ResAndReg loadResource(final PathAddress address,

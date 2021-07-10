@@ -84,7 +84,7 @@ public class PathAddress implements Iterable<PathElement> {
                 }
 
             }
-            if (props.size() == 0) {
+            if (props.isEmpty()) {
                 return EMPTY_ADDRESS;
             } else {
                 final Set<String> seen = new HashSet<String>();
@@ -110,7 +110,7 @@ public class PathAddress implements Iterable<PathElement> {
     }
 
     public static PathAddress pathAddress(List<PathElement> elements) {
-        if (elements.size() == 0) {
+        if (elements.isEmpty()) {
             return EMPTY_ADDRESS;
         }
         final ArrayList<PathElement> newList = new ArrayList<PathElement>(elements.size());
@@ -241,7 +241,7 @@ public class PathAddress implements Iterable<PathElement> {
      */
     public PathElement getLastElement() {
         final List<PathElement> list = pathAddressList;
-        return list.size() == 0 ? null : list.get(list.size() - 1);
+        return list.isEmpty() ? null : list.get(list.size() - 1);
     }
 
     /**
@@ -508,7 +508,7 @@ public class PathAddress implements Iterable<PathElement> {
     }
 
     private String toString(char keyValSeparator) {
-        if (pathAddressList.size() == 0) {
+        if (pathAddressList.isEmpty()) {
             return "/";
         }
         StringBuilder sb = new StringBuilder();
