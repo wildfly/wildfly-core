@@ -1242,7 +1242,7 @@ public abstract class ElytronUtil {
         builder.setOperationName(Util.ADD);
         builder.addNode(Util.SUBSYSTEM, Util.ELYTRON);
         builder.addNode(Util.CERTIFICATE_AUTHORITY_ACCOUNT, name);
-        if(contactUrls.size() > 0) {
+        if(!contactUrls.isEmpty()) {
             builder.getModelNode().get(Util.CONTACT_URLS).set(createModelNodes(contactUrls));
         }
         builder.addProperty(Util.KEY_STORE, keyStoreName);

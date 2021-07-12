@@ -273,7 +273,7 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         // First keystore file name
         while (keyStoreFile == null) {
             keyStoreFile = commandInvocation.inputLine(new Prompt("Key-store file name (default " + defaultKeyStoreFile + "): "));
-            if (keyStoreFile != null && keyStoreFile.length() == 0) {
+            if (keyStoreFile != null && keyStoreFile.isEmpty()) {
                 keyStoreFile = defaultKeyStoreFile;
             }
             //Check that we are not going to corrupt existing key-stores that are referencing the exact same file.
@@ -295,14 +295,14 @@ public class InteractiveSecurityBuilder extends SSLSecurityBuilder {
         // then password
         while (password == null) {
             password = commandInvocation.inputLine(new Prompt("Password (blank generated): "));
-            if (password != null && password.length() == 0) {
+            if (password != null && password.isEmpty()) {
                 password = SSLSecurityBuilder.generateRandomPassword();
             }
         }
 
         if(useLetsEncrypt) {
             //then prompt for domainName
-            while (domainNames == null || domainNames.size() < 1) {
+            while (domainNames == null || domainNames.isEmpty()) {
                 String domains = commandInvocation.inputLine(new Prompt("Your domain name(s) (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com,second.example.com]: "));
                 domainNames = parseItemsFromString(domains);
             }

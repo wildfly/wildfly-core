@@ -173,9 +173,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
         final List<String> args = parsedCmd.getOtherProperties();
         if (!args.isEmpty()) {
-            if (args.size() != 0) {
                 throw new CommandFormatException("The command accepts 0 unnamed argument(s) but received: " + args);
-            }
         }
 
         final EnvironmentRestorer restorer = new EnvironmentRestorer(JBOSS_DOMAIN_LOG_DIR);
