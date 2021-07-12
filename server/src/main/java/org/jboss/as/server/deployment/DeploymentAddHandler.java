@@ -67,12 +67,13 @@ public class DeploymentAddHandler implements OperationStepHandler {
 
     protected final ContentRepository contentRepository;
 
-    private final DeploymentTransformationUtil deploymentTransformationUtil;
+    private final DeploymentTransformation deploymentTransformation;
+
 
     protected DeploymentAddHandler(final ContentRepository contentRepository) {
         assert contentRepository != null : "Null contentRepository";
         this.contentRepository = contentRepository;
-        this.deploymentTransformationUtil = new DeploymentTransformationUtil();
+        this.deploymentTransformation = new DeploymentTransformation();
     }
 
     public static DeploymentAddHandler create(final ContentRepository contentRepository) {
@@ -205,7 +206,7 @@ public class DeploymentAddHandler implements OperationStepHandler {
         InputStream transformed = null;
         try {
             try {
-                transformed = deploymentTransformationUtil.doTransformation(context, contentItemNode, name, in);
+                transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
                 hash = contentRepository.addContent(transformed);
             } catch (IOException e) {
                 throw createFailureException(e.toString());
