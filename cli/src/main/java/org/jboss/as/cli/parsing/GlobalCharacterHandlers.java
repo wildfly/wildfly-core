@@ -107,5 +107,5 @@ public class GlobalCharacterHandlers {
         //addHandler("STRING_IN_CHEVRONS", '<', '>', "The closing '>' is missing.");
         addHandler('\\', EscapeCharacterState.INSTANCE);
         addHandler('"', QuotesState.QUOTES_EXCLUDED);
-    };
+    }
 }

@@ -191,7 +191,7 @@ public class ControlledProcessState {
             }
         }
         return Integer.valueOf(newStamp);
-    };
+    }
 
     public void revertReloadRequired(Object stamp) {
         if (!reloadSupported) {

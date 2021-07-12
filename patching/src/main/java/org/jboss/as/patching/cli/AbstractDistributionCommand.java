@@ -109,7 +109,7 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
             return (getCommandContext().getModelControllerClient() != null)
                     && getCommandContext().isDomainMode();
         }
-    };
+    }
 
     public static class DisconnectedActivator extends AbstractOptionActivator {
 
@@ -117,7 +117,7 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
         public boolean isActivated(ParsedCommand processedCommand) {
             return getCommandContext().getModelControllerClient() == null;
         }
-    };
+    }
 
     public static class HostsCompleter implements OptionCompleter<CLICompleterInvocation> {
 

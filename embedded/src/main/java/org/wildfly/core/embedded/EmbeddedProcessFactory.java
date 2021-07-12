@@ -63,8 +63,6 @@ public class EmbeddedProcessFactory {
             SYSPROP_KEY_JBOSS_DOMAIN_TEMP_DIR, SYSPROP_KEY_JBOSS_DOMAIN_LOG_DIR, SYSPROP_KEY_JBOSS_DOMAIN_CONFIG_DIR
     };
 
-    private static final String JBOSS_MODULES_DIR_NAME = "modules";
-
     private static final String HOST_FACTORY = "org.wildfly.core.embedded.EmbeddedHostControllerFactory";
     private static final String SERVER_FACTORY = "org.wildfly.core.embedded.EmbeddedStandaloneServerFactory";
     /**

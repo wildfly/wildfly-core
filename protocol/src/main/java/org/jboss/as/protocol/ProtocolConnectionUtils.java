@@ -30,7 +30,6 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.URI;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -51,7 +50,6 @@ import org.wildfly.security.auth.client.CallbackKind;
 import org.wildfly.security.auth.client.MatchRule;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.sasl.SaslMechanismSelector;
-import org.wildfly.security.sasl.localuser.LocalUserClient;
 import org.xnio.IoFuture;
 import org.xnio.Option;
 import org.xnio.OptionMap;
@@ -67,7 +65,6 @@ import org.xnio.Options;
 public class ProtocolConnectionUtils {
 
     private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
-    private static final Map<String, String> QUIET_LOCAL_AUTH = Collections.singletonMap(LocalUserClient.QUIET_AUTH, "true");
 
     private static final AuthenticationContextConfigurationClient AUTH_CONFIGURATION_CLIENT = doPrivileged(AuthenticationContextConfigurationClient.ACTION);
 

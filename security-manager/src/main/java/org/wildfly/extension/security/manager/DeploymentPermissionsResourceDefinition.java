@@ -89,7 +89,7 @@ class DeploymentPermissionsResourceDefinition extends PersistentResourceDefiniti
         final ModelNode defaultPermission = new ModelNode();
         defaultPermission.get(PERMISSION_CLASS).set("java.security.AllPermission");
         DEFAULT_MAXIMUM_SET = new ModelNode().add(defaultPermission);
-    };
+    }
 
     static final AttributeDefinition MAXIMUM_PERMISSIONS =
             ObjectListAttributeDefinition.Builder.of(Constants.MAXIMUM_PERMISSIONS, PERMISSIONS_VALUE_TYPE)

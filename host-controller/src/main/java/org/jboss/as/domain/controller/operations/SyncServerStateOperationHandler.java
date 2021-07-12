@@ -56,7 +56,7 @@ class SyncServerStateOperationHandler implements OperationStepHandler {
     private final SyncModelParameters parameters;
     private final List<ModelNode> operations;
 
-    private enum SyncServerResultAction {RESTART_REQUIRED, RELOAD_REQUIRED};
+    private enum SyncServerResultAction {RESTART_REQUIRED, RELOAD_REQUIRED}
 
     public SyncServerStateOperationHandler(SyncModelParameters parameters, List<ModelNode> operations) {
         this.parameters = parameters;

@@ -201,7 +201,7 @@ class JaspiDefinition {
             removeRegistration(context);
         }
 
-    };
+    }
 
 
 

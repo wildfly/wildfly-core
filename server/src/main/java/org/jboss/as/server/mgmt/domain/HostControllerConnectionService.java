@@ -70,7 +70,6 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("host", "controller", "client");
 
-    private static final String JBOSS_LOCAL_USER = "JBOSS-LOCAL-USER";
     private static final long SERVER_CONNECTION_TIMEOUT = 60000;
 
     private final Supplier<ExecutorService> executorSupplier;

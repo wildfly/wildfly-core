@@ -18,7 +18,6 @@ package org.wildfly.core.testrunner;
 
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STARTING;
 import static org.jboss.as.controller.client.helpers.ClientConstants.CONTROLLER_PROCESS_STATE_STOPPING;
-import static org.jboss.as.controller.client.helpers.ClientConstants.DEPLOYMENT;
 import static org.jboss.as.controller.client.helpers.ClientConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP;
 import static org.jboss.as.controller.client.helpers.ClientConstants.OP_ADDR;
@@ -56,9 +55,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
 
     private static final String UNDERTOW = "undertow";
     private static final String NAME = "name";
-
-    private static final String POSTFIX_WEB = ".war";
-    private static final String POSTFIX_EAR = ".ear";
 
     private final String mgmtAddress;
     private final int mgmtPort;
@@ -194,32 +190,6 @@ public class ManagementClient implements AutoCloseable, Closeable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    //-------------------------------------------------------------------------------------||
-    // Metadata Extraction Operations -----------------------------------------------------||
-    //-------------------------------------------------------------------------------------||
-
-    private boolean isEnterpriseArchive(String deploymentName) {
-        return deploymentName.endsWith(POSTFIX_EAR);
-    }
-
-    private boolean isWebArchive(String deploymentName) {
-        return deploymentName.endsWith(POSTFIX_WEB);
-    }
-
-    private ModelNode createDeploymentAddress(String deploymentName) {
-        ModelNode address = new ModelNode();
-        address.add(DEPLOYMENT, deploymentName);
-        return address;
-    }
-
-    private String toContextName(String deploymentName) {
-        String correctedName = deploymentName;
-        if (correctedName.startsWith("/")) {
-            correctedName = correctedName.substring(1);
-        }
-        return correctedName;
     }
 
     //-------------------------------------------------------------------------------------||
