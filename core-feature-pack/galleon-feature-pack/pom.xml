@@ -65,7 +65,7 @@
         <!-- Bring in all the common deps in one go -->
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>wildfly-core-feature-pack-common</artifactId>
+            <artifactId>wildfly-core-feature-pack-galleon-common</artifactId>
             <type>pom</type>
             <scope>provided</scope>
             <!-- Exclude the ee-8-api dependencies
@@ -203,7 +203,7 @@
                             </licensesConfigFiles>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedGroups>org.wildfly.galleon-plugins</excludedGroups>
-                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-core-feature-pack-common|wildfly-core-feature-pack-ee-8-api|wildfly-elytron\z</excludedArtifacts>
+                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-core-feature-pack-ee-8-api|wildfly-elytron\z</excludedArtifacts>
                             <excludedScopes>system</excludedScopes>
                         </configuration>
                     </execution>
@@ -259,7 +259,7 @@
                                                 <exclude>sun.jdk:jconsole</exclude>
                                                 <!-- Ignore the shared resource poms as those we want their
                                                      transitives. Those poms ban transitives at their level -->
-                                                <exclude>${project.groupId}:wildfly-core-feature-pack-common</exclude>
+                                                <exclude>${project.groupId}:wildfly-core-feature-pack-galleon-common</exclude>
                                                 <exclude>${project.groupId}:wildfly-core-feature-pack-ee-8-api</exclude>
                                             </excludes>
                                         </banTransitiveDependencies>

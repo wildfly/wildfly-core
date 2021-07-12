@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~
+  ~ Copyright 2021 Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<module xmlns="urn:jboss:module:1.9" name="org.wildfly.security.elytron-private">
+    <properties>
+        <!--
+             Although this module is private see the module 'org.wildfly.security.elytron' for the re-exported public API.
+         -->
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+    </resources>
+
+    <dependencies>
+        <!--
+        This is only exported because some of the ElytronXmlParser methods throw an exception in this module. If other
+        modules use the parser, they need to have visibility to this module.
+        -->
+        <module name="org.wildfly.client.config" export="true"/>
+        <!-- The artifacts in these dependencies were previously exported by this module. -->
+        <module name="org.wildfly.security.elytron-base" services="export" export="true"/>
+        <module name="org.wildfly.security.jakarta.authentication" export="true"/>
+        <module name="org.wildfly.security.jakarta.authorization" export="true"/>
+    </dependencies>
+</module>
