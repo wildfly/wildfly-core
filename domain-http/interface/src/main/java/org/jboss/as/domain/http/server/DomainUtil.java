@@ -151,7 +151,7 @@ public class DomainUtil {
         // If not, use application/octet-stream to trigger the browser to treat it as a download
         String entryType = entry.getMimeType();
         HeaderValues headerValues = exchange.getRequestHeaders().get(Headers.ACCEPT);
-        if (headerValues == null || headerValues.size() == 0) {
+        if (headerValues == null || headerValues.isEmpty()) {
             // The browser doesn't care
             return entryType;
         }
@@ -239,7 +239,7 @@ public class DomainUtil {
     private static int getStreamIndex(Deque<String> holder) {
         int result;
         if (holder != null) {
-            if (holder.size() > 0 && holder.getFirst().length() > 0) {
+            if (!holder.isEmpty() && !holder.getFirst().isEmpty()) {
                 result = Integer.parseInt(holder.getFirst());
             } else {
                 result = 0;

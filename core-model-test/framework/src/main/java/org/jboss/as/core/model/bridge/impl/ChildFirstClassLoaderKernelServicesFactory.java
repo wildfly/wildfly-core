@@ -62,7 +62,7 @@ public class ChildFirstClassLoaderKernelServicesFactory {
         XMLMapper xmlMapper = XMLMapper.Factory.create();
         TestParser testParser = TestParser.create(null, xmlMapper, type);
         ModelInitializer modelInitializer = null;
-        if (modelInitializerEntries != null && modelInitializerEntries.size() > 0) {
+        if (modelInitializerEntries != null && !modelInitializerEntries.isEmpty()) {
             modelInitializer = new LegacyModelInitializer(modelInitializerEntries);
         }
 

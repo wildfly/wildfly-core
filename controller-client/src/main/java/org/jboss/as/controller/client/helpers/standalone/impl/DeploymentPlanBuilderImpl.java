@@ -99,7 +99,7 @@ class DeploymentPlanBuilderImpl
 
     @Override
     public DeploymentAction getLastAction() {
-        return deploymentActions.size() == 0 ? null : deploymentActions.get(deploymentActions.size() - 1);
+        return deploymentActions.isEmpty() ? null : deploymentActions.get(deploymentActions.size() - 1);
     }
 
     @Override
@@ -297,7 +297,7 @@ class DeploymentPlanBuilderImpl
     @Override
     @Deprecated
     public DeploymentPlanBuilder withRollback() {
-        if (deploymentActions.size() > 0) {
+        if (!deploymentActions.isEmpty()) {
             // Someone has cast to this impl class
             cleanup();
             throw ControllerClientLogger.ROOT_LOGGER.operationsNotAllowed(InitialDeploymentPlanBuilder.class.getSimpleName());
@@ -311,7 +311,7 @@ class DeploymentPlanBuilderImpl
 
     @Override
     public DeploymentPlanBuilder withoutRollback() {
-        if (deploymentActions.size() > 0) {
+        if (!deploymentActions.isEmpty()) {
             // Someone has cast to this impl class
             cleanup();
             throw ControllerClientLogger.ROOT_LOGGER.operationsNotAllowed(InitialDeploymentPlanBuilder.class.getSimpleName());
@@ -325,7 +325,7 @@ class DeploymentPlanBuilderImpl
         // deployment repository service such that as part of shutdown after
         // undeploys are done it then removes the content?
 
-        if (deploymentActions.size() > 0) {
+        if (!deploymentActions.isEmpty()) {
             // Someone has to cast this impl class
             cleanup();
             throw ControllerClientLogger.ROOT_LOGGER.operationsNotAllowed(InitialDeploymentPlanBuilder.class.getSimpleName());
@@ -348,7 +348,7 @@ class DeploymentPlanBuilderImpl
         // deployment repository service such that as part of shutdown after
         // undeploys are done it then removes the content?
 
-        if (deploymentActions.size() > 0) {
+        if (!deploymentActions.isEmpty()) {
             // Someone has to cast this impl class
             cleanup();
             throw ControllerClientLogger.ROOT_LOGGER.operationsNotAllowed(InitialDeploymentPlanBuilder.class.getSimpleName());

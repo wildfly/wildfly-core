@@ -236,7 +236,7 @@ public class CoreModelTestDelegate {
         }
         ModelTestModelDescriptionValidator validator = new ModelTestModelDescriptionValidator(PathAddress.EMPTY_ADDRESS.toModelNode(), model, config);
         List<ValidationFailure> validationMessages = validator.validateResources();
-        if (validationMessages.size() > 0) {
+        if (!validationMessages.isEmpty()) {
             final StringBuilder builder = new StringBuilder("VALIDATION ERRORS IN MODEL:");
             for (ValidationFailure failure : validationMessages) {
                 builder.append(failure);
