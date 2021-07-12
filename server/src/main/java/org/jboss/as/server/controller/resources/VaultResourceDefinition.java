@@ -73,7 +73,7 @@ public class VaultResourceDefinition extends SimpleResourceDefinition {
             .setValidator(new StringLengthValidator(1, true, true))
             .build();
 
-    public static AttributeDefinition[] ALL_ATTRIBUTES = new AttributeDefinition[]{CODE, MODULE, VAULT_OPTIONS};
+    public static final AttributeDefinition[] ALL_ATTRIBUTES = new AttributeDefinition[]{CODE, MODULE, VAULT_OPTIONS};
 
     public VaultResourceDefinition(AbstractVaultReader vaultReader) {
         super(new Parameters(PATH, ServerDescriptions.getResourceDescriptionResolver(VAULT))

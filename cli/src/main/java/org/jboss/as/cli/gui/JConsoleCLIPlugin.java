@@ -74,7 +74,7 @@ public class JConsoleCLIPlugin extends JConsolePlugin {
 
     // Global count of created pools
     private static final AtomicInteger executorCount = new AtomicInteger();
-    private final Logger log = Logger.getLogger(JConsoleCLIPlugin.class.getName());
+    private static final Logger log = Logger.getLogger(JConsoleCLIPlugin.class.getName());
 
     private ConnectDialog dialog;
     CliGuiContext cliGuiCtx;

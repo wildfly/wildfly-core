@@ -66,10 +66,10 @@ public abstract class ElytronUtil {
     public static final String PKCS12 = "PKCS12";
     public static final String TLS_V1_2 = "TLSv1.2";
 
-    public static String OOTB_MANAGEMENT_SASL_FACTORY = "management-sasl-authentication";
-    public static String OOTB_MANAGEMENT_HTTP_FACTORY = "management-http-authentication";
-    public static String OOTB_APPLICATION_HTTP_FACTORY = "application-http-authentication";
-    public static String OOTB_APPLICATION_DOMAIN = "ApplicationDomain";
+    public static final String OOTB_MANAGEMENT_SASL_FACTORY = "management-sasl-authentication";
+    public static final String OOTB_MANAGEMENT_HTTP_FACTORY = "management-http-authentication";
+    public static final String OOTB_APPLICATION_HTTP_FACTORY = "application-http-authentication";
+    public static final String OOTB_APPLICATION_DOMAIN = "ApplicationDomain";
 
     public static final String SASL_SERVER_CAPABILITY = "org.wildfly.security.sasl-server-factory";
     public static final String HTTP_SERVER_CAPABILITY = "org.wildfly.security.http-server-mechanism-factory";

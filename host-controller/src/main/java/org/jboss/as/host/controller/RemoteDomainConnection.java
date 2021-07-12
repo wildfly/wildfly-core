@@ -481,7 +481,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
      private class CompleteRegistrationRequest extends AbstractManagementRequest<Void, Void> {
 
          private final byte outcome;
-         private final String message = "yay!"; //
+         private static final String message = "yay!"; //
 
          private CompleteRegistrationRequest(final byte outcome) {
              this.outcome = outcome;

@@ -165,7 +165,7 @@ public class ServerGroupResourceDefinition extends SimpleResourceDefinition {
 
     private static class ServerRestartRequiredWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-        public static OperationStepHandler INSTANCE = new ServerRestartRequiredWriteAttributeHandler();
+        public static final OperationStepHandler INSTANCE = new ServerRestartRequiredWriteAttributeHandler();
 
         private ServerRestartRequiredWriteAttributeHandler() {
             super(PROFILE, SOCKET_BINDING_GROUP);

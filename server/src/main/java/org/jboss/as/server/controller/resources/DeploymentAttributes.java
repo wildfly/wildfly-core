@@ -361,7 +361,7 @@ public class DeploymentAttributes {
     @SuppressWarnings("unchecked")
     public static final Map<String, AttributeDefinition> ALL_CONTENT_ATTRIBUTES = createAttributeMap(MANAGED_CONTENT_ATTRIBUTES, UNMANAGED_CONTENT_ATTRIBUTES);
 
-    public static SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VERBOSE, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition VERBOSE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VERBOSE, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .build();
 

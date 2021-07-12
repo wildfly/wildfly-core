@@ -51,7 +51,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
             .setAllowExpression(true).setValidator(new IntRangeValidator(-65535, 65535, true, true))
             .setDefaultValue(ModelNode.ZERO).setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES).build();
 
-    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+    public static final SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
 
     private SocketBindingGroupResourceDefinition() {
         super(BindingGroupAddHandler.INSTANCE,

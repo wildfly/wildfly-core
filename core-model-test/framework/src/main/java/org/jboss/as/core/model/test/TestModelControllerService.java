@@ -408,7 +408,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private class ServerInitializer implements Initializer {
         final ExtensibleConfigurationPersister persister = new NullConfigurationPersister();
         final ServerEnvironment environment = createStandaloneServerEnvironment();
-        final boolean parallelBoot = false;
+        static final boolean parallelBoot = false;
 
         public void setRootResourceDefinitionDelegate() {
             rootResourceDefinition.setDelegate(new ServerRootResourceDefinition(
@@ -443,7 +443,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     }
 
     private class HostInitializer implements Initializer {
-        final String hostName = "master";
+        static final String hostName = "master";
         final HostControllerEnvironment env = createHostControllerEnvironment();
         final LocalHostControllerInfoImpl info = createLocalHostControllerInfo(env);
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(info);

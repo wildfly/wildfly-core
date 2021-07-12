@@ -139,7 +139,7 @@ public abstract class ManagementClientChannelStrategy implements Closeable {
      */
     private static class Establishing extends FutureManagementChannel {
 
-        private final String serviceType = DEFAULT_CHANNEL_SERVICE_TYPE;
+        private static final String serviceType = DEFAULT_CHANNEL_SERVICE_TYPE;
         private final OptionMap channelOptions;
         private final Channel.Receiver receiver;
         private final ProtocolConnectionManager connectionManager;

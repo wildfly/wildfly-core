@@ -63,7 +63,7 @@ public class LsHandler extends BaseOperationCommand {
     private final ArgumentWithValue nodePath;
     private final ArgumentWithoutValue l;
     private final ArgumentWithoutValue resolve;
-    private final Logger log = Logger.getLogger(LsHandler.class);
+    private static final Logger log = Logger.getLogger(LsHandler.class);
 
     public LsHandler(CommandContext ctx) {
         this(ctx, "ls");

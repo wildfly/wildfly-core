@@ -46,7 +46,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class FetchMissingConfigurationHandler implements OperationStepHandler {
 
-    public static String OPERATION_NAME = "slave-server-config-change";
+    public static final String OPERATION_NAME = "slave-server-config-change";
 
     private final Transformers transformers;
     private final ExtensionRegistry extensionRegistry;

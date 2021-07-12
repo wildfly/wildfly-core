@@ -30,7 +30,7 @@ import org.wildfly.core.cli.command.aesh.CLIConverterInvocation;
  */
 public class HeadersConverter implements Converter<ModelNode, CLIConverterInvocation> {
 
-    public static HeadersConverter INSTANCE = new HeadersConverter();
+    public static final HeadersConverter INSTANCE = new HeadersConverter();
 
     public HeadersConverter() {
 

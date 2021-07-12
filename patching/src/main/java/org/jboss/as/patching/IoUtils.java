@@ -43,7 +43,7 @@ import org.wildfly.common.Assert;
  */
 public class IoUtils {
 
-    public static byte[] NO_CONTENT = new byte[0];
+    public static final byte[] NO_CONTENT = new byte[0];
 
     private static final int DEFAULT_BUFFER_SIZE = 65536;
 

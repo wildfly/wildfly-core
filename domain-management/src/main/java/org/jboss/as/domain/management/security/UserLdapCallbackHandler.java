@@ -88,7 +88,7 @@ public class UserLdapCallbackHandler implements Service, CallbackHandlerService 
 
     private final boolean allowEmptyPassword;
     private final boolean shareConnection;
-    protected final int searchTimeLimit = 10000; // TODO - Maybe make configurable.
+    protected static final int searchTimeLimit = 10000; // TODO - Maybe make configurable.
 
     UserLdapCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer,
                             final Supplier<LdapConnectionManager> connectionManagerSupplier,

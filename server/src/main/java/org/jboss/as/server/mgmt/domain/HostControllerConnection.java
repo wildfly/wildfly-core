@@ -327,7 +327,7 @@ class HostControllerConnection extends FutureManagementChannel {
 
     public class ServerStartedRequest extends AbstractManagementRequest<Void, Void> {
 
-        private final String message = ""; // started / failed message
+        private static final String message = ""; // started / failed message
 
         @Override
         public byte getOperationType() {

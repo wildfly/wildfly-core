@@ -40,7 +40,7 @@ import org.jboss.as.cli.parsing.QuotesState;
  */
 public class SegmentParsingInitialState extends DefaultParsingState {
 
-    public static SegmentParsingInitialState INSTANCE = new SegmentParsingInitialState();
+    public static final SegmentParsingInitialState INSTANCE = new SegmentParsingInitialState();
 
     public SegmentParsingInitialState() {
         super("SEGMENT");

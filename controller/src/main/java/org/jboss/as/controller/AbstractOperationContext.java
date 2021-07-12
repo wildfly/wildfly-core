@@ -181,7 +181,7 @@ abstract class AbstractOperationContext implements OperationContext {
     // protected by this
     private Map<String, OperationResponse.StreamEntry> responseStreams;
 
-    private final Level WARNING_DEFAULT_LEVEL = Level.WARNING;
+    private static final Level WARNING_DEFAULT_LEVEL = Level.WARNING;
     /**
      * Resources modified by this context's operations. May be modified by ParallelBootOperationStepHandler which spawns threads,
      * so guard by itself.

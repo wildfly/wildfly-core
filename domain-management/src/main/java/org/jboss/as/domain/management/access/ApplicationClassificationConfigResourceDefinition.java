@@ -57,14 +57,14 @@ import org.jboss.dmr.ModelType;
  */
 public class ApplicationClassificationConfigResourceDefinition extends SimpleResourceDefinition {
 
-    public static PathElement PATH_ELEMENT = PathElement.pathElement(CLASSIFICATION);
+    public static final PathElement PATH_ELEMENT = PathElement.pathElement(CLASSIFICATION);
 
-    public static SimpleAttributeDefinition DEFAULT_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_APPLICATION, ModelType.BOOLEAN, false)
+    public static final SimpleAttributeDefinition DEFAULT_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_APPLICATION, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
-    public static SimpleAttributeDefinition CONFIGURED_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_APPLICATION, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition CONFIGURED_APPLICATION = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_APPLICATION, ModelType.BOOLEAN, true)
             .setXmlName(APPLICATION.getLocalName())
 //            .setAllowExpression(true)
             .build();

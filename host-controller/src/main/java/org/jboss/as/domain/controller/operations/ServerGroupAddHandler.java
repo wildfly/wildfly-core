@@ -32,7 +32,7 @@ import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
  */
 public class ServerGroupAddHandler extends AbstractAddStepHandler {
 
-    public static OperationStepHandler INSTANCE = new ServerGroupAddHandler();
+    public static final OperationStepHandler INSTANCE = new ServerGroupAddHandler();
 
     ServerGroupAddHandler() {
         super(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY, ServerGroupResourceDefinition.ADD_ATTRIBUTES);

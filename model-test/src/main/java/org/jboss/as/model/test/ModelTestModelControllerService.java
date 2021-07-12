@@ -624,49 +624,49 @@ public abstract class ModelTestModelControllerService extends AbstractController
     //These are here to overload the constuctor used for the different legacy controllers
 
     public static class Controller73x {
-        public static Controller73x INSTANCE = new Controller73x();
+        public static final Controller73x INSTANCE = new Controller73x();
         private Controller73x() {
         }
     }
 
     public static class Controller74x {
-        public static Controller74x INSTANCE = new Controller74x();
+        public static final Controller74x INSTANCE = new Controller74x();
         private Controller74x() {
         }
     }
 
     public static class Controller90x {
-        public static Controller90x INSTANCE = new Controller90x();
+        public static final Controller90x INSTANCE = new Controller90x();
         private Controller90x() {
         }
     }
 
     public static class Controller10x {
-        public static Controller10x INSTANCE = new Controller10x();
+        public static final Controller10x INSTANCE = new Controller10x();
         private Controller10x() {
         }
     }
 
     public static class Controller11x {
-        public static Controller11x INSTANCE = new Controller11x();
+        public static final Controller11x INSTANCE = new Controller11x();
         private Controller11x() {
         }
     }
 
     public static class Controller14x {
-        public static Controller14x INSTANCE = new Controller14x();
+        public static final Controller14x INSTANCE = new Controller14x();
         private Controller14x() {
         }
     }
 
     public static class Controller18x {
-        public static Controller18x INSTANCE = new Controller18x();
+        public static final Controller18x INSTANCE = new Controller18x();
         private Controller18x() {
         }
     }
 
     public static class Controller23x {
-        public static Controller23x INSTANCE = new Controller23x();
+        public static final Controller23x INSTANCE = new Controller23x();
         private Controller23x() {
         }
     }

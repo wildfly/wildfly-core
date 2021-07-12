@@ -30,7 +30,7 @@ import org.jboss.as.controller.OperationContext;
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class TransformerOperationAttachment {
-    public static OperationContext.AttachmentKey<TransformerOperationAttachment> KEY =
+    public static final OperationContext.AttachmentKey<TransformerOperationAttachment> KEY =
             OperationContext.AttachmentKey.create(TransformerOperationAttachment.class);
     private final ContextAttachments contextAttachments = new ContextAttachments();
 

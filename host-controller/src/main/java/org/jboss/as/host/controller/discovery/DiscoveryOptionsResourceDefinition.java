@@ -51,7 +51,7 @@ import org.jboss.dmr.ModelType;
  */
 public class DiscoveryOptionsResourceDefinition extends SimpleResourceDefinition {
 
-    public static DiscoveryOptionsResourceDefinition INSTANCE = new DiscoveryOptionsResourceDefinition();
+    public static final DiscoveryOptionsResourceDefinition INSTANCE = new DiscoveryOptionsResourceDefinition();
 
     public static final PrimitiveListAttributeDefinition DISCOVERY_OPTIONS = new PrimitiveListAttributeDefinition.Builder(ModelDescriptionConstants.DISCOVERY_OPTIONS, ModelType.PROPERTY)
         .setRequired(false)

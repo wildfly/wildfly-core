@@ -41,7 +41,7 @@ import org.jboss.logmanager.config.PropertyConfigurable;
  */
 public class LogHandlerListAttributeDefinition extends SimpleListAttributeDefinition implements ConfigurationProperty<Set<String>> {
     private final String propertyName;
-    private final HandlerResolver resolver = HandlerResolver.INSTANCE;
+    private static final HandlerResolver resolver = HandlerResolver.INSTANCE;
 
     private LogHandlerListAttributeDefinition(final Builder builder, final AttributeDefinition valueType) {
         super(builder, valueType);

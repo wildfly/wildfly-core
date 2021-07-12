@@ -69,38 +69,38 @@ import org.jboss.dmr.ModelType;
  */
 public class SensitivityResourceDefinition extends SimpleResourceDefinition {
 
-    public static PathElement PATH_ELEMENT = PathElement.pathElement(CLASSIFICATION);
+    public static final PathElement PATH_ELEMENT = PathElement.pathElement(CLASSIFICATION);
 
-    public static PathElement VAULT_ELEMENT = PathElement.pathElement(CONSTRAINT, VAULT_EXPRESSION);
+    public static final PathElement VAULT_ELEMENT = PathElement.pathElement(CONSTRAINT, VAULT_EXPRESSION);
 
-    private static SimpleAttributeDefinition DEFAULT_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, false)
+    private static final SimpleAttributeDefinition DEFAULT_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
 
-    private static SimpleAttributeDefinition DEFAULT_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_READ, ModelType.BOOLEAN, false)
+    private static final SimpleAttributeDefinition DEFAULT_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_READ, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
-    private static SimpleAttributeDefinition DEFAULT_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_WRITE, ModelType.BOOLEAN, false)
+    private static final SimpleAttributeDefinition DEFAULT_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DEFAULT_REQUIRES_WRITE, ModelType.BOOLEAN, false)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
-    public static SimpleAttributeDefinition CONFIGURED_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition CONFIGURED_REQUIRES_ADDRESSABLE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_ADDRESSABLE, ModelType.BOOLEAN, true)
             .setXmlName(REQUIRES_ADDRESSABLE.getLocalName())
 //            .setAllowExpression(true)
             .build();
 
 
-    public static SimpleAttributeDefinition CONFIGURED_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_READ, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition CONFIGURED_REQUIRES_READ = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_READ, ModelType.BOOLEAN, true)
             .setXmlName(REQUIRES_READ.getLocalName())
 //            .setAllowExpression(true)
             .build();
 
-    public static SimpleAttributeDefinition CONFIGURED_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition CONFIGURED_REQUIRES_WRITE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CONFIGURED_REQUIRES_WRITE, ModelType.BOOLEAN, true)
             .setXmlName(REQUIRES_WRITE.getLocalName())
 //            .setAllowExpression(true)
             .build();

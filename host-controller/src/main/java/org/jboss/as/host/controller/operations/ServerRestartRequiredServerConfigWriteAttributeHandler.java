@@ -43,7 +43,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class ServerRestartRequiredServerConfigWriteAttributeHandler extends ModelOnlyWriteAttributeHandler {
 
-    public static OperationStepHandler INSTANCE = new ServerRestartRequiredServerConfigWriteAttributeHandler();
+    public static final OperationStepHandler INSTANCE = new ServerRestartRequiredServerConfigWriteAttributeHandler();
 
     protected ServerRestartRequiredServerConfigWriteAttributeHandler() {
         super(GROUP, MODULE_OPTIONS, SOCKET_BINDING_GROUP, SOCKET_BINDING_PORT_OFFSET, SOCKET_BINDING_DEFAULT_INTERFACE);

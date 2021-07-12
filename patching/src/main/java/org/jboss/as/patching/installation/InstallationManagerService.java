@@ -31,7 +31,7 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class InstallationManagerService implements Service<InstallationManager> {
 
-    public static ServiceName NAME = JBOSS_PATCHING.append("manager");
+    public static final ServiceName NAME = JBOSS_PATCHING.append("manager");
 
     private static final String MODULE_PATH = "module.path";
     private static final String BUNDLES_DIR = "jboss.bundles.dir";

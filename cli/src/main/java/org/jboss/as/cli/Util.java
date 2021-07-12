@@ -330,7 +330,7 @@ public class Util {
     private static TerminalTextStyle BOLD_STYLE = new TerminalTextStyle(CharacterType.BOLD);
     private static String ENCODING_EXCEPTION_MESSAGE = "Encoding exception.";
 
-    private static Logger LOG = Logger.getLogger(Util.class);
+    private static final Logger LOG = Logger.getLogger(Util.class);
 
     public static final String formatErrorMessage(String message) {
         return new TerminalString(message, ERROR_COLOR, BOLD_STYLE).toString();

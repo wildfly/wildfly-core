@@ -82,7 +82,7 @@ public class SocketBindingGroupResourceDefinition extends AbstractSocketBindingG
             .setCapabilityReference(SOCKET_BINDING_GROUP_CAPABILITY_NAME, SOCKET_BINDING_GROUP_CAPABILITY_NAME)
             .build();
 
-    public static SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
+    public static final SocketBindingGroupResourceDefinition INSTANCE = new SocketBindingGroupResourceDefinition();
 
     private SocketBindingGroupResourceDefinition() {
         super(SocketBindingGroupAddHandler.INSTANCE, ModelOnlyRemoveStepHandler.INSTANCE,

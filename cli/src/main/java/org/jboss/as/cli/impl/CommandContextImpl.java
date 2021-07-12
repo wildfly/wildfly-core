@@ -290,7 +290,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     /** operation request address prefix */
     private final OperationRequestAddress prefix = new DefaultOperationRequestAddress();
     /** the prefix formatter */
-    private final NodePathFormatter prefixFormatter = DefaultPrefixFormatter.INSTANCE;
+    private static final NodePathFormatter prefixFormatter = DefaultPrefixFormatter.INSTANCE;
     /** provider of operation request candidates for tab-completion */
     private final OperationCandidatesProvider operationCandidatesProvider;
     /** operation request handler */

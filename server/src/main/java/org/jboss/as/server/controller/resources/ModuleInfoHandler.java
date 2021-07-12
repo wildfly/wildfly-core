@@ -102,7 +102,7 @@ public class ModuleInfoHandler implements OperationStepHandler {
             .setReplyParameters(MODULE_NAME, MAIN_CLASS, FALLBACK_LOADER, DEPENDENCIES, RESOURCE_LOADERS)
             .build();
 
-    public static ModuleInfoHandler INSTANCE = new ModuleInfoHandler();
+    public static final ModuleInfoHandler INSTANCE = new ModuleInfoHandler();
 
     protected void populateModel(final ModelNode operation, final ModelNode model) throws OperationFailedException {
         for (AttributeDefinition attr : DEFINITION.getParameters()) {

@@ -42,7 +42,7 @@ import org.jboss.logging.Logger;
 public class DeploymentItemCompleter implements CommandLineCompleter {
 
     private final OperationRequestAddress address;
-    private final Logger log = Logger.getLogger(DeploymentItemCompleter.class);
+    private static final Logger log = Logger.getLogger(DeploymentItemCompleter.class);
 
     public DeploymentItemCompleter(OperationRequestAddress address) {
         this.address = address;
