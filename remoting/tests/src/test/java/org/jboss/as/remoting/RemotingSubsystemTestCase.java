@@ -130,24 +130,6 @@ public class RemotingSubsystemTestCase extends AbstractRemotingSubsystemBaseTest
         return readResource("remoting.xml");
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-remoting_4_0.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] {
-                "/subsystem-templates/remoting.xml"
-        };
-    }
-
-    @Test
-    @Override
-    public void testSchemaOfSubsystemTemplates() throws Exception {
-        super.testSchemaOfSubsystemTemplates();
-    }
-
     /**
      * WFCORE-3327. Use the management API to add the subsystem, with the endpoint configuration done via
      * the deprecated /subsystem=remoting/configuration=endpoint resource.

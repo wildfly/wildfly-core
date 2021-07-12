@@ -23,7 +23,6 @@ import java.util.EnumSet;
 import java.util.Locale;
 
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -50,23 +49,5 @@ public class DiscoverySubsystemTestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource(String.format(Locale.ROOT, "discovery-%d.%d.xml", this.schema.major(), this.schema.minor()));
-    }
-
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return String.format(Locale.ROOT, "schema/wildfly-discovery_%d_%d.xsd", this.schema.major(), this.schema.minor());
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] { "/subsystem-templates/discovery.xml" };
-    }
-
-    @Test
-    @Override
-    public void testSchemaOfSubsystemTemplates() throws Exception {
-        if (this.schema == DiscoverySchema.CURRENT) {
-            super.testSchemaOfSubsystemTemplates();
-        }
     }
 }

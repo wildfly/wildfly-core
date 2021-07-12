@@ -52,12 +52,6 @@ public class IOSubsystem10TestCase extends AbstractSubsystemBaseTest {
         super.compareXml(configId, marshalled, readResource("shipped-default.xml"));
     }
 
-
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_1_0.xsd";
-    }
-
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("io-1.0.xml");

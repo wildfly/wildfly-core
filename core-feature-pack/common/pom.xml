@@ -33,7 +33,7 @@
     <artifactId>wildfly-core-feature-pack-common</artifactId>
 
     <name>WildFly Core: Feature Pack Common Resources</name>
-    <description>Resources used in Galleon and legacy feature packs used to provision WildFly Core based servers</description>
+    <description>Resources used in Galleon feature pack used to provision WildFly Core based servers</description>
     <packaging>pom</packaging>
 
     <dependencies>

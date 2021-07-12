@@ -32,6 +32,7 @@
 
     <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
     <packaging>pom</packaging>
+    <name>WildFly Core: EE 8 API resources for Galleon Feature Packs</name>
 
     <dependencies>
 

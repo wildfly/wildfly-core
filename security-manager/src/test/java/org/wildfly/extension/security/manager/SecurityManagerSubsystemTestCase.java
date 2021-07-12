@@ -57,18 +57,6 @@ public class SecurityManagerSubsystemTestCase extends AbstractSubsystemBaseTest 
         return readResource("security-manager-1.0.xml");
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-security-manager_1_0.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[] {
-                "/subsystem-templates/security-manager.xml"
-        };
-    }
-
     @Test
     public void testTransformersEAP70() throws Exception {
         testTransformers(ModelTestControllerVersion.EAP_7_0_0);
