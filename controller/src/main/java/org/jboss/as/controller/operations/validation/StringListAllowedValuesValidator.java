@@ -25,12 +25,13 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
-public class StringAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
+public class StringListAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
 
     private List<ModelNode> allowedValues = new ArrayList<>();
 
-    public StringAllowedValuesValidator(String... values) {
-        super(ModelType.STRING, false, true);
+    public StringListAllowedValuesValidator(String... values) {
+//        super(ModelType.LIST);
+        super(ModelType.LIST, false, true);
         for (String value : values) {
             allowedValues.add(new ModelNode().set(value));
         }
@@ -40,11 +41,22 @@ public class StringAllowedValuesValidator extends ModelTypeValidator implements 
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
-            final String proposed = value.asString();
+            final List<String> proposedList = value.asList().stream().map(a -> a.resolve().asString()).collect(Collectors.toList());
             final Set<String> allowed = allowedValues.stream().map(a -> a.resolve().asString()).collect(Collectors.toSet());
-            if (!allowed.contains(proposed)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(proposed, parameterName,
-                        allowedValues));
+            StringBuilder invalid = new StringBuilder();
+            String sep = "";
+            for (String proposed : proposedList) {
+                if (!allowed.contains(proposed)) {
+                    invalid.append(sep)
+                            .append("\"")
+                            .append(proposed)
+                            .append("\"");
+                    sep = ",";
+                }
+            }
+            if (invalid.length() != 0) {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(invalid.toString(),
+                        parameterName, allowedValues));
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc.
+ * Copyright 2021 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,13 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
-public class StringAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
+public class IntAllowedValuesValidator extends ModelTypeValidator implements AllowedValuesValidator {
 
     private List<ModelNode> allowedValues = new ArrayList<>();
 
-    public StringAllowedValuesValidator(String... values) {
-        super(ModelType.STRING, false, true);
-        for (String value : values) {
+    public IntAllowedValuesValidator(int... values) {
+        super(ModelType.INT, false, true);
+        for (int value : values) {
             allowedValues.add(new ModelNode().set(value));
         }
     }
@@ -40,11 +40,10 @@ public class StringAllowedValuesValidator extends ModelTypeValidator implements 
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
         super.validateParameter(parameterName, value);
         if (value.isDefined()) {
-            final String proposed = value.asString();
-            final Set<String> allowed = allowedValues.stream().map(a -> a.resolve().asString()).collect(Collectors.toSet());
-            if (!allowed.contains(proposed)) {
-                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(proposed, parameterName,
-                        allowedValues));
+            final Set<Integer> allowed = allowedValues.stream().map(a -> a.resolve().asInt()).collect(Collectors.toSet());
+            if (!allowed.contains(value.resolve().asInt())) {
+                throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.invalidValue(value.asString(),
+                        parameterName, allowedValues));
             }
         }
     }

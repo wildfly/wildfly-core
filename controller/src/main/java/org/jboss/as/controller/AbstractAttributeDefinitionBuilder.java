@@ -32,7 +32,10 @@ import java.util.Set;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
+import org.jboss.as.controller.operations.validation.IntAllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
+import org.jboss.as.controller.operations.validation.StringListAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -659,8 +662,17 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         for (int i = 0; i < allowedValues.length; i++) {
             this.allowedValues[i] = new ModelNode(allowedValues[i]);
         }
+        if (validator == null) {
+            if (this.type.equals(ModelType.STRING)) {
+                validator = new StringAllowedValuesValidator(allowedValues);
+            } else if (this.type.equals(ModelType.LIST)) {
+                validator = new StringListAllowedValuesValidator(allowedValues);
+            }
+        }
         return (BUILDER) this;
-    }/**
+    }
+
+    /**
      * Sets allowed values for attribute
      *
      * @param allowedValues values that are legal as part in this attribute
@@ -671,6 +683,9 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.allowedValues = new ModelNode[allowedValues.length];
         for (int i = 0; i < allowedValues.length; i++) {
             this.allowedValues[i] = new ModelNode(allowedValues[i]);
+        }
+        if (validator == null) {
+            validator = new IntAllowedValuesValidator(allowedValues);
         }
         return (BUILDER) this;
     }
