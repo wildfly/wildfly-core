@@ -237,7 +237,7 @@ public class LdapGroupSearcherFactory {
             if (!shouldParseGroupFromDN) {
                 String propertyValue = SecurityActions.getSystemProperty(PARSE_ROLES_FROM_DN, null);
                 if (propertyValue != null) {
-                    this.shouldParseGroupFromDN = Boolean.valueOf(propertyValue);
+                    this.shouldParseGroupFromDN = Boolean.parseBoolean(propertyValue);
                     SECURITY_LOGGER.usingDeprecatedSystemProperty(PARSE_ROLES_FROM_DN);
                 } else {
                     this.shouldParseGroupFromDN = shouldParseGroupFromDN;

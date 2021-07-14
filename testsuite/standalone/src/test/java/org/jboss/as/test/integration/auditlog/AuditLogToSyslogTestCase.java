@@ -176,7 +176,7 @@ public abstract class AuditLogToSyslogTestCase {
      */
     protected void makeOneLog() throws Exception {
         long timeStamp = System.currentTimeMillis();
-        properties.add(Long.valueOf(timeStamp));
+        properties.add(timeStamp);
         ModelNode op = Util.createAddOperation(PathAddress.pathAddress().append(SYSTEM_PROPERTY, Long.toString(timeStamp)));
         op.get(NAME).set(NAME);
         op.get(VALUE).set("someValue");

@@ -74,7 +74,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
     static {
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                warnOnNonFileURLs = new Boolean(System.getProperty("org.jboss.resolver.warning", "false")).booleanValue();
+                warnOnNonFileURLs = Boolean.parseBoolean(System.getProperty("org.jboss.resolver.warning", "false"));
                 return null;
             }
         });
@@ -314,7 +314,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
             inputSource = resolveSystemIDasURL(systemId, trace);
         }
 
-        entityResolved.set(new Boolean(inputSource != null));
+        entityResolved.set(inputSource != null);
 
         if (inputSource == null) { log.debug("Cannot resolve [publicID=" + publicId + ",systemID=" + systemId + "]"); }
 
@@ -328,7 +328,7 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
      */
     public boolean isEntityResolved() {
         Boolean value = entityResolved.get();
-        return value != null ? value.booleanValue() : false;
+        return value != null ? value : false;
     }
 
     /**

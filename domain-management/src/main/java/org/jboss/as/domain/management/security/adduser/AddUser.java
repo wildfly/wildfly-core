@@ -89,7 +89,7 @@ public class AddUser {
         StateValues stateValues = new StateValues(options);
 
         final Interactiveness howInteractive;
-        boolean silent = Boolean.valueOf(argsCliProps.getProperty(CommandLineArgument.SILENT.key()));
+        boolean silent = Boolean.parseBoolean(argsCliProps.getProperty(CommandLineArgument.SILENT.key()));
         theConsole = options.getConsoleWrapper();
         if (silent) {
             howInteractive = Interactiveness.SILENT;
@@ -98,7 +98,7 @@ public class AddUser {
         }
         stateValues.setHowInteractive(howInteractive);
 
-        final boolean shouldDisplaySecret = Boolean.valueOf(argsCliProps.getProperty(CommandLineArgument.DISPLAY_SECRET.key()));
+        final boolean shouldDisplaySecret = Boolean.parseBoolean(argsCliProps.getProperty(CommandLineArgument.DISPLAY_SECRET.key()));
         stateValues.setDisplaySecret(shouldDisplaySecret);
 
         // Username should not be null or empty.
@@ -224,7 +224,7 @@ public class AddUser {
             final String user = argsCliProps.getProperty(CommandLineArgument.USER.key());
             final boolean enableArgExists = argsCliProps.getProperty(CommandLineArgument.ENABLE.key()) != null;
             final boolean disableArgExists = argsCliProps.getProperty(CommandLineArgument.DISABLE.key()) != null;
-            final boolean disable = Boolean.valueOf(argsCliProps.getProperty(CommandLineArgument.DISABLE.key()));
+            final boolean disable = Boolean.parseBoolean(argsCliProps.getProperty(CommandLineArgument.DISABLE.key()));
             options.setEnableDisableMode(enableArgExists || disableArgExists);
             options.setDisable(disable);
             if (argsCliProps.containsKey(CommandLineArgument.REALM.key())) {

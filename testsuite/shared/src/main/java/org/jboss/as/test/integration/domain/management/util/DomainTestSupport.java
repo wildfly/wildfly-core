@@ -60,10 +60,10 @@ public class DomainTestSupport implements AutoCloseable {
     public static final String slaveAddress = System.getProperty("jboss.test.host.slave.address", "127.0.0.1");
     /** @deprecated unused */
     @Deprecated()
-    public static final long domainBootTimeout = Long.valueOf(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
+    public static final long domainBootTimeout = Long.parseLong(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
     /** @deprecated unused */
     @Deprecated
-    public static final long domainShutdownTimeout = Long.valueOf(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
+    public static final long domainShutdownTimeout = Long.parseLong(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
     @SuppressWarnings("WeakerAccess")
     public static final String masterJvmHome = System.getProperty("jboss.test.host.master.jvmhome");
     @SuppressWarnings("WeakerAccess")

@@ -288,7 +288,7 @@ public class JvmElement {
             String vmVersionStr = WildFlySecurityManager.getPropertyPrivileged("java.specification.version", null);
             Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(vmVersionStr); //match 1.<number> or <number>
             if (matcher.find()) {
-                return Integer.valueOf(matcher.group(1));
+                return Integer.parseInt(matcher.group(1));
             } else {
                 throw new RuntimeException("Unknown version of jvm " + vmVersionStr);
             }

@@ -57,7 +57,7 @@ public class ChainedParameterValidator implements ParameterValidator, MinMaxVali
             if (validator instanceof MinMaxValidator) {
                 MinMaxValidator minMax = (MinMaxValidator) validator;
                 Long val = minMax.getMin();
-                if (val != null && (valMin == null || val.longValue() > valMin.longValue())) {
+                if (val != null && (valMin == null || val > valMin)) {
                     valMin = val;
                 }
             }
@@ -72,7 +72,7 @@ public class ChainedParameterValidator implements ParameterValidator, MinMaxVali
             if (validator instanceof MinMaxValidator) {
                 MinMaxValidator minMax = (MinMaxValidator) validator;
                 Long val = minMax.getMax();
-                if (val != null && (valMax == null || val.longValue() < valMax.longValue())) {
+                if (val != null && (valMax == null || val < valMax)) {
                     valMax = val;
                 }
             }

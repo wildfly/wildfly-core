@@ -74,7 +74,7 @@ class BlockingTimeoutImpl implements BlockingTimeout {
             sysPropLocalValue = propValue;
             int number = -1;
             try {
-                number = Integer.valueOf(sysPropLocalValue);
+                number = Integer.parseInt(sysPropLocalValue);
             } catch (NumberFormatException nfe) {
                 // ignored
             }
@@ -97,7 +97,7 @@ class BlockingTimeoutImpl implements BlockingTimeout {
             sysPropDomainValue = propValue;
             int number = -1;
             try {
-                number = Integer.valueOf(sysPropDomainValue);
+                number = Integer.parseInt(sysPropDomainValue);
             } catch (NumberFormatException nfe) {
                 // ignored
             }

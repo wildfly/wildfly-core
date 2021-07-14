@@ -204,10 +204,10 @@ class DeploymentScannerParser_1_0 implements XMLStreamConstants, XMLElementReade
         operation.get(OP).set(ADD);
         operation.get(OP_ADDR).set(address).add(CommonAttributes.SCANNER, name);
         operation.get(PATH).set(path);
-        if (interval != null) operation.get(CommonAttributes.SCAN_INTERVAL).set(interval.intValue());
-        if (autoDeployZipped != null) operation.get(CommonAttributes.AUTO_DEPLOY_ZIPPED).set(autoDeployZipped.booleanValue());
-        if (autoDeployExploded != null) operation.get(CommonAttributes.AUTO_DEPLOY_EXPLODED).set(autoDeployExploded.booleanValue());
-        if (enabled != null) operation.get(CommonAttributes.SCAN_ENABLED).set(enabled.booleanValue());
+        if (interval != null) operation.get(CommonAttributes.SCAN_INTERVAL).set(interval);
+        if (autoDeployZipped != null) operation.get(CommonAttributes.AUTO_DEPLOY_ZIPPED).set(autoDeployZipped);
+        if (autoDeployExploded != null) operation.get(CommonAttributes.AUTO_DEPLOY_EXPLODED).set(autoDeployExploded);
+        if (enabled != null) operation.get(CommonAttributes.SCAN_ENABLED).set(enabled);
         if(relativeTo != null) operation.get(CommonAttributes.RELATIVE_TO).set(relativeTo);
         if(deploymentTimeout != null) operation.get(CommonAttributes.DEPLOYMENT_TIMEOUT).set(deploymentTimeout);
         list.add(operation);

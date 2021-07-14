@@ -210,7 +210,7 @@ public abstract class SimpleSyslogServer implements Runnable {
                                     byte[] bytes = out.toByteArray();
                                     length = 0;
                                     for (int j = 0 ; j < bytes.length ; j++) {
-                                        length = length * 10 + bytes[j] - (int)Character.valueOf('0');
+                                        length = length * 10 + bytes[j] - (int) '0';
                                     }
                                     out.reset();
                                     continue;

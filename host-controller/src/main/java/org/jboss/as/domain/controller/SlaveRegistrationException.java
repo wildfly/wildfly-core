@@ -49,7 +49,7 @@ public class SlaveRegistrationException extends Exception {
             return new SlaveRegistrationException(ErrorCode.UNKNOWN, raw);
         }
 
-        ErrorCode code = ErrorCode.parseCode(Byte.valueOf(raw.substring(0, index)));
+        ErrorCode code = ErrorCode.parseCode(Byte.parseByte(raw.substring(0, index)));
         String msg = raw.substring(index + SEPARATOR.length());
         return new SlaveRegistrationException(code, msg);
     }

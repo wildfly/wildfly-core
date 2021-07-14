@@ -914,7 +914,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
         static AdditionalBootCliScriptInvocation create(String additionalBootCliScriptPath, AbstractControllerService controllerService) {
 
-            boolean keepAlive = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged(SKIP_RELOAD_PROPERTY, "false"));
+            boolean keepAlive = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(SKIP_RELOAD_PROPERTY, "false"));
             final String markerDirectoryProperty =
                     WildFlySecurityManager.getPropertyPrivileged(MARKER_DIRECTORY_PROPERTY, null);
             if (keepAlive && markerDirectoryProperty == null) {

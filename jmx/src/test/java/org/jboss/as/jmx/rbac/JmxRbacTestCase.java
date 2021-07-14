@@ -355,16 +355,16 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
                         }
                     }
                     if (canWrite) {
-                        server.setAttribute(OBJECT_NAME, new Attribute("Attr", new Integer(10)));
-                        server.setAttributes(OBJECT_NAME, new AttributeList(Collections.singletonList(new Attribute("Attr", new Integer(10)))));
+                        server.setAttribute(OBJECT_NAME, new Attribute("Attr", 10));
+                        server.setAttributes(OBJECT_NAME, new AttributeList(Collections.singletonList(new Attribute("Attr", 10))));
                     } else {
                         try {
-                            server.setAttribute(OBJECT_NAME, new Attribute("Attr", new Integer(10)));
+                            server.setAttribute(OBJECT_NAME, new Attribute("Attr", 10));
                             Assert.fail();
                         } catch (JMRuntimeException expected) {
                         }
                         try {
-                            server.setAttributes(OBJECT_NAME, new AttributeList(Collections.singletonList(new Attribute("Attr", new Integer(10)))));
+                            server.setAttributes(OBJECT_NAME, new AttributeList(Collections.singletonList(new Attribute("Attr", 10))));
                             Assert.fail();
                         } catch (JMRuntimeException expected) {
                         }

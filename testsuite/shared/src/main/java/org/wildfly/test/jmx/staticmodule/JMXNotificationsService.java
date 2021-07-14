@@ -113,7 +113,7 @@ public class JMXNotificationsService implements ServiceActivator, Service<Void> 
                     addNotificationListener(targetName, listener);
                 }
             }
-            if(Boolean.valueOf((String)properties.getOrDefault("keep.after.stop", "false"))) {
+            if(Boolean.parseBoolean((String)properties.getOrDefault("keep.after.stop", "false"))) {
                 keepAtStop = true;
             }
         } catch (Exception e) {

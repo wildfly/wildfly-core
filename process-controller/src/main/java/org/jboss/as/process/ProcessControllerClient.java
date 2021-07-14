@@ -127,7 +127,7 @@ public final class ProcessControllerClient implements Closeable {
                         messageHandler.handleOperationFailed(client, type, processName);
                         break;
                     } default: {
-                        ProcessLogger.CLIENT_LOGGER.receivedUnknownMessageCode(Integer.valueOf(cmd));
+                        ProcessLogger.CLIENT_LOGGER.receivedUnknownMessageCode(cmd);
                         // ignore
                         dataStream.close();
                         break;

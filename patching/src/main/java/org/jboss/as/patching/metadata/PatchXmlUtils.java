@@ -448,7 +448,7 @@ class PatchXmlUtils implements XMLStreamConstants {
             if (Attribute.NAME == attribute) {
                 name = reader.getAttributeValue(i);
             } else if (Attribute.ADD_ON == attribute) {
-                isAddOn = Boolean.valueOf(reader.getAttributeValue(i));
+                isAddOn = Boolean.parseBoolean(reader.getAttributeValue(i));
             } else {
                 throw unexpectedAttribute(reader, i);
             }

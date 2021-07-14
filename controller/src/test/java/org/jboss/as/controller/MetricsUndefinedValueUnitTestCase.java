@@ -149,10 +149,10 @@ public class MetricsUndefinedValueUnitTestCase {
         ModelNode rr = Util.createEmptyOperation(READ_RESOURCE_OPERATION, ADDRESS);
         rr.get(INCLUDE_RUNTIME).set(true);
         if (includeUndefinedMetric != null) {
-            rr.get(INCLUDE_UNDEFINED_METRIC_VALUES).set(includeUndefinedMetric.booleanValue());
+            rr.get(INCLUDE_UNDEFINED_METRIC_VALUES).set(includeUndefinedMetric);
         }
         result = getResult(client.execute(rr));
-        if (includeUndefinedMetric != null && includeUndefinedMetric.booleanValue()) {
+        if (includeUndefinedMetric != null && includeUndefinedMetric) {
             Assert.assertFalse(result.hasDefined(TEST_METRIC));
         } else {
             Assert.assertTrue(result.hasDefined(TEST_METRIC));

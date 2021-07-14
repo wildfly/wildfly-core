@@ -64,7 +64,7 @@ class ConsoleVersion implements Comparable<ConsoleVersion> {
 
     private static int getInt(String part) {
         try {
-            return Integer.valueOf(part);
+            return Integer.parseInt(part);
         } catch (NumberFormatException e) {
             return -1;
         }

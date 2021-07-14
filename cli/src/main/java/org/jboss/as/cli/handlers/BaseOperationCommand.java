@@ -158,7 +158,7 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
         }
 
         if(available != null) {
-            return available.booleanValue();
+            return available;
         }
 
         final ModelControllerClient client = ctx.getModelControllerClient();

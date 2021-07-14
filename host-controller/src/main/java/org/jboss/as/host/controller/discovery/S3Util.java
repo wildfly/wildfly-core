@@ -1137,7 +1137,7 @@ public class S3Util {
                 } else if (name.equals("Delimiter")) {
                     this.delimiter = this.currText.toString();
                 } else if (name.equals("IsTruncated")) {
-                    this.isTruncated = Boolean.valueOf(this.currText.toString());
+                    this.isTruncated = Boolean.parseBoolean(this.currText.toString());
                 } else if (name.equals("NextMarker")) {
                     this.nextMarker = this.currText.toString();
                 } else if (name.equals("Contents")) {

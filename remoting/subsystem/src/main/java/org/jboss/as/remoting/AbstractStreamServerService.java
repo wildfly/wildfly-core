@@ -118,7 +118,7 @@ abstract class AbstractStreamServerService implements Service {
                 //in case that legacy sasl mechanisms are used, noanonymous default value is true
                 Boolean policyNonanonymous = mechanismNames == null ? null: true;
                 if(connectorPropertiesOptionMap.contains(Options.SASL_POLICY_NOANONYMOUS)) {
-                    policyNonanonymous = connectorPropertiesOptionMap.get(Options.SASL_POLICY_NOANONYMOUS).booleanValue();
+                    policyNonanonymous = connectorPropertiesOptionMap.get(Options.SASL_POLICY_NOANONYMOUS);
                 }
 
                 if(mechanismNames != null || policyNonanonymous != null) {

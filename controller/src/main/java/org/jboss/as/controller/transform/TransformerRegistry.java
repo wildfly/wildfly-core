@@ -281,9 +281,9 @@ public final class TransformerRegistry {
         if(length > 3) {
             throw new IllegalStateException();
         }
-        int major = Integer.valueOf(s[0]);
-        int minor = length > 1 ? Integer.valueOf(s[1]) : 0;
-        int micro = length == 3 ? Integer.valueOf(s[2]) : 0;
+        int major = Integer.parseInt(s[0]);
+        int minor = length > 1 ? Integer.parseInt(s[1]) : 0;
+        int micro = length == 3 ? Integer.parseInt(s[2]) : 0;
         return ModelVersion.create(major, minor, micro);
     }
 

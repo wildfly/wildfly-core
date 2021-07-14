@@ -84,7 +84,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
         if (systemProps.containsKey(PER_DEPLOYMENT_LOGGING)) {
             LoggingLogger.ROOT_LOGGER.perDeploymentPropertyDeprecated(PER_DEPLOYMENT_LOGGING, attributeName);
             if (process) {
-                process = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged(PER_DEPLOYMENT_LOGGING, Boolean.toString(true)));
+                process = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(PER_DEPLOYMENT_LOGGING, Boolean.toString(true)));
             } else {
                 LoggingLogger.ROOT_LOGGER.perLoggingDeploymentIgnored(PER_DEPLOYMENT_LOGGING, attributeName, deploymentUnit.getName());
             }

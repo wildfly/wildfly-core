@@ -96,7 +96,7 @@ public class ModelNodeUtil {
      */
     public static void setIfNotNull(ModelNode node, String attribute, Long value) {
         if (value != null) {
-            node.get(attribute).set(value.longValue());
+            node.get(attribute).set(value);
         }
     }
 

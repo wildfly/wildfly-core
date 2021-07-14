@@ -1743,7 +1743,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         if (requiresModelUpdateAuthorization == null) {
             requiresModelUpdateAuthorization = !isBooting() && getProcessType() == ProcessType.DOMAIN_SERVER;
         }
-        return requiresModelUpdateAuthorization.booleanValue();
+        return requiresModelUpdateAuthorization;
     }
 
     private void authorize(boolean allAttributes, Set<Action.ActionEffect> actionEffects) {

@@ -591,11 +591,11 @@ public class KeyStoresTestCase extends AbstractSubsystemTest {
             final Iterator<List<?>> iterator = names.iterator();
             List<?> item = iterator.next();
             assertEquals(2, item.size());
-            assertEquals(Integer.valueOf(GeneralName.RFC_822_NAME), item.get(0));
+            assertEquals(GeneralName.RFC_822_NAME, item.get(0));
             assertEquals("bobsmith@example.com", item.get(1));
             item = iterator.next();
             assertEquals(2, item.size());
-            assertEquals(Integer.valueOf(GeneralName.DNS_NAME), item.get(0));
+            assertEquals(GeneralName.DNS_NAME, item.get(0));
             assertEquals("bobsmith.example.com", item.get(1));
             assertNotNull(certificate.getExtensionValue(X500.OID_CE_SUBJECT_KEY_IDENTIFIER));
 

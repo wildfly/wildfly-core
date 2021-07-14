@@ -1592,7 +1592,7 @@ class SSLDefinitions {
                     return false;
                 }
 
-                return isFips != null && isFips instanceof Boolean ? ((Boolean) isFips).booleanValue() : false;
+                return isFips instanceof Boolean ? (Boolean) isFips : false;
             };
 
         } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {

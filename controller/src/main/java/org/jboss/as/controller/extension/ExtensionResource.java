@@ -209,17 +209,17 @@ public class ExtensionResource implements Resource.ResourceEntry {
             final ModelNode majorNode = model.get(ExtensionSubsystemResourceDefinition.MAJOR_VERSION.getName());
             Integer major = subsystemInformation.getManagementInterfaceMajorVersion();
             if (major != null) {
-                majorNode.set(major.intValue());
+                majorNode.set(major);
             }
             final ModelNode minorNode = model.get(ExtensionSubsystemResourceDefinition.MINOR_VERSION.getName());
             Integer minor = subsystemInformation.getManagementInterfaceMinorVersion();
             if (minor != null) {
-                minorNode.set(minor.intValue());
+                minorNode.set(minor);
             }
             final ModelNode microNode = model.get(ExtensionSubsystemResourceDefinition.MICRO_VERSION.getName());
             Integer micro = subsystemInformation.getManagementInterfaceMicroVersion();
             if (micro != null) {
-                microNode.set(micro.intValue());
+                microNode.set(micro);
             }
 
             final ModelNode xmlNode = model.get(ExtensionSubsystemResourceDefinition.XML_NAMESPACES.getName()).setEmptyList();

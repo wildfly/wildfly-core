@@ -256,7 +256,7 @@ public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {
                     String[] nameParts = fileName.split("\\.");
                     if (!nameParts[0].contains("standalone")) { return; }
                     if (!nameParts[2].equals("xml")) { return; }
-                    int version = Integer.valueOf(nameParts[1].substring(1));
+                    int version = Integer.parseInt(nameParts[1].substring(1));
                     if (version > lastVersion[0]) {
                         lastVersion[0] = version;
                         lastFile[0] = path.toFile();

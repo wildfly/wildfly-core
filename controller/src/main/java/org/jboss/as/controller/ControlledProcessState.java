@@ -169,7 +169,7 @@ public class ControlledProcessState {
                 }
             }
         }
-        return Integer.valueOf(newStamp);
+        return newStamp;
     }
 
     public Object setRestartRequired() {
@@ -190,7 +190,7 @@ public class ControlledProcessState {
                 }
             }
         }
-        return Integer.valueOf(newStamp);
+        return newStamp;
     };
 
     public void revertReloadRequired(Object stamp) {
