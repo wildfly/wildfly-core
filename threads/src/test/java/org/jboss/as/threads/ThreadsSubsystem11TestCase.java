@@ -44,11 +44,6 @@ public class ThreadsSubsystem11TestCase extends AbstractSubsystemBaseTest {
         standardSubsystemTest(null, false);
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/jboss-as-threads_1_1.xsd";
-    }
-
     @Test
     public void testExpressions() throws Exception {
         standardSubsystemTest("expressions.xml", false);

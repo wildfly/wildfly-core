@@ -87,7 +87,6 @@ public class DiscoveryOptionsResourceDefinition extends SimpleResourceDefinition
                 .of("list-item", doAttr, sdAttr).build();
 
         OPTIONS = ObjectListAttributeDefinition.Builder.of(ModelDescriptionConstants.OPTIONS, listItem)
-                .setType(ModelType.LIST)
                 .addFlag(Flag.STORAGE_CONFIGURATION)
                 .setRequired(false)
                 .setDefaultValue(new ModelNode().setEmptyList())

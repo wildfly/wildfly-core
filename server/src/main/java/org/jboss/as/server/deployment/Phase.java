@@ -454,6 +454,8 @@ public enum Phase {
     public static final int DEPENDENCIES_MICROPROFILE_OPENTRACING       = 0x1880;
     public static final int DEPENDENCIES_MICROPROFILE_OPENAPI           = 0x1890;
     public static final int DEPENDENCIES_MICROPROFILE_JWT               = 0x18A0;
+    public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_MESSAGING = 0x18B0;
+    public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_STREAMS_OPERATORS = 0x18C0;
     public static final int DEPENDENCIES_MICROPROFILE_FAULT_TOLERANCE   = 0x1900;
 
 

@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>17.0.0.Beta2-SNAPSHOT</version>
+        <version>17.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-parent</artifactId>
@@ -40,7 +40,6 @@
         <module>galleon-common</module>
         <module>galleon-pruned</module>
         <module>galleon-feature-pack</module>
-        <module>legacy-feature-pack</module>
     </modules>
 
 

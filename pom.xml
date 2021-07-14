@@ -31,7 +31,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>17.0.0.Beta2-SNAPSHOT</version>
+    <version>17.0.0.Beta3-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -170,7 +170,7 @@
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.6.0</version.org.apache.sshd>
         <version.org.apache.xerces>2.12.0.SP03</version.org.apache.xerces>
-        <version.org.bouncycastle>1.68</version.org.bouncycastle>
+        <version.org.bouncycastle>1.69</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>4.2.1</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core>6.0.3</version.org.codehaus.woodstox.woodstox-core>
@@ -179,7 +179,7 @@
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.15</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.5.Final</version.org.jboss.classfilewriter>
-        <version.org.jboss.invocation>1.6.0.Final</version.org.jboss.invocation>
+        <version.org.jboss.invocation>1.6.1.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.2.3.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.5.1.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.15.Final</version.org.jboss.jboss-vfs>
@@ -192,7 +192,7 @@
         <version.org.jboss.logmanager.log4j2-jboss-logmanager>1.0.0.Final</version.org.jboss.logmanager.log4j2-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>2.0.12.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.11.0.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.4.12.Final</version.org.jboss.msc.jboss-msc>
+        <version.org.jboss.msc.jboss-msc>1.4.13.Final</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.23.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.4.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
@@ -234,9 +234,7 @@
         <module>controller-client</module>
         <module>bootable-jar</module>
         <module>build</module>
-        <module>build-legacy</module>
         <module>dist</module>
-        <module>dist-legacy</module>
         <module>component-matrix-builder</module>
         <module>core-feature-pack</module>
         <module>core-management</module>
@@ -1223,6 +1221,10 @@
                         <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>net.i2p.crypto</groupId>
                         <artifactId>eddsa</artifactId>
                     </exclusion>
@@ -1290,6 +1292,12 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcmail-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -1300,10 +1308,21 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
 
@@ -1813,11 +1832,6 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-cert</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-http-deprecated</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
             <dependency>

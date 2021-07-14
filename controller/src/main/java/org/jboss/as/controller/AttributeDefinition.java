@@ -113,7 +113,7 @@ public abstract class AttributeDefinition {
                 true, toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
-                toCopy.getAttributeGroup(), toCopy.referenceRecorder, toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
+                toCopy.getAttributeGroup(), toCopy.getCapabilityReferenceRecorder(), toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
                 toCopy.getUndefinedMetricValue(), immutableSetOf(toCopy.getFlags()));
     }
 

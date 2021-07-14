@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>17.0.0.Beta2-SNAPSHOT</version>
+        <version>17.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-testbom</artifactId>
@@ -41,7 +41,7 @@
 
     <properties>
         <version.com.fasterxml.jackson>2.11.3</version.com.fasterxml.jackson>
-        <version.commons-io>2.5</version.commons-io>
+        <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.63.Final</version.io.netty>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
@@ -175,6 +175,10 @@
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
                         <artifactId>bcpkix-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

@@ -21,8 +21,6 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -34,14 +32,17 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
-import org.apache.commons.io.FileUtils;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import org.codehaus.plexus.util.FileUtils;
 import org.jboss.as.cli.Util;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.shared.TestSuiteEnvironment;

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.ParametersValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
@@ -80,23 +81,18 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
         final String attributeName = operation.require(NAME).asString();
         // Don't require VALUE. Let the validator decide if it's bothered by an undefined value
         ModelNode newValue = operation.hasDefined(VALUE) ? operation.get(VALUE) : new ModelNode();
+
         final Resource resource = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS);
         final ModelNode submodel = resource.getModel();
         final ModelNode currentValue = submodel.get(attributeName).clone();
-
         final AttributeDefinition attributeDefinition = getAttributeDefinition(attributeName);
-        final ModelNode defaultValue;
-        if (attributeDefinition != null) {
-            defaultValue = attributeDefinition.getDefaultValue();
-            final ModelNode syntheticOp = new ModelNode();
-            syntheticOp.get(attributeName).set(newValue);
-            attributeDefinition.validateAndSet(syntheticOp, submodel);
-            newValue = submodel.get(attributeName);
-            recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, currentValue);
-        } else {
-            defaultValue = null;
-            submodel.get(attributeName).set(newValue);
-        }
+        final ModelNode defaultValue = attributeDefinition.getDefaultValue();
+        final ModelNode syntheticOp = new ModelNode();
+
+        syntheticOp.get(attributeName).set(newValue);
+        attributeDefinition.validateAndSet(syntheticOp, submodel);
+        newValue = submodel.get(attributeName);
+        recordCapabilitiesAndRequirements(context, attributeDefinition, newValue, currentValue);
 
         finishModelStage(context, operation, attributeName, newValue, currentValue, resource);
 
@@ -254,10 +250,15 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
      * {@link AttributeDefinition#getName() name} matches the given {@code attributeName}.
      *
      * @param attributeName the attribute name
-     * @return the attribute definition, or {@code null} if no matching definition is found
+     * @return the attribute definition of {@code attributeName}
+     * @throws IllegalArgumentException if no attribute definition with name {@code attributeName} exists.
      */
-    protected AttributeDefinition getAttributeDefinition(final String attributeName) {
-        return attributeDefinitions == null ? null : attributeDefinitions.get(attributeName);
+    protected AttributeDefinition getAttributeDefinition(final String attributeName) throws IllegalArgumentException {
+        AttributeDefinition response = attributeDefinitions.get(attributeName);
+        if (response == null) {
+            throw ControllerLogger.MGMT_OP_LOGGER.invalidAttributeDefinition(attributeName);
+        }
+        return response;
     }
 
     /**

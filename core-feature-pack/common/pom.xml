@@ -27,13 +27,13 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>17.0.0.Beta2-SNAPSHOT</version>
+        <version>17.0.0.Beta3-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-common</artifactId>
 
     <name>WildFly Core: Feature Pack Common Resources</name>
-    <description>Resources used in Galleon and legacy feature packs used to provision WildFly Core based servers</description>
+    <description>Resources used in Galleon feature pack used to provision WildFly Core based servers</description>
     <packaging>pom</packaging>
 
     <dependencies>
@@ -243,6 +243,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-jdk15on</artifactId>
+         </dependency>
+
+        <dependency>
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
         </dependency>
@@ -336,10 +341,6 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-http-digest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-http-deprecated</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>

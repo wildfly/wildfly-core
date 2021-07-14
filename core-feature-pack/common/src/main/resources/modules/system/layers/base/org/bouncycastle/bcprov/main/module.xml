@@ -34,5 +34,8 @@
             <with-class name="org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider"/>
         </service>
     </provides>
-
+    <dependencies>
+        <module name="java.naming"/>
+        <module name="java.sql"/>
+    </dependencies>
 </module>

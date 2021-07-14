@@ -3652,4 +3652,6 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 483, value = "Charset '%s' is not supported in this instance of the Java Virtual Machine")
     OperationFailedException unsupportedCharset(String charset);
 
+    @Message(id = 484, value = "Attribute definition of attribute '%s' is null")
+    IllegalArgumentException invalidAttributeDefinition(String attributeName);
 }

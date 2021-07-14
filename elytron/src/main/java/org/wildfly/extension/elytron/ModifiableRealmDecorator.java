@@ -489,7 +489,7 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
 
             static final ObjectTypeAttributeDefinition OBJECT_DEFINITION = new ObjectTypeAttributeDefinition.Builder(
                     ElytronDescriptionConstants.OTP, ALGORITHM, PASSWORD, SEED, SEQUENCE)
-                    .setAllowNull(true)
+                    .setRequired(false)
                     .build();
         }
 

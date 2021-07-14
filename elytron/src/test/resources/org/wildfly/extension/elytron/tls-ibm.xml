@@ -122,14 +122,15 @@
                                 session-timeout="321" maximum-session-cache-size="123"/>
             <server-ssl-context name="ServerSslContextSSLv2Hello" protocols="TLSv1 SSLv2Hello"
                                 key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
-                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="IBMJSSE"
+                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="IBMJSSE2"
                                 session-timeout="321" maximum-session-cache-size="123"/>
-            <server-ssl-context name="ServerSslContextDefaultProtocols"
+            <server-ssl-context name="ServerSslContextMultipleProtocolsNoSSLv2Hello"
                                 key-manager="ServerKeyManager" trust-manager="CaTrustManager" want-client-auth="true" need-client-auth="true"
-                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="IBMJSSE"
-                                session-timeout="321" maximum-session-cache-size="123"/>
+                                authentication-optional="false" providers="ManagerProviderLoader" provider-name="IBMJSSE2"
+                                session-timeout="321" maximum-session-cache-size="123"
+                                protocols="TLSv1 TLSv1.1 TLSv1.2"/>
             <server-ssl-context name="ServerSslContextSSLv2HelloOneWay" protocols="TLSv1 SSLv2Hello"
-                                key-manager="ServerKeyManager" providers="ManagerProviderLoader" provider-name="IBMJSSE"
+                                key-manager="ServerKeyManager" providers="ManagerProviderLoader" provider-name="IBMJSSE2"
                                 session-timeout="321" maximum-session-cache-size="123"/>
         </server-ssl-contexts>
         <client-ssl-contexts>
@@ -148,8 +149,8 @@
             <client-ssl-context name="ClientWithMultipleCRLs" key-manager="ClientKeyManager" trust-manager="trust-with-multiple-crls" />
             <client-ssl-context name="ClientSslContextOnlyTLS1" protocols="TLSv1" key-manager="ClientKeyManager"
                                 trust-manager="CaTrustManager" providers="ManagerProviderLoader" />
-            <client-ssl-context name="ClientSslContextDefaultProtocols" key-manager="ClientKeyManager"
-                                trust-manager="CaTrustManager" providers="ManagerProviderLoader" />
+            <client-ssl-context name="ClientSslContextMultipleProtocolsNoSSLv2Hello" key-manager="ClientKeyManager"
+                                trust-manager="CaTrustManager" providers="ManagerProviderLoader" protocols="TLSv1 TLSv1.1 TLSv1.2"/>
             <client-ssl-context name="ClientSslContextSSLv2Hello" protocols="SSLv2Hello TLSv1" key-manager="ClientKeyManager"
                                 trust-manager="CaTrustManager" providers="ManagerProviderLoader"/>
             <client-ssl-context name="ClientSslContextSSLv2HelloOneWay" protocols="SSLv2Hello TLSv1"

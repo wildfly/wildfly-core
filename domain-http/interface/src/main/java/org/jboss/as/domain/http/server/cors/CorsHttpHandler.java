@@ -51,7 +51,8 @@ public class CorsHttpHandler implements HttpHandler {
     private final HttpHandler next;
     private final Collection<String> allowedOrigins = new ArrayList<String>();
     /** Default max age **/
-    private static final long ONE_HOUR_IN_SECONDS = 60 * 60;
+    private static final long ONE_MINUTE_IN_SECONDS = 60;
+    private static final long ONE_HOUR_IN_SECONDS = 60 * ONE_MINUTE_IN_SECONDS;
 
     public CorsHttpHandler(HttpHandler next, Collection<String> allowedOrigins) {
         this.next = next;

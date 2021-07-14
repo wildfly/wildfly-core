@@ -32,16 +32,6 @@ public class ElytronSubsystem11TestCase extends AbstractSubsystemBaseTest {
     }
 
     @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-elytron_1_1.xsd";
-    }
-
-    @Override
-    public void testSchemaOfSubsystemTemplates() throws Exception {
-        //
-    }
-
-    @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("legacy-elytron-subsystem-1.1.xml");
     }

@@ -1,7 +1,9 @@
-<?xml version='1.0' encoding='UTF-8'?>
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2014 Red Hat, Inc., and individual contributors
+  ~
+  ~ Copyright 2020 Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,5 +18,18 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<!-- Empty Elytron subsystem definition to be included in standalone.xml while using wildfly-extension plugin -->
-<subsystem xmlns="urn:wildfly:elytron:15.0"/>
+
+<module xmlns="urn:jboss:module:1.9" name="org.bouncycastle.bcutil">
+
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <artifact name="${org.bouncycastle:bcutil-jdk15on}"/>
+    </resources>
+
+    <dependencies>
+        <module name="org.bouncycastle.bcprov"/>
+    </dependencies>
+</module>

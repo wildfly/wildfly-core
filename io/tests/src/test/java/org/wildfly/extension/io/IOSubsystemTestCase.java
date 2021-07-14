@@ -63,24 +63,6 @@ public class IOSubsystemTestCase extends AbstractSubsystemBaseTest {
         return readResource("io-3.0.xml");
     }
 
-    @Override
-    protected String getSubsystemXsdPath() throws Exception {
-        return "schema/wildfly-io_3_0.xsd";
-    }
-
-    @Override
-    protected String[] getSubsystemTemplatePaths() throws IOException {
-        return new String[]{
-                "/subsystem-templates/io.xml"
-        };
-    }
-
-    @Test
-    @Override
-    public void testSchemaOfSubsystemTemplates() throws Exception {
-        super.testSchemaOfSubsystemTemplates();
-    }
-
     @Test
     public void testRuntime() throws Exception {
         KernelServices mainServices = startKernelServices(getSubsystemXml());

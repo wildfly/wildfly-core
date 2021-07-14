@@ -268,7 +268,7 @@ public class ReloadHandler extends BaseOperationCommand {
 
     private void ensureServerRebootComplete(CommandContext ctx, ModelControllerClient client) throws CommandLineException {
         final long start = System.currentTimeMillis();
-        final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000;
+        final long timeoutMillis = ctx.getConfig().getConnectionTimeout() + 1000L;
         final ModelNode getStateOp = new ModelNode();
         if(ctx.isDomainMode()) {
             final ParsedCommandLine args = ctx.getParsedCommandLine();
