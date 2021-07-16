@@ -226,6 +226,18 @@ public class VaultExpressionSensitivityTestCase extends AbstractRbacTestCase {
         }
     }
 
+    /*
+     * Test if the Monitor role can smuggle a vault expression to retrieve the value from the vault.
+     */
+    @Test
+    public void testHiddenExpression() throws Exception {
+        ModelControllerClient client = getClientForUser(RbacUtil.MAINTAINER_USER);
+
+        ModelNode operation = createOpNode("subsystem=logging/logger=vault-test", ADD);
+        operation.get("level").set("${someproperty:XXX} " + vaultPassword);
+        RbacUtil.executeOperation(client, operation, Outcome.UNAUTHORIZED);
+    }
+
     private void test(String userName, boolean canRead, boolean canWrite) throws Exception {
         ModelControllerClient client = getClientForUser(userName);
 
