@@ -524,8 +524,11 @@ public final class ServerService extends AbstractControllerService {
     private static class ServerExecutorService implements Service<ExecutorService> {
 
         private static final int DEFAULT_CORE_POOL_SIZE = 1;
+        private static final int DEFAULT_MAX_POOL_SIZE = 1024;
         private static final int DEFAULT_DOMAIN_CORE_POOL_SIZE = 3; // keep more threads in a domain server as the intra-process comms use more tasks
-        private static final String CONFIG_SYS_PROP = "org.jboss.as.server-service.core.threads";
+        private static final String CORE_POOL_SIZE_SYS_PROP = "org.jboss.as.server-service.core.threads";
+        private static final String MAX_POOL_SIZE_SYS_PROP = "org.jboss.as.server-service.max.threads";
+        private static final String ENHANCED_EXECUTOR_MBEAN_NAME = "ServerService";
 
         private final ThreadFactory threadFactory;
         private final boolean forDomain;
@@ -544,9 +547,10 @@ public final class ServerService extends AbstractControllerService {
             } else {
                 executorService = new EnhancedQueueExecutor.Builder()
                     .setCorePoolSize(getCorePoolSize(forDomain))
-                    .setMaximumPoolSize(1024)
+                    .setMaximumPoolSize(getMaxPoolSize())
                     .setKeepAliveTime(20L, TimeUnit.SECONDS)
                     .setThreadFactory(threadFactory)
+                    .setMBeanName(ENHANCED_EXECUTOR_MBEAN_NAME)
                     .build();
             }
         }
@@ -592,21 +596,39 @@ public final class ServerService extends AbstractControllerService {
         }
 
         private static int getCorePoolSize(boolean forDomain) {
-            String val = WildFlySecurityManager.getPropertyPrivileged(CONFIG_SYS_PROP, null);
+            String val = WildFlySecurityManager.getPropertyPrivileged(CORE_POOL_SIZE_SYS_PROP, null);
             if (val != null) {
                 try {
                     int result = Integer.parseInt(val);
                     if (result >= 0) {
                         return result;
                     } else {
-                        ServerLogger.ROOT_LOGGER.invalidPoolCoreSize(val, CONFIG_SYS_PROP);
+                        ServerLogger.ROOT_LOGGER.invalidPoolSize(val, CORE_POOL_SIZE_SYS_PROP);
                     }
                 } catch (NumberFormatException nfe) {
-                    ServerLogger.ROOT_LOGGER.invalidPoolCoreSize(val, CONFIG_SYS_PROP);
+                    ServerLogger.ROOT_LOGGER.invalidPoolSize(val, CORE_POOL_SIZE_SYS_PROP);
                 }
 
             }
             return forDomain ? DEFAULT_DOMAIN_CORE_POOL_SIZE : DEFAULT_CORE_POOL_SIZE;
+        }
+
+        private static int getMaxPoolSize() {
+            String val = WildFlySecurityManager.getPropertyPrivileged(MAX_POOL_SIZE_SYS_PROP, null);
+            if (val != null) {
+                try {
+                    int result = Integer.parseInt(val);
+                    if (result >= 0) {
+                        return result;
+                    } else {
+                        ServerLogger.ROOT_LOGGER.invalidPoolSize(val, MAX_POOL_SIZE_SYS_PROP);
+                    }
+                } catch (NumberFormatException nfe) {
+                    ServerLogger.ROOT_LOGGER.invalidPoolSize(val, MAX_POOL_SIZE_SYS_PROP);
+                }
+
+            }
+            return DEFAULT_MAX_POOL_SIZE;
         }
     }
 
