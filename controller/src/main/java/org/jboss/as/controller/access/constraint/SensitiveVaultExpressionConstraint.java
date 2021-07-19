@@ -24,7 +24,6 @@ package org.jboss.as.controller.access.constraint;
 
 import java.util.regex.Pattern;
 
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -46,7 +45,7 @@ public class SensitiveVaultExpressionConstraint extends AllowAllowNotConstraint 
 
     public static final ConstraintFactory FACTORY = new Factory();
 
-    private static final Pattern STANDARD_VAULT_PATTERN = Pattern.compile("VAULT::.*::.*::.*");
+    private static final Pattern VAULT_EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{VAULT::.*::.*::.*}.*");
 
     private static final SensitiveVaultExpressionConstraint SENSITIVE = new SensitiveVaultExpressionConstraint(true);
     private static final SensitiveVaultExpressionConstraint NOT_SENSITIVE = new SensitiveVaultExpressionConstraint(false);
@@ -126,12 +125,8 @@ public class SensitiveVaultExpressionConstraint extends AllowAllowNotConstraint 
             if (value.getType() == ModelType.EXPRESSION
                     || value.getType() == ModelType.STRING) {
                 String valueString = value.asString();
-                if (ExpressionResolver.EXPRESSION_PATTERN.matcher(valueString).matches()) {
-                    int start = valueString.indexOf("${") + 2;
-                    int end = valueString.indexOf("}", start);
-                    valueString = valueString.substring(start, end);
-                    return STANDARD_VAULT_PATTERN.matcher(valueString).matches();
-                }
+
+                return VAULT_EXPRESSION_PATTERN.matcher(valueString).matches();
             }
             return false;
         }
