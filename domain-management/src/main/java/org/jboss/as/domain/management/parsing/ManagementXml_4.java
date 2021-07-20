@@ -325,7 +325,7 @@ final class ManagementXml_4 implements ManagementXml {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -386,7 +386,7 @@ final class ManagementXml_4 implements ManagementXml {
                         }
                     }
 
-                    if (required.size() > 0) {
+                    if (!required.isEmpty()) {
                         throw missingRequired(reader, required);
                     }
                     requireNoContent(reader);
@@ -937,7 +937,7 @@ final class ManagementXml_4 implements ManagementXml {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
     }

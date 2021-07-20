@@ -152,7 +152,7 @@ public class StateValues {
     }
 
     public boolean groupPropertiesFound() {
-        return groupFiles != null && groupFiles.size() > 0;
+        return groupFiles != null && !groupFiles.isEmpty();
     }
 
     public Set<String> getEnabledKnownUsers() {

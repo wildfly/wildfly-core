@@ -111,7 +111,7 @@ public class SSLServerIdentityResourceDefinition extends SimpleResourceDefinitio
                 XMLStreamWriter writer) throws XMLStreamException {
             if (resourceModel.hasDefined(attribute.getName())) {
                 List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
-                if (list.size() > 0) {
+                if (!list.isEmpty()) {
                     StringBuilder sb = new StringBuilder();
                     for (ModelNode child : list) {
                         if (sb.length() > 0) {

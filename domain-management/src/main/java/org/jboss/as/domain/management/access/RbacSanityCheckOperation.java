@@ -171,11 +171,8 @@ public class RbacSanityCheckOperation implements OperationStepHandler {
             for (String current : roleNames) {
                 Resource roleResource = authorizationResource.getChild(PathElement.pathElement(ROLE_MAPPING, current));
                 ModelNode roleModel = roleResource.getModel();
-                if (roleModel.get(INCLUDE_ALL).isDefined() && roleModel.require(INCLUDE_ALL).asBoolean()) {
-                    return true;
-                }
-
-                if (roleResource.getChildren(INCLUDE).size() > 0) {
+                if (roleModel.get(INCLUDE_ALL).isDefined() && roleModel.require(INCLUDE_ALL).asBoolean()
+                    || !roleResource.getChildren(INCLUDE).isEmpty()) {
                     return true;
                 }
             }

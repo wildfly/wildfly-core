@@ -95,7 +95,7 @@ public class PlugInLoaderService implements Service {
                 } catch (ModuleLoadException e) {
                     throw DomainManagementLogger.ROOT_LOGGER.unableToLoadPlugInProviders(name, e.getMessage());
                 }
-                if (providers.size() > 0) {
+                if (!providers.isEmpty()) {
                     cachedProviders.put(name, providers);
                     response = providers;
                 } else {
