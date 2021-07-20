@@ -880,13 +880,13 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
 
                         CapabilityScope reqDependent = req.getDependentContext();
                         recordConsistentSets(requiresConsistency, consistentSets, reqDependent, consistentSet, req, satisfactory, reqDependent);
-                        isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
+                        isInconsistent = isInconsistent || (consistentSet != null && consistentSet.isEmpty());
 
                         // Record for any contexts that include this one
                         for (CapabilityScope including : dependentContext.getIncludingScopes(resolutionContext)) {
                             consistentSet = consistentSets.get(including);
                             recordConsistentSets(requiresConsistency, consistentSets, including, consistentSet, req, satisfactory, reqDependent);
-                            isInconsistent = isInconsistent || (consistentSet != null && consistentSet.size() == 0);
+                            isInconsistent = isInconsistent || (consistentSet != null && consistentSet.isEmpty());
                         }
                     } // else simple capability match
                 }

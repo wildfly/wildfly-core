@@ -79,7 +79,7 @@ public class ExtensionXml {
 
     public void writeExtensions(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
         Set<String> keys = new TreeSet<>(modelNode.keys());
-        if (keys.size() > 0) {
+        if (!keys.isEmpty()) {
             writer.writeStartElement(Element.EXTENSIONS.getLocalName());
             for (final String extension : keys) {
                 writer.writeEmptyElement(Element.EXTENSION.getLocalName());

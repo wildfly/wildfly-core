@@ -123,7 +123,7 @@ public final class ParsedInterfaceCriteria {
                 return new ParsedInterfaceCriteria(e.getMessage());
             }
         }
-        if (specified && parsed.getFailureMessage() == null && ! parsed.isAnyLocal() && parsed.getCriteria().size() == 0) {
+        if (specified && parsed.getFailureMessage() == null && ! parsed.isAnyLocal() && parsed.getCriteria().isEmpty()) {
             return new ParsedInterfaceCriteria(ControllerLogger.ROOT_LOGGER.noInterfaceCriteria());
         }
         return parsed;

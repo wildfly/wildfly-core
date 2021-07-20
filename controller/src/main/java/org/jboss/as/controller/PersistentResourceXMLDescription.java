@@ -293,7 +293,7 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
     }
 
     private void parseChildren(final XMLExtendedStreamReader reader, PathAddress parentAddress, List<ModelNode> list, ModelNode op) throws XMLStreamException {
-        if (children.size() == 0) {
+        if (children.isEmpty()) {
             if (flushRequired && attributeGroups.isEmpty() && attributeElements.isEmpty()) {
                 ParseUtils.requireNoContent(reader);
             }

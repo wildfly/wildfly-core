@@ -1352,7 +1352,7 @@ abstract class AbstractOperationContext implements OperationContext {
             return false;
         }
         synchronized (modifiedResourcesForModelValidation) {
-            if (modifiedResourcesForModelValidation.size() == 0) {
+            if (modifiedResourcesForModelValidation.isEmpty()) {
                 return false;
             }
             ModelNode op = Util.createOperation(ValidateModelStepHandler.INTERNAL_MODEL_VALIDATION_NAME, PathAddress.EMPTY_ADDRESS);

@@ -710,7 +710,7 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
                                                                                         resource,
                                                                                         currentElement.getKey());
                 Set<String> childNames = childAddresses.get(currentElement.getKey());
-                if (childNames != null && childNames.size() > 0) {
+                if (childNames != null && !childNames.isEmpty()) {
                     for (String name : childNames) {
                         PathAddress address = currentAddress.append(PathElement.pathElement(currentElement.getKey(), name));
                         if (addParentResource(context, addresses, address)) {

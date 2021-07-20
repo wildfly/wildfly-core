@@ -114,7 +114,7 @@ public class ExtensionResource implements Resource.ResourceEntry {
 
     @Override
     public boolean hasChildren(String childType) {
-        return getChildren(childType).size() > 0;
+        return !getChildren(childType).isEmpty();
     }
 
     @Override

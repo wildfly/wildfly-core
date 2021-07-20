@@ -88,7 +88,7 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
     }
 
     protected void drainTo(final Collection<TransactionalProtocolClient.PreparedOperation<T>> collection) {
-        if(queue.size() > 0) {
+        if(!queue.isEmpty()) {
             queue.drainTo(collection);
         }
     }

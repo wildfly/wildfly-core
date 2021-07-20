@@ -271,7 +271,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 // Update the stack
                                 recordResolutionInStack(resolved, stack);
 
-                                if (stack.size() == 0) {
+                                if (stack.isEmpty()) {
                                     // All expressions so far are resolved; record for output
                                     builder.append(resolved);
                                     state = INITIAL;
@@ -311,12 +311,12 @@ public class ExpressionResolverImpl implements ExpressionResolver {
             }
         }
 
-        if (stack != null && stack.size() > 0) {
+        if (stack != null && !stack.isEmpty()) {
             if (state == GOT_DOLLAR) {
                 stack.pop();
             }
 
-            if (stack.size() > 0) {
+            if (!stack.isEmpty()) {
                 throw ControllerLogger.ROOT_LOGGER.incompleteExpression(initialValue);
             }
 

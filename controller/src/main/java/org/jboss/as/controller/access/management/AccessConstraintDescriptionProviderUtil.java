@@ -38,7 +38,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class AccessConstraintDescriptionProviderUtil {
     public static void addAccessConstraints(ModelNode result, List<AccessConstraintDefinition> accessConstraints, Locale locale) {
-        if (accessConstraints.size() > 0) {
+        if (!accessConstraints.isEmpty()) {
             ModelNode constraints = new ModelNode();
             for (AccessConstraintDefinition constraint : accessConstraints) {
                 ModelNode constraintDesc = constraints.get(constraint.getType(), constraint.getName());

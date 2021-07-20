@@ -333,7 +333,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                         // Problem wasn't a capability removal.
                         // See what step(s) added this requirement
                         Set<Step> bereft = addedRequirements.get(reqReq);
-                        if (bereft != null && bereft.size() > 0) {
+                        if (bereft != null && !bereft.isEmpty()) {
                             for (Step step : bereft) {
                                 Set<CapabilityId> set = missingForStep.get(step);
                                 if (set == null) {
@@ -395,7 +395,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 for (RuntimeRequirementRegistration reg : validation.getInconsistentRequirements()) {
                     // See what step(s) added this requirement
                     Set<Step> inconsistent = addedRequirements.get(reg);
-                    if (inconsistent != null && inconsistent.size() > 0) {
+                    if (inconsistent != null && !inconsistent.isEmpty()) {
                         for (Step step : inconsistent) {
                             ModelNode response = step.response;
                             String depConName = reg.getDependentContext().getName();

@@ -157,7 +157,7 @@ public final class OverallInterfaceCriteria implements InterfaceCriteria {
                         retained.removeAll(subAddresses);
                     }
                 }
-                if (retained.size() > 0) {
+                if (!retained.isEmpty()) {
                     pruned.put(ni, retained);
                 }
             }

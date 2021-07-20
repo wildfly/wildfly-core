@@ -190,7 +190,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
         if (registration != null) {
             Set<String> orderedChildTypes = registration.getOrderedChildTypes();
             boolean orderedChildResource = registration.isOrderedChildResource();
-            if (orderedChildResource || orderedChildTypes.size() > 0) {
+            if (orderedChildResource || !orderedChildTypes.isEmpty()) {
                 return new OrderedResourceCreator(orderedChildResource, orderedChildTypes).createResource(context, operation);
             }
         }

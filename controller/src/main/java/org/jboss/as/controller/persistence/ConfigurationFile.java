@@ -661,14 +661,14 @@ public class ConfigurationFile {
                 }
             }
         }
-        if (names.size() == 0 && errorIfNoFiles) {
+        if (names.isEmpty() && errorIfNoFiles) {
             throw ControllerLogger.ROOT_LOGGER.fileNotFoundWithPrefix(prefix, snapshotsDirectory.getAbsolutePath());
         }
         if (names.size() > 1) {
             throw ControllerLogger.ROOT_LOGGER.ambiguousName(prefix, snapshotsDirectory.getAbsolutePath(), names);
         }
 
-        return names.size() > 0 ? new File(snapshotsDirectory, names.get(0)) : null;
+        return !names.isEmpty() ? new File(snapshotsDirectory, names.get(0)) : null;
     }
 
     private void createHistoryDirectory() throws IOException {
