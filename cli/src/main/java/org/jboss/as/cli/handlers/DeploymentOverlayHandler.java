@@ -576,7 +576,7 @@ public class DeploymentOverlayHandler extends BatchModeCommandHandler {//Command
             } else {
                 groups = Arrays.asList(sg.split(",+"));
             }
-            if(groups.size() == 0) {
+            if(groups.isEmpty()) {
                 throw new CommandFormatException(serverGroups.getFullName() + " is missing value.");
             }
             for(String group : groups) {

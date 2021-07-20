@@ -520,14 +520,14 @@ public class HelpSupport {
             if (standalone.size() == opts.size()
                     && (arg == null || !(arg.activator() instanceof DomainOptionActivator))) {
                 synopsis = generateSynopsis(bundle, parentName, commandName, opts,
-                        arg, parsers != null && parsers.size() > 0, superNames, isOperation, false);
+                        arg, parsers != null && !parsers.isEmpty(), superNames, isOperation, false);
                 builder.append(splitAndFormat(synopsis, 80, TAB, 0, synopsisTab.toString()));
             } else {
                 List<ProcessedOption> standaloneOnly = retrieveStandaloneOptions(opts);
                 builder.append("Standalone mode:").append(Config.getLineSeparator());
                 builder.append(Config.getLineSeparator());
                 synopsis = generateSynopsis(bundle, parentName, commandName, standaloneOnly,
-                        arg, parsers != null && parsers.size() > 0, superNames, isOperation, false);
+                        arg, parsers != null && !parsers.isEmpty(), superNames, isOperation, false);
                 builder.append(splitAndFormat(synopsis, 80, TAB, 0, synopsisTab.toString()));
                 builder.append(Config.getLineSeparator());
                 builder.append(Config.getLineSeparator());
@@ -535,7 +535,7 @@ public class HelpSupport {
                 builder.append(Config.getLineSeparator());
                 List<ProcessedOption> domain = retrieveDomainOptions(opts);
                 synopsis = generateSynopsis(bundle, parentName, commandName, domain,
-                        arg, parsers != null && parsers.size() > 0, superNames, isOperation, true);
+                        arg, parsers != null && !parsers.isEmpty(), superNames, isOperation, true);
                 builder.append(splitAndFormat(synopsis, 80, TAB, 0, synopsisTab.toString()));
             }
         } else {
@@ -575,7 +575,7 @@ public class HelpSupport {
             List<CommandLineParser<CLICommandInvocation>> parsers,
             List<String> superNames) {
         StringBuilder builder = new StringBuilder();
-        if (parsers != null && parsers.size() > 0) {
+        if (parsers != null && !parsers.isEmpty()) {
             builder.append("ACTIONS")
                     .append(Config.getLineSeparator()).
                     append(Config.getLineSeparator());
@@ -703,7 +703,7 @@ public class HelpSupport {
             ProcessedOption arg, boolean isOperation) {
         int width = 80;
         StringBuilder sb = new StringBuilder();
-        if (opts.size() > 0) {
+        if (!opts.isEmpty()) {
             sb.append(Config.getLineSeparator()).append("OPTIONS").append(Config.getLineSeparator());
             sb.append(Config.getLineSeparator());
         }
