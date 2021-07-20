@@ -125,7 +125,7 @@ public class DeploymentSetPlanImpl implements DeploymentSetPlan, Serializable {
     }
 
     boolean hasServerGroupPlans() {
-        return serverGroupPlans.size() > 1 || serverGroupPlans.get(0).size() > 0;
+        return serverGroupPlans.size() > 1 || !serverGroupPlans.get(0).isEmpty();
     }
 
     ServerGroupDeploymentPlan getLatestServerGroupDeploymentPlan() {

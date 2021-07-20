@@ -676,7 +676,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
     private void executeScannerTasks(List<ScannerTask> scannerTasks, DeploymentOperations deploymentOperations,
                                      boolean oneOffScan) throws InterruptedException {
         // Process the tasks
-        if (scannerTasks.size() > 0) {
+        if (!scannerTasks.isEmpty()) {
             List<ModelNode> updates = new ArrayList<ModelNode>(scannerTasks.size());
 
             for (ScannerTask task : scannerTasks) {
