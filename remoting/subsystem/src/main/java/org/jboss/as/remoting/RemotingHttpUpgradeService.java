@@ -149,7 +149,7 @@ public class RemotingHttpUpgradeService implements Service {
         listenerInfo.addHttpUpgradeMetadata(httpUpgradeMetadata = new ListenerRegistry.HttpUpgradeMetadata("jboss-remoting", endpointName));
         RemotingConnectorBindingInfoService.install(context.getChildTarget(), context.getController().getName().getSimpleName(), (SocketBinding)listenerInfo.getContextInformation("socket-binding"), listenerInfo.getProtocol().equals("https") ? REMOTE_HTTPS : REMOTE_HTTP);
 
-        if (connectorPropertiesOptionMap != null) {
+        if (connectorPropertiesOptionMap != null && connectorPropertiesOptionMap.size() > 0) {
             builder.addAll(connectorPropertiesOptionMap);
         }
         OptionMap resultingMap = builder.getMap();
@@ -165,10 +165,10 @@ public class RemotingHttpUpgradeService implements Service {
 
                 Option<?> optionMechanismNames = Option.fromString("org.xnio.Options."+ Options.SASL_MECHANISMS.getName(), loader);
                 String[] mechanismNames = null;
-                if(connectorPropertiesOptionMap.contains(optionMechanismNames)) {
-                    Object o = connectorPropertiesOptionMap.get(optionMechanismNames);
+                if(resultingMap.contains(optionMechanismNames)) {
+                    Object o = resultingMap.get(optionMechanismNames);
                     if (o instanceof Sequence) {
-                        Sequence<String> sequence = (Sequence<String>) connectorPropertiesOptionMap.get(optionMechanismNames);
+                        Sequence<String> sequence = (Sequence<String>) resultingMap.get(optionMechanismNames);
                         mechanismNames = sequence.toArray(new String[sequence.size()]);
                     }
                 }
@@ -176,8 +176,8 @@ public class RemotingHttpUpgradeService implements Service {
                 Option<?> optionPolicyNonanonymous = Option.fromString("org.xnio.Options."+ Options.SASL_POLICY_NOANONYMOUS.getName(), loader);
                 //in case that legacy sasl mechanisms are used, noanonymous default value is true
                 Boolean policyNonanonymous = mechanismNames == null ? null: true;
-                if(connectorPropertiesOptionMap.contains(optionPolicyNonanonymous)) {
-                    Object o = connectorPropertiesOptionMap.get(optionPolicyNonanonymous);
+                if(resultingMap.contains(optionPolicyNonanonymous)) {
+                    Object o = resultingMap.get(optionPolicyNonanonymous);
                     if (o instanceof Boolean) {
                         policyNonanonymous = (Boolean) o;
                     }
