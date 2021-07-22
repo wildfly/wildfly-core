@@ -1301,6 +1301,11 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
+                <artifactId>bcjmail-jdk15on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpg-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
