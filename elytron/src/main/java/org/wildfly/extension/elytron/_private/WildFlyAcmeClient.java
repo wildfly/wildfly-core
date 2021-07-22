@@ -52,7 +52,9 @@ public final class WildFlyAcmeClient extends AcmeClientSpi {
                 break;
             }
         }
-
+        if (selectedChallenge == null) {
+            throw ROOT_LOGGER.missingCertificateAuthorityChallenge();
+        }
         // ensure the token is valid before proceeding
         String token = selectedChallenge.getToken();
         if (! token.matches(TOKEN_REGEX)) {

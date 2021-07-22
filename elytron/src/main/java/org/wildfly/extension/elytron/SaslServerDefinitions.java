@@ -392,7 +392,7 @@ class SaslServerDefinitions {
 
                     boolean enabling = ENABLING.resolveModelAttribute(context, model).asBoolean();
                     if (enabling == false) {
-                        predicate = predicate.negate();
+                        predicate = predicate != null ? predicate.negate() : null;
                     }
                 }
 
