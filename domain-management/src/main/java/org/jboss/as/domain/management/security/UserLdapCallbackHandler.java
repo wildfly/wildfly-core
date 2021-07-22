@@ -300,7 +300,7 @@ public class UserLdapCallbackHandler implements Service, CallbackHandlerService 
                 } else {
                     SECURITY_LOGGER.tracef(
                             "Password verification failed for user '%s', no connection for referral '%s'", username,
-                            referralUri.toString());
+                            String.valueOf(referralUri));
                     return false;
                 }
             } catch (Exception e) {

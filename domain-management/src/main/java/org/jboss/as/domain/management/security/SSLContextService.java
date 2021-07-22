@@ -208,9 +208,10 @@ public class SSLContextService implements Service {
                     synchronized (this) {
                         if(!init) {
                             try {
-                                AbstractKeyManagerService keyManagers = keyManagersSupplier != null ? keyManagersSupplier.get() : null;
+                                AbstractKeyManagerService keyManagerService = keyManagersSupplier != null ? keyManagersSupplier.get() : null;
+                                KeyManager[] keyManagers = keyManagerService != null ? keyManagerService.getKeyManagers() : null;
                                 TrustManager[] trustManagers = trustManagersSupplier != null ? trustManagersSupplier.get() : null;
-                                wrapped.init(keyManagers.getKeyManagers(), trustManagers, null);
+                                wrapped.init(keyManagers, trustManagers, null);
                                 wrapped = wrapSslContext(wrapped, enabledCipherSuites, enabledProtocols);
                             } catch (Exception e) {
                                 throw DomainManagementLogger.SECURITY_LOGGER.failedToCreateLazyInitSSLContext(e);
