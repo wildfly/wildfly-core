@@ -67,7 +67,9 @@ class PatchModuleInvalidationUtils {
      * End of central directory record marker
      */
     public static final int GOOD_ENDSIG = 0x06054b50; // Good signature
+    public static final boolean FLAG_GOOD_ENDSIG = false;
     public static final int CRIPPLED_ENDSIG = 0x07054b50; // Crippled signature
+    public static final boolean FLAG_CRIPPLED_ENDSIG = true;
 
     /**
      * Length of the fixed portion of a local file header
@@ -150,11 +152,11 @@ class PatchModuleInvalidationUtils {
     static void processFile(final IdentityPatchContext context, final File file, final PatchingTaskContext.Mode mode) throws IOException {
         if (mode == PatchingTaskContext.Mode.APPLY) {
             if (ENABLE_INVALIDATION) {
-                updateJar(file, GOOD_ENDSIG_PATTERN, BAD_BYTE_SKIP, CRIPPLED_ENDSIG, GOOD_ENDSIG);
+                updateJar(file, GOOD_ENDSIG_PATTERN, BAD_BYTE_SKIP, FLAG_CRIPPLED_ENDSIG, GOOD_ENDSIG);
                 backup(context, file);
             }
         } else if (mode == PatchingTaskContext.Mode.ROLLBACK) {
-            updateJar(file, CRIPPLED_ENDSIG_PATTERN, BAD_BYTE_SKIP, GOOD_ENDSIG, CRIPPLED_ENDSIG);
+            updateJar(file, CRIPPLED_ENDSIG_PATTERN, BAD_BYTE_SKIP, FLAG_GOOD_ENDSIG, CRIPPLED_ENDSIG);
             restore(context, file);
         } else {
             throw new IllegalStateException();
@@ -167,23 +169,24 @@ class PatchModuleInvalidationUtils {
      * @param file          the file to process
      * @param searchPattern the search patter to use
      * @param badSkipBytes  the bad bytes skip table
-     * @param newSig        the new signature
+     * @param flagNewSig    true for CRIPPLED_ENDSIG, false for a GOOD_ENDSIG as newSig
      * @param endSig        the expected signature
      * @throws IOException
      */
-    private static void updateJar(final File file, final byte[] searchPattern, final int[] badSkipBytes, final int newSig, final int endSig) throws IOException {
+    private static void updateJar(final File file, final byte[] searchPattern, final int[] badSkipBytes, final boolean flagNewSig, final int endSig) throws IOException {
         final RandomAccessFile raf = new RandomAccessFile(file, "rw");
         try {
             final FileChannel channel = raf.getChannel();
             try {
                 long pos = channel.size() - ENDLEN;
                 final ScanContext context;
-                if (newSig == CRIPPLED_ENDSIG) {
+                final int newSig;
+                if (flagNewSig) {
                     context = new ScanContext(GOOD_ENDSIG_PATTERN, CRIPPLED_ENDSIG_PATTERN);
-                } else if (newSig == GOOD_ENDSIG) {
+                    newSig = CRIPPLED_ENDSIG;
+                } else  {
                     context = new ScanContext(CRIPPLED_ENDSIG_PATTERN, GOOD_ENDSIG_PATTERN);
-                } else {
-                    context = null;
+                    newSig = GOOD_ENDSIG;
                 }
 
                 if (!validateEndRecord(file, channel, pos, endSig)) {
