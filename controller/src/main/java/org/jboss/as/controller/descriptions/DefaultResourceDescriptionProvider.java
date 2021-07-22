@@ -34,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NOTIFICATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATIONS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REQUIRED;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,8 +96,8 @@ public class DefaultResourceDescriptionProvider implements DescriptionProvider {
             result.get(MIN_OCCURS).set(minOccurs);
         }
         int maxOccurs = registration.getMaxOccurs();
-        PathAddress pa = registration.getPathAddress();
-        if (pa == null || pa.size() == 0) {
+        PathAddress pa = checkNotNullParam("pa", registration.getPathAddress());
+        if (pa.size() == 0) {
             // Root node has no documented 'default'
             result.get(MAX_OCCURS).set(maxOccurs);
         } else {

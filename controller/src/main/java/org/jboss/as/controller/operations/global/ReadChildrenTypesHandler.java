@@ -75,7 +75,7 @@ public class ReadChildrenTypesHandler implements OperationStepHandler {
             PathAddress relativeAddr = PathAddress.pathAddress(child);
             ImmutableManagementResourceRegistration childReg = registry.getSubModel(relativeAddr);
             boolean isSingletonResource = childReg == null || !child.isWildcard();
-            if (childReg.isAlias() && !aliases) {
+            if (childReg != null && childReg.isAlias() && !aliases) {
                 continue;
             }
             if(singletons && isSingletonResource)  {
