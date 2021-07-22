@@ -382,13 +382,24 @@ if /I "%~1"== "/jbosspass" (
   if not "%~2"=="" (
     set T=%~2
     if not "!T:~0,1!"=="/" (
-      set JBOSSPASS=%~2
+      set "JBOSSPASS=%~2"
     )
   )
   if "!JBOSSPASS!" == "" (
     echo ERROR: You need to specify a password for /jbosspass
     goto endBatch
   )
+
+  for %%C in (^^^^ ^^^( ^^^) ^^^> ^^^< ^^^& ^^^|) do (
+    if not "!JBOSSPASS:%%C=!"=="!JBOSSPASS!" set IS_SANITIZED=true
+    set "JBOSSPASS=!JBOSSPASS:%%C=^^%%C!"
+  )
+  if not "!IS_SANITIZED!" == "true" (
+    for %%C in (^^ ^( ^) ^> ^< ^& ^|) do (
+      set "JBOSSPASS=!JBOSSPASS:%%C=^^^%%C!"
+    )
+  )
+
   shift
   shift
   goto LoopArgs
@@ -507,7 +518,7 @@ if not "%JBOSSUSER%" == "" (
     echo When specifying a user, you need to specify the password
     goto endBatch
   )
-  set CREDENTIALS=--user=%JBOSSUSER% --password=%JBOSSPASS%
+  set "CREDENTIALS=--user=%JBOSSUSER% --password=!JBOSSPASS!"
 )
 
 set RUNAS=
@@ -532,7 +543,7 @@ if /I "%IS_DOMAIN%" == "true" (
   if "%CONFIG%"=="" set CONFIG=domain.xml
   if "%START_SCRIPT%"=="" set START_SCRIPT=domain.bat
   set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.domain.base.dir=!BASE!#--domain-config=!CONFIG!#--host-config=!HOSTCONFIG!"
-  set STOPPARAM="/c set NOPAUSE=Y && %STOP_SCRIPT% --controller=%CONTROLLER% --connect %CREDENTIALS% --command=/host=!DC_HOST!:shutdown"
+  set STOPPARAM="/c set NOPAUSE=Y && %STOP_SCRIPT% --controller=%CONTROLLER% --connect !CREDENTIALS! --command=/host=!DC_HOST!:shutdown"
 ) else (
   if "%BASE%"=="" set "BASE=%JBOSS_HOME%\standalone"
   if "%CONFIG%"=="" set CONFIG=standalone.xml
@@ -543,7 +554,7 @@ if /I "%IS_DOMAIN%" == "true" (
     set "PROPS=#--properties=%PROPSPATH%"
   )
   set STARTPARAM="/c#set#NOPAUSE=Y#&&#!START_SCRIPT!#-Djboss.server.base.dir=!BASE!#--server-config=!CONFIG!!PROPS!"
-  set STOPPARAM="/c set NOPAUSE=Y && !STOP_SCRIPT! --controller=%CONTROLLER% --connect %CREDENTIALS% --command=:shutdown"
+  set STOPPARAM="/c set NOPAUSE=Y && !STOP_SCRIPT! --controller=%CONTROLLER% --connect !CREDENTIALS! --command=:shutdown"
 )
 
 if "%LOGPATH%"=="" set LOGPATH="!BASE!\log"
@@ -585,8 +596,8 @@ if /I "%ISDEBUG%" == "true" (
 )
 
 @rem quotes around the "%DESCRIPTION%" and "%DISPLAYNAME" but nowhere else
-echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENV_VARS%
-%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=%STOPPARAM% ++Environment=%ENV_VARS%
+echo %PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM! ++Environment=%ENV_VARS%
+%PRUNSRV% install %SHORTNAME% %RUNAS% --DisplayName="%DISPLAYNAME%" --Description="%DESCRIPTION%" --LogLevel=%LOGLEVEL% --LogPath=%LOGPATH% --LogPrefix=service --StdOutput=%STDOUT% --StdError=%STDERR% --StartMode=exe --Startup=%STARTUP_MODE% --StartImage=cmd.exe --StartPath=%START_PATH% ++StartParams=%STARTPARAM% --StopMode=exe --StopImage=cmd.exe --StopPath=%STOP_PATH%  ++StopParams=!STOPPARAM! ++Environment=%ENV_VARS%
 
 @if /I "%ISDEBUG%" == "true" (
   @echo off
