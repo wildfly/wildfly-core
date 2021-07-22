@@ -56,6 +56,7 @@ public class DomainDeploymentTableModel extends StandaloneDeploymentTableModel {
             if (deploymentsQuery.get("outcome").asString().equals("failed")) return;
         } catch (Exception e) {
             e.printStackTrace();
+            return;
         }
 
         for (ModelNode node : deploymentsQuery.get("result").asList()) {
