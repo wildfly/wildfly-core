@@ -228,7 +228,9 @@ public class RealmIdentityManager implements IdentityManager {
                 ROOT_LOGGER.debug("Unexpected authentication failure", e);
                 return null;
             } finally {
-                digest.reset();
+                if(digest != null) {
+                    digest.reset();
+                }
             }
         } else {
             org.wildfly.security.credential.PasswordCredential passwordCredential = (org.wildfly.security.credential.PasswordCredential) (((CredentialCallback)callbacks[2]).getCredential());
