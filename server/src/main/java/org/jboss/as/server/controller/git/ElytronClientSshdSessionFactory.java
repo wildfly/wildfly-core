@@ -161,9 +161,11 @@ class ElytronClientSshdSessionFactory extends SshdSessionFactory {
                            Callback[] callbacks = {callback};
                            CLIENT.getCallbackHandler(config).handle(callbacks);
                            SSHCredential credential = null;
-                           if (callback != null && callback.getCredential() != null) credential = callback.getCredential().castAs(SSHCredential.class);
-                           char[] password = credential.getPassphrase().castAndApply(PasswordCredential.class, c -> c.getPassword().castAndApply(ClearPassword.class, ClearPassword::getPassword));
-                           ((CredentialItem.Password) i).setValue(password);
+                           if (callback != null && callback.getCredential() != null) {
+                               credential = callback.getCredential().castAs(SSHCredential.class);
+                               char[] password = credential.getPassphrase().castAndApply(PasswordCredential.class, c -> c.getPassword().castAndApply(ClearPassword.class, ClearPassword::getPassword));
+                               ((CredentialItem.Password) i).setValue(password);
+                           }
                            continue;
                        }
                    }
