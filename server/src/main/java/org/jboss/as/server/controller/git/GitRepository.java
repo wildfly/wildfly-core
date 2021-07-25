@@ -46,6 +46,7 @@ import org.eclipse.jgit.api.PullResult;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.lib.ConfigConstants;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
@@ -89,8 +90,8 @@ public class GitRepository implements Closeable {
         SshSessionFactory.setInstance(sshdSessionFactory);
         if (gitDir.exists()) {
             try {
-                repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
-            } catch (IOException ex) {
+                repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setInitialBranch(MASTER).setup().build();
+            } catch (IOException | InvalidRefNameException ex) {
                 throw ServerLogger.ROOT_LOGGER.failedToPullRepository(ex, gitConfig.getRepository());
             }
             try (Git git = Git.wrap(repository)) {
@@ -116,7 +117,7 @@ public class GitRepository implements Closeable {
             }
         } else {
             if (isLocalGitRepository(gitConfig.getRepository())) {
-                try (Git git = Git.init().setDirectory(baseDir).call()) {
+                try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(MASTER).call()) {
                     StoredConfig config = git.getRepository().getConfig();
                     config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
@@ -137,7 +138,7 @@ public class GitRepository implements Closeable {
                 Path atticPath = basePath.getParent().resolve("attic");
                 Files.copy(basePath, atticPath, StandardCopyOption.REPLACE_EXISTING);
                 clearExistingFiles(basePath, gitConfig.getRepository());
-                try (Git git = Git.init().setDirectory(baseDir).call()) {
+                try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(MASTER).call()) {
                     String remoteName = UUID.randomUUID().toString();
                     StoredConfig config = git.getRepository().getConfig();
                     config.setString("remote", remoteName, "url", gitConfig.getRepository());
@@ -160,7 +161,11 @@ public class GitRepository implements Closeable {
                     PathUtil.deleteSilentlyRecursively(atticPath);
                 }
             }
-            repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setup().build();
+            try {
+                repository = new FileRepositoryBuilder().setWorkTree(baseDir).setGitDir(gitDir).setInitialBranch(MASTER).setup().build();
+            } catch (InvalidRefNameException ex) {
+                throw ServerLogger.ROOT_LOGGER.failedToInitRepository(ex, gitConfig.getRepository());
+            }
         }
         ServerLogger.ROOT_LOGGER.usingGit();
     }

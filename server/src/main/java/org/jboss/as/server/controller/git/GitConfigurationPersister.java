@@ -15,6 +15,7 @@
  */
 package org.jboss.as.server.controller.git;
 
+import static org.eclipse.jgit.lib.Constants.MASTER;
 import static org.eclipse.jgit.lib.Constants.R_TAGS;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
@@ -78,7 +79,7 @@ public class GitConfigurationPersister extends XmlConfigurationPersister {
                 gitDir.mkdir();
             }
             if (gitRepository.isBare()) {
-                Git.init().setDirectory(baseDir).setGitDir(gitDir).call();
+                Git.init().setDirectory(baseDir).setGitDir(gitDir).setInitialBranch(MASTER).call();
                 ServerLogger.ROOT_LOGGER.gitRespositoryInitialized(baseDir.getAbsolutePath());
             }
         } catch (IllegalStateException | GitAPIException e) {

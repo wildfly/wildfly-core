@@ -51,7 +51,7 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
         createFile(remoteRoot, "standard.xml", "std");
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(baseDir).call()) {
+            try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();

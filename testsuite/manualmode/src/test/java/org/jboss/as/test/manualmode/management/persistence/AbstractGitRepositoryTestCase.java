@@ -27,6 +27,7 @@ import java.util.List;
 import javax.inject.Inject;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.lib.ConfigConstants;
@@ -79,7 +80,7 @@ public class AbstractGitRepositoryTestCase {
         Files.createDirectories(emptyRemoteRoot);
         File gitDir = new File(emptyRemoteRoot.toFile(), Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).call()) {
+            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
@@ -96,7 +97,7 @@ public class AbstractGitRepositoryTestCase {
         FileUtils.delete(emptyRemoteRoot.getParent().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
     }
 
-    protected Repository createRepository() throws IOException {
+    protected Repository createRepository() throws IOException, InvalidRefNameException {
         Repository repo = new FileRepositoryBuilder().setWorkTree(getJbossServerBaseDir().toFile())
                 .setGitDir(getDotGitDir().toFile())
                 .setup().build();
