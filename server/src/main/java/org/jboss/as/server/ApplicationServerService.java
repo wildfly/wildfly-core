@@ -26,13 +26,10 @@ import static org.jboss.as.server.ServerService.EXTERNAL_MODULE_CAPABILITY;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,7 +45,6 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.domain.RemoteFileRepositoryService;
 import org.jboss.as.server.moduleservice.ExternalModuleService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
@@ -180,9 +176,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
 
         //Add server path manager service
         ServerPathManagerService.addService(serviceTarget, new ServerPathManagerService(configuration.getCapabilityRegistry()), serverEnvironment);
-        final AbstractVaultReader vaultReader = loadVaultReaderService();
-        ServerLogger.AS_ROOT_LOGGER.debugf("Using VaultReader %s", vaultReader);
-        ServerService.addService(serviceTarget, configuration, processState, bootstrapListener, runningModeControl, vaultReader, configuration.getAuditLogger(),
+        ServerService.addService(serviceTarget, configuration, processState, bootstrapListener, runningModeControl, configuration.getAuditLogger(),
                 configuration.getAuthorizer(), configuration.getSecurityIdentitySupplier(), suspendController);
         final ServiceActivatorContext serviceActivatorContext = new ServiceActivatorContext() {
             @Override
@@ -247,22 +241,4 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
       return result.toString();
    }
 
-    private static AbstractVaultReader loadVaultReaderService() {
-        final ServiceLoader<AbstractVaultReader> serviceLoader = ServiceLoader.load(AbstractVaultReader.class,
-                ApplicationServerService.class.getClassLoader());
-        final Iterator<AbstractVaultReader> it = serviceLoader.iterator();
-        // TODO WFCORE-114 get rid of catching/suppressing errors once we have a complete impl in WFCORE
-        ServiceConfigurationError sce = null;
-        try {
-            while (it.hasNext()) {
-                return it.next();
-            }
-        } catch (ServiceConfigurationError e) {
-            sce = e;
-        }
-        if (sce != null) {
-            ServerLogger.AS_ROOT_LOGGER.debugf(sce, "Cannot instantiate provider of service %s", AbstractVaultReader.class);
-        }
-        return null;
-    }
 }

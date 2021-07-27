@@ -53,7 +53,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SSL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STATIC_DISCOVERY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
 import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingOneOf;
@@ -200,9 +199,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
         }
 
         boolean hasCoreServices = modelNode.hasDefined(CORE_SERVICE);
-        if (hasCoreServices && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
-            writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
-        }
 
         if (hasCoreServices) {
             ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
@@ -340,10 +336,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
         }
         if (element == Element.PATHS) {
             parsePaths(reader, address, namespace, list, true);
-            element = nextElement(reader, namespace);
-        }
-        if (element == Element.VAULT) {
-            parseVault(reader, address, namespace, list);
             element = nextElement(reader, namespace);
         }
         if (element == Element.MANAGEMENT) {

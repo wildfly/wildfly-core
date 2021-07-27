@@ -77,8 +77,6 @@
         <module name="org.jboss.stdio"/>
         <module name="org.jboss.threads"/>
         <module name="org.jboss.vfs"/>
-        <!-- only used when vault in the CLI configuration, brought by vault-tools -->
-        <module name="org.picketbox" optional="true"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.embedded"/>
     </dependencies>

@@ -69,7 +69,6 @@
         <module>shared</module>
         <module>test-runner</module>
         <module>standalone</module>
-        <module>vault-test-feature-pack</module>
         <module>elytron</module>
         <module>embedded</module>
         <module>scripts</module>
@@ -166,18 +165,6 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-testsuite-shared</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
-                <version>${project.version}</version>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
-                <version>${project.version}</version>
-                <type>zip</type>
             </dependency>
         </dependencies>
     </dependencyManagement>

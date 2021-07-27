@@ -129,7 +129,6 @@ import org.jboss.as.server.mgmt.domain.HostControllerConnectionService;
 import org.jboss.as.server.moduleservice.ExtensionIndexService;
 import org.jboss.as.server.moduleservice.ExternalModule;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
@@ -173,7 +172,6 @@ public final class ServerService extends AbstractControllerService {
     private final ControlledProcessState processState;
     private final RunningModeControl runningModeControl;
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
-    private final AbstractVaultReader vaultReader;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
     private final SuspendController suspendController;
     public static final String SERVER_NAME = "server";
@@ -198,16 +196,15 @@ public final class ServerService extends AbstractControllerService {
                           final Supplier<ControllerInstabilityListener> instabilityListener,
                           final Bootstrap.Configuration configuration, final ControlledProcessState processState,
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
-                          final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
+                          final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry,
                           final SuspendController suspendController) {
         super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
-                rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(vaultReader), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.configuration = configuration;
         this.bootstrapListener = bootstrapListener;
         this.processState = processState;
         this.runningModeControl = runningModeControl;
-        this.vaultReader = vaultReader;
         this.rootResourceDefinition = rootResourceDefinition;
         this.suspendController = suspendController;
     }
@@ -225,7 +222,7 @@ public final class ServerService extends AbstractControllerService {
      */
     public static void addService(final ServiceTarget serviceTarget, final Bootstrap.Configuration configuration,
                                   final ControlledProcessState processState, final BootstrapListener bootstrapListener,
-                                  final RunningModeControl runningModeControl, final AbstractVaultReader vaultReader, final ManagedAuditLogger auditLogger,
+                                  final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                                   final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                   final SuspendController suspendController) {
 
@@ -260,7 +257,7 @@ public final class ServerService extends AbstractControllerService {
         final boolean isDomainEnv = configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN;
         final Supplier<ControllerInstabilityListener> cilSupplier = isDomainEnv ? serviceBuilder.requires(HostControllerConnectionService.SERVICE_NAME) : null;
         ServerService service = new ServerService(esSupplier, cilSupplier, configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
-                runningModeControl, vaultReader, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
+                runningModeControl, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
         serviceBuilder.setInstance(service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
@@ -284,7 +281,7 @@ public final class ServerService extends AbstractControllerService {
         rootResourceDefinition.setDelegate(
                 new ServerRootResourceDefinition(injectedContentRepository.getValue(),
                         extensibleConfigurationPersister, configuration.getServerEnvironment(), processState,
-                        runningModeControl, vaultReader, configuration.getExtensionRegistry(),
+                        runningModeControl, configuration.getExtensionRegistry(),
                         getExecutorService() != null,
                         (PathManagerService)injectedPathManagerService.getValue(),
                         new DomainServerCommunicationServices.OperationIDUpdater() {

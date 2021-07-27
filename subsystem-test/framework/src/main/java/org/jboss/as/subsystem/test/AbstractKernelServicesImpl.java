@@ -99,7 +99,7 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                                                            StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
                                                            boolean registerTransformers){
                 return TestModelControllerService.create(mainExtension, controllerInitializer, additionalInit, extensionRegistry,
-                        persister, validateOpsFilter, registerTransformers, new RuntimeExpressionResolver(null), capabilityRegistry);
+                        persister, validateOpsFilter, registerTransformers, new RuntimeExpressionResolver(), capabilityRegistry);
             }
         };
         if (legacyModelVersion != null) {

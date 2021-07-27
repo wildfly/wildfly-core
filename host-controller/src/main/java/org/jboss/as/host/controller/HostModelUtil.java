@@ -49,7 +49,6 @@ import org.jboss.as.host.controller.operations.RemoteDomainControllerAddHandler;
 import org.jboss.as.host.controller.operations.RemoteDomainControllerRemoveHandler;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.HostFileRepository;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import org.jboss.as.controller.operations.global.ReadFeatureDescriptionHandler;
@@ -117,7 +116,6 @@ public class HostModelUtil {
                                           final DomainController domainController,
                                           final ExtensionRegistry hostExtensionRegistry,
                                           final ExtensionRegistry extensionRegistry,
-                                          final AbstractVaultReader vaultReader,
                                           final IgnoredDomainResourceRegistry ignoredRegistry,
                                           final ControlledProcessState processState,
                                           final PathManagerService pathManager,
@@ -131,7 +129,7 @@ public class HostModelUtil {
                         environment, runningModeControl, localFileRepository,
                         hostControllerInfo, serverInventory, remoteFileRepository,
                         contentRepository, domainController, hostExtensionRegistry,
-                        vaultReader, ignoredRegistry, processState, pathManager, authorizer, securityIdentitySupplier, auditLogger, bootErrorCollector));
+                        ignoredRegistry, processState, pathManager, authorizer, securityIdentitySupplier, auditLogger, bootErrorCollector));
 
         final DomainControllerWriteAttributeHandler dcWAH =
                 DomainControllerWriteAttributeHandler.getInstance(root, hostControllerInfo, configurationPersister,

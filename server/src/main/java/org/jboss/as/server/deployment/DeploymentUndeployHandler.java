@@ -26,7 +26,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 /**
  * Handles undeployment from the runtime.
@@ -37,12 +36,6 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = UNDEPLOY;
 
-    private final AbstractVaultReader vaultReader;
-
-    public DeploymentUndeployHandler(final AbstractVaultReader vaultReader) {
-        this.vaultReader = vaultReader;
-    }
-
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
         ModelNode model = context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel();
@@ -52,7 +45,7 @@ public class DeploymentUndeployHandler implements OperationStepHandler {
 
             final String managementName = context.getCurrentAddressValue();
 
-            DeploymentHandlerUtil.undeploy(context, operation, managementName, runtimeName, vaultReader);
+            DeploymentHandlerUtil.undeploy(context, operation, managementName, runtimeName);
         }
         DeploymentUtils.disableAttribute(model);
     }

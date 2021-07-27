@@ -23,32 +23,19 @@
 package org.jboss.as.server.parsing;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_OPTIONS;
-import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNamespace;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
-import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.logging.ServerLogger.CONFIG_LOGGER;
 
-import java.util.EnumSet;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
-import org.jboss.as.server.controller.resources.VaultResourceDefinition;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parsing and marshalling logic specific to vault definitions.
@@ -84,169 +71,37 @@ class VaultXml {
     }
 
     private void parseVault_1_1(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
-        final int vaultAttribCount = reader.getAttributeCount();
-
-        ModelNode vault = new ModelNode();
-        String code = null;
-
-        for (int i = 0; i < vaultAttribCount; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            switch (attribute) {
-                case CODE: {
-                    VaultResourceDefinition.CODE.parseAndSetParameter(value, vault, reader);
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-
-        ModelNode vaultAddress = address.clone();
-        vaultAddress.add(CORE_SERVICE, VAULT);
-        if (code != null) {
-            vault.get(Attribute.CODE.getLocalName()).set(code);
-        }
-        vault.get(OP_ADDR).set(vaultAddress);
-        vault.get(OP).set(ADD);
-
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case VAULT_OPTION: {
-                    parseModuleOption(reader, vault.get(VAULT_OPTIONS));
+                    requireNoContent(reader);
                     break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
                 }
             }
         }
-        list.add(vault);
+        CONFIG_LOGGER.vaultSupportRemoved();
     }
 
     private void parseVault_1_6_and_3_0(final XMLExtendedStreamReader reader, final ModelNode address, final Namespace expectedNs, final List<ModelNode> list) throws XMLStreamException {
-        final int vaultAttribCount = reader.getAttributeCount();
-
-        ModelNode vault = new ModelNode();
-        String code = null;
-
-        for (int i = 0; i < vaultAttribCount; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            switch (attribute) {
-                case CODE: {
-                    VaultResourceDefinition.CODE.parseAndSetParameter(value, vault, reader);
-                    break;
-                }
-                case MODULE: {
-                    VaultResourceDefinition.MODULE.parseAndSetParameter(value, vault, reader);
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-
-        ModelNode vaultAddress = address.clone();
-        vaultAddress.add(CORE_SERVICE, VAULT);
-        if (code != null) {
-            vault.get(Attribute.CODE.getLocalName()).set(code);
-        }
-        vault.get(OP_ADDR).set(vaultAddress);
-        vault.get(OP).set(ADD);
-
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
             requireNamespace(reader, expectedNs);
             final Element element = Element.forName(reader.getLocalName());
             switch (element) {
                 case VAULT_OPTION: {
-                    parseModuleOption(reader, vault.get(VAULT_OPTIONS));
+                    requireNoContent(reader);
                     break;
+                }
+                default: {
+                    throw unexpectedElement(reader);
                 }
             }
         }
-        list.add(vault);
-    }
-
-    private void parseVaultOption(XMLExtendedStreamReader reader, ModelNode vaultOptions) throws XMLStreamException {
-        String name = null;
-        String val = null;
-        EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case NAME: {
-                    name = value;
-                    break;
-                }
-                case VALUE: {
-                    val = value;
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-
-        if (required.size() > 0) {
-            throw missingRequired(reader, required);
-        }
-
-        vaultOptions.get(name).set(val);
-        requireNoContent(reader);
-    }
-
-    private void parseModuleOption(XMLExtendedStreamReader reader, ModelNode moduleOptions) throws XMLStreamException {
-        String name = null;
-        String val = null;
-        EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            requireNoNamespaceAttribute(reader, i);
-            final String value = reader.getAttributeValue(i);
-            final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case NAME: {
-                    name = value;
-                    break;
-                }
-                case VALUE: {
-                    val = value;
-                    break;
-                }
-                default:
-                    throw unexpectedAttribute(reader, i);
-            }
-        }
-
-        if (required.size() > 0) {
-            throw missingRequired(reader, required);
-        }
-
-        moduleOptions.add(name, val);
-        requireNoContent(reader);
-    }
-
-    void writeVault(XMLExtendedStreamWriter writer, ModelNode vault) throws XMLStreamException {
-        writer.writeStartElement(Element.VAULT.getLocalName());
-        VaultResourceDefinition.CODE.marshallAsAttribute(vault, writer);
-        VaultResourceDefinition.MODULE.marshallAsAttribute(vault, writer);
-
-        if (vault.hasDefined(VAULT_OPTIONS)) {
-            ModelNode properties = vault.get(VAULT_OPTIONS);
-            for (Property prop : properties.asPropertyList()) {
-                writer.writeEmptyElement(Element.VAULT_OPTION.getLocalName());
-                writer.writeAttribute(Attribute.NAME.getLocalName(), prop.getName());
-                writer.writeAttribute(Attribute.VALUE.getLocalName(), prop.getValue().asString());
-            }
-        }
-        writer.writeEndElement();
+        CONFIG_LOGGER.vaultSupportRemoved();
     }
 
 }

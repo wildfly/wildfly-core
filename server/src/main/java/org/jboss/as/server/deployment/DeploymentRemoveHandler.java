@@ -40,7 +40,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 
@@ -54,11 +53,9 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
     public static final String OPERATION_NAME = REMOVE;
 
     private final ContentRepository contentRepository;
-    private final AbstractVaultReader vaultReader;
 
-    public DeploymentRemoveHandler(ContentRepository contentRepository, final AbstractVaultReader vaultReader) {
+    public DeploymentRemoveHandler(ContentRepository contentRepository) {
         this.contentRepository = contentRepository;
-        this.vaultReader = vaultReader;
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -92,7 +89,7 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
                             if (resultAction == OperationContext.ResultAction.ROLLBACK) {
                                 if (enabled) {
                                     recoverServices(context, deployment, managementName, runtimeName, contentNode,
-                                            registration, mutableRegistration, vaultReader);
+                                            registration, mutableRegistration);
                                 }
 
                                 if (enabled && context.hasFailureDescription()) {
@@ -130,9 +127,9 @@ public class DeploymentRemoveHandler implements OperationStepHandler {
 
     private void recoverServices(OperationContext context, Resource deployment, String managementName, String runtimeName,
                                    ModelNode contentNode, ImmutableManagementResourceRegistration registration,
-                                   ManagementResourceRegistration mutableRegistration, final AbstractVaultReader vaultReader) {
+                                   ManagementResourceRegistration mutableRegistration) {
         final DeploymentHandlerUtil.ContentItem[] contents = getContents(contentNode);
-        DeploymentHandlerUtil.doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, vaultReader, contents);
+        DeploymentHandlerUtil.doDeploy(context, runtimeName, managementName, deployment, registration, mutableRegistration, contents);
     }
 
     private void removeContent(OperationContext context, List<byte[]> removedHashes, String name) {

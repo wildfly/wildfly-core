@@ -97,7 +97,6 @@ import org.jboss.as.host.controller.util.AbstractControllerTestBase;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.HostFileRepository;
 import org.jboss.as.server.operations.ServerProcessStateHandler;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -730,14 +729,13 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             final HostRunningModeControl runningModeControl = new HostRunningModeControl(RunningMode.NORMAL, RestartMode.SERVERS);
             final ServerInventory serverInventory = null;
             final HostFileRepository remoteFileRepository = repository;
-            final AbstractVaultReader vaultReader = null;
             final ControlledProcessState processState = null;
             final ManagedAuditLogger auditLogger = null;
             final BootErrorCollector bootErrorCollector = null;
             //Save this for later since setDelegate() gets called before initModel....
             hostResourceDefinition = new HostResourceDefinition(hostName, hostControllerConfigurationPersister,
                     hostControllerEnvironment, runningModeControl, repository, hostControllerInfo, serverInventory, remoteFileRepository,
-                    repository, domainController, extensionRegistry, vaultReader, ignoredDomainResourceRegistry, processState,
+                    repository, domainController, extensionRegistry, ignoredDomainResourceRegistry, processState,
                     pathManager, authorizer, securityIdentitySupplier, auditLogger, bootErrorCollector);
         }
 

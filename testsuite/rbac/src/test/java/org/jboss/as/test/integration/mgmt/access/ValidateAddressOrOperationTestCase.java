@@ -44,19 +44,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALIDATE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ALLOW_RESOURCE_SERVICE_RESTART;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT_OPTIONS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -69,106 +62,25 @@ import java.util.Set;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.common.ValidateAddressOperationHandler;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;
-import org.jboss.as.test.integration.mgmt.access.extension.ExtensionSetup;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.wildfly.test.security.VaultHandler;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
  */
 @RunWith(WildflyTestRunner.class)
-@ServerSetup({BasicExtensionSetupTask.class, ValidateAddressOrOperationTestCase.VaultSetupTask.class, StandardUsersSetupTask.class})
+@ServerSetup({BasicExtensionSetupTask.class, StandardUsersSetupTask.class})
 public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
     private static String[] LEGAL_ADDRESS_RESP_FIELDS;
     private static String[] LEGAL_OPERATION_RESPONSE_FIELDS;
-
-    static class VaultSetupTask implements ServerSetupTask {
-
-        private VaultHandler vaultHandler;
-        private static final String RESOURCE_LOCATION = ValidateAddressOrOperationTestCase.class.getProtectionDomain().getCodeSource().getLocation().getFile()
-                + "vault-validate/";
-        private static String DATA_SOURCE = "MaskedDS";
-
-        @Override
-        public void setup(ManagementClient managementClient) throws Exception {
-            ExtensionSetup.addResources(managementClient);
-            VaultHandler.cleanFilesystem(RESOURCE_LOCATION, true);
-            ModelNode op;
-            // create new vault
-            vaultHandler = new VaultHandler(RESOURCE_LOCATION);
-
-            // create security attributes
-            String vaultBlock = "ds_ExampleDS";
-            String attributeName = "password";
-            String vaultPasswordString = vaultHandler.addSecuredAttribute(vaultBlock, attributeName,
-                    "sa".toCharArray());
-
-            String vaultPassword = "${" + vaultPasswordString + "}";
-
-            // create new vault setting in standalone
-            op = new ModelNode();
-            op.get(OP).set(ADD);
-            op.get(OP_ADDR).add(CORE_SERVICE, VAULT);
-            ModelNode vaultOption = op.get(VAULT_OPTIONS);
-            vaultOption.get("KEYSTORE_URL").set(vaultHandler.getKeyStore());
-            vaultOption.get("KEYSTORE_PASSWORD").set(vaultHandler.getMaskedKeyStorePassword());
-            vaultOption.get("KEYSTORE_ALIAS").set(vaultHandler.getAlias());
-            vaultOption.get("SALT").set(vaultHandler.getSalt());
-            vaultOption.get("ITERATION_COUNT").set(vaultHandler.getIterationCountAsString());
-            vaultOption.get("ENC_FILE_DIR").set(vaultHandler.getEncodedVaultFileDirectory());
-            vaultOption.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-            managementClient.getControllerClient().execute(new OperationBuilder(op).build());
-
-            // create new datasource with right password
-            ModelNode address = new ModelNode();
-            address.add(SUBSYSTEM, "rbac");
-            address.add("rbac-constrained", DATA_SOURCE);
-            address.protect();
-            op = new ModelNode();
-            op.get(OP).set(ADD);
-            op.get(OP_ADDR).set(address);
-            op.get("jndi-name").set("java:jboss/datasources/" + DATA_SOURCE);
-            op.get("user-name").set("sa");
-            op.get("password").set(vaultPassword);
-            op.get(OPERATION_HEADERS).get(ALLOW_RESOURCE_SERVICE_RESTART).set(true);
-            managementClient.getControllerClient().execute(new OperationBuilder(op).build());
-        }
-
-        @Override
-        public void tearDown(ManagementClient managementClient) throws Exception {
-            ModelNode op;
-            // remove created datasources
-            op = new ModelNode();
-            op.get(OP).set(REMOVE);
-            op.get(OP_ADDR).add(SUBSYSTEM, "rbac");
-            op.get(OP_ADDR).add("rbac-constrained", DATA_SOURCE);
-            managementClient.getControllerClient().execute(new OperationBuilder(op).build());
-
-            // remove created vault
-            op = new ModelNode();
-            op.get(OP).set(REMOVE);
-            op.get(OP_ADDR).add(CORE_SERVICE, VAULT);
-            managementClient.getControllerClient().execute(new OperationBuilder(op).build());
-
-            // remove temporary files
-            vaultHandler.cleanUp();
-            ExtensionSetup.removeResources(managementClient);
-
-        }
-
-    }
 
     @Before
     public void setupLegalFields() throws Exception {
@@ -251,12 +163,6 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
         validateAddress(client, address, securityRealmExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "default");
-        validateAddress(client, address, datasourceWithPlainPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", VaultSetupTask.DATA_SOURCE);
-        validateAddress(client, address, datasourceWithMaskedPasswordExpectation);
     }
 
     private void testValidateOperation(String userName, boolean mgmtAuthorizationExpectation, boolean auditLogExpectation,
@@ -296,24 +202,6 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
         validateOperation(client, writeAttribute(address, MAP_GROUPS_TO_ROLES, ModelNode.TRUE), securityRealmExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "default");
-        validateOperation(client, readResource(address), datasourceWithPlainPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "default");
-        validateOperation(client, readAttribute(address, "password"), datasourceWithPlainPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "default");
-        validateOperation(client, writeAttribute(address, "password", new ModelNode("new-password")), datasourceWithPlainPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "MaskedDS");
-        validateOperation(client, readResource(address), datasourceWithMaskedPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "MaskedDS");
-        validateOperation(client, readAttribute(address, "password"), datasourceWithMaskedPasswordExpectation);
-
-        address.setEmptyList().add(SUBSYSTEM, "rbac").add("rbac-constrained", "MaskedDS");
-        validateOperation(client, writeAttribute(address, "password", new ModelNode("new-password")), datasourceWithMaskedPasswordExpectation);
     }
 
     // test utils

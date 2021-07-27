@@ -31,7 +31,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
@@ -58,18 +57,16 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final ManagementResourceRegistration mutableRegistration;
     final Resource resource;
     final CapabilityServiceSupport capabilityServiceSupport;
-    final AbstractVaultReader vaultReader;
     private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
 
     private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
-    AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport, final AbstractVaultReader vaultReader) {
+    AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport) {
         this.mutableRegistration = mutableRegistration;
         this.capabilityServiceSupport = capabilityServiceSupport;
         this.registration = registration;
-        this.vaultReader = vaultReader;
         this.resource = resource;
     }
 

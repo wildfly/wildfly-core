@@ -66,11 +66,6 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-jmx</artifactId>
         </dependency>
         <dependency>
@@ -229,7 +224,7 @@
                                 <feature-packs>
                                     <feature-pack>
                                         <groupId>org.wildfly.core</groupId>
-                                        <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                        <artifactId>wildfly-core-galleon-pack</artifactId>
                                         <version>${project.version}</version>
                                         <inherit-configs>false</inherit-configs>
                                         <included-configs>
@@ -346,7 +341,7 @@
                                      <feature-packs>
                                          <feature-pack>
                                              <groupId>org.wildfly.core</groupId>
-                                             <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                             <artifactId>wildfly-core-galleon-pack</artifactId>
                                              <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
                                              <version>${project.version}</version>
                                              <inherit-configs>false</inherit-configs>
@@ -354,7 +349,6 @@
                                              <!-- Specifically include patching -->
                                              <included-packages>
                                                  <name>org.jboss.as.patching.cli</name>
-                                                 <name>org.picketbox</name>
                                              </included-packages>
                                              <excluded-packages>
                                                  <name>product.conf</name>
@@ -456,13 +450,12 @@
                             <feature-packs>
                                 <feature-pack>
                                     <groupId>org.wildfly.core</groupId>
-                                    <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
+                                    <artifactId>wildfly-core-galleon-pack</artifactId>
                                     <!--<artifactId>wildfly-core-galleon-pack</artifactId>-->
                                     <version>${project.version}</version>
                                     <!-- Specifically include patching -->
                                     <included-packages>
                                         <name>org.jboss.as.patching.cli</name>
-                                        <name>org.picketbox</name>
                                     </included-packages>
                                     <excluded-packages>
                                         <name>product.conf</name>

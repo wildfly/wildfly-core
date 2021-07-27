@@ -93,11 +93,6 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-jmx</artifactId>
         </dependency>
         <dependency>
@@ -217,7 +212,7 @@
                         <phase>process-test-resources</phase>
                         <configuration>
                             <target>
-                                <copy file="${project.build.testOutputDirectory}/wildfly/standalone/configuration/mgmt-users.properties" todir="${project.build.directory}/wildfly-core/standalone/configuration" overwrite="true" />
+                                <copy file="${project.basedir}/src/test/resources/wildfly/standalone/configuration/mgmt-users.properties" todir="${project.build.directory}/wildfly-core/standalone/configuration" overwrite="true" />
                             </target>
                         </configuration>
                         <goals>

@@ -65,11 +65,6 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-testsuite-shared</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-vault-test-galleon-pack</artifactId>
-            <type>pom</type>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.directory.server</groupId>

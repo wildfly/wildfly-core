@@ -80,8 +80,6 @@ public class SystemPropertiesParsingTest {
             final String xml = "<?xml version='1.0' encoding='UTF-8'?>"
                     + "<server name=\"example\" xmlns=\"urn:jboss:domain:8.0\">"
                     + "    <system-properties>\n"
-                    + "        <property name=\"org.jboss.as.server.parsing.secret\" value=\"${VAULT::vb::password::1}\"/>\n"
-                    + "        <property name=\"org.jboss.as.server.parsing.secret-nested\" value=\"${VAULT::vb::${not-found:password}::1}\"/>\n"
                     + "        <property name=\"org.jboss.as.server.parsing.test\" value=\"other-value\"/>\n"
                     + "    </system-properties>\n"
                     + "</server>";

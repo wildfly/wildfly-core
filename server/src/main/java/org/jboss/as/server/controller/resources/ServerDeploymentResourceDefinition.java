@@ -37,7 +37,6 @@ import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.server.deployment.ManagedDeploymentBrowseContentHandler;
 import org.jboss.as.server.deployment.ManagedDeploymentReadContentHandler;
 import org.jboss.as.server.deployment.ExplodedDeploymentRemoveContentHandler;
-import org.jboss.as.server.services.security.AbstractVaultReader;
 
 /**
  *
@@ -46,30 +45,28 @@ import org.jboss.as.server.services.security.AbstractVaultReader;
 public class ServerDeploymentResourceDefinition extends DeploymentResourceDefinition {
 
     private final ContentRepository contentRepository;
-    private final AbstractVaultReader vaultReader;
     private final ServerEnvironment serverEnvironment;
 
-    private ServerDeploymentResourceDefinition(ContentRepository contentRepository, AbstractVaultReader vaultReader,
+    private ServerDeploymentResourceDefinition(ContentRepository contentRepository,
                                                ServerEnvironment serverEnvironment, OperationStepHandler addHandler,
                                                OperationStepHandler removeHandler) {
         super(DeploymentResourceParent.SERVER, addHandler, removeHandler);
-        this.vaultReader = vaultReader;
         this.contentRepository = contentRepository;
         this.serverEnvironment = serverEnvironment;
     }
 
-    public static ServerDeploymentResourceDefinition create(ContentRepository contentRepository, AbstractVaultReader vaultReader, ServerEnvironment serverEnvironment) {
-        return new ServerDeploymentResourceDefinition(contentRepository, vaultReader, serverEnvironment,
-                DeploymentAddHandler.create(contentRepository, vaultReader),
-                new DeploymentRemoveHandler(contentRepository, vaultReader));
+    public static ServerDeploymentResourceDefinition create(ContentRepository contentRepository, ServerEnvironment serverEnvironment) {
+        return new ServerDeploymentResourceDefinition(contentRepository, serverEnvironment,
+                DeploymentAddHandler.create(contentRepository),
+                new DeploymentRemoveHandler(contentRepository));
     }
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOY_DEFINITION, new DeploymentDeployHandler(vaultReader));
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.UNDEPLOY_DEFINITION, new DeploymentUndeployHandler(vaultReader));
-        resourceRegistration.registerOperationHandler(DeploymentAttributes.REDEPLOY_DEFINITION, new DeploymentRedeployHandler(vaultReader));
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOY_DEFINITION, new DeploymentDeployHandler());
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.UNDEPLOY_DEFINITION, new DeploymentUndeployHandler());
+        resourceRegistration.registerOperationHandler(DeploymentAttributes.REDEPLOY_DEFINITION, new DeploymentRedeployHandler());
         resourceRegistration.registerOperationHandler(DeploymentAttributes.EXPLODE_DEFINITION, new DeploymentExplodeHandler(contentRepository));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_ADD_CONTENT_DEFINITION, new ExplodedDeploymentAddContentHandler(contentRepository, serverEnvironment));
         resourceRegistration.registerOperationHandler(DeploymentAttributes.DEPLOYMENT_REMOVE_CONTENT_DEFINITION, new ExplodedDeploymentRemoveContentHandler(contentRepository, serverEnvironment));

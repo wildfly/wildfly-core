@@ -41,7 +41,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAULT;
 import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
@@ -227,10 +226,6 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
             element = nextElement(reader, namespace);
         }
 
-        if (element == Element.VAULT) {
-            parseVault(reader, address, namespace, list);
-            element = nextElement(reader, namespace);
-        }
         if (element == Element.MANAGEMENT) {
             ManagementXml managementXml = ManagementXml.newInstance(namespace, this, false);
             managementXml.parseManagement(reader, address, list, false);
@@ -746,10 +741,6 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
 
         if (modelNode.hasDefined(PATH)) {
             writePaths(writer, modelNode.get(PATH), false);
-        }
-
-        if (modelNode.hasDefined(CORE_SERVICE) && modelNode.get(CORE_SERVICE).hasDefined(VAULT)) {
-            writeVault(writer, modelNode.get(CORE_SERVICE, VAULT));
         }
 
         if (modelNode.hasDefined(CORE_SERVICE)) {
