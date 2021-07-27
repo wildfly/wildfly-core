@@ -946,13 +946,13 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
             if (replacedHandlers != null && replacedHandlers.size() > 0){
                 for (AuditLogHandler handler : replacedHandlers.values()) {
                     AuditLogHandler existing = config.removeConfiguredHandler(handler.getName());
-                    if (existing != null){
+                    if (existing != null) {
                         existing.stop();
-                    }
-                    //Update the references for the replaced one
-                    for (PathAddress referenceAddress : existing.getReferences()){
-                        if (removedReferences != null && !removedReferences.contains(referenceAddress)){
-                            handler.addReference(referenceAddress);
+                        // Update the references for the replaced one
+                        for (PathAddress referenceAddress : existing.getReferences()) {
+                            if (removedReferences != null && !removedReferences.contains(referenceAddress)) {
+                                handler.addReference(referenceAddress);
+                            }
                         }
                     }
                     config.putConfiguredHandler(handler);

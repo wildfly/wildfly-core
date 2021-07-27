@@ -545,7 +545,7 @@ public abstract class PathManagerService implements PathManager, Service<PathMan
                         if (callbackSet != null) {
                             callbackSet.remove(callback);
                         }
-                        if (callbackSet.isEmpty()) {
+                        if (callbackSet != null && callbackSet.isEmpty()) {
                             callbacksByEvent.remove(event);
                         }
                     }
