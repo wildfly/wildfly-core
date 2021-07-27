@@ -159,29 +159,30 @@ public class ArchiveHandler extends BatchModeCommandHandler {
         File tempDir = new File(systemTmpDir,"cli-" + Long.toHexString(rng.nextLong()));
         tempDir.mkdir();
 
-        JarFile jarFile = new JarFile(archive);
-        for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
-            JarEntry entry = entries.nextElement();
-            File file = new File(tempDir, entry.getName());
-            if (entry.isDirectory()) {
-                file.mkdir();
-                continue;
-            }
-            InputStream is = null;
-            FileOutputStream fos = null;
-            try {
-                int bufferSize = 65536;
-                byte[] buf = new byte[bufferSize];
-                int rc;
-                is = jarFile.getInputStream(entry);
-                fos = new FileOutputStream(file);
-                while ((rc = is.read(buf)) > -1) {
-                    fos.write(buf,0,rc);
+        try (JarFile jarFile = new JarFile(archive)) {
+            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
+                JarEntry entry = entries.nextElement();
+                File file = new File(tempDir, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdir();
+                    continue;
                 }
-                fos.flush();
-            } finally {
-                StreamUtils.safeClose(is);
-                StreamUtils.safeClose(fos);
+                InputStream is = null;
+                FileOutputStream fos = null;
+                try {
+                    int bufferSize = 65536;
+                    byte[] buf = new byte[bufferSize];
+                    int rc;
+                    is = jarFile.getInputStream(entry);
+                    fos = new FileOutputStream(file);
+                    while ((rc = is.read(buf)) > -1) {
+                        fos.write(buf, 0, rc);
+                    }
+                    fos.flush();
+                } finally {
+                    StreamUtils.safeClose(is);
+                    StreamUtils.safeClose(fos);
+                }
             }
         }
         return tempDir;

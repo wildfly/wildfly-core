@@ -108,32 +108,33 @@ public class SimpleTable {
     }
 
     public StringBuilder append(StringBuilder buf, boolean order) {
-        Formatter formatter = new Formatter(buf);
-        final StringBuilder formatBuf = new StringBuilder();
-        for(int length : columnLengths) {
-            formatBuf.append("%-").append(length).append('s');
-        }
-        final String format = formatBuf.toString();
-        if(header != null) {
-            formatter.format(format, header);
-            buf.append('\n');
-        }
+        try (Formatter formatter = new Formatter(buf)) {
+            final StringBuilder formatBuf = new StringBuilder();
+            for(int length : columnLengths) {
+                formatBuf.append("%-").append(length).append('s');
+            }
+            final String format = formatBuf.toString();
+            if(header != null) {
+                formatter.format(format, header);
+                buf.append('\n');
+            }
 
-        if(order) {
-            Collections.sort(lines, new Comparator<String[]>(){
-                @Override
-                public int compare(String[] o1, String[] o2) {
-                    return o1[0].compareTo(o2[0]);
-                }});
-        }
+            if(order) {
+                Collections.sort(lines, new Comparator<String[]>(){
+                    @Override
+                    public int compare(String[] o1, String[] o2) {
+                        return o1[0].compareTo(o2[0]);
+                    }});
+            }
 
-        int i = 0;
-        if(i < lines.size()) {
-            formatter.format(format, (Object[])lines.get(i));
-        }
-        while(++i < lines.size()) {
-            buf.append('\n');
-            formatter.format(format, (Object[])lines.get(i));
+            int i = 0;
+            if(i < lines.size()) {
+                formatter.format(format, (Object[])lines.get(i));
+            }
+            while(++i < lines.size()) {
+                buf.append('\n');
+                formatter.format(format, (Object[])lines.get(i));
+            }
         }
         return buf;
     }
