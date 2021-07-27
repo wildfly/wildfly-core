@@ -518,7 +518,7 @@ if not "%JBOSSUSER%" == "" (
     echo When specifying a user, you need to specify the password
     goto endBatch
   )
-  set "CREDENTIALS=--user=%JBOSSUSER% --password=!JBOSSPASS!"
+  set "CREDENTIALS=--user=%JBOSSUSER% --password='!JBOSSPASS!'"
 )
 
 set RUNAS=
