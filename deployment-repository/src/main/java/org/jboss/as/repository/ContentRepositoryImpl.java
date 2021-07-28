@@ -20,8 +20,6 @@
  */
 package org.jboss.as.repository;
 
-import static org.jboss.as.repository.ContentRepository.DELETED_CONTENT;
-import static org.jboss.as.repository.ContentRepository.MARKED_CONTENT;
 import static org.jboss.as.repository.PathUtil.copyRecursively;
 import static org.jboss.as.repository.PathUtil.createTempDirectory;
 import static org.jboss.as.repository.PathUtil.deleteRecursively;
@@ -292,6 +290,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         } else {
             contentPath = getDeploymentContentFile(reference.getHash(), false);
         }
+        Path parent = contentPath.getParent();
         try {
             if (HashUtil.isEachHexHashInTable(reference.getHexHash()) && this.readWrite) { //Otherwise this is not a deployment content
                 if(!lock(reference.getHash())) {
@@ -299,7 +298,7 @@ public class ContentRepositoryImpl implements ContentRepository {
                     return;
                 }
             }
-            deleteRecursively(contentPath);
+            deleteRecursively(parent);
         } catch (IOException ex) {
             DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, contentPath.toString());
         } catch (InterruptedException ex) {
@@ -310,17 +309,11 @@ public class ContentRepositoryImpl implements ContentRepository {
                 unlock(reference.getHash());
             }
         }
-        Path parent = contentPath.getParent();
-        try {
-            Files.deleteIfExists(parent);
-        } catch (IOException ex) {
-            DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, parent.toString());
-        }
         Path grandParent = parent.getParent();
         if(Files.exists(grandParent)) {
             try (Stream<Path> files = Files.list(grandParent)) {
-                if (!files.findAny().isPresent()) {
-                    Files.deleteIfExists(grandParent);
+                if (!files.anyMatch(Files::isDirectory)) {
+                    deleteRecursively(grandParent);
                 }
             } catch (IOException ex) {
                 DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, grandParent.toString());

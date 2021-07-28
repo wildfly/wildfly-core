@@ -586,7 +586,7 @@ public class ContentRepositoryTest {
     }
 
     /**
-     * Test that an dir not empty with no content will not be removed during cleaning.
+     * Test that an dir not empty with no content will be removed during cleaning.
      */
     @Test
     public void testNotEmptyDir() throws Exception {
@@ -606,7 +606,7 @@ public class ContentRepositoryTest {
             Thread.sleep(10);
             result = repository.cleanObsoleteContent();
             assertThat(Files.exists(content), is(false));
-            assertThat(Files.exists(overlay), is(true));
+            assertThat(Files.exists(overlay), is(false));
             assertThat(result.get(ContentRepository.MARKED_CONTENT).size(), is(0));
             assertThat(result.get(ContentRepository.DELETED_CONTENT).size(), is(1));
             assertThat(result.get(ContentRepository.DELETED_CONTENT).contains(parentDir.toFile().getAbsolutePath()), is(true));
