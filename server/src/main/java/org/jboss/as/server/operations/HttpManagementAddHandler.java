@@ -51,7 +51,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.http.server.ConsoleAvailability;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.RemotingHttpUpgradeService;
@@ -138,9 +137,8 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         NativeManagementServices.installManagementWorkerService(serviceTarget, context.getServiceRegistry(false));
 
         final String httpAuthenticationFactory = commonPolicy.getHttpAuthenticationFactory();
-        final String securityRealm = commonPolicy.getSecurityRealm();
         final String sslContext = commonPolicy.getSSLContext();
-        if (httpAuthenticationFactory == null && securityRealm == null) {
+        if (httpAuthenticationFactory == null) {
             ServerLogger.ROOT_LOGGER.httpManagementInterfaceIsUnsecured();
         }
 
@@ -158,10 +156,9 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
         final Supplier<Executor> eSupplier = builder.requires(ExternalManagementRequestExecutor.SERVICE_NAME);
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
-        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? SecurityRealm.ServiceUtil.requires(builder, securityRealm) : null;
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService undertowService = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, sbSupplier, ssbSupplier, sbmSupplier,
-                null, null, cpsnSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, srSupplier, scSupplier, null, null, commonPolicy.getAllowedOrigins(), consoleMode,
+                null, null, cpsnSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, null, null, commonPolicy.getAllowedOrigins(), consoleMode,
                 environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier);
         builder.setInstance(undertowService);
         builder.install();
@@ -188,7 +185,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
             }
 
             RemotingHttpUpgradeService.installServices(context, ManagementRemotingServices.HTTP_CONNECTOR, httpConnectorName,
-                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), securityRealm, commonPolicy.getSaslAuthenticationFactory());
+                    ManagementRemotingServices.MANAGEMENT_ENDPOINT, commonPolicy.getConnectorOptions(), commonPolicy.getSaslAuthenticationFactory());
 
             return Arrays.asList(UndertowHttpManagementService.SERVICE_NAME, HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         }

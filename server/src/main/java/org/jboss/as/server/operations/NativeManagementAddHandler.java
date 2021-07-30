@@ -43,7 +43,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseNativeInterfaceAddStepHandler;
 import org.jboss.as.controller.management.NativeInterfaceCommonPolicy;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -90,13 +89,11 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         final String bindingName = SOCKET_BINDING.resolveModelAttribute(context, model).asString();
         ServiceName socketBindingServiceName = context.getCapabilityServiceName(SOCKET_BINDING_CAPABILITY_NAME, bindingName, SocketBinding.class);
 
-        String securityRealm = commonPolicy.getSecurityRealm();
         String saslAuthenticationFactory = commonPolicy.getSaslAuthenticationFactory();
-        if (saslAuthenticationFactory == null && securityRealm == null) {
+        if (saslAuthenticationFactory == null) {
             ServerLogger.ROOT_LOGGER.nativeManagementInterfaceIsUnsecured();
         }
 
-        ServiceName securityRealmName = securityRealm != null ? SecurityRealm.ServiceUtil.createServiceName(securityRealm) : null;
         ServiceName saslAuthenticationFactoryName = saslAuthenticationFactory != null ? context.getCapabilityServiceName(
                 SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class) : null;
         String sslContext = commonPolicy.getSSLContext();
@@ -107,7 +104,7 @@ public class NativeManagementAddHandler extends BaseNativeInterfaceAddStepHandle
         ManagementRemotingServices.installConnectorServicesForSocketBinding(serviceTarget, endpointName,
                     ManagementRemotingServices.MANAGEMENT_CONNECTOR,
                     socketBindingServiceName, commonPolicy.getConnectorOptions(),
-                    securityRealmName, saslAuthenticationFactoryName, sslContextName, sbmName);
+                    saslAuthenticationFactoryName, sslContextName, sbmName);
         return Arrays.asList(REMOTING_BASE.append("server", MANAGEMENT_CONNECTOR), socketBindingServiceName);
     }
 

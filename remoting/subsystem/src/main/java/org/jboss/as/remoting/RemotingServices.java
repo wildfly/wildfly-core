@@ -118,7 +118,6 @@ public class RemotingServices {
                                                                           final ServiceName networkInterfaceBindingName,
                                                                           final int port,
                                                                           final OptionMap connectorPropertiesOptionMap,
-                                                                          final ServiceName securityRealm,
                                                                           final ServiceName saslAuthenticationFactory,
                                                                           final ServiceName sslContext,
                                                                           final ServiceName socketBindingManager) {

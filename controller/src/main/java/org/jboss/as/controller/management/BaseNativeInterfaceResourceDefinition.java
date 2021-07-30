@@ -57,14 +57,6 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
 
     protected static final PathElement RESOURCE_PATH = PathElement.pathElement(MANAGEMENT_INTERFACE, NATIVE_INTERFACE);
 
-    public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-        .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-        .setRestartAllServices()
-        .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
-        .setNullSignificant(true)
-        .setDeprecated(ModelVersion.create(5))
-        .build();
-
     public static final SimpleAttributeDefinition SERVER_NAME = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SERVER_NAME, ModelType.STRING, true)
         .setRequires(ModelDescriptionConstants.SECURITY_REALM)
         .setAllowExpression(true)
@@ -96,7 +88,7 @@ public abstract class BaseNativeInterfaceResourceDefinition extends SimpleResour
         .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SSL_REF)
         .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SECURITY_REALM, SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY };
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { SSL_CONTEXT, SERVER_NAME, SASL_PROTOCOL, SASL_AUTHENTICATION_FACTORY };
 
     protected BaseNativeInterfaceResourceDefinition(Parameters parameters) {
         super(parameters

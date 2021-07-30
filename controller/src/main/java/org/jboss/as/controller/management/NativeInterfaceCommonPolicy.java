@@ -46,13 +46,6 @@ public interface NativeInterfaceCommonPolicy {
     String getSSLContext();
 
     /**
-     * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
-     *
-     * @return Get the name of the security realm to secure the HTTP interface.
-     */
-    String getSecurityRealm();
-
-    /**
      * Get the connector options based on the current configuration.
      *
      * @return the connector options based on the current configuration.

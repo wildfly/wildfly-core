@@ -75,7 +75,6 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
     public void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final String httpAuthenticationFactory = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.HTTP_AUTHENTICATION_FACTORY, model);
         final String sslContext = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SSL_CONTEXT, model);
-        final String securityRealm = asStringIfDefined(context, BaseHttpInterfaceResourceDefinition.SECURITY_REALM, model);
         final boolean consoleEnabled = BaseHttpInterfaceResourceDefinition.CONSOLE_ENABLED.resolveModelAttribute(context, model).asBoolean();
         final boolean httpUpgradeEnabled;
         final String saslAuthenticationFactory;
@@ -141,11 +140,6 @@ public abstract class BaseHttpInterfaceAddStepHandler extends ManagementInterfac
             @Override
             public boolean isConsoleEnabled() {
                 return consoleEnabled;
-            }
-
-            @Override
-            public String getSecurityRealm() {
-                return securityRealm;
             }
 
             @Override
