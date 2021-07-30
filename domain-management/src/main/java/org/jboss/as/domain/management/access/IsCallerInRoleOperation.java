@@ -33,12 +33,12 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Authorizer;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.rbac.RunAsRoleMapper;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * A {@link org.jboss.as.controller.ResourceDefinition} representing an individual role mapping.
@@ -67,12 +67,12 @@ public class IsCallerInRoleOperation implements OperationStepHandler {
         } else {
             ModelNode result = context.getResult();
             Set<String> operationHeaderRoles = RunAsRoleMapper.getOperationHeaderRoles(operation);
-            result.set(isCallerInRole(roleName, context.getCaller(), context.getCallEnvironment(), operationHeaderRoles));
+            result.set(isCallerInRole(roleName, context.getSecurityIdentity(), context.getCallEnvironment(), operationHeaderRoles));
         }
     }
 
-    private boolean isCallerInRole(String roleName, Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {
-        Set<String> mappedRoles = authorizer.getCallerRoles(caller, callEnvironment, operationHeaderRoles);
+    private boolean isCallerInRole(String roleName, SecurityIdentity identity, Environment callEnvironment, Set<String> operationHeaderRoles) {
+        Set<String> mappedRoles = authorizer.getCallerRoles(identity, callEnvironment, operationHeaderRoles);
         if (mappedRoles == null) {
             return false;
         } else if (mappedRoles.contains(roleName)) {
