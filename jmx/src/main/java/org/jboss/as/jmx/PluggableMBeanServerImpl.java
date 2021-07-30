@@ -44,7 +44,6 @@ import static org.jboss.as.jmx.MBeanServerSignature.REMOVE_NOTIFICATION_LISTENER
 import static org.jboss.as.jmx.MBeanServerSignature.SET_ATTRIBUTE;
 import static org.jboss.as.jmx.MBeanServerSignature.SET_ATTRIBUTES;
 import static org.jboss.as.jmx.MBeanServerSignature.UNREGISTER_MBEAN;
-import static org.jboss.as.jmx.SecurityActions.createCaller;
 
 import java.io.ObjectInputStream;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -1201,7 +1200,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             JmxAction action = new JmxAction(methodName, impact, attributeName);
             //TODO populate the 'environment' variable
             SecurityIdentity securityIdentity = securityIdentitySupplier != null ? securityIdentitySupplier.get() : null;
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(securityIdentity), null, action, target);
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(securityIdentity, null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 if (exception) {
                     throw JmxLogger.ROOT_LOGGER.unauthorized();
@@ -1223,7 +1222,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             JmxAction action = new JmxAction(methodName, JmxAction.Impact.CLASSLOADING);
             //TODO populate the 'environment' variable
             SecurityIdentity securityIdentity = securityIdentitySupplier != null ? securityIdentitySupplier.get() : null;
-            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(createCaller(securityIdentity), null, action, target);
+            AuthorizationResult authorizationResult = authorizer.authorizeJmxOperation(securityIdentity, null, action, target);
             if (authorizationResult.getDecision() != Decision.PERMIT) {
                 throw JmxLogger.ROOT_LOGGER.unauthorized();
             }

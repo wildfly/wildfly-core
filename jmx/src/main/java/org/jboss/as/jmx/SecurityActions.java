@@ -27,8 +27,6 @@ import static java.security.AccessController.doPrivileged;
 import java.security.PrivilegedAction;
 
 import org.jboss.as.controller.AccessAuditContext;
-import org.jboss.as.controller.access.Caller;
-import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -45,17 +43,8 @@ class SecurityActions {
         return createAccessAuditContextActions().currentContext();
     }
 
-    static Caller createCaller(SecurityIdentity securityIdentity) {
-
-        return createCallerActions().createCaller(securityIdentity);
-    }
-
     private static AccessAuditContextActions createAccessAuditContextActions() {
         return WildFlySecurityManager.isChecking() ? AccessAuditContextActions.PRIVILEGED : AccessAuditContextActions.NON_PRIVILEGED;
-    }
-
-    private static CallerActions createCallerActions() {
-        return WildFlySecurityManager.isChecking() ? CallerActions.PRIVILEGED : CallerActions.NON_PRIVILEGED;
     }
 
     private interface AccessAuditContextActions {
@@ -86,37 +75,6 @@ class SecurityActions {
             public AccessAuditContext currentContext() {
                 return doPrivileged(PRIVILEGED_ACTION);
             }
-        };
-
-    }
-
-    private interface CallerActions {
-
-        Caller createCaller(SecurityIdentity securityIdentity);
-
-
-        CallerActions NON_PRIVILEGED = new CallerActions() {
-
-            @Override
-            public Caller createCaller(SecurityIdentity securityIdentity) {
-                return Caller.createCaller(securityIdentity);
-            }
-
-        };
-
-        CallerActions PRIVILEGED = new CallerActions() {
-
-            @Override
-            public Caller createCaller(final SecurityIdentity securityIdentity) {
-                return doPrivileged(new PrivilegedAction<Caller>() {
-
-                    @Override
-                    public Caller run() {
-                        return NON_PRIVILEGED.createCaller(securityIdentity);
-                    }
-                });
-            }
-
         };
 
     }
