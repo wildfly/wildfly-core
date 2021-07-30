@@ -60,6 +60,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -525,8 +526,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     default:
                         throw unexpectedAttribute(reader, i);
@@ -576,8 +576,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         // ignore -- this was a bug in the xsd
                         break;
                     case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, mgmtSocket, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     default:
                         throw unexpectedAttribute(reader, i);
@@ -611,12 +610,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case SECURITY_REALM: {
-                        if (http) {
-                            HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        } else {
-                            NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        }
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case CONSOLE_ENABLED:{
                         if (http){
@@ -662,8 +656,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case CONSOLE_ENABLED: {
                         HttpManagementResourceDefinition.CONSOLE_ENABLED.parseAndSetParameter(value, addOp, reader);
@@ -686,8 +679,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case CONSOLE_ENABLED: {
                         HttpManagementResourceDefinition.CONSOLE_ENABLED.parseAndSetParameter(value, addOp, reader);
@@ -719,8 +711,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
@@ -756,8 +747,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                 final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                 switch (attribute) {
                     case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     default:
                         throw unexpectedAttribute(reader, i);
@@ -780,8 +770,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);

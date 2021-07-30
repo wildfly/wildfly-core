@@ -54,6 +54,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoNamespaceAttri
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -289,8 +290,7 @@ final class HostXml_11 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         HttpManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
@@ -338,8 +338,7 @@ final class HostXml_11 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);

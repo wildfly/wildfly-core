@@ -1282,7 +1282,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 258, value = "Cannot explode a subdeployment of an unexploded deployment")
     OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
 
-    @Message(id = 259, value = "If attribute secure-socket-binding is defined one of ssl-context or security-realm must also be defined")
+    @Message(id = 259, value = "If attribute secure-socket-binding is defined ssl-context must also be defined")
     OperationFailedException secureSocketBindingRequiresSSLContext();
 
     @LogMessage(level = INFO)
@@ -1381,6 +1381,9 @@ public interface ServerLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 285, value = "Vault support has been removed, no vault resources will be initialised.")
     void vaultSupportRemoved();
+
+    @Message(id = 286, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
+    XMLStreamException securityRealmReferencesUnsupported();
 
     ////////////////////////////////////////////////
     //Messages without IDs

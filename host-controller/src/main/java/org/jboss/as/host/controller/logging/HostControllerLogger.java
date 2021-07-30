@@ -1461,4 +1461,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 216, value = "The module option %s is not allowed.")
     OperationFailedException moduleOptionNotAllowed(String option);
 
+    @Message(id = 217, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
+    XMLStreamException securityRealmReferencesUnsupported();
+
 }

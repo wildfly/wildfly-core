@@ -395,10 +395,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
                         HttpManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
-                    case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
                     case SERVER_NAME: {
                         HttpManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
                         break;
@@ -442,10 +438,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
                     }
                     case SASL_PROTOCOL: {
                         NativeManagementResourceDefinition.SASL_PROTOCOL.parseAndSetParameter(value, addOp, reader);
-                        break;
-                    }
-                    case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
                     case SERVER_NAME: {
@@ -1723,7 +1715,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
         NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
         NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
 
@@ -1742,7 +1733,6 @@ final class HostXml_18 extends CommonXml implements ManagementXmlDelegate {
         writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
         HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
         HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
                 HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);

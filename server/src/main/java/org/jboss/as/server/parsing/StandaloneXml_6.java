@@ -39,6 +39,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.logging.ServerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,7 +53,6 @@ import java.util.Set;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
@@ -75,7 +75,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parser and marshaller for standalone server configuration xml documents (e.g. standalone.xml) that use the urn:jboss:domain:5.0 schema.
@@ -269,8 +268,7 @@ final class StandaloneXml_6 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        HttpManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         HttpManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
@@ -313,8 +311,7 @@ final class StandaloneXml_6 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        NativeManagementResourceDefinition.SECURITY_REALM.parseAndSetParameter(value, addOp, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case SERVER_NAME: {
                         NativeManagementResourceDefinition.SERVER_NAME.parseAndSetParameter(value, addOp, reader);
@@ -744,73 +741,4 @@ final class StandaloneXml_6 extends CommonXml implements ManagementXmlDelegate {
         return true;
     }
 
-    @Override
-    public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
-        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        if (NativeManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)) {
-            writer.writeEmptyElement(Element.SOCKET_BINDING.getLocalName());
-            NativeManagementResourceDefinition.SOCKET_BINDING.marshallAsAttribute(protocol, writer);
-        }
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
-        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        boolean consoleEnabled = protocol.get(ModelDescriptionConstants.CONSOLE_ENABLED).asBoolean(true);
-        if (!consoleEnabled) {
-            HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
-        }
-
-        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
-                HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
-
-        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
-            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
-            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-            HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-        }
-
-        if (HttpManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)
-                || HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.isMarshallable(protocol)) {
-            writer.writeEmptyElement(Element.SOCKET_BINDING.getLocalName());
-            HttpManagementResourceDefinition.SOCKET_BINDING.marshallAsAttribute(protocol, writer);
-            HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.marshallAsAttribute(protocol, writer);
-        }
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
-        accessControlXml.writeAccessControl(writer, accessAuthorization);
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
-        auditLogDelegate.writeAuditLog(writer, auditLog);
-
-        return true;
-    }
 }
