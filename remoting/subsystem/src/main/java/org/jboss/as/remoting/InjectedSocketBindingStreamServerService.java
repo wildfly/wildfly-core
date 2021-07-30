@@ -26,7 +26,6 @@ import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
@@ -54,13 +53,12 @@ final class InjectedSocketBindingStreamServerService extends AbstractStreamServe
     InjectedSocketBindingStreamServerService(
             final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
             final Supplier<Endpoint> endpointSupplier,
-            final Supplier<SecurityRealm> securityRealmSupplier,
             final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
             final Supplier<SSLContext> sslContextSupplier,
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
             final Supplier<SocketBinding> socketBindingSupplier,
             final OptionMap connectorPropertiesOptionMap) {
-        super(streamServerConsumer, endpointSupplier, securityRealmSupplier, saslAuthenticationFactorySupplier,
+        super(streamServerConsumer, endpointSupplier, saslAuthenticationFactorySupplier,
                 sslContextSupplier, socketBindingManagerSupplier, connectorPropertiesOptionMap);
         this.socketBindingSupplier = socketBindingSupplier;
     }

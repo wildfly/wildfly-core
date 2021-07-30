@@ -25,6 +25,7 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Capabilities.SOCKET_BINDING_MANAGER_CAPABILTIY;
 import static org.jboss.as.remoting.Capabilities.SSL_CONTEXT_CAPABILITY;
+import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
 
 import javax.net.ssl.SSLContext;
 
@@ -33,7 +34,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.dmr.ModelNode;
@@ -74,7 +74,9 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceName socketBindingName = context.getCapabilityServiceName(ConnectorResource.SOCKET_CAPABILITY_NAME, socketName, SocketBinding.class);
 
         ModelNode securityRealmModel = ConnectorResource.SECURITY_REALM.resolveModelAttribute(context, fullModel);
-        final ServiceName securityRealmName = securityRealmModel.isDefined() ? SecurityRealm.ServiceUtil.createServiceName(securityRealmModel.asString()) : null;
+        if (securityRealmModel.isDefined()) {
+            throw ROOT_LOGGER.runtimeSecurityRealmUnsupported();
+        }
 
         ModelNode saslAuthenticationFactoryModel = ConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, fullModel);
         final ServiceName saslAuthenticationFactoryName = saslAuthenticationFactoryModel.isDefined()
@@ -88,6 +90,6 @@ public class ConnectorAdd extends AbstractAddStepHandler {
         final ServiceName sbmName = context.getCapabilityServiceName(SOCKET_BINDING_MANAGER_CAPABILTIY, SocketBindingManager.class);
 
         RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName,
-                socketBindingName, optionMap, securityRealmName, saslAuthenticationFactoryName, sslContextName, sbmName);
+                socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName);
     }
 }

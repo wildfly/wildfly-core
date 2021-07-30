@@ -33,7 +33,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
@@ -78,10 +77,9 @@ class RemoteOutboundConnectionAdd extends AbstractAddStepHandler {
         final ServiceBuilder<?> builder = context.getServiceTarget().addService(serviceName);
         final Consumer<RemoteOutboundConnectionService> serviceConsumer = builder.provides(deprecatedName, aliasServiceName);
         final Supplier<OutboundSocketBinding> osbSupplier = builder.requires(outboundSocketBindingDependency);
-        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? SecurityRealm.ServiceUtil.requires(builder, securityRealm) : null;
         final Supplier<AuthenticationContext> acSupplier = authenticationContext != null ? builder.requires(context.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, authenticationContext, AuthenticationContext.class)) : null;
         builder.requires(RemotingServices.SUBSYSTEM_ENDPOINT);
-        builder.setInstance(new RemoteOutboundConnectionService(serviceConsumer, osbSupplier, srSupplier, acSupplier, connOpts, username, protocol));
+        builder.setInstance(new RemoteOutboundConnectionService(serviceConsumer, osbSupplier, acSupplier, connOpts, username, protocol));
         builder.install();
     }
 }

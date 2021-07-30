@@ -29,8 +29,6 @@ import javax.net.ssl.SSLContext;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.SocketBindingManager;
@@ -49,8 +47,6 @@ import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
-import org.xnio.Sequence;
-import org.xnio.SslClientAuthMode;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
 
@@ -64,7 +60,6 @@ abstract class AbstractStreamServerService implements Service {
 
     private final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer;
     /* not private due to testing purposes */ final Supplier<Endpoint> endpointSupplier;
-    private final Supplier<SecurityRealm> securityRealmSupplier;
     private final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier;
     private final Supplier<SSLContext> sslContextSupplier;
     private final Supplier<SocketBindingManager> socketBindingManagerSupplier;
@@ -76,14 +71,12 @@ abstract class AbstractStreamServerService implements Service {
     AbstractStreamServerService(
             final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer,
             final Supplier<Endpoint> endpointSupplier,
-            final Supplier<SecurityRealm> securityRealmSupplier,
             final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
             final Supplier<SSLContext> sslContextSupplier,
             final Supplier<SocketBindingManager> socketBindingManagerSupplier,
             final OptionMap connectorPropertiesOptionMap) {
         this.streamServerConsumer = streamServerConsumer;
         this.endpointSupplier = endpointSupplier;
-        this.securityRealmSupplier = securityRealmSupplier;
         this.saslAuthenticationFactorySupplier = saslAuthenticationFactorySupplier;
         this.sslContextSupplier = sslContextSupplier;
         this.socketBindingManagerSupplier = socketBindingManagerSupplier;
@@ -95,11 +88,7 @@ abstract class AbstractStreamServerService implements Service {
         try {
             NetworkServerProvider networkServerProvider = endpointSupplier.get().getConnectionProviderInterface("remoting", NetworkServerProvider.class);
 
-            SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
             SSLContext sslContext = sslContextSupplier != null ? sslContextSupplier.get() : null;
-            if (sslContext == null && securityRealm != null) {
-                sslContext = securityRealm.getSSLContext();
-            }
 
             OptionMap.Builder builder = OptionMap.builder();
             if (sslContext != null) {
@@ -108,30 +97,6 @@ abstract class AbstractStreamServerService implements Service {
             }
 
             SaslAuthenticationFactory factory = saslAuthenticationFactorySupplier != null ? saslAuthenticationFactorySupplier.get() : null;
-            if (factory == null && securityRealm != null) {
-                String[] mechanismNames = null;
-                if(connectorPropertiesOptionMap.contains(Options.SASL_MECHANISMS)) {
-                    Sequence<String> sequence = connectorPropertiesOptionMap.get(Options.SASL_MECHANISMS);
-                    mechanismNames = sequence.toArray(new String[sequence.size()]);
-                }
-
-                //in case that legacy sasl mechanisms are used, noanonymous default value is true
-                Boolean policyNonanonymous = mechanismNames == null ? null: true;
-                if(connectorPropertiesOptionMap.contains(Options.SASL_POLICY_NOANONYMOUS)) {
-                    policyNonanonymous = connectorPropertiesOptionMap.get(Options.SASL_POLICY_NOANONYMOUS).booleanValue();
-                }
-
-                if(mechanismNames != null || policyNonanonymous != null) {
-                    factory = securityRealm.getSaslAuthenticationFactory(mechanismNames, policyNonanonymous);
-                } else {
-                    factory = securityRealm.getSaslAuthenticationFactory();
-                }
-
-                if (securityRealm.getSupportedAuthenticationMechanisms().contains(AuthMechanism.CLIENT_CERT)) {
-                    builder.set(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
-                }
-            }
-
             if (connectorPropertiesOptionMap != null) {
                 builder.addAll(connectorPropertiesOptionMap);
             }
@@ -139,8 +104,6 @@ abstract class AbstractStreamServerService implements Service {
             if (RemotingLogger.ROOT_LOGGER.isTraceEnabled()) {
                 RemotingLogger.ROOT_LOGGER.tracef("Resulting OptionMap %s", resultingMap.toString());
             }
-
-
 
             if (factory == null) {
                 // TODO Elytron: Just authenticate anonymously

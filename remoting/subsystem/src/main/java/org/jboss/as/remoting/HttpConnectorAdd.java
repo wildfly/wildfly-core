@@ -22,6 +22,8 @@
 
 package org.jboss.as.remoting;
 
+import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
+
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -68,10 +70,12 @@ public class HttpConnectorAdd extends AbstractAddStepHandler {
         final String connectorRef = HttpConnectorResource.CONNECTOR_REF.resolveModelAttribute(context, model).asString();
 
         ModelNode securityRealmModel = HttpConnectorResource.SECURITY_REALM.resolveModelAttribute(context, model);
-        final String securityRealm = securityRealmModel.isDefined() ? securityRealmModel.asString() : null;
+        if (securityRealmModel.isDefined()) {
+            throw ROOT_LOGGER.runtimeSecurityRealmUnsupported();
+        }
         ModelNode saslAuthenticationFactoryModel = HttpConnectorResource.SASL_AUTHENTICATION_FACTORY.resolveModelAttribute(context, model);
         final String saslAuthenticationFactory = saslAuthenticationFactoryModel.isDefined() ? saslAuthenticationFactoryModel.asString() : null;
-        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, securityRealm, saslAuthenticationFactory);
+        RemotingHttpUpgradeService.installServices(context, connectorName, connectorRef, RemotingServices.SUBSYSTEM_ENDPOINT, optionMap, saslAuthenticationFactory);
     }
 
 
