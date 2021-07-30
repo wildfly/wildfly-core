@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+import org.jboss.as.domain.management.security.adduser.PropertiesFileLoader;
 import org.junit.Assert;
 import org.junit.Test;
 

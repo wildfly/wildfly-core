@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.management.security;
+package org.jboss.as.domain.management.audit;
 
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.domain.management.ModelDescriptionConstants;

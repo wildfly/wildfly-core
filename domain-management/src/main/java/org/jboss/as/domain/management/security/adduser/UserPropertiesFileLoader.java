@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.management.security;
+package org.jboss.as.domain.management.security.adduser;
 
 import org.jboss.as.controller.services.path.PathManager;
 
@@ -41,7 +41,7 @@ import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class UserPropertiesFileLoader extends PropertiesFileLoader {
+class UserPropertiesFileLoader extends PropertiesFileLoader {
 
     private static final String REALM_COMMENT_PREFIX = "$REALM_NAME=";
     private static final String REALM_COMMENT_SUFFIX = "$";

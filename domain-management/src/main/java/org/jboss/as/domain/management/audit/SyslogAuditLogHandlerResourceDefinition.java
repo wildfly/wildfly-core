@@ -33,9 +33,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VAL
 import static org.jboss.as.controller.security.CredentialReference.applyCredentialReferenceUpdateToRuntime;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
+import static org.jboss.as.domain.management.audit.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
+import static org.jboss.as.domain.management.audit.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
 import static org.jboss.as.domain.management.audit.SyslogAuditLogHandlerService.SYSLOG_AUDIT_HANDLER;
-import static org.jboss.as.domain.management.security.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
-import static org.jboss.as.domain.management.security.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.domain.management.security;
+package org.jboss.as.domain.management.security.adduser;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
@@ -59,7 +59,7 @@ import org.jboss.msc.service.StopContext;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class PropertiesFileLoader {
+class PropertiesFileLoader {
 
     private static final char[] ESCAPE_ARRAY = new char[] { '=', '\\'};
     protected static final String COMMENT_PREFIX = "#";

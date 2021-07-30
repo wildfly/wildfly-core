@@ -23,8 +23,6 @@
 
 package org.jboss.as.domain.management.security.adduser;
 
-import org.jboss.as.domain.management.security.PropertiesFileLoader;
-import org.jboss.as.domain.management.security.UserPropertiesFileLoader;
 import org.jboss.msc.service.StartException;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 

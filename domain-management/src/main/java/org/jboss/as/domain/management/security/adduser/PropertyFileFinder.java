@@ -43,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.as.domain.management.security.PropertiesFileLoader;
-import org.jboss.as.domain.management.security.UserPropertiesFileLoader;
 import org.jboss.as.domain.management.security.adduser.AddUser.FileMode;
 import org.jboss.as.domain.management.security.adduser.AddUser.RealmMode;
 import org.jboss.msc.service.StartException;
