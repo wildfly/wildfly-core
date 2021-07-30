@@ -239,7 +239,6 @@
         <module>core-feature-pack</module>
         <module>core-management</module>
         <module>core-model-test</module>
-        <module>core-security</module>
         <module>deployment-repository</module>
         <module>deployment-scanner</module>
         <module>discovery</module>
@@ -1498,11 +1497,6 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-core-security</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.core</groupId>
-                <artifactId>wildfly-core-security-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

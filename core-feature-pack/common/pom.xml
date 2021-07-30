@@ -619,16 +619,6 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-cli</artifactId>
         </dependency>
 

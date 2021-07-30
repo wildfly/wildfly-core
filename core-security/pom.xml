@@ -38,7 +38,6 @@
     <name>WildFly: Core Security parent</name>
 
     <modules>
-        <module>api</module>
         <module>implementation</module>
     </modules>
 
