@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.domain.management.security;
+package org.jboss.as.domain.management.security.adduser;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-import org.jboss.as.domain.management.security.adduser.PropertiesFileLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
