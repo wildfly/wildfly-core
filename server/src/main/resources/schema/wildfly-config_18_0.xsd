@@ -186,21 +186,6 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="identity" type="identityType" minOccurs="0" />
-            <xs:element name="security-realms" minOccurs="0">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="security-realm" type="security-realmType" minOccurs="1"
-                                    maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="outbound-connections" minOccurs="0">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="ldap" type="ldapConnectionType" minOccurs="1" /> <!-- TODO minOccurs only while ldap is only supported connection. -->
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
         </xs:sequence>
     </xs:complexType>
 
@@ -265,304 +250,12 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="ldapConnectionType">
-        <xs:annotation>
-            <xs:documentation>
-                The LDAP connection definition.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" />
-            <xs:element name="search-credential-reference" type="credential-reference:credentialReferenceType" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The credential reference to use when connecting to perform a search.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this connection.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="url" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The URL to connect to ldap.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="search-dn" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The distinguished name to use when connecting to LDAP to perform searches.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="search-credential" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The credential to use when connecting to perform a search.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="security-realm" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    A reference to a security realm to obtain an initialised SSLContext to use when establishing a
-                    connection to the LDAP server.
-
-                    The realm referenced here MUST NOT be a realm that is also configured to use this connection.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="initial-context-factory" type="xs:string" default="com.sun.jndi.ldap.LdapCtxFactory">
-            <xs:annotation>
-                <xs:documentation>
-                    The initial context factory to establish the LdapContext.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="referrals" default="IGNORE" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    Defines how referrals should be handled if encountered when using this connection, by default they are
-                    ignored.
-
-                    If set to FOLLOW then if referrals are encountered using this connection they will automatically be followed. Apart from the alternative
-                    location if set to FOLLOW it is assumed the remainder of settings for this connection can be applied to the connection
-                    for the referral.
-
-                    Finally if this option is set to THROW an exception is thrown by the connection when referrals are encountered, the security realm will then
-                    use information from the Exception to identify an alternative connection to use.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="IGNORE" />
-                    <xs:enumeration value="FOLLOW" />
-                    <xs:enumeration value="THROW" />
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
-        <xs:attribute name="handles-referrals-for" type="urlListType" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    A space seaparated list of URLs that this connection will handle referrals for.
-
-                    Note: Only the prototocol, host and port should be specified in the URLs.  The LDAP connections are not ordered so a single URL should only
-                    be listed against a single connection, if multpile connections are defined as handling the same URL which connection will be selected is undefined
-                    and subject to change.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="always-send-client-cert" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Where an LDAPS connection is established for the purpose of validating the provided credential by default the local servers certificate is not sent to 
-                    avoid inadvertently authenticating as the server.
-
-                    This attribute can be set to true to ensure the local servers certificate is always sent where this is required independently of the authentication 
-                    based on the credential.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:simpleType name="urlListType">
         <xs:annotation>
             <xs:documentation>A list of URLs.</xs:documentation>
         </xs:annotation>
         <xs:list itemType="xs:anyURI"/>
     </xs:simpleType>
-
-    <xs:complexType name="security-realmType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration of a security realm for securing access to the management interfaces.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="plug-ins" type="plug-insType" minOccurs="0" />
-            <xs:element name="server-identities" type="server-identitiesType" minOccurs="0" />
-            <xs:element name="authentication" type="authenticationType" minOccurs="0" />
-            <xs:element name="authorization" type="authorizationType" minOccurs="0" />
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of this security-realm, each security-realm must be assigned a unique name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="plug-insType">
-        <xs:annotation>
-            <xs:documentation>
-                List of modules to be searched for supported security realm plug-ins.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="plug-in" type="plug-inType" />
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="plug-inType">
-        <xs:attribute name="module" use="required" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>The name of the module.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="plug-inAuthType">
-        <xs:annotation>
-            <xs:documentation>
-                This type defines which plug in will be used to handle either the loading of the
-                authentication data or authorization data during the authentication process.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        The properties to be made available to the plug-in.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The short name of the plug-in as already dynamically registered by being referenced
-                    in the plug-ins element.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="mechanism" default="DIGEST" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    By default plug-ins will be assumed to be used with the DIGEST authentication mechanism,
-                    this attribute can override the plug-in for use with the PLAIN mechanism.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:simpleType>
-                <xs:restriction base="xs:string">
-                    <xs:enumeration value="DIGEST" />
-                    <xs:enumeration value="PLAIN" />
-                </xs:restriction>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="authorizationType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration defining how to load the authorization information for the authenticated user.
-
-                After a user has been authenticated additional information such as groups or roles can be loaded and
-                associated with the user for subsequent authorization checks, this type is used to define
-                how the roles are loaded.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:choice minOccurs="0">
-            <xs:element name="properties" type="propertiesFileType" minOccurs="0" />
-            <xs:element name="plug-in" type="plug-inAuthType" minOccurs="0" />
-            <xs:element name="ldap" type="ldapAuthorizationType" minOccurs="0" />
-        </xs:choice>
-        <xs:attribute name="map-groups-to-roles" type="xs:boolean" default="true" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The membership information loaded is the authenticated identities group membership, commonly there
-                    is a 1:1 mapping between group membership and the applicable roles, this attribute allows for the
-                    mapping to be performed automatically.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="server-identitiesType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration of the identities that represent the server.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="ssl" type="sslType" minOccurs="0" />
-            <xs:element name="secret" type="secretType" minOccurs="0" />
-            <xs:element name="kerberos" type="kerberosIdentityType" minOccurs="0" />
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="kerberosIdentityType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration of a servers Kerberos identity.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="keytab">
-                <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            Reference to an individual keytab.
-
-                            On handling the authentication for an incoming request two pieces of information are known, the protocol and the name of the host
-                            this server is acting as.  For HTTP requests the protocol will always be HTTP, for requests over Remoting by default the protocol will
-                            be 'remote' although this can be overridden.
-
-                            At the time authentication is going to be handled the keytab will be selected as follows: -
-                             1 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching protocol/hostname.
-                             2 - Iterate the list of keytabs and identify one where the name of the principal matches matches protocol/hostname.
-                             3 - Iterate the list of keytabs and identity one where the for-hosts attribute contains an entry matching hostname.
-                             4 - Iterate the list of keytabs and identify one where the hostname portion of the principal matches the hostname of the request.
-                             5 - Use the keytab where for-hosts is set to '*'.
-
-                            If no match is found no keytab will be selected and Kerberos will not be available for communication as that host.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="path" type="xs:string" use="required">
-                        <xs:annotation>
-                            <xs:documentation>
-                                The path of the keytab.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                    <xs:attribute name="relative-to" use="optional" type="xs:string">
-                        <xs:annotation>
-                            <xs:documentation>
-                                The name of another previously named path, or of one of the
-                                standard paths provided by the system. If 'relative-to' is
-                                provided, the value of the 'path' attribute is treated as
-                                relative to the path specified by this attribute.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                    <xs:attribute name="principal" use="required" type="xs:string">
-                        <xs:annotation>
-                            <xs:documentation>
-                                The name of the principal represented by the keytab.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                    <xs:attribute name="for-hosts" use="optional" type="stringListType">
-                        <xs:annotation>
-                            <xs:documentation>
-                                A space separated list of the host names this keytab can be used for.  Can also be set to '*' if applicable for all hosts if a better match is not found.
-
-                                If multiple keytabs are defined as handling the same host which one is selected is undefined and subject to change,
-                                for predictability you should ensure that no more than one keytab is defined per host.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
 
     <xs:simpleType name="stringListType">
         <xs:annotation>
@@ -595,56 +288,6 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="sslType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration of the SSL identity of this server.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="engine" type="engineType" minOccurs="0" />
-            <xs:element name="keystore" type="realmExtendedKeyStoreType" />
-        </xs:sequence>
-        <xs:attribute name="protocol" type="xs:string" default="TLS">
-            <xs:annotation>
-                <xs:documentation>
-                    The protocol to use when creating the SSLContext.
-
-                    Note: This is separate from the enabled protocols on the underlying SSLEngine, to configure those add the engine specific configuration.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="engineType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration options specific to the
-                unlerlying SSLEngine created for request handling.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="enabled-protocols" use="optional" type="stringListType" default="TLSv1 TLSv1.1 TLSv1.2">
-            <xs:annotation>
-                <xs:documentation>
-                    A space separated list of protocols that may be enabled on the SSLEngine handling requests.
-
-                    At runtime the intersection of the available protocols and the protocols specified here will be used, if that
-                    results in an empy list an error will be reported.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="enabled-cipher-suites" use="optional" type="stringListType">
-            <xs:annotation>
-                <xs:documentation>
-                    A space separated list of cipher suites that may be enabled on the SSLEngine handling requests.
-
-                    At runtime the intersection of the available suites and the suites specified here will be used, if that
-                    results in an empy list an error will be reported.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
     <xs:complexType name="keyStoreType">
         <xs:annotation>
             <xs:documentation>
@@ -668,8 +311,8 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-
-    <xs:complexType name="extendedKeyStoreType">
+    
+        <xs:complexType name="extendedKeyStoreType">
         <xs:annotation>
             <xs:documentation>
                 This is a more complex keystore definition which also allows for an alias
@@ -712,79 +355,6 @@
                             will be the value of this attribute.
 
                             This is not intended for production use.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="realmKeyStoreType">
-        <xs:annotation>
-            <xs:documentation>
-                An extension of keyStoreType used by realms.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="keyStoreType">
-                <xs:attribute name="provider" type="xs:string" default="JKS">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The provider for the store, the default is a file based JKS store.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="path" type="xs:string" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The path of the keystore, this is required if the provider is JKS otherwise it will be ignored.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="relative-to" use="optional" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The name of another previously named path, or of one of the
-                            standard paths provided by the system. If 'relative-to' is
-                            provided, the value of the 'path' attribute is treated as
-                            relative to the path specified by this attribute.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="realmExtendedKeyStoreType">
-        <xs:annotation>
-            <xs:documentation>
-                An extension of keyStoreType used by realms.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="extendedKeyStoreType">
-                <xs:attribute name="provider" type="xs:string" default="JKS">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The provider for the store, the default is a file based JKS store.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="path" type="xs:string" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The path of the keystore, this is required if the provider is JKS otherwise it will be ignored.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="relative-to" use="optional" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The name of another previously named path, or of one of the
-                            standard paths provided by the system. If 'relative-to' is
-                            provided, the value of the 'path' attribute is treated as
-                            relative to the path specified by this
-                            attribute.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -852,615 +422,6 @@
         </xs:complexContent>
     </xs:complexType>
 
-    <xs:complexType name="localType">
-        <xs:annotation>
-            <xs:documentation>
-                This type definition is used to control the local authentication mechanism.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="default-user" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    When using the local mechanism it is optional for the client side to send an
-                    authentication user name - this attribute specifies the user name to be assumed
-                    if the remote client does not send one.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="allowed-users" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    A comma separated list of users that can be specified by the client when connecting
-                    using the local authentication mechanism.
-
-                    If a default user has been specified then that user is automatically added to the
-                    allowed list.  If both default-user and allowed-users are omitted despite the mechanism
-                    being enabled no incoming connection attemps using the mechanism will succeed.
-
-                    If any user name should be accepted the value should be set to "*".
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="skip-group-loading" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    After authentication has occurred the username of the authenticated user is then passed
-                    to the configured authorization mechanism to load the group membership information for
-                    the authenticated user.
-
-                    As the local authenitication mechanism is a special case with an artificial identifier
-                    for the authenticated user this can cause problems during group loading where a user
-                    with the same name does not exist.
-
-                    Setting this attribute to 'false' will disable the loading of groups for the local user.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="authenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                Configuration of the server side authentication mechanisms.
-
-                Optionally one truststore can be defined and one username/password based store can be defined.
-                Authentication will first attempt to use the truststore and if this is not available will fall back
-                to the username/password authentication.
-
-                If none of these are specified the only available mechanism will be the local mechanism for the
-                Native interface and the HTTP interface will not be accessible.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="truststore" type="realmKeyStoreType" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Configuration of a keystore to use to create a trust manager to verify clients.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="local" type="localType" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Configuration to enable the local authentication mechanism, if this element
-                        is omitted then local authentication will be disabled.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="kerberos" type="kerberosAuthenticationType" minOccurs="0">
-                <xs:annotation>
-                    <xs:documentation>
-                        Configuration to enable Kerberos authentication.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:choice minOccurs="0">
-                <xs:element name="jaas" type="jaasAuthenticationType" minOccurs="0" />
-                <xs:element name="ldap" type="ldapAuthenticationType" minOccurs="0" />
-                <xs:element name="properties" type="propertiesAuthenticationType" minOccurs="0" />
-                <xs:element name="users" type="usersAuthenticationType" minOccurs="0" />
-                <xs:element name="plug-in" type="plug-inAuthType" minOccurs="0" />
-            </xs:choice>
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="kerberosAuthenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                Definition to enable Kerberos for
-                authentication.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="remove-realm" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    When a user is authenticated using Kerberos typically their identity will be represented in the form username@REALM,
-                    setting this option to true will strip the @REALM part of the name.
-
-                    This may be desired to bring the names in-line with username/password based authentication if used in parallel.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="jaasAuthenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                Definition to use a JAAS based configuration for authentication.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="name" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name identifying the jaas configuration of LoginModules.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="assign-groups" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    When JAAS is delegated to for authentication a user is also assigned a set of roles,
-                    if this attribute is set to true then those roles will be assigned to the user a groups.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="baseLdapAuthType" abstract="true">
-        <xs:annotation>
-            <xs:documentation>
-                The base type used for LDAP authentication and authorization definitions.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="connection" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of the connection to use to connect to LDAP.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="ldapAuthenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                Definition to use LDAP as the user repository.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="baseLdapAuthType">
-                <xs:sequence>
-                    <xs:element name="cache" type="ldapCacheType" minOccurs="0" />
-                    <xs:choice>
-                        <xs:element name="username-filter">
-                            <xs:complexType>
-                                <xs:attribute name="attribute" type="xs:string" use="required">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the attribute to search for the user, this filter will then perform
-                                            a simple search where the username entered by the user matches the attribute
-                                            specified here.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="advanced-filter">
-                            <xs:complexType>
-                                <xs:attribute name="filter" type="xs:string" use="required">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The fully defined filter to be used to search for the user based on their entered
-                                            user ID. The filter should contain a variable in the form {0} - this will be
-                                            replaced with the username supplied by the user.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:complexType>
-                        </xs:element>
-                    </xs:choice>
-                </xs:sequence>
-                <xs:attribute name="base-dn" type="xs:string" use="required">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The base distinguished name to commence the search for the user.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="recursive" type="xs:boolean" default="false">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Should the search be recursive.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="user-dn" type="xs:string" default="dn">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The name of the attribute which is the users distinguished name.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="username-load" type="xs:string" use="optional">
-                    <xs:annotation>
-                        <xs:documentation>
-                            This attribute is independent of the filtering configuration, if this attribute is set then after
-                            the users entry in LDAP is identified this attribute will be read to discover the users actual username.
-
-                            This is optional but could be useful in a few scenarios e.g. authenticate with an e-mail address but be identified by a username,
-                            correcting the case of an entered username or even in the future ensuring consistency after a different
-                            authentication approach.
-
-                            Note: This value will become the username used for any subsequent group loading.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-                <xs:attribute name="allow-empty-passwords" type="xs:boolean" default="false">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Should users be allowed to supply an empty password? Some LDAP servers will
-                            allow an anonymous bind
-                            so an empty password could appear as a successful authentication
-                            even though no password was sent to verify.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="ldapAuthorizationType">
-        <xs:complexContent>
-            <xs:extension base="baseLdapAuthType">
-                <xs:sequence>
-                    <xs:element name="username-to-dn" type="ldapUserSearchType" minOccurs="0" />
-                    <xs:element name="group-search" type="ldapGroupSearchType" />
-                </xs:sequence>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="baseLdapSearchType" abstract="true">
-        <xs:annotation>
-            <xs:documentation>
-                Base type of common attributes used for
-                LDAP searches.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="base-dn" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The base distinguished name to commence the search.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="recursive" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Should the search be recursive.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="ldapUserSearchType">
-        <xs:annotation>
-            <xs:documentation>
-                Search definition to locate a user from
-                the supplied username.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="cache" type="ldapCacheType" minOccurs="0" />
-            <xs:choice>
-                <xs:element name="username-is-dn" />
-                <xs:element name="username-filter">
-                    <xs:complexType>
-                        <xs:complexContent>
-                            <xs:extension base="baseLdapSearchType">
-                                <xs:attribute name="user-dn-attribute" type="xs:string" use="optional" default="dn">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The attribute on the user entry which is their distinguished name.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="attribute" type="xs:string" use="optional" default="uid">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The name of the attribute to search for the user, this filter will then perform a
-                                            simple search where the username entered by the user matches the attribute specified here.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:extension>
-                        </xs:complexContent>
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="advanced-filter">
-                    <xs:complexType>
-                        <xs:complexContent>
-                            <xs:extension base="baseLdapSearchType">
-                                <xs:attribute name="user-dn-attribute" type="xs:string" use="optional" default="dn">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The attribute on the user entry which is their distinguished name.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="filter" type="xs:string" use="required">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            The fully defined filter to be used to search for the user based on their entered user
-                                            ID. The filter should contain a variable in
-                                            the form {0} - this will be replaced with the username
-                                            supplied by the user.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:extension>
-                        </xs:complexContent>
-                    </xs:complexType>
-                </xs:element>
-            </xs:choice>
-        </xs:sequence>
-        <xs:attribute name="force" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    If the username was already converted to a distinguished name during authentication this attribute forces
-                    the search to be repeated
-                    before loading group information.
-
-                    This would most likely be required if a different LDAP server
-                    was being used to load group information as was used for authentication.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:simpleType name="groupMode">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="SIMPLE" />
-            <xs:enumeration value="DISTINGUISHED_NAME" />
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:complexType name="membershipFilterType">
-        <xs:attribute name="principal-attribute" type="xs:string" default="member">
-            <xs:annotation>
-                <xs:documentation>
-                    The attribute on the group entry that references the principal.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="ldapGroupSearchType">
-        <xs:sequence>
-            <xs:element name="cache" type="ldapCacheType" minOccurs="0" />
-            <xs:choice>
-                <xs:element name="group-to-principal">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Group search definition where an attribute on the group references the principal.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:complexType>
-                        <xs:complexContent>
-                            <xs:extension base="baseLdapSearchType">
-                                <xs:sequence>
-                                    <xs:element name="membership-filter" type="membershipFilterType" minOccurs="1" />
-                                </xs:sequence>
-                                <xs:attribute name="search-by" type="groupMode" default="DISTINGUISHED_NAME">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            Should searching use the simple name or distinguished name of the principal.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="prefer-original-connection" type="xs:boolean" default="true">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            After a referral has been followed should the original LDAP connection defined for
-                                            group loading be used or should the connection from the last referral be used instead.
-
-                                            By default each attempt to load a group will revert back to the original connection as defined
-                                            in the configuration, however setting this attribute to false will cause subsequent searches to
-                                            use the connection of the last referral.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
-                            </xs:extension>
-                        </xs:complexContent>
-                    </xs:complexType>
-                </xs:element>
-                <xs:element name="principal-to-group">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Group search definition where an attribute on the principal references the group.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:complexType>
-                        <xs:attribute name="group-attribute" type="xs:string" default="memberOf">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    The name of the attribute on the principal that references the group.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="prefer-original-connection" type="xs:boolean" default="true">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    After a referral has been followed should the original LDAP connection defined for
-                                    group loading be used or should the connection from the last referral be used instead.
-
-                                    By default each attempt to load a group will revert back to the original connection as defined
-                                    in the configuration, however setting this attribute to false will cause subsequent searches to
-                                    use the connection of the last referral.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="skip-missing-groups" type="xs:boolean" default="false">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    If an entry references non-existent groups then authentication is aborted due to the inability to
-                                    query a users complete set of groups, setting this option to true allows for non-existent groups
-                                    to be silently ignored.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                        <xs:attribute name="parse-group-name-from-dn" type="xs:boolean" default="false">
-                            <xs:annotation>
-                                <xs:documentation>
-                                    Extract the groupe name from the distinguished name instead of requesting it.
-                                </xs:documentation>
-                            </xs:annotation>
-                        </xs:attribute>
-                    </xs:complexType>
-                </xs:element>
-            </xs:choice>
-        </xs:sequence>
-        <xs:attribute name="group-name" type="groupMode" use="optional" default="SIMPLE">
-            <xs:annotation>
-                <xs:documentation>
-                    Defines the form the name of the group should take, either it's simple name or it's complete
-                    distringuished name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="iterative" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Should any group searching be iterative, i.e. should additional searches be performed to identify the
-                    groups that the groups are members of.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="group-dn-attribute" type="xs:string" default="dn">
-            <xs:annotation>
-                <xs:documentation>
-                    On the group entry which of it's attributes is it's distingushed name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="group-name-attribute" type="xs:string" default="uid">
-            <xs:annotation>
-                <xs:documentation>
-                    On the group entry which of it's attributes is it's simple name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:simpleType name="cacheType">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="by-search-time" />
-            <xs:enumeration value="by-access-time" />
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:complexType name="ldapCacheType">
-        <xs:attribute name="type" type="cacheType" default="by-search-time">
-            <xs:annotation>
-                <xs:documentation>
-                    The type of cache, by-search-time and the entries are evicted based on search time and search order, by-access-time and
-                    the entires are evicted based on the time they were last accessed.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="eviction-time" type="xs:int" default="900">
-            <xs:annotation>
-                <xs:documentation>
-                    The time until an entry is evicted from the cache in seconds, a time of &lt;=0 means no eviction based
-                    on time.
-
-                    If items are not going to be evicted based on time then max-cache-size should be set otherwise the cache
-                    could grow without restriction.
-
-                    Note: The eviction time is handled on a best-efforts basis, during times of many concurrent authentications
-                    there could be small delay before the evictions fire.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="cache-failures" type="xs:boolean" default="false">
-            <xs:annotation>
-                <xs:documentation>
-                    Should non IO failures be cached? e.g. should searches for a non-existent user be cached to avoid
-                    repeating the same search.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="max-cache-size" type="xs:int" default="0">
-            <xs:annotation>
-                <xs:documentation>
-                    The maximum number of items to hold in the cache before items are evicted, or &lt;=0 where the size of
-                    the cache is unlimited.
-
-                    This value should be higher than the anticipated cache size for current users otherwise items
-                    will be continually evicted.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="usersAuthenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                A set of users
-            </xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="user" type="userType" maxOccurs="unbounded"/>
-        </xs:sequence>
-    </xs:complexType>
-
-    <xs:complexType name="userType">
-        <xs:annotation>
-            <xs:documentation>
-                A single user.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:choice>
-            <xs:element name="password" type="xs:string" />
-        </xs:choice>
-        <xs:attribute name="username" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The users username.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="propertiesFileType">
-        <xs:annotation>
-            <xs:documentation>
-                Declaration of a location of a properties file.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:attribute name="relative-to" use="optional" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>
-                    The name of another previously named path, or of one of the
-                    standard paths provided by the system. If 'relative-to' is
-                    provided, the value of the 'path' attribute is treated as
-                    relative to the path specified by this attribute.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="path" type="xs:string" use="required">
-            <xs:annotation>
-                <xs:documentation>
-                    The path of the properties file.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:complexType>
-
-    <xs:complexType name="propertiesAuthenticationType">
-        <xs:annotation>
-            <xs:documentation>
-                Declaration of users stored within properties files.
-
-                The entries within the properties file are username={credentials} with each user
-                being specified on it's own line.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="propertiesFileType">
-                <xs:attribute name="plain-text" type="xs:boolean" default="false">
-                    <xs:annotation>
-                        <xs:documentation>
-                            Are the credentials within the properties file stored in plain text, if not
-                            the {credential} is expected to be the hex encoded Digest hash
-                            of 'username : realm : password'.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-
    <xs:complexType name="audit-log-formattersType">
         <xs:annotation>
             <xs:documentation>
@@ -1520,15 +481,15 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="base-audit-log-formatterType">
-	        <xs:attribute name="compact" type="xs:boolean" default="false">
-		            <xs:annotation>
-		               <xs:documentation>
-		                   If true will format the JSON on one line. There may still be
-		                   values containing new lines, so if having the whole record on
-		                   one line is important, set escape-new-line or escape-control-characters to true.
-		               </xs:documentation>
-		            </xs:annotation>
-		        </xs:attribute>
+                <xs:attribute name="compact" type="xs:boolean" default="false">
+                    <xs:annotation>
+                       <xs:documentation>
+                           If true will format the JSON on one line. There may still be
+                           values containing new lines, so if having the whole record on
+                           one line is important, set escape-new-line or escape-control-characters to true.
+                       </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
               <xs:attribute name="escape-new-line" type="xs:boolean" default="false">
                   <xs:annotation>
                      <xs:documentation>
@@ -1746,33 +707,33 @@
                     </xs:element>
                 </xs:choice>
                 <xs:attribute name="syslog-format" default="RFC5424">
-		            <xs:annotation>
-		                <xs:documentation>
-		                    The format to use for the syslog messages. See your syslog provider's documentation for what is supported.
-		                </xs:documentation>
-		            </xs:annotation>
-		            <xs:simpleType>
-		                <xs:restriction base="xs:token">
-		                    <xs:enumeration value="RFC5424">
-		                        <xs:annotation>
-		                            <xs:documentation>Format the syslog data according to the RFC-5424 standard</xs:documentation>
-		                        </xs:annotation>
-		                    </xs:enumeration>
-		                    <xs:enumeration value="RFC3164">
-		                        <xs:annotation>
-		                            <xs:documentation>Format the syslog data according to the RFC-3164 standard</xs:documentation>
-		                        </xs:annotation>
-		                    </xs:enumeration>
-		                </xs:restriction>
-		            </xs:simpleType>
-		        </xs:attribute>
-		        <xs:attribute name="max-length" type="xs:int">
-		          <xs:annotation>
-		             <xs:documentation>
-		                The maximum length in bytes a log message, including the header, is allowed to be. If undefined, it will default to 1024 bytes if the syslog-format is RFC3164, or 2048 bytes if the syslog-format is RFC5424.
-		             </xs:documentation>
-		          </xs:annotation>
-		        </xs:attribute>
+                    <xs:annotation>
+                        <xs:documentation>
+                            The format to use for the syslog messages. See your syslog provider's documentation for what is supported.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleType>
+                        <xs:restriction base="xs:token">
+                            <xs:enumeration value="RFC5424">
+                                <xs:annotation>
+                                    <xs:documentation>Format the syslog data according to the RFC-5424 standard</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                            <xs:enumeration value="RFC3164">
+                                <xs:annotation>
+                                    <xs:documentation>Format the syslog data according to the RFC-3164 standard</xs:documentation>
+                                </xs:annotation>
+                            </xs:enumeration>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+                <xs:attribute name="max-length" type="xs:int">
+                  <xs:annotation>
+                     <xs:documentation>
+                        The maximum length in bytes a log message, including the header, is allowed to be. If undefined, it will default to 1024 bytes if the syslog-format is RFC3164, or 2048 bytes if the syslog-format is RFC5424.
+                     </xs:documentation>
+                  </xs:annotation>
+                </xs:attribute>
               <xs:attribute name="truncate" type="xs:boolean" default="true">
                 <xs:annotation>
                    <xs:documentation>
@@ -1789,127 +750,127 @@
                 </xs:annotation>
                 <xs:simpleType>
 	                <xs:restriction base="xs:token">
-		                <xs:enumeration value="KERNEL">
-			                <xs:annotation>
-			                   <xs:documentation>0</xs:documentation>
-			                </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="USER_LEVEL">
+                        <xs:enumeration value="KERNEL">
+        	                <xs:annotation>
+        	                   <xs:documentation>0</xs:documentation>
+        	                </xs:annotation>
+                        </xs:enumeration>
+                        <xs:enumeration value="USER_LEVEL">
                          <xs:annotation>
                             <xs:documentation>1</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="MAIL_SYSTEM">
+                        </xs:enumeration>
+                        <xs:enumeration value="MAIL_SYSTEM">
                          <xs:annotation>
                             <xs:documentation>2</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="SYSTEM_DAEMONS">
+                        </xs:enumeration>
+                        <xs:enumeration value="SYSTEM_DAEMONS">
                          <xs:annotation>
                             <xs:documentation>3</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="SECURITY">
+                        </xs:enumeration>
+                        <xs:enumeration value="SECURITY">
                          <xs:annotation>
                             <xs:documentation>4</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="SYSLOGD">
+                        </xs:enumeration>
+                        <xs:enumeration value="SYSLOGD">
                          <xs:annotation>
                             <xs:documentation>5</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LINE_PRINTER">
+                        </xs:enumeration>
+                        <xs:enumeration value="LINE_PRINTER">
                          <xs:annotation>
                             <xs:documentation>6</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="NETWORK_NEWS">
+                        </xs:enumeration>
+                        <xs:enumeration value="NETWORK_NEWS">
                          <xs:annotation>
                             <xs:documentation>7</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="UUCP">
+                        </xs:enumeration>
+                        <xs:enumeration value="UUCP">
                          <xs:annotation>
                             <xs:documentation>8</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="CLOCK_DAEMON">
+                        </xs:enumeration>
+                        <xs:enumeration value="CLOCK_DAEMON">
                          <xs:annotation>
                             <xs:documentation>9</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="SECURITY2">
+                        </xs:enumeration>
+                        <xs:enumeration value="SECURITY2">
                          <xs:annotation>
                             <xs:documentation>10</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="FTP_DAEMON">
+                        </xs:enumeration>
+                        <xs:enumeration value="FTP_DAEMON">
                          <xs:annotation>
                             <xs:documentation>11</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="NTP">
+                        </xs:enumeration>
+                        <xs:enumeration value="NTP">
                          <xs:annotation>
                             <xs:documentation>12</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOG_AUDIT">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOG_AUDIT">
                          <xs:annotation>
                             <xs:documentation>13</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOG_ALERT">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOG_ALERT">
                          <xs:annotation>
                             <xs:documentation>14</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="CLOCK_DAEMON2">
+                        </xs:enumeration>
+                        <xs:enumeration value="CLOCK_DAEMON2">
                          <xs:annotation>
                             <xs:documentation>15</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_0">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_0">
                          <xs:annotation>
                             <xs:documentation>16</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_1">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_1">
                          <xs:annotation>
                             <xs:documentation>17</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_2">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_2">
                          <xs:annotation>
                             <xs:documentation>18</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_3">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_3">
                          <xs:annotation>
                             <xs:documentation>19</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_4">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_4">
                          <xs:annotation>
                             <xs:documentation>20</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_5">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_5">
                          <xs:annotation>
                             <xs:documentation>21</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_6">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_6">
                          <xs:annotation>
                             <xs:documentation>22</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-		                <xs:enumeration value="LOCAL_USE_7">
+                        </xs:enumeration>
+                        <xs:enumeration value="LOCAL_USE_7">
                          <xs:annotation>
                             <xs:documentation>23</xs:documentation>
                          </xs:annotation>
-		                </xs:enumeration>
-	                </xs:restriction>
+                        </xs:enumeration>
+                    </xs:restriction>
                 </xs:simpleType>
               </xs:attribute>
               <xs:attribute name="app-name" type="xs:string">
@@ -2086,17 +1047,6 @@
             <xs:annotation>
                 <xs:documentation>
                     Reference to the SSLContext to use for this management interface.
-
-                    If this is not set then the SSLContext will be obtained from any referenced security-realm.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="security-realm" type="xs:string" use="optional">
-            <xs:annotation>
-                <xs:documentation>
-                    The security realm to use for this management interface, the capabilities
-                    of the security realm will be queried to identify the authentication mechanism(s) to
-                    offer.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2310,7 +1260,7 @@
 
                             If not specified the port will not be opened.
 
-                            If specified an ssl-context or security-realm will be
+                            If specified an ssl-context will be
                             required to obtain the SSL configuration.
                         </xs:documentation>
                     </xs:annotation>
@@ -2344,7 +1294,7 @@
                             attribute, redirect of HTTPS requests received on the HTTP
                             socket to the HTTPS address will not be supported.
 
-                            If specified an ssl-context or security-realm will be
+                            If specified an ssl-context will be
                             required to obtain the SSL configuration.
                         </xs:documentation>
                     </xs:annotation>
@@ -2468,7 +1418,7 @@
                 <xs:documentation>
                     Name of a socket-binding configuration declared in the server's socket-binding-group to use for a HTTPS socket.
 
-                    Note: When specified the interface must also be configured to reference an ssl-context or a security realm with a configured keystore.
+                    Note: When specified the interface must also be configured to reference an ssl-context.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -2535,7 +1485,6 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="security-realm" type="xs:string" use="optional" />
         <xs:attribute name="username" type="xs:string" use="optional" />
         <xs:attribute name="ignore-unused-configuration" type="xs:boolean" use="optional">
             <xs:annotation>
@@ -2578,8 +1527,8 @@
 
                         The management authorization configuration system (which is ordinarily
                         configured according to policies set in the domain wide configuration)
-                        will use default settings, whereby user who can authenticate to the security
-                        realm associated with the management interface to which they connect
+                        will use default settings, whereby user who can authenticate to the authentication
+                        factory associated with the management interface to which they connect
                         will have all permissions.
                         ]]>
                     </xs:documentation>

@@ -48,38 +48,6 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 public interface ManagementXmlDelegate {
 
     /**
-     * Parse {@link Element#SECURITY_REALMS} content.
-     * <p>
-     * This default implementation does standard parsing; override to disable.
-     * </p>
-     *
-     * @param reader the xml reader
-     * @param address the address of the parent resource for any added resources
-     * @param expectedNs the expected namespace for any children
-     * @param operationsList list to which any operations should be added
-     * @throws XMLStreamException
-     */
-    default boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList) throws XMLStreamException {
-        return false;
-    }
-
-    /**
-     * Parse {@link Element#OUTBOUND_CONNECTIONS} content.
-     * <p>
-     * This default implementation does standard parsing; override to disable.
-     * </p>
-     *
-     * @param reader the xml reader
-     * @param address the address of the parent resource for any added resources
-     * @param expectedNs the expected namespace for any children
-     * @param operationsList list to which any operations should be added
-     * @throws XMLStreamException
-     */
-    default boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList) throws XMLStreamException {
-        return false;
-    }
-
-    /**
      * Parse {@link Element#MANAGEMENT_INTERFACES} content.
      * <p>This default implementation throws {@code UnsupportedOperationException}; override to support.</p>
      *
