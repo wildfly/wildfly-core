@@ -60,7 +60,6 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -1184,7 +1183,7 @@ public class ExtensionRegistry {
     private static final JmxAuthorizer NO_OP_AUTHORIZER = new JmxAuthorizer() {
 
         @Override
-        public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
+        public AuthorizationResult authorize(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource target) {
             return AuthorizationResult.PERMITTED;
         }
 
@@ -1204,17 +1203,17 @@ public class ExtensionRegistry {
         }
 
         @Override
-        public AuthorizationResult authorize(Caller caller, Environment callEnvironment, Action action, TargetAttribute target) {
+        public AuthorizationResult authorize(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute target) {
             return AuthorizationResult.PERMITTED;
         }
 
         @Override
-        public AuthorizationResult authorizeJmxOperation(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        public AuthorizationResult authorizeJmxOperation(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
             return AuthorizationResult.PERMITTED;
         }
 
         @Override
-        public Set<String> getCallerRoles(Caller caller, Environment callEnvironment, Set<String> runAsRoles) {
+        public Set<String> getCallerRoles(SecurityIdentity identity, Environment callEnvironment, Set<String> runAsRoles) {
             return null;
         }
 

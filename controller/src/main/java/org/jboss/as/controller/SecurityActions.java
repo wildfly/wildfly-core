@@ -26,9 +26,7 @@ import static java.security.AccessController.doPrivileged;
 
 import java.security.PrivilegedAction;
 
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.InVmAccess;
-import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -49,10 +47,6 @@ class SecurityActions {
         return createInVmActions().runInVm(action);
     }
 
-    static Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
-        return createCallerActions().getCaller(currentCaller, securityIdentity);
-    }
-
     static AccessAuditContext currentAccessAuditContext() {
         return createAccessAuditContextActions().currentContext();
     }
@@ -63,10 +57,6 @@ class SecurityActions {
 
     private static InVmActions createInVmActions() {
         return WildFlySecurityManager.isChecking() ? InVmActions.PRIVILEGED : InVmActions.NON_PRIVILEGED;
-    }
-
-    private static CallerActions createCallerActions() {
-        return WildFlySecurityManager.isChecking() ? CallerActions.PRIVILEGED : CallerActions.NON_PRIVILEGED;
     }
 
     private interface AccessAuditContextActions {
@@ -96,42 +86,6 @@ class SecurityActions {
             public AccessAuditContext currentContext() {
                 return doPrivileged(PRIVILEGED_ACTION);
             }
-        };
-
-    }
-
-    private interface CallerActions {
-
-        Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity);
-
-
-        CallerActions NON_PRIVILEGED = new CallerActions() {
-
-            @Override
-            public Caller getCaller(Caller currentCaller, SecurityIdentity securityIdentity) {
-                // This is deliberately checking the Subject is the exact same instance.
-                if (currentCaller == null || securityIdentity != currentCaller.getSecurityIdentity()) {
-                    return Caller.createCaller(securityIdentity);
-                }
-
-                return currentCaller;
-            }
-
-        };
-
-        CallerActions PRIVILEGED = new CallerActions() {
-
-            @Override
-            public Caller getCaller(final Caller currentCaller, final SecurityIdentity securityIdentity) {
-                return doPrivileged(new PrivilegedAction<Caller>() {
-
-                    @Override
-                    public Caller run() {
-                        return NON_PRIVILEGED.getCaller(currentCaller, securityIdentity);
-                    }
-                });
-            }
-
         };
 
     }

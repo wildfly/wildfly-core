@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.access.constraint.ScopingConstraint;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Encapsulates the current configuration of all aspects of the access control system that are
@@ -72,8 +73,10 @@ public interface AuthorizerConfiguration {
     Map<String, RoleMapping> getRoleMappings();
 
     /**
-     * Gets whether role mapping should use roles obtained from the security realm and associated
-     * with the {@link Caller}.
+     * Gets whether role mapping should use roles obtained from the {@link SecurityIdentity}.
+     *
+     * Any configured exclusions are still checked.  The configured inclusions will also be checked
+     * meaning additional roles may also be granted.
      *
      * @return {@code true} if role
      */
@@ -128,20 +131,20 @@ public interface AuthorizerConfiguration {
         /**
          * Gets whether the caller matches the role mapping's inclusion rules.
          *
-         * @param caller the caller
+         * @param identity the caller identity
          * @return the principal that results in the caller satisfying the role mapping's inclusion rules,
          *         or {@code null} if the caller does not satisfy them
          */
-        MappingPrincipal isIncluded(Caller caller);
+        MappingPrincipal isIncluded(SecurityIdentity identity);
 
         /**
          * Gets whether the caller matches the role mapping's exclusion rules.
          *
-         * @param caller the caller
+         * @param identity the caller identity
          * @return the principal that results in the caller satisfying the role mapping's exclusion rules,
          *         or {@code null} if the caller does not satisfy them
          */
-        MappingPrincipal isExcluded(Caller caller);
+        MappingPrincipal isExcluded(SecurityIdentity identity);
     }
 
     /**
@@ -155,12 +158,6 @@ public interface AuthorizerConfiguration {
          * @return the principal type. Will not be {@code null}
          */
         PrincipalType getType();
-
-        /**
-         * The name of the security realm for which the principal is valid
-         * @return the realm name, or {@code null} if the principal is not specific to any realm
-         */
-        String getRealm();
 
         /**
          * Gets the name of the principal

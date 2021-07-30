@@ -35,8 +35,6 @@ import java.util.stream.StreamSupport;
 
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.core.security.RealmUser;
-import org.jboss.as.core.security.api.RealmPrincipal;
 import org.jboss.as.protocol.mgmt.ProtocolUtils;
 import org.wildfly.security.auth.SupportLevel;
 import org.wildfly.security.auth.permission.LoginPermission;
@@ -59,7 +57,7 @@ import org.wildfly.security.evidence.Evidence;
  * Note: Although this implementation operates on a {@link SecurityIdentity} and {@link InetAddress} it is reusing the protocol
  * established in WildFly 8 to propagate the contents of a Subject to different processes, this has the advantage that older
  * slaves will still understand the message and be able to interpret it correctly but it does mean any subsequent deviations
- * from the protocl would require a management protocol version bump and a check to decide which form to send.
+ * from the protocol would require a management protocol version bump and a check to decide which form to send.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
@@ -81,15 +79,12 @@ class IdentityAddressProtocolUtil {
 
     static void write(final DataOutput output, final SecurityIdentity securityIdentity, final InetAddress sourceAddress) throws IOException {
         final Principal principal;
-        final String realm;
         final Set<String> roles;
         if (securityIdentity != null) {
             principal = securityIdentity.getPrincipal();
-            realm = principal instanceof RealmPrincipal ? ((RealmPrincipal) principal).getRealm() : null;
             roles = StreamSupport.stream(securityIdentity.getRoles().spliterator(), false).collect(Collectors.toSet());
         } else {
             principal = null;
-            realm = null;
             roles = Collections.emptySet();
         }
 
@@ -107,10 +102,6 @@ class IdentityAddressProtocolUtil {
 
         if (principal != null) {
             output.write(USER);
-            if (realm != null) {
-                output.write(REALM_PARAM);
-                output.writeUTF(realm);
-            }
             output.write(NAME_PARAM);
             output.writeUTF(principal.getName());
         }
@@ -118,11 +109,6 @@ class IdentityAddressProtocolUtil {
         // We send all the SI roles as groups as previous versions would map from group to access control role.
         for (String roleName : roles) {
             output.write(GROUP);
-            if (realm != null) {
-                // We write the realm as older hosts use it - servers build on WildFly Core 3 will just drop it.
-                output.write(REALM_PARAM);
-                output.writeUTF(realm);
-            }
             output.write(NAME_PARAM);
             output.writeUTF(roleName);
 
@@ -162,10 +148,9 @@ class IdentityAddressProtocolUtil {
             switch (type) {
                 case USER: {
                     byte paramType = input.readByte();
-                    String realm = null;
                     String name = null;
                     if (paramType == REALM_PARAM) {
-                        realm = input.readUTF();
+                        input.readUTF(); // Drop it - no longer used.
                         paramType = input.readByte();
                     }
                     if (paramType == NAME_PARAM) {
@@ -174,7 +159,7 @@ class IdentityAddressProtocolUtil {
                         throw ControllerLogger.ROOT_LOGGER.unsupportedIdentityParameter(paramType, USER);
                     }
 
-                    principal = realm != null ? new RealmUser(realm, name) : new NamePrincipal(name);
+                    principal = new NamePrincipal(name);
                     break;
                 }
                 case GROUP:

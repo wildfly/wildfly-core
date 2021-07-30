@@ -36,7 +36,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -48,6 +47,8 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
@@ -61,13 +62,13 @@ public class ManagementPermissionAuthorizerTestCase {
         }
     });
 
-    private Caller caller;
+    private SecurityIdentity identity;
     private Environment environment;
     private ManagementPermissionAuthorizer authorizer;
 
     @Before
     public void setUp() {
-        caller = Caller.createCaller(null);
+        identity = SecurityDomain.builder().build().getAnonymousSecurityIdentity();
         ControlledProcessState processState = new ControlledProcessState(false);
         processState.setRunning();
         environment = new Environment(processState, ProcessType.EMBEDDED_SERVER);
@@ -80,7 +81,7 @@ public class ManagementPermissionAuthorizerTestCase {
         Action action = new Action(null, null, EnumSet.of(Action.ActionEffect.ADDRESS,
                 Action.ActionEffect.READ_CONFIG));
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
-        AuthorizationResult result = authorizer.authorize(caller, environment, action, targetResource);
+        AuthorizationResult result = authorizer.authorize(identity, environment, action, targetResource);
 
         assertEquals(AuthorizationResult.Decision.PERMIT, result.getDecision());
     }
@@ -90,7 +91,7 @@ public class ManagementPermissionAuthorizerTestCase {
         Action action = new Action(null, null, EnumSet.of(Action.ActionEffect.ADDRESS,
                 Action.ActionEffect.READ_CONFIG, Action.ActionEffect.WRITE_CONFIG));
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
-        AuthorizationResult result = authorizer.authorize(caller, environment, action, targetResource);
+        AuthorizationResult result = authorizer.authorize(identity, environment, action, targetResource);
 
         assertEquals(AuthorizationResult.Decision.DENY, result.getDecision());
     }
@@ -101,7 +102,7 @@ public class ManagementPermissionAuthorizerTestCase {
                 Action.ActionEffect.READ_CONFIG));
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
         TargetAttribute targetAttribute = new TargetAttribute("test", null, new ModelNode(), targetResource);
-        AuthorizationResult result = authorizer.authorize(caller, environment, action, targetAttribute);
+        AuthorizationResult result = authorizer.authorize(identity, environment, action, targetAttribute);
 
         assertEquals(AuthorizationResult.Decision.PERMIT, result.getDecision());
     }
@@ -112,7 +113,7 @@ public class ManagementPermissionAuthorizerTestCase {
                 Action.ActionEffect.READ_CONFIG, Action.ActionEffect.WRITE_CONFIG));
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
         TargetAttribute targetAttribute = new TargetAttribute("test", null, new ModelNode(), targetResource);
-        AuthorizationResult result = authorizer.authorize(caller, environment, action, targetAttribute);
+        AuthorizationResult result = authorizer.authorize(identity, environment, action, targetAttribute);
 
         assertEquals(AuthorizationResult.Decision.DENY, result.getDecision());
     }
@@ -137,12 +138,12 @@ public class ManagementPermissionAuthorizerTestCase {
         }
 
         @Override
-        public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetAttribute target) {
+        public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute target) {
             return getUserPermissions();
         }
 
         @Override
-        public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
+        public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource target) {
             return getUserPermissions();
         }
 
@@ -157,7 +158,7 @@ public class ManagementPermissionAuthorizerTestCase {
         }
 
         @Override
-        public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
             return null;
         }
 

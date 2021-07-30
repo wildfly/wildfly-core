@@ -78,7 +78,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import org.jboss.as.controller.ConfigurationChangesCollector.ConfigurationChange;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.audit.AuditLogger;
 import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
@@ -163,7 +162,6 @@ abstract class AbstractOperationContext implements OperationContext {
     boolean cancelled;
     /** Currently executing step */
     Step activeStep;
-    Caller caller;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
     /** Whether operation execution has begun; i.e. whether completeStep() has been called */
     private boolean executing;
@@ -659,11 +657,11 @@ abstract class AbstractOperationContext implements OperationContext {
         if (!auditLogged) {
             try {
                 AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
-                Caller caller = getCaller();
+                SecurityIdentity identity = getSecurityIdentity();
                 auditLogger.log(
                         isReadOnly(),
                         resultAction,
-                        caller == null ? null : caller.getName(),
+                        identity == null ? null : identity.getPrincipal().getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
                         accessContext == null ? null : accessContext.getRemoteAddress(),
@@ -688,9 +686,9 @@ abstract class AbstractOperationContext implements OperationContext {
         if (!isBooting() && !isReadOnly() && configurationChangesCollector.trackAllowed()) {
             try {
                 AccessAuditContext accessContext = SecurityActions.currentAccessAuditContext();
-                Caller currentCaller = getCaller();
+                SecurityIdentity identity = getSecurityIdentity();
                 configurationChangesCollector.addConfigurationChanges(new ConfigurationChange(resultAction,
-                        currentCaller == null ? null : currentCaller.getName(),
+                        identity == null ? null : identity.getPrincipal().getName(),
                         accessContext == null ? null : accessContext.getDomainUuid(),
                         accessContext == null ? null : accessContext.getAccessMechanism(),
                         accessContext == null ? null : accessContext.getRemoteAddress(),
@@ -1307,15 +1305,6 @@ abstract class AbstractOperationContext implements OperationContext {
             more = !steps.get(stage).isEmpty();
         }
         return more;
-    }
-
-    @Override
-    public Caller getCaller() {
-        // TODO Consider threading but in general no harm in multiple instances being created rather than adding synchronization.
-        Caller response = SecurityActions.getCaller(caller, getSecurityIdentity()); // This allows for a change of SecurityIdentity whilst the same OperationContext is in use.
-        caller = response;
-
-        return response;
     }
 
     @Override

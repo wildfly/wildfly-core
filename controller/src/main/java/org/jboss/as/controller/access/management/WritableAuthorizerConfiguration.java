@@ -34,10 +34,11 @@ import java.util.WeakHashMap;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.CombinationPolicy;
 import org.jboss.as.controller.access.rbac.StandardRBACAuthorizer;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.wildfly.security.auth.server.SecurityIdentity;
+import org.wildfly.security.authz.Roles;
 
 /**
  * Standard {@link AuthorizerConfiguration} implementation that also exposes mutator APIs for use by
@@ -415,48 +416,33 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
         }
 
         @Override
-        public MappingPrincipal isIncluded(Caller caller) {
-            return isInSet(caller, includes);
+        public MappingPrincipal isIncluded(SecurityIdentity identity) {
+            return isInSet(identity, includes);
         }
 
         @Override
-        public MappingPrincipal isExcluded(Caller caller) {
-            return isInSet(caller, excludes);
+        public MappingPrincipal isExcluded(SecurityIdentity identity) {
+            return isInSet(identity, excludes);
         }
 
-        private MappingPrincipal isInSet(Caller caller, Set<MappingPrincipal> theSet) {
+        private MappingPrincipal isInSet(SecurityIdentity identity, Set<MappingPrincipal> theSet) {
             // One match is all it takes - return true on first match found.
 
             String accountName = null;
             String realm = null;
-            Set<String> groups = null;
+            Roles identityRoles = null;
 
             for (MappingPrincipal current : theSet) {
-                String expectedRealm = current.getRealm();
                 switch (current.getType()) {
                     case USER:
-                        if (expectedRealm != null) {
-                            if (current.getName().equals((accountName = getAccountName(caller, accountName)))
-                                    && expectedRealm.equals((realm = getRealmName(caller, realm)))) {
-                                return current;
-                            }
-                        } else {
-                            if (current.getName().equals((accountName = getAccountName(caller, accountName)))) {
-                                return current;
-                            }
+                        if (current.getName().equals((accountName = getAccountName(identity, accountName)))) {
+                            return current;
                         }
                         break;
                     case GROUP:
-                        if (expectedRealm != null) {
-                            if ((groups = getGroups(caller, groups)).contains(current.getName())
-                                    && expectedRealm.equals((realm = getRealmName(caller, realm)))) {
+                            if ((identityRoles = getIdentityRoles(identity, identityRoles)).contains(current.getName())) {
                                 return current;
                             }
-                        } else {
-                            if ((groups = getGroups(caller, groups)).contains(current.getName())) {
-                                return current;
-                            }
-                        }
 
                         break;
                 }
@@ -465,16 +451,12 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
             return null;
         }
 
-        private String getAccountName(final Caller caller, final String currentValue) {
-            return currentValue != null ? currentValue : caller.getName();
+        private String getAccountName(final SecurityIdentity identity, final String currentValue) {
+            return currentValue != null ? currentValue : identity.getPrincipal().getName();
         }
 
-        private String getRealmName(final Caller caller, final String currentValue) {
-            return currentValue != null ? currentValue : caller.getRealm();
-        }
-
-        private Set<String> getGroups(final Caller caller, final Set<String> currentValue) {
-            return currentValue != null ? currentValue : caller.getAssociatedGroups();
+        private Roles getIdentityRoles(final SecurityIdentity identity, final Roles currentValue) {
+            return currentValue != null ? currentValue : identity.getRoles();
         }
 
         private Set<MappingPrincipal> getSet(final MatchType matchType, final boolean immediate) {
@@ -505,7 +487,6 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
 
     private static final class MappingPrincipalImpl implements MappingPrincipal {
         private final PrincipalType type;
-        private final String realm;
         private final String name;
 
         private final int hashCode; // Doesn't change and we know it is needed.
@@ -513,7 +494,6 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
         private MappingPrincipalImpl(final PrincipalType type, final String name, final String realm) {
             this.type = type;
             this.name = name;
-            this.realm = realm;
 
             hashCode = type.ordinal() * name.hashCode() * (realm == null ? 31 : realm.hashCode());
         }
@@ -521,11 +501,6 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
         @Override
         public PrincipalType getType() {
             return type;
-        }
-
-        @Override
-        public String getRealm() {
-            return realm;
         }
 
         @Override
@@ -544,12 +519,12 @@ public class WritableAuthorizerConfiguration implements AuthorizerConfiguration,
         }
 
         private boolean equals(MappingPrincipalImpl obj) {
-            return type == obj.type && name.equals(obj.name) && (realm == null ? obj.realm == null : realm.equals(obj.realm));
+            return type == obj.type && name.equals(obj.name);
         }
 
         @Override
         public String toString() {
-            return "Principal [type=" + type + ", realm=" + realm + ", name=" + name + "]";
+            return "Principal [type=" + type + ", name=" + name + "]";
         }
 
     }

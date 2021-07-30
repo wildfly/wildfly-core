@@ -28,7 +28,6 @@ import java.util.logging.Level;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -832,15 +831,6 @@ public interface OperationContext extends ExpressionResolver {
      * @return  the authorization result
      */
     AuthorizationResult authorizeOperation(ModelNode operation);
-
-    /**
-     * Obtain the {@link Caller} for the current request.
-     *
-     * @return The current caller.
-     * @deprecated Use {@link #getSecurityIdentity()} instead.
-     */
-    @Deprecated
-    Caller getCaller();
 
     /**
      * Obtain the {@link SecurityIdentity} for the current request.
