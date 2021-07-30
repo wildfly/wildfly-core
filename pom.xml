@@ -208,7 +208,6 @@
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
         <version.org.mockito>3.10.0</version.org.mockito>
-        <version.org.picketbox>5.0.3.Final-redhat-00007</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
         <version.org.slf4j>1.7.30</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
@@ -1128,50 +1127,6 @@
                 <groupId>org.jboss.xnio</groupId>
                 <artifactId>xnio-nio</artifactId>
                 <version>${version.org.jboss.xnio.xnio-nio}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox</artifactId>
-                <version>${version.org.picketbox}</version>
-                <exclusions>
-                    <exclusion>
-                         <groupId>org.picketbox</groupId>
-                         <artifactId>jboss-security-spi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                         <groupId>org.picketbox</groupId>
-                         <artifactId>jbosssx</artifactId>
-                    </exclusion>
-                    <exclusion>
-                         <groupId>org.picketbox</groupId>
-                         <artifactId>picketbox-bare</artifactId>
-                    </exclusion>
-                 </exclusions>
-            </dependency>
-            <!-- This isn't used in WildFly Core but we include it here to keep
-                 it's version aligned with the core's use of related picketbox artifacts -->
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-infinispan</artifactId>
-                <version>${version.org.picketbox}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.picketbox</groupId>
-                        <artifactId>picketbox-spi-bare</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.picketbox</groupId>
-                        <artifactId>jbosssx-bare</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.logging</groupId>
-                        <artifactId>jboss-logging-spi</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.infinispan</groupId>
-                        <artifactId>infinispan-core</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.projectodd.vdx</groupId>

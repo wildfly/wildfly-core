@@ -53,7 +53,6 @@
         <module name="org.jboss.msc" />
         <module name="org.jboss.staxmapper"/>
         <!-- used with jaas authentication -->
-        <module name="org.picketbox" optional="true"/>
         <!-- for SecurityRealmService ADDITIONAL_PERMISSION -->
         <module name="org.wildfly.transaction.client" optional="true" />
     </dependencies>
