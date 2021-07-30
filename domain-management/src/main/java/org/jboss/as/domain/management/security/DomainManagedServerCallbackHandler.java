@@ -16,6 +16,10 @@
 
 package org.jboss.as.domain.management.security;
 
+import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
+import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
+import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
+
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -23,21 +27,17 @@ import java.security.Principal;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
-import org.jboss.as.core.security.RealmUser;
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
@@ -62,11 +62,6 @@ import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.PasswordSpec;
 
-import static org.jboss.as.domain.management.RealmConfigurationConstants.VERIFY_PASSWORD_CALLBACK_SUPPORTED;
-import static org.jboss.msc.service.ServiceController.Mode.ON_DEMAND;
-import static org.wildfly.security.password.interfaces.ClearPassword.ALGORITHM_CLEAR;
-import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_DIGEST_MD5;
-
 /**
  * A callback handler for servers connecting back to the local host-controller
  * When a server is started, the process is given a generated authKey from the initiating host-controller, that it
@@ -75,7 +70,7 @@ import static org.wildfly.security.password.interfaces.DigestPassword.ALGORITHM_
  * @author <a href="mailto:kwills@jboss.com">Ken Wills</a>
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-public class DomainManagedServerCallbackHandler implements Service, CallbackHandlerService, CallbackHandler {
+public class DomainManagedServerCallbackHandler implements Service, CallbackHandler {
 
     public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("domain", "management", "security", "server-auth");
 
@@ -83,16 +78,16 @@ public class DomainManagedServerCallbackHandler implements Service, CallbackHand
     public static final String DOMAIN_SERVER_AUTH_PREFIX = System.getProperty("org.jboss.as.domain.management.security.domain-auth-server-prefix", "=");
 
     private static final String SERVICE_SUFFIX = "internal-domain-server-authentication";
-    private final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer;
+    private final Consumer<DomainManagedServerCallbackHandler> callbackHandlerServiceConsumer;
     private volatile CallbackHandler serverCallbackHandler;
 
-    DomainManagedServerCallbackHandler(final Consumer<CallbackHandlerService> callbackHandlerServiceConsumer) {
+    DomainManagedServerCallbackHandler(final Consumer<DomainManagedServerCallbackHandler> callbackHandlerServiceConsumer) {
         this.callbackHandlerServiceConsumer = callbackHandlerServiceConsumer;
     }
 
     public static void install(final ServiceTarget serviceTarget) {
         final ServiceBuilder<?> builder = serviceTarget.addService(DomainManagedServerCallbackHandler.SERVICE_NAME);
-        final Consumer<CallbackHandlerService> chsConsumer = builder.provides(DomainManagedServerCallbackHandler.SERVICE_NAME);
+        final Consumer<DomainManagedServerCallbackHandler> chsConsumer = builder.provides(DomainManagedServerCallbackHandler.SERVICE_NAME);
         builder.setInstance(new DomainManagedServerCallbackHandler(chsConsumer));
         builder.setInitialMode(ON_DEMAND);
         builder.install();
@@ -107,35 +102,10 @@ public class DomainManagedServerCallbackHandler implements Service, CallbackHand
         this.serverCallbackHandler = serverCallbackHandler;
     }
 
-    /*
-     * CallbackHandlerService Methods
-     */
-    @Override
-    public AuthMechanism getPreferredMechanism() {
-       return AuthMechanism.PLAIN;
-    }
-
-    @Override
-    public Set<AuthMechanism> getSupplementaryMechanisms() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public Map<String, String> getConfigurationOptions() {
-        return Collections.singletonMap(VERIFY_PASSWORD_CALLBACK_SUPPORTED, Boolean.TRUE.toString());
-    }
-
-    @Override
-    public boolean isReadyForHttpChallenge() {
-        return true;
-    }
-
-    @Override
     public CallbackHandler getCallbackHandler(Map<String, Object> sharedState) {
         return this;
     }
 
-    @Override
     public org.wildfly.security.auth.server.SecurityRealm getElytronSecurityRealm() {
         return new SecurityRealmImpl();
     }
@@ -161,11 +131,11 @@ public class DomainManagedServerCallbackHandler implements Service, CallbackHand
         }
     }
 
-    @Override
     public Function<Principal, Principal> getPrincipalMapper() {
-        return p -> {
-            return p instanceof RealmUser ? new RealmUser(DOMAIN_SERVER_AUTH_REALM, p.getName()) : p;
-        };
+        return Function.identity();
+//        return p -> {
+//            return p instanceof RealmUser ? new RealmUser(DOMAIN_SERVER_AUTH_REALM, p.getName()) : p;
+//        };
     }
 
     private class SecurityRealmImpl implements org.wildfly.security.auth.server.SecurityRealm {
@@ -325,11 +295,13 @@ public class DomainManagedServerCallbackHandler implements Service, CallbackHand
 
     public static final class ServiceUtil {
 
+        private static final ServiceName BASE_SERVICE_NAME = ServiceName.JBOSS.append("server", "controller", "management", "security_realm");
+
         private ServiceUtil() {
         }
 
         public static ServiceName createServiceName(final String realmName) {
-            return SecurityRealm.ServiceUtil.createServiceName(realmName).append(SERVICE_SUFFIX);
+            return BASE_SERVICE_NAME.append(realmName, SERVICE_SUFFIX);
         }
 
     }
