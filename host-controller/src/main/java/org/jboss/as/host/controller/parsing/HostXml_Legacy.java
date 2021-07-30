@@ -1370,8 +1370,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case USERNAME: {
                         DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);
@@ -1441,8 +1440,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case USERNAME: {
                         DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);
@@ -1507,8 +1505,7 @@ final class HostXml_Legacy extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, update, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case USERNAME: {
                         DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, update, reader);

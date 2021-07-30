@@ -223,7 +223,6 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
                 DomainControllerWriteAttributeHandler.PORT,
                 DomainControllerWriteAttributeHandler.AUTHENTICATION_CONTEXT,
                 DomainControllerWriteAttributeHandler.USERNAME,
-                DomainControllerWriteAttributeHandler.SECURITY_REALM,
                 DomainControllerWriteAttributeHandler.IGNORE_UNUSED_CONFIG,
                 DomainControllerWriteAttributeHandler.ADMIN_ONLY_POLICY)
             .build();

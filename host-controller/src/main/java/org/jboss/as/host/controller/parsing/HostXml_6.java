@@ -100,7 +100,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parser and marshaller for host controller configuration xml documents (e.g. host.xml) that use the urn:jboss:domain:6.0 schema.
@@ -682,8 +681,7 @@ final class HostXml_6 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, updateDc, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case USERNAME: {
                         DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, updateDc, reader);

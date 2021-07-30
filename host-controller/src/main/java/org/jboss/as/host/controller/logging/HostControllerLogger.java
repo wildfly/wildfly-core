@@ -1345,7 +1345,7 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 196, value = "Cannot move the file %s to %s, unable to persist domain configuration changes: %s ")
     void cannotRenameCachedDomainXmlOnBoot(String tmpFilename, String destFilename, String reason);
 
-    @Message(id = 197, value = "If attribute %s is defined one of ssl-context or security-realm must also be defined")
+    @Message(id = 197, value = "If attribute %s is defined an ssl-context must also be defined")
     OperationFailedException attributeRequiresSSLContext(String attribute);
 
     @LogMessage(level = Level.WARN)

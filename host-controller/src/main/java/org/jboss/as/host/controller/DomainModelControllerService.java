@@ -981,7 +981,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 extensionRegistry,
                 hostControllerInfo,
                 hostControllerInfo.getAuthenticationContext(),
-                hostControllerInfo.getRemoteDomainControllerSecurityRealm(),
                 remoteFileRepository,
                 contentRepository,
                 ignoredRegistry,

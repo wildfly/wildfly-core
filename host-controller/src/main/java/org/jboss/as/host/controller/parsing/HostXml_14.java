@@ -72,7 +72,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
@@ -103,7 +102,6 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
  * Parser and marshaller for host controller configuration xml documents (e.g. host.xml) that use the urn:jboss:domain:14.0 schema.
@@ -759,8 +757,7 @@ final class HostXml_14 extends CommonXml implements ManagementXmlDelegate {
                         break;
                     }
                     case SECURITY_REALM: {
-                        DomainControllerWriteAttributeHandler.SECURITY_REALM.parseAndSetParameter(value, updateDc, reader);
-                        break;
+                        throw ROOT_LOGGER.securityRealmReferencesUnsupported();
                     }
                     case USERNAME: {
                         DomainControllerWriteAttributeHandler.USERNAME.parseAndSetParameter(value, updateDc, reader);
@@ -1439,79 +1436,6 @@ final class HostXml_14 extends CommonXml implements ManagementXmlDelegate {
     public boolean parseAuditLog(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> list)
             throws XMLStreamException {
         auditLogDelegate.parseAuditLog(reader, address, namespace, list);
-
-        return true;
-    }
-
-    @Override
-    public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
-        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        writer.writeEmptyElement(Element.SOCKET.getLocalName());
-        NativeManagementResourceDefinition.INTERFACE.marshallAsAttribute(protocol, writer);
-        NativeManagementResourceDefinition.NATIVE_PORT.marshallAsAttribute(protocol, writer);
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
-
-        writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
-        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURITY_REALM.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
-                HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
-        HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
-
-        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
-            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
-            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-            HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
-        }
-
-        writer.writeEmptyElement(Element.SOCKET.getLocalName());
-        HttpManagementResourceDefinition.INTERFACE.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.HTTP_PORT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.HTTPS_PORT.marshallAsAttribute(protocol, writer);
-        HttpManagementResourceDefinition.SECURE_INTERFACE.marshallAsAttribute(protocol, writer);
-
-        if (HttpManagementResourceDefinition.CONSTANT_HEADERS.isMarshallable(protocol)) {
-            writer.writeStartElement(Element.CONSTANT_HEADERS.getLocalName());
-
-            for (ModelNode headerMapping : protocol.require(ModelDescriptionConstants.CONSTANT_HEADERS).asList()) {
-                writer.writeStartElement(Element.HEADER_MAPPING.getLocalName());
-                BaseHttpInterfaceResourceDefinition.PATH.marshallAsAttribute(headerMapping, writer);
-                for (ModelNode header : headerMapping.require(ModelDescriptionConstants.HEADERS).asList()) {
-                    writer.writeEmptyElement(Element.HEADER.getLocalName());
-                    BaseHttpInterfaceResourceDefinition.HEADER_NAME.marshallAsAttribute(header, writer);
-                    BaseHttpInterfaceResourceDefinition.HEADER_VALUE.marshallAsAttribute(header, writer);
-                }
-                writer.writeEndElement();
-            }
-
-            writer.writeEndElement();
-        }
-
-        writer.writeEndElement();
-
-        return true;
-    }
-
-    @Override
-    public boolean writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
-        auditLogDelegate.writeAuditLog(writer, auditLog);
 
         return true;
     }

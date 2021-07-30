@@ -609,18 +609,6 @@ final class DomainXml_5 extends CommonXml implements ManagementXmlDelegate {
      */
 
     @Override
-    public boolean parseSecurityRealms(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
-            throws XMLStreamException {
-        throw unexpectedElement(reader);
-    }
-
-    @Override
-    public boolean parseOutboundConnections(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
-            throws XMLStreamException {
-        throw unexpectedElement(reader);
-    }
-
-    @Override
     public boolean parseAccessControl(XMLExtendedStreamReader reader, ModelNode address, List<ModelNode> operationsList)
             throws XMLStreamException {
 
