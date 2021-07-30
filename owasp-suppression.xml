@@ -127,13 +127,13 @@
         <cve>CVE-2020-13936</cve>
     </suppress>
 
-    <!-- sshd-common updated to 2.7.0 with exclusion from wildfly-elytron-tool, lower versions are not present -->
+    <!-- This is a false positive because the core itself does not use json-smart. The library is used by mockserver-netty in test (wildfly-core-testsuite-share) module. -->
     <suppress>
         <notes><![CDATA[
-   file name: wildfly-elytron-tool-1.13.1.Final.jar (shaded: org.apache.sshd:sshd-common:2.3.0)
+   file name: json-smart-2.3.jar
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.sshd/sshd\-common@.*$</packageUrl>
-        <cve>CVE-2021-30129</cve>
+        <packageUrl regex="true">^pkg:maven/net\.minidev/json\-smart@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-27568</vulnerabilityName>
     </suppress>
 
 </suppressions>
