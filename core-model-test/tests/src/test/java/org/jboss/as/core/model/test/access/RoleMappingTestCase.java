@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.jboss.as.controller.AccessAuditContext;
 import org.jboss.as.controller.access.rbac.StandardRole;
@@ -57,10 +56,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
 import org.jboss.as.core.model.test.TestModelType;
-import org.jboss.as.core.security.AccountPrincipal;
-import org.jboss.as.core.security.GroupPrincipal;
-import org.jboss.as.core.security.RealmPrincipal;
-import org.jboss.as.core.security.RealmUser;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -505,7 +500,7 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
 
         SecurityDomain testDomain = SecurityDomain.builder()
                 .setDefaultRealmName("Default")
-                .setPreRealmRewriter((Function<Principal, Principal>) p -> new RealmUser(realm, p.getName()))
+                //.setPreRealmRewriter((Function<Principal, Principal>) p -> new RealmUser(realm, p.getName()))
                 .addRealm("Default", securityRealm)
                     .setRoleDecoder(RoleDecoder.simple("groups"))
                     .build()
@@ -552,7 +547,7 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
 
     }
 
-    private static class User implements RealmPrincipal, AccountPrincipal {
+    private static class User {
 
         private final String realm;
         private final String name;
@@ -562,34 +557,10 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
             this.realm = realm;
         }
 
-        @Override
         public String getName() {
             return name;
         }
 
-        @Override
-        public String getRealm() {
-            return realm;
-        }
-
-    }
-
-    private static class Group implements RealmPrincipal, GroupPrincipal {
-
-        private final String name;
-        private final String realm;
-
-        private Group(final String name, final String realm) {
-            this.name = name;
-            this.realm = realm;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
         public String getRealm() {
             return realm;
         }
