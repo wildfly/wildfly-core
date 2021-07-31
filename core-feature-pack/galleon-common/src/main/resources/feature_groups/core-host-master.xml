@@ -4,7 +4,6 @@
         <param name="host" value="master"/>
         <param name="persist-name" value="true"/>
 
-        <feature-group name="host-security-realms"/>
         <feature-group name="host-audit"/>
         <feature-group name="host-profile"/>
 

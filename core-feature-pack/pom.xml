@@ -38,7 +38,6 @@
         <module>common</module>
         <module>ee-8-api</module>
         <module>galleon-common</module>
-        <module>galleon-pruned</module>
         <module>galleon-feature-pack</module>
     </modules>
 

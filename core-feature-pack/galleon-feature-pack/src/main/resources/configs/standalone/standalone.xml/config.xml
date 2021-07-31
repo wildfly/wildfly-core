@@ -2,9 +2,7 @@
 
 <config xmlns="urn:jboss:galleon:config:1.0" name="standalone.xml" model="standalone">
     <layers>
-        <include name="legacy-management"/>
-        <exclude name="management"/> <!-- Other layers may optionally depend on this one. -->
-        <include name="core-security-realms"/> <!-- legacy-management only pulls in ManagementRealm -->
+        <include name="management"/> 
         <include name="elytron"/> 
         <include name="jmx-remoting"/> 
         <include name="logging"/>
