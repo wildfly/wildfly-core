@@ -231,6 +231,7 @@
         <module>cli</module>
         <module>controller</module>
         <module>controller-client</module>
+        <module>core-security</module>
         <module>bootable-jar</module>
         <module>build</module>
         <module>dist</module>
