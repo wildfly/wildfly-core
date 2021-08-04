@@ -332,7 +332,7 @@ public class GlobalOperationHandlers {
     private abstract static class AbstractAddressResolver implements OperationStepHandler {
 
         private static final FilterPredicate DEFAULT_PREDICATE = item -> !item.isDefined()
-                || !item.hasDefined(OP_ADDR);
+                || (!item.hasDefined(OP_ADDR) && !item.hasDefined(FAILURE_DESCRIPTION));
 
 
         private final ModelNode operation;
@@ -707,7 +707,14 @@ public class GlobalOperationHandlers {
                                                     "to %s at %s", fullAddress, resolvedAddress);
                                             nr.get(OP_ADDR).set(resolvedAddress.toModelNode());
                                             nr.get(OUTCOME).set(rr.get(OUTCOME));
-                                            nr.get(RESULT).set(rr.get(RESULT));
+
+                                            if (rr.hasDefined(RESULT)) {
+                                                nr.get(RESULT).set(rr.get(RESULT));
+                                            }
+
+                                            if (rr.hasDefined(FAILURE_DESCRIPTION)) {
+                                                nr.get(FAILURE_DESCRIPTION).set(rr.get(FAILURE_DESCRIPTION));
+                                            }
 
                                             if (rr.hasDefined(RESPONSE_HEADERS)) {
                                                 ModelNode headers = rr.get(RESPONSE_HEADERS);
@@ -733,7 +740,14 @@ public class GlobalOperationHandlers {
                                     final ModelNode nr = result.add();
                                     nr.get(OP_ADDR).set(fullAddress.toModelNode());
                                     nr.get(OUTCOME).set(resultItem.get(OUTCOME));
-                                    nr.get(RESULT).set(resultItem.get(RESULT));
+
+                                    if (resultItem.hasDefined(RESULT)) {
+                                        nr.get(RESULT).set(resultItem.get(RESULT));
+                                    }
+
+                                    if (resultItem.hasDefined(FAILURE_DESCRIPTION)) {
+                                        nr.get(FAILURE_DESCRIPTION).set(resultItem.get(FAILURE_DESCRIPTION));
+                                    }
 
                                     if (resultItem.hasDefined(RESPONSE_HEADERS)) {
                                         ModelNode headers = resultItem.get(RESPONSE_HEADERS);
