@@ -115,9 +115,8 @@ fi
 
 if [ -z "$JBOSS_BASE_DIR" ]; then
          JBOSS_BASE_DIR="$JBOSS_HOME/$JBOSS_MODE"
-else
-         JBOSS_OPTS="$JBOSS_OPTS -Djboss.server.base.dir=$JBOSS_BASE_DIR"
 fi
+JBOSS_OPTS="$JBOSS_OPTS -Djboss.server.base.dir=$JBOSS_BASE_DIR"
 
 JBOSS_MARKERFILE=$JBOSS_BASE_DIR/tmp/startup-marker
 

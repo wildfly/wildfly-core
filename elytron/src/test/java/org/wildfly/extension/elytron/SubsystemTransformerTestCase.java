@@ -20,6 +20,7 @@ import static org.jboss.as.model.test.FailedOperationTransformationConfig.REJECT
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_1_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_3_0;
+import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.junit.Assert.assertTrue;
 
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
@@ -217,7 +218,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
      */
     @Test
     public void testRejectingTransformersEAP740() throws Exception {
-        testRejectingTransformers(EAP_7_3_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
+        testRejectingTransformers(EAP_7_4_0, "elytron-transformers-13.0-reject.xml", new FailedOperationTransformationConfig()
                 .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.SERVER_SSL_SNI_CONTEXT, "SNIwithCaret")),
                         new FailedOperationTransformationConfig.NewAttributesConfig(ElytronDescriptionConstants.HOST_CONTEXT_MAP)
                 )
@@ -265,7 +266,7 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
      */
     @Test
     public void testTransformerEAP740() throws Exception {
-        testTransformation(EAP_7_3_0);
+        testTransformation(EAP_7_4_0);
     }
 
     private KernelServices buildKernelServices(String xml, ModelTestControllerVersion controllerVersion, ModelVersion version, String... mavenResourceURLs) throws Exception {
