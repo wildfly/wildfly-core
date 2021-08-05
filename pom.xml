@@ -171,7 +171,7 @@
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.4.0</version.org.apache.sshd>
         <version.org.apache.xerces>2.12.0.SP03</version.org.apache.xerces>
-        <version.org.bouncycastle>1.67</version.org.bouncycastle>
+        <version.org.bouncycastle>1.69</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>4.2.1</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core>6.0.3</version.org.codehaus.woodstox.woodstox-core>
@@ -1173,6 +1173,10 @@
                         <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>net.i2p.crypto</groupId>
                         <artifactId>eddsa</artifactId>
                     </exclusion>
@@ -1238,6 +1242,17 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk15on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpg-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
@@ -1245,10 +1260,21 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk15on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
 

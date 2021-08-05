@@ -31,5 +31,8 @@
     
     <dependencies>
         <module name="org.bouncycastle.bcprov" services="import"/>
+        <module name="org.bouncycastle.bcutil"/>
+        <module name="java.logging"/>
+        <module name="java.naming"/>
     </dependencies>
 </module>
