@@ -228,6 +228,16 @@ public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {
         File snapshotFile = new File(snapshotFileName);
         assertTrue(snapshotFile.exists());
 
+        // WFCORE-5536 take snapshot with custom name;
+        op = createOpNode(null, "take-snapshot");
+        op.get("name").set("sp1");
+        result = executeOperation(op);
+
+        // check that the snapshot file with custom name also exists
+        snapshotFileName = result.asString();
+        File snapshotFileWithCustomName = new File(snapshotFileName);
+        assertTrue(snapshotFileWithCustomName.exists());
+
         // get the snapshot listing
         op = createOpNode(null, "list-snapshots");
         result = executeOperation(op);
@@ -236,6 +246,7 @@ public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {
 
         List<String> snapshotNames = ModelUtil.modelNodeAsStingList(result.get("names"));
         assertTrue(snapshotNames.contains(snapshotFile.getName()));
+        assertTrue(snapshotNames.contains(snapshotFileWithCustomName.getName()));
 
     }
 
