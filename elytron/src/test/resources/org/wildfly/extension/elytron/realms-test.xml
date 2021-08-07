@@ -40,6 +40,18 @@
             <file path="filesystem-realm-4" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
 
+        <filesystem-realm name="FilesystemRealm5" levels="1" encoded="false" credential-store="secretkeycredentialstore" secret-key="key">
+            <file path="filesystem-realm-5" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealm6" levels="1" encoded="false" credential-store="secretkeycredstore" secret-key="key">
+            <file path="filesystem-realm-6" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealmExpression" levels="1" encoded="false" credential-store="${exp.credential-store:secretkeycredstore}" secret-key="${exp.secret-key:key}">
+            <file path="filesystem-realm-expression" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+
         <token-realm name="JwtRealm" principal-claim="sub">
             <jwt issuer="some-issuer-a some-issuer-b" audience="some-audience-a some-audience-b some-audience-c" public-key="-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCqGKukO1De7zhZj6+H0qtjTkVxwTCpvKe4eCZ0FPqri0cb2JZfXJ/DgYSF6vUpwmJG8wVQZKjeGcjDOL5UlsuusFncCzWBQ7RKNUSesmQRMSGkVb1/3j+skZ6UtW+5u09lHNsj6tQ51s1SPrCBkedbNf0Tp0GbMJDyR4e9T04ZZwIDAQAB-----END PUBLIC KEY-----"/>
         </token-realm>
@@ -81,4 +93,9 @@
             <client-ssl-context name="ClientCaSslContext" trust-manager="CaTrustManager" />
         </client-ssl-contexts>
     </tls>
+
+    <credential-stores>
+        <secret-key-credential-store name="secretkeycredentialstore" path="target/test-classes/org/wildfly/extension/elytron/mycredstore.cs" />
+        <secret-key-credential-store name="secretkeycredstore" path="target/test-classes/org/wildfly/extension/elytron/mysecretkeycredstore.cs" create="true" populate="true" />
+    </credential-stores>
 </subsystem>
