@@ -52,12 +52,16 @@
         <credential-store name="store1" location="path/to/store_file" >
             <credential-reference clear-text="STOREPASSWORD"/>
         </credential-store>
+        <secret-key-credential-store name="secretkeycredentialstore" path="target/test-classes/org/wildfly/extension/elytron/mysecretkeycredstore.cs" create="true" populate="true" />
     </credential-stores>
     <security-realms>
         <properties-realm name="PropertiesRealmEncodingCharset" hash-charset="GB2312" hash-encoding="base64">
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm"/>
         </properties-realm>
         <filesystem-realm name="FilesystemRealmEncodingCharset" hash-charset="GB2312" hash-encoding="hex">
+            <file  path="filesystem-realm" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+        <filesystem-realm name="FilesystemRealmEncrypted" credential-store="secretkeycredentialstore" secret-key="key">
             <file  path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
         <jdbc-realm name="JDBCRealmCharset" hash-charset="GB2312">

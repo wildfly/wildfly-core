@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<identity xmlns="urn:elytron:identity:1.1">
+    <!--    This filesystem directory was generated using the test -->
+    <!--    FileSystemSecurityRealmTest.testCreateIdentityWithAttributesEncryption() by running *only* that test, -->
+    <!--    retrieving the generated directory from the project files in Elytron, and copying them into the resources of this -->
+    <!--    project. -->
+    <attributes>
+        <attribute name="RUxZAUMQawwljqt76Nel9l0w9dnWJwI/YnVcHwCvvZmruCRaCuU=" value="RUxZAUMQomhPUJ5W7Jw6tzt38LlQgVuRWRUCCvsOcHiKNBRlG18="></attribute>
+        <attribute name="RUxZAUMQ0giEUAUQIT2+978yQyvkoMAAGDNes3VJyyxNNM6Pqo0=" value="RUxZAUMQnmv4yOHEcVddrfqRtP0mXrKYdY0AE6j/ne4MbUw9P5I="></attribute>
+        <attribute name="RUxZAUMQeSUw2iZml8LoAA03dGfMRdv/Sg6yctBGN/Z3OekpDJM=" value="RUxZAUMQ61oWtt1XrttiBbqV+tVmHTsPGAKrnNgIkNtfXyW0Mhg="></attribute>
+        <attribute name="RUxZAUMQZvrdybb1OffiHKX4h+0RlRBrrRQWdlHNGV5BmnkCLAU=" value="RUxZAUMQxsNiQ4NvOarNf3DzgaKuvOLoZHbGNZFStGpks5d1rCQ="></attribute>
+    </attributes></identity>

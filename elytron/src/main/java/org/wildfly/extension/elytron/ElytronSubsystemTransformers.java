@@ -27,6 +27,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_M
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
@@ -39,6 +40,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTI
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECRET_KEY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
@@ -151,6 +153,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
         .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), ElytronDescriptionConstants.RECURSIVE)
         .end();
 
+        builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, CREDENTIAL_STORE)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, SECRET_KEY)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, CREDENTIAL_STORE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SECRET_KEY);
     }
 
     private static void from15(ChainedTransformationDescriptionBuilder chainedBuilder) {
