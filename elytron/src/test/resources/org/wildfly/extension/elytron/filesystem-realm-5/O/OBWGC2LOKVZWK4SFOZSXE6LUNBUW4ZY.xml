@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<identity xmlns="urn:elytron:identity:1.1">
+    <!--    This filesystem directory was generated using the test -->
+    <!--    FileSystemSecurityRealmTest.testCreateIdentityWithEverything() by running *only* that test, -->
+    <!--    retrieving the generated directory from the project files in Elytron, and copying them into the resources of this -->
+    <!--    project. -->
+    <credentials>
+        <password algorithm="bcrypt" format="enc_base64">RUxZAUMQzwxx+frh+N5CVTcZWWiHEwSmVmDQuQ7lC1FKQ1L2adqAeQGHk9hziyKLYlxrpApOvVuPAYnbcwaIlfxziMN5Yw==</password>
+        <otp algorithm="otp-sha1" hash="UF2In5AIWEc=" seed="a2UxMjM0" sequence="500"></otp>
+    </credentials>
+    <attributes>
+        <attribute name="RUxZAUMQmo06kmNvECBwwviEDIWZLV6GpeCgvY9Q++M2uff1lA4=" value="RUxZAUMQqszfKzJsynzkOZRdxO1zKzu/yW8i/3dDqi2+QIDV9Ks="></attribute>
+        <attribute name="RUxZAUMQlJKotki/2MK0B932hsmwHad4Nsl+joX7tQvLOpg/STA=" value="RUxZAUMQ3/0pUk6vjurn2R4fVAYPlmB1l7KleOnZbDxI6Mu1Qu8="></attribute>
+        <attribute name="RUxZAUMQe1gewL/g+6406338jREV3T3JelgAt3M3RNDJ4pz0Hyk=" value="RUxZAUMQFnx2I9Gix5sfINVrPMsMwFhz4FQqSAlfxn5gX07At0Y="></attribute>
+        <attribute name="RUxZAUMQfbPDjWExZ9pjYVskqKPYyvEb6iT0ir4f4j2ecH8ONLw=" value="RUxZAUMQ43vFRq0O7oaZ5h7fMZNozTT8oJV3vr4gi26AbTNsRJ8="></attribute>
+        <attribute name="RUxZAUMQ6Ghx75JImSkUTMbw8IJgcy3Q7gnSq1a4tUOZM3nCMF8=" value="RUxZAUMQ+8VDHEEIYKDMilCkI7/8nJ14bU00Z8QQOFqzDRUI7Iw="></attribute>
+    </attributes></identity>
