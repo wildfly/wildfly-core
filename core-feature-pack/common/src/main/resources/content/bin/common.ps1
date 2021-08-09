@@ -47,6 +47,7 @@ $global:RUN_IN_BACKGROUND=$false
 $GC_LOG=Get-Env GC_LOG
 #module opts that are passed to jboss modules
 $global:MODULE_OPTS = @()
+$global:CONFIG_FILE=Get-Env CONFIG_FILE $null
 
 Function Get-String {
   $value = ''
@@ -93,6 +94,10 @@ Write-Host "  MODULE_OPTS: $MODULE_OPTS"
 Write-Host ""
 Write-Host "  JAVA_OPTS: $javaOpts"
 Write-Host ""
+if ($CONFIG_FILE -ne $null){
+    Write-Host "  CONFIGURATION: $CONFIG_FILE"
+    Write-Host ""
+}
 Write-Host "================================================================================="
 Write-Host ""
 
@@ -258,6 +263,12 @@ Param(
 				$i++
 				continue
 			}
+		}elseif ($arg -eq '-c') {
+		    if ($args[$i+1] -ne $null) {
+		        $global:CONFIG_FILE = $Params[$i+1]
+		        $i++
+		        continue
+		    }
 		}elseif ($arg -contains '-Djava.security.manager'){
 			Write-Warning "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
 			exit

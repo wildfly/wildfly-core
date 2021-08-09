@@ -48,11 +48,19 @@ if "%~1" == "" (
    goto MAIN
 ) else if "%~1" == "--debug" (
    goto READ-DEBUG-PORT
+) else if "%~1" == "-c" (
+   goto READ-CONFIG
 ) else if "%~1" == "-secmgr" (
    set SECMGR=true
 )
 shift
 goto READ-ARGS
+
+:READ-CONFIG
+if not "%~2" == "" (
+   CONFIG_FILE="%2"
+   shift
+)
 
 :READ-DEBUG-PORT
 set "DEBUG_MODE=true"
@@ -200,6 +208,7 @@ set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
 set baseDirFound=false
 set configDirFound=false
 set logDirFound=false
+set configFileFound=false
 for %%a in (!CONSOLIDATED_OPTS!) do (
    if !baseDirFound! == true (
       set "JBOSS_BASE_DIR=%%~a"
@@ -213,6 +222,10 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
       set "JBOSS_LOG_DIR=%%~a"
       set logDirFound=false
    )
+   if !configFileFound! == true (
+      set "CONFIG_FILE=%%~a"
+      set configFileFound=false
+   )
    if "%%~a" == "-Djboss.server.base.dir" (
        set baseDirFound=true
    )
@@ -221,6 +234,12 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
    )
    if "%%~a" == "-Djboss.server.log.dir" (
        set logDirFound=true
+   )
+   if "%%~a" == "-c" (
+       set configFileFound=true
+   )
+   if "%%~a" == "--server-config" (
+       set configFileFound=true
    )
 )
 
@@ -323,6 +342,10 @@ echo   JAVA: "%JAVA%"
 echo.
 echo   JAVA_OPTS: "%JAVA_OPTS%"
 echo.
+if NOT "%CONFIG_FILE%"=="" (
+    echo   CONFIGURATION: "%CONFIG_FILE%"
+    echo.
+)
 echo ===============================================================================
 echo.
 

@@ -19,6 +19,13 @@ do
               shift
           fi
           ;;
+      # in case of `./standalone.sh -c standalone-microprofile.xml`
+      -c)
+      	  if [ -n "$2" ]; then
+      	      CONFIG_FILE="$2"
+      	      shift
+      	  fi
+      	  ;;
       -Djava.security.manager*)
           echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
           exit 1
@@ -151,6 +158,12 @@ if $linux; then
          -Djboss.server.config.dir=*)
               JBOSS_CONFIG_DIR=`readlink -m ${p#*=}`
               ;;
+         -c=*)
+              CONFIG_FILE=`readlink -m ${p#*=}`
+              ;;
+         --server-config=*)
+              CONFIG_FILE=`readlink -m ${p#*=}`
+              ;;
        esac
     done
 fi
@@ -172,6 +185,12 @@ if $solaris; then
              ;;
         -Djboss.server.config.dir=*)
              JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        -c=*)
+             CONFIG_FILE=`echo $p | awk -F= '{print $2}'`
+             ;;
+        --server-config=*)
+             CONFIG_FILE=`echo $p | awk -F= '{print $2}'`
              ;;
       esac
     done
@@ -200,6 +219,12 @@ if $darwin || $freebsd || $other ; then
              ;;
          -Djboss.server.config.dir=*)
               JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
+              ;;
+         -c=*)
+              CONFIG_FILE=`cd ${p#*=} ; pwd -P`
+              ;;
+         --server-config=*)
+              CONFIG_FILE=`cd ${p#*=} ; pwd -P`
               ;;
        esac
     done
@@ -329,6 +354,10 @@ echo "  JAVA: $JAVA"
 echo ""
 echo "  JAVA_OPTS: $JAVA_OPTS"
 echo ""
+if [[ -n $CONFIG_FILE ]]; then
+echo "  CONFIGURATION: $CONFIG_FILE"
+echo ""
+fi
 echo "========================================================================="
 echo ""
 

@@ -44,7 +44,11 @@ foreach($p in $HOST_CONTROLLER_OPTS){
 		$JBOSS_LOG_DIR=$p.Substring('-Djboss.domain.log.dir='.Length)
 	}elseif ($arg.StartsWith('-Djboss.domain.config.dir')){
 		$JBOSS_CONFIG_DIR=$p.Substring('-Djboss.domain.config.dir='.Length)
-	}
+	}elseif ($arg.StartsWith('--host-config')){
+    	$CONFIG_FILE=$p.Substring('--host-config='.Length)
+    }elseif ($arg.StartsWith('--domain-config')){
+    	$CONFIG_FILE=$p.Substring('--domain-config='.Length)
+    }
 }
 
 # If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace

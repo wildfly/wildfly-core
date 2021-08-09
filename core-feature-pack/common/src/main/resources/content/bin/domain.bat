@@ -151,6 +151,7 @@ set "CONSOLIDATED_OPTS=%JAVA_OPTS% %SERVER_OPTS%"
 set baseDirFound=false
 set configDirFound=false
 set logDirFound=false
+set configFileFound=false
 for %%a in (!CONSOLIDATED_OPTS!) do (
    if !baseDirFound! == true (
       set "JBOSS_BASE_DIR=%%~a"
@@ -164,6 +165,10 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
       set "JBOSS_LOG_DIR=%%~a"
       set logDirFound=false
    )
+   if !configFileFound! == true (
+      set "CONFIG_FILE=%%~a"
+      set configFileFound=false
+   )
    if "%%~a" == "-Djboss.domain.base.dir" (
        set baseDirFound=true
    )
@@ -172,6 +177,12 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
    )
    if "%%~a" == "-Djboss.domain.log.dir" (
        set logDirFound=true
+   )
+   if "%%~a" == "--host-config" (
+       set configFileFound=true
+   )
+   if "%%~a" == "--domain-config" (
+       set configFileFound=true
    )
 )
 
@@ -218,6 +229,10 @@ echo   JAVA: "%JAVA%"
 echo.
 echo   JAVA_OPTS: "%PROCESS_CONTROLLER_JAVA_OPTS%"
 echo.
+if NOT "%CONFIG_FILE%"=="" (
+    echo   CONFIGURATION: "%CONFIG_FILE%"
+    echo.
+)
 echo ===============================================================================
 echo.
 

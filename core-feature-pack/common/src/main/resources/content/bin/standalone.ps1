@@ -40,6 +40,18 @@ if ($global:DEBUG_MODE){
     }
 }
 
+foreach ($p in $SERVER_OPTS){
+    if ($p -eq $null){
+        continue
+    }
+    $arg = $p.Trim()
+    if ($arg.StartsWith('-c=')){
+        $CONFIG_FILE=$p.Substring('-c='.Length)
+    } elseif ($arg.StartsWith('--server-config')){
+        $CONFIG_FILE=$p.Substring('--server-config='.Length)
+    }
+}
+
 $backgroundProcess = Get-Env LAUNCH_JBOSS_IN_BACKGROUND 'false'
 $runInBackGround = $global:RUN_IN_BACKGROUND -or ($backgroundProcess -eq 'true')
 

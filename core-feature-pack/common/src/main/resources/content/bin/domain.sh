@@ -159,6 +159,12 @@ if $linux; then
         -Djboss.domain.config.dir=*)
              JBOSS_CONFIG_DIR=`readlink -m ${p#*=}`
              ;;
+        --host-config=*)
+             CONFIG_FILE=`readlink -m ${p#*=}`
+             ;;
+        --domain-config=*)
+             CONFIG_FILE=`readlink -m ${p#*=}`
+             ;;
       esac
     done
 fi
@@ -180,6 +186,12 @@ if $solaris; then
              ;;
         -Djboss.domain.config.dir=*)
              JBOSS_CONFIG_DIR=`echo $p | awk -F= '{print $2}'`
+             ;;
+        --host-config=*)
+             CONFIG_FILE=`echo $p | awk -F= '{print $2}'`
+             ;;
+        --domain-config=*)
+             CONFIG_FILE=`echo $p | awk -F= '{print $2}'`
              ;;
       esac
     done
@@ -208,6 +220,12 @@ if $darwin || $other ; then
              ;;
         -Djboss.domain.config.dir=*)
              JBOSS_CONFIG_DIR=`cd ${p#*=} ; pwd -P`
+             ;;
+        --host-config=*)
+             CONFIG_FILE=`cd ${p#*=} ; pwd -P`
+             ;;
+        --domain-config=*)
+             CONFIG_FILE=`cd ${p#*=} ; pwd -P`
              ;;
       esac
     done
@@ -271,6 +289,10 @@ echo "  JAVA: $JAVA"
 echo ""
 echo "  JAVA_OPTS: $PROCESS_CONTROLLER_JAVA_OPTS"
 echo ""
+if [[ -n $CONFIG_FILE ]]; then
+echo "  CONFIGURATION: $CONFIG_FILE"
+echo ""
+fi
 echo "========================================================================="
 echo ""
 
