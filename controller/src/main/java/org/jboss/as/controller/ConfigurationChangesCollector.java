@@ -34,9 +34,10 @@ import java.net.InetAddress;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
-import java.util.TreeSet;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
 
@@ -60,7 +61,7 @@ public interface ConfigurationChangesCollector {
 
     static class ConfigurationChangesCollectorImpl implements ConfigurationChangesCollector {
 
-        private final TreeSet<ConfigurationChange> history = new TreeSet<>();
+        private final Deque<ConfigurationChange> history = new ArrayDeque<>();
         private int maxHistory;
 
         private ConfigurationChangesCollectorImpl(final int maxHistory) {
@@ -71,9 +72,11 @@ public interface ConfigurationChangesCollector {
         public void addConfigurationChanges(ConfigurationChange change) {
             synchronized (history) {
                 if (history.size() == maxHistory) {
-                    history.remove(history.last());
+                    history.removeLast();
                 }
-                history.add(change);
+                // set the timestamp now to maintain time coherence
+                change.setOperationInstant();
+                history.addFirst(change);
             }
         }
 
@@ -82,7 +85,7 @@ public interface ConfigurationChangesCollector {
             synchronized (history) {
                 this.maxHistory = maxHistory;
                 while(maxHistory < history.size()) {
-                    history.remove(history.last());
+                    history.removeLast();
                 }
             }
         }
@@ -90,9 +93,9 @@ public interface ConfigurationChangesCollector {
         @SuppressWarnings("unchecked")
         @Override
         public List<ModelNode> getChanges() {
-            TreeSet<ConfigurationChange> changes;
+            Deque<ConfigurationChange> changes;
             synchronized (history) {
-                changes = new TreeSet<>(history);
+                changes = new ArrayDeque<>(history);
             }
             ModelNode result = new ModelNode().setEmptyList();
             for (ConfigurationChange change : changes) {
@@ -117,7 +120,7 @@ public interface ConfigurationChangesCollector {
         }
     }
 
-    static final class ConfigurationChange implements Comparable<ConfigurationChange> {
+    static final class ConfigurationChange {
 
         private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant(3).toFormatter(Locale.ENGLISH);
         private final OperationContext.ResultAction resultAction;
@@ -126,7 +129,7 @@ public interface ConfigurationChangesCollector {
         private final AccessMechanism accessMecanism;
         private final InetAddress inetAddress;
         private final List<ModelNode> operations;
-        private final Instant date;
+        private Instant date;
 
         public ConfigurationChange(OperationContext.ResultAction resultAction, String userId, String domainUuid,
                 AccessMechanism accessMecanism, InetAddress inetAddress, List<ModelNode> operations) {
@@ -136,7 +139,7 @@ public interface ConfigurationChangesCollector {
             this.accessMecanism = accessMecanism;
             this.inetAddress = inetAddress;
             this.operations = operations;
-            date = now();
+            date = Instant.EPOCH;
         }
 
         private String getDate() {
@@ -145,6 +148,13 @@ public interface ConfigurationChangesCollector {
 
         public Instant getOperationInstant() {
             return date;
+        }
+
+        /**
+         * Sets the operation time to now.
+         */
+        public void setOperationInstant() {
+            date = now();
         }
 
         public ModelNode asModel() {
@@ -167,11 +177,6 @@ public interface ConfigurationChangesCollector {
                 }
             }
             return entry;
-        }
-
-        @Override
-        public int compareTo(ConfigurationChange change) {
-            return change.getOperationInstant().compareTo(date);
         }
     }
 }
