@@ -35,12 +35,22 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.dump;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import static org.jboss.as.test.patching.PatchingTestUtil.readFile;
+import static org.jboss.as.test.patching.PatchingTestUtil.touch;
+import static org.junit.Assert.assertThrows;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
@@ -82,6 +92,65 @@ public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCa
         if (!file.exists()) {
             dump(file, "test-content");
         }
+    }
+
+    /**
+     * Prepare a one-off patch which adds a misc file and a file with a name that makes it to point out of the zip directory.
+     *
+     * @throws Exception In case of an error building the patch file.
+     */
+    @Test
+    public void testOneOffContentOutsideOfTargetDirectory() throws Exception {
+        final String fileContent = "Hello World!";
+        // prepare the patch
+        String patchID = randomString();
+        File oneOffPatchDir = mkdir(tempDir, patchID);
+        ContentModification miscFileAdded = ContentModificationUtils.addMisc(oneOffPatchDir, patchID,
+                fileContent, "awesomeDirectory", "awesomeFile");
+        ProductConfig productConfig = new ProductConfig(PRODUCT, AS_VERSION, "main");
+        Patch oneOffPatch = PatchBuilder.create()
+                .setPatchId(patchID)
+                .setDescription("A one-off patch adding a misc file.")
+                .oneOffPatchIdentity(productConfig.getProductName(), productConfig.getProductVersion())
+                .getParent()
+                .addContentModification(miscFileAdded)
+                .build();
+        createPatchXMLFile(oneOffPatchDir, oneOffPatch);
+
+        final File zippedPatch = new File(oneOffPatchDir.getParentFile(), patchID + ".zip");
+        final Path sourcePath = oneOffPatchDir.toPath();
+        try (FileOutputStream fos = new FileOutputStream(zippedPatch); ZipOutputStream zos = new ZipOutputStream(fos)) {
+            Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+                    if (!sourcePath.equals(dir)) {
+                        zos.putNextEntry(new ZipEntry(sourcePath.relativize(dir) + "/"));
+                        zos.closeEntry();
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+                    zos.putNextEntry(new ZipEntry(sourcePath.relativize(file).toString()));
+                    Files.copy(file, zos);
+                    zos.closeEntry();
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            File empty = new File(oneOffPatchDir, "empty");
+            touch(empty);
+            ZipEntry zipFileEntry = new ZipEntry("../empty");
+            zos.putNextEntry(zipFileEntry);
+            zos.closeEntry();
+        }
+
+        controller.start();
+        Exception exception = assertThrows(Exception.class, () -> applyPatch(zippedPatch.getAbsolutePath()));
+        exception.getMessage().contains("WFLYPAT0051");
+        Assert.assertFalse("server should not be in restart-required mode", CliUtilsForPatching.doesServerRequireRestart());
+        Assert.assertFalse("The patch " + patchID + " should be listed as installed", CliUtilsForPatching.getInstalledPatches().contains(patchID));
+        controller.stop();
     }
 
     /**

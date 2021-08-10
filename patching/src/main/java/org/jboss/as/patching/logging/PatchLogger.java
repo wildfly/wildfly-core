@@ -243,4 +243,7 @@ public interface PatchLogger extends BasicLogger {
     @LogMessage(level = Level.INFO)
     @Message(id = 50, value = "%s cumulative patch ID is: %s, one-off patches include: %s")
     void logPatchingInfo(String identityName, String cp, String patches);
+
+    @Message(id = 51, value = "Invalid zip file. Found an entry that resolves to a path outside of the patch directory: %s")
+    IOException entryOutsideOfPatchDirectory(String path);
 }
