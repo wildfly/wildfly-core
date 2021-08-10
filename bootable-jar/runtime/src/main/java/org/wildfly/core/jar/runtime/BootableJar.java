@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +34,8 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
@@ -139,58 +142,59 @@ public final class BootableJar implements ShutdownHandler {
     }
 
     private static void updateConfig(Path configFile, String name, boolean isExploded) throws Exception {
-        FileInputStream fileInputStream = new FileInputStream(configFile.toFile());
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        try (FileInputStream fileInputStream = new FileInputStream(configFile.toFile())) {
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+            Document document = documentBuilder.parse(fileInputStream);
+            Element root = document.getDocumentElement();
 
-        Document document = documentBuilder.parse(fileInputStream);
-        Element root = document.getDocumentElement();
-
-        NodeList lst = root.getChildNodes();
-        for (int i = 0; i < lst.getLength(); i++) {
-            Node n = lst.item(i);
-            if (n instanceof Element) {
-                if (DEPLOYMENTS.equals(n.getNodeName())) {
-                    throw BootableJarLogger.ROOT_LOGGER.deploymentAlreadyExist();
+            NodeList lst = root.getChildNodes();
+            for (int i = 0; i < lst.getLength(); i++) {
+                Node n = lst.item(i);
+                if (n instanceof Element) {
+                    if (DEPLOYMENTS.equals(n.getNodeName())) {
+                        throw BootableJarLogger.ROOT_LOGGER.deploymentAlreadyExist();
+                    }
                 }
             }
+            Element deployments = document.createElement(DEPLOYMENTS);
+            Element deployment = document.createElement(DEPLOYMENT);
+            Element content = document.createElement(CONTENT);
+            content.setAttribute(SHA1, DEP_1 + DEP_2);
+            if (isExploded) {
+                content.setAttribute(ARCHIVE, "false");
+            }
+            deployment.appendChild(content);
+            deployment.setAttribute(NAME, name);
+            deployment.setAttribute(RUNTIME_NAME, name);
+            deployments.appendChild(deployment);
+
+            root.appendChild(deployments);
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            StreamResult output = new StreamResult(configFile.toFile());
+            DOMSource input = new DOMSource(document);
+
+            transformer.transform(input, output);
         }
-        Element deployments = document.createElement(DEPLOYMENTS);
-        Element deployment = document.createElement(DEPLOYMENT);
-        Element content = document.createElement(CONTENT);
-        content.setAttribute(SHA1, DEP_1 + DEP_2);
-        if (isExploded) {
-            content.setAttribute(ARCHIVE, "false");
-        }
-        deployment.appendChild(content);
-        deployment.setAttribute(NAME, name);
-        deployment.setAttribute(RUNTIME_NAME, name);
-        deployments.appendChild(deployment);
-
-        root.appendChild(deployments);
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        StreamResult output = new StreamResult(configFile.toFile());
-        DOMSource input = new DOMSource(document);
-
-        transformer.transform(input, output);
-
     }
 
     private void copyDirectory(Path src, Path target) throws IOException {
-        Files.walk(src).forEach(file -> {
-            try {
-                Path targetFile = target.resolve(src.relativize(file));
-                if (Files.isDirectory(file)) {
-                    if (!Files.exists(targetFile)) {
-                        Files.createDirectory(targetFile);
+        try (Stream<Path> stream = Files.walk(src)) {
+            stream.forEach(file -> {
+                try {
+                    Path targetFile = target.resolve(src.relativize(file));
+                    if (Files.isDirectory(file)) {
+                        if (!Files.exists(targetFile)) {
+                            Files.createDirectory(targetFile);
+                        }
+                    } else {
+                        Files.copy(file, targetFile);
                     }
-                } else {
-                    Files.copy(file, targetFile);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
                 }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
-        });
+            });
+        }
     }
 
     private void configureLogger() throws IOException {
