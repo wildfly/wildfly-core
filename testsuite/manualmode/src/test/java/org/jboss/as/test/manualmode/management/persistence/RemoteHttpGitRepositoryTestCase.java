@@ -64,7 +64,7 @@ public class RemoteHttpGitRepositoryTestCase extends AbstractGitRepositoryTestCa
         }
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(baseDir).call()) {
+            try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(Constants.MASTER).call()) {
                 git.add().addFilepattern("configuration").call();
                 git.commit().setSign(false).setMessage("Repository initialized").call();
             }

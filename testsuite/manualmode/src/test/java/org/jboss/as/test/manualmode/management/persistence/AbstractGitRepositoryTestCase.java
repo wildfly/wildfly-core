@@ -79,7 +79,7 @@ public class AbstractGitRepositoryTestCase {
         Files.createDirectories(emptyRemoteRoot);
         File gitDir = new File(emptyRemoteRoot.toFile(), Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).call()) {
+            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
@@ -115,6 +115,12 @@ public class AbstractGitRepositoryTestCase {
         }
         if(Files.exists(getDotGitIgnore())) {
             FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        }
+    }
+
+    protected List<String> listCommits(Repository repository, String branchName) throws IOException, GitAPIException {
+        try (Git git = new Git(repository)) {
+            return listCommits(git, branchName);
         }
     }
 
