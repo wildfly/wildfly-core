@@ -118,6 +118,12 @@ public class AbstractGitRepositoryTestCase {
         }
     }
 
+    protected List<String> listCommits(Repository repository, String branchName) throws IOException, GitAPIException {
+        try (Git git = new Git(repository)) {
+            return listCommits(git, branchName);
+        }
+    }
+
     protected List<String> listCommits(Repository repository) throws IOException, GitAPIException {
         try (Git git = new Git(repository)) {
             return listCommits(git, Constants.MASTER);
