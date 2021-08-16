@@ -22,6 +22,7 @@
 
 package org.jboss.as.server.deployment;
 
+import java.lang.ref.Reference;
 import java.security.PermissionCollection;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +32,7 @@ import java.util.jar.Manifest;
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.server.deployment.annotation.AnnotationIndexSupport;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.AdditionalModuleSpecification;
 import org.jboss.as.server.deployment.module.ExtensionInfo;
@@ -180,6 +182,13 @@ public final class Attachments {
      * the annotations
      */
     public static final AttachmentKey<Index> ANNOTATION_INDEX = AttachmentKey.create(Index.class);
+
+    /**
+     * A reference to a support utility object for processing annotation indices. This is attached to the {@link DeploymentUnit} for
+     * a top-level deployment and any subdeployments. A {@link Reference} holds the support object so it can be
+     * garbage collected once the management operation that created it completes.
+     */
+    public static final AttachmentKey<Reference<AnnotationIndexSupport>> ANNOTATION_INDEX_SUPPORT = AttachmentKey.create(Reference.class);
 
     /**
      * The composite annotation index for this deployment.

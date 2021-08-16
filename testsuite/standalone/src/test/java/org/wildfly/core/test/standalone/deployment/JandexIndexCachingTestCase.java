@@ -108,15 +108,13 @@ public class JandexIndexCachingTestCase {
         assertDeploymentFunctional(deploymentB.getName());
 
         // Index caching should mean only one log message should have been added
-        //Assert.assertEquals(3, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
-        Assert.assertEquals(4, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG)); // TODO the desired answer is 3
+        Assert.assertEquals(3, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
 
         // Reload
         ServerReload.executeReloadAndWaitForCompletion(mcc);
 
         // Only one log message should have been added
-        //Assert.assertEquals(4, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
-        Assert.assertEquals(6, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));  // TODO the desired answer is 4
+        Assert.assertEquals(4, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
     }
 
     private Operation createDeploymentOp(JavaArchive deployment) {
