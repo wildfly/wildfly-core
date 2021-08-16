@@ -31,7 +31,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOGGER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAP_GROUPS_TO_ROLES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -43,7 +42,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLLED_BACK;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALID;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALIDATE_OPERATION;
@@ -100,52 +98,52 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testMonitor() throws Exception {
-        test(RbacUtil.MONITOR_USER, false, true, false, true, true);
+        test(RbacUtil.MONITOR_USER, false, true, true, true);
     }
 
     @Test
     public void testOperator() throws Exception {
-        test(RbacUtil.OPERATOR_USER, false, true, false, true, true);
+        test(RbacUtil.OPERATOR_USER, false, true, true, true);
     }
 
     @Test
     public void testMaintainer() throws Exception {
-        test(RbacUtil.MAINTAINER_USER, false, true, false, true, true);
+        test(RbacUtil.MAINTAINER_USER, false, true, true, true);
     }
 
     @Test
     public void testDeployer() throws Exception {
-        test(RbacUtil.DEPLOYER_USER, false, true, false, true, true);
+        test(RbacUtil.DEPLOYER_USER, false, true, true, true);
     }
 
     @Test
     public void testAdministrator() throws Exception {
-        test(RbacUtil.ADMINISTRATOR_USER, true, true, true, true, true);
+        test(RbacUtil.ADMINISTRATOR_USER, true, true, true, true);
     }
 
     @Test
     public void testAuditor() throws Exception {
-        test(RbacUtil.AUDITOR_USER, true, true, true, true, true);
+        test(RbacUtil.AUDITOR_USER, true, true, true, true);
     }
 
     @Test
     public void testSuperUser() throws Exception {
-        test(RbacUtil.SUPERUSER_USER, true, true, true, true, true);
+        test(RbacUtil.SUPERUSER_USER, true, true, true, true);
     }
 
     private void test(String userName, boolean mgmtAuthorizationExpectation, boolean auditLogExpectation,
-            boolean securityRealmExpectation, boolean datasourceWithPlainPasswordExpectation,
+            boolean datasourceWithPlainPasswordExpectation,
             boolean datasourceWithMaskedPasswordExpectation) throws Exception {
 
-        testValidateAddress(userName, mgmtAuthorizationExpectation, auditLogExpectation, securityRealmExpectation,
+        testValidateAddress(userName, mgmtAuthorizationExpectation, auditLogExpectation,
                 datasourceWithPlainPasswordExpectation, datasourceWithMaskedPasswordExpectation);
 
-        testValidateOperation(userName, mgmtAuthorizationExpectation, auditLogExpectation, securityRealmExpectation,
+        testValidateOperation(userName, mgmtAuthorizationExpectation, auditLogExpectation,
                 datasourceWithPlainPasswordExpectation, datasourceWithMaskedPasswordExpectation);
     }
 
     private void testValidateAddress(String userName, boolean mgmtAuthorizationExpectation, boolean auditLogExpectation,
-            boolean securityRealmExpectation, boolean datasourceWithPlainPasswordExpectation,
+            boolean datasourceWithPlainPasswordExpectation,
             boolean datasourceWithMaskedPasswordExpectation) throws Exception {
 
         ModelControllerClient client = getClientForUser(userName);
@@ -160,13 +158,10 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(ACCESS, AUDIT).add(LOGGER, AUDIT_LOG);
         validateAddress(client, address, auditLogExpectation);
-
-        address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
-        validateAddress(client, address, securityRealmExpectation);
     }
 
     private void testValidateOperation(String userName, boolean mgmtAuthorizationExpectation, boolean auditLogExpectation,
-            boolean securityRealmExpectation, boolean datasourceWithPlainPasswordExpectation,
+            boolean datasourceWithPlainPasswordExpectation,
             boolean datasourceWithMaskedPasswordExpectation) throws Exception {
 
         ModelControllerClient client = getClientForUser(userName);
@@ -193,15 +188,6 @@ public class ValidateAddressOrOperationTestCase extends AbstractRbacTestCase {
 
         address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(ACCESS, AUDIT).add(LOGGER, AUDIT_LOG);
         validateOperation(client, writeAttribute(address, ENABLED, ModelNode.TRUE), auditLogExpectation);
-
-        address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
-        validateOperation(client, readResource(address), securityRealmExpectation);
-
-        address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
-        validateOperation(client, readAttribute(address, MAP_GROUPS_TO_ROLES), securityRealmExpectation);
-
-        address.setEmptyList().add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm");
-        validateOperation(client, writeAttribute(address, MAP_GROUPS_TO_ROLES, ModelNode.TRUE), securityRealmExpectation);
     }
 
     // test utils

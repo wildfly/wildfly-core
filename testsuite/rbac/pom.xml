@@ -166,36 +166,6 @@
                             <dir>${wildfly.standalone.config}</dir>
                             <skipDefaultExcludes>true</skipDefaultExcludes>
                             <includes>
-                                <include>properties-role-mapping-standalone*.xml</include>
-                            </includes>
-                            <stylesheet>${local.xslt.dir}/setupRbacLdapAuthG2U.xsl</stylesheet>
-                            <outputDir>${wildfly.standalone.config}</outputDir>
-                            <fileMappers>
-                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
-                                    <pattern>^properties-role-mapping</pattern>
-                                    <replacement>ldap-role-mapping-g2u</replacement>
-                                </fileMapper>
-                            </fileMappers>
-                        </transformationSet>
-                        <transformationSet>
-                            <dir>${wildfly.standalone.config}</dir>
-                            <skipDefaultExcludes>true</skipDefaultExcludes>
-                            <includes>
-                                <include>properties-role-mapping-standalone*.xml</include>
-                            </includes>
-                            <stylesheet>${local.xslt.dir}/setupRbacLdapAuthU2G.xsl</stylesheet>
-                            <outputDir>${wildfly.standalone.config}</outputDir>
-                            <fileMappers>
-                                <fileMapper implementation="org.codehaus.plexus.components.io.filemappers.RegExpFileMapper">
-                                    <pattern>^properties-role-mapping</pattern>
-                                    <replacement>ldap-role-mapping-u2g</replacement>
-                                </fileMapper>
-                            </fileMappers>
-                        </transformationSet>
-                        <transformationSet>
-                            <dir>${wildfly.standalone.config}</dir>
-                            <skipDefaultExcludes>true</skipDefaultExcludes>
-                            <includes>
                                 <include>standalone*.xml</include>
                             </includes>
                             <stylesheet>${local.xslt.dir}/enableJmxNonCoreMbeansSensitivity.xsl</stylesheet>
@@ -246,8 +216,6 @@
                             <excludes>
                                 <exclude>**/PropertiesRoleMappingTestCase.java</exclude>
                                 <exclude>**/JmxSensitiveTestCase.java</exclude>
-                                <exclude>**/LdapRoleMappingG2UTestCase.java</exclude>
-                                <exclude>**/LdapRoleMappingU2GTestCase.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -263,36 +231,6 @@
                             </includes>
                             <systemPropertyVariables>
                                 <server.config>properties-role-mapping-standalone.xml</server.config>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>access-ldap-role-mapping-g2u</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>org/jboss/as/test/integration/mgmt/access/LdapRoleMappingG2UTestCase.java</include>
-                            </includes>
-                            <systemPropertyVariables>
-                                <server.config>ldap-role-mapping-g2u-standalone.xml</server.config>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>access-ldap-role-mapping-u2g</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>org/jboss/as/test/integration/mgmt/access/LdapRoleMappingU2GTestCase.java</include>
-                            </includes>
-                            <systemPropertyVariables>
-                                <server.config>ldap-role-mapping-u2g-standalone.xml</server.config>
                             </systemPropertyVariables>
                         </configuration>
                     </execution>
@@ -552,20 +490,6 @@
                             <!-- for now disable the alternative executions that would require multiple bootable jar packaging -->
                             <execution>
                                 <id>access-properties-role-mapping</id>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <phase>none</phase>
-                            </execution>
-                            <execution>
-                                <id>access-ldap-role-mapping-g2u</id>
-                                <goals>
-                                    <goal>test</goal>
-                                </goals>
-                                <phase>none</phase>
-                            </execution>
-                            <execution>
-                                <id>access-ldap-role-mapping-u2g</id>
                                 <goals>
                                     <goal>test</goal>
                                 </goals>
