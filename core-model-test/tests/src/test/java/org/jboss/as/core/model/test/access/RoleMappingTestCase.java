@@ -113,24 +113,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
     }
 
     /**
-     * Same as testIncludeByUsername but now verify that the users realm is taken into account.
-     */
-    @Test
-    public void testIncludeByUsernameAndRealm() {
-        final String roleName = "Deployer";
-        final String userName = "UserTwo";
-        addRole(roleName, false);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.USER, userName, TEST_REALM);
-        assertIsCallerInRole(roleName, null, false);
-
-        assertIsCallerInRole(roleName, true, userName, TEST_REALM, null);
-        assertIsCallerInRole(roleName, false, userName, OTHER_REALM, null);
-        assertIsCallerInRole(roleName, false, OTHER_USER, TEST_REALM, null, userName);
-
-        removeRole(roleName);
-    }
-
-    /**
      * Test that a user is assigned a role based on their group membership (not realm specific).
      *
      * Also verify that a user account with the same name does not result in role assignment.
@@ -146,25 +128,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
 
         assertIsCallerInRole(roleName, true, userName, TEST_REALM, null, groupName);
         assertIsCallerInRole(roleName, true, userName, OTHER_REALM, null, groupName);
-        assertIsCallerInRole(roleName, false, groupName, TEST_REALM, null, userName);
-
-        removeRole(roleName);
-    }
-
-    /**
-     * Same as testIncludeByGroup but now include the realm name in the match.
-     */
-    @Test
-    public void testIncludeByGroupAndRealm() {
-        final String roleName = "Deployer";
-        final String userName = "UserFour";
-        final String groupName = "GroupFour";
-        addRole(roleName, false);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, groupName, TEST_REALM);
-        assertIsCallerInRole(roleName, null, false);
-
-        assertIsCallerInRole(roleName, true, userName, TEST_REALM, null, groupName);
-        assertIsCallerInRole(roleName, false, userName, OTHER_REALM, null, groupName);
         assertIsCallerInRole(roleName, false, groupName, TEST_REALM, null, userName);
 
         removeRole(roleName);
@@ -190,26 +153,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
     }
 
     /**
-     * Same as testExcludeByUsername except the exclusion is realm specific.
-     */
-    @Test
-    public void testExcludeByUsernameAndRealm() {
-        final String roleName = "Deployer";
-        final String userName = "UserFive";
-        final String groupName = "GroupFive";
-        addRole(roleName, false);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, groupName, null);
-        addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.USER, userName, TEST_REALM);
-        assertIsCallerInRole(roleName, null, false);
-
-        assertIsCallerInRole(roleName, true, OTHER_USER, TEST_REALM, null, groupName);
-        assertIsCallerInRole(roleName, false, userName, TEST_REALM, null, groupName);
-        assertIsCallerInRole(roleName, true, userName, OTHER_REALM, null, groupName);
-
-        removeRole(roleName);
-    }
-
-    /**
      * Test that a user assigned a role due to group membership is excluded based on the membership of another group.
      */
     @Test
@@ -225,27 +168,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
 
         assertIsCallerInRole(roleName, true, userName, TEST_REALM, null, inGroupName);
         assertIsCallerInRole(roleName, false, userName, TEST_REALM, null, inGroupName, outGroupName);
-
-        removeRole(roleName);
-    }
-
-    /**
-     * Same as testExcludeByGroup but the exclusion takes the realm into account.
-     */
-    @Test
-    public void testExcludeByGroupAndRealm() {
-        final String roleName = "Deployer";
-        final String userName = "UserSeven";
-        final String inGroupName = "GroupSeven_In";
-        final String outGroupName = "GroupSeven_Out";
-        addRole(roleName, false);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, inGroupName, null);
-        addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, outGroupName, TEST_REALM);
-        assertIsCallerInRole(roleName, null, false);
-
-        assertIsCallerInRole(roleName, true, userName, TEST_REALM, null, inGroupName);
-        assertIsCallerInRole(roleName, false, userName, TEST_REALM, null, inGroupName, outGroupName);
-        assertIsCallerInRole(roleName, true, userName, OTHER_REALM, null, inGroupName, outGroupName);
 
         removeRole(roleName);
     }
@@ -300,8 +222,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
         final String roleName = "Deployer";
         final String userName = "UserEight";
         addRole(roleName, true);
-        // TODO Elytron Hack - Default user 'anonymous' is picked up as being in the role.
-        assertIsCallerInRole(roleName, null, true);
 
         assertIsCallerInRole(roleName, true, userName, TEST_REALM, null);
 
@@ -391,23 +311,6 @@ public class RoleMappingTestCase extends AbstractCoreModelTest {
         addRole(roleName, false);
         addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, groupName, TEST_REALM);
         addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, groupName, TEST_REALM, true);
-
-        removeRole(roleName);
-    }
-
-    @Test
-    public void testDuplicateGroupRealmLess() {
-        final String roleName = "Deployer";
-        final String groupName = "UserFourteen";
-
-        addRole(roleName, false);
-        addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, groupName, null);
-        addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, groupName, TEST_REALM);
-        addPrincipal(roleName, MappingType.EXCLUDE, PrincipalType.GROUP, groupName, null, true);
-
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, groupName, TEST_REALM);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, groupName, null);
-        addPrincipal(roleName, MappingType.INCLUDE, PrincipalType.GROUP, groupName, null, true);
 
         removeRole(roleName);
     }
