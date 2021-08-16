@@ -25,11 +25,6 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     }
 
     @Test
-    public void testWFLY2870() throws Exception {
-        doHostXml("host-with-secure-interface.xml");
-    }
-
-    @Test
     public void testSocketBindingDefaultInterface() throws Exception {
         doHostXml("host-with-default-interface.xml");
     }
@@ -47,11 +42,6 @@ public class HostModelTestCase extends AbstractCoreModelTest {
     @Test
     public void testWFLY75HttpRemoting() throws Exception {
         doRemoteHostXml("host-http-remoting-domain-manager.xml");
-    }
-
-    @Test
-    public void testHostXmlWithServerSSL() throws Exception {
-        doHostXml("host-with-server-ssl.xml");
     }
 
     private void doHostXml(String hostXmlFile) throws Exception {

@@ -3,24 +3,6 @@
 <host name="master" xmlns="urn:jboss:domain:18.0">
 
     <management>
-        <security-realms>
-            <security-realm name="ManagementRealm">
-                <authentication>
-                    <local default-user="$local" skip-group-loading="true" />
-                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
-                </authentication>
-            </security-realm>
-            <security-realm name="ApplicationRealm">
-                <authentication>
-                    <local default-user="$local" allowed-users="*" skip-group-loading="true" />
-                    <properties path="application-users.properties" relative-to="jboss.domain.config.dir" />
-                </authentication>
-                <authorization>
-                    <properties path="application-roles.properties" relative-to="jboss.domain.config.dir"/>
-                </authorization>
-            </security-realm>
-        </security-realms>
-        
         <audit-log>
             <formatters>
                <json-formatter name="json-formatter"/>
@@ -41,10 +23,10 @@
             </server-logger>
         </audit-log>
         <management-interfaces>
-            <native-interface security-realm="ManagementRealm">
+            <native-interface>
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
-            <http-interface security-realm="ManagementRealm">
+            <http-interface>
                 <socket interface="management" port="${jboss.management.http.port:9990}"/>
             </http-interface>
         </management-interfaces>
