@@ -222,7 +222,7 @@ final class ApplicationServerService implements Service<AsyncFuture<ServiceConta
         //processState.setStopping();
         CurrentServiceContainer.setServiceContainer(null);
         String prettyVersion = configuration.getServerEnvironment().getProductConfig().getPrettyVersionString();
-        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, Integer.valueOf((int) (context.getElapsedTime() / 1000000L)));
+        ServerLogger.AS_ROOT_LOGGER.serverStopped(prettyVersion, (int) (context.getElapsedTime() / 1000000L));
         BootstrapListener.deleteStartupMarker(configuration.getServerEnvironment().getServerTempDir());
     }
 

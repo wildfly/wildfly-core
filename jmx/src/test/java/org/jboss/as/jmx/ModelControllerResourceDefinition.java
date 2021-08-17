@@ -167,7 +167,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
             model.get("bytes").set(new byte[]{5, 6});
             model.get("double").set(7.0);
             model.get("string").set("8");
-            model.get("list").add(new Integer(9));
+            model.get("list").add(9);
             model.get("long").set(10L);
             model.get("type").set(ModelType.INT);
             model.get("map", "key1").set(11);
