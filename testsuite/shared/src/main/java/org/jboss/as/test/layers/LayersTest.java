@@ -105,8 +105,11 @@ public class LayersTest {
                 invalidUnref.add(unref);
             }
         }
+
+        // If an ERROR occurs please refer to unreferenced java doc for more details
         if (!invalidUnref.isEmpty()) {
-            throw new Exception("Some unreferenced modules are un-expected " + invalidUnref);
+            throw new Exception("!!ERROR, some modules have not been provisioned-- " +
+                    " Some unreferenced modules in installation [${project.build.directory}/layers-results/test-all-layers] are unexpected compared to [${project.build.directory}/layers-results/test-standalone-reference] " + invalidUnref);
         }
         StringBuilder builder = new StringBuilder();
         appendResult("REFERENCE", reference, builder, null);
