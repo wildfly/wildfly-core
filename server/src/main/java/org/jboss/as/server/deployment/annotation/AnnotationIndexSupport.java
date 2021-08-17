@@ -20,7 +20,6 @@ package org.jboss.as.server.deployment.annotation;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -32,7 +31,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.moduleservice.ModuleIndexBuilder;
-import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoadException;
@@ -49,7 +47,7 @@ import org.wildfly.common.Assert;
 public final class AnnotationIndexSupport {
 
     private final ConcurrentMap<String, Lock> indexLocks = new ConcurrentHashMap<>();
-    private final Map<String, IndexingResult> indexCache = new ConcurrentHashMap<>();
+    private final Map<String, CompositeIndex> indexCache = new ConcurrentHashMap<>();
 
     /**
      * Gets the annotation indices for the resources in the module with the given id.
@@ -58,11 +56,11 @@ public final class AnnotationIndexSupport {
      * @return the indices. Will not return {@code null}.
      * @throws DeploymentUnitProcessingException if a problem occurs obtaining the indices
      */
-    IndexingResult getAnnotationIndices(String moduleId, ModuleLoader moduleLoader) throws DeploymentUnitProcessingException {
+    CompositeIndex getAnnotationIndices(String moduleId, ModuleLoader moduleLoader) throws DeploymentUnitProcessingException {
         Assert.checkNotNullParam("moduleId", moduleId);
         Assert.checkNotNullParam("moduleLoader", moduleLoader);
 
-        IndexingResult result;
+        CompositeIndex result;
 
         // See if we have this one in the cache
         result = indexCache.get(moduleId);
@@ -106,22 +104,21 @@ public final class AnnotationIndexSupport {
         return lock;
     }
 
-    static IndexingResult indexModule(String moduleIdentifier, ModuleLoader moduleLoader) throws DeploymentUnitProcessingException {
+    static CompositeIndex indexModule(String moduleIdentifier, ModuleLoader moduleLoader) throws DeploymentUnitProcessingException {
         ServerLogger.DEPLOYMENT_LOGGER.debugf("Creating annotation index for static module %s", moduleIdentifier);
         try {
-            IndexingResult result;
+            CompositeIndex result;
             Module module = moduleLoader.loadModule(moduleIdentifier);
             // If the module resources include any MANIFEST/jandex.idx files, we only index those resources
             // A module with any jandex.idx files must have them in all resources where index calculation is wanted.
             final CompositeIndex additionalIndex = ModuleIndexBuilder.buildCompositeIndex(module);
             if (additionalIndex != null) {
-                result = new IndexingResult(additionalIndex, true);
+                result = additionalIndex;
             } else {
                 // No MANIFEST/jandex.idx files. The fact that we were calle indicates some deployment
                 // wants this module indexed even though it has no jandex.idx files, so we process
                 // all class files in the module resources.
-                final Index index = calculateModuleIndex(module);
-                result = new IndexingResult(new CompositeIndex(Collections.singleton(index)), false);
+                result = calculateModuleIndex(module);
             }
             return result;
         } catch (ModuleLoadException | IOException e) {
@@ -129,7 +126,7 @@ public final class AnnotationIndexSupport {
         }
     }
 
-    private static Index calculateModuleIndex(final Module module) throws ModuleLoadException, IOException {
+    private static CompositeIndex calculateModuleIndex(final Module module) throws ModuleLoadException, IOException {
         final Indexer indexer = new Indexer();
         final PathFilter filter = PathFilters.getDefaultImportFilter();
         final Iterator<Resource> iterator = module.iterateResources(filter);
@@ -143,28 +140,6 @@ public final class AnnotationIndexSupport {
                 }
             }
         }
-        return indexer.complete();
-    }
-
-    static final class IndexingResult {
-        private final CompositeIndex compositeIndex;
-        private final boolean fromIdxFile;
-
-        IndexingResult(CompositeIndex compositeIndex, boolean fromIdxFile) {
-            this.compositeIndex = compositeIndex;
-            this.fromIdxFile = fromIdxFile;
-        }
-
-        CompositeIndex getCompositeIndex() {
-            return compositeIndex;
-        }
-
-        Collection<Index> getIndices() {
-            return compositeIndex.indexes;
-        }
-
-        boolean isFromIdxFile() {
-            return fromIdxFile;
-        }
+        return new CompositeIndex(Collections.singleton(indexer.complete()));
     }
 }
