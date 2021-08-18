@@ -125,6 +125,7 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                 }
             } else {
                 try {
+                    ServerLogger.DEPLOYMENT_LOGGER.debugf("Creating annotation index for static module %s", moduleIdentifier);
                     Module module = moduleLoader.loadModule(moduleIdentifier);
                     final CompositeIndex additionalIndex = ModuleIndexBuilder.buildCompositeIndex(module);
                     if (additionalIndex != null) {
