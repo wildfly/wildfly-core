@@ -491,12 +491,12 @@ public enum Phase {
     @Deprecated
     public static final int CONFIGURE_RESOLVE_BUNDLE                    = 0x0100;
     public static final int CONFIGURE_JDBC_DRIVER_MANAGER_ADAPTER       = 0x0180;
+    public static final int CONFIGURE_DISTRIBUTABLE_WEB                 = 0x0190;
     public static final int CONFIGURE_MODULE_SPEC                       = 0x0200;
     public static final int CONFIGURE_DEFERRED_PHASE                    = 0x0300;
     public static final int CONFIGURE_SINGLETON_DEPLOYMENT              = 0x0400;
     public static final int CONFIGURE_AUTHENTICATION_CONTEXT            = 0x0500;
     public static final int CONFIGURE_DEFAULT_SSL_CONTEXT               = 0x0580;
-    public static final int CONFIGURE_DISTRIBUTABLE_WEB                 = 0x0600;
 
     // FIRST_MODULE_USE
     public static final int FIRST_MODULE_USE_PERSISTENCE_CLASS_FILE_TRANSFORMER = 0x0100; // need to be before POST_MODULE_REFLECTION_INDEX
