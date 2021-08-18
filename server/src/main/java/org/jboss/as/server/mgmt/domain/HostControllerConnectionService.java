@@ -124,6 +124,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             // final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
+            final String userName = this.userName != null ? this.userName : serverName;
             configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());
