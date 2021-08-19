@@ -1382,6 +1382,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 285, value = "Vault support has been removed, no vault resources will be initialised.")
     void vaultSupportRemoved();
 
+    @Message(id = 286, value = "Failed to index static module %s for annotations")
+    DeploymentUnitProcessingException staticModuleIndexingFailed(String moduleId, @Cause Throwable cause);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

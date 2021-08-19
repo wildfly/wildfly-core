@@ -51,6 +51,7 @@ import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
+import org.jboss.as.server.deployment.annotation.AnnotationIndexSupport;
 import org.jboss.as.server.deploymentoverlay.DeploymentOverlayIndex;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
@@ -71,6 +72,8 @@ import org.jboss.vfs.VirtualFile;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class DeploymentHandlerUtil {
+
+    private static final OperationContext.AttachmentKey<AnnotationIndexSupport> ANNOTATION_INDEX_SUPPORT = OperationContext.AttachmentKey.create(AnnotationIndexSupport.class);
 
     static class ContentItem {
         // either hash or <path, relativeTo, isArchive>
@@ -204,10 +207,13 @@ public class DeploymentHandlerUtil {
             contentService = PathContentServitor.addService(context, serviceTarget, contentsServiceName, path, relativeTo);
         }
         DeploymentOverlayIndex overlays = DeploymentOverlayIndex.createDeploymentOverlayIndex(context);
+        // Get or create a shared cache of static module annotation indices to use across all deployments
+        // associated with the current OperationContext
+        AnnotationIndexSupport annotationIndexSupport = getAnnotationIndexCache(context);
 
         final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null,
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), overlays,
-                isExplodedContent);
+                annotationIndexSupport, isExplodedContent);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
                 .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                 .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
@@ -449,5 +455,14 @@ public class DeploymentHandlerUtil {
             }
         }
         return hash;
+    }
+
+    private static AnnotationIndexSupport getAnnotationIndexCache(OperationContext context) {
+        AnnotationIndexSupport result = context.getAttachment(ANNOTATION_INDEX_SUPPORT);
+        if (result == null) {
+            result = new AnnotationIndexSupport();
+            context.attach(ANNOTATION_INDEX_SUPPORT, result);
+        }
+        return result;
     }
 }
