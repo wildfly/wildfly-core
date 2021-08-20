@@ -772,6 +772,17 @@
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
+                <artifactId>undertow-servlet-jakartaee9</artifactId>
+                <version>${version.io.undertow}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
                 <artifactId>undertow-websockets-jsr</artifactId>
                 <version>${version.io.undertow}</version>
                 <exclusions>
@@ -786,6 +797,17 @@
                     <exclusion>
                         <groupId>org.wildfly.client</groupId>
                         <artifactId>wildfly-client-config</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-websockets-jsr-jakartaee9</artifactId>
+                <version>${version.io.undertow}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
