@@ -107,6 +107,7 @@ public class ConfigurationFile {
     private static final Pattern VERSION_PATTERN = Pattern.compile("v\\d+");
     private static final Pattern FILE_WITH_VERSION_PATTERN = Pattern.compile("\\S*\\.v\\d+\\.xml");
     private static final Pattern SNAPSHOT_XML = Pattern.compile(TIMESTAMP_STRING + "\\S*\\.xml");
+    private static final Pattern GENERAL_SNAPSHOT_XML = Pattern.compile("\\S*\\.xml");
 
 
     private final AtomicInteger sequence = new AtomicInteger();
@@ -818,7 +819,7 @@ public class ConfigurationFile {
             for (String name : snapshotsDirectory.list(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    return SNAPSHOT_XML.matcher(name).matches();
+                    return GENERAL_SNAPSHOT_XML.matcher(name).matches();
                 }
             })) {
                 names.add(name);
