@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.waitUntilState;
 import static org.junit.Assert.assertEquals;
@@ -45,6 +46,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -52,6 +54,7 @@ import org.junit.Test;
  *
  * Basic tests for domain server auth when local realm authentication is removed.
  */
+@Ignore("[WFCORE-5549] Unable to remove JBOSS_LOCAL_USER with Elytron configuration.")
 public class ServerAuthenticationTestCase {
 
     private static final int FAILED_RELOAD_TIMEOUT_MILLIS = 10000;
@@ -79,8 +82,12 @@ public class ServerAuthenticationTestCase {
 
     @Test
     public void testDisableLocalAuthAndStartServers() throws Exception {
-        // disable local-auth on the slave
+        // Check local auth is enabled at the outset and that the servers start
         assertTrue(localAuthEnabled(masterLifecycleUtil.getDomainClient(), "slave"));
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "main-three", "STARTED");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "other-two", "STARTED");
+
+        // disable local-auth on the slave
         removeLocalAuth(masterLifecycleUtil.getDomainClient(), "slave");
 
         // reload slave, and wait for it to register with master
@@ -114,12 +121,15 @@ public class ServerAuthenticationTestCase {
 
         final ModelNode value = new ModelNode();
 
-        // Always add DIGEST_MD5
+        // Always add DIGEST-MD5
         final ModelNode digestMd5 = new ModelNode();
         digestMd5.get("mechanism-name").set("DIGEST-MD5");
+
+        final ModelNode mechanismRealmConfigurations = new ModelNode();
         final ModelNode digestMd5RealmConfiguration = new ModelNode();
         digestMd5RealmConfiguration.get("realm-name").set("ManagementRealm");
-        digestMd5.get("mechanism-realm-configuration").set(digestMd5RealmConfiguration);
+        mechanismRealmConfigurations.add(digestMd5RealmConfiguration);
+        digestMd5.get("mechanism-realm-configurations").set(mechanismRealmConfigurations);
         value.add(digestMd5);
 
         if (includeLocalAuth) {
@@ -128,6 +138,7 @@ public class ServerAuthenticationTestCase {
             localAuth.get("realm-mapper").set("local");
             value.add(localAuth);
         }
+        operation.get(VALUE).set(value);
 
         final ModelNode result = client.execute(operation);
         assertEquals(result.toString(), SUCCESS, result.get(OUTCOME).asString());
