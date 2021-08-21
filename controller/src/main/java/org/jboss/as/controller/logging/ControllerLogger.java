@@ -41,6 +41,7 @@ import java.util.concurrent.CancellationException;
 import javax.xml.namespace.QName;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.ModelVersion;
@@ -192,6 +193,15 @@ public interface ControllerLogger extends BasicLogger {
      */
     @LogMessage(level = ERROR)
     void failedToCloseResource(@Cause Throwable cause, XMLStreamWriter writer);
+
+    /**
+     * Logs an error message indicating to failure to close the resource represented by the {@code reader} parameter.
+     *
+     * @param cause  the cause of the error.
+     * @param reader the resource.
+     */
+    @LogMessage(level = ERROR)
+    void failedToCloseResource(@Cause Throwable cause, XMLStreamReader reader);
 
     /**
      * Logs an error message indicating a failure to persist configuration change.

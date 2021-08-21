@@ -62,6 +62,7 @@ public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_RESOURCE_SUPPORT, new DeploymentResourceSupport(deploymentUnit));
         deploymentUnit.putAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT, capabilityServiceSupport);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX, parent.getAttachment(Attachments.DEPLOYMENT_OVERLAY_INDEX));
+        deploymentUnit.putAttachment(Attachments.ANNOTATION_INDEX_SUPPORT, parent.getAttachment(Attachments.ANNOTATION_INDEX_SUPPORT));
         deploymentUnit.putAttachment(Attachments.PATH_MANAGER, pathManager);
         return deploymentUnit;
     }

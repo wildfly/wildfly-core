@@ -118,18 +118,12 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
             }
         }
         final List<ModelNode> updates = new ArrayList<ModelNode>();
+        BufferedInputStream input = null;
+        XMLStreamReader streamReader = null;
         try {
-            final FileInputStream fis = new FileInputStream(fileName);
-            try {
-                BufferedInputStream input = new BufferedInputStream(fis);
-                XMLStreamReader streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
-                mapper.parseDocument(updates, streamReader);
-                streamReader.close();
-                input.close();
-                fis.close();
-            } finally {
-                safeClose(fis);
-            }
+            input = new BufferedInputStream(new FileInputStream(fileName));
+            streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
+            mapper.parseDocument(updates, streamReader);
         } catch (XMLStreamException e) {
             final boolean reported = reportValidationError(e);
             Throwable cause = null;
@@ -143,7 +137,11 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
             throw ControllerLogger.ROOT_LOGGER.failedToParseConfiguration(cause);
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToParseConfiguration(e);
+        } finally {
+            safeClose(streamReader);
+            safeClose(input);
         }
+
         return updates;
     }
 
@@ -153,12 +151,21 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
                 .report(exception);
     }
 
-
     private static void safeClose(final Closeable closeable) {
         if (closeable != null) try {
             closeable.close();
         } catch (Throwable t) {
             ROOT_LOGGER.failedToCloseResource(t, closeable);
+        }
+    }
+
+    private static void safeClose(final XMLStreamReader reader) {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (Throwable t) {
+                ROOT_LOGGER.failedToCloseResource(t, reader);
+            }
         }
     }
 

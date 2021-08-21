@@ -1382,8 +1382,12 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 285, value = "Vault support has been removed, no vault resources will be initialised.")
     void vaultSupportRemoved();
 
-    @Message(id = 286, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
+    @Message(id = 286, value = "Failed to index static module %s for annotations")
+    DeploymentUnitProcessingException staticModuleIndexingFailed(String moduleId, @Cause Throwable cause);
+
+    @Message(id = 287, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
     XMLStreamException securityRealmReferencesUnsupported();
+
 
     ////////////////////////////////////////////////
     //Messages without IDs

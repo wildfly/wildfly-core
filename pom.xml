@@ -148,7 +148,7 @@
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.2.9.Final</version.io.undertow>
+        <version.io.undertow>2.2.10.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0.3</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
@@ -179,7 +179,7 @@
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.16</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.5.Final</version.org.jboss.classfilewriter>
-        <version.org.jboss.invocation>1.6.2.Final</version.org.jboss.invocation>
+        <version.org.jboss.invocation>1.6.3.Final</version.org.jboss.invocation>
         <version.org.jboss.jandex>2.2.3.Final</version.org.jboss.jandex>
         <version.org.jboss.jboss-dmr>1.5.1.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.15.Final</version.org.jboss.jboss-vfs>
@@ -771,6 +771,17 @@
             </dependency>
             <dependency>
                 <groupId>io.undertow</groupId>
+                <artifactId>undertow-servlet-jakartaee9</artifactId>
+                <version>${version.io.undertow}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
                 <artifactId>undertow-websockets-jsr</artifactId>
                 <version>${version.io.undertow}</version>
                 <exclusions>
@@ -785,6 +796,17 @@
                     <exclusion>
                         <groupId>org.wildfly.client</groupId>
                         <artifactId>wildfly-client-config</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.undertow</groupId>
+                <artifactId>undertow-websockets-jsr-jakartaee9</artifactId>
+                <version>${version.io.undertow}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

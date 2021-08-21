@@ -76,19 +76,16 @@ class WorkerResourceDefinition extends PersistentResourceDefinition {
             RuntimeCapability.Builder.of(IOServices.IO_WORKER_CAPABILITY_NAME, true, XnioWorker.class).build();
 
     static final OptionAttributeDefinition WORKER_TASK_CORE_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_CORE_THREADS, Options.WORKER_TASK_CORE_THREADS)
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setDefaultValue(new ModelNode(2))
             .setValidator(new IntRangeValidator(0))
             .setAllowExpression(true)
             .build();
 
     static final OptionAttributeDefinition WORKER_TASK_MAX_THREADS = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_MAX_THREADS, Options.WORKER_TASK_MAX_THREADS)
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setValidator(new IntRangeValidator(0))
             .setAllowExpression(true)
             .build();
     static final OptionAttributeDefinition WORKER_TASK_KEEPALIVE = new OptionAttributeDefinition.Builder(Constants.WORKER_TASK_KEEPALIVE, Options.WORKER_TASK_KEEPALIVE)
-            .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setDefaultValue(new ModelNode(60_000))
             .setValidator(new IntRangeValidator(0))
             .setAllowExpression(true)
