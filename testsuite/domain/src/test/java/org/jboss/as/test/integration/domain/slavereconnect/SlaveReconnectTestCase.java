@@ -56,6 +56,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -116,6 +117,7 @@ public class SlaveReconnectTestCase {
     }
 
     @Test
+    @Ignore("[WFCORE-5549] Unable to remove JBOSS_LOCAL_USER with Elytron configuration.")
     public void test02_RBAC_user_and_model_out_of_sync() throws Exception {
         testReconnect(new ReconnectTestScenario[]{
                 new RBACModelOutOfSyncScenario()
