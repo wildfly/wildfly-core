@@ -191,6 +191,9 @@ public abstract class AbstractRbacTestCase {
             op.get(CHILD_TYPE).set(SUBSYSTEM);
             ModelNode subsystems = RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
             for (ModelNode subsystem : subsystems.get(RESULT).asList()) {
+                if ("elytron".equals(subsystem.asString())) {
+                    continue;
+                }
                 op = createOpNode("profile=" + profile.asString() + "/subsystem=" + subsystem.asString(), DESCRIBE);
                 configureRoles(op, roles);
                 result = RbacUtil.executeOperation(client, op, expectedOutcomeForProfile);

@@ -82,19 +82,16 @@
             <heap size="64m" max-size="128m"/>
             <jvm-options>
                 <option value="-ea"/>
-            </jvm-options>
-            <environment-variables>
-                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-            </environment-variables>
-            <!--
-            <jvm-options>
+                <!--
                 <option value="-Xdebug"/>
                 <option value="-Xnoagent"/>
                 <option value="-Djava.compiler=NONE"/>
                 <option value="-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=y"/>
-
+                -->
             </jvm-options>
-            -->
+            <environment-variables>
+                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+            </environment-variables>
         </jvm>
     </jvms>
 
