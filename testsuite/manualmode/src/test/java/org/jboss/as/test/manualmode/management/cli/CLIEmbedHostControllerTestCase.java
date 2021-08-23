@@ -59,6 +59,7 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -67,6 +68,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Ken Wills (c) 2016 Red Hat Inc.
  */
+@Ignore("[WFCORE-5555] CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron.")
 public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     /**
