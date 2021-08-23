@@ -354,6 +354,15 @@ public class ObjectTypeAttributeDefinition extends SimpleAttributeDefinition {
             this.suffix = suffix;
             return this;
         }
+
+        /*
+       --------------------------
+       added for binary compatibility for running compatibilty tests
+         */
+        @Override
+        public Builder setAllowNull(boolean allowNull) {
+            return super.setAllowNull(allowNull);
+        }
     }
 
     private static class ObjectParameterCorrector implements ParameterCorrector {
