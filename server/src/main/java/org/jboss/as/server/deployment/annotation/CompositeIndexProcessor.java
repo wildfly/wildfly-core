@@ -120,7 +120,7 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                 }
             } else {
                 // This module id refers to a module external to the deployment. Get the indices from the support object.
-                AnnotationIndexSupport.IndexingResult externalModuleIndexes;
+                CompositeIndex externalModuleIndexes;
                 AnnotationIndexSupport annotationIndexSupport = indexSupportRef.get();
                 if (annotationIndexSupport != null) {
                     externalModuleIndexes = annotationIndexSupport.getAnnotationIndices(moduleIdentifier.toString(), moduleLoader);
@@ -130,10 +130,8 @@ public class CompositeIndexProcessor implements DeploymentUnitProcessor {
                     // the indices without worrying about caching.
                     externalModuleIndexes = AnnotationIndexSupport.indexModule(moduleIdentifier.toString(), moduleLoader);
                 }
-                indexes.addAll(externalModuleIndexes.getIndices());
-                if (externalModuleIndexes.isFromIdxFile()) { // TODO it's likely a bug that how the index was created matters to whether we pass it on
-                    additionalAnnotationIndexes.put(moduleIdentifier, externalModuleIndexes.getCompositeIndex());
-                }
+                indexes.addAll(externalModuleIndexes.indexes);
+                additionalAnnotationIndexes.put(moduleIdentifier, externalModuleIndexes);
             }
         }
         deploymentUnit.putAttachment(Attachments.ADDITIONAL_ANNOTATION_INDEXES_BY_MODULE, additionalAnnotationIndexes);
