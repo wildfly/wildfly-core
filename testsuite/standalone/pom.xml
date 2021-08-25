@@ -151,6 +151,8 @@
 
                     <environmentVariables>
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
+                        <!-- Used in one of the tests -->
+                        <TEST_ENVIRONMENT_VARIABLE>Hello world</TEST_ENVIRONMENT_VARIABLE>
                     </environmentVariables>
 
                     <systemPropertyVariables>

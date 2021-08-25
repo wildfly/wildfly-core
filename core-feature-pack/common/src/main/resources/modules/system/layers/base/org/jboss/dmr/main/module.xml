@@ -27,5 +27,7 @@
         <artifact name="${org.jboss:jboss-dmr}"/>
     </resources>
 
-
+    <dependencies>
+        <module name="org.jboss.logging"/>
+    </dependencies>
 </module>
