@@ -295,6 +295,10 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                             } else if (lenient) {
                                 // just respond with the initial value
                                 return new ParseAndResolveResult(initialValue, false, false);
+                            } else if (initialValue.endsWith("?}")) {
+                                modified = true;
+                                recordResolutionInStack(toResolve, stack);
+                                continue;
                             } else {
                                 throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(initialValue);
                             }
@@ -339,9 +343,23 @@ public class ExpressionResolverImpl implements ExpressionResolver {
         // parseAndResolve should only be providing expressions with no leading or trailing chars
         assert unresolvedString.startsWith("${") && unresolvedString.endsWith("}");
 
+        String result = attemptToResolveExpression(unresolvedString, context);
+
+        // Optional expression
+        if (result.equals(unresolvedString) && unresolvedString.endsWith("?}")) {
+            String expressionString = unresolvedString.substring(0, unresolvedString.length() - 2) + "}";
+            result = attemptToResolveExpression(expressionString, context);
+            if (result.equals(expressionString)) {
+                result = unresolvedString;
+            }
+        }
+
+        return result;
+    }
+
+    private String attemptToResolveExpression(final String unresolvedString, final OperationContext context) throws OperationFailedException {
         // Default result is no change from input
         String result = unresolvedString;
-
         ModelNode resolveNode = new ModelNode(new ValueExpression(unresolvedString));
 
         // Try plug-in resolution; i.e. vault

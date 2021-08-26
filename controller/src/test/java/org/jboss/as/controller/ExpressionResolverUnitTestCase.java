@@ -363,6 +363,30 @@ public class ExpressionResolverUnitTestCase {
         assertEquals(ModelType.STRING, node.getType());
     }
 
+    @Test
+    public void testOptionalExpression() throws OperationFailedException {
+        System.setProperty("test.optional?", "correct");
+        System.setProperty("test.optional", "wrong");
+        System.setProperty("test.optional2", "abc");
+        try {
+            ModelNode node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.optional?}"));
+            assertEquals("correct", node.asString());
+            assertEquals(ModelType.STRING, node.getType());
+
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.optional2?}"));
+            assertEquals("abc", node.asString());
+            assertEquals(ModelType.STRING, node.getType());
+
+            node = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.optional3?}"));
+            assertEquals("", node.asString());
+            assertEquals(ModelType.STRING, node.getType());
+        } finally {
+            System.clearProperty("test.optional?");
+            System.clearProperty("test.optional");
+            System.clearProperty("test.optional2");
+        }
+    }
+
     /**
      * Test that a incomplete expression to a system property reference throws an ISE
      */

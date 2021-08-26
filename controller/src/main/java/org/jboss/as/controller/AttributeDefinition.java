@@ -665,6 +665,9 @@ public abstract class AttributeDefinition {
             node.set(defaultValue);
         }
         ModelNode resolved = resolver.resolveExpressions(node);
+        if (resolved.asString().isEmpty() && node.asString().endsWith("?}") && defaultValue != null && defaultValue.isDefined()) {
+            resolved.set(defaultValue);
+        }
         resolved = parseResolvedValue(value, resolved);
         validator.validateParameter(name, resolved);
         return resolved;
