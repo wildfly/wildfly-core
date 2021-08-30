@@ -115,6 +115,8 @@ public class JandexIndexCachingTestCase {
 
         // Only one log message should have been added
         Assert.assertEquals(4, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
+        ManagementOperations.executeOperation(mcc, createDeleteDeploymentOp(deploymentA));
+        ManagementOperations.executeOperation(mcc, createDeleteDeploymentOp(deploymentB));
     }
 
     private Operation createDeploymentOp(JavaArchive deployment) {
@@ -124,6 +126,11 @@ public class JandexIndexCachingTestCase {
         addOperation.get("enabled").set(true);
         addOperation.get("content").add().get("input-stream-index").set(0);
         return Operation.Factory.create(addOperation, streams, true);
+    }
+
+    private Operation createDeleteDeploymentOp(JavaArchive deployment) {
+        final ModelNode removeOperation = Util.createRemoveOperation(PathAddress.pathAddress("deployment", deployment.getName()));
+        return Operation.Factory.create(removeOperation);
     }
 
     private JavaArchive prepareTestDeployment(String deploymentName, Class<?> clazz) throws IOException {
