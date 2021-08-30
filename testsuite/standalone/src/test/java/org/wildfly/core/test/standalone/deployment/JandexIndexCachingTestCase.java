@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.wildfly.core.test.standalone.deployment;
 
 import java.io.IOException;
@@ -48,6 +47,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,7 +76,6 @@ public class JandexIndexCachingTestCase {
         JavaArchive deploymentB = prepareTestDeployment("appB", ServiceActivatorDeploymentB.class);
         Operation deploymentAop = createDeploymentOp(deploymentA);
         Operation deploymentBop = createDeploymentOp(deploymentB);
-
         // Execute individually
         ManagementOperations.executeOperation(mcc, deploymentAop);
         assertDeploymentFunctional(deploymentA.getName());
@@ -117,6 +116,12 @@ public class JandexIndexCachingTestCase {
         Assert.assertEquals(4, LoggingUtil.countLogMessage(mcc, HANDLER_NAME, INDEXING_MSG));
     }
 
+    @After
+    public void cleanUp() throws IOException {
+        managementClient.getControllerClient().execute(Util.createRemoveOperation(PathAddress.pathAddress("deployment", "appA" + DEPLOYMENT_NAME_SUFFIX)));
+        managementClient.getControllerClient().execute(Util.createRemoveOperation(PathAddress.pathAddress("deployment", "appB" + DEPLOYMENT_NAME_SUFFIX)));
+    }
+
     private Operation createDeploymentOp(JavaArchive deployment) {
         final List<InputStream> streams = new ArrayList<>();
         streams.add(deployment.as(ZipExporter.class).exportAsInputStream());
@@ -148,13 +153,13 @@ public class JandexIndexCachingTestCase {
 
     private String prepareJBossDeploymentStructure() {
         // Declare a dep on a module and request annotations info from it
-        return "<jboss-deployment-structure>\n" +
-                "  <deployment>\n" +
-                "    <dependencies>\n" +
-                "      <module name=\"" + DEPENDEE_MODULE + "\" annotations=\"true\"/>\n" +
-                "    </dependencies>\n" +
-                "  </deployment>\n" +
-                "</jboss-deployment-structure>\n";
+        return "<jboss-deployment-structure>\n"
+                + "  <deployment>\n"
+                + "    <dependencies>\n"
+                + "      <module name=\"" + DEPENDEE_MODULE + "\" annotations=\"true\"/>\n"
+                + "    </dependencies>\n"
+                + "  </deployment>\n"
+                + "</jboss-deployment-structure>\n";
     }
 
     private void assertDeploymentFunctional(String deploymentName) throws IOException, MgmtOperationException {
@@ -169,12 +174,14 @@ public class JandexIndexCachingTestCase {
     }
 
     public static class ServiceActivatorDeploymentA extends ServiceActivatorDeployment {
+
         public ServiceActivatorDeploymentA() {
             super(ServiceName.of(ServiceActivatorDeployment.class.getSimpleName(), "a"), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         }
     }
 
     public static class ServiceActivatorDeploymentB extends ServiceActivatorDeployment {
+
         public ServiceActivatorDeploymentB() {
             super(ServiceName.of(ServiceActivatorDeployment.class.getSimpleName(), "b"), ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         }
