@@ -55,7 +55,7 @@
     <feature spec="subsystem.elytron.configurable-sasl-server-factory">
         <param name="configurable-sasl-server-factory" value="configured" />
         <param name="sasl-server-factory" value="elytron" />
-        <param name="properties" value="{wildfly.sasl.local-user.default-user=&quot;\$local&quot;}" />
+        <param name="properties" value="{wildfly.sasl.local-user.default-user=&quot;\$local&quot;,wildfly.sasl.local-user.challenge-path=&quot;${jboss.server.temp.dir}/auth&quot;}" />
     </feature>
     <feature spec="subsystem.elytron.constant-role-mapper">
         <param name="constant-role-mapper" value="super-user-mapper" />
