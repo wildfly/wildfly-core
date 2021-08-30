@@ -43,8 +43,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -54,6 +52,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -1579,27 +1578,7 @@ class SSLDefinitions {
     }
 
     private static BooleanSupplier getFipsSupplier() {
-        try {
-            final Class<?> providerClazz = SSLDefinitions.class.getClassLoader().loadClass("com.sun.net.ssl.internal.ssl.Provider");
-            final Method isFipsMethod = providerClazz.getMethod("isFIPS", new Class[0]);
-
-            return () -> {
-                Object isFips;
-                try {
-                    isFips = isFipsMethod.invoke(null, new Object[0]);
-                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    ROOT_LOGGER.trace("Unable to invoke com.sun.net.ssl.internal.ssl.Provider.isFIPS() method.", e);
-                    return false;
-                }
-
-                return isFips != null && isFips instanceof Boolean ? ((Boolean) isFips).booleanValue() : false;
-            };
-
-        } catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
-            ROOT_LOGGER.trace("Unable to find com.sun.net.ssl.internal.ssl.Provider.isFIPS() method.", e);
-        }
-
-        return Boolean.FALSE::booleanValue;
+        return () -> new SecureRandom().getProvider().getName().toLowerCase().contains("fips");
     }
 
     static ModifiableKeyStoreService getModifiableKeyStoreService(OperationContext context, String keyStoreName) {
