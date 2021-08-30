@@ -189,6 +189,8 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         if(Files.exists(properties)) {
             Files.delete(properties);
         }
+        Path jbossAuthDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone").resolve("tmp").resolve("auth");
+        Files.createDirectories(jbossAuthDir);
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
             try (Git git = Git.init().setDirectory(baseDir).call()) {
