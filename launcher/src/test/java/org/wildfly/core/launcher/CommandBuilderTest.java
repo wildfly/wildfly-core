@@ -261,9 +261,11 @@ public class CommandBuilderTest {
             assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.io=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.security=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.base/java.util=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.management/javax.management=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.naming/javax.naming=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-modules=java.se", expectedCount);
@@ -276,12 +278,16 @@ public class CommandBuilderTest {
                     command.contains("--add-opens=java.base/java.lang=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang.invoke=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.lang.reflect=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.io=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.base/java.io=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.security=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.base/java.security=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.base/java.util=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.base/java.util=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-opens=java.base/java.util.concurrent=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.management/javax.management=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.management/javax.management=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.naming/javax.naming=ALL-UNNAMED\" to be in the command list",
