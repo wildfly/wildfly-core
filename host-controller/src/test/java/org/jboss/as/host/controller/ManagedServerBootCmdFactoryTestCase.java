@@ -128,7 +128,7 @@ public class ManagedServerBootCmdFactoryTestCase {
         List<String> result = instance.getServerLaunchCommand();
         Assert.assertThat(result.size(), is(notNullValue()));
         if (result.size() > 18) {
-            Assert.assertThat(result.size(), is(27));
+            Assert.assertThat(result.size(), is(29));
         } else {
             Assert.assertThat(result.size(), is(18));
         }

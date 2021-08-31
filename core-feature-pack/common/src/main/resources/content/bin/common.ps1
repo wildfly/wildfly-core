@@ -149,12 +149,16 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
         # Needed by the MicroProfile REST Client subsystem
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+        # Needed for marshalling of proxies
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
         # Needed by JBoss Marshalling
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.io=ALL-UNNAMED"
         # Needed by WildFly Security Manager
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.security=ALL-UNNAMED"
-        # Needed for marshalling of enum maps
+        # Needed for marshalling of collections
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util=ALL-UNNAMED"
+        # Needed for marshalling of concurrent collections
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED"
         # EE integration with sar mbeans requires deep reflection in javax.management
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
         # InitialContext proxy generation requires deep reflection in javax.naming
