@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>17.0.0.Beta5-SNAPSHOT</version>
+        <version>17.0.0.Beta6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -151,6 +151,8 @@
 
                     <environmentVariables>
                         <JBOSS_HOME>${wildfly.home}</JBOSS_HOME>
+                        <!-- Used in one of the tests -->
+                        <TEST_ENVIRONMENT_VARIABLE>Hello world</TEST_ENVIRONMENT_VARIABLE>
                     </environmentVariables>
 
                     <systemPropertyVariables>

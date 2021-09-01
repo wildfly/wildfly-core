@@ -63,9 +63,11 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.io=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.security=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.base/java.util=ALL-UNNAMED");
+        modularJavaOpts.add("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.management/javax.management=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.naming/javax.naming=ALL-UNNAMED");
         // As of jboss-modules 1.9.1.Final the java.se module is no longer required to be added. However as this API is
