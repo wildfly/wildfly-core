@@ -516,6 +516,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             } else if (!tmp.mkdirs()) {
                 throw ServerLogger.ROOT_LOGGER.couldNotCreateServerTempDirectory(tmp);
             }
+            createAuthDir(tmp);
 
             tmp = getFileFromProperty(CONTROLLER_TEMP_DIR, props);
             if (tmp == null) {
@@ -1005,6 +1006,29 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         }
         serverTempDir = tmp;
         return tmp;
+    }
+
+    private void createAuthDir(File tempDir) {
+        File authDir = new File(tempDir, "auth");
+        if (authDir.exists()) {
+            if (!authDir.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.unableToCreateTempDirForAuthTokensFileExists();
+            }
+        } else if (!authDir.mkdirs()) {
+            // there is a race if multiple services are starting for the same
+            // security realm
+            if (!authDir.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.unableToCreateAuthDir(authDir.getAbsolutePath());
+            }
+        } else {
+            // As a precaution make perms user restricted for directories created (if the OS allows)
+            authDir.setWritable(false, false);
+            authDir.setWritable(true, true);
+            authDir.setReadable(false, false);
+            authDir.setReadable(true, true);
+            authDir.setExecutable(false, false);
+            authDir.setExecutable(true, true);
+        }
     }
 
     // BES 2012/02/04 made package protected as I cannot find use for it other than to create a PathService

@@ -1234,12 +1234,12 @@ public interface DomainManagementLogger extends BasicLogger {
     //void registeredOpenSSLProvider();
 
     // Was WFLYRMT-13
-    @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
-    StartException unableToCreateTempDirForAuthTokensFileExists();
+//    @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
+//    StartException unableToCreateTempDirForAuthTokensFileExists();
 
     // Was WFLYRMT-14
-    @Message(id = 138, value = "Unable to create auth dir %s.")
-    StartException unableToCreateAuthDir(String dir);
+//    @Message(id = 138, value = "Unable to create auth dir %s.")
+//    StartException unableToCreateAuthDir(String dir);
 
     @Message(id = 139, value = "No SubjectIdentity found for %s/%s.")
     GeneralSecurityException noSubjectIdentityForProtocolAndHost(final String protocol, final String host);

@@ -1388,6 +1388,11 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 287, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
     XMLStreamException securityRealmReferencesUnsupported();
 
+    @Message(id = 288, value = "Unable to create tmp dir for auth tokens as file already exists.")
+    IllegalStateException unableToCreateTempDirForAuthTokensFileExists();
+
+    @Message(id = 289, value = "Unable to create auth dir %s.")
+    IllegalStateException unableToCreateAuthDir(String dir);
 
     ////////////////////////////////////////////////
     //Messages without IDs
