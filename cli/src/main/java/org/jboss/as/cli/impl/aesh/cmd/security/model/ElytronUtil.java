@@ -478,6 +478,10 @@ public abstract class ElytronUtil {
         return null;
     }
 
+    public static boolean hasServerSSLContext(CommandContext context, String sslContextName) {
+        return getChildResource(sslContextName, Util.SERVER_SSL_CONTEXT, context) != null;
+    }
+
     public static ServerSSLContext getServerSSLContext(CommandContext context, String sslContextName) {
         ModelNode sslContext = getChildResource(sslContextName, Util.SERVER_SSL_CONTEXT, context);
         ServerSSLContext ctx = null;

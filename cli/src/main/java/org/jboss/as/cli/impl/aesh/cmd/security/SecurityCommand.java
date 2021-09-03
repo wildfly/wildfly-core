@@ -125,6 +125,14 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
     public static final String OPT_SECURITY_DOMAIN = "security-domain";
     public static final String OPT_REFERENCED_SECURITY_DOMAIN = "referenced-security-domain";
 
+    public static final String OPT_OVERRIDE_SSL_CONTEXT = "override-ssl-context";
+    public static final String OPT_ADD_HTTPS_LISTENER = "add-https-listener";
+    public static final String OPT_HTTPS_LISTENER_NAME = "https-listener-name";
+    public static final String OPT_HTTPS_LISTENER_SOCKET_BINDING_NAME = "https-listener-socket-binding-name";
+
+    public static final String OPT_REMOVE_HTTPS_LISTENER = "remove-https-listener";
+    public static final String OPT_DEFAULT_SERVER_SSL_CONTEXT = "default-server-ssl-context";
+
     private final CommandContext ctx;
     private final AtomicReference<EmbeddedProcessLaunch> embeddedServerRef;
 
@@ -184,6 +192,37 @@ public class SecurityCommand implements GroupCommand<CLICommandInvocation> {
             @Override
             protected List<String> getItems(CLICompleterInvocation completerInvocation) {
                 return Util.getUndertowServerNames(completerInvocation.getCommandContext().getModelControllerClient());
+            }
+        }
+
+         public static class HTTPSListenerCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                HTTPServerDisableSSLCommand cmd = (HTTPServerDisableSSLCommand) completerInvocation.getCommand();
+                String serverName = cmd.getServerName(completerInvocation.getCommandContext());
+                return Util.getUndertowHTTSListeners(completerInvocation.getCommandContext().getModelControllerClient(), serverName);
+            }
+        }
+
+         public static class NewHTTPSListenerCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                HTTPServerEnableSSLCommand cmd = (HTTPServerEnableSSLCommand) completerInvocation.getCommand();
+                if (cmd.hasAddHTTPSListener()) {
+                    return Collections.emptyList();
+                }
+                String serverName = cmd.getServerName(completerInvocation.getCommandContext());
+                return Util.getUndertowHTTSListeners(completerInvocation.getCommandContext().getModelControllerClient(), serverName);
+            }
+        }
+
+        public static class SocketBindingCompleter extends AbstractCompleter {
+
+            @Override
+            protected List<String> getItems(CLICompleterInvocation completerInvocation) {
+                return Util.getStandardSocketBindings(completerInvocation.getCommandContext().getModelControllerClient());
             }
         }
 
