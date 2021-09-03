@@ -3,15 +3,6 @@
 <host name="master" xmlns="urn:jboss:domain:18.0">
 
     <management>
-        <security-realms>
-            <security-realm name="ManagementRealm">
-                <authentication>
-                    <local default-user="$local" skip-group-loading="true" />
-                    <properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir"/>
-                </authentication>
-            </security-realm>
-        </security-realms>
-
         <management-interfaces>
             <native-interface sasl-authentication-factory="management-sasl">
                 <socket interface="management" port="${jboss.management.native.port:9999}"/>

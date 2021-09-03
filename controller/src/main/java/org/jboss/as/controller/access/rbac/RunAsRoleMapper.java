@@ -30,7 +30,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.jboss.as.controller.access.Action;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
@@ -39,6 +38,7 @@ import org.jboss.as.controller.access.TargetResource;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * A {@link RoleMapper} that allows clients to specify the roles they desire to run as. By default this {@link RoleMapper} Reads
@@ -60,26 +60,26 @@ public class RunAsRoleMapper implements RoleMapper {
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetAttribute attribute) {
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute attribute) {
         Set<String> runAsRoles = getOperationHeaderRoles(action.getOperation());
-        return mapRoles(caller, realRoleMapper.mapRoles(caller, callEnvironment, action, attribute), runAsRoles, true);
+        return mapRoles(identity, realRoleMapper.mapRoles(identity, callEnvironment, action, attribute), runAsRoles, true);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource) {
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource resource) {
         Set<String> runAsRoles = getOperationHeaderRoles(action.getOperation());
-        return mapRoles(caller, realRoleMapper.mapRoles(caller, callEnvironment, action, resource), runAsRoles, true);
+        return mapRoles(identity, realRoleMapper.mapRoles(identity, callEnvironment, action, resource), runAsRoles, true);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
         // There's no mechanism for setting run-as roles over JMX
-        return realRoleMapper.mapRoles(caller, callEnvironment, action, target);
+        return realRoleMapper.mapRoles(identity, callEnvironment, action, target);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {
-        return mapRoles(caller, realRoleMapper.mapRoles(caller, callEnvironment, null), operationHeaderRoles, false);
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Set<String> operationHeaderRoles) {
+        return mapRoles(identity, realRoleMapper.mapRoles(identity, callEnvironment, null), operationHeaderRoles, false);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class RunAsRoleMapper implements RoleMapper {
         }
     }
 
-    private Set<String> mapRoles(Caller caller, Set<String> currentRoles, Set<String> runAsRoles, boolean sanitized) {
+    private Set<String> mapRoles(SecurityIdentity identity, Set<String> currentRoles, Set<String> runAsRoles, boolean sanitized) {
         Set<String> result = currentRoles;
         if (runAsRoles != null) {
             Set<String> roleSet = new HashSet<String>();
@@ -147,7 +147,7 @@ public class RunAsRoleMapper implements RoleMapper {
             if (roleSet.isEmpty() == false) {
                 result = Collections.unmodifiableSet(roleSet);
                 if (ACCESS_LOGGER.isTraceEnabled()) {
-                    StringBuilder sb = new StringBuilder("User '").append(caller.getName()).append(
+                    StringBuilder sb = new StringBuilder("User '").append(identity.getPrincipal().getName()).append(
                             "' Mapped to requested roles { ");
                     for (String current : result) {
                         sb.append("'").append(current).append("' ");

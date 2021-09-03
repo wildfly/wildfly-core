@@ -72,7 +72,6 @@ import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.Action.ActionEffect;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.AuthorizationResult.Decision;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.access.ResourceNotAddressableException;
@@ -1368,7 +1367,7 @@ final class OperationContextImpl extends AbstractOperationContext {
         Environment callEnvironment = getCallEnvironment();
         if (authResp.getResourceResult(ActionEffect.ADDRESS) == null) {
             Action action = authResp.standardAction.limitAction(ActionEffect.ADDRESS);
-            authResp.addResourceResult(ActionEffect.ADDRESS, modelController.getAuthorizer().authorize(getCaller(), callEnvironment, action, authResp.targetResource));
+            authResp.addResourceResult(ActionEffect.ADDRESS, modelController.getAuthorizer().authorize(getSecurityIdentity(), callEnvironment, action, authResp.targetResource));
         }
 
         if (authResp.getResourceResult(ActionEffect.ADDRESS).getDecision() == Decision.PERMIT) {
@@ -1376,7 +1375,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 AuthorizationResult effectResult = authResp.getResourceResult(requiredEffect);
                 if (effectResult == null) {
                     Action action = authResp.standardAction.limitAction(requiredEffect);
-                    effectResult = modelController.getAuthorizer().authorize(getCaller(), callEnvironment, action, authResp.targetResource);
+                    effectResult = modelController.getAuthorizer().authorize(getSecurityIdentity(), callEnvironment, action, authResp.targetResource);
                     authResp.addResourceResult(requiredEffect, effectResult);
                 }
             }
@@ -1402,7 +1401,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                             if (targetAttribute == null) {
                                 targetAttribute = createTargetAttribute(authResp, attr, isDefaultResponse);
                             }
-                            authResult = modelController.getAuthorizer().authorize(getCaller(), callEnvironment, action, targetAttribute);
+                            authResult = modelController.getAuthorizer().authorize(getSecurityIdentity(), callEnvironment, action, targetAttribute);
                             authResp.addAttributeResult(attr, actionEffect, authResult);
                         }
                     }
@@ -1489,7 +1488,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 operation.get(OPERATION_HEADERS).set(activeStep.operation.get(OPERATION_HEADERS));
                 Action targetAction = new Action(operation, operationEntry);
 
-                authResult = modelController.getAuthorizer().authorize(getCaller(), getCallEnvironment(), targetAction, authResp.targetResource);
+                authResult = modelController.getAuthorizer().authorize(getSecurityIdentity(), getCallEnvironment(), targetAction, authResp.targetResource);
                 authResp.addOperationResult(operationName, authResult);
 
                 //When authorizing the 'add' operation, make sure that all the attributes are accessible
@@ -1799,7 +1798,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 AuthorizationResult effectResult = authResp.getResourceResult(requiredEffect);
                 if (effectResult == null) {
                     Action action = authResp.standardAction.limitAction(requiredEffect);
-                    effectResult = modelController.getAuthorizer().authorize(getCaller(), getCallEnvironment(), action, authResp.targetResource);
+                    effectResult = modelController.getAuthorizer().authorize(getSecurityIdentity(), getCallEnvironment(), action, authResp.targetResource);
                     authResp.addResourceResult(requiredEffect, effectResult);
                 }
                 if (effectResult.getDecision() == AuthorizationResult.Decision.DENY) {
@@ -1846,7 +1845,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                         AttributeAccess attributeAccess = authResp.targetResource.getResourceRegistration().getAttributeAccess(PathAddress.EMPTY_ADDRESS, attribute);
                         targetAttribute = new TargetAttribute(attribute, attributeAccess, currentValue, authResp.targetResource);
                     }
-                    authResult = modelController.getAuthorizer().authorize(getCaller(), getCallEnvironment(), action, targetAttribute);
+                    authResult = modelController.getAuthorizer().authorize(getSecurityIdentity(), getCallEnvironment(), action, targetAttribute);
                     authResp.addAttributeResult(attribute, actionEffect, authResult);
                 }
                 if (authResult.getDecision() == AuthorizationResult.Decision.DENY) {
@@ -1859,7 +1858,7 @@ final class OperationContextImpl extends AbstractOperationContext {
     }
 
     private AuthorizationResponseImpl getBasicAuthorizationResponse(OperationId opId, ModelNode operation) {
-        Caller caller = getCaller();
+        SecurityIdentity identity = getSecurityIdentity();
         ImmutableManagementResourceRegistration mrr = managementModel.getRootResourceRegistration().getSubModel(opId.address);
         if (mrr == null) {
             return null;
@@ -1890,7 +1889,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
 
         AuthorizationResponseImpl result = new AuthorizationResponseImpl(action, targetResource);
-        AuthorizationResult simple = modelController.getAuthorizer().authorize(caller, getCallEnvironment(), action, targetResource);
+        AuthorizationResult simple = modelController.getAuthorizer().authorize(identity, getCallEnvironment(), action, targetResource);
         if (simple.getDecision() == AuthorizationResult.Decision.PERMIT) {
             for (Action.ActionEffect actionEffect : action.getActionEffects()) {
                 result.addResourceResult(actionEffect, simple);

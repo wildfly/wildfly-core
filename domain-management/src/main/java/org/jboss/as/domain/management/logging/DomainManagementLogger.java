@@ -31,8 +31,6 @@ import java.util.Collection;
 import java.util.Set;
 
 import javax.naming.NamingException;
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
@@ -47,7 +45,6 @@ import org.jboss.logging.annotations.Cause;
 import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
-import org.jboss.logging.annotations.Param;
 import org.jboss.msc.service.StartException;
 
 /**
@@ -82,24 +79,24 @@ public interface DomainManagementLogger extends BasicLogger {
      * Logs a warning message indicating that whitespace has been trimmed from the password when it was
      * decoded from Base64.
      */
-    @LogMessage(level = WARN)
-    @Message(id = 2, value = "Whitespace has been trimmed from the Base64 representation of the secret identity.")
-    void whitespaceTrimmed();
+//    @LogMessage(level = WARN)
+//    @Message(id = 2, value = "Whitespace has been trimmed from the Base64 representation of the secret identity.")
+//    void whitespaceTrimmed();
 
     /**
      * Logs a warning message indicating that the password attribute is deprecated that that keystore-password
      * should be used instead.
      */
-    @LogMessage(level = WARN)
-    @Message(id = 3, value = "The attribute 'password' is deprecated, 'keystore-password' should be used instead.")
-    void passwordAttributeDeprecated();
+//    @LogMessage(level = WARN)
+//    @Message(id = 3, value = "The attribute 'password' is deprecated, 'keystore-password' should be used instead.")
+//    void passwordAttributeDeprecated();
 
     /**
      * Logs a message indicating that the name of the realm does not match the name used in the properties file.
      */
-    @LogMessage(level = WARN)
-    @Message(id = 4, value = "The realm name of the defined security realm '%s' does not match the realm name within the properties file '%s'.")
-    void realmMisMatch(final String realmRealmName, final String fileRealmName);
+//    @LogMessage(level = WARN)
+//    @Message(id = 4, value = "The realm name of the defined security realm '%s' does not match the realm name within the properties file '%s'.")
+//    void realmMisMatch(final String realmRealmName, final String fileRealmName);
 
 
 //    /**
@@ -137,8 +134,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return an {@link IOException} for the error.
      */
-    @Message(id = 9, value = "Unable to perform verification")
-    IOException cannotPerformVerification(@Cause Throwable cause);
+//    @Message(id = 9, value = "Unable to perform verification")
+//    IOException cannotPerformVerification(@Cause Throwable cause);
 
     /**
      * Creates an exception indicating the realm was invalid.
@@ -148,8 +145,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 10, value = "Invalid Realm '%s' expected '%s'")
-    IllegalStateException invalidRealm(String realm, String expectedRealm);
+//    @Message(id = 10, value = "Invalid Realm '%s' expected '%s'")
+//    IllegalStateException invalidRealm(String realm, String expectedRealm);
 
     /**
      * Creates an exception indicating the referral for authentication could not be followed.
@@ -158,8 +155,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return a {@link NamingException} for the error.
      */
-    @Message(id = 11, value = "Can't follow referral for authentication: %s")
-    NamingException nameNotFound(String name);
+//    @Message(id = 11, value = "Can't follow referral for authentication: %s")
+//    NamingException nameNotFound(String name);
 
 //    /**
 //     * Creates an exception indicating no authentication mechanism was defined in the security realm.
@@ -174,16 +171,16 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return an {@link IOException} for the error.
      */
-    @Message(id = 13, value = "No username provided.")
-    IOException noUsername();
+//    @Message(id = 13, value = "No username provided.")
+//    IOException noUsername();
 
     /**
      * Creates an exception indicating no password was provided.
      *
      * @return an {@link IOException} for the error.
      */
-    @Message(id = 14, value = "No password to verify.")
-    IOException noPassword();
+//    @Message(id = 14, value = "No password to verify.")
+//    IOException noPassword();
 
 //    /**
 //     * Creates an exception indicating that one of {@code attr1} or {@code attr2} is required.
@@ -203,8 +200,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return an {@link UnsupportedCallbackException} for the error.
      */
-    @Message(id = 16, value = "Realm choice not currently supported.")
-    UnsupportedCallbackException realmNotSupported(@Param Callback callback);
+//    @Message(id = 16, value = "Realm choice not currently supported.")
+//    UnsupportedCallbackException realmNotSupported(@Param Callback callback);
 
     /**
      * Creates an exception indicating the properties could not be loaded.
@@ -223,8 +220,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return a {@link StartException} for the error.
      */
-    @Message(id = 18, value = "Unable to start service")
-    StartException unableToStart(@Cause Throwable cause);
+//    @Message(id = 18, value = "Unable to start service")
+//    StartException unableToStart(@Cause Throwable cause);
 
     /**
      * A message indicating the user, represented by the {@code username} parameter, was not found.
@@ -233,8 +230,8 @@ public interface DomainManagementLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = 19, value = "User '%s' not found.")
-    String userNotFound(String username);
+//    @Message(id = 19, value = "User '%s' not found.")
+//    String userNotFound(String username);
 
     /**
      * Creates an exception indicating the user, represented by the {@code username} parameter, was not found in the
@@ -1237,12 +1234,12 @@ public interface DomainManagementLogger extends BasicLogger {
     //void registeredOpenSSLProvider();
 
     // Was WFLYRMT-13
-    @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
-    StartException unableToCreateTempDirForAuthTokensFileExists();
+//    @Message(id = 137, value = "Unable to create tmp dir for auth tokens as file already exists.")
+//    StartException unableToCreateTempDirForAuthTokensFileExists();
 
     // Was WFLYRMT-14
-    @Message(id = 138, value = "Unable to create auth dir %s.")
-    StartException unableToCreateAuthDir(String dir);
+//    @Message(id = 138, value = "Unable to create auth dir %s.")
+//    StartException unableToCreateAuthDir(String dir);
 
     @Message(id = 139, value = "No SubjectIdentity found for %s/%s.")
     GeneralSecurityException noSubjectIdentityForProtocolAndHost(final String protocol, final String host);
@@ -1269,6 +1266,12 @@ public interface DomainManagementLogger extends BasicLogger {
 
     @Message(id = 144, value = "Sensitivity constraint %s contains imcompatible attribute value to other sensitive classification constraints.")
     OperationFailedException imcompatibleConfiguredRequiresAttributeValue(String addr);
+
+    @Message(id = 145, value = "Security realms are no longer supported, please remove them from the configuration.")
+    XMLStreamException securityRealmsUnsupported();
+
+    @Message(id = 146, value = "Outbound connections are no longer supported, please remove them from the configuration.")
+    XMLStreamException outboundConnectionsUnsupported();
 
     /**
      * Information message saying the username and password must be different.

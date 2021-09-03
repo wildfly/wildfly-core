@@ -22,7 +22,6 @@
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
         <version.javax.enterprise>1.2</version.javax.enterprise>
 
-        <ts.enable.elytron.cli>enable-elytron.cli</ts.enable.elytron.cli>
         <ts.config.elytron.cli.no.embedded>configure-elytron.cli</ts.config.elytron.cli.no.embedded>
         <ts.config.elytron.cli>${project.build.directory}/${ts.config.elytron.cli.no.embedded}</ts.config.elytron.cli>
     </properties>
@@ -271,7 +270,6 @@
                          <configuration>
                              <offline>true</offline>
                              <scripts>
-                                 <script>${ts.enable.elytron.cli}</script>
                                  <script>${ts.config.elytron.cli}</script>
                              </scripts>
                              <jboss-home>${project.build.directory}/wildfly-core</jboss-home>

@@ -24,6 +24,8 @@ package org.jboss.as.controller.access.rbac;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ACCESS_LOGGER;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.security.Permission;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +40,6 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
@@ -59,23 +60,23 @@ public class StandardRoleMapper implements RoleMapper {
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetAttribute attribute) {
-        return mapRoles(caller);
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute attribute) {
+        return mapRoles(identity);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource) {
-        return mapRoles(caller);
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource resource) {
+        return mapRoles(identity);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
-        return mapRoles(caller);
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        return mapRoles(identity);
     }
 
     @Override
-    public Set<String> mapRoles(Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {
-        return mapRoles(caller);
+    public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Set<String> operationHeaderRoles) {
+        return mapRoles(identity);
     }
 
     @Override
@@ -99,7 +100,8 @@ public class StandardRoleMapper implements RoleMapper {
         return hasRole && isSuperUser;
     }
 
-    private Set<String> mapRoles(final Caller caller) {
+    private Set<String> mapRoles(final SecurityIdentity identity) {
+        checkNotNullParam("identity", identity);
         Set<String> mappedRoles = new HashSet<String>();
 
         boolean traceEnabled = ACCESS_LOGGER.isTraceEnabled();
@@ -115,35 +117,34 @@ public class StandardRoleMapper implements RoleMapper {
             ACCESS_LOGGER.tracef("Assigning role '%s' for call (An IN-VM Call).", IN_VM_ROLE);
 
             mappedRoles.add(IN_VM_ROLE);
-        } else  if (caller.hasSecurityIdentity()) {
+        } else {
             Map<String, AuthorizerConfiguration.RoleMapping> rolesToCheck;
             if (authorizerConfiguration.isMapUsingIdentityRoles()) {
                 rolesToCheck = new HashMap<String, AuthorizerConfiguration.RoleMapping>(authorizerConfiguration.getRoleMappings());
-                SecurityIdentity securityIdentity = caller.getSecurityIdentity();
-                for (String r : securityIdentity.getRoles()) {
+                for (String r : identity.getRoles()) {
                     String roleName = r.toUpperCase(Locale.ENGLISH);
                     if (rolesToCheck.containsKey(roleName)) {
                         AuthorizerConfiguration.RoleMapping roleMapping = rolesToCheck.remove(roleName);
-                        AuthorizerConfiguration.MappingPrincipal exclusion = roleMapping.isExcluded(caller);
+                        AuthorizerConfiguration.MappingPrincipal exclusion = roleMapping.isExcluded(identity);
                         if (exclusion == null) {
                             if (traceEnabled) {
                                 ACCESS_LOGGER
                                         .tracef("User '%s' assigned role '%s' due to realm assignment and no exclusion in role mapping definition.",
-                                                caller.getName(), roleName);
+                                                identity.getPrincipal().getName(), roleName);
                             }
                             mappedRoles.add(roleName);
                         } else {
                             if (traceEnabled) {
                                 ACCESS_LOGGER
                                         .tracef("User '%s' NOT assigned role '%s' despite realm assignment due to exclusion match against %s.",
-                                                caller.getName(), roleName, exclusion);
+                                                identity.getPrincipal().getName(), roleName, exclusion);
                             }
                         }
                     } else {
                         if (traceEnabled) {
                             ACCESS_LOGGER
                                     .tracef("User '%s' assigned role '%s' due to realm assignment and no role mapping to check for exclusion.",
-                                            caller.getName(), roleName);
+                                            identity.getPrincipal().getName(), roleName);
                         }
                         mappedRoles.add(roleName);
                     }
@@ -154,17 +155,17 @@ public class StandardRoleMapper implements RoleMapper {
             }
 
             for (AuthorizerConfiguration.RoleMapping current : rolesToCheck.values()) {
-                boolean includeAll = current.includeAllAuthedUsers();
-                AuthorizerConfiguration.MappingPrincipal inclusion = includeAll == false ? current.isIncluded(caller) : null;
+                boolean includeAll = current.includeAllAuthedUsers() && !identity.isAnonymous();
+                AuthorizerConfiguration.MappingPrincipal inclusion = includeAll == false ? current.isIncluded(identity) : null;
                 if (includeAll || inclusion != null) {
-                    AuthorizerConfiguration.MappingPrincipal exclusion = current.isExcluded(caller);
+                    AuthorizerConfiguration.MappingPrincipal exclusion = current.isExcluded(identity);
                     if (exclusion == null) {
                         if (traceEnabled) {
                             if (includeAll) {
-                                ACCESS_LOGGER.tracef("User '%s' assiged role '%s' due to include-all set on role.", caller.getName(),
+                                ACCESS_LOGGER.tracef("User '%s' assiged role '%s' due to include-all set on role.", identity.getPrincipal().getName(),
                                         current.getName());
                             } else {
-                                ACCESS_LOGGER.tracef("User '%s' assiged role '%s' due to match on inclusion %s", caller.getName(),
+                                ACCESS_LOGGER.tracef("User '%s' assiged role '%s' due to match on inclusion %s", identity.getPrincipal().getName(),
                                         current.getName(), inclusion);
                             }
                         }
@@ -172,21 +173,21 @@ public class StandardRoleMapper implements RoleMapper {
                     } else {
                         if (traceEnabled) {
                             ACCESS_LOGGER.tracef("User '%s' denied membership of role '%s' due to exclusion %s",
-                                    caller.getName(), current.getName(), exclusion);
+                                    identity.getPrincipal().getName(), current.getName(), exclusion);
                         }
                     }
                 } else {
                     if (traceEnabled) {
                         ACCESS_LOGGER.tracef(
                                 "User '%s' not assigned role '%s' as no match on the include definition of the role mapping.",
-                                caller.getName(), current.getName());
+                                identity.getPrincipal().getName(), current.getName());
                     }
                 }
             }
         }
 
         if (traceEnabled) {
-            StringBuilder sb = new StringBuilder("User '").append(caller.getName()).append("' Assigned Roles { ");
+            StringBuilder sb = new StringBuilder("User '").append(identity.getPrincipal().getName()).append("' Assigned Roles { ");
             for (String current : mappedRoles) {
                 sb.append("'").append(current).append("' ");
             }

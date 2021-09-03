@@ -44,6 +44,7 @@ import org.jboss.as.host.controller.logging.HostControllerLogger;
 import org.jboss.as.host.controller.jvm.JvmType;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.network.NetworkUtils;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
@@ -468,6 +469,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         }
         this.domainTempDir = tmp;
         WildFlySecurityManager.setPropertyPrivileged(DOMAIN_TEMP_DIR, this.domainTempDir.getAbsolutePath());
+        createAuthDir(tmp);
 
         if (defaultJVM != null) {
             defaultJvm = JvmType.createFromJavaExecutable(defaultJVM, false);
@@ -854,6 +856,29 @@ public class HostControllerEnvironment extends ProcessEnvironment {
             }
         }
         return result;
+    }
+
+    private void createAuthDir(File tempDir) {
+        File authDir = new File(tempDir, "auth");
+        if (authDir.exists()) {
+            if (!authDir.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.unableToCreateTempDirForAuthTokensFileExists();
+            }
+        } else if (!authDir.mkdirs()) {
+            // there is a race if multiple services are starting for the same
+            // security realm
+            if (!authDir.isDirectory()) {
+                throw ServerLogger.ROOT_LOGGER.unableToCreateAuthDir(authDir.getAbsolutePath());
+            }
+        } else {
+            // As a precaution make perms user restricted for directories created (if the OS allows)
+            authDir.setWritable(false, false);
+            authDir.setWritable(true, true);
+            authDir.setReadable(false, false);
+            authDir.setReadable(true, true);
+            authDir.setExecutable(false, false);
+            authDir.setExecutable(true, true);
+        }
     }
 
     @Override

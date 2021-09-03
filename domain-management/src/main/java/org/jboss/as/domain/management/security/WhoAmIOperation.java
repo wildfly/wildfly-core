@@ -25,7 +25,6 @@ package org.jboss.as.domain.management.security;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.ATTRIBUTES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.IDENTITY;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.MAPPED_ROLES;
-import static org.jboss.as.domain.management.ModelDescriptionConstants.REALM;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.ROLES;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.USERNAME;
 import static org.jboss.as.domain.management.ModelDescriptionConstants.WHOAMI;
@@ -43,7 +42,6 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.Authorizer;
 import org.jboss.as.controller.access.rbac.RunAsRoleMapper;
 import org.jboss.as.controller.descriptions.common.ControllerResolver;
-import org.jboss.as.core.security.api.RealmPrincipal;
 import org.jboss.as.domain.management.ModelDescriptionConstants;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
 import org.jboss.dmr.ModelNode;
@@ -98,12 +96,6 @@ public class WhoAmIOperation implements OperationStepHandler {
         ModelNode identity = result.get(IDENTITY);
         Principal principal = securityIdentity.getPrincipal();
         identity.get(USERNAME).set(principal.getName());
-        if (principal instanceof RealmPrincipal) {
-            String realm = ((RealmPrincipal)principal).getRealm();
-            if (realm != null) {
-                identity.get(REALM).set(realm);
-            }
-        }
 
         if (verbose) {
             Roles roles = securityIdentity.getRoles();
@@ -125,7 +117,7 @@ public class WhoAmIOperation implements OperationStepHandler {
                 }
             }
 
-            Set<String> mappedRoles = authorizer == null ? null : authorizer.getCallerRoles(context.getCaller(), context.getCallEnvironment(), RunAsRoleMapper.getOperationHeaderRoles(operation));
+            Set<String> mappedRoles = authorizer == null ? null : authorizer.getCallerRoles(context.getSecurityIdentity(), context.getCallEnvironment(), RunAsRoleMapper.getOperationHeaderRoles(operation));
             if (mappedRoles != null) {
                 ModelNode rolesModel = result.get(MAPPED_ROLES);
                 for (String current : mappedRoles) {

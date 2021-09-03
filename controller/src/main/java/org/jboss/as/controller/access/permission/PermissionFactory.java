@@ -25,12 +25,12 @@ package org.jboss.as.controller.access.permission;
 import java.security.PermissionCollection;
 
 import org.jboss.as.controller.access.Action;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
 import org.jboss.as.controller.access.JmxTarget;
 import org.jboss.as.controller.access.TargetAttribute;
 import org.jboss.as.controller.access.TargetResource;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Factory for a compatible set of permissions. Implementations must ensure that the permissions returned
@@ -43,15 +43,15 @@ import org.jboss.as.controller.access.TargetResource;
  */
 public interface PermissionFactory {
 
-    PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetAttribute target);
+    PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute target);
 
-    PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetResource target);
+    PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource target);
 
     PermissionCollection getRequiredPermissions(Action action, TargetAttribute target);
 
     PermissionCollection getRequiredPermissions(Action action, TargetResource target);
 
-    PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target);
+    PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target);
 
     PermissionCollection getRequiredPermissions(JmxAction action, JmxTarget target);
 }

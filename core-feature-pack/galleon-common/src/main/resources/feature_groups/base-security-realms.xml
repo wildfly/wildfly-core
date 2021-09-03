@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<feature-group-spec name="base-security-realms" xmlns="urn:jboss:galleon:feature-group:1.0">
-    <feature-group name="management-security-realm"/>
-    <feature-group name="application-security-realm"/>
-</feature-group-spec>

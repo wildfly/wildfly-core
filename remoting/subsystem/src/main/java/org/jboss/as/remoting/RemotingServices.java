@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.network.SocketBindingManager;
@@ -119,7 +118,6 @@ public class RemotingServices {
                                                                           final ServiceName networkInterfaceBindingName,
                                                                           final int port,
                                                                           final OptionMap connectorPropertiesOptionMap,
-                                                                          final ServiceName securityRealm,
                                                                           final ServiceName saslAuthenticationFactory,
                                                                           final ServiceName sslContext,
                                                                           final ServiceName socketBindingManager) {
@@ -127,13 +125,12 @@ public class RemotingServices {
         final ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
         final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer = builder.provides(serviceName);
         final Supplier<Endpoint> eSupplier = builder.requires(endpointName);
-        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? builder.requires(securityRealm) : null;
         final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? builder.requires(saslAuthenticationFactory) : null;
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requires(sslContext): null;
         final Supplier<SocketBindingManager> sbmSupplier = socketBindingManager != null ? builder.requires(socketBindingManager) : null;
         final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requires(networkInterfaceBindingName);
         builder.setInstance(new InjectedNetworkBindingStreamServerService(streamServerConsumer,
-                eSupplier, srSupplier, safSupplier, scSupplier, sbmSupplier, ibSupplier, connectorPropertiesOptionMap, port));
+                eSupplier, safSupplier, scSupplier, sbmSupplier, ibSupplier, connectorPropertiesOptionMap, port));
         builder.install();
     }
 
@@ -142,7 +139,6 @@ public class RemotingServices {
                                                                 final String connectorName,
                                                                 final ServiceName socketBindingName,
                                                                 final OptionMap connectorPropertiesOptionMap,
-                                                                final ServiceName securityRealm,
                                                                 final ServiceName saslAuthenticationFactory,
                                                                 final ServiceName sslContext,
                                                                 final ServiceName socketBindingManager) {
@@ -150,13 +146,12 @@ public class RemotingServices {
         final ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
         final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer = builder.provides(serviceName);
         final Supplier<Endpoint> eSupplier = builder.requires(endpointName);
-        final Supplier<SecurityRealm> srSupplier = securityRealm != null ? builder.requires(securityRealm) : null;
         final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? builder.requires(saslAuthenticationFactory) : null;
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requires(sslContext) : null;
         final Supplier<SocketBindingManager> sbmSupplier = builder.requires(socketBindingManager);
         final Supplier<SocketBinding> sbSupplier = builder.requires(socketBindingName);
         builder.setInstance(new InjectedSocketBindingStreamServerService(streamServerConsumer,
-                eSupplier, srSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap));
+                eSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap));
         builder.install();
     }
 

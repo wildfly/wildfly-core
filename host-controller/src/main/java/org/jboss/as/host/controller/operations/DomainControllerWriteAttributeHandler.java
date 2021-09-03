@@ -60,12 +60,6 @@ import org.wildfly.security.auth.client.AuthenticationContext;
  */
 public abstract class DomainControllerWriteAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
-    public static final SimpleAttributeDefinition SECURITY_REALM =
-            new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-                    .setValidator(new StringLengthValidator(1, true))
-                    .setAlternatives(ModelDescriptionConstants.AUTHENTICATION_CONTEXT)
-                    .setDeprecated(ModelVersion.create(5))
-                    .build();
     public static final SimpleAttributeDefinition AUTHENTICATION_CONTEXT =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.AUTHENTICATION_CONTEXT,  ModelType.STRING,  true)
                     .setCapabilityReference("org.wildfly.security.authentication-context", "org.wildfly.host.controller")
@@ -285,13 +279,6 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                 }, Stage.RUNTIME);
             } else {
                 remoteDC.get(DomainControllerWriteAttributeHandler.AUTHENTICATION_CONTEXT.getName()).clear();
-            }
-
-            if (parameters.has(DomainControllerWriteAttributeHandler.SECURITY_REALM.getName())) {
-                DomainControllerWriteAttributeHandler.SECURITY_REALM.validateAndSet(parameters, remoteDC);
-                hostControllerInfo.setRemoteDomainControllerSecurityRealm(DomainControllerWriteAttributeHandler.SECURITY_REALM.resolveModelAttribute(context, parameters).asString());
-            } else {
-                remoteDC.get(DomainControllerWriteAttributeHandler.SECURITY_REALM.getName()).clear();
             }
         }
 

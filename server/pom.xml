@@ -181,12 +181,6 @@
             <groupId>org.apache.sshd</groupId>
             <artifactId>sshd-core</artifactId>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-        </dependency>
-        -->
         <!-- Test Dependencies -->
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>

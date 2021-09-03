@@ -15,7 +15,6 @@ limitations under the License.
  */
 package org.jboss.as.test.integration.management.cli;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,8 +50,6 @@ public class ReloadSASLFactoryTestCase {
             + File.separator + "configuration" + File.separator + "mgmt-users-other.properties");
     private static final Path FOO = Paths.get(ROOT, "standalone"
             + File.separator + "configuration" + File.separator + "mgmt-users-foo.properties");
-
-    private static final ByteArrayOutputStream consoleOutput = new ByteArrayOutputStream();
 
     @ClassRule
     public static final TemporaryFolder temporaryUserHome = new TemporaryFolder();
@@ -189,11 +186,8 @@ public class ReloadSASLFactoryTestCase {
     private static void setupNativeInterface() throws Exception {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:"
                 + "add(port=" + MANAGEMENT_NATIVE_PORT + ",interface=management");
-        ctx.handle("/core-service=management/security-realm=native-realm:add()");
-        ctx.handle("/core-service=management/security-realm=native-realm/authentication=local:"
-                + "add(default-user=\"$local\"");
         ctx.handle("/core-service=management/management-interface=native-interface:"
-                + "add(security-realm=native-realm,socket-binding=management-native");
+                + "add(socket-binding=management-native");
         ctx.handle("reload");
 
         // Build the cleaner
@@ -281,18 +275,10 @@ public class ReloadSASLFactoryTestCase {
             e = ex;
         } finally {
             try {
-                removeNativeRealm(context);
+                remoteNativeMgmtPort(context);
             } catch (Exception ex) {
                 if (e == null) {
                     e = ex;
-                }
-            } finally {
-                try {
-                    remoteNativeMgmtPort(context);
-                } catch (Exception ex) {
-                    if (e == null) {
-                        e = ex;
-                    }
                 }
             }
         }
@@ -350,10 +336,6 @@ public class ReloadSASLFactoryTestCase {
 
     private static void removeNativeMgmt(CommandContext context) throws Exception {
         context.handle("/core-service=management/management-interface=native-interface:remove()");
-    }
-
-    private static void removeNativeRealm(CommandContext context) throws Exception {
-        context.handle("/core-service=management/security-realm=native-realm:remove()");
     }
 
     private static void remoteNativeMgmtPort(CommandContext context) throws Exception {

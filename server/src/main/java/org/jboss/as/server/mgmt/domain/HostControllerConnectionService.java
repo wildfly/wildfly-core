@@ -48,7 +48,6 @@ import javax.net.ssl.X509TrustManager;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
-import org.jboss.as.domain.management.security.DomainManagedServerCallbackHandler;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.logging.ServerLogger;
@@ -81,7 +80,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
 
     private final URI connectionURI;
     private final String serverName;
-    private final String userName;
+    private final String userName = null; // TODO This likely needs to be further visited.
     private final String serverProcessName;
     private final String initialAuthKey;
     private final int connectOperationID;
@@ -100,7 +99,6 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                                            final Supplier<ProcessStateNotifier> processStateNotifierSupplier) {
         this.connectionURI= connectionURI;
         this.serverName = serverName;
-        this.userName = DomainManagedServerCallbackHandler.DOMAIN_SERVER_AUTH_PREFIX + serverName;
         this.serverProcessName = serverProcessName;
         this.initialAuthKey = authKey;
         this.connectOperationID = connectOperationID;
@@ -126,6 +124,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
             // final OptionMap options = OptionMap.create(Options.SASL_DISALLOWED_MECHANISMS, Sequence.of(JBOSS_LOCAL_USER));
             // Create the connection configuration
             final ProtocolConnectionConfiguration configuration = ProtocolConnectionConfiguration.create(endpoint, connectionURI, OptionMap.EMPTY);
+            final String userName = this.userName != null ? this.userName : serverName;
             configuration.setCallbackHandler(HostControllerConnection.createClientCallbackHandler(userName, initialAuthKey));
             configuration.setConnectionTimeout(SERVER_CONNECTION_TIMEOUT);
             configuration.setSslContext(sslContextSupplier.get());

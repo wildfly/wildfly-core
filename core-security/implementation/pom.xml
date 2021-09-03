@@ -40,10 +40,6 @@
     <name>WildFly: Core Security Utilities</name>
 
     <dependencies>
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.jboss.logging</groupId>

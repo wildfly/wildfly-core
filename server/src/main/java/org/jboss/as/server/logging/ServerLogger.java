@@ -1282,7 +1282,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 258, value = "Cannot explode a subdeployment of an unexploded deployment")
     OperationFailedException cannotExplodeSubDeploymentOfUnexplodedDeployment();
 
-    @Message(id = 259, value = "If attribute secure-socket-binding is defined one of ssl-context or security-realm must also be defined")
+    @Message(id = 259, value = "If attribute secure-socket-binding is defined ssl-context must also be defined")
     OperationFailedException secureSocketBindingRequiresSSLContext();
 
     @LogMessage(level = INFO)
@@ -1384,6 +1384,15 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 286, value = "Failed to index static module %s for annotations")
     DeploymentUnitProcessingException staticModuleIndexingFailed(String moduleId, @Cause Throwable cause);
+
+    @Message(id = 287, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
+    XMLStreamException securityRealmReferencesUnsupported();
+
+    @Message(id = 288, value = "Unable to create tmp dir for auth tokens as file already exists.")
+    IllegalStateException unableToCreateTempDirForAuthTokensFileExists();
+
+    @Message(id = 289, value = "Unable to create auth dir %s.")
+    IllegalStateException unableToCreateAuthDir(String dir);
 
     ////////////////////////////////////////////////
     //Messages without IDs

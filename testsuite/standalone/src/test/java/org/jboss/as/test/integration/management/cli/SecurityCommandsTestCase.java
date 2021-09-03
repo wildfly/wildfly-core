@@ -15,6 +15,11 @@ limitations under the License.
  */
 package org.jboss.as.test.integration.management.cli;
 
+import static org.jboss.as.test.integration.management.cli.AcmeMockServerBuilder.setupTestObtainCertificateWithKeySize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +38,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandContextFactory;
 import org.jboss.as.cli.CommandLineException;
@@ -40,11 +46,7 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.CommandContextConfiguration;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
-import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
@@ -58,11 +60,6 @@ import org.junit.runner.RunWith;
 import org.mockserver.integration.ClientAndServer;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
-
-import static org.jboss.as.test.integration.management.cli.AcmeMockServerBuilder.setupTestObtainCertificateWithKeySize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -1041,24 +1038,14 @@ public class SecurityCommandsTestCase {
 
     public static void enableNative(CommandContext ctx) throws Exception {
         ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:add(port=9999,interface=management)");
-        ModelNode operation = org.jboss.as.controller.operations.common.Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
-        operation.get("steps").add(createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.ADD));
-        ModelNode localAuth = createOpNode("core-service=management/security-realm=native-realm/authentication=local", ModelDescriptionConstants.ADD);
-        localAuth.get("default-user").set("$local");
-        operation.get("steps").add(localAuth);
-        CoreUtils.applyUpdate(operation, ctx.getModelControllerClient());
-        ctx.handle("/core-service=management/management-interface=native-interface:add(security-realm=native-realm, socket-binding=management-native)");
+        ctx.handle("/core-service=management/management-interface=native-interface:add(socket-binding=management-native)");
     }
 
     public static void disableNative(CommandContext ctx) throws CommandLineException {
         try {
             ctx.handle("/core-service=management/management-interface=native-interface:remove()");
         } finally {
-            try {
-                ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:remove()");
-            } finally {
-                ctx.handle("/core-service=management/security-realm=native-realm:remove");
-            }
+            ctx.handle("/socket-binding-group=standard-sockets/socket-binding=management-native:remove()");
         }
     }
 

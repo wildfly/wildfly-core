@@ -263,6 +263,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-core-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-asn1</artifactId>
         </dependency>
@@ -615,16 +619,6 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-management-subsystem</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security-api</artifactId>
         </dependency>
 
         <dependency>

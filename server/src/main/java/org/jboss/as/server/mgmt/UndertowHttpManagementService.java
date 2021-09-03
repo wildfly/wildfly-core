@@ -21,10 +21,6 @@
 */
 package org.jboss.as.server.mgmt;
 
-import io.undertow.server.HttpHandler;
-import io.undertow.server.ListenerRegistry;
-import io.undertow.server.handlers.ChannelUpgradeHandler;
-
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -32,25 +28,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLContext;
 
-import io.undertow.server.handlers.resource.ResourceManager;
-
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.ConsoleAvailability;
 import org.jboss.as.domain.http.server.ConsoleMode;
 import org.jboss.as.domain.http.server.ManagementHttpRequestProcessor;
 import org.jboss.as.domain.http.server.ManagementHttpServer;
-import org.jboss.as.domain.management.AuthMechanism;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.ManagedBindingRegistry;
 import org.jboss.as.network.NetworkInterfaceBinding;
@@ -65,10 +56,15 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.common.Assert;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.xnio.SslClientAuthMode;
 import org.xnio.XnioWorker;
+
+import io.undertow.server.HttpHandler;
+import io.undertow.server.ListenerRegistry;
+import io.undertow.server.handlers.ChannelUpgradeHandler;
+import io.undertow.server.handlers.resource.ResourceManager;
 
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -107,7 +103,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Integer securePort;
     private final Collection<String> allowedOrigins;
     private final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier;
-    private final Supplier<SecurityRealm> securityRealmSupplier;
     private final Supplier<SSLContext> sslContextSupplier;
     private final ConsoleMode consoleMode;
     private final String consoleSlot;
@@ -218,7 +213,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Supplier<XnioWorker> workerSupplier,
                                          final Supplier<Executor> executorSupplier,
                                          final Supplier<HttpAuthenticationFactory> httpAuthFactorySupplier,
-                                         final Supplier<SecurityRealm> securityRealmSupplier,
                                          final Supplier<SSLContext> sslContextSupplier,
                                          final Integer port,
                                          final Integer securePort,
@@ -240,7 +234,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.workerSupplier = workerSupplier;
         this.executorSupplier = executorSupplier;
         this.httpAuthFactorySupplier = httpAuthFactorySupplier;
-        this.securityRealmSupplier = securityRealmSupplier;
         this.sslContextSupplier = sslContextSupplier;
         this.port = port;
         this.securePort = securePort;
@@ -264,14 +257,10 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         final ConsoleAvailability consoleAvailability = consoleAvailabilitySupplier.get();
         socketBindingManager = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
 
-        final SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
         final HttpAuthenticationFactory httpAuthenticationFactory = httpAuthFactorySupplier != null ? httpAuthFactorySupplier.get() : null;
         SSLContext sslContext = sslContextSupplier != null ? sslContextSupplier.get() : null;
         final SslClientAuthMode sslClientAuthMode;
-        if (sslContext == null && securityRealm != null) {
-            sslContext = securityRealm.getSSLContext();
-            sslClientAuthMode = getSslClientAuthMode(securityRealm);
-        } else {
+        if (sslContext == null) {
             sslClientAuthMode = null;
         }
 
@@ -342,9 +331,7 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setBindAddress(bindAddress)
                     .setSecureBindAddress(secureBindAddress)
                     .setModelController(modelController)
-                    .setSecurityRealm(securityRealm)
                     .setSSLContext(sslContext)
-                    .setSSLClientAuthMode(sslClientAuthMode)
                     .setHttpAuthenticationFactory(httpAuthenticationFactory)
                     .setControlledProcessStateNotifier(processStateNotifier)
                     .setConsoleMode(consoleMode)
@@ -444,21 +431,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     @Override
     public HttpManagement getValue() throws IllegalStateException, IllegalArgumentException {
         return httpManagement;
-    }
-
-    private static SslClientAuthMode getSslClientAuthMode(final SecurityRealm securityRealm) {
-        Set<AuthMechanism> supportedMechanisms = securityRealm.getSupportedAuthenticationMechanisms();
-        if (supportedMechanisms.contains(AuthMechanism.CLIENT_CERT)) {
-            if (supportedMechanisms.contains(AuthMechanism.DIGEST)
-                    || supportedMechanisms.contains(AuthMechanism.PLAIN)) {
-                // Username / Password auth is possible so don't mandate a client certificate.
-                return SslClientAuthMode.REQUESTED;
-            } else {
-                return SslClientAuthMode.REQUIRED;
-            }
-        }
-
-        return null;
     }
 
 }

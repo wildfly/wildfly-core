@@ -35,16 +35,14 @@ import org.wildfly.core.testrunner.ServerSetupTask;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class DisableLocalAuthServerSetupTask implements ServerSetupTask {
+class DisableLocalAuthServerSetupTask implements ServerSetupTask {
     private static final String protocol = "remote";
     private static final String host = TestSuiteEnvironment.getServerAddress();
     private static final int port = 9999;
 
     private final ModelNode saslFactoryAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", "configured");
-    private final ModelNode managementRealmAddress = Operations.createAddress("core-service", "management", "security-realm", "ManagementRealm", "authentication", "local");
     private final ModelNode nativeSocketBindingAddress = Operations.createAddress("socket-binding-group", "standard-sockets", "socket-binding", "management-native");
     private final ModelNode nativeInterfaceAddress = Operations.createAddress("core-service", "management", "management-interface", "native-interface");
-    private final ModelNode nativeSecurityRealmAddress = Operations.createAddress("core-service", "management", "security-realm", "native-realm");
 
     private final String defaultUserKey = "wildfly.sasl.local-user.default-user";
 
@@ -60,18 +58,8 @@ public class DisableLocalAuthServerSetupTask implements ServerSetupTask {
         op.get("interface").set("management");
         compositeOp.addStep(op.clone());
 
-        // Add the native-interface
-        compositeOp.addStep(Operations.createAddOperation(nativeSecurityRealmAddress));
-
-        // Add the native-interface local authentication
-        final ModelNode nativeRealmLocalAuthAddress = nativeSecurityRealmAddress.clone().add("authentication", "local");
-        op = Operations.createAddOperation(nativeRealmLocalAuthAddress);
-        op.get("default-user").set("$local");
-        compositeOp.addStep(op.clone());
-
-        // Add the native interface
+        // Add the native-interface anonymous authentication
         op = Operations.createAddOperation(nativeInterfaceAddress);
-        op.get("security-realm").set("native-realm");
         op.get("socket-binding").set("management-native");
         compositeOp.addStep(op.clone());
 
@@ -83,14 +71,6 @@ public class DisableLocalAuthServerSetupTask implements ServerSetupTask {
             op.get("name").set("properties");
             op.get("key").set(defaultUserKey);
             compositeOp.addStep(op.clone());
-        }
-
-        // Undefine the legacy local-auth
-        op = Operations.createReadResourceOperation(managementRealmAddress);
-        result = client.execute(op);
-        if (Operations.isSuccessfulOutcome(result)) {
-            compositeOp.addStep(Operations.createUndefineAttributeOperation(managementRealmAddress, "default-user"));
-
         }
 
         executeForSuccess(client, compositeOp.build());
@@ -107,8 +87,6 @@ public class DisableLocalAuthServerSetupTask implements ServerSetupTask {
 
             // Remove the native interface
             compositeOp.addStep(Operations.createRemoveOperation(nativeInterfaceAddress));
-            // Remove the native-interface
-            compositeOp.addStep(Operations.createRemoveOperation(nativeSecurityRealmAddress));
             // Remove the socket binding for the native-interface
             compositeOp.addStep(Operations.createRemoveOperation(nativeSocketBindingAddress));
 
@@ -121,15 +99,6 @@ public class DisableLocalAuthServerSetupTask implements ServerSetupTask {
                 op.get("key").set(defaultUserKey);
                 op.get("value").set("$local");
                 compositeOp.addStep(op.clone());
-            }
-
-            // Re-enable the legacy local-auth
-            op = Operations.createReadResourceOperation(managementRealmAddress);
-            result = client.execute(op);
-            if (Operations.isSuccessfulOutcome(result)) {
-                ///core-service=management/security-realm=ManagementRealm/authentication=local:undefine-attribute(name=default-user)
-                compositeOp.addStep(Operations.createWriteAttributeOperation(managementRealmAddress, "default-user", "$local"));
-
             }
 
             executeForSuccess(client, compositeOp.build());

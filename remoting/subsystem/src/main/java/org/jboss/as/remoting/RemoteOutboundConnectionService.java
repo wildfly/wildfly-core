@@ -28,8 +28,6 @@ import java.security.GeneralSecurityException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.jboss.as.domain.management.CallbackHandlerFactory;
-import org.jboss.as.domain.management.SecurityRealm;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
@@ -42,7 +40,6 @@ import org.jboss.remoting3.RemotingOptions;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.AuthenticationContextConfigurationClient;
-import org.wildfly.security.sasl.SaslMechanismSelector;
 import org.xnio.OptionMap;
 
 import static java.security.AccessController.doPrivileged;
@@ -63,7 +60,6 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
 
     private final Consumer<RemoteOutboundConnectionService> serviceConsumer;
     private final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier;
-    private final Supplier<SecurityRealm> securityRealmSupplier;
     private final Supplier<AuthenticationContext> authenticationContextSupplier;
 
     private final OptionMap connectionCreationOptions;
@@ -77,12 +73,10 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
     RemoteOutboundConnectionService(
             final Consumer<RemoteOutboundConnectionService> serviceConsumer,
             final Supplier<OutboundSocketBinding> outboundSocketBindingSupplier,
-            final Supplier<SecurityRealm> securityRealmSupplier,
             final Supplier<AuthenticationContext> authenticationContextSupplier,
             final OptionMap connectionCreationOptions, final String username, final String protocol) {
         this.serviceConsumer = serviceConsumer;
         this.outboundSocketBindingSupplier = outboundSocketBindingSupplier;
-        this.securityRealmSupplier = securityRealmSupplier;
         this.authenticationContextSupplier = authenticationContextSupplier;
         this.connectionCreationOptions = connectionCreationOptions;
         this.username = username;
@@ -119,23 +113,9 @@ final class RemoteOutboundConnectionService extends AbstractOutboundConnectionSe
             URI finalUri = uri;
             authenticationConfiguration = () -> AUTH_CONFIGURATION_CLIENT.getAuthenticationConfiguration(finalUri, injectedContext);
         } else {
-            final SecurityRealm securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null;
             AuthenticationConfiguration configuration = AuthenticationConfiguration.empty();
-            if (securityRealm != null) {
-                // legacy remote-outbound-connection configuration
-                if (username != null) {
-                    configuration = configuration
-                            .useName(username)
-                            .setSaslMechanismSelector(SaslMechanismSelector.DEFAULT.forbidMechanism(JBOSS_LOCAL_USER));
-                    final CallbackHandlerFactory callbackHandlerFactory = securityRealm.getSecretCallbackHandlerFactory();
-                    if (callbackHandlerFactory != null) {
-                        configuration = configuration.useCallbackHandler(callbackHandlerFactory.getCallbackHandler(username));
-                    }
-                }
-                sslContext = securityRealm.getSSLContext();
-            } else {
-                sslContext = null;
-            }
+            sslContext = null;
+
             AuthenticationConfiguration finalConfiguration = configuration;
             authenticationConfiguration = () -> finalConfiguration;
         }

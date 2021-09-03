@@ -31,9 +31,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.as.controller.access.AuthorizerConfiguration;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.permission.ManagementPermissionAuthorizer;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Standard {@link org.jboss.as.controller.access.Authorizer} implementation that uses a provided
@@ -99,8 +99,8 @@ public final class StandardRBACAuthorizer extends ManagementPermissionAuthorizer
     }
 
     @Override
-    public Set<String> getCallerRoles(Caller caller, Environment callEnvironment, Set<String> runAsRoles) {
-        Set<String> mapped = roleMapper.mapRoles(caller, callEnvironment, runAsRoles);
+    public Set<String> getCallerRoles(SecurityIdentity identity, Environment callEnvironment, Set<String> runAsRoles) {
+        Set<String> mapped = roleMapper.mapRoles(identity, callEnvironment, runAsRoles);
         if (mapped == null) {
             return null;
         } else if (mapped.isEmpty()) {

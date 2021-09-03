@@ -38,8 +38,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.jboss.as.controller.remote.IdentityAddressProtocolUtil.PropagatedIdentity;
-import org.jboss.as.core.security.RealmUser;
-import org.jboss.as.core.security.api.RealmPrincipal;
 import org.junit.Test;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
@@ -76,7 +74,7 @@ public class IdentityAddressProtocolUtilTestCase {
                                             .setRoleDecoder(RoleDecoder.simple("GROUPS"))
                                             .setPrincipalRewriter(p -> new NamePrincipal(p.getName()))
                                             .build()
-                                        .setPreRealmRewriter((Function<Principal, Principal>) p -> new RealmUser("TestRealm", p.getName()))
+                                        .setPreRealmRewriter((Function<Principal, Principal>) p -> new NamePrincipal(p.getName()))
                                         .setPermissionMapper((permissionMappable, roles) -> LoginPermission.getInstance())
                                         .build();
 
@@ -93,7 +91,6 @@ public class IdentityAddressProtocolUtilTestCase {
 
         Principal principal = securityIdentity.getPrincipal();
         assertEquals("Principal Name", "TestUser", principal.getName());
-        assertEquals("Principal Realm", "TestRealm", ((RealmPrincipal)principal).getRealm());
         Set<String> identityRoles =  StreamSupport.stream(securityIdentity.getRoles().spliterator(), false).collect(Collectors.toSet());
         assertEquals("Roles Count", 2, identityRoles.size());
         assertTrue("GroupOne Membership", identityRoles.contains("GroupOne"));

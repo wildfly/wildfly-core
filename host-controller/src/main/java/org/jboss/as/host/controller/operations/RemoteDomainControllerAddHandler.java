@@ -94,11 +94,6 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setDeprecated(ModelVersion.create(5))
             .build();
 
-    public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, STRING, true)
-            .setValidator(new StringLengthValidator(1, true))
-            .setDeprecated(ModelVersion.create(5))
-            .build();
-
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
             .setRequired(false)
             .setAllowExpression(true)
@@ -113,7 +108,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, HostResolver.getResolver("host"))
-            .setParameters(PROTOCOL, PORT, HOST, AUTHENTICATION_CONTEXT, USERNAME, SECURITY_REALM, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
+            .setParameters(PROTOCOL, PORT, HOST, AUTHENTICATION_CONTEXT, USERNAME, IGNORE_UNUSED_CONFIG, ADMIN_ONLY_POLICY)
             .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.DOMAIN_CONTROLLER)
             .setDeprecated(ModelVersion.create(5, 0, 0))
             .build();
@@ -153,13 +148,6 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             }, Stage.RUNTIME);
         } else {
             remoteDC.get(AUTHENTICATION_CONTEXT.getName()).clear();
-        }
-
-        if (operation.has(SECURITY_REALM.getName())) {
-            SECURITY_REALM.validateAndSet(operation, remoteDC);
-            hostControllerInfo.setRemoteDomainControllerSecurityRealm(SECURITY_REALM.resolveModelAttribute(context, operation).asString());
-        } else {
-            remoteDC.get(SECURITY_REALM.getName()).clear();
         }
 
         if (dc.has(LOCAL)) {

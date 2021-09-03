@@ -35,7 +35,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -92,17 +95,17 @@ public class RBACModelOutOfSyncScenario extends ReconnectTestScenario {
         Assert.assertEquals(1, masterSnapshots.size());
         Assert.assertEquals(1, slaveSnapshots.size());
 
-        ModelNode operation = Util.createRemoveOperation(MASTER_ADDR.append(CORE_SRV_MNGMT).append(SEC_REALM_MNGMT_REALM).append(AUTHENTICATION_LOCAL));
+        ModelNode operation = redefineMechanismConfiguration(MASTER_ADDR, false);
         DomainTestUtils.executeForResult(operation, masterClient);
 
-        operation = Util.createRemoveOperation(SLAVE_ADDR.append(CORE_SRV_MNGMT).append(SEC_REALM_MNGMT_REALM).append(AUTHENTICATION_LOCAL));
+        operation = redefineMechanismConfiguration(SLAVE_ADDR, false);
         DomainTestUtils.executeForResult(operation, masterClient);
 
-        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.username", "slave");
-        DomainTestUtils.executeForResult(operation, masterClient);
+//        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.username", "slave");
+//        DomainTestUtils.executeForResult(operation, masterClient);
 
-        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.security-realm", "ManagementRealm");
-        DomainTestUtils.executeForResult(operation, masterClient);
+//        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.security-realm", "ManagementRealm");
+//        DomainTestUtils.executeForResult(operation, masterClient);
 
         operation = Util.getWriteAttributeOperation(CORE_SRV_MNGMT.append(ACCESS_AUTHORIZATION), PROVIDER, "rbac");
         DomainTestUtils.executeForResult(operation, masterClient);
@@ -114,6 +117,37 @@ public class RBACModelOutOfSyncScenario extends ReconnectTestScenario {
 
         reloadHost(testSupport.getDomainMasterLifecycleUtil(), "master", null, null);
         reloadHost(testSupport.getDomainSlaveLifecycleUtil(), "slave", null, null);
+    }
+
+    private static ModelNode redefineMechanismConfiguration(final PathAddress baseAddress, final boolean includeLocalAuth) throws Exception {
+        final PathAddress factoryAddress = baseAddress.append(SUBSYSTEM, "elytron")
+                .append("sasl-authentication-factory", "management-sasl-authentication");
+
+        final ModelNode operation = Util.createEmptyOperation(WRITE_ATTRIBUTE_OPERATION, factoryAddress);
+        operation.get(NAME).set("mechanism-configurations");
+
+        final ModelNode value = new ModelNode();
+
+        // Always add DIGEST-MD5
+        final ModelNode digestMd5 = new ModelNode();
+        digestMd5.get("mechanism-name").set("DIGEST-MD5");
+
+        final ModelNode mechanismRealmConfigurations = new ModelNode();
+        final ModelNode digestMd5RealmConfiguration = new ModelNode();
+        digestMd5RealmConfiguration.get("realm-name").set("ManagementRealm");
+        mechanismRealmConfigurations.add(digestMd5RealmConfiguration);
+        digestMd5.get("mechanism-realm-configurations").set(mechanismRealmConfigurations);
+        value.add(digestMd5);
+
+        if (includeLocalAuth) {
+            final ModelNode localAuth = new ModelNode();
+            localAuth.get("mechanism-name").set("JBOSS-LOCAL-USER");
+            localAuth.get("realm-mapper").set("local");
+            value.add(localAuth);
+        }
+        operation.get(VALUE).set(value);
+
+        return operation;
     }
 
     @Override

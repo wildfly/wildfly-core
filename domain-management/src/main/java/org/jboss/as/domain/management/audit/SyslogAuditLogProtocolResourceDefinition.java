@@ -29,8 +29,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.controller.security.CredentialReference.handleCredentialReferenceUpdate;
 import static org.jboss.as.controller.security.CredentialReference.rollbackCredentialStoreUpdate;
-import static org.jboss.as.domain.management.security.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
-import static org.jboss.as.domain.management.security.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
+import static org.jboss.as.domain.management.audit.KeystoreAttributes.KEYSTORE_PASSWORD_CREDENTIAL_REFERENCE_NAME;
+import static org.jboss.as.domain.management.audit.KeystoreAttributes.KEY_PASSWORD_CREDENTIAL_REFERENCE_NAME;
 
 import java.util.List;
 import java.util.Locale;
@@ -62,7 +62,6 @@ import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.domain.management._private.DomainManagementResolver;
 import org.jboss.as.domain.management.logging.DomainManagementLogger;
-import org.jboss.as.domain.management.security.KeystoreAttributes;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 

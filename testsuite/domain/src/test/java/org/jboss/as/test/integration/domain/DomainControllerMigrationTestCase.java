@@ -222,7 +222,7 @@ public class DomainControllerMigrationTestCase {
         changeMasterOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
         changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.slave.address}");
         changeMasterOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
-        changeMasterOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
+        changeMasterOp.get(ModelDescriptionConstants.AUTHENTICATION_CONTEXT).set("slaveHostAContext");
 
         hostUtils[2].executeForResult(changeMasterOp);
 

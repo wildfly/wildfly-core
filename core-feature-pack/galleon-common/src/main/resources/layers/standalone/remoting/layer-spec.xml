@@ -9,7 +9,6 @@
     <feature spec="subsystem.remoting.http-connector">
         <param name="http-connector" value="http-remoting-connector"/>
         <param name="connector-ref" value="default"/>
-        <unset param="security-realm"/>
         <param name="sasl-authentication-factory" value="application-sasl-authentication"/>
     </feature>
 </layer-spec>

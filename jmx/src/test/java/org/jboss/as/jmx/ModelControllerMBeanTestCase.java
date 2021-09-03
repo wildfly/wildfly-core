@@ -1681,7 +1681,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY,
-                    null, null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
+                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
         }
 
         @Override

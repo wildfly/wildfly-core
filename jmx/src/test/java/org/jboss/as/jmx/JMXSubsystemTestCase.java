@@ -673,7 +673,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemBaseTest {
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY,
-                    null, null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
+                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
         }
     }
 

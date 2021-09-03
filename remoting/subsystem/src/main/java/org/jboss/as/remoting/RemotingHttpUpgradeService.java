@@ -24,16 +24,15 @@ package org.jboss.as.remoting;
 import static org.jboss.as.remoting.Capabilities.SASL_AUTHENTICATION_FACTORY_CAPABILITY;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTP;
 import static org.jboss.as.remoting.Protocol.REMOTE_HTTPS;
+import static org.jboss.as.remoting.logging.RemotingLogger.ROOT_LOGGER;
+import static org.wildfly.security.permission.PermissionUtil.createPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.undertow.server.ListenerRegistry;
-import io.undertow.server.handlers.ChannelUpgradeHandler;
-
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.domain.management.security.SecurityRealmService;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.logging.RemotingLogger;
 import org.jboss.msc.Service;
@@ -47,18 +46,19 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.remoting3.Endpoint;
 import org.jboss.remoting3.UnknownURISchemeException;
 import org.jboss.remoting3.spi.ExternalConnectionProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
-import org.wildfly.security.manager.WildFlySecurityManager;
+import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
 import org.xnio.ChannelListener;
-import org.xnio.Option;
 import org.xnio.OptionMap;
-import org.xnio.Options;
-import org.xnio.Sequence;
 import org.xnio.StreamConnection;
+
+import io.undertow.server.ListenerRegistry;
+import io.undertow.server.handlers.ChannelUpgradeHandler;
 
 /**
  * Service that registers a HTTP upgrade handler to enable remoting to be used via http upgrade.
@@ -69,6 +69,8 @@ import org.xnio.StreamConnection;
 public class RemotingHttpUpgradeService implements Service {
 
     public static final String JBOSS_REMOTING = "jboss-remoting";
+
+    private static final String[] ADDITIONAL_PERMISSION = new String[] { "org.wildfly.transaction.client.RemoteTransactionPermission", "org.jboss.ejb.client.RemoteEJBPermission" };
 
     /**
      * Magic number used in the handshake.
@@ -96,7 +98,6 @@ public class RemotingHttpUpgradeService implements Service {
     private final Supplier<ChannelUpgradeHandler> upgradeRegistrySupplier;
     private final Supplier<ListenerRegistry> listenerRegistrySupplier;
     private final Supplier<Endpoint> endpointSupplier;
-    private final Supplier<org.jboss.as.domain.management.SecurityRealm> securityRealmSupplier;
     private final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier;
     private final OptionMap connectorPropertiesOptionMap;
 
@@ -106,14 +107,12 @@ public class RemotingHttpUpgradeService implements Service {
                                       final Supplier<ChannelUpgradeHandler> upgradeRegistrySupplier,
                                       final Supplier<ListenerRegistry> listenerRegistrySupplier,
                                       final Supplier<Endpoint> endpointSupplier,
-                                      final Supplier<org.jboss.as.domain.management.SecurityRealm> securityRealmSupplier,
                                       final Supplier<SaslAuthenticationFactory> saslAuthenticationFactorySupplier,
                                       final String httpConnectorName, final String endpointName, final OptionMap connectorPropertiesOptionMap) {
         this.serviceConsumer = serviceConsumer;
         this.upgradeRegistrySupplier = upgradeRegistrySupplier;
         this.listenerRegistrySupplier = listenerRegistrySupplier;
         this.endpointSupplier = endpointSupplier;
-        this.securityRealmSupplier = securityRealmSupplier;
         this.saslAuthenticationFactorySupplier = saslAuthenticationFactorySupplier;
         this.httpConnectorName = httpConnectorName;
         this.endpointName = endpointName;
@@ -122,7 +121,7 @@ public class RemotingHttpUpgradeService implements Service {
 
     public static void installServices(final OperationContext context, final String remotingConnectorName,
                                        final String httpConnectorName, final ServiceName endpointName,
-                                       final OptionMap connectorPropertiesOptionMap, final String securityRealm,
+                                       final OptionMap connectorPropertiesOptionMap,
                                        final String saslAuthenticationFactory) {
         final ServiceTarget serviceTarget = context.getServiceTarget();
         final ServiceName serviceName = UPGRADE_SERVICE_NAME.append(remotingConnectorName);
@@ -131,9 +130,8 @@ public class RemotingHttpUpgradeService implements Service {
         final Supplier<ChannelUpgradeHandler> urSupplier = sb.requires(HTTP_UPGRADE_REGISTRY.append(httpConnectorName));
         final Supplier<ListenerRegistry> lrSupplier = sb.requires(RemotingServices.HTTP_LISTENER_REGISTRY);
         final Supplier<Endpoint> eSupplier = sb.requires(endpointName);
-        final Supplier<org.jboss.as.domain.management.SecurityRealm> srSupplier = securityRealm != null ? sb.requires(org.jboss.as.domain.management.SecurityRealm.ServiceUtil.createServiceName(securityRealm)) : null;
         final Supplier<SaslAuthenticationFactory> safSupplier = saslAuthenticationFactory != null ? sb.requires(context.getCapabilityServiceName(SASL_AUTHENTICATION_FACTORY_CAPABILITY, saslAuthenticationFactory, SaslAuthenticationFactory.class)) : null;
-        sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, srSupplier, safSupplier, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
+        sb.setInstance(new RemotingHttpUpgradeService(serviceConsumer, urSupplier, lrSupplier, eSupplier, safSupplier, httpConnectorName, endpointName.getSimpleName(), connectorPropertiesOptionMap));
         sb.setInitialMode(ServiceController.Mode.ACTIVE);
         sb.install();
     }
@@ -158,45 +156,13 @@ public class RemotingHttpUpgradeService implements Service {
 
             SaslAuthenticationFactory saslAuthenticationFactory = saslAuthenticationFactorySupplier != null ? saslAuthenticationFactorySupplier.get() : null;
 
-            org.jboss.as.domain.management.SecurityRealm securityRealm = null;
-            if (saslAuthenticationFactory == null && (securityRealm = securityRealmSupplier != null ? securityRealmSupplier.get() : null) != null) {
-
-                final ClassLoader loader = WildFlySecurityManager.getClassLoaderPrivileged(ConnectorUtils.class);
-
-                Option<?> optionMechanismNames = Option.fromString("org.xnio.Options."+ Options.SASL_MECHANISMS.getName(), loader);
-                String[] mechanismNames = null;
-                if(connectorPropertiesOptionMap.contains(optionMechanismNames)) {
-                    Object o = connectorPropertiesOptionMap.get(optionMechanismNames);
-                    if (o instanceof Sequence) {
-                        Sequence<String> sequence = (Sequence<String>) connectorPropertiesOptionMap.get(optionMechanismNames);
-                        mechanismNames = sequence.toArray(new String[sequence.size()]);
-                    }
-                }
-
-                Option<?> optionPolicyNonanonymous = Option.fromString("org.xnio.Options."+ Options.SASL_POLICY_NOANONYMOUS.getName(), loader);
-                //in case that legacy sasl mechanisms are used, noanonymous default value is true
-                Boolean policyNonanonymous = mechanismNames == null ? null: true;
-                if(connectorPropertiesOptionMap.contains(optionPolicyNonanonymous)) {
-                    Object o = connectorPropertiesOptionMap.get(optionPolicyNonanonymous);
-                    if (o instanceof Boolean) {
-                        policyNonanonymous = (Boolean) o;
-                    }
-                }
-
-                if(mechanismNames != null || policyNonanonymous != null) {
-                    saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory(mechanismNames, policyNonanonymous);
-                } else {
-                    saslAuthenticationFactory = securityRealm.getSaslAuthenticationFactory();
-                }
-            }
-
             if (saslAuthenticationFactory == null) {
                 // TODO Elytron Inject the sasl server factory.
                 RemotingLogger.ROOT_LOGGER.warn("****** All authentication is ANONYMOUS for " + getClass().getName());
                 final SecurityDomain.Builder domainBuilder = SecurityDomain.builder();
                 domainBuilder.addRealm("default", SecurityRealm.EMPTY_REALM).build();
                 domainBuilder.setDefaultRealmName("default");
-                domainBuilder.setPermissionMapper((permissionMappable, roles) -> SecurityRealmService.createPermissionVerifier());
+                domainBuilder.setPermissionMapper((permissionMappable, roles) -> createPermissionVerifier());
                 final SaslAuthenticationFactory.Builder authBuilder = SaslAuthenticationFactory.builder();
                 authBuilder.setSecurityDomain(domainBuilder.build());
                 authBuilder.setFactory(new AnonymousServerFactory());
@@ -232,6 +198,20 @@ public class RemotingHttpUpgradeService implements Service {
         listenerRegistrySupplier.get().getListener(httpConnectorName).removeHttpUpgradeMetadata(httpUpgradeMetadata);
         httpUpgradeMetadata = null;
         upgradeRegistrySupplier.get().removeProtocol(JBOSS_REMOTING);
+    }
+
+    private static PermissionVerifier createPermissionVerifier() {
+        PermissionVerifier permissionVerifier = LoginPermission.getInstance();
+        for (String permissionName : ADDITIONAL_PERMISSION) {
+            try {
+                Permission permission = createPermission(RemotingHttpUpgradeService.class.getClassLoader(), permissionName, null, null);
+                permissionVerifier = permissionVerifier.or(PermissionVerifier.from(permission));
+            } catch (Exception e) {
+                ROOT_LOGGER.tracef(e, "Unable to create permission '%s'", permissionName);
+            }
+        }
+
+        return permissionVerifier;
     }
 
 }

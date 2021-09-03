@@ -40,7 +40,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.CombinationPolicy;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.JmxAction;
@@ -56,6 +55,8 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.junit.Before;
 import org.junit.Test;
+import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
@@ -79,12 +80,15 @@ public class DefaultPermissionFactoryTestCase {
         REJECTING = rejecting;
     }
 
-    private Caller caller;
+    private SecurityIdentity identity;
     private Environment environment;
 
     @Before
     public void setUp() {
-        caller = Caller.createCaller(null);
+        SecurityDomain testDomain = SecurityDomain.builder()
+            .build();
+        identity = testDomain.getAnonymousSecurityIdentity();
+
         ControlledProcessState processState = new ControlledProcessState(false);
         processState.setRunning();
         environment = new Environment(processState, ProcessType.EMBEDDED_SERVER);
@@ -178,7 +182,7 @@ public class DefaultPermissionFactoryTestCase {
         Action action = new Action(null, null, EnumSet.of(Action.ActionEffect.ADDRESS));
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
 
-        PermissionCollection userPermissions = permissionFactory.getUserPermissions(caller, environment, action, targetResource);
+        PermissionCollection userPermissions = permissionFactory.getUserPermissions(identity, environment, action, targetResource);
         PermissionCollection requiredPermissions = permissionFactory.getRequiredPermissions(action, targetResource);
 
         for (Permission requiredPermission : toSet(requiredPermissions)) {
@@ -200,7 +204,7 @@ public class DefaultPermissionFactoryTestCase {
         TargetResource targetResource = TargetResource.forStandalone(PathAddress.EMPTY_ADDRESS, ROOT_RR, null);
         TargetAttribute targetAttribute = new TargetAttribute("test", null, new ModelNode(), targetResource);
 
-        PermissionCollection userPermissions = permissionFactory.getUserPermissions(caller, environment, action, targetAttribute);
+        PermissionCollection userPermissions = permissionFactory.getUserPermissions(identity, environment, action, targetAttribute);
         PermissionCollection requiredPermissions = permissionFactory.getRequiredPermissions(action, targetAttribute);
 
         for (Permission requiredPermission : toSet(requiredPermissions)) {
@@ -218,7 +222,7 @@ public class DefaultPermissionFactoryTestCase {
         try {
             permissionFactory = new DefaultPermissionFactory(new TestRoleMapper(),
                     Collections.<ConstraintFactory>emptySet(), REJECTING);
-            permissionFactory.getUserPermissions(caller, environment, action, targetResource);
+            permissionFactory.getUserPermissions(identity, environment, action, targetResource);
         } catch (Exception e) {
             fail();
         }
@@ -226,7 +230,7 @@ public class DefaultPermissionFactoryTestCase {
         try {
             permissionFactory = new DefaultPermissionFactory(
                     new TestRoleMapper(StandardRole.MONITOR), Collections.<ConstraintFactory>emptySet(), REJECTING);
-            permissionFactory.getUserPermissions(caller, environment, action, targetResource);
+            permissionFactory.getUserPermissions(identity, environment, action, targetResource);
         } catch (Exception e) {
             fail();
         }
@@ -234,7 +238,7 @@ public class DefaultPermissionFactoryTestCase {
         permissionFactory = new DefaultPermissionFactory(
                 new TestRoleMapper(StandardRole.MONITOR, StandardRole.DEPLOYER), REJECTING);
         try {
-            permissionFactory.getUserPermissions(caller, environment, action, targetResource);
+            permissionFactory.getUserPermissions(identity, environment, action, targetResource);
             fail();
         } catch (Exception e) { /* expected */ }
 
@@ -242,7 +246,7 @@ public class DefaultPermissionFactoryTestCase {
                 new TestRoleMapper(StandardRole.MONITOR, StandardRole.DEPLOYER, StandardRole.AUDITOR),
                 Collections.<ConstraintFactory>emptySet(), REJECTING);
         try {
-            permissionFactory.getUserPermissions(caller, environment, action, targetResource);
+            permissionFactory.getUserPermissions(identity, environment, action, targetResource);
             fail();
         } catch (Exception e) { /* expected */ }
     }
@@ -270,22 +274,22 @@ public class DefaultPermissionFactoryTestCase {
         }
 
         @Override
-        public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetAttribute attribute) {
+        public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute attribute) {
             return roles;
         }
 
         @Override
-        public Set<String> mapRoles(Caller caller, Environment callEnvironment, Action action, TargetResource resource) {
+        public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource resource) {
             return roles;
         }
 
         @Override
-        public Set<String> mapRoles(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
             return roles;
         }
 
         @Override
-        public Set<String> mapRoles(Caller caller, Environment callEnvironment, Set<String> operationHeaderRoles) {
+        public Set<String> mapRoles(SecurityIdentity identity, Environment callEnvironment, Set<String> operationHeaderRoles) {
             return roles;
         }
 

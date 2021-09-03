@@ -56,13 +56,6 @@ public interface HttpInterfaceCommonPolicy {
     String getSaslAuthenticationFactory();
 
     /**
-     * Get the name of the security realm to secure the HTTP interface, or {@code null} if one has not been defined.
-     *
-     * @return Get the name of the security realm to secure the HTTP interface.
-     */
-    String getSecurityRealm();
-
-    /**
      * Is the management console enabled, is set to {@code false} the console should not be made available.
      *
      * @return {@code true} if the management console should be made available, {@code false} otherwise.

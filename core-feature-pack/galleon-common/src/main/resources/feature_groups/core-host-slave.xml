@@ -5,15 +5,7 @@
         <param name="persist-name" value="false"/>
 
         <feature spec="host.domain-controller">
-            <param name="remote" value="{security-realm=ManagementRealm}"/>
-        </feature>
-
-        <feature-group name="host-security-realms"/>
-        <feature spec="core-service.management.security-realm">
-            <param name="security-realm" value="ManagementRealm"/>
-            <feature spec="core-service.management.security-realm.server-identity.secret">
-                <param name="value" value="&quot;c2xhdmVfdXNlcl9wYXNzd29yZA==&quot;"/>
-            </feature>
+            <param name="remote" value="{}"/> <!-- TODO This needs an alternative. -->
         </feature>
 
         <feature-group name="host-audit"/>

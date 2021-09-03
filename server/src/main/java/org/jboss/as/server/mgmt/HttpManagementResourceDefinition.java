@@ -101,7 +101,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
                 ModelNode model = context.readResource(PathAddress.EMPTY_ADDRESS).getModel();
                 ModelNode secureSocketBinding = SECURE_SOCKET_BINDING.resolveModelAttribute(context, model);
                 if (secureSocketBinding.isDefined()) {
-                    if (SSL_CONTEXT.resolveModelAttribute(context, model).isDefined() || SECURITY_REALM.resolveModelAttribute(context, model).isDefined()) {
+                    if (SSL_CONTEXT.resolveModelAttribute(context, model).isDefined()) {
                         return;
                     }
                     throw ROOT_LOGGER.secureSocketBindingRequiresSSLContext();

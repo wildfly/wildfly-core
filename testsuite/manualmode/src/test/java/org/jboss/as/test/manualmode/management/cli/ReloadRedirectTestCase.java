@@ -36,23 +36,14 @@ import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  *
  * @author jdenise@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
-@ServerControl(manual = true)
 public class ReloadRedirectTestCase {
 
     private static final String IBM_OVERRIDE_DEFAULT_TLS = "-Dcom.ibm.jsse2.overrideDefaultTLS=true";
@@ -115,36 +106,6 @@ public class ReloadRedirectTestCase {
         }
         if (e != null) {
             throw e;
-        }
-    }
-
-    @BeforeClass
-    public static void initServer() throws Exception {
-        container.start();
-
-        setupNativeInterface(container);
-
-        // elytron or legacy
-        try {
-            ModelNode op = createOpNode("core-service=management/"
-                    + "management-interface=http-interface/", "read-attribute");
-            op.get("name").set("http-authentication-factory");
-            ModelNode result = container.getClient().executeForResult(op);
-            elytron = result.isDefined();
-        } catch (UnsuccessfulOperationException ignored) {
-            elytron = true;
-        }
-    }
-
-    @AfterClass
-    public static void afterClass() throws Exception {
-        try {
-            // Even though we don't reuse this server, the next test uses the config so we
-            // need to revert the config changes the test made
-            ManagementClient client = getCleanupClient();
-            cleanConfig(client);
-        } finally {
-            container.stop();
         }
     }
 
@@ -230,103 +191,6 @@ public class ReloadRedirectTestCase {
         // Use a client that connects to 9999
         ModelControllerClient mcc = ModelControllerClient.Factory.create("remote", TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT);
         return new ManagementClient(mcc, TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT, "remote");
-    }
-
-    /**
-     * We should have the same test with "shutdown --restart" but testing
-     * framework doesn't allow to restart the server (not launched from server
-     * script file). "shutdown --restart" must be tested manually.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testReloadwithRedirect() throws Exception {
-        CliProcessWrapper cliProc = new CliProcessWrapper()
-                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
-                .addCliArgument("--connect")
-                .addCliArgument("--controller="
-                        + TestSuiteEnvironment.getServerAddress() + ":"
-                        + TestSuiteEnvironment.getServerPort());
-        try {
-            cliProc.executeInteractive();
-            cliProc.clearOutput();
-            setupSSL(cliProc);
-            boolean promptFound = cliProc.pushLineAndWaitForResults("reload", "Accept certificate");
-            assertTrue("No certificate prompt " + cliProc.getOutput(), promptFound);
-        } finally {
-            cliProc.ctrlCAndWaitForClose();
-        }
-    }
-
-    @Test
-    public void testRedirectWithSecurityCommands() throws Throwable {
-        CliProcessWrapper cliProc = new CliProcessWrapper()
-                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
-                .addCliArgument("--connect")
-                .addCliArgument("--no-color-output")
-                .addCliArgument("--controller="
-                        + TestSuiteEnvironment.getServerAddress() + ":"
-                        + TestSuiteEnvironment.getServerPort());
-        Throwable exception = null;
-        try {
-            cliProc.executeInteractive();
-            cliProc.clearOutput();
-            Assert.assertTrue("No certificate prompt " + cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security enable-ssl-management"
-                    + " --key-store-path=target/server.keystore.jks"
-                    + " --key-store-password=secret"
-                    + " --new-key-store-name=nks"
-                    + " --new-key-manager-name=nkm"
-                    + " --new-ssl-context-name=nsslctx", "Accept certificate"));
-            cliProc.clearOutput();
-            Assert.assertTrue(cliProc.getOutput(),
-                    cliProc.pushLineAndWaitForResults("T", "[standalone@"));
-            cliProc.clearOutput();
-            Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security disable-ssl-management",
-                    "[standalone@"));
-        } catch (Throwable ex) {
-            exception = ex;
-        } finally {
-            try {
-                cliProc.clearOutput();
-                Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/server-ssl-context=nsslctx:remove", null));
-                Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-            } catch (Throwable ex) {
-                if (exception == null) {
-                    exception = ex;
-                }
-            } finally {
-                try {
-                    cliProc.clearOutput();
-                    Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-manager=nkm:remove", null));
-                    Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-                } catch (Throwable ex) {
-                    if (exception == null) {
-                        exception = ex;
-                    }
-                } finally {
-                    try {
-                        cliProc.clearOutput();
-                        Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-store=nks:remove", null));
-                        Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
-                    } catch (Throwable ex) {
-                        if (exception == null) {
-                            exception = ex;
-                        }
-                    } finally {
-                        try {
-                            cliProc.ctrlCAndWaitForClose();
-                        } catch (Throwable ex) {
-                            if (exception == null) {
-                                exception = ex;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (exception != null) {
-            throw exception;
-        }
     }
 
     private void setupSSL(CliProcessWrapper cliProc) throws Exception {

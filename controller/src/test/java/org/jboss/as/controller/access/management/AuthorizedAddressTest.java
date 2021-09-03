@@ -43,7 +43,6 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.ResourceAuthorization;
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
@@ -517,11 +516,6 @@ public class AuthorizedAddressTest {
 
         @Override
         public AuthorizationResult authorizeOperation(ModelNode operation) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public Caller getCaller() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 

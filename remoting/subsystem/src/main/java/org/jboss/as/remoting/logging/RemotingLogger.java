@@ -130,4 +130,7 @@ public interface RemotingLogger extends BasicLogger {
 
     @Message(id = 28, value = "Invalid option '%s'.")
     OperationFailedException invalidOption(String message);
+
+    @Message(id = 29, value = "The use of security realms at runtime is unsupported.")
+    OperationFailedException runtimeSecurityRealmUnsupported();
 }

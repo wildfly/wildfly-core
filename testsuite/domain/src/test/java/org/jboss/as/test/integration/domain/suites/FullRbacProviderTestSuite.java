@@ -22,9 +22,17 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
+import org.jboss.as.test.integration.domain.rbac.AbstractHostScopedRolesTestCase;
+import org.jboss.as.test.integration.domain.rbac.AbstractServerGroupScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.IncludeAllRoleTestCase;
 import org.jboss.as.test.integration.domain.rbac.JmxRBACProviderHostScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.JmxRBACProviderServerGroupScopedRolesTestCase;
@@ -36,10 +44,12 @@ import org.jboss.as.test.integration.domain.rbac.RBACProviderStandardRolesTestCa
 import org.jboss.as.test.integration.domain.rbac.RBACSensitivityConstraintUtilizationTestCase;
 import org.jboss.as.test.integration.domain.rbac.RolesIntegrityCheckingTestCase;
 import org.jboss.as.test.integration.domain.rbac.WildcardReadsTestCase;
+import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 
 /**
  * Simple {@code Suite} test wrapper to start the domain only once for multiple
@@ -122,6 +132,12 @@ public class FullRbacProviderTestSuite {
             configuration.getMasterConfiguration().setMgmtUsersFile(mgmtUserProperties);
             configuration.getSlaveConfiguration().setMgmtUsersFile(mgmtUserProperties);
             final DomainTestSupport testSupport = DomainTestSupport.create(configuration);
+            // Add users used by tests.
+            List<String> users = new ArrayList<String>();
+            addUsers(users, AbstractHostScopedRolesTestCase.USERS);
+            addUsers(users, AbstractServerGroupScopedRolesTestCase.USERS);
+            addUsers(users, "SlaveHostSuperUser", "OtherGroupSuperUser");
+            Files.write((new File(System.getProperty("jboss.home")).toPath().resolve("domain").resolve("configuration").resolve("application-users.properties")), users, Charset.forName("UTF-8"));
             // Start!
             testSupport.start();
             ExtensionSetup.initializeTestExtension(testSupport);
@@ -129,6 +145,12 @@ public class FullRbacProviderTestSuite {
             return testSupport;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void addUsers(final List<String> users, String... userNames) throws Exception {
+        for (String userName : userNames) {
+            users.add(userName + "=" + new UsernamePasswordHashUtil().generateHashedHexURP(userName, "ApplicationRealm", RbacAdminCallbackHandler.STD_PASSWORD.toCharArray()));
         }
     }
 }

@@ -38,7 +38,6 @@ import java.util.TreeSet;
 
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizerConfiguration;
-import org.jboss.as.controller.access.Caller;
 import org.jboss.as.controller.access.CombinationPolicy;
 import org.jboss.as.controller.access.Environment;
 import org.jboss.as.controller.access.TargetAttribute;
@@ -63,6 +62,7 @@ import org.jboss.as.controller.access.permission.ManagementPermissionCollection;
 import org.jboss.as.controller.access.permission.PermissionFactory;
 import org.jboss.as.controller.access.permission.SimpleManagementPermission;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
  * Default {@link org.jboss.as.controller.access.permission.PermissionFactory} implementation that supports
@@ -100,18 +100,18 @@ public class DefaultPermissionFactory implements PermissionFactory, AuthorizerCo
     }
 
     @Override
-    public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetAttribute target) {
-        return getUserPermissions(roleMapper.mapRoles(caller, callEnvironment, action, target));
+    public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetAttribute target) {
+        return getUserPermissions(roleMapper.mapRoles(identity, callEnvironment, action, target));
     }
 
     @Override
-    public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, Action action, TargetResource target) {
-        return getUserPermissions(roleMapper.mapRoles(caller, callEnvironment, action, target));
+    public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, Action action, TargetResource target) {
+        return getUserPermissions(roleMapper.mapRoles(identity, callEnvironment, action, target));
     }
 
     @Override
-    public PermissionCollection getUserPermissions(Caller caller, Environment callEnvironment, JmxAction action, JmxTarget target) {
-        return getUserPermissions(roleMapper.mapRoles(caller, callEnvironment, action, target));
+    public PermissionCollection getUserPermissions(SecurityIdentity identity, Environment callEnvironment, JmxAction action, JmxTarget target) {
+        return getUserPermissions(roleMapper.mapRoles(identity, callEnvironment, action, target));
     }
 
     private PermissionCollection getUserPermissions(Set<String> roles) {

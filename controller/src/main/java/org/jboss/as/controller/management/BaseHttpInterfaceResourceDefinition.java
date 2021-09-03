@@ -83,14 +83,6 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
         .setRestartAllServices()
         .build();
 
-    public static final SimpleAttributeDefinition SECURITY_REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SECURITY_REALM, ModelType.STRING, true)
-        .setValidator(new StringLengthValidator(1, Integer.MAX_VALUE, true, false))
-        .addAccessConstraint(SensitiveTargetAccessConstraintDefinition.SECURITY_REALM_REF)
-        .setNullSignificant(true)
-        .setDeprecated(ModelVersion.create(5))
-        .setRestartAllServices()
-        .build();
-
     public static final SimpleAttributeDefinition SSL_CONTEXT = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SSL_CONTEXT, ModelType.STRING, true)
         .setMinSize(1)
         .setCapabilityReference(SSL_CONTEXT_CAPABILITY, HTTP_MANAGEMENT_RUNTIME_CAPABILITY)
@@ -206,7 +198,7 @@ public abstract class BaseHttpInterfaceResourceDefinition extends SimpleResource
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
-    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, SECURITY_REALM, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
+    protected static final AttributeDefinition[] COMMON_ATTRIBUTES = new AttributeDefinition[] { HTTP_AUTHENTICATION_FACTORY, SSL_CONTEXT, CONSOLE_ENABLED, HTTP_UPGRADE_ENABLED,
                                                                                                      HTTP_UPGRADE, SASL_PROTOCOL, SERVER_NAME, ALLOWED_ORIGINS, CONSTANT_HEADERS};
 
     /**

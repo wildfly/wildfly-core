@@ -60,12 +60,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
@@ -94,18 +88,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-core-security</artifactId>
         </dependency>
 
         <dependency>

@@ -39,7 +39,6 @@ import org.jboss.as.test.integration.domain.AbstractSlaveHCAuthenticationTestCas
 import org.jboss.as.test.integration.domain.management.util.Authentication;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
-import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -70,9 +69,10 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
 
         // Tweak the callback handler so the master test driver client can authenticate
         // To keep setup simple it uses the same credentials as the slave host
-        WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();
         CallbackHandler callbackHandler = Authentication.getCallbackHandler("slave", RIGHT_PASSWORD, "ManagementRealm");
-        masterConfig.setCallbackHandler(callbackHandler);
+        testSupport.getDomainMasterConfiguration().setCallbackHandler(callbackHandler);
+        testSupport.getDomainSlaveConfiguration().setCallbackHandler(callbackHandler);
+
 
         testSupport.start();
 

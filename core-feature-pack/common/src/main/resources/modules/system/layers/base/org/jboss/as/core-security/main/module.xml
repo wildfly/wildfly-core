@@ -32,7 +32,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.jboss.as.core-security-api" export="true"/>
         <module name="org.wildfly.common"/>
     </dependencies>
 </module>

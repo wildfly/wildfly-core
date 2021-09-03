@@ -125,7 +125,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
                 ModelNode httpsPort = HTTPS_PORT.resolveModelAttribute(context, model);
                 ModelNode secureInterface = SECURE_INTERFACE.resolveModelAttribute(context, model);
                 if (httpsPort.isDefined() || secureInterface.isDefined()) {
-                    if (SSL_CONTEXT.resolveModelAttribute(context, model).isDefined() || SECURITY_REALM.resolveModelAttribute(context, model).isDefined()) {
+                    if (SSL_CONTEXT.resolveModelAttribute(context, model).isDefined()) {
                         return;
                     }
                     throw ROOT_LOGGER.attributeRequiresSSLContext(httpsPort.isDefined() ? HTTPS_PORT.getName() : SECURE_INTERFACE.getName());

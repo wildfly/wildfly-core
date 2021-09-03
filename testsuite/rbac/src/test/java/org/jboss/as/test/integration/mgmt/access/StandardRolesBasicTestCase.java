@@ -84,7 +84,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
     private static final byte[] DEPLOYMENT_2_CONTENT = "CONTENT".getBytes(Charset.defaultCharset());
     private static final String AUTHORIZATION = "core-service=management/access=authorization";
     private static final String ROLE_MAPPING_BASE = "core-service=management/access=authorization/role-mapping=";
-    private static final String MANAGEMENT_REALM = "core-service=management/security-realm=ManagementRealm";
     private static final String HTTP_BINDING = "socket-binding-group=standard-sockets/socket-binding=management-http";
     private static final String MEMORY_MBEAN = "core-service=platform-mbean/type=memory";
     protected static final String EXAMPLE_DS = "subsystem=rbac/rbac-constrained=default";
@@ -148,7 +147,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
-        readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
         checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.UNAUTHORIZED);
@@ -171,7 +169,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
-        readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
         checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.SUCCESS);
@@ -191,7 +188,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
-        readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
         checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.SUCCESS);
@@ -211,7 +207,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.UNAUTHORIZED);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.HIDDEN);
-        readResource(client, MANAGEMENT_REALM, Outcome.HIDDEN);
         checkSensitiveAttribute(client, false);
         checkNonSensitiveDefaultAttribute(client, false, false);
         runGC(client, Outcome.UNAUTHORIZED);
@@ -234,7 +229,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
-        readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
         checkNonSensitiveDefaultAttribute(client, true, true);
         runGC(client, Outcome.SUCCESS);
@@ -256,7 +250,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
-        readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
         checkNonSensitiveDefaultAttribute(client, true, false);
         runGC(client, Outcome.UNAUTHORIZED);
@@ -280,7 +273,6 @@ public abstract class StandardRolesBasicTestCase extends AbstractManagementInter
         readWholeConfig(client, Outcome.SUCCESS);
         checkStandardReads(client);
         readResource(client, AUTHORIZATION, Outcome.SUCCESS);
-        readResource(client, MANAGEMENT_REALM, Outcome.SUCCESS);
         checkSensitiveAttribute(client, true);
         checkNonSensitiveDefaultAttribute(client, true, true);
         runGC(client, Outcome.SUCCESS);

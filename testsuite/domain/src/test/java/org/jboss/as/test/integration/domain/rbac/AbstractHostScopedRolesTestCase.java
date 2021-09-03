@@ -69,7 +69,7 @@ public abstract class AbstractHostScopedRolesTestCase extends AbstractRbacTestCa
     public static final String SLAVE_AUDITOR_USER = "HostSlaveAuditor";
     public static final String SLAVE_SUPERUSER_USER = "HostSlaveSuperUser";
 
-    static final String[] USERS = { MONITOR_USER, OPERATOR_USER, MAINTAINER_USER, DEPLOYER_USER,
+    public static final String[] USERS = { MONITOR_USER, OPERATOR_USER, MAINTAINER_USER, DEPLOYER_USER,
             ADMINISTRATOR_USER, AUDITOR_USER, SUPERUSER_USER };
     static final String[] SLAVE_USERS = {SLAVE_MONITOR_USER, SLAVE_OPERATOR_USER, SLAVE_MAINTAINER_USER,
             SLAVE_DEPLOYER_USER, SLAVE_ADMINISTRATOR_USER, SLAVE_AUDITOR_USER, SLAVE_SUPERUSER_USER};

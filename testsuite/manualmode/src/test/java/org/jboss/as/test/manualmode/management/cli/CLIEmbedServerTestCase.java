@@ -74,6 +74,7 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -353,6 +354,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /** Tests building an entire server config from scratch */
     @Test
+    @Ignore("[WFCORE-5555] CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron.")
     public void testBuildServerConfig() throws Exception {
 
         String line = "embed-server --server-config=standalone-cli.xml --empty-config --remove-existing " + JBOSS_HOME;
