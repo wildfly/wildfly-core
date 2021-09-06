@@ -44,7 +44,7 @@ class ModuleStructureSpec {
     private final List<ResourceRoot> resourceRoots = new ArrayList<ResourceRoot>();
     private final List<FilterSpecification> exportFilters = new ArrayList<FilterSpecification>();
     private final List<ModuleIdentifier> exclusions = new ArrayList<ModuleIdentifier>();
-    private final List<String> classFileTransformers = new ArrayList<String>();
+    private final List<String> classTransformers = new ArrayList<String>();
     private final List<ModuleIdentifier> aliases = new ArrayList<ModuleIdentifier>();
     private final List<ModuleIdentifier> annotationModules = new ArrayList<ModuleIdentifier>();
 
@@ -116,8 +116,8 @@ class ModuleStructureSpec {
         return exportFilters;
     }
 
-    public List<String> getClassFileTransformers() {
-        return classFileTransformers;
+    public List<String> getClassTransformers() {
+        return classTransformers;
     }
 
     public boolean isLocalLast() {

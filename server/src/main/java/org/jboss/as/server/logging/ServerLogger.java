@@ -938,7 +938,7 @@ public interface ServerLogger extends BasicLogger {
     DeploymentUnitProcessingException noSeamIntegrationJarPresent(Module module);
 
     @Message(id = 158, value = "Failed to instantiate a %s")
-    DeploymentUnitProcessingException failedToInstantiateClassFileTransformer(String clazz, @Cause Exception cause);
+    DeploymentUnitProcessingException failedToInstantiateClassTransformer(String clazz, @Cause Exception cause);
 
     @Message(id = 159, value = "No deployment repository available.")
     DeploymentUnitProcessingException noDeploymentRepositoryAvailable();

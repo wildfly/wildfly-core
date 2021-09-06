@@ -87,7 +87,7 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
     public void undeploy(final DeploymentUnit deploymentUnit) {
         deploymentUnit.removeAttachment(Attachments.MODULE);
         deploymentUnit.removeAttachment(Attachments.MODULE_PERMISSIONS);
-        deploymentUnit.removeAttachment(DelegatingClassFileTransformer.ATTACHMENT_KEY);
+        deploymentUnit.removeAttachment(DelegatingClassTransformer.ATTACHMENT_KEY);
     }
 
     private void deployModuleSpec(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -267,9 +267,9 @@ public class ModuleSpecProcessor implements DeploymentUnitProcessor {
         specBuilder.setPermissionCollection(permissionCollection);
         deploymentUnit.putAttachment(Attachments.MODULE_PERMISSIONS, permissionCollection);
 
-        final DelegatingClassFileTransformer delegatingClassFileTransformer = new DelegatingClassFileTransformer();
-        specBuilder.setClassFileTransformer(delegatingClassFileTransformer);
-        deploymentUnit.putAttachment(DelegatingClassFileTransformer.ATTACHMENT_KEY, delegatingClassFileTransformer);
+        final DelegatingClassTransformer delegatingClassTransformer = new DelegatingClassTransformer();
+        specBuilder.setClassFileTransformer(delegatingClassTransformer);
+        deploymentUnit.putAttachment(DelegatingClassTransformer.ATTACHMENT_KEY, delegatingClassTransformer);
         final ModuleSpec moduleSpec = specBuilder.create();
         final ServiceName moduleSpecServiceName = ServiceModuleLoader.moduleSpecServiceName(moduleIdentifier);
 
