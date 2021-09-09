@@ -47,8 +47,8 @@ import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationExtension;
+import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.controller.persistence.ConfigurationFile;
-import org.jboss.as.controller.persistence.YamlConfigurationExtension;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.server.controller.git.GitRepository;
 import org.jboss.as.server.controller.git.GitRepositoryConfiguration;
@@ -403,12 +403,9 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
 
         this.initialRunningMode = initialRunningMode == null ? RunningMode.NORMAL : initialRunningMode;
         Path[] yamlFiles = findYamlFiles(yaml);
-        ConfigurationExtension configurationExtension;
-        if (yamlFiles != null && yamlFiles.length > 0) {
-            configurationExtension = new YamlConfigurationExtension(yamlFiles);
+        ConfigurationExtension configurationExtension = ConfigurationExtensionFactory.createConfigurationExtension(yamlFiles);
+        if (configurationExtension != null) {
             configInteractionPolicy = configurationExtension.shouldProcessOperations(initialRunningMode) ? ConfigurationFile.InteractionPolicy.READ_ONLY : configInteractionPolicy;
-        } else {
-            configurationExtension = null;
         }
         this.runningModeControl = new RunningModeControl(this.initialRunningMode);
         this.startTime = startTime;

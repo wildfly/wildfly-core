@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.controller.persistence;
+package org.jboss.as.controller.persistence.yaml;
 
 import static org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker.CLI_SCRIPT_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -49,6 +49,7 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -81,12 +82,17 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
     private static final String[] EXCLUDED_ELEMENTS = {" deployment", "extension", "deployment-overlay"};
 
     @SuppressWarnings("unchecked")
-    public YamlConfigurationExtension(Path... files) {
-        this.files = files;
-        load();
+    public YamlConfigurationExtension() {
     }
 
-    private final void load() {
+    @Override
+    public ConfigurationExtension load(Path... files) {
+        this.files = files;
+        load();
+        return this;
+    }
+
+    private void load() {
         long start = System.currentTimeMillis();
         for (Path file : files) {
             if (file != null && Files.exists(file) && Files.isRegularFile(file)) {

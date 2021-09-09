@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.as.controller.persistence;
+package org.jboss.as.controller.persistence.yaml;
+
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
@@ -48,6 +49,8 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
+import org.jboss.as.controller.persistence.ConfigurationExtension;
+import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
@@ -142,7 +145,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testAddingNewResources() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(3, postExtensionOps.size());
@@ -163,7 +166,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testAddResourceOverwrite() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_overwrite.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_overwrite.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(2, postExtensionOps.size());
@@ -180,7 +183,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testRemoveAddNewResources() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_delete_add.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_delete_add.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(2, postExtensionOps.size());
@@ -204,7 +207,7 @@ public class YamlConfigurationExtensionTest {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
         postExtensionOps.add(new ParsedBootOp(Operations.createAddOperation(PathAddress.pathAddress("system-property", "aaa").toModelNode()), null));
         postExtensionOps.add(new ParsedBootOp(Operations.createAddOperation(PathAddress.pathAddress("system-property", "bbb").toModelNode()), null));
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(5, postExtensionOps.size());
@@ -236,7 +239,7 @@ public class YamlConfigurationExtensionTest {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
         postExtensionOps.add(new ParsedBootOp(Operations.createAddOperation(PathAddress.pathAddress("system-property", "aaa").toModelNode()), null));
         postExtensionOps.add(new ParsedBootOp(Operations.createAddOperation(PathAddress.pathAddress("system-property", "bbb").toModelNode()), null));
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_undefine.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_undefine.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(4, postExtensionOps.size());
@@ -262,7 +265,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testListAttribute() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_list.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_list.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(1, postExtensionOps.size());
@@ -284,7 +287,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testListMergeAttribute() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_list_merge.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_list_merge.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(1, postExtensionOps.size());
@@ -311,7 +314,7 @@ public class YamlConfigurationExtensionTest {
         listCreation.get("strings").add("first");
         listCreation.get("strings").add("second");
         postExtensionOps.add(new ParsedBootOp(listCreation, null));
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_list_add.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_list_add.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(3, postExtensionOps.size());
@@ -347,7 +350,7 @@ public class YamlConfigurationExtensionTest {
     @Test
     public void testRemoveUnexisitingResource() throws URISyntaxException {
         List<ParsedBootOp> postExtensionOps = new ArrayList<>();
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_remove.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_remove.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(3, postExtensionOps.size());
@@ -379,7 +382,7 @@ public class YamlConfigurationExtensionTest {
         ModelNode oldAcceptor = Operations.createAddOperation(PathAddress.pathAddress("connector", "old-connector").append("acceptor", "old-acceptor").toModelNode());
         oldAcceptor.get("type").set("acceptor");
         postExtensionOps.add(new ParsedBootOp(oldAcceptor, null));
-        YamlConfigurationExtension instance = new YamlConfigurationExtension(Paths.get(this.getClass().getResource("simple_remove.yml").toURI()));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_remove.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
         assertEquals(6, postExtensionOps.size());
