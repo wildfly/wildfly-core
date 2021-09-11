@@ -375,8 +375,10 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 throw new IllegalStateException();
             }
         }
-        for (final Node currentChild : currentChildren.values()) {
-            removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)), false);
+        if (currentChildren != null) {
+            for (final Node currentChild : currentChildren.values()) {
+                removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)), false);
+            }
         }
     }
 

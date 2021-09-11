@@ -478,6 +478,10 @@ public abstract class ElytronUtil {
         return null;
     }
 
+    public static boolean hasServerSSLContext(CommandContext context, String sslContextName) {
+        return getChildResource(sslContextName, Util.SERVER_SSL_CONTEXT, context) != null;
+    }
+
     public static ServerSSLContext getServerSSLContext(CommandContext context, String sslContextName) {
         ModelNode sslContext = getChildResource(sslContextName, Util.SERVER_SSL_CONTEXT, context);
         ServerSSLContext ctx = null;
@@ -607,7 +611,7 @@ public abstract class ElytronUtil {
                 for (String ksName : res.keys()) {
                     ModelNode ks = res.get(ksName);
                     AuthFactory fact = getAuthFactory(ks, ksName, spec, ctx);
-                    List<AuthMechanism> mecs = fact.getMechanisms();
+                    List<AuthMechanism> mecs = fact != null ? fact.getMechanisms() : Collections.emptyList();
                     if (mecs.isEmpty() || mecs.size() > 1) {
                         continue;
                     }

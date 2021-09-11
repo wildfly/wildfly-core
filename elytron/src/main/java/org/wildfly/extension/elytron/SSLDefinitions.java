@@ -1004,6 +1004,8 @@ class SSLDefinitions {
                         serviceContainer = getRequiredService(context.getServiceRegistry(false), serviceName, KeyManager.class);
                     } else if (serviceName.getParent().getCanonicalName().equals(TRUST_MANAGER_CAPABILITY)) {
                         serviceContainer = getRequiredService(context.getServiceRegistry(false), serviceName, TrustManager.class);
+                    } else {
+                        throw ROOT_LOGGER.invalidServiceNameParent(serviceName.getParent().getCanonicalName());
                     }
                     serviceContainer.getService().stop(null);
                     serviceContainer.getService().start(null);

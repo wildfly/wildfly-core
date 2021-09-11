@@ -52,7 +52,10 @@ public enum DirectoryGrouping {
     }
 
     public static DirectoryGrouping forName(String localName) {
-        final DirectoryGrouping directoryGrouping = localName != null ? MAP.get(localName.toLowerCase()) : null;
+        if (localName == null) {
+            return null;
+        }
+        final DirectoryGrouping directoryGrouping = MAP.get(localName.toLowerCase());
         return directoryGrouping == null ? DirectoryGrouping.valueOf(localName.toUpperCase(Locale.ENGLISH)) : directoryGrouping;
     }
 

@@ -92,6 +92,7 @@ public class Util {
     public static final String ALTERNATIVES = "alternatives";
     public static final String APPLICATION_REALM = "ApplicationRealm";
     public static final String APPLICATION_SECURITY_DOMAIN = "application-security-domain";
+    public static final String APPLICATION_SERVER_SSL_CONTEXT = "applicationSSC";
     public static final String ARCHIVE = "archive";
     public static final String ATTACHED_STREAMS = "attached-streams";
     public static final String ATTRIBUTES = "attributes";
@@ -770,6 +771,31 @@ public class Util {
             builder.setOperationName(Util.READ_CHILDREN_NAMES);
             builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
             builder.addProperty(Util.CHILD_TYPE, Util.SERVER);
+            request = builder.buildRequest();
+        } catch (OperationFormatException e) {
+            throw new IllegalStateException("Failed to build operation", e);
+        }
+
+        try {
+            final ModelNode outcome = client.execute(request);
+            if (isSuccess(outcome)) {
+                return getList(outcome);
+            }
+        } catch (Exception e) {
+        }
+
+        return Collections.emptyList();
+    }
+
+    public static List<String> getUndertowHTTSListeners(ModelControllerClient client, String serverName) {
+
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        final ModelNode request;
+        try {
+            builder.setOperationName(Util.READ_CHILDREN_NAMES);
+            builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+            builder.addNode(Util.SERVER, serverName);
+            builder.addProperty(Util.CHILD_TYPE, Util.HTTPS_LISTENER);
             request = builder.buildRequest();
         } catch (OperationFormatException e) {
             throw new IllegalStateException("Failed to build operation", e);

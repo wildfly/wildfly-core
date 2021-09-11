@@ -35,7 +35,8 @@ public class HTTPServer {
 
     public static final String DEFAULT_SERVER = "default-server";
 
-    public static void enableSSL(String serverName, boolean noOverride, CommandContext context, SSLSecurityBuilder builder) throws OperationFormatException {
+    public static void enableSSL(String serverName, boolean addHttpsListener, String listenerName,
+            String socketBinding, boolean noOverride, CommandContext context, SSLSecurityBuilder builder) throws OperationFormatException, IOException {
         if (serverName == null) {
             serverName = DefaultResourceNames.getDefaultServerName(context);
         }
@@ -43,8 +44,38 @@ public class HTTPServer {
             throw new OperationFormatException("No default server name found.");
         }
         final String sName = serverName;
-        if (!noOverride) {
-            builder.addStep(writeServerAttribute(serverName, Util.SECURITY_REALM, null),
+        if (addHttpsListener) {
+            if (!HTTPServer.hasHttpsListener(context, serverName, listenerName)) {
+                builder.addStep(addHttpsListener(serverName, listenerName, socketBinding, builder.getServerSSLContext().getName()), new SSLSecurityBuilder.FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Adding https-listener " + listenerName + " to server " + sName;
+                    }
+                });
+            } else {
+                builder.addStep(writeServerAttribute(serverName, listenerName, Util.SSL_CONTEXT,
+                        builder.getServerSSLContext().getName()), new SSLSecurityBuilder.FailureDescProvider() {
+                    @Override
+                    public String stepFailedDescription() {
+                        return "Writing "
+                                + Util.SSL_CONTEXT
+                                + " attribute on https-listener " + sName;
+                    }
+                });
+            }
+        } else {
+            builder.addStep(writeServerAttribute(serverName, listenerName, Util.SSL_CONTEXT,
+                    builder.getServerSSLContext().getName()), new SSLSecurityBuilder.FailureDescProvider() {
+                @Override
+                public String stepFailedDescription() {
+                    return "Writing "
+                            + Util.SSL_CONTEXT
+                            + " attribute on https-listener " + sName;
+                }
+            });
+        }
+        if (!noOverride && isLegacySecurityRealmSupported(context)) {
+            builder.addStep(writeServerAttribute(serverName, listenerName, Util.SECURITY_REALM, null),
                     new SSLSecurityBuilder.FailureDescProvider() {
                         @Override
                         public String stepFailedDescription() {
@@ -54,23 +85,14 @@ public class HTTPServer {
                 }
             });
         }
-        builder.addStep(writeServerAttribute(serverName, Util.SSL_CONTEXT,
-                builder.getServerSSLContext().getName()), new SSLSecurityBuilder.FailureDescProvider() {
-            @Override
-            public String stepFailedDescription() {
-                return "Writing "
-                        + Util.SSL_CONTEXT
-                        + " attribute on http-server " + sName;
-            }
-        });
     }
 
-    private static ModelNode writeServerAttribute(String serverName, String name, String value) throws OperationFormatException {
+    private static ModelNode writeServerAttribute(String serverName, String httpsListener, String name, String value) throws OperationFormatException {
         DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
         builder.setOperationName(Util.WRITE_ATTRIBUTE);
         builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
         builder.addNode(Util.SERVER, serverName);
-        builder.addNode(Util.HTTPS_LISTENER, Util.HTTPS);
+        builder.addNode(Util.HTTPS_LISTENER, httpsListener);
         builder.addProperty(Util.NAME, name);
         if (value != null) {
             builder.addProperty(Util.VALUE, value);
@@ -78,22 +100,37 @@ public class HTTPServer {
         return builder.buildRequest();
     }
 
-    public static String disableSSL(CommandContext context, String serverName, ModelNode steps) throws OperationFormatException {
+    public static String disableSSL(CommandContext context, String serverName, boolean removeHttpsListener,
+            String httpsListener, String defaultAppSSLContext, ModelNode steps) throws OperationFormatException, IOException {
         if (serverName == null) {
             serverName = DefaultResourceNames.getDefaultServerName(context);
         }
-        steps.add(writeServerAttribute(serverName, Util.SSL_CONTEXT, null));
-        steps.add(writeServerAttribute(serverName, Util.SECURITY_REALM, DefaultResourceNames.getDefaultApplicationLegacyRealm()));
+        if (removeHttpsListener) {
+            // New behavior, remove the https listener.
+            steps.add(removeHttpsListener(context, serverName, httpsListener));
+        } else {
+            if (isLegacySecurityRealmSupported(context)) {
+                steps.add(writeServerAttribute(serverName, httpsListener, Util.SSL_CONTEXT, null));
+                steps.add(writeServerAttribute(serverName, httpsListener, Util.SECURITY_REALM, DefaultResourceNames.getDefaultApplicationLegacyRealm()));
+            } else {
+               if (ElytronUtil.hasServerSSLContext(context, defaultAppSSLContext)) {
+                   steps.add(writeServerAttribute(serverName, httpsListener, Util.SSL_CONTEXT,
+                    defaultAppSSLContext));
+               } else {
+                   throw new OperationFormatException("No "+ defaultAppSSLContext + " default SSL Context to use.");
+               }
+            }
+        }
         return serverName;
     }
 
-    public static String getSSLContextName(String serverName, CommandContext ctx) throws IOException, OperationFormatException {
+    public static String getSSLContextName(String serverName, String httpsListener, CommandContext ctx) throws IOException, OperationFormatException {
         final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
         final ModelNode request;
         builder.setOperationName(Util.READ_ATTRIBUTE);
         builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
         builder.addNode(Util.SERVER, serverName);
-        builder.addNode(Util.HTTPS_LISTENER, Util.HTTPS);
+        builder.addNode(Util.HTTPS_LISTENER, httpsListener);
         builder.addProperty(Util.NAME, Util.SSL_CONTEXT);
         request = builder.buildRequest();
 
@@ -150,6 +187,45 @@ public class HTTPServer {
             }
         }
         return false;
+    }
+
+    public static boolean isLegacySecurityRealmSupported(CommandContext commandContext) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.READ_RESOURCE_DESCRIPTION);
+        builder.addNode(Util.CORE_SERVICE, Util.MANAGEMENT);
+        builder.addNode(Util.SECURITY_REALM, "?");
+        ModelNode response = commandContext.getModelControllerClient().execute(builder.buildRequest());
+        return Util.isSuccess(response);
+    }
+
+    public static boolean hasHttpsListener(CommandContext commandContext, String serverName, String httpsListener) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.READ_RESOURCE);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.SERVER, serverName);
+        builder.addNode(Util.HTTPS_LISTENER, httpsListener);
+        ModelNode response = commandContext.getModelControllerClient().execute(builder.buildRequest());
+        return Util.isSuccess(response);
+    }
+
+    public static ModelNode addHttpsListener(String serverName, String httpsListenerName, String socketBindingName, String sslContext) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.ADD);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.SERVER, serverName);
+        builder.addNode(Util.HTTPS_LISTENER, httpsListenerName);
+        builder.addProperty(Util.SOCKET_BINDING, socketBindingName);
+        builder.addProperty(Util.SSL_CONTEXT, sslContext);
+        return builder.buildRequest();
+    }
+
+    public static ModelNode removeHttpsListener(CommandContext commandContext, String serverName, String httpsListener) throws IOException, OperationFormatException {
+        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
+        builder.setOperationName(Util.REMOVE);
+        builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
+        builder.addNode(Util.SERVER, serverName);
+        builder.addNode(Util.HTTPS_LISTENER, httpsListener);
+        return builder.buildRequest();
     }
 
     public static ApplicationSecurityDomain getSecurityDomain(CommandContext ctx, String name) throws OperationFormatException, IOException {
