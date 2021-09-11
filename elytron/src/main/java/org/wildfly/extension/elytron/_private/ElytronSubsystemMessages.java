@@ -332,6 +332,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 43, value = "A cycle has been detected initialising the resources - %s")
     OperationFailedException cycleDetected(String cycle);
 
+    @Message(id = 44, value = "Unexpected name of servicename's parent - %s")
+    IllegalStateException invalidServiceNameParent(String canonicalName);
+
     /*
      * Credential Store Section.
      */
@@ -639,6 +642,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1087, value = "Hostname in SNI mapping cannot contain ^ character.")
     OperationFailedException hostContextMapHostnameContainsCaret();
+
+    @Message(id = 1088, value = "Missing certificate authority challenge")
+    AcmeException missingCertificateAuthorityChallenge();
 
     /*
      * Expression Resolver Section
