@@ -66,9 +66,8 @@ public class ElytronExtension implements Extension {
     static final String NAMESPACE_12_0 = "urn:wildfly:elytron:12.0";
     static final String NAMESPACE_13_0 = "urn:wildfly:elytron:13.0";
     static final String NAMESPACE_14_0 = "urn:wildfly:elytron:14.0";
-    static final String NAMESPACE_15_0 = "urn:wildfly:elytron:15.0";
 
-    static final String CURRENT_NAMESPACE = NAMESPACE_15_0;
+    static final String CURRENT_NAMESPACE = NAMESPACE_14_0;
 
     /**
      * The name of our subsystem within the model.
@@ -95,9 +94,8 @@ public class ElytronExtension implements Extension {
     static final ModelVersion ELYTRON_12_0_0 = ModelVersion.create(12);
     static final ModelVersion ELYTRON_13_0_0 = ModelVersion.create(13);
     static final ModelVersion ELYTRON_14_0_0 = ModelVersion.create(14);
-    static final ModelVersion ELYTRON_15_0_0 = ModelVersion.create(15);
 
-    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_15_0_0;
+    private static final ModelVersion ELYTRON_CURRENT = ELYTRON_14_0_0;
 
     static final String ISO_8601_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
@@ -143,7 +141,6 @@ public class ElytronExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_12_0, () -> new ElytronSubsystemParser12_0());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_13_0, () -> new ElytronSubsystemParser13_0());
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_14_0, () -> new ElytronSubsystemParser14_0());
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, NAMESPACE_15_0, () -> new ElytronSubsystemParser15_0());
     }
 
     @Override
@@ -156,7 +153,7 @@ public class ElytronExtension implements Extension {
         final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
-        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser15_0());
+        subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser14_0());
     }
 
     @SuppressWarnings("unchecked")
