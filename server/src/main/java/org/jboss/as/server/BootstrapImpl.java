@@ -88,7 +88,7 @@ final class BootstrapImpl implements Bootstrap {
     private AsyncFuture<ServiceContainer> internalBootstrap(final Configuration configuration, final List<ServiceActivator> extraServices) {
         try {
             final Object value = ManagementFactory.getPlatformMBeanServer().getAttribute(new ObjectName("java.lang", "type", "OperatingSystem"), "MaxFileDescriptorCount");
-            final long fdCount = Long.valueOf(value.toString()).longValue();
+            final long fdCount = Long.parseLong(value.toString());
             if (fdCount < 4096L) {
                 ServerLogger.FD_LIMIT_LOGGER.fdTooLow(fdCount);
             }
