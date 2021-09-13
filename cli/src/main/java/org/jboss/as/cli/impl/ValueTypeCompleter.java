@@ -174,18 +174,6 @@ public class ValueTypeCompleter implements CommandLineCompleter {
         public String asString() {
             return null;
         }
-
-        private boolean contains(String p) {
-            boolean found = false;
-            for (Property prop : properties) {
-                if (prop.name != null && prop.name.equals(p)
-                        && prop.value != null) {
-                    found = true;
-                    break;
-                }
-            }
-            return found;
-        }
     }
 
     private static class ListInstance extends Instance {

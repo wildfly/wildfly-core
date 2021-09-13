@@ -402,6 +402,6 @@ class PropertiesFileLoader {
      * @param properties - The Properties instance to verify.
      */
     protected void verifyProperties(Properties properties) throws IOException {
-    };
+    }
 
 }

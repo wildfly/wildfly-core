@@ -77,5 +77,5 @@ public class PropertyState extends ExpressionBaseState {
             setReturnHandler(GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
             setIgnoreWhitespaces(true);
         }
-    };
+    }
 }

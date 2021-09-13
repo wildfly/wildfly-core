@@ -265,7 +265,7 @@ public class GlobalTransformerRegistry {
             }
             return null;
         }
-    };
+    }
 
     private SubRegistry getOrCreate(final String key) {
         for (;;) {

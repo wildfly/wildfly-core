@@ -51,7 +51,7 @@ public interface ModelNodeFormatter {
         }
 
         abstract void formatDefined(StringBuilder buf, int newLineOffset, ModelNode value);
-    };
+    }
 
     ModelNodeFormatterBase DEFAULT = new ModelNodeFormatterBase(){
         @Override

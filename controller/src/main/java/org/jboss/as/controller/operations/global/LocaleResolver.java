@@ -32,7 +32,7 @@ public final class LocaleResolver {
 
     private static final String ENGLISH = new Locale("en").getLanguage();
 
-    private LocaleResolver(){};
+    private LocaleResolver(){}
 
     static Locale resolveLocale(String unparsed) throws IllegalArgumentException {
         Locale locale = forLanguageTag(unparsed);

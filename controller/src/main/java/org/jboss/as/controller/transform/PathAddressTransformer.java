@@ -176,7 +176,7 @@ public interface PathAddressTransformer {
             } else {
                 return original;
             }
-        };
+        }
 
     }
 

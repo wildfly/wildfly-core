@@ -471,23 +471,6 @@ public class OperationDialog extends JDialog {
             return new JComboBox(valueVector);
         }
 
-        // fill in form fields for write-attribute when an attribute node is selected.
-        private void setWriteAttributeValues() {
-            if (!OperationDialog.this.node.isLeaf()) return;
-            if (!OperationDialog.this.opName.equals("write-attribute")) return;
-
-            UserObject usrObj = (UserObject)OperationDialog.this.node.getUserObject();
-
-            if (this.name.equals("name")) {
-                ((JTextField)valueComponent).setText(usrObj.getName());
-                return;
-            }
-
-            if (usrObj.getValue().equals("undefined")) return;
-
-            if (this.name.equals("value")) ((JTextField)valueComponent).setText(usrObj.getValue());
-        }
-
         @Override
         public int compareTo(Object t) {
             if (this.equals(t)) return 0;

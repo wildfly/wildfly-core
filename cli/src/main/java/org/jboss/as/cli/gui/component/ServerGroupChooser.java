@@ -39,7 +39,7 @@ import org.jboss.dmr.ModelNode;
 public class ServerGroupChooser extends JPanel {
 
     private List<JCheckBox> serverGroups = new ArrayList<JCheckBox>();
-    private JPanel serverGroupsPanel = new JPanel(new FlowLayout());;
+    private JPanel serverGroupsPanel = new JPanel(new FlowLayout());
 
     public ServerGroupChooser(CliGuiContext cliGuiCtx) {
         setLayout(new BorderLayout());

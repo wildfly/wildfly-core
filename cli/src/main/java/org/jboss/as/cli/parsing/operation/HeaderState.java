@@ -79,5 +79,5 @@ public class HeaderState extends DefaultParsingState {
             setReturnHandler(GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
             setIgnoreWhitespaces(true);
         }
-    };
+    }
 }

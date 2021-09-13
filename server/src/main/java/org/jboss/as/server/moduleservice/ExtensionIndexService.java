@@ -38,9 +38,6 @@ import java.util.jar.Manifest;
 import org.jboss.as.server.deployment.module.ExtensionInfo;
 import org.jboss.logging.Logger;
 import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleSpec;
-import org.jboss.modules.ResourceLoaderSpec;
-import org.jboss.modules.ResourceLoaders;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -277,11 +274,6 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             s1 = e1 + 1;
             s2 = e2 + 1;
         }
-    }
-
-    private static void addResourceRoot(final ModuleSpec.Builder specBuilder, String name, JarFile jarFile) {
-        specBuilder.addResourceRoot(ResourceLoaderSpec.createResourceLoaderSpec(ResourceLoaders.createJarResourceLoader(name,
-                jarFile)));
     }
 
     static class ExtensionJar {

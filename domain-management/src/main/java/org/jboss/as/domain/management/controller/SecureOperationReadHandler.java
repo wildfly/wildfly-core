@@ -22,14 +22,10 @@
 
 package org.jboss.as.domain.management.controller;
 
-import java.util.EnumSet;
-import java.util.Set;
-
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.management.AuthorizedAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.dmr.ModelNode;
@@ -44,7 +40,6 @@ import org.jboss.dmr.ModelNode;
 public class SecureOperationReadHandler implements OperationStepHandler {
 
     private static final String HIDDEN = "<hidden>";
-    private static final Set<Action.ActionEffect> ADDRESS_EFFECT = EnumSet.of(Action.ActionEffect.ADDRESS);
 
     static final OperationStepHandler INSTANCE = new SecureOperationReadHandler();
 

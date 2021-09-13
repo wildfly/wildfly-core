@@ -1541,9 +1541,6 @@ public class DomainModelControllerService extends AbstractControllerService impl
             super.setResult(inventory);
         }
 
-        private void setFailure(final Throwable t) {
-            super.setFailed(t);
-        }
     }
 
     // this is a placeholder object used in certain cases where the live inventory is not available

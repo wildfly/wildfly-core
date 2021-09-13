@@ -2140,11 +2140,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             this.password = password;
         }
 
-        private AuthenticationCallbackHandler(String username, String digest) {
-            this.username = username;
-            this.digest = digest;
-        }
-
         @Override
         public void handle(final Callback[] callbacks) throws IOException, UnsupportedCallbackException {
             try {

@@ -1341,7 +1341,7 @@ public class GenericTypeOperationHandler extends BatchModeCommandHandler {
 
             return composite;
         }
-    };
+    }
 
     class OpHandler extends ActionHandler {
 

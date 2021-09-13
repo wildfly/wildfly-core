@@ -16,14 +16,11 @@ limitations under the License.
 package org.jboss.as.cli.impl.aesh.cmd.security.model;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import static org.jboss.as.cli.Util.isSuccess;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
-import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -142,29 +139,6 @@ public class HTTPServer {
         }
 
         return null;
-    }
-
-    private static List<String> getNames(ModelControllerClient client, String type) {
-        final DefaultOperationRequestBuilder builder = new DefaultOperationRequestBuilder();
-        final ModelNode request;
-        try {
-            builder.setOperationName(Util.READ_CHILDREN_NAMES);
-            builder.addNode(Util.SUBSYSTEM, Util.UNDERTOW);
-            builder.addProperty(Util.CHILD_TYPE, type);
-            request = builder.buildRequest();
-        } catch (OperationFormatException e) {
-            throw new IllegalStateException("Failed to build operation", e);
-        }
-
-        try {
-            final ModelNode outcome = client.execute(request);
-            if (Util.isSuccess(outcome)) {
-                return Util.getList(outcome);
-            }
-        } catch (Exception e) {
-        }
-
-        return Collections.emptyList();
     }
 
     public static boolean isUnderowSupported(CommandContext commandContext) throws IOException, OperationFormatException {

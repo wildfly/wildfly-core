@@ -46,7 +46,7 @@ public class DeferredPermissionFactory implements PermissionFactory {
         DEPLOYMENT,
         MAXIMUM_SET,
         MINIMUM_SET,
-    };
+    }
 
     public DeferredPermissionFactory(Type type, ModuleLoader moduleLoader, String moduleName, String permissionClass, String permissionName, String permissionActions) {
         this.type = checkNotNullParam("type", type);

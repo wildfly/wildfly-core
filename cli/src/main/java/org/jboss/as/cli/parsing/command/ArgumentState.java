@@ -100,5 +100,5 @@ public class ArgumentState extends DefaultParsingState {
             setReturnHandler(GlobalCharacterHandlers.LEAVE_STATE_HANDLER);
             setIgnoreWhitespaces(true);
         }
-    };
+    }
 }

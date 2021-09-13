@@ -73,17 +73,7 @@ class EmbedHostControllerHandler extends CommandHandlerWithHelp {
 
     private static final String JBOSS_DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     private static final String JBOSS_DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
-    private static final String JBOSS_DOMAIN_CONTENT_DIR = "jboss.domain.content.dir";
-    private static final String JBOSS_DOMAIN_DEPLOYMENT_DIR = "jboss.domain.deployment.dir";
-    private static final String JBOSS_DOMAIN_TEMP_DIR = "jboss.domain.temp.dir";
     private static final String JBOSS_DOMAIN_LOG_DIR = "jboss.domain.log.dir";
-    private static final String JBOSS_DOMAIN_DATA_DIR = "jboss.domain.data.dir";
-    private static final String JBOSS_CONTROLLER_TEMP_DIR = "jboss.controller.temp.dir";
-
-    private static final String[] HOST_CONTROLLER_PROPS = {
-            JBOSS_DOMAIN_BASE_DIR, JBOSS_DOMAIN_CONFIG_DIR, JBOSS_DOMAIN_CONTENT_DIR, JBOSS_DOMAIN_DEPLOYMENT_DIR, JBOSS_DOMAIN_TEMP_DIR,
-            JBOSS_DOMAIN_LOG_DIR, JBOSS_DOMAIN_DATA_DIR
-    };
 
     private final AtomicReference<EmbeddedProcessLaunch> hostControllerReference;
     private ArgumentWithValue jbossHome;

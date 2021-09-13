@@ -45,14 +45,14 @@ public class PatchInfo extends AbstractDistributionCommand {
         public NoStreamsActivator() {
             super("streams");
         }
-    };
+    }
 
     public static class NoPatchIdActivator extends AbstractRejectOptionActivator {
 
         public NoPatchIdActivator() {
             super("");
         }
-    };
+    }
 
     public static class PatchIdNoStreamsActivator extends AbstractDependRejectOptionActivator {
 
