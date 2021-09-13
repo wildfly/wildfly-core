@@ -452,9 +452,9 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
          */
         public OrderedResourceCreator(boolean indexedAdd, String... orderedChildTypes) {
             this.indexedAdd = indexedAdd;
-            Set<String> set = new HashSet<String>(orderedChildTypes.length);
-            for (String type : orderedChildTypes) {
-                set.add(type);
+            Set<String> set = Collections.emptySet();
+            if (orderedChildTypes != null && orderedChildTypes.length > 0) {
+                set = new HashSet<String>(Arrays.asList(orderedChildTypes));
             }
             this.orderedChildTypes = set;
         }

@@ -25,6 +25,7 @@ package org.jboss.as.controller.registry;
 import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -82,11 +83,7 @@ public abstract class AbstractModelResource extends ResourceProvider.ResourcePro
         if (array.length == 0) {
             set = Collections.emptySet();
         } else {
-            set = new HashSet<String>();
-            for (String type : array) {
-                set.add(type);
-            }
-            set = Collections.unmodifiableSet(set);
+            set = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(array)));
         }
         return set;
     }

@@ -142,8 +142,8 @@ public class PathAddress implements Iterable<PathElement> {
 
     public static PathAddress pathAddress(PathAddress parent, PathElement... elements) {
         List<PathElement> list = new ArrayList<PathElement>(parent.pathAddressList);
-        for (PathElement element : elements) {
-            list.add(element);
+        if (elements != null && elements.length > 0) {
+            Collections.addAll(list, elements);
         }
         return pathAddress(list);
     }

@@ -23,6 +23,7 @@
 package org.jboss.as.controller.operations.validation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -59,8 +60,8 @@ public class TimeUnitValidator extends ModelTypeValidator implements AllowedValu
     public TimeUnitValidator(final boolean nullable, final boolean allowExpressions, final TimeUnit... allowed) {
         super(ModelType.STRING, nullable, allowExpressions);
         allowedValues = EnumSet.noneOf(TimeUnit.class);
-        for (TimeUnit tu : allowed) {
-            allowedValues.add(tu);
+        if (allowed != null && allowed.length > 0) {
+            Collections.addAll(allowedValues, allowed);
         }
     }
 
