@@ -357,8 +357,8 @@ public class FailedOperationTransformationConfig {
         protected abstract boolean isAttributeWritable(String attributeName);
 
         public AttributesPathAddressConfig<T> setNotExpectedWriteFailure(String...attributes) {
-            for (String attr : attributes) {
-                noWriteFailureAttributes.add(attr);
+            if (attributes != null && attributes.length > 0) {
+                Collections.addAll(noWriteFailureAttributes, attributes);
             }
             return this;
         }
@@ -371,8 +371,8 @@ public class FailedOperationTransformationConfig {
         }
 
         public AttributesPathAddressConfig<T> setReadOnly(String...attributes) {
-            for (String attr : attributes) {
-                readOnlyAttributes.add(attr);
+            if (attributes != null && attributes.length > 0) {
+                Collections.addAll(readOnlyAttributes, attributes);
             }
             return this;
         }
