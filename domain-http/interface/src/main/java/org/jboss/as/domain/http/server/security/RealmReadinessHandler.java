@@ -47,7 +47,7 @@ abstract class RealmReadinessHandler implements HttpHandler {
 
     @Override
     public void handleRequest(HttpServerExchange exchange) throws Exception {
-        if (readyFunction.apply(exchange)) {
+        if (Boolean.TRUE.equals(readyFunction.apply(exchange))) {
             next.handleRequest(exchange);
         } else {
             try {
