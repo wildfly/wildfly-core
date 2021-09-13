@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -64,10 +65,8 @@ public class PatchReenableJarTool {
 
     static void findJars(final File moduleRoot, final List<File> jars) {
         final File[] files = moduleRoot.listFiles(JAR_FILTER);
-        if (files != null) {
-            for (final File jar : files) {
-                jars.add(jar);
-            }
+        if (files != null && files.length > 0 && jars != null) {
+            Collections.addAll(jars, files);
         }
     }
 

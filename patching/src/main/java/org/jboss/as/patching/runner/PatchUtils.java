@@ -39,6 +39,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -76,11 +77,7 @@ public final class PatchUtils {
             return Collections.emptyList();
         } else {
             final String[] names = layersProp.split(",");
-            final List<String> patches = new ArrayList<String>();
-            for (final String name : names) {
-                patches.add(name);
-            }
-            return Collections.unmodifiableList(patches);
+            return Collections.unmodifiableList(Arrays.asList(names));
         }
     }
 
