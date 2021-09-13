@@ -58,8 +58,6 @@ class RemotingSubsystem12Parser extends RemotingSubsystem11Parser implements XML
         String name = null;
         String securityRealm = null;
         String socketBinding = null;
-        String serverName = null;
-        String saslProtocol = null;
         final EnumSet<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.SOCKET_BINDING);
         final int count = reader.getAttributeCount();
         final ModelNode connector = new ModelNode();
@@ -105,12 +103,6 @@ class RemotingSubsystem12Parser extends RemotingSubsystem11Parser implements XML
         connector.get(SOCKET_BINDING).set(socketBinding);
         if (securityRealm != null) {
             connector.get(SECURITY_REALM).set(securityRealm);
-        }
-        if (serverName != null) {
-            connector.get(SERVER_NAME).set(serverName);
-        }
-        if (saslProtocol != null) {
-            connector.get(SASL_PROTOCOL).set(saslProtocol);
         }
         list.add(connector);
 
