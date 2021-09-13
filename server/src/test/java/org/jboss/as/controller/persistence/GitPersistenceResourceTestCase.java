@@ -46,7 +46,7 @@ public class GitPersistenceResourceTestCase extends AbstractGitPersistenceResour
         File baseDir = root.toAbsolutePath().toFile();
         File gitDir = new File(baseDir, Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(baseDir).setGitDir(gitDir).call()) {
+            try (Git git = Git.init().setDirectory(baseDir).setGitDir(gitDir).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
