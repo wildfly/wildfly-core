@@ -568,13 +568,13 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         }
 
         private boolean sendResultToHost(ModelController.OperationTransaction transaction, final ModelNode result) {
-            final Boolean registered = executeBlocking(new IOTask<Boolean>() {
+            final boolean registered = executeBlocking(new IOTask<Boolean>() {
                 @Override
                 void sendMessage(final FlushableDataOutput output) throws IOException {
                     sendResponse(output, DomainControllerProtocol.PARAM_OK, result);
                 }
             });
-            if(! registered) {
+            if (!registered) {
                 transaction.rollback();
                 return true;
             }

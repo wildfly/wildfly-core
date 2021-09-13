@@ -76,7 +76,7 @@ public class JvmXml {
     private static String parseJvmAttributes(XMLExtendedStreamReader reader, ModelNode addOp, Set<String> jvmNames, boolean server) throws XMLStreamException {
         // Handle attributes
         String name = null;
-        Boolean debugEnabled = null;
+        boolean debugEnabled = false;
         String debugOptions = null;
         final int count = reader.getAttributeCount();
         for (int i = 0; i < count; i++) {
@@ -113,7 +113,7 @@ public class JvmXml {
                         if (!server) {
                             throw ParseUtils.unexpectedAttribute(reader, i);
                         }
-                        debugEnabled = Boolean.valueOf(value);
+                        debugEnabled = Boolean.parseBoolean(value);
                         JvmAttributes.DEBUG_ENABLED.parseAndSetParameter(value, addOp, reader);
                         break;
                     }
@@ -141,7 +141,7 @@ public class JvmXml {
             // domain and host levels aren't mixed in. OR make name required in xsd always
             throw ParseUtils.missingRequired(reader, Collections.singleton(Attribute.NAME));
         }
-        if (debugEnabled != null && debugOptions == null && debugEnabled) {
+        if (debugEnabled && debugOptions == null) {
             throw ParseUtils.missingRequired(reader, EnumSet.of(Attribute.DEBUG_OPTIONS));
         }
 
