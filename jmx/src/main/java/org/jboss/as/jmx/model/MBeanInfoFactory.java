@@ -392,8 +392,8 @@ public class MBeanInfoFactory {
     private Descriptor createAttributeDescriptor(ModelNode attribute) {
         Map<String, String> descriptions = new HashMap<String, String>();
         addMBeanExpressionSupport(descriptions);
-        Boolean allowExpressions = attribute.hasDefined(EXPRESSIONS_ALLOWED) && attribute.get(EXPRESSIONS_ALLOWED).asBoolean();
-        descriptions.put(DESC_EXPRESSIONS_ALLOWED, allowExpressions.toString());
+        boolean allowExpressions = attribute.hasDefined(EXPRESSIONS_ALLOWED) && attribute.get(EXPRESSIONS_ALLOWED).asBoolean();
+        descriptions.put(DESC_EXPRESSIONS_ALLOWED, Boolean.toString(allowExpressions));
         descriptions.put(DESC_EXPRESSIONS_ALLOWED_DESC, allowExpressions ?
                 JmxLogger.ROOT_LOGGER.descriptorAttributeExpressionsAllowedTrue() : JmxLogger.ROOT_LOGGER.descriptorAttributeExpressionsAllowedFalse());
         return new ImmutableDescriptor(descriptions);
