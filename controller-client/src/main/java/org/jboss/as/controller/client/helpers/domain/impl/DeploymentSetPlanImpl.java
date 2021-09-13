@@ -112,7 +112,7 @@ public class DeploymentSetPlanImpl implements DeploymentSetPlan, Serializable {
     @Override
     public List<Set<ServerGroupDeploymentPlan>> getServerGroupDeploymentPlans() {
         List<Set<ServerGroupDeploymentPlan>> copy = null;
-        if (serverGroupPlans != null) {
+        if (serverGroupPlans != null && !serverGroupPlans.isEmpty()) {
             copy = new ArrayList<Set<ServerGroupDeploymentPlan>>(serverGroupPlans.size());
             for (Set<ServerGroupDeploymentPlan> set : serverGroupPlans) {
                 copy.add(Collections.unmodifiableSet(new LinkedHashSet<ServerGroupDeploymentPlan>(set)));
