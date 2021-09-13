@@ -107,7 +107,7 @@ public class RuntimeCapability<T> extends AbstractCapability  {
         this.serviceValueType = serviceValueType;
         if (serviceValueType != null) {
             Assert.assertNotNull(baseServiceName);
-            this.serviceName = dynamicElement == null ? baseServiceName : baseServiceName.append(dynamicElement);
+            this.serviceName = baseServiceName.append(dynamicElement);
         } else {
             assert baseServiceName == null;
         }

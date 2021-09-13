@@ -60,39 +60,34 @@ public class DeferredExtensionContext {
         if (!loaded) {
             loaded = true;
 
-            final Map<String, Future<XMLStreamException>> loadFutures = bootExecutor != null
-                    ? new LinkedHashMap<String, Future<XMLStreamException>>() : null;
+            final Map<String, Future<Void>> loadFutures = bootExecutor != null
+                    ? new LinkedHashMap<String, Future<Void>>() : null;
 
             for(ExtensionData extension : extensions) {
                 String moduleName = extension.moduleName;
                 XMLMapper xmlMapper = extension.xmlMapper;
                 if (loadFutures != null) {
                     // Load the module asynchronously
-                    Callable<XMLStreamException> callable = new Callable<XMLStreamException>() {
+                    Callable<Void> callable = new Callable<Void>() {
                         @Override
-                        public XMLStreamException call() throws Exception {
-                            return loadModule(moduleName, xmlMapper);
+                        public Void call() throws Exception {
+                            loadModule(moduleName, xmlMapper);
+                            return null;
                         }
                     };
-                    Future<XMLStreamException> future = bootExecutor.submit(callable);
+                    Future<Void> future = bootExecutor.submit(callable);
                     loadFutures.put(moduleName, future);
                 } else {
                     // Load the module from this thread
-                    XMLStreamException xse = loadModule(moduleName, xmlMapper);
-                    if (xse != null) {
-                        throw xse;
-                    }
+                    loadModule(moduleName, xmlMapper);
                 }
             }
 
             if (loadFutures != null) {
-                for (Map.Entry<String, Future<XMLStreamException>> entry : loadFutures.entrySet()) {
+                for (Map.Entry<String, Future<Void>> entry : loadFutures.entrySet()) {
 
                     try {
-                        XMLStreamException xse = entry.getValue().get();
-                        if (xse != null) {
-                            throw xse;
-                        }
+                        entry.getValue().get();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw ControllerLogger.ROOT_LOGGER.moduleLoadingInterrupted(entry.getKey());
@@ -105,7 +100,7 @@ public class DeferredExtensionContext {
 
     }
 
-    private XMLStreamException loadModule(final String moduleName, final XMLMapper xmlMapper) throws XMLStreamException {
+    private void loadModule(final String moduleName, final XMLMapper xmlMapper) throws XMLStreamException {
         // Register element handlers for this extension
         try {
             final Module module = moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName));
@@ -124,7 +119,6 @@ public class DeferredExtensionContext {
             if (!initialized) {
                 throw ControllerLogger.ROOT_LOGGER.notFound("META-INF/services/", Extension.class.getName(), module.getName());
             }
-            return null;
         } catch (final ModuleLoadException e) {
             throw ControllerLogger.ROOT_LOGGER.failedToLoadModule(e);
         }
