@@ -879,12 +879,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     }
 
     private void configureBundlesDir(String dirPath, Properties providedProperties) {
-        boolean haveDirProperty = dirPath != null;
         File tmp = getFileFromPath(dirPath);
         if (tmp == null) {
-            if (haveDirProperty) {
-                throw ServerLogger.ROOT_LOGGER.bundlesDirectoryDoesNotExist(new File(dirPath).getAbsoluteFile());
-            }
             providedProperties.remove(BUNDLES_DIR);
             tmp = new File(homeDir, "bundles");
         } else {
