@@ -45,11 +45,11 @@ class OrOperation extends BaseOperation {
             if(!(value instanceof Boolean)) {
                 throw new CommandFormatException("Expected boolean value from " + operand + " but received " + value);
             }
-            if(((Boolean)value)) {
-                return true;
+            if (((Boolean)value)) {
+                return Boolean.TRUE;
             }
         }
-        return false;
+        return Boolean.FALSE;
     }
 
     @Override

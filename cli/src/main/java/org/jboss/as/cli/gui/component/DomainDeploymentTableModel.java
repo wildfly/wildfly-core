@@ -67,7 +67,7 @@ public class DomainDeploymentTableModel extends StandaloneDeploymentTableModel {
 
             List<String> serverGroups = (List<String>)deployment[2];
 
-            Boolean enabled = deploymentNode.get("enabled").asBoolean();
+            boolean enabled = deploymentNode.get("enabled").asBoolean();
             if (!enabled) serverGroup += " (disabled)";
             serverGroups.add(serverGroup);
         }
