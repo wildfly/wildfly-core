@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.jboss.as.cli.operation.OperationRequestAddress;
 
@@ -154,6 +155,9 @@ public class DefaultOperationRequestAddress implements OperationRequestAddress {
 
             @Override
             public Node next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 return array[i++];
             }
 
