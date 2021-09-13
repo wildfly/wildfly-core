@@ -557,7 +557,7 @@ public class DeploymentAttributes {
         public void validateParameter(String parameterName, ModelNode contentItemNode) throws OperationFailedException {
             for (String key : contentItemNode.keys()){
                 boolean managedAttr = true;
-                if (CONTENT_ARCHIVE.equals(key)) {
+                if (CONTENT_ARCHIVE.getName().equals(key)) {
                     continue;
                 }
                 AttributeDefinition def = MANAGED_CONTENT_ATTRIBUTES.get(key);
