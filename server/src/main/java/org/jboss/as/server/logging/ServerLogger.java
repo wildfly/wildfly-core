@@ -232,12 +232,12 @@ public interface ServerLogger extends BasicLogger {
     void cannotAddURLStreamHandlerFactory(@Cause Exception cause, String moduleID);
 
     @LogMessage(level = INFO)
-    @Message(id = 25, value = "%s started in %dms - Started %d of %d services (%d services are lazy, passive or on-demand)")
-    void startedClean(String prettyVersionString, long time, int startedServices, int allServices, int passiveOnDemandServices);
+    @Message(id = 25, value = "%s started in %dms - Started %d of %d services (%d services are lazy, passive or on-demand) %s")
+    void startedClean(String prettyVersionString, long time, int startedServices, int allServices, int passiveOnDemandServices, String append);
 
     @LogMessage(level = ERROR)
-    @Message(id = 26, value = "%s started (with errors) in %dms - Started %d of %d services (%d services failed or missing dependencies, %d services are lazy, passive or on-demand)")
-    void startedWitErrors(String prettyVersionString, long time, int startedServices, int allServices, int problemServices, int passiveOnDemandServices);
+    @Message(id = 26, value = "%s started (with errors) in %dms - Started %d of %d services (%d services failed or missing dependencies, %d services are lazy, passive or on-demand) %s")
+    void startedWitErrors(String prettyVersionString, long time, int startedServices, int allServices, int problemServices, int passiveOnDemandServices, String append);
 
     @LogMessage(level = INFO)
     @Message(id = 27, value = "Starting deployment of \"%s\" (runtime-name: \"%s\")")
@@ -367,8 +367,8 @@ public interface ServerLogger extends BasicLogger {
     void caughtExceptionDuringBoot(@Cause Exception e);
 
 
-    @Message(id = 56, value = "Server boot has failed in an unrecoverable manner; exiting. See previous messages for details.")
-    String unsuccessfulBoot();
+    @Message(id = 56, value = "Server boot has failed in an unrecoverable manner; exiting. See previous messages for details. %s")
+    String unsuccessfulBoot(String append);
 
     /**
      * Logs an error message indicating the content for a configured deployment was unavailable at boot but boot
@@ -1412,4 +1412,6 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = Message.NONE, value = "Adding .gitignore")
     String addingIgnored();
 
+    @Message(id = Message.NONE, value = "- Server configuration file in use: %s")
+    String serverConfigFileInUse(String serverConfigFile);
 }
