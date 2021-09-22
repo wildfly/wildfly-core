@@ -70,7 +70,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
         public void handleMessage(final Connection connection, final InputStream dataStream) throws IOException {
             final int cmd = readUnsignedByte(dataStream);
             if (cmd != Protocol.AUTH) {
-                ProcessLogger.SERVER_LOGGER.receivedUnknownGreetingCode(Integer.valueOf(cmd), connection.getPeerAddress());
+                ProcessLogger.SERVER_LOGGER.receivedUnknownGreetingCode(cmd, connection.getPeerAddress());
                 connection.close();
                 return;
             }
@@ -270,7 +270,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                             break;
                         }
                         default: {
-                            ProcessLogger.SERVER_LOGGER.receivedUnknownMessageCode(Integer.valueOf(cmd));
+                            ProcessLogger.SERVER_LOGGER.receivedUnknownMessageCode(cmd);
                             // unknown
                             dataStream.close();
                         }
