@@ -369,8 +369,6 @@ class SyncModelOperationHandler implements OperationStepHandler {
                 compareExistsInBothModels(currentChild, remoteChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)));
             } else if (currentChild == null && remoteChild != null) {
                 addChildRecursive(remoteChild, operations, registration.getSubModel(PathAddress.pathAddress(remoteChild.element)));
-            } else if (currentChild != null && remoteChild == null) {
-                removeChildRecursive(currentChild, operations, registration.getSubModel(PathAddress.pathAddress(currentChild.element)), false);
             } else {
                 throw new IllegalStateException();
             }
