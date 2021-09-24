@@ -624,7 +624,7 @@ public final class Main {
         private final UnknownHostException uhe;
 
         private PCSocketConfig() {
-            boolean preferIPv6 = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged("java.net.preferIPv6Addresses", "false"));
+            boolean preferIPv6 = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged("java.net.preferIPv6Addresses", "false"));
             this.defaultBindAddress = preferIPv6 ? "::1" : "127.0.0.1";
             UnknownHostException toCache = null;
             try {
