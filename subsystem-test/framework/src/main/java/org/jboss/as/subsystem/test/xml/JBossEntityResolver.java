@@ -72,9 +72,9 @@ public class JBossEntityResolver implements EntityResolver, LSResourceResolver {
     private ThreadLocal<Boolean> entityResolved = new ThreadLocal<Boolean>();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                warnOnNonFileURLs = new Boolean(System.getProperty("org.jboss.resolver.warning", "false")).booleanValue();
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                warnOnNonFileURLs = Boolean.parseBoolean(System.getProperty("org.jboss.resolver.warning", "false"));
                 return null;
             }
         });
