@@ -394,7 +394,7 @@ public final class ServerService extends AbstractControllerService {
                 // Boot but by default don't rollback on runtime failures
                 // TODO replace system property used by tests with something properly configurable for general use
                 // TODO search for uses of "jboss.unsupported.fail-boot-on-runtime-failure" in tests before changing this!!
-                boolean failOnRuntime = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged("jboss.unsupported.fail-boot-on-runtime-failure", "false"));
+                boolean failOnRuntime = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged("jboss.unsupported.fail-boot-on-runtime-failure", "false"));
 
                 // Load the ops
                 List<ModelNode> bootOps = extensibleConfigurationPersister.load();
