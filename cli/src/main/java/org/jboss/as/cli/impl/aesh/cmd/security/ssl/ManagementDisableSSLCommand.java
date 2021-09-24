@@ -140,7 +140,7 @@ public class ManagementDisableSSLCommand implements Command<CLICommandInvocation
             if (System.currentTimeMillis() - start > timeoutMillis) {
                 ctx.disconnectController();
                 throw new CommandLineException("Failed to re-establish connection in " + (System.currentTimeMillis() - start)
-                        + "ms." + (exception != null ? exception : ""));
+                        + "ms. " + exception );
             }
             try {
                 Thread.sleep(50);
