@@ -340,7 +340,7 @@ class PropertiesFileLoader {
         String escapedKey = escapeString(key, ESCAPE_ARRAY);
         final String value = getValue(key, currentValue);
         final String newLine;
-        if (Boolean.valueOf(toSave.getProperty(key + DISABLE_SUFFIX_KEY))) {
+        if (Boolean.parseBoolean(toSave.getProperty(key + DISABLE_SUFFIX_KEY))) {
             // Commented property
             newLine = "#" + escapedKey + "=" + value;
         } else {
