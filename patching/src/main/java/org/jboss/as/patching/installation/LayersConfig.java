@@ -35,7 +35,7 @@ public class LayersConfig {
         configured = true;
         layersPath = properties.getProperty("layers.path", DEFAULT_LAYERS_PATH);
         addOnsPath = properties.getProperty("add-ons.path", DEFAULT_ADD_ONS_PATH);
-        final boolean excludeBase = Boolean.valueOf(properties.getProperty(Constants.EXCLUDE_LAYER_BASE, "false"));
+        final boolean excludeBase = Boolean.parseBoolean(properties.getProperty(Constants.EXCLUDE_LAYER_BASE, "false"));
         String layersProp = (String) properties.get(Constants.LAYERS);
         if (layersProp == null || (layersProp = layersProp.trim()).length() == 0) {
             if (excludeBase) {
