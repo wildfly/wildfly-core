@@ -280,7 +280,7 @@ abstract class LoggingSubsystemParser implements XMLStreamConstants, XMLElementR
                     break;
                 }
                 case REPLACE: {
-                    final boolean replaceAll = Boolean.valueOf(reader.getAttributeValue(null, REPLACE_ALL.getName()));
+                    final boolean replaceAll = Boolean.parseBoolean(reader.getAttributeValue(null, REPLACE_ALL.getName()));
                     if (replaceAll) {
                         filter.append(Filters.SUBSTITUTE_ALL);
                     } else {
