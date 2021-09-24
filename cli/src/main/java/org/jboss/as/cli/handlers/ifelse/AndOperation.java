@@ -46,10 +46,10 @@ class AndOperation extends BaseOperation {
                 throw new CommandFormatException("Expected boolean value from " + operand + " but received " + value);
             }
             if(!((Boolean)value)) {
-                return false;
+                return Boolean.FALSE;
             }
         }
-        return true;
+        return Boolean.TRUE;
     }
 
     @Override
