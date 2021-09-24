@@ -320,8 +320,8 @@ public final class Main {
             if (bindAddress != null) {
                 return bindAddress;
             } else {
-                boolean v4Stack = Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged(CommandLineConstants.PREFER_IPV4_STACK, "false"));
-                boolean useV6 = !v4Stack && Boolean.valueOf(WildFlySecurityManager.getPropertyPrivileged(CommandLineConstants.PREFER_IPV6_ADDRESSES, "false"));
+                boolean v4Stack = Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(CommandLineConstants.PREFER_IPV4_STACK, "false"));
+                boolean useV6 = !v4Stack && Boolean.parseBoolean(WildFlySecurityManager.getPropertyPrivileged(CommandLineConstants.PREFER_IPV6_ADDRESSES, "false"));
                 return useV6 ? "::1" : "127.0.0.1";
             }
         }
