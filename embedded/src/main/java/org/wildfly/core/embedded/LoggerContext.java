@@ -21,7 +21,6 @@ package org.wildfly.core.embedded;
 
 import static org.jboss.logging.Logger.Level.WARN;
 
-import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -233,27 +232,6 @@ class LoggerContext implements Context {
         public void classDefined(final String name, final Module module) {
             if (defineLogger.isTraceEnabled()) {
                 defineLogger.tracef("Defined class %s in %s", name, module);
-            }
-        }
-
-        @Override
-        public void providerUnloadable(final String name, final ClassLoader loader) {
-            if (defineLogger.isTraceEnabled()) {
-                defineLogger.tracef("Could not load provider %s in %s", name, loader);
-            }
-        }
-
-        @Override
-        public void jaxpClassLoaded(final Class<?> jaxpClass, final Module module) {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("Loading JAXP %s from %s", jaxpClass, module);
-            }
-        }
-
-        @Override
-        public void jaxpResourceLoaded(final URL resourceURL, final Module module) {
-            if (logger.isTraceEnabled()) {
-                logger.tracef("JAXP Resource %s loaded from module %s", resourceURL, module);
             }
         }
     }

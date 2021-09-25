@@ -66,16 +66,6 @@
             <artifactId>undertow-core</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>stax2-api</artifactId>
-        </dependency>
-
         <!-- TODO: why do we need jandex in minimal? -->
         <dependency>
             <groupId>org.jboss</groupId>
@@ -799,11 +789,6 @@
         <dependency>
             <groupId>org.wildfly.discovery</groupId>
             <artifactId>wildfly-discovery-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
         </dependency>
 
     </dependencies>

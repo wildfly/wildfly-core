@@ -16,7 +16,6 @@
  */
 package org.wildfly.core.jar.boot;
 
-import __redirected.__JAXPRedirected;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -166,8 +165,6 @@ public final class Main {
     private static void runBootableJar(Path jbossHome, List<String> arguments, Long unzipTime, boolean securityManager) throws Exception {
         final String modulePath = jbossHome.resolve(JBOSS_MODULES_DIR_NAME).toAbsolutePath().toString();
         ModuleLoader moduleLoader = setupModuleLoader(modulePath);
-
-        __JAXPRedirected.changeAll(MODULE_ID_JAR_RUNTIME, moduleLoader);
 
         final Module bootableJarModule;
         try {

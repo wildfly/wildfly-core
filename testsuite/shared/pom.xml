@@ -163,16 +163,7 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-subsystem-test-framework</artifactId>
-            <!-- exclude woodstox as it is doesn't work right with adding new lines after document end -->
             <exclusions>
-                <exclusion>
-                    <groupId>org.codehaus.woodstox</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.woodstox</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.jboss.slf4j</groupId>
                     <artifactId>slf4j-jboss-logmanager</artifactId>

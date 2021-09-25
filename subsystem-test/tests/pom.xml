@@ -57,11 +57,6 @@
            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>test</scope> <!-- here to test WFCORE-1136 -->
-        </dependency>
-        <dependency>
             <groupId>org.jboss.xnio</groupId>
             <artifactId>xnio-api</artifactId>
             <scope>test</scope>
