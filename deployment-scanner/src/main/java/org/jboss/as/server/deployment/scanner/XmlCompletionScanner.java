@@ -32,6 +32,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger;
+import org.wildfly.common.xml.SAXParserFactoryUtil;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -47,7 +48,7 @@ public class XmlCompletionScanner {
     public static boolean isCompleteDocument(final File file) throws IOException {
         ErrorHandler handler = new ErrorHandler(file.getName());
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParserFactory factory = SAXParserFactoryUtil.create();
             factory.setValidating(false);
             final SAXParser parser = factory.newSAXParser();
             parser.parse(file, handler);

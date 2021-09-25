@@ -32,10 +32,8 @@ import java.io.StringWriter;
 import java.util.Properties;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -49,6 +47,8 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.subsystem.test.xml.JBossEntityResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ValueExpression;
+import org.wildfly.common.xml.DocumentBuilderFactoryUtil;
+import org.wildfly.common.xml.TransformerFactoryUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -91,14 +91,14 @@ public class SchemaValidator {
     static void validateXML(String xmlContent, String elementRoot, String xsdPath, Properties resolvedProperties) throws Exception {
         // build an input source from the XML content
         InputSource inputSource = new InputSource(new StringReader(xmlContent));
-        Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputSource);
+        Document document = DocumentBuilderFactoryUtil.create().newDocumentBuilder().parse(inputSource);
 
         // validated only the nodes corresponding to the given elementRoot
         NodeList nodes = document.getElementsByTagName(elementRoot);
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
             // use a transformer to the the String result of the node tree
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            Transformer transformer = TransformerFactoryUtil.create().newTransformer();
             StringWriter writer = new StringWriter();
             transformer.transform(new DOMSource(node), new StreamResult(writer));
             SchemaValidator.validateXML(writer.toString(), xsdPath, resolvedProperties);

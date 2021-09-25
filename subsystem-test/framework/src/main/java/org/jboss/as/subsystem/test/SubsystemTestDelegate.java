@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -110,6 +109,7 @@ import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.wildfly.common.xml.XMLInputFactoryUtil;
 import org.wildfly.legacy.test.spi.Version;
 
 /**
@@ -218,7 +218,7 @@ final class SubsystemTestDelegate {
         String xml = "<test xmlns=\"" + TEST_NAMESPACE + "\">" +
                 subsystemXml +
                 "</test>";
-        final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
+        final XMLStreamReader reader = XMLInputFactoryUtil.create().createXMLStreamReader(new StringReader(xml));
         addAdditionalParsers(additionalParsers);
         final List<ModelNode> operationList = new ArrayList<>();
         xmlMapper.parseDocument(operationList, reader);
