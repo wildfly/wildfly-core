@@ -815,9 +815,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
         StabilityMonitor monitor = new StabilityMonitor();
-        getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService)
-                .addMonitor(monitor)
-                .install();
+        monitor.addController(getContainer().addService(AbstractControllerService.PATH_MANAGER_CAPABILITY.getCapabilityServiceName(), pathManagerService).install());
 
         try {
             monitor.awaitStability(10, TimeUnit.SECONDS);
