@@ -137,4 +137,14 @@
         <vulnerabilityName>CVE-2021-27568</vulnerabilityName>
     </suppress>
 
+    <!-- This is a false positive because wildfly-core itself does not use mockserver libraries. Mockserver is used only for test purposes (wildfly-core-testsuite-shared module). -->
+    <suppress>
+        <notes><![CDATA[
+   file name: mockserver-core-5.8.1.jar
+   file name: mockserver-netty-5.8.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.mock\-server/mockserver\-.*$</packageUrl>
+        <cve>CVE-2021-32827</cve>
+    </suppress>
+
 </suppressions>
