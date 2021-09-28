@@ -55,7 +55,5 @@
         <module name="org.jboss.logmanager"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-private"/>
-        <!-- WFCORE-5032 Dependency on legacy security integration to enable discovery of services if available. --> 
-        <module name="org.jboss.as.security-integration" optional="true" services="import" />
     </dependencies>
 </module>
