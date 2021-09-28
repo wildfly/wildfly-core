@@ -44,6 +44,9 @@
             <trust-manager name="trust-with-crl-dp" algorithm="SunX509" key-store="jks_store">
                 <certificate-revocation-list />
             </trust-manager>
+            <trust-manager name="trust-with-crl-dp-deprecated-max-cert-path" algorithm="SunX509" key-store="jks_store">
+                <certificate-revocation-list maximum-cert-path="1"/>
+            </trust-manager>
             <trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="jks_store" soft-fail="true" only-leaf-cert="true">
                 <certificate-revocation-list />
                 <ocsp responder="http://localhost/ocsp"/>

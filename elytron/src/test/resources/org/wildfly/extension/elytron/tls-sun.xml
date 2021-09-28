@@ -78,6 +78,9 @@
             <trust-manager name="trust-with-crl-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-list />
             </trust-manager>
+            <trust-manager name="trust-with-crl-dp-deprecated-max-cert-path" algorithm="PKIX" key-store="ElytronCaTruststore">
+                <certificate-revocation-list maximum-cert-path="1"/>
+            </trust-manager>
             <trust-manager name="trust-with-crls-dp" algorithm="PKIX" key-store="ElytronCaTruststore">
                 <certificate-revocation-lists />
             </trust-manager>

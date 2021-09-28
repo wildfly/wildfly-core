@@ -66,6 +66,8 @@ import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.openssl.MiscPEMGenerator;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.io.pem.PemWriter;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
@@ -80,6 +82,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.ssl.X509RevocationTrustManager;
 import org.wildfly.security.x500.cert.BasicConstraintsExtension;
 import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
@@ -557,12 +560,24 @@ public class TlsTestCase extends AbstractSubsystemTest {
     public void testRevocationListsDp() throws Throwable {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManager);
+        MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
 
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp");
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
         Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not realoadable
+    }
+
+    @Test
+    public void testRevocationListsDpOnlyDeprecatedMaximumCertPath() throws Throwable {
+        ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crl-dp-deprecated-max-cert-path");
+        TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
+        MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
+
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crl-dp-deprecated-max-cert-path");
+        operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.RELOAD_CERTIFICATE_REVOCATION_LIST);
+        Assert.assertTrue(services.executeOperation(operation).get(OUTCOME).asString().equals(FAILED)); // not reloadable
     }
 
     /**
@@ -572,7 +587,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     public void testCertificateRevocationListsDp() throws Throwable {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-crls-dp");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManager);
+        MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
 
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, "trust-with-crls-dp");
@@ -653,14 +668,14 @@ public class TlsTestCase extends AbstractSubsystemTest {
     public void testOcspCrl() {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-crl");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManager);
+        MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
     }
 
     @Test
     public void testOcspSimple() {
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName("trust-with-ocsp-simple");
         TrustManager trustManager = (TrustManager) services.getContainer().getService(serviceName).getValue();
-        Assert.assertNotNull(trustManager);
+        MatcherAssert.assertThat(trustManager, CoreMatchers.instanceOf(X509RevocationTrustManager.class));
     }
 
     private SSLContext getSslContext(String contextName) {
