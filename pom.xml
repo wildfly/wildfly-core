@@ -161,7 +161,7 @@
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.2.10.Final</version.io.undertow>
+        <version.io.undertow>2.2.11.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0.3</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
