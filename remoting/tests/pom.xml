@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-remoting-parent</artifactId>
-        <version>17.0.0.Beta8-SNAPSHOT</version>
+        <version>17.0.0.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
