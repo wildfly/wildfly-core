@@ -160,6 +160,32 @@ check_status() {
 	pidofproc -p "$JBOSS_PIDFILE" "$JAVA" >/dev/null 2>&1
 }
 
+write_log() {
+	pid=$!
+
+	while ps -p $pid >/dev/null 2>&1
+	do
+		read -r output
+
+		if [ -n "$output" ]; then
+			echo "$output" >> "$JBOSS_CONSOLE_LOG" 2>&1
+		fi
+
+		if [ -n "$JBOSS_LOG_FILE_MAX_SIZE" ]; then
+			log_size="$(du -b $JBOSS_CONSOLE_LOG | tr -s '\t' ' ' | cut -d' ' -f1)"
+			if [ $log_size -gt $JBOSS_LOG_FILE_MAX_SIZE ]; then
+				swap_log
+			fi
+		fi
+	done
+}
+
+swap_log() {
+	timestamp="$(date -r $JBOSS_CONSOLE_LOG +"%Y-%m-%d-%T")"
+	mv "$JBOSS_CONSOLE_LOG" "$JBOSS_CONSOLE_LOG".$timestamp
+	touch "$JBOSS_CONSOLE_LOG"
+}
+
 case "$1" in
  start)
 	log_daemon_msg "Starting $DESC" "$NAME"
@@ -169,18 +195,24 @@ case "$1" in
 		mkdir -p $(dirname "$JBOSS_PIDFILE")
 		mkdir -p $(dirname "$JBOSS_CONSOLE_LOG")
 		chown $JBOSS_USER $(dirname "$JBOSS_PIDFILE") || true
-		cat /dev/null > "$JBOSS_CONSOLE_LOG"
+
+		if [ -s "$JBOSS_CONSOLE_LOG" ]; then
+			swap_log
+		else
+			cat /dev/null > "$JBOSS_CONSOLE_LOG"
+		fi
+
 		currenttime=$(date +%s%N | cut -b1-13)
 
 		if [ "$JBOSS_MODE" = "standalone" ]; then
 			start-stop-daemon --start --user "$JBOSS_USER" \
 			--chuid "$JBOSS_USER" --chdir "$JBOSS_HOME" --pidfile "$JBOSS_PIDFILE" \
-			--exec "$JBOSS_SCRIPT" -- -c $JBOSS_CONFIG $JBOSS_OPTS >> "$JBOSS_CONSOLE_LOG" 2>&1 &
+			--exec "$JBOSS_SCRIPT" -- -c $JBOSS_CONFIG $JBOSS_OPTS | write_log &
 		else
 			start-stop-daemon --start --user "$JBOSS_USER" \
 			--chuid "$JBOSS_USER" --chdir "$JBOSS_HOME" --pidfile "$JBOSS_PIDFILE" \
 			--exec "$JBOSS_SCRIPT" -- --domain-config=$JBOSS_DOMAIN_CONFIG \
-			--host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS >> "$JBOSS_CONSOLE_LOG" 2>&1 &
+			--host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS | write_log &
 		fi
 
 		count=0

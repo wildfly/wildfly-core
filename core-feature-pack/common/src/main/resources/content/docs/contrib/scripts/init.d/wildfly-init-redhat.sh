@@ -141,6 +141,32 @@ check_status() {
 	status -p "$JBOSS_PIDFILE" -l "$(basename "$JBOSS_LOCKFILE")" "$NAME" >/dev/null 2>&1
 }
 
+write_log() {
+	pid=$$
+
+	while ps -p $pid >/dev/null 2>&1
+	do
+		read -r output
+
+		if [ -n "$output" ]; then
+			echo "$output" >> "$JBOSS_CONSOLE_LOG" 2>&1
+		fi
+
+		if [ -n "$JBOSS_LOG_FILE_MAX_SIZE" ]; then
+			log_size="$(du -b $JBOSS_CONSOLE_LOG | tr -s '\t' ' ' | cut -d' ' -f1)"
+			if [ $log_size -gt $JBOSS_LOG_FILE_MAX_SIZE ]; then
+				swap_log
+			fi
+		fi
+	done
+}
+
+swap_log() {
+	timestamp="$(date -r $JBOSS_CONSOLE_LOG +"%Y-%m-%d-%T")"
+	mv "$JBOSS_CONSOLE_LOG" "$JBOSS_CONSOLE_LOG".$timestamp
+	touch "$JBOSS_CONSOLE_LOG"
+}
+
 start() {
 	printf "%s\n" $"Starting $NAME: "
 	check_status
@@ -149,16 +175,22 @@ start() {
 		mkdir -p "$(dirname "$JBOSS_PIDFILE")"
 		mkdir -p "$(dirname "$JBOSS_CONSOLE_LOG")"
 		chown $JBOSS_USER "$(dirname "$JBOSS_PIDFILE")" || true
-		cat /dev/null > "$JBOSS_CONSOLE_LOG"
+
+		if [ -s "$JBOSS_CONSOLE_LOG" ]; then
+			swap_log
+		else
+			cat /dev/null > "$JBOSS_CONSOLE_LOG"
+		fi
+
 		currenttime=$(date +%s%N | cut -b1-13)
 
 		if [ "$JBOSS_MODE" = "standalone" ]; then
 			cd "$JBOSS_HOME" >/dev/null 2>&1 || exit
-			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT -c $JBOSS_CONFIG $JBOSS_OPTS &" >> "$JBOSS_CONSOLE_LOG" 2>&1
+			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT -c $JBOSS_CONFIG $JBOSS_OPTS &" 2>&1 | write_log &
 			cd - >/dev/null 2>&1 || exit
 		else
 			cd "$JBOSS_HOME" >/dev/null 2>&1 || exit
-			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT --domain-config=$JBOSS_DOMAIN_CONFIG --host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS &" >> "$JBOSS_CONSOLE_LOG" 2>&1
+			daemon --user=$JBOSS_USER --pidfile="$JBOSS_PIDFILE" LAUNCH_JBOSS_IN_BACKGROUND=1 JBOSS_PIDFILE="$JBOSS_PIDFILE" "$JBOSS_SCRIPT --domain-config=$JBOSS_DOMAIN_CONFIG --host-config=$JBOSS_HOST_CONFIG $JBOSS_OPTS &" 2>&1 | write_log &
 			cd - >/dev/null 2>&1 || exit
 		fi
 
