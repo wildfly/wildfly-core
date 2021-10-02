@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.management.security.auditlog;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,8 +47,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.xnio.IoUtils;
 
 /**
  * @author: Kabir Khan
@@ -76,28 +76,30 @@ public abstract class SimpleSyslogServer implements Runnable {
     static SimpleSyslogServer createTls(int port, boolean octetCounting, File keystorePath, String keystorePassword, File clientCertPath, String clientCertPwd) throws IOException, GeneralSecurityException {
         KeyManager[] keyManagers;
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        final FileInputStream in = new FileInputStream(keystorePath);
+        FileInputStream in = new FileInputStream(keystorePath);
         try {
             final KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(in, keystorePassword.toCharArray());
             kmf.init(ks, keystorePassword.toCharArray());
             keyManagers = kmf.getKeyManagers();
         } finally {
-            IoUtils.safeClose(in);
+            safeClose(in);
+            in = null;
         }
         boolean requireClientAuth = false;
         TrustManager[] trustManagers = null;
         if (clientCertPath != null) {
             requireClientAuth = true;
             final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            final FileInputStream clientIn = new FileInputStream(clientCertPath);
+            FileInputStream clientIn = new FileInputStream(clientCertPath);
             try {
                 final KeyStore ks = KeyStore.getInstance("JKS");
                 ks.load(clientIn, clientCertPwd.toCharArray());
                 tmf.init(ks);
                 trustManagers = tmf.getTrustManagers();
             } finally {
-                IoUtils.safeClose(in);
+                safeClose(clientIn);
+                clientIn = null;
             }
         }
 
@@ -124,7 +126,7 @@ public abstract class SimpleSyslogServer implements Runnable {
 
     private static class Udp extends SimpleSyslogServer {
 
-        private final DatagramSocket socket;
+        private DatagramSocket socket;
 
         Udp(int port) throws IOException {
             socket = new DatagramSocket(port);
@@ -133,7 +135,11 @@ public abstract class SimpleSyslogServer implements Runnable {
         @Override
         void close() {
             closed.set(true);
-            socket.close();
+            DatagramSocket toClose = socket;
+            socket = null;
+            if (toClose != null) {
+                toClose.close();
+            }
         }
 
         @Override
@@ -158,7 +164,7 @@ public abstract class SimpleSyslogServer implements Runnable {
 
     private static class Tcp extends SimpleSyslogServer {
         private final boolean octetCounting;
-        private final ServerSocket serverSocket;
+        private ServerSocket serverSocket;
         private volatile Socket socket;
 
         Tcp(ServerSocket servetSocket, boolean octetCounting){
@@ -179,8 +185,11 @@ public abstract class SimpleSyslogServer implements Runnable {
                 } catch (Throwable e) {
                 }
             }
-            IoUtils.safeClose(serverSocket);
-            IoUtils.safeClose(socket);
+            safeClose(serverSocket);
+            serverSocket = null;
+
+            safeClose(socket);
+            socket = null;
         }
 
         Socket accept(ServerSocket serverSocket) throws IOException {

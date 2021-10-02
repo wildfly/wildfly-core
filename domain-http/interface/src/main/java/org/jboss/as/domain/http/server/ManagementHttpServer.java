@@ -23,6 +23,7 @@ package org.jboss.as.domain.http.server;
 
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -66,7 +67,6 @@ import org.xnio.BufferAllocator;
 import org.xnio.ByteBufferSlicePool;
 import org.xnio.ChannelListener;
 import org.xnio.ChannelListeners;
-import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
@@ -174,8 +174,10 @@ public class ManagementHttpServer {
     }
 
     public void stop() {
-        IoUtils.safeClose(normalServer);
-        IoUtils.safeClose(secureServer);
+        safeClose(normalServer);
+        normalServer = null;
+        safeClose(secureServer);
+        secureServer = null;
     }
 
     public synchronized void addStaticContext(String contextName, ResourceManager resourceManager) {

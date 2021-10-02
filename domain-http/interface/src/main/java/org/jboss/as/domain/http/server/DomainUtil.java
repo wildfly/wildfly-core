@@ -26,6 +26,7 @@ import static io.undertow.predicate.Predicates.path;
 import static io.undertow.predicate.Predicates.suffixes;
 import static io.undertow.util.Headers.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -50,8 +51,6 @@ import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
-
 
 /**
  * Utility methods used for HTTP based domain management.
@@ -119,7 +118,7 @@ public class DomainUtil {
                     int res = inputStream.read(buffer);
                     if (res == -1) {
                         //we are done, clean up and return
-                        IoUtils.safeClose(operationResponse);
+                        safeClose(operationResponse);
                         return;
                     }
                     sender.send(ByteBuffer.wrap(buffer, 0, res), this);
@@ -136,7 +135,7 @@ public class DomainUtil {
 
             @Override
             public void onException(HttpServerExchange exchange, Sender sender, IOException exception) {
-                IoUtils.safeClose(operationResponse);
+                safeClose(operationResponse);
                 if (!exchange.isResponseStarted()) {
                     exchange.setStatusCode(500);
                 }

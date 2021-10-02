@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.http.server;
 
+import static org.xnio.IoUtils.safeClose;
+
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_MECHANISM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CALLER_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -59,7 +61,6 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
 
 /**
  * Generic http POST handler accepting a single operation and multiple input streams passed as part of
@@ -190,7 +191,7 @@ class DomainApiGenericOperationHandler implements HttpHandler {
             // Close any input streams that were open
             if (builtOp.isAutoCloseStreams()) {
                 for (InputStream in : builtOp.getInputStreams()) {
-                    IoUtils.safeClose(in);
+                    safeClose(in);
                 }
             }
         }

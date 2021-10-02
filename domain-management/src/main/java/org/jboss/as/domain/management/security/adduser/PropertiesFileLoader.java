@@ -23,10 +23,10 @@
 package org.jboss.as.domain.management.security.adduser;
 
 import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -387,13 +387,6 @@ class PropertiesFileLoader {
             }
         }
         return name;
-    }
-
-    protected void safeClose(final Closeable c) {
-        try {
-            c.close();
-        } catch (IOException ignored) {
-        }
     }
 
     /**
