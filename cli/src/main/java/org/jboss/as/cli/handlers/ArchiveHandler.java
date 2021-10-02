@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.handlers;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,7 +46,6 @@ import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.impl.FileSystemPathArgument;
 import org.jboss.as.cli.operation.OperationFormatException;
 import org.jboss.as.cli.operation.ParsedCommandLine;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -180,8 +181,8 @@ public class ArchiveHandler extends BatchModeCommandHandler {
                     }
                     fos.flush();
                 } finally {
-                    StreamUtils.safeClose(is);
-                    StreamUtils.safeClose(fos);
+                    safeClose(is);
+                    safeClose(fos);
                 }
             }
         }

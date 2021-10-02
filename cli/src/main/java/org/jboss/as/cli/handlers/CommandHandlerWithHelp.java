@@ -22,6 +22,7 @@
 package org.jboss.as.cli.handlers;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -34,7 +35,6 @@ import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.cli.impl.ArgumentWithoutValue;
 import org.jboss.as.cli.util.HelpFormatter;
-import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -109,7 +109,7 @@ public abstract class CommandHandlerWithHelp extends CommandHandlerWithArguments
             } catch(java.io.IOException e) {
                 throw new CommandFormatException ("Failed to read help/help.txt: " + e.getLocalizedMessage());
             } finally {
-                StreamUtils.safeClose(reader);
+                safeClose(reader);
             }
         } else {
             throw new CommandFormatException("Failed to locate command description " + filename);

@@ -15,6 +15,8 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh.cmd.deployment;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.CommandWithPermissions;
 import org.jboss.as.cli.impl.aesh.cmd.deployment.security.Permissions;
 import java.io.BufferedReader;
@@ -224,12 +226,7 @@ public class DeployArchiveCommand extends CommandWithPermissions implements Comm
             } catch (CommandLineException ex) {
                 throw new CommandFormatException(ex);
             } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (IOException e) {
-                    }
-                }
+                safeClose(reader);
             }
             return ctx.getBatchManager().getActiveBatch().toRequest();
         } catch (CommandFormatException cfex) {

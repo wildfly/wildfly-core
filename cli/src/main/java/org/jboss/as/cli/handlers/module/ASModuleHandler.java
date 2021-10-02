@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.handlers.module;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -488,9 +490,10 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
 
             FileOutputStream fos = null;
             final File moduleFile = new File(moduleDir, "module.xml");
+            XMLExtendedStreamWriter xmlWriter = null;
             try {
                 fos = new FileOutputStream(moduleFile);
-                XMLExtendedStreamWriter xmlWriter = create(XMLOutputFactory.newInstance().createXMLStreamWriter(fos, StandardCharsets.UTF_8.name()));
+                xmlWriter = create(XMLOutputFactory.newInstance().createXMLStreamWriter(fos, StandardCharsets.UTF_8.name()));
                 config.writeContent(xmlWriter, null);
                 xmlWriter.flush();
             } catch (IOException e) {
@@ -498,10 +501,9 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
             } catch (XMLStreamException e) {
                 throw new CommandLineException("Failed to write to " + moduleFile.getAbsolutePath(), e);
             } finally {
-                if(fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException e) {}
+                safeClose(fos);
+                if (xmlWriter != null) {
+                    safeClose((AutoCloseable) xmlWriter::close);
                 }
             }
         }

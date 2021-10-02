@@ -23,6 +23,7 @@ package org.jboss.as.cli;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,7 +64,6 @@ import org.jboss.as.cli.operation.impl.DefaultOperationRequestBuilder;
 import org.jboss.as.cli.parsing.CommandSubstitutionException;
 import org.jboss.as.cli.parsing.operation.OperationFormat;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -1431,7 +1431,7 @@ public class Util {
         } catch (Exception e) {
             throw new OperationFormatException("Failed to read file " + f.getAbsolutePath(), e);
         } finally {
-            StreamUtils.safeClose(is);
+            safeClose(is);
         }
         return bytes;
     }

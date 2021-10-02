@@ -22,6 +22,7 @@
 package org.jboss.as.cli.impl;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -45,7 +46,6 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.ControllerAddress;
 import org.jboss.as.cli.SSLConfig;
 import org.jboss.as.cli.util.CLIExpressionResolver;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.logging.Logger;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
@@ -175,6 +175,7 @@ class CliConfigImpl implements CliConfig {
         CliConfigImpl config = new CliConfigImpl();
 
         BufferedInputStream input = null;
+        XMLStreamReader streamReader = null;
         try {
             final XMLMapper mapper = XMLMapper.Factory.create();
             final XMLElementReader<CliConfigImpl> reader = new CliConfigReader();
@@ -183,13 +184,15 @@ class CliConfigImpl implements CliConfig {
             }
             FileInputStream is = new FileInputStream(f);
             input = new BufferedInputStream(is);
-            XMLStreamReader streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
+            streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
             mapper.parseDocument(config, streamReader);
-            streamReader.close();
         } catch(Throwable t) {
             throw new CliInitializationException("Failed to parse " + f.getAbsolutePath(), t);
         } finally {
-            StreamUtils.safeClose(input);
+            safeClose(input);
+            if (streamReader != null) {
+                safeClose((AutoCloseable) streamReader::close);
+            }
         }
         return config;
     }

@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.handlers;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +45,6 @@ import org.jboss.as.cli.impl.DefaultCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.http.RedirectException;
 
@@ -223,7 +224,7 @@ public class ReloadHandler extends BaseOperationCommand {
         } catch(IOException e) {
             // if it's not connected it's assumed the reload is in process
             if (cliClient.isConnected()) {
-                StreamUtils.safeClose(client);
+                safeClose(client);
                 throw new CommandLineException("Failed to execute :reload", e);
             }
         }
@@ -259,7 +260,7 @@ public class ReloadHandler extends BaseOperationCommand {
             }
         } catch(IOException e) {
             // This shouldn't be possible, as this is a local client
-            StreamUtils.safeClose(client);
+            safeClose(client);
             throw new CommandLineException("Failed to execute :reload", e);
         }
 
