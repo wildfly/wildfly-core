@@ -28,6 +28,7 @@ import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -196,12 +197,7 @@ class AuditResourceDefinitions {
 
         @Override
         public void dispose() {
-            if (endpoint == null) return;
-            try {
-                endpoint.close();
-            } catch (IOException e) {
-                ROOT_LOGGER.trace("Unable to close audit endpoint", e);
-            }
+            safeClose(endpoint);
         }
     }
 
