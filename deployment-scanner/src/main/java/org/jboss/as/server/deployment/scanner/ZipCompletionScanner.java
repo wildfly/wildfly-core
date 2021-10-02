@@ -21,7 +21,8 @@
  */
 package org.jboss.as.server.deployment.scanner;
 
-import java.io.Closeable;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -411,16 +412,6 @@ public class ZipCompletionScanner {
 
         for (int j = 0; j < pattern.length - 1; j++) {
             badByteArray[pattern[j] - Byte.MIN_VALUE] = pattern.length - j - 1;
-        }
-    }
-
-    private static void safeClose(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            }
-            catch (Exception ignored) {
-            }
         }
     }
 

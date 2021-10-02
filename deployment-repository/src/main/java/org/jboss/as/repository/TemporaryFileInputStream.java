@@ -62,8 +62,24 @@ public class TemporaryFileInputStream extends TypedInputStream {
 
     @Override
     public void close() throws IOException {
-        delegate.close();
-        Files.deleteIfExists(file);
+        IOException ioex = null;
+        try {
+            delegate.close();
+        } catch (IOException e) {
+            ioex = e;
+        }
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            if (ioex != null) {
+                ioex.addSuppressed(e);
+            } else {
+                ioex = e;
+            }
+        }
+        if (ioex != null) {
+            throw ioex;
+        }
     }
 
     @Override
