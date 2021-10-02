@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -46,7 +47,6 @@ import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -94,7 +94,7 @@ class DomainApiUploadHandler implements HttpHandler {
                     Common.sendError(exchange, false, t.getLocalizedMessage());
                     return;
                 } finally {
-                    IoUtils.safeClose(in);
+                    safeClose(in);
                 }
 
                 // TODO Determine what format the response should be in for a deployment upload request.
@@ -116,7 +116,7 @@ class DomainApiUploadHandler implements HttpHandler {
         try {
             response.writeJSONString(print, true);
         } finally {
-            IoUtils.safeClose(print);
+            safeClose(print);
         }
     }
 }
