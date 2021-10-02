@@ -21,12 +21,15 @@
  */
 package org.jboss.as.controller.audit;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.PortUnreachableException;
 import java.security.KeyStore;
 import java.util.logging.ErrorManager;
+import java.util.logging.Handler;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.KeyManager;
@@ -47,7 +50,6 @@ import org.jboss.logmanager.handlers.TcpOutputStream;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.security.credential.source.CredentialSource;
 import org.wildfly.security.password.interfaces.ClearPassword;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -280,7 +282,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                             kmf.init(ks, resolvePassword(syslogAuditLogHandlerService.getTlsClientCertStoreKeySupplier(),tlsClientCertStoreKeyPassword != null ? tlsClientCertStoreKeyPassword : String.valueOf(tlsClientCertStorePwd)));
                             keyManagers = kmf.getKeyManagers();
                         } finally {
-                            IoUtils.safeClose(in);
+                            safeClose(in);
                         }
                     }
                     TrustManager[] trustManagers = null;
@@ -293,7 +295,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
                             tmf.init(ks);
                             trustManagers = tmf.getTrustManagers();
                         } finally {
-                            IoUtils.safeClose(in);
+                            safeClose(in);
                         }
 
                     }
@@ -310,11 +312,7 @@ public class SyslogAuditLogHandler extends AuditLogHandler {
         } catch (Exception e) {
             // Failed to initialize the handler, clean up the resources
             connected = false;
-            if (handler != null) {
-                try {
-                    handler.close();
-                } catch (Exception ignore){}
-            }
+            safeClose((Handler)handler);
             throw new RuntimeException(e);
         }
     }

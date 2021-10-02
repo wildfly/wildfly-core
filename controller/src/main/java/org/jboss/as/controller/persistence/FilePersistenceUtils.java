@@ -21,6 +21,8 @@
  */
 package org.jboss.as.controller.persistence;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +46,6 @@ import java.util.Set;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -85,17 +86,14 @@ class FilePersistenceUtils {
 
     static ExposedByteArrayOutputStream marshalXml(final AbstractConfigurationPersister persister, final ModelNode model) throws ConfigurationPersistenceException {
         ExposedByteArrayOutputStream marshalled = new ExposedByteArrayOutputStream(1024 * 8);
+        BufferedOutputStream output = null;
         try {
-            try {
-                BufferedOutputStream output = new BufferedOutputStream(marshalled);
-                persister.marshallAsXml(model, output);
-                output.close();
-                marshalled.close();
-            } finally {
-                IoUtils.safeClose(marshalled);
-            }
+            output = new BufferedOutputStream(marshalled);
+            persister.marshallAsXml(model, output);
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToMarshalConfiguration(e);
+        } finally {
+            safeClose(output);
         }
         return marshalled;
     }

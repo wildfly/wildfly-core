@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.client.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -31,7 +33,6 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
@@ -59,7 +60,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 t.setStackTrace(closeable.allocationStackTrace);
                 ControllerClientLogger.ROOT_LOGGER.leakedControllerClient(t);
                 // Close
-                StreamUtils.safeClose(closeable);
+                safeClose(closeable);
             }
         }
     };
@@ -162,7 +163,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 channelAssociation.shutdown();
                 // First close the channel and connection
                 if (strategy != null) {
-                    StreamUtils.safeClose(strategy);
+                    safeClose(strategy);
                     strategy = null;
                 }
                 // Then the endpoint
@@ -181,7 +182,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
                 } catch (InterruptedException ignore) {
                     Thread.currentThread().interrupt();
                 } finally {
-                    StreamUtils.safeClose(clientConfiguration);
+                    safeClose(clientConfiguration);
                 }
                 // Per WFCORE-1573 remoting endpoints should be closed asynchronously, however consumers of this client
                 // likely need to wait until the endpoints are fully shutdown.

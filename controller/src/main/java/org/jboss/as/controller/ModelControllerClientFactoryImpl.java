@@ -24,9 +24,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYNC_REMOVED_FOR_READD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
-import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -344,12 +343,7 @@ final class ModelControllerClientFactoryImpl implements ModelControllerClientFac
             @Override
             public ModelNode fromOperationResponse(OperationResponse or) {
                 ModelNode result = or.getResponseNode();
-                try {
-                    or.close();
-                } catch (IOException e) {
-                    ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, "
-                            + "if any, were not wanted", or);
-                }
+                safeClose(or);
                 return result;
             }
         };

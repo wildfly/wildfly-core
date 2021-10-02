@@ -22,6 +22,7 @@
 package org.jboss.as.controller.support;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -41,7 +42,6 @@ import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.util.SaslFactories;
-import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;
@@ -133,8 +133,8 @@ public class ChannelServer implements Closeable {
     }
 
     public void close() {
-        IoUtils.safeClose(streamServer);
-        IoUtils.safeClose(registration);
+        safeClose(streamServer);
+        safeClose(registration);
         // TODO WFCORE-3302 -- should not be necessary to dispose of endpoint
         if (endpoint != null) {
             endpoint.closeAsync();

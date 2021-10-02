@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.client.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -89,8 +90,20 @@ public class OperationResponseProxy implements OperationResponse {
 
     @Override
     public void close() throws IOException {
+        IOException ioex = null;
         for (StreamEntry se : proxiedStreams.values()) {
-            se.getStream().close();
+            try {
+                se.getStream().close();
+            } catch (IOException e) {
+                if (ioex != null) {
+                    ioex.addSuppressed(e);
+                } else {
+                    ioex = e;
+                }
+            }
+        }
+        if (ioex != null) {
+            throw ioex;
         }
     }
 
@@ -146,6 +159,8 @@ public class OperationResponseProxy implements OperationResponse {
             } catch (IOException e) {
                 if (ex == null) {
                     ex = e;
+                } else {
+                    ex.addSuppressed(e);
                 }
             }
             try {
@@ -153,6 +168,8 @@ public class OperationResponseProxy implements OperationResponse {
             } catch (IOException e) {
                 if (ex == null) {
                     ex = e;
+                } else {
+                    ex.addSuppressed(e);
                 }
             }
             if (ex != null) {
@@ -283,7 +300,7 @@ public class OperationResponseProxy implements OperationResponse {
         }
 
         private void shutdown(Exception error) {
-            StreamUtils.safeClose(this);
+            safeClose(this);
             this.error = error;
         }
 
