@@ -33,6 +33,7 @@ import static org.jboss.as.server.deployment.scanner.ZipCompletionScanner.END_CO
 import static org.jboss.as.server.deployment.scanner.ZipCompletionScanner.EXTSIG;
 import static org.jboss.as.server.deployment.scanner.ZipCompletionScanner.LOCLEN;
 import static org.jboss.as.server.deployment.scanner.ZipCompletionScanner.LOCSIG;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -88,11 +89,7 @@ public class AutoDeployTestSupport {
 
     public void cleanupChannels() {
         for (Channel ch : channels) {
-            try {
-                ch.close();
-            }
-            catch (Exception ignored) {
-            }
+            safeClose(ch);
         }
     }
 
