@@ -21,6 +21,8 @@
  */
 package org.jboss.as.cli.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
@@ -41,7 +43,6 @@ import org.jboss.as.cli.Util;
 import org.jboss.as.cli.gui.GuiMain;
 import org.jboss.as.cli.handlers.FilenameTabCompleter;
 import org.jboss.as.cli.impl.aesh.HelpSupport;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.logging.Logger;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -373,7 +374,7 @@ public class CliLauncher {
         } catch (Throwable e) {
             throw new IllegalStateException("Failed to process file '" + file.getAbsolutePath() + "'", e);
         } finally {
-            StreamUtils.safeClose(reader);
+            safeClose(reader);
         }
     }
 

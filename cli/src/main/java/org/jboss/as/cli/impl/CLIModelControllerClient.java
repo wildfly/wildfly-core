@@ -23,6 +23,7 @@ package org.jboss.as.cli.impl;
 
 import org.jboss.as.cli.AwaiterModelControllerClient;
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.net.URI;
@@ -43,7 +44,6 @@ import org.jboss.as.cli.impl.ModelControllerClientFactory.ConnectionCloseHandler
 import org.jboss.as.controller.client.impl.AbstractModelControllerClient;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolTimeoutHandler;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementClientChannelStrategy;
@@ -241,7 +241,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             channelAssociation.shutdown();
             // First close the channel and connection
             if (strategy != null) {
-                StreamUtils.safeClose(strategy);
+                safeClose(strategy);
                 strategy = null;
             }
             // Cancel all still active operations
@@ -275,7 +275,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
                         lock.wait(5000);
                     } catch (InterruptedException e) {
                     }
-                    StreamUtils.safeClose(strategy);
+                    safeClose(strategy);
                     strategy = null;
                 }
             }
@@ -299,7 +299,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
                 ioe = e;
                 synchronized (lock) {
                     if (strategy != null) {
-                        StreamUtils.safeClose(strategy);
+                        safeClose(strategy);
                         strategy = null;
                     }
                     lock.notifyAll();
@@ -385,7 +385,7 @@ public class CLIModelControllerClient extends AbstractModelControllerClient
             closed.getConnection().addCloseHandler(new CloseHandler<Connection>(){
                 @Override
                 public void handleClose(Connection closed, IOException exception) {
-                    StreamUtils.safeClose(originalStrategy);
+                    safeClose(originalStrategy);
                 }});
         }
     }

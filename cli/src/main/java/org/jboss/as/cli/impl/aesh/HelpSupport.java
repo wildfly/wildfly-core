@@ -15,6 +15,8 @@ limitations under the License.
  */
 package org.jboss.as.cli.impl.aesh;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.wildfly.core.cli.command.aesh.activator.HideOptionActivator;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -52,7 +54,6 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.handlers.CommandHandlerWithHelp;
 import org.jboss.as.cli.operation.OperationRequestAddress;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
@@ -95,7 +96,7 @@ public class HelpSupport {
             } catch (java.io.IOException e) {
                 return "Failed to read " + filename + ". " + e.getLocalizedMessage();
             } finally {
-                StreamUtils.safeClose(reader);
+                safeClose(reader);
             }
         } else {
             return "Failed to locate command description " + filename;
