@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -52,7 +53,6 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.ManagedServerOperationsFactory;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -227,13 +227,14 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             final ProxyController controller = serverInventory.serverCommunicationRegistered(serverProcessName, channelHandler);
             try {
                 // Send the boot updates
-                final FlushableDataOutput output = comm.writeMessage(ManagementResponseHeader.create(comm.getRequestHeader()));
+                FlushableDataOutput output = comm.writeMessage(ManagementResponseHeader.create(comm.getRequestHeader()));
                 try {
                     output.write(DomainServerProtocol.PARAM_OK);
                     updates.writeExternal(output);
                     output.close();
+                    output = null; //avoid double close
                 } finally {
-                    StreamUtils.safeClose(output);
+                    safeClose(output);
                 }
             } catch (IOException e) {
                 context.getFailureDescription().set(e.getMessage());
@@ -395,13 +396,14 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
 
     protected static void writeResponse(final Channel channel, final ManagementRequestHeader header, final Exception error) throws IOException {
         final ManagementResponseHeader response = ManagementResponseHeader.create(header, error);
-        final MessageOutputStream output = channel.writeMessage();
+        MessageOutputStream output = channel.writeMessage();
         try {
             writeHeader(response, output);
             output.write(ManagementProtocol.RESPONSE_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
@@ -417,14 +419,15 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
 
     protected static void writeResponse(final Channel channel, final ManagementRequestHeader header, final byte param) throws IOException {
         final ManagementResponseHeader response = ManagementResponseHeader.create(header);
-        final MessageOutputStream output = channel.writeMessage();
+        MessageOutputStream output = channel.writeMessage();
         try {
             writeHeader(response, output);
             output.write(param);
             output.write(ManagementProtocol.RESPONSE_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

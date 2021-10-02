@@ -85,20 +85,19 @@ public class S3Util {
         if (buffer == null) {
             return retval;
         }
-        ByteArrayInputStream in_stream = new ByteArrayInputStream(buffer);
-        DataInputStream in = new DataInputStream(in_stream);
-        String content = SEPARATOR;
-        while (SEPARATOR.equals(content)) {
-            DomainControllerData data = new DomainControllerData();
-            data.readFrom(in);
-            retval.add(data);
-            try {
-                content = readString(in);
-            } catch (EOFException ex) {
-                content = null;
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(buffer))) {
+            String content = SEPARATOR;
+            while (SEPARATOR.equals(content)) {
+                DomainControllerData data = new DomainControllerData();
+                data.readFrom(in);
+                retval.add(data);
+                try {
+                    content = readString(in);
+                } catch (EOFException ex) {
+                    content = null;
+                }
             }
         }
-        in.close();
         return retval;
     }
 

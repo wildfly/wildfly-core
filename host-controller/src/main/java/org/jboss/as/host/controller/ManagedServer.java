@@ -847,13 +847,13 @@ class ManagedServer {
             final ServerStartTask startTask = new ServerStartTask(hostControllerName, serverName, 0, operationID,
                     Collections.<ServiceActivator>singletonList(hostControllerCommActivator), bootUpdates, launchProperties,
                     bootConfiguration.isSuspended(), bootConfiguration.isGracefulStartup());
-            final Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
-            final OutputStream os = processControllerClient.sendStdin(serverProcessName);
-            marshaller.start(Marshalling.createByteOutput(os));
-            marshaller.writeObject(startTask);
-            marshaller.finish();
-            marshaller.close();
-            os.close();
+
+            try (Marshaller marshaller = MARSHALLER_FACTORY.createMarshaller(CONFIG);
+                    OutputStream os = processControllerClient.sendStdin(serverProcessName)) {
+                marshaller.start(Marshalling.createByteOutput(os));
+                marshaller.writeObject(startTask);
+                marshaller.finish();
+            }
             return true;
         }
     }

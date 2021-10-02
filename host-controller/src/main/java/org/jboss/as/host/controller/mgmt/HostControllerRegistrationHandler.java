@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -67,7 +68,6 @@ import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -666,7 +666,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                         failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendMessage(e.getMessage()));
                         throw new IllegalStateException(e);
                     } finally {
-                        StreamUtils.safeClose(output);
+                        safeClose(output);
                     }
                 } catch (IOException e) {
                     failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendResponseHeader(e.getMessage()));
@@ -718,20 +718,21 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         try {
             sendResponse(output, responseType, response);
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
     static void sendResponse(final FlushableDataOutput output, final byte responseType, final ModelNode response) throws IOException {
-        // response type
-        output.writeByte(responseType);
-        if(response != null) {
-            // operation result
-            response.writeExternal(output);
+        try (FlushableDataOutput fdoutput = output) {
+            // response type
+            fdoutput.writeByte(responseType);
+            if (response != null) {
+                // operation result
+                response.writeExternal(fdoutput);
+            }
+            // response end
+            fdoutput.writeByte(ManagementProtocol.RESPONSE_END);
         }
-        // response end
-        output.writeByte(ManagementProtocol.RESPONSE_END);
-        output.close();
     }
 
     /**
@@ -744,7 +745,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
      */
     static void sendFailedResponse(final ManagementRequestContext<RegistrationContext> context, final byte errorCode, final String message) throws IOException {
         final ManagementResponseHeader header = ManagementResponseHeader.create(context.getRequestHeader());
-        final FlushableDataOutput output = context.writeMessage(header);
+        FlushableDataOutput output = context.writeMessage(header);
         try {
             // This is an error
             output.writeByte(DomainControllerProtocol.PARAM_ERROR);
@@ -759,8 +760,9 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             // response end
             output.writeByte(ManagementProtocol.RESPONSE_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
