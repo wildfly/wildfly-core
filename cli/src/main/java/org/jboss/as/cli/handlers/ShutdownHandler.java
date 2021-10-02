@@ -22,6 +22,8 @@
 
 package org.jboss.as.cli.handlers;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,7 +41,6 @@ import org.jboss.as.cli.AwaiterModelControllerClient;
 import org.jboss.as.cli.impl.CommaSeparatedCompleter;
 import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.http.RedirectException;
 
@@ -155,7 +156,7 @@ public class ShutdownHandler extends BaseOperationCommand {
         } catch(IOException e) {
             // if it's not connected, it's assumed the connection has already been shutdown
             if(cliClient.isConnected()) {
-                StreamUtils.safeClose(client);
+                safeClose(client);
                 throw new CommandLineException("Failed to execute :shutdown", e);
             }
         }

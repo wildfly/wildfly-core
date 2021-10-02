@@ -23,6 +23,7 @@ package org.jboss.as.cli.impl;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
 import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -195,7 +196,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.protocol.GeneralTimeoutHandler;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
@@ -759,7 +759,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 } catch (IOException e) {
                     throw new GeneralSecurityException(e);
                 } finally {
-                    StreamUtils.safeClose(fis);
+                    safeClose(fis);
                 }
             }
 
@@ -1479,7 +1479,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                     // WFLYCTL0313: Unauthorized to execute operation
                     final String failure = Util.getFailureDescription(response);
                     if (failure.contains("WFLYCTL0332")) {
-                        StreamUtils.safeClose(client);
+                        safeClose(client);
                         throw new CommandLineException(
                                 "Connection refused based on the insufficient user permissions."
                                         + " Please, make sure the security-realm attribute is specified for the relevant management interface"
@@ -1527,7 +1527,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 // We don't know what happened, most likely a timeout.
                 throw new CommandLineException("The controller is not available at " + address.getHost() + ":" + address.getPort(), e);
             } finally {
-                StreamUtils.safeClose(client);
+                safeClose(client);
             }
         }
     }
@@ -1537,7 +1537,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         if (this.client != null) {
             // Closed by caller
             if (!bootInvoker) {
-                StreamUtils.safeClose(client);
+                safeClose(client);
             }
             // if(loggingEnabled) {
             // printLine("Closed connection to " + this.controllerHost + ':' +
@@ -2342,7 +2342,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 if (trustStoreFile.exists()) {
                     fis = new FileInputStream(trustStoreFile);
                     theTrustStore.load(fis, trustStorePassword.toCharArray());
-                    StreamUtils.safeClose(fis);
+                    safeClose(fis);
                     fis = null;
                 } else {
                     theTrustStore.load(null);
@@ -2362,8 +2362,8 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to operate on trust store.", e);
             } finally {
-                StreamUtils.safeClose(fis);
-                StreamUtils.safeClose(fos);
+                safeClose(fis);
+                safeClose(fos);
             }
 
             delegate = null; // Triggers a reload on next use.
@@ -2402,7 +2402,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
                 } catch (IOException e) {
                     throw new IllegalStateException("Unable to operate on trust store.", e);
                 } finally {
-                    StreamUtils.safeClose(fis);
+                    safeClose(fis);
                 }
             }
             if (delegate == null) {

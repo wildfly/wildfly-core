@@ -22,6 +22,7 @@
 package org.jboss.as.cli.handlers;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -240,7 +241,7 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
             builder.addFileAsAttachment(new File(path));
         }
         final ModelControllerClient client = ctx.getModelControllerClient();
-        final OperationResponse operationResponse;
+        OperationResponse operationResponse;
         try {
             operationResponse = client.executeOperation(builder.build(), OperationMessageHandler.DISCARD);
         } catch (Exception e) {
@@ -253,8 +254,11 @@ public abstract class BaseOperationCommand extends CommandHandlerWithHelp implem
             }
             handleResponse(ctx, operationResponse, Util.COMPOSITE.equals(request.get(Util.OPERATION).asString()));
             operationResponse.close();
+            operationResponse = null; // avoid double close
         } catch (IOException ex) {
             throw new CommandLineException("Failed to perform operation", ex);
+        } finally {
+            safeClose(operationResponse);
         }
     }
 
