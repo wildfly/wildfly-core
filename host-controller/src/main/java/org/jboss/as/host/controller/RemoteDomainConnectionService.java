@@ -37,6 +37,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -95,7 +96,6 @@ import org.jboss.as.host.controller.mgmt.DomainRemoteFileRequestAndHandler;
 import org.jboss.as.host.controller.mgmt.HostControllerRegistrationHandler;
 import org.jboss.as.host.controller.mgmt.HostInfo;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -327,7 +327,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
 
     /** {@inheritDoc} */
     public synchronized void unregister() {
-        StreamUtils.safeClose(connection);
+        safeClose(connection);
     }
 
     @Override
@@ -628,7 +628,7 @@ public class RemoteDomainConnectionService implements MasterDomainControllerClie
             @Override
             public void run() {
                 try {
-                    StreamUtils.safeClose(connection);
+                    safeClose(connection);
                     responseAttachmentSupport.shutdown();
                 } finally {
                     context.complete();
