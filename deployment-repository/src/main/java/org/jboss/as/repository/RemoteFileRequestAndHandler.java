@@ -22,6 +22,7 @@
 package org.jboss.as.repository;
 
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedOutputStream;
 import java.io.DataInput;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementRequestContext;
@@ -138,9 +138,10 @@ public abstract class RemoteFileRequestAndHandler {
                 try {
                     writeResponse(localPath, output);
                     output.close();
+                    output = null; //avoid double close
                     resultHandler.done(null); // call stack (AsyncTaskRunner created by ManagementRequestContext) handles failures
                 } finally {
-                    StreamUtils.safeClose(output);
+                    safeClose(output);
                 }
             }
         };
@@ -214,12 +215,7 @@ public abstract class RemoteFileRequestAndHandler {
                 output.write(buffer, 0, len);
             }
         } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException ignored) {
-                }
-            }
+            safeClose(inputStream);
         }
         output.writeByte(protocol.fileEnd());
     }

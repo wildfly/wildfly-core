@@ -27,7 +27,7 @@ import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
  */
 public class TemporaryFileInputStream extends TypedInputStream {
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    private final InputStream delegate;
+    private InputStream delegate;
     private final Path file;
 
     TemporaryFileInputStream(Path file) throws IOException {
@@ -62,8 +62,28 @@ public class TemporaryFileInputStream extends TypedInputStream {
 
     @Override
     public void close() throws IOException {
-        delegate.close();
-        Files.deleteIfExists(file);
+        InputStream toClose = delegate;
+        delegate = null;
+        IOException ioex = null;
+        if (toClose != null) {
+            try {
+                toClose.close();
+            } catch (IOException e) {
+                ioex = e;
+            }
+        }
+        try {
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            if (ioex != null) {
+                ioex.addSuppressed(e);
+            } else {
+                ioex = e;
+            }
+        }
+        if (ioex != null) {
+            throw ioex;
+        }
     }
 
     @Override
