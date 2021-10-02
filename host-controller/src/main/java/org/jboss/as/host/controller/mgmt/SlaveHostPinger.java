@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -30,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.as.protocol.mgmt.ManagementPingRequest;
 import org.jboss.remoting3.Channel;
@@ -146,7 +147,7 @@ public class SlaveHostPinger {
                         } catch (IOException e) {
                             // ignore; shouldn't happen as the channel is already established if this task is running
                         }
-                        StreamUtils.safeClose(channel);
+                        safeClose(channel);
                     } else if (!cancelled && interval > 0) {
                         scheduler.schedule(this, interval, TimeUnit.MILLISECONDS);
                     }

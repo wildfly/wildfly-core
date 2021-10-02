@@ -23,6 +23,7 @@
 package org.jboss.as.host.controller;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import javax.net.SocketFactory;
 import java.io.IOException;
@@ -40,7 +41,6 @@ import org.jboss.as.process.ProcessControllerClient;
 import org.jboss.as.process.ProcessInfo;
 import org.jboss.as.process.ProcessMessageHandler;
 import org.jboss.as.process.protocol.ProtocolClient;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
@@ -199,7 +199,7 @@ class ProcessControllerConnectionService implements Service<ProcessControllerCon
     public synchronized void stop(StopContext context) {
         final ProcessControllerClient client = this.client;
         this.client = null;
-        StreamUtils.safeClose(client);
+        safeClose(client);
     }
 
     /** {@inheritDoc} */

@@ -19,6 +19,7 @@
 package org.jboss.as.domain.controller.operations.deployment;
 
 import static org.jboss.as.domain.controller.logging.DomainControllerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,14 +83,4 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
 
     protected abstract InputStream getContentInputStream(OperationContext context, ModelNode operation) throws OperationFailedException;
 
-    private static void safeClose(InputStream is) {
-        if (is != null) {
-            try {
-                is.close();
-            }
-            catch (Exception e) {
-                ROOT_LOGGER.caughtExceptionClosingInputStream(e);
-            }
-        }
-    }
 }

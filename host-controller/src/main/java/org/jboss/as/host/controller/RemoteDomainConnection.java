@@ -22,6 +22,8 @@
 
 package org.jboss.as.host.controller;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.net.URI;
@@ -52,7 +54,6 @@ import org.jboss.as.host.controller.mgmt.DomainControllerProtocol;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolConnectionManager;
 import org.jboss.as.protocol.ProtocolConnectionUtils;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -560,7 +561,7 @@ class RemoteDomainConnection extends FutureManagementChannel {
                         } catch (IOException e) {
                             // ignore; shouldn't happen as the channel is already established if this task is running
                         }
-                        StreamUtils.safeClose(channel);
+                        safeClose(channel);
                     } else {
                         schedule(this);
                     }
