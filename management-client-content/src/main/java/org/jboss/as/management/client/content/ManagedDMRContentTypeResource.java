@@ -23,9 +23,9 @@
 package org.jboss.as.management.client.content;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -358,16 +358,6 @@ public class ManagedDMRContentTypeResource implements Resource.ResourceEntry {
 
     private ResourceEntry getChildEntry(String name) {
         return new ManagedDMRContentResource(PathElement.pathElement(childType, name) ,this);
-    }
-
-    private static void safeClose(Closeable c) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
     }
 
     static class ManagedContent {
