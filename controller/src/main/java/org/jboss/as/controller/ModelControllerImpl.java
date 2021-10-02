@@ -1322,7 +1322,7 @@ class ModelControllerImpl implements ModelController {
     private static class OperationResponseImpl implements OperationResponse {
 
         private final ModelNode simpleResponse;
-        private final Map<String, StreamEntry> inputStreams;
+        private Map<String, StreamEntry> inputStreams;
 
         private OperationResponseImpl(ModelNode simpleResponse, Map<String, StreamEntry> inputStreams) {
             this.simpleResponse = simpleResponse;
@@ -1355,6 +1355,9 @@ class ModelControllerImpl implements ModelController {
 
         @Override
         public void close() throws IOException {
+            if (inputStreams == null) {
+                return;
+            }
             int i = 0;
             for (OperationResponse.StreamEntry is : inputStreams.values()) {
                 try {
@@ -1364,6 +1367,8 @@ class ModelControllerImpl implements ModelController {
                 }
                 i++;
             }
+            inputStreams.clear();
+            inputStreams = null;
         }
     }
 }

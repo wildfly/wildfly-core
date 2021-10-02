@@ -21,7 +21,8 @@
  */
 package org.jboss.as.controller.client;
 
-import org.jboss.as.protocol.StreamUtils;
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.dmr.ModelNode;
 import org.wildfly.common.Assert;
 
@@ -84,7 +85,7 @@ class OperationImpl implements Operation {
     public void close() throws IOException {
         final List<InputStream> streams = getInputStreams();
         for(final InputStream stream : streams) {
-            StreamUtils.safeClose(stream);
+            safeClose(stream);
         }
     }
 }

@@ -21,6 +21,7 @@ package org.jboss.as.controller.client.impl;
 import static org.jboss.as.controller.client.helpers.ClientConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESPONSE_HEADERS;
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -219,7 +219,7 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
                         // Initialize the stream entry
                         final int size = entry.initialize();
                         try {
-                            final FlushableDataOutput output = context.writeMessage(response);
+                            FlushableDataOutput output = context.writeMessage(response);
                             try {
                                 output.writeByte(ModelControllerProtocol.PARAM_INPUTSTREAM_LENGTH);
                                 output.writeInt(size);
@@ -227,12 +227,13 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
                                 entry.copyStream(output);
                                 output.writeByte(ManagementProtocol.RESPONSE_END);
                                 output.close();
+                                output = null; //avoids double close
                             } finally {
-                                StreamUtils.safeClose(output);
+                                safeClose(output);
                             }
                         } finally {
                             // the caller is responsible for closing the input streams
-                            // StreamUtils.safeClose(is);
+                            // IoUtils.safeClose(is);
                         }
                     }
                 }
@@ -306,10 +307,10 @@ public abstract class AbstractModelControllerClient implements ModelControllerCl
 
         private void closeAttachments() {
             for(final InputStreamEntry entry : streams) {
-                StreamUtils.safeClose(entry);
+                safeClose(entry);
             }
             if(operation.isAutoCloseStreams()) {
-                StreamUtils.safeClose(operation);
+                safeClose(operation);
             }
         }
 

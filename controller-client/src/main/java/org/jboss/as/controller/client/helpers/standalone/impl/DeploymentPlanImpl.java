@@ -22,13 +22,14 @@
 
 package org.jboss.as.controller.client.helpers.standalone.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import org.jboss.as.controller.client.helpers.standalone.DeploymentAction;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentPlan;
-import org.jboss.as.protocol.StreamUtils;
 import org.wildfly.common.Assert;
 
 /**
@@ -97,7 +98,7 @@ public class DeploymentPlanImpl implements DeploymentPlan {
     void cleanup() {
         for (DeploymentActionImpl action : deploymentActions) {
             if (action.isInternalStream() && action.getContentStream() != null) {
-                StreamUtils.safeClose(action.getContentStream());
+                safeClose(action.getContentStream());
             }
         }
     }

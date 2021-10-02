@@ -22,14 +22,14 @@
 
 package org.jboss.as.controller.client.impl;
 
-import java.io.IOException;
+import static org.xnio.IoUtils.safeClose;
+
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.client.OperationResponse;
-import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.threads.AsyncFuture;
 
@@ -77,12 +77,7 @@ class ConvertingDelegatingAsyncFuture extends BasicDelegatingAsyncFuture<ModelNo
     /** Extracts the response node from an OperationResponse and returns it after first closing the OperationResponse */
     private static ModelNode responseNodeOnly(OperationResponse or) {
         ModelNode result = or.getResponseNode();
-        try {
-            or.close();
-        } catch (IOException e) {
-            ControllerClientLogger.ROOT_LOGGER.debugf(e, "Caught exception closing %s whose associated streams, " +
-                    "if any, were not wanted", or);
-        }
+        safeClose(or);
         return result;
     }
 

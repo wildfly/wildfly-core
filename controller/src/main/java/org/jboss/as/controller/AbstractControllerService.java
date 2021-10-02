@@ -1157,8 +1157,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
 
             @Override
             public void close() throws IOException {
-                if (tempModuleLayer != null) {
-                    tempModuleLayer.close();
+                TemporaryModuleLayer toClose = tempModuleLayer;
+                tempModuleLayer = null;
+                if (toClose != null) {
+                    toClose.close();
                 }
             }
         }

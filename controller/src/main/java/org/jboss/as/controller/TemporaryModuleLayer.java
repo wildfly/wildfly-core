@@ -51,7 +51,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 class TemporaryModuleLayer implements Closeable {
     private final ModuleLoader loader;
-    private final LocalModuleFinder moduleFinder;
+    private LocalModuleFinder moduleFinder;
 
     private TemporaryModuleLayer(ModuleLoader loader, LocalModuleFinder moduleFinder) {
         this.loader = loader;
@@ -102,7 +102,9 @@ class TemporaryModuleLayer implements Closeable {
 
     @Override
     public void close() throws IOException {
-        moduleFinder.close();
+        LocalModuleFinder toClose = moduleFinder;
+        moduleFinder = null;
+        toClose.close();
     }
 
 

@@ -22,7 +22,7 @@
 
 package org.jboss.as.controller.persistence;
 
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -105,8 +105,11 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
                 };
                 mapper.deparseDocument(rootDeparser, extensibleModel, streamWriter);
                 streamWriter.close();
+                streamWriter = null; //avoid double close
             } finally {
-                safeClose(streamWriter);
+                if (streamWriter != null) {
+                    safeClose((AutoCloseable) streamWriter::close);
+                }
             }
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToWriteConfiguration(e);
@@ -126,11 +129,4 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
     public void deleteSnapshot(String name) {
     }
 
-    private static void safeClose(final XMLStreamWriter streamWriter) {
-        if (streamWriter != null) try {
-            streamWriter.close();
-        } catch (Throwable t) {
-            ROOT_LOGGER.failedToCloseResource(t, streamWriter);
-        }
-    }
 }

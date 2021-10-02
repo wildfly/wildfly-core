@@ -24,10 +24,10 @@ package org.jboss.as.controller.operations.common;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -86,24 +86,23 @@ public class XmlMarshallingHandler implements OperationStepHandler{
         final Resource resource = context.readResourceFromRoot(getBaseAddress());
         // Get the model recursively
         final ModelNode model = Resource.Tools.readModel(resource);
+        BufferedOutputStream output = null;
         try {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try {
-                BufferedOutputStream output = new BufferedOutputStream(baos);
-                configPersister.marshallAsXml(model, output);
-                output.close();
-                baos.close();
-            } finally {
-                safeClose(baos);
-            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            output = new BufferedOutputStream(baos);
+            configPersister.marshallAsXml(model, output);
             String xml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
             context.getResult().set(xml);
+            output.close();
+            output = null; //avoid double close
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
             // Log this
             MGMT_OP_LOGGER.failedExecutingOperation(e, operation.require(ModelDescriptionConstants.OP), pa);
             context.getFailureDescription().set(e.toString());
+        } finally {
+            safeClose(output);
         }
     }
 
@@ -111,11 +110,4 @@ public class XmlMarshallingHandler implements OperationStepHandler{
         return PathAddress.EMPTY_ADDRESS;
     }
 
-    private void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            MGMT_OP_LOGGER.failedToCloseResource(t, closeable);
-        }
-    }
 }

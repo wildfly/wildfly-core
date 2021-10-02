@@ -21,6 +21,8 @@
 */
 package org.jboss.as.controller.support;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -37,7 +39,6 @@ import org.jboss.remoting3.Connection;
 import org.jboss.remoting3.OpenListener;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.threads.QueueExecutor;
-import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 /**
@@ -117,13 +118,13 @@ public class RemoteChannelPairSetup {
     }
 
     public void stopChannels() throws InterruptedException {
-        IoUtils.safeClose(clientChannel);
-        IoUtils.safeClose(serverChannel);
-//        IoUtils.safeClose(connection);
+        safeClose(clientChannel);
+        safeClose(serverChannel);
+//        safeClose(connection);
     }
 
     public void shutdownRemoting() throws IOException, InterruptedException {
-        IoUtils.safeClose(channelServer);
+        safeClose(channelServer);
         executorService.shutdown();
         executorService.awaitTermination(10L, TimeUnit.SECONDS);
         executorService.shutdownNow();

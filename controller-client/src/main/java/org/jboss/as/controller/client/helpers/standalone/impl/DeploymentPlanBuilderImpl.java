@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.client.helpers.standalone.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +47,6 @@ import org.jboss.as.controller.client.helpers.standalone.ReplaceDeploymentPlanBu
 import org.jboss.as.controller.client.helpers.standalone.UndeployDeploymentPlanBuilder;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentAction.Type;
 import org.jboss.as.controller.client.impl.InputStreamEntry.FileStreamEntry;
-import org.jboss.as.protocol.StreamUtils;
 
 /**
  * {@link DeploymentPlanBuilder} implementation meant to handle in-VM calls.
@@ -403,7 +404,7 @@ class DeploymentPlanBuilderImpl
     protected void cleanup() {
         for (DeploymentActionImpl action : deploymentActions) {
             if (action.isInternalStream() && action.getContentStream() != null) {
-                StreamUtils.safeClose(action.getContentStream());
+                safeClose(action.getContentStream());
             }
         }
     }

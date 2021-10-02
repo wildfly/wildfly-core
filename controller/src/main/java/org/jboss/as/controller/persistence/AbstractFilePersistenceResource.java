@@ -22,6 +22,7 @@
 package org.jboss.as.controller.persistence;
 
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -29,7 +30,6 @@ import java.io.InputStream;
 
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -40,17 +40,16 @@ public abstract class AbstractFilePersistenceResource implements ConfigurationPe
 
     protected AbstractFilePersistenceResource(final ModelNode model, final AbstractConfigurationPersister persister) throws ConfigurationPersistenceException {
         marshalled = new ExposedByteArrayOutputStream(1024 * 8);
+        BufferedOutputStream output = null;
         try {
-            try {
-                BufferedOutputStream output = new BufferedOutputStream(marshalled);
-                persister.marshallAsXml(model, output);
-                output.close();
-                marshalled.close();
-            } finally {
-                IoUtils.safeClose(marshalled);
-            }
+            output = new BufferedOutputStream(marshalled);
+            persister.marshallAsXml(model, output);
+            output.close();
+            output = null; //avoid double close
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToMarshalConfiguration(e);
+        } finally {
+            safeClose(output);
         }
     }
 

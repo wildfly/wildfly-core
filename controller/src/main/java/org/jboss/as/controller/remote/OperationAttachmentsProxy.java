@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.remote;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +34,6 @@ import java.util.List;
 
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -114,7 +115,7 @@ class OperationAttachmentsProxy implements Operation {
 
         private final int index;
         private final int batchId;
-        private final Pipe pipe;
+        private Pipe pipe;
         private final ManagementChannelAssociation channelAssociation;
 
         private boolean initialized;
@@ -141,16 +142,25 @@ class OperationAttachmentsProxy implements Operation {
 
         @Override
         public void close() throws IOException {
+            if(pipe == null) {
+                return;
+            }
+            Pipe toClose = pipe;
+            pipe = null;
             IOException ex = null;
             try {
-                pipe.getOut().close();
+                toClose.getOut().close();
             } catch (IOException e) {
                 ex = e;
             }
             try {
-                pipe.getIn().close();
+                toClose.getIn().close();
             } catch (IOException e) {
-                ex = e;
+                if (ex != null) {
+                    ex.addSuppressed(e);
+                } else {
+                    ex = e;
+                }
             }
             if (ex != null) {
                 throw ex;
@@ -218,7 +228,7 @@ class OperationAttachmentsProxy implements Operation {
         }
 
         private void shutdown(Throwable error) {
-            StreamUtils.safeClose(this);
+            safeClose(this);
             this.error = error;
         }
     }

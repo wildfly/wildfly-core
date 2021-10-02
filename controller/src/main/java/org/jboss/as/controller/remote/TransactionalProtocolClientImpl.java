@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.write;
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -357,29 +358,31 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
                     try {
                         final File temp = copyStream(is, exec.tempDir);
                         try {
-                            final FlushableDataOutput output = context.writeMessage(response);
+                            FlushableDataOutput output = context.writeMessage(response);
                             try {
                                 output.writeByte(ModelControllerProtocol.PARAM_INPUTSTREAM_LENGTH);
                                 output.writeInt((int) temp.length()); // the int is required by the protocol
                                 output.writeByte(ModelControllerProtocol.PARAM_INPUTSTREAM_CONTENTS);
-                                final FileInputStream fis = new FileInputStream(temp);
+                                FileInputStream fis = new FileInputStream(temp);
                                 try {
                                     StreamUtils.copyStream(fis, output);
                                     fis.close();
+                                    fis = null; //avoid double close
                                 } finally {
-                                    StreamUtils.safeClose(fis);
+                                    safeClose(fis);
                                 }
                                 output.writeByte(ManagementProtocol.RESPONSE_END);
                                 output.close();
+                                output = null; //avoid double close
                             } finally {
-                                StreamUtils.safeClose(output);
+                                safeClose(output);
                             }
                         } finally {
                             temp.delete();
                         }
                     } finally {
                         // the caller is responsible for closing the input streams
-                        // StreamUtils.safeClose(is);
+                        // IoUtils.safeClose(is);
                     }
                 }
             });
@@ -388,12 +391,13 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
         protected File copyStream(final InputStream is, final File tempDir) throws IOException {
             final File temp = File.createTempFile("upload", "temp", tempDir);
             if (is != null) {
-                final FileOutputStream os = new FileOutputStream(temp);
+                FileOutputStream os = new FileOutputStream(temp);
                 try {
                     StreamUtils.copyStream(is, os);
                     os.close();
+                    os = null; //avoid double close
                 } finally {
-                    StreamUtils.safeClose(os);
+                    safeClose(os);
                 }
             }
             return temp;

@@ -53,6 +53,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WAR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WARNINGS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,7 +97,6 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceController;
@@ -1633,7 +1633,7 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     private static class OperationStreamEntry implements OperationResponse.StreamEntry {
-        private final InputStream stream;
+        private InputStream stream;
         private final String mimeType;
         private final String uuid;
 
@@ -1660,7 +1660,8 @@ abstract class AbstractOperationContext implements OperationContext {
 
         @Override
         public void close() throws IOException {
-            StreamUtils.safeClose(stream);
+            safeClose(stream);
+            stream = null;
         }
     }
 }
