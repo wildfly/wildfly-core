@@ -25,6 +25,7 @@ package org.jboss.as.controller.remote;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATTACHED_STREAMS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.DataInput;
@@ -43,7 +44,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementProtocol;
@@ -299,11 +299,11 @@ public class ResponseAttachmentInputStreamSupport {
                             }
                         }
                         output.writeByte(ManagementProtocol.RESPONSE_END);
-                        output.close();
+                        output.flush();
                         resultHandler.done(null);
                     } finally {
-                        StreamUtils.safeClose(output);
-                        StreamUtils.safeClose(entry);
+                        safeClose(output);
+                        safeClose(entry);
                     }
                 }
             });
