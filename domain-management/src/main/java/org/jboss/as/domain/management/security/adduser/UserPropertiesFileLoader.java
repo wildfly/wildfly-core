@@ -22,6 +22,9 @@
 
 package org.jboss.as.domain.management.security.adduser;
 
+import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.controller.services.path.PathManager;
 
 import java.io.BufferedReader;
@@ -33,8 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
-
-import static org.jboss.as.domain.management.logging.DomainManagementLogger.ROOT_LOGGER;
 
 /**
  * An extension of {@link PropertiesFileLoader} that is realm aware.

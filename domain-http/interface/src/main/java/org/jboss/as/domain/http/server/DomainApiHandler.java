@@ -43,6 +43,7 @@ import static org.jboss.as.domain.http.server.DomainUtil.writeResponse;
 import static org.jboss.as.domain.http.server.DomainUtil.writeStreamResponse;
 import static org.jboss.as.domain.http.server.logging.HttpServerLogger.ROOT_LOGGER;
 import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,7 +74,6 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.core.security.AccessMechanism;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
 import org.xnio.IoUtils;
 import org.xnio.streams.ChannelInputStream;
@@ -189,7 +189,7 @@ class DomainApiHandler implements HttpHandler {
                     }
                 } finally {
                     if (closeResponse) {
-                        StreamUtils.safeClose(response);
+                        safeClose(response);
                     }
                 }
 
