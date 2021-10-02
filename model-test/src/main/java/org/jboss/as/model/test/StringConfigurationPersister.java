@@ -21,6 +21,8 @@
 */
 package org.jboss.as.model.test;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -79,17 +81,12 @@ public class StringConfigurationPersister extends AbstractConfigurationPersister
         StringPersistenceResource(final ModelNode model, final AbstractConfigurationPersister persister) throws ConfigurationPersistenceException {
             ByteArrayOutputStream output = new ByteArrayOutputStream(1024 * 8);
             try {
-                try {
-                    persister.marshallAsXml(model, output);
-                } finally {
-                    try {
-                        output.close();
-                    } catch (Exception ignore) {
-                    }
-                    bytes = output.toByteArray();
-                }
+                persister.marshallAsXml(model, output);
             } catch (Exception e) {
                 throw new ConfigurationPersistenceException("Failed to marshal configuration", e);
+            } finally {
+                safeClose(output);
+                bytes = output.toByteArray();
             }
         }
 
