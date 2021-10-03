@@ -60,12 +60,14 @@ public class IoUtils {
             copyStream(is, os, DEFAULT_BUFFER_SIZE);
             // throw an exception if the close fails since some data might be lost
             is.close();
+            is = null; //avoid double close
             os.close();
+            os = null; //avoid double close
         }
         finally {
             // ...but still guarantee that they're both closed
-            safeClose(is);
-            safeClose(os);
+            org.xnio.IoUtils.safeClose(is);
+            org.xnio.IoUtils.safeClose(os);
         }
     }
 
@@ -154,24 +156,26 @@ public class IoUtils {
         }
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(Closeable)} directly instead.
+     */
     public static void safeClose(final Closeable closeable) {
-        if(closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                //
-            }
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(ZipFile)} directly instead.
+     */
     public static void safeClose(final ZipFile closeable) {
-        if(closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                //
-            }
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
     public static boolean recursiveDelete(File root) {

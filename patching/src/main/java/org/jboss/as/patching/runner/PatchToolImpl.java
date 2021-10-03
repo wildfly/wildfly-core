@@ -22,7 +22,7 @@
 
 package org.jboss.as.patching.runner;
 
-import static org.jboss.as.patching.IoUtils.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -151,19 +151,14 @@ public class PatchToolImpl implements PatchTool {
 
     @Override
     public PatchingResult applyPatch(final URL url, final ContentVerificationPolicy contentPolicy) throws PatchingException {
+        InputStream is = null;
         try {
-            final InputStream is = url.openStream();
-            try {
-                return applyPatch(is, contentPolicy);
-            } finally {
-                if(is != null) try {
-                    is.close();
-                } catch (IOException e) {
-                    PatchLogger.ROOT_LOGGER.debugf(e, "failed to close input stream");
-                }
-            }
+            is = url.openStream();
+            return applyPatch(is, contentPolicy);
         } catch (IOException e) {
             throw new PatchingException(e);
+        } finally {
+            safeClose(is);
         }
     }
 

@@ -22,6 +22,8 @@
 
 package org.jboss.as.patching.metadata;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -109,10 +111,17 @@ public class PatchXml {
 
     public static void marshal(final Writer writer, final Patch patch) throws XMLStreamException {
         final XMLOutputFactory outputFactory = OUTPUT_FACTORY;
-        final XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(writer);
+        XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(writer);
         final XMLElementWriter<?> xmlWriter = XML1_0;
-        MAPPER.deparseDocument(xmlWriter, patch, streamWriter);
-        streamWriter.close();
+        try {
+            MAPPER.deparseDocument(xmlWriter, patch, streamWriter);
+            streamWriter.close();
+            streamWriter = null; // avoid double close
+        } finally {
+            if (streamWriter != null) {
+                safeClose((AutoCloseable) streamWriter::close);
+            }
+        }
     }
 
     public static void marshal(final OutputStream os, final Patch patch) throws XMLStreamException {
@@ -125,9 +134,17 @@ public class PatchXml {
 
     protected static void marshal(final OutputStream os, final Patch patch, final XMLElementWriter<? extends Patch> xmlWriter) throws XMLStreamException {
         final XMLOutputFactory outputFactory = OUTPUT_FACTORY;
-        final XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(os);
-        MAPPER.deparseDocument(xmlWriter, patch, streamWriter);
-        streamWriter.close();
+        XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(os);
+        try {
+            MAPPER.deparseDocument(xmlWriter, patch, streamWriter);
+            streamWriter.close();
+            streamWriter = null; // avoid double close
+        } finally {
+            if (streamWriter != null) {
+                safeClose((AutoCloseable) streamWriter::close);
+            }
+        }
+
     }
 
     public static PatchMetadataResolver parse(final InputStream stream) throws XMLStreamException {
@@ -153,13 +170,17 @@ public class PatchXml {
         return inputFactory;
     }
 
-    protected static PatchMetadataResolver parse(final XMLStreamReader reader, InstalledIdentity originalIdentity) throws XMLStreamException {
+    protected static PatchMetadataResolver parse(XMLStreamReader reader, InstalledIdentity originalIdentity) throws XMLStreamException {
         try {
             final Result<PatchMetadataResolver> result = new Result<PatchMetadataResolver>(originalIdentity);
             MAPPER.parseDocument(result, reader);
+            reader.close();
+            reader = null; // avoid double close
             return result.getResult();
         } finally {
-            reader.close();
+            if (reader != null) {
+                safeClose((AutoCloseable) reader::close);
+            }
         }
     }
 

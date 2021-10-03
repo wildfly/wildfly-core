@@ -27,6 +27,8 @@ import static java.lang.System.getSecurityManager;
 import static java.lang.System.getenv;
 import static java.security.AccessController.doPrivileged;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,7 +62,6 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.util.SimpleTable;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.patching.Constants;
-import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchingException;
 import org.jboss.as.patching.logging.PatchLogger;
 import org.jboss.as.patching.metadata.BundledPatch.BundledPatchEntry;
@@ -505,18 +506,8 @@ public class PatchHandler extends CommandHandlerWithHelp {
         } catch (XMLStreamException e) {
             throw new CommandLineException("Failed to parse patch.xml", e);
         } finally {
-            if(is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                }
-            }
-            if (patchZip != null) {
-                try {
-                    patchZip.close();
-                } catch (IOException e) {
-                }
-            }
+            safeClose(is);
+            safeClose(patchZip);
         }
     }
 
@@ -559,8 +550,8 @@ public class PatchHandler extends CommandHandlerWithHelp {
             } catch (Exception e) {
                 throw new CommandLineException("Failed to inspect " + bundledPatch.getPatchPath(), e);
             } finally {
-                IoUtils.safeClose(bundledPatchIs);
-                IoUtils.safeClose(is);
+                safeClose(bundledPatchIs);
+                safeClose(is);
             }
         }
     }

@@ -22,7 +22,7 @@
 
 package org.jboss.as.patching.metadata;
 
-import static org.jboss.as.patching.IoUtils.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
@@ -57,10 +57,17 @@ public class PatchBundleXml {
             final XMLInputFactory inputFactory = INPUT_FACTORY;
             setIfSupported(inputFactory, XMLInputFactory.IS_VALIDATING, Boolean.FALSE);
             setIfSupported(inputFactory, XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-            final XMLStreamReader streamReader = inputFactory.createXMLStreamReader(stream);
-            //
+            XMLStreamReader streamReader = inputFactory.createXMLStreamReader(stream);
             final PatchXml.Result<BundledPatch> result = new PatchXml.Result<BundledPatch>();
-            MAPPER.parseDocument(result, streamReader);
+            try {
+                MAPPER.parseDocument(result, streamReader);
+                streamReader.close();
+                streamReader = null; // avoid double close
+            } finally {
+                if (streamReader != null) {
+                    safeClose((AutoCloseable) streamReader::close);
+                }
+            }
             return result.getResult();
         } finally {
             safeClose(stream);
@@ -69,16 +76,30 @@ public class PatchBundleXml {
 
     public static void marshal(final Writer writer, final BundledPatch patches) throws XMLStreamException {
         final XMLOutputFactory outputFactory = OUTPUT_FACTORY;
-        final XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(writer);
-        MAPPER.deparseDocument(XML1_0, patches, streamWriter);
-        streamWriter.close();
+        XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(writer);
+        try {
+            MAPPER.deparseDocument(XML1_0, patches, streamWriter);
+            streamWriter.close();
+            streamWriter = null; // avoid double close
+        } finally {
+            if (streamWriter != null) {
+                safeClose((AutoCloseable) streamWriter::close);
+            }
+        }
     }
 
     public static void marshal(final OutputStream os, final BundledPatch patches) throws XMLStreamException {
         final XMLOutputFactory outputFactory = OUTPUT_FACTORY;
-        final XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(os);
-        MAPPER.deparseDocument(XML1_0, patches, streamWriter);
-        streamWriter.close();
+        XMLStreamWriter streamWriter = outputFactory.createXMLStreamWriter(os);
+        try {
+            MAPPER.deparseDocument(XML1_0, patches, streamWriter);
+            streamWriter.close();
+            streamWriter = null; // avoid double close
+        } finally {
+            if (streamWriter != null) {
+                safeClose((AutoCloseable) streamWriter::close);
+            }
+        }
     }
 
     private static void setIfSupported(final XMLInputFactory inputFactory, final String property, final Object value) {
