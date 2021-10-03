@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +47,6 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.protocol.StreamUtils;
 
 import org.jboss.as.server.deployment.DeploymentUndeployHandler;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -158,7 +158,7 @@ public class DeploymentScannerUnitTestCase extends AbstractDeploymentScannerBase
                 }
 
             } finally {
-                StreamUtils.safeClose(client);
+                safeClose(client);
             }
         } finally {
             container.stop();

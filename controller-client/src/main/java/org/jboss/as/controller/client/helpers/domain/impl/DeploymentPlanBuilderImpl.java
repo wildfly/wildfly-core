@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.client.helpers.domain.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -226,7 +228,7 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
             return add(name, commonName, stream);
         }
         finally {
-            try { stream.close(); } catch (Exception ignored) {}
+            safeClose(stream);
         }
     }
 
@@ -238,7 +240,7 @@ class DeploymentPlanBuilderImpl extends AbstractDeploymentPlanBuilder implements
             return replace(name, commonName, stream);
         }
         finally {
-            try { stream.close(); } catch (Exception ignored) {}
+            safeClose(stream);
         }
     }
 

@@ -23,6 +23,7 @@
 package org.jboss.as.protocol;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -127,7 +128,7 @@ public class ProtocolConnectionUtils {
             // close any connection that was established. We don't want to risk using a
             // Connection after we told remoting to cancel, and if we don't use it we must close it.
             Connection toClose = checkFuture(future.getStatus(), future, configuration);
-            StreamUtils.safeClose(toClose);
+            safeClose(toClose);
 
             throw ProtocolLogger.ROOT_LOGGER.couldNotConnect(configuration.getUri());
         }

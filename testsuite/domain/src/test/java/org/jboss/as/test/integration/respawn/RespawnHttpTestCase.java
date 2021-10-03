@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -58,7 +59,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.process.Main;
 import org.jboss.as.process.ProcessController;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
@@ -68,7 +68,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.xnio.IoUtils;
 
 
 /**
@@ -188,8 +187,8 @@ public class RespawnHttpTestCase {
             processController.shutdown();
             processController = null;
         }
-        IoUtils.safeClose(client);
-        IoUtils.safeClose(utils);
+        safeClose(client);
+        safeClose(utils);
     }
 
     @Test
@@ -633,7 +632,7 @@ public class RespawnHttpTestCase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                StreamUtils.safeClose(input);
+                safeClose(input);
             }
             return processes;
         }

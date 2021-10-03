@@ -62,6 +62,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.PRODUCT;
 import static org.jboss.as.test.patching.PatchingTestUtil.assertPatchElements;
 import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
 import static org.junit.Assert.assertEquals;
+import static org.xnio.IoUtils.safeClose;
 
 /**
  *
@@ -149,7 +150,7 @@ public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
             assertEquals(cpElementId, table.get("Cumulative patch ID"));
             assertEquals(oneOffElement2 + ',' + oneOffElement1, table.get("One-off patches"));
         } finally {
-            IoUtils.safeClose(buf);
+            safeClose(buf);
         }
     }
 

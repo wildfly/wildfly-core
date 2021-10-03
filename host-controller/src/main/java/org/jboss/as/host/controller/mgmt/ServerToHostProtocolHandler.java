@@ -29,6 +29,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -52,7 +53,6 @@ import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.host.controller.ManagedServerOperationsFactory;
 import org.jboss.as.host.controller.ServerInventory;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -231,9 +231,8 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
                 try {
                     output.write(DomainServerProtocol.PARAM_OK);
                     updates.writeExternal(output);
-                    output.close();
                 } finally {
-                    StreamUtils.safeClose(output);
+                    safeClose(output);
                 }
             } catch (IOException e) {
                 context.getFailureDescription().set(e.getMessage());
@@ -399,9 +398,8 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
         try {
             writeHeader(response, output);
             output.write(ManagementProtocol.RESPONSE_END);
-            output.close();
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
@@ -422,9 +420,8 @@ public class ServerToHostProtocolHandler implements ManagementRequestHandlerFact
             writeHeader(response, output);
             output.write(param);
             output.write(ManagementProtocol.RESPONSE_END);
-            output.close();
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

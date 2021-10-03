@@ -22,11 +22,12 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.protocol.ProtocolConnectionManager;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.CloseHandler;
@@ -72,7 +73,7 @@ public abstract class FutureManagementChannel extends ManagementClientChannelStr
                 return;
             }
             state = State.CLOSED;
-            StreamUtils.safeClose(channel);
+            safeClose(channel);
             lock.notifyAll();
         }
     }

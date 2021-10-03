@@ -44,6 +44,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STOP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,11 +156,7 @@ public class IgnoreUnusedConfigurationTestCase {
             Assert.assertFalse(exists(domainMasterLifecycleUtil, hash));
             Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
         } finally {
-            if (is != null) try {
-                is.close();
-            } catch (IOException e) {
-                // ignored
-            }
+            safeClose(is);
         }
     }
 

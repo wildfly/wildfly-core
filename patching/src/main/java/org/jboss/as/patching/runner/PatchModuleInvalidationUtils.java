@@ -22,7 +22,8 @@
 
 package org.jboss.as.patching.runner;
 
-import java.io.Closeable;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -541,16 +542,6 @@ class PatchModuleInvalidationUtils {
         }
         for (int j = 0; j < patternTwo.length - 1; j++) {
             badByteArray[patternTwo[j] - Byte.MIN_VALUE] = patternTwo.length - j - 1;
-        }
-    }
-
-
-    private static void safeClose(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (Exception ignored) {
-            }
         }
     }
 

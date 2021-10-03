@@ -20,6 +20,7 @@ package org.jboss.as.test.manualmode.adminonly.auditlog;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 
@@ -41,7 +42,6 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  * @author Kabir Khan
@@ -68,7 +68,7 @@ public class AdminOnlyAuditLogTestCase {
             // Stop the container
             container.stop();
         } finally {
-            IoUtils.safeClose(managementClient);
+            safeClose(managementClient);
         }
     }
 
@@ -143,7 +143,7 @@ public class AdminOnlyAuditLogTestCase {
 
             }
         } finally {
-            IoUtils.safeClose(client);
+            safeClose(client);
         }
     }
 }

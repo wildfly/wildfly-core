@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,8 +47,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.xnio.IoUtils;
 
 /**
  * @author: Kabir Khan
@@ -83,7 +83,7 @@ public abstract class SimpleSyslogServer implements Runnable {
             kmf.init(ks, keystorePassword.toCharArray());
             keyManagers = kmf.getKeyManagers();
         } finally {
-            IoUtils.safeClose(in);
+            safeClose(in);
         }
         boolean requireClientAuth = false;
         TrustManager[] trustManagers = null;
@@ -97,7 +97,7 @@ public abstract class SimpleSyslogServer implements Runnable {
                 tmf.init(ks);
                 trustManagers = tmf.getTrustManagers();
             } finally {
-                IoUtils.safeClose(in);
+                safeClose(in);
             }
         }
 
@@ -169,8 +169,8 @@ public abstract class SimpleSyslogServer implements Runnable {
         @Override
         void close() {
             closed.set(true);
-            IoUtils.safeClose(serverSocket);
-            IoUtils.safeClose(socket);
+            safeClose(serverSocket);
+            safeClose(socket);
         }
 
         Socket accept(ServerSocket serverSocket) throws IOException {

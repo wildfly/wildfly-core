@@ -24,7 +24,7 @@ package org.jboss.as.patching.runner;
 
 import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.IoUtils.mkdir;
-import static org.jboss.as.patching.IoUtils.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -229,13 +229,12 @@ public final class PatchUtils {
     }
 
     public static void writeProperties(final File file, final Properties properties) throws IOException {
-        final OutputStream os = new FileOutputStream(file);
+        Writer writer = null;
         try {
-            final Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8);
+            writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
             properties.store(writer, "read only");
-            writer.close();
         } finally {
-            safeClose(os);
+            safeClose(writer);
         }
     }
 

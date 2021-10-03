@@ -44,10 +44,10 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
 import static org.jboss.as.server.deployment.scanner.logging.DeploymentScannerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -1313,15 +1313,6 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         }
         op.get(OPERATION_HEADERS, ROLLBACK_ON_RUNTIME_FAILURE).set(rollbackOnRuntimeFailure);
         return op;
-    }
-
-    private void safeClose(final Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException ignored) {
-            }
-        }
     }
 
     private void createMarkerFile(final File marker, String deploymentName) {

@@ -22,6 +22,8 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -36,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.as.protocol.mgmt.support.ManagementChannelShutdownHandle;
 import org.jboss.remoting3.Channel;
@@ -511,7 +512,7 @@ public abstract class AbstractMessageHandler implements ManagementMessageHandler
             writeHeader(response, output);
             output.close();
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

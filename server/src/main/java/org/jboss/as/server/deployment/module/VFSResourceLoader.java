@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment.module;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -206,7 +207,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                                 throw ServerLogger.ROOT_LOGGER.resourceTooLarge();
                             }
                         } finally {
-                            VFSUtils.safeClose(is);
+                            safeClose(is);
                         }
                     }
                 }

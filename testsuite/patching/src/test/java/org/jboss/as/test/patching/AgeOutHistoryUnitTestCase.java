@@ -30,6 +30,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,11 +74,7 @@ public class AgeOutHistoryUnitTestCase extends AbstractPatchingTestCase {
 
     @After
     public void tearDown() throws Exception {
-        if (client != null) {
-            try {
-                client.close();
-            } catch (Exception e) {}
-        }
+        safeClose(client);
     }
 
     @Override

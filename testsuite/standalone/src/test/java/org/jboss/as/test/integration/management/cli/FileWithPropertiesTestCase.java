@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -109,16 +110,8 @@ public class FileWithPropertiesTestCase {
         } catch(IOException e) {
             fail(e.getLocalizedMessage());
         } finally {
-            if(reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {}
-            }
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {}
-            }
+            safeClose(reader);
+            safeClose(writer);
         }
 
         ensureRemoved(SCRIPT_FILE);
@@ -136,12 +129,7 @@ public class FileWithPropertiesTestCase {
         } catch (IOException e) {
             fail("Failed to write to " + SCRIPT_FILE.getAbsolutePath() + ": " + e.getLocalizedMessage());
         } finally {
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                }
-            }
+            safeClose(writer);
         }
 
         writer = null;
@@ -153,12 +141,7 @@ public class FileWithPropertiesTestCase {
         } catch (IOException e) {
             fail("Failed to write to " + PROPS_FILE.getAbsolutePath() + ": " + e.getLocalizedMessage());
         } finally {
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                }
-            }
+            safeClose(writer);
         }
     }
 

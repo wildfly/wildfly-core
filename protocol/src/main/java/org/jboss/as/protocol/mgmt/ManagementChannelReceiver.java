@@ -22,12 +22,13 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.MessageInputStream;
@@ -100,7 +101,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
         } catch (Exception e) {
             handleError(channel, new IOException(e));
         } finally {
-            StreamUtils.safeClose(message);
+            safeClose(message);
             ProtocolLogger.ROOT_LOGGER.tracef("%s done handling incoming data", this);
         }
         channel.receiveMessage(this);
@@ -116,20 +117,12 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
     @Override
     public void handleError(final Channel channel, final IOException error) {
         ProtocolLogger.ROOT_LOGGER.tracef(error, "%s error handling incoming data", this);
-        try {
-            channel.close();
-        } catch (IOException e) {
-            ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
-        }
+        safeClose(channel);
     }
 
     @Override
     public void handleEnd(final Channel channel) {
-        try {
-            channel.close();
-        } catch (IOException e) {
-            ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
-        }
+        safeClose(channel);
     }
 
     /**
@@ -146,7 +139,7 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
             writeHeader(response, output);
             output.close();
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

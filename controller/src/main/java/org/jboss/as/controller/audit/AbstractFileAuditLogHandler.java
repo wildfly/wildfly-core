@@ -21,10 +21,11 @@
  */
 package org.jboss.as.controller.audit;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.protocol.StreamUtils;
-import org.xnio.IoUtils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -101,7 +102,7 @@ public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
             output.flush();
             fos.getFD().sync();
         } finally {
-            IoUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
@@ -150,12 +151,11 @@ public abstract class AbstractFileAuditLogHandler extends AuditLogHandler {
                 //Flush and force the file to sync
                 output.flush();
                 fos.getFD().sync();
-                fos.close();
             } finally {
-                StreamUtils.safeClose(output);
+                safeClose(output);
             }
         } finally {
-            StreamUtils.safeClose(in);
+            safeClose(in);
         }
     }
 

@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HAS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INPUT_STREAM_INDEX;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.URL;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,7 +48,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.operations.CompositeOperationAwareTransmuter;
 import org.jboss.as.controller.operations.OperationAttachments;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.repository.DeploymentFileRepository;
@@ -143,14 +143,11 @@ public class DeploymentOverlayContentAdd extends AbstractAddStepHandler {
         byte[] hash;
         InputStream in = getInputStream(context, contentItemNode);
         try {
-            try {
-                hash = contentRepository.addContent(in);
-            } catch (IOException e) {
-                throw createFailureException(e.toString());
-            }
-
+            hash = contentRepository.addContent(in);
+        } catch (IOException e) {
+            throw createFailureException(e.toString());
         } finally {
-            StreamUtils.safeClose(in);
+            safeClose(in);
         }
         return hash;
     }

@@ -23,6 +23,7 @@
 package org.jboss.as.test.integration.domain.management.util;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -91,11 +92,7 @@ public class DomainControllerClientConfig implements Closeable {
         if(destroyExecutor) {
             executorService.shutdown();
         }
-        if(endpoint != null) try {
-            endpoint.close();
-        } catch (IOException | UnsupportedOperationException e) {
-            // ignore
-        }
+        safeClose(endpoint);
         if(destroyExecutor) {
             executorService.shutdownNow();
         }

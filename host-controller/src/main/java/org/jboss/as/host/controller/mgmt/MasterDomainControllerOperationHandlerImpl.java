@@ -19,6 +19,7 @@
 package org.jboss.as.host.controller.mgmt;
 
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -29,7 +30,6 @@ import org.jboss.as.controller.HashUtil;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementProtocol;
@@ -84,10 +84,10 @@ class MasterDomainControllerOperationHandlerImpl implements ManagementRequestHan
             final FlushableDataOutput os = writeGenericResponseHeader(context);
             try {
                 os.write(ManagementProtocol.RESPONSE_END);
-                os.close();
+                os.flush();
                 resultHandler.done(null); // call stack (AbstractMessageHandler) handles failures
             } finally {
-                StreamUtils.safeClose(os);
+                safeClose(os);
             }
         }
 

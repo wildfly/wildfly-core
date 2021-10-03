@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
+import static org.xnio.IoUtils.safeClose;
 
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
@@ -55,7 +56,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
-import org.xnio.IoUtils;
 
 /**
  * Tests for suspend/resume functionality
@@ -101,7 +101,7 @@ public class StartSuspendedTestCase {
             // Stop the container
             container.stop();
         } finally {
-            IoUtils.safeClose(managementClient);
+            safeClose(managementClient);
         }
     }
 

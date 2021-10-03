@@ -20,6 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -61,7 +62,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
-import org.xnio.IoUtils;
 
 /**
  * WFCORE-3073. Tests that a softly killed process shuts down gracefully.
@@ -326,7 +326,7 @@ public class SuspendOnSoftKillTestCase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                IoUtils.safeClose(input);
+                safeClose(input);
             }
             return processes;
         }

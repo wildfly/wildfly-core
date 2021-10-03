@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.read;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -50,7 +51,6 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.ModelControllerProtocol;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.remote.IdentityAddressProtocolUtil.PropagatedIdentity;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelAssociation;
@@ -636,11 +636,11 @@ public class TransactionalProtocolOperationHandler implements ManagementRequestH
                     response.writeExternal(output);
                     // response end
                     output.writeByte(ManagementProtocol.RESPONSE_END);
-                    output.close();
+                    output.flush();
                 } catch (IOException toCache) {
                     exceptionHolder.exception = toCache;
                 } finally {
-                    StreamUtils.safeClose(output);
+                    safeClose(output);
                     latch.countDown();
                 }
             }

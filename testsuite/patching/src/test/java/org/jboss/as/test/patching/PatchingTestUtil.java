@@ -28,11 +28,11 @@ import static org.jboss.as.patching.Constants.MODULES;
 import static org.jboss.as.patching.Constants.OVERLAYS;
 import static org.jboss.as.patching.Constants.SYSTEM;
 import static org.jboss.as.patching.IoUtils.newFile;
-import static org.jboss.as.patching.IoUtils.safeClose;
 import static org.jboss.as.patching.logging.PatchLogger.ROOT_LOGGER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -158,7 +158,7 @@ public class PatchingTestUtil {
             os.write(content.getBytes(StandardCharsets.UTF_8));
             os.close();
         } finally {
-            IoUtils.safeClose(os);
+            safeClose(os);
         }
     }
 
@@ -168,7 +168,7 @@ public class PatchingTestUtil {
             os.write(content);
             os.close();
         } finally {
-            IoUtils.safeClose(os);
+            safeClose(os);
         }
     }
 

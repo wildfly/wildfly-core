@@ -31,6 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.remote.IdentityAddressProtocolUtil.write;
 import static org.jboss.as.protocol.mgmt.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.File;
@@ -365,21 +366,20 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
                                 final FileInputStream fis = new FileInputStream(temp);
                                 try {
                                     StreamUtils.copyStream(fis, output);
-                                    fis.close();
                                 } finally {
-                                    StreamUtils.safeClose(fis);
+                                    safeClose(fis);
                                 }
                                 output.writeByte(ManagementProtocol.RESPONSE_END);
-                                output.close();
+                                output.flush();
                             } finally {
-                                StreamUtils.safeClose(output);
+                                safeClose(output);
                             }
                         } finally {
                             temp.delete();
                         }
                     } finally {
                         // the caller is responsible for closing the input streams
-                        // StreamUtils.safeClose(is);
+                        // IoUtils.safeClose(is);
                     }
                 }
             });
@@ -391,9 +391,8 @@ class TransactionalProtocolClientImpl implements ManagementRequestHandlerFactory
                 final FileOutputStream os = new FileOutputStream(temp);
                 try {
                     StreamUtils.copyStream(is, os);
-                    os.close();
                 } finally {
-                    StreamUtils.safeClose(os);
+                    safeClose(os);
                 }
             }
             return temp;

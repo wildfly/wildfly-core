@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.host.controller.logging.HostControllerLogger.DOMAIN_LOGGER;
 import static org.jboss.as.process.protocol.ProtocolUtils.expectHeader;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -67,7 +68,6 @@ import org.jboss.as.domain.controller.SlaveRegistrationException;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.operations.ReadMasterDomainModelHandler;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
 import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
@@ -666,7 +666,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                         failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendMessage(e.getMessage()));
                         throw new IllegalStateException(e);
                     } finally {
-                        StreamUtils.safeClose(output);
+                        safeClose(output);
                     }
                 } catch (IOException e) {
                     failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendResponseHeader(e.getMessage()));
@@ -718,7 +718,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
         try {
             sendResponse(output, responseType, response);
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
@@ -758,9 +758,8 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             }
             // response end
             output.writeByte(ManagementProtocol.RESPONSE_END);
-            output.close();
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

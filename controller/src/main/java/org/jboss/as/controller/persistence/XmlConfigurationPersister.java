@@ -22,10 +22,9 @@
 
 package org.jboss.as.controller.persistence;
 
-import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -138,7 +137,9 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
         } catch (Exception e) {
             throw ControllerLogger.ROOT_LOGGER.failedToParseConfiguration(e);
         } finally {
-            safeClose(streamReader);
+            if (streamReader != null) {
+                safeClose((AutoCloseable) streamReader::close);
+            }
             safeClose(input);
         }
 
@@ -149,24 +150,6 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
         return new WildFlyErrorReporter(this.fileName,
                                         ControllerLogger.ROOT_LOGGER)
                 .report(exception);
-    }
-
-    private static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            ROOT_LOGGER.failedToCloseResource(t, closeable);
-        }
-    }
-
-    private static void safeClose(final XMLStreamReader reader) {
-        if (reader != null) {
-            try {
-                reader.close();
-            } catch (Throwable t) {
-                ROOT_LOGGER.failedToCloseResource(t, reader);
-            }
-        }
     }
 
     protected void successfulBoot(File file) throws ConfigurationPersistenceException {

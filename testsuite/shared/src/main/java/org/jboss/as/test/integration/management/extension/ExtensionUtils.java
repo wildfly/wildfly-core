@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.management.extension;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -45,7 +47,6 @@ import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
 import org.jboss.shrinkwrap.api.exporter.StreamExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.xnio.IoUtils;
 
 /**
  * Utilities for manipulating extensions in integration tests.
@@ -82,7 +83,7 @@ public class ExtensionUtils {
         try {
             copyFile(new File(file, JAR_NAME), is);
         } finally {
-            IoUtils.safeClose(is);
+            safeClose(is);
         }
 
         URL url = extension.getResource("module.xml");
@@ -109,7 +110,7 @@ public class ExtensionUtils {
                 i = src.read();
             }
         } finally {
-            IoUtils.safeClose(out);
+            safeClose(out);
         }
     }
 

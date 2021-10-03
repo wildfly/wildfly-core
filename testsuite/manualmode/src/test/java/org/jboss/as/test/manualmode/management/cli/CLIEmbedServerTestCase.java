@@ -39,6 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -53,7 +54,6 @@ import java.util.List;
 import org.codehaus.plexus.util.FileUtils;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
@@ -781,7 +781,7 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
                 fail("Cannot connect remotely: " + e.toString());
             }
         } finally {
-            StreamUtils.safeClose(mcc);
+            safeClose(mcc);
         }
     }
 

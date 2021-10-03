@@ -25,8 +25,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
+import static org.xnio.IoUtils.safeClose;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -257,11 +257,7 @@ public abstract class ModelTestLegacyControllerKernelServicesProxy {
             throw new RuntimeException(e);
         }
         if (childFirstClassLoader instanceof URLClassLoader){
-            try {
-                ((URLClassLoader)childFirstClassLoader).close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            safeClose((URLClassLoader)childFirstClassLoader);
         }
     }
 

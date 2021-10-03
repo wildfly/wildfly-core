@@ -42,6 +42,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -329,11 +330,7 @@ public class IgnoredResourcesTestCase {
             Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
 
         } finally {
-            if (is != null) try {
-                is.close();
-            } catch (IOException e) {
-                // ignored
-            }
+            safeClose(is);
         }
     }
 

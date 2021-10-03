@@ -64,8 +64,8 @@ public class IoUtils {
         }
         finally {
             // ...but still guarantee that they're both closed
-            safeClose(is);
-            safeClose(os);
+            org.xnio.IoUtils.safeClose(is);
+            org.xnio.IoUtils.safeClose(os);
         }
     }
 
@@ -155,23 +155,11 @@ public class IoUtils {
     }
 
     public static void safeClose(final Closeable closeable) {
-        if(closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                //
-            }
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
     public static void safeClose(final ZipFile closeable) {
-        if(closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                //
-            }
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
     public static boolean recursiveDelete(File root) {

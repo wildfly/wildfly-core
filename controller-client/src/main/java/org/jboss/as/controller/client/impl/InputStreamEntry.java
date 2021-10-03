@@ -22,6 +22,8 @@
 
 package org.jboss.as.controller.client.impl;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import org.jboss.as.controller.client.logging.ControllerClientLogger;
 import org.jboss.as.protocol.StreamUtils;
@@ -80,7 +82,7 @@ public interface InputStreamEntry extends Closeable {
                 StreamUtils.copyStream(original, os);
             } finally {
                 if(autoClose) {
-                    StreamUtils.safeClose(original);
+                    safeClose(original);
                 }
             }
             data = os.toByteArray();
@@ -125,7 +127,7 @@ public interface InputStreamEntry extends Closeable {
                     return (int) Files.copy(original, temp.toPath());
                 } finally {
                     if(autoClose) {
-                        StreamUtils.safeClose(original);
+                        safeClose(original);
                     }
                 }
             }
@@ -138,7 +140,7 @@ public interface InputStreamEntry extends Closeable {
             try {
                 StreamUtils.copyStream(is, output);
             } finally {
-                StreamUtils.safeClose(is);
+                safeClose(is);
             }
         }
 

@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.junit.Assert.fail;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -37,7 +38,6 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.xnio.IoUtils;
 
 /**
  * Utilities for handling server reloads.
@@ -191,7 +191,7 @@ public class ServerReload {
                     }
                 } catch (IOException e) {
                 } finally {
-                    IoUtils.safeClose(liveClient);
+                    safeClose(liveClient);
                 }
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);

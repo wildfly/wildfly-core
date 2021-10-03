@@ -19,6 +19,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.PRODUCT;
 import static org.jboss.as.test.patching.PatchingTestUtil.createPatchXMLFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.createZippedPatchFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +32,6 @@ import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
-import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.version.ProductConfig;
@@ -105,7 +105,7 @@ public class PatchRemoteHostUnitTestCase {
             final ModelNode result = client.execute(op);
             validateResponse(result);
         } finally {
-            StreamUtils.safeClose(op);
+            safeClose(op);
         }
 
         // Restart the slave

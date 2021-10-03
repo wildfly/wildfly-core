@@ -18,6 +18,8 @@
 
 package org.jboss.as.test.manualmode.auditlog;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
@@ -51,7 +53,6 @@ import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  * Tests that fields of Audit log have right content.
@@ -115,7 +116,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
                 // Stop the container
                 container.stop();
             } finally {
-                IoUtils.safeClose(client);
+                safeClose(client);
                 Files.deleteIfExists(FILE);
             }
         }

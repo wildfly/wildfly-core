@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -51,7 +52,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.byteman.agent.submit.Submit;
@@ -227,10 +227,10 @@ public class DeploymentScannerShutdownTestCase {
                     i = in.read();
                 }
             } finally {
-                StreamUtils.safeClose(out);
+                safeClose(out);
             }
         } finally {
-            StreamUtils.safeClose(in);
+            safeClose(in);
         }
         Assert.assertTrue(file.exists());
         waitForMarkerFile(deployed);

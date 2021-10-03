@@ -26,6 +26,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CON
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ENABLED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -106,8 +107,8 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
             StreamUtils.copyStream(in, out);
             return out.toByteArray();
         } finally {
-            StreamUtils.safeClose(in);
-            StreamUtils.safeClose(out);
+            safeClose(in);
+            safeClose(out);
         }
     }
 

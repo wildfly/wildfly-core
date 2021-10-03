@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.mgmt.domain;
 
+import static org.xnio.IoUtils.safeClose;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -45,7 +47,6 @@ import org.jboss.as.controller.remote.TransactionalProtocolOperationHandler;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
 import org.jboss.as.protocol.ProtocolConnectionManager;
 import org.jboss.as.protocol.ProtocolConnectionUtils;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.mgmt.AbstractManagementRequest;
 import org.jboss.as.protocol.mgmt.ActiveOperation;
 import org.jboss.as.protocol.mgmt.FlushableDataOutput;
@@ -188,7 +189,7 @@ class HostControllerConnection extends FutureManagementChannel {
             }
             // Disconnect - the HC might have closed the connection without us noticing and is asking for a reconnect
             final Connection connection = connectionManager.getConnection();
-            StreamUtils.safeClose(connection);
+            safeClose(connection);
             if(connection != null) {
                 try {
                     // Wait for the connection to be closed
@@ -216,7 +217,7 @@ class HostControllerConnection extends FutureManagementChannel {
             }
         } finally {
             if(!ok) {
-                StreamUtils.safeClose(connection);
+                safeClose(connection);
             }
         }
     }

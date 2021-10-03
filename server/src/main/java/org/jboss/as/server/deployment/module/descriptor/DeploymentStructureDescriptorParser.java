@@ -21,7 +21,8 @@
  */
 package org.jboss.as.server.deployment.module.descriptor;
 
-import java.io.Closeable;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -379,30 +380,13 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 mapper.parseDocument(result, streamReader);
                 return result;
             } finally {
-                safeClose(streamReader);
+                if (streamReader != null) {
+                    safeClose((AutoCloseable) streamReader::close);
+                }
             }
         } catch (XMLStreamException e) {
             throw ServerLogger.ROOT_LOGGER.errorLoadingDeploymentStructureFile(file.getPath(), e);
         }
     }
-
-    private static void safeClose(final Closeable closeable) {
-        if (closeable != null)
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                // ignore
-            }
-    }
-
-    private static void safeClose(final XMLStreamReader streamReader) {
-        if (streamReader != null)
-            try {
-                streamReader.close();
-            } catch (XMLStreamException e) {
-                // ignore
-            }
-    }
-
 
 }

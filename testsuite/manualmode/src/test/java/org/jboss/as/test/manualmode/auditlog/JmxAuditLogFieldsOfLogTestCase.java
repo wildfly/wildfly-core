@@ -3,6 +3,8 @@ package org.jboss.as.test.manualmode.auditlog;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT_LOG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HANDLER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.xnio.IoUtils.safeClose;
+
 import java.nio.file.Files;
 import java.util.List;
 
@@ -30,7 +32,6 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  * @author Ondrej Lukas
@@ -119,7 +120,7 @@ public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCa
     @After
     public void afterTest() throws Exception {
         final ModelControllerClient client = container.getClient().getControllerClient();
-        IoUtils.safeClose(connector);
+        safeClose(connector);
 
         final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();
         resetUser(compositeOp);

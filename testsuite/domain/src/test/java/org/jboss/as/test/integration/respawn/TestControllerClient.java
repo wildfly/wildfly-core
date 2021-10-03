@@ -1,5 +1,7 @@
 package org.jboss.as.test.integration.respawn;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.controller.client.impl.AbstractModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
@@ -10,7 +12,6 @@ import org.jboss.as.protocol.mgmt.ManagementChannelHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.Connection;
-import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ class TestControllerClient extends AbstractModelControllerClient {
             try {
                 channelHandler.shutdown();
             } finally {
-                IoUtils.safeClose(channelStrategy);
+                safeClose(channelStrategy);
             }
         } finally {
             channelHandler.shutdownNow();

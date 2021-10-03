@@ -18,6 +18,7 @@ package org.jboss.as.test.manualmode.auditlog;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLIENT_CERT_STORE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TRUSTSTORE;
 import static org.jboss.as.test.manualmode.auditlog.AbstractLogFieldsOfLogTestCase.executeForSuccess;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -44,7 +45,6 @@ import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -115,7 +115,7 @@ public class AuditLogBootingSyslogTest {
                 // Stop the container
                 container.stop();
             } finally {
-                IoUtils.safeClose(client);
+                safeClose(client);
             }
         }
     }
