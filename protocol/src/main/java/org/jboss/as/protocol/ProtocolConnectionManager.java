@@ -22,6 +22,8 @@
 
 package org.jboss.as.protocol;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.CloseHandler;
 import org.jboss.remoting3.Connection;
@@ -86,7 +88,7 @@ public final class ProtocolConnectionManager {
                     });
                 } finally {
                     if(!ok) {
-                        StreamUtils.safeClose(connection);
+                        safeClose(connection);
                     }
                 }
             }
