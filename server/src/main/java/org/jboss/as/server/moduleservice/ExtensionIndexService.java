@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.moduleservice;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -46,7 +48,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -123,7 +124,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             extensionJarSet.add(extensionJar);
 
                         } finally {
-                            VFSUtils.safeClose(jarFile);
+                            safeClose(jarFile);
                         }
                     } catch (IOException e) {
                         log.debugf("Failed to process JAR manifest for %s: %s", jar, e);

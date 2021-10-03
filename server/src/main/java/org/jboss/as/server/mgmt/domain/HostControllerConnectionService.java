@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.mgmt.domain;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.FileInputStream;
@@ -49,7 +51,6 @@ import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.remote.ResponseAttachmentInputStreamSupport;
 import org.jboss.as.protocol.ProtocolConnectionConfiguration;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceName;
@@ -57,7 +58,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.remoting3.Endpoint;
-import org.xnio.IoUtils;
 import org.xnio.OptionMap;
 
 /**
@@ -144,7 +144,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                                 || current == ControlledProcessState.State.RESTART_REQUIRED) {
                             connection.started();
                         } else {
-                            IoUtils.safeClose(connection);
+                            safeClose(connection);
                         }
                     }
                 }
@@ -165,7 +165,7 @@ public class HostControllerConnectionService implements Service<HostControllerCl
                 try {
                     responseAttachmentSupport.shutdown();
                 } finally {
-                    StreamUtils.safeClose(client);
+                    safeClose(client);
                     client = null;
                     stopContext.complete();
                 }

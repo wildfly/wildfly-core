@@ -22,9 +22,10 @@
 
 package org.jboss.as.server.deployment.module;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.Closeable;
 
-import org.jboss.vfs.VFSUtils;
 import org.wildfly.common.ref.CleanerReference;
 import org.wildfly.common.ref.Reaper;
 import org.wildfly.common.ref.Reference;
@@ -43,7 +44,7 @@ public class MountHandle implements Closeable {
     private static final Reaper<MountHandle, Closeable> REAPER = new Reaper<MountHandle, Closeable>() {
         @Override
         public void reap(Reference<MountHandle, Closeable> reference) {
-            VFSUtils.safeClose(reference.getAttachment());
+            safeClose(reference.getAttachment());
         }
     };
 
@@ -76,8 +77,6 @@ public class MountHandle implements Closeable {
      * Forcefully close this handle. Use with caution.
      */
     public void close() {
-        if (handle != null) {
-            VFSUtils.safeClose(handle);
-        }
+        safeClose(handle);
     }
 }
