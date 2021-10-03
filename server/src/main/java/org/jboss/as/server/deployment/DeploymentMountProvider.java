@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -45,7 +46,6 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -139,7 +139,8 @@ public interface DeploymentMountProvider {
                     public void run() {
                         try {
                             deploymentMountProviderConsumer.accept(null);
-                            VFSUtils.safeClose(tempFileProvider);
+                            safeClose(tempFileProvider);
+                            tempFileProvider = null; //not needed anymore
                         } finally {
                             try {
                                 ScheduledExecutorService ses = scheduledExecutorService;

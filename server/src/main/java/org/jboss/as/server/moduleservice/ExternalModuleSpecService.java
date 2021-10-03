@@ -21,6 +21,8 @@
  */
 package org.jboss.as.server.moduleservice;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,7 +49,6 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -136,7 +137,7 @@ public class ExternalModuleSpecService implements Service<ModuleDefinition> {
     public synchronized void stop(StopContext context) {
         for (JarFile jarFile : jarFiles) {
             log.debugf("Closing %s jar file which was added as resource root for %s module identifier", jarFile.getName(), moduleIdentifier.getName());
-            VFSUtils.safeClose(jarFile);
+            safeClose(jarFile);
         }
         jarFiles.clear();
         jarFiles = null;

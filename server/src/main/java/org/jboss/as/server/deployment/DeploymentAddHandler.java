@@ -36,6 +36,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.addFlushHand
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidContentAdditionParameterDefined;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +50,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
@@ -205,16 +205,13 @@ public class DeploymentAddHandler implements OperationStepHandler {
         InputStream in = getInputStream(context, contentItemNode);
         InputStream transformed = null;
         try {
-            try {
-                transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
-                hash = contentRepository.addContent(transformed);
-            } catch (IOException e) {
-                throw createFailureException(e.toString());
-            }
-
+            transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
+            hash = contentRepository.addContent(transformed);
+        } catch (IOException e) {
+            throw createFailureException(e.toString());
         } finally {
-            StreamUtils.safeClose(in);
-            StreamUtils.safeClose(transformed);
+            safeClose(in);
+            safeClose(transformed);
         }
         return new DeploymentHandlerUtil.ContentItem(hash);
     }

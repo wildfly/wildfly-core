@@ -233,11 +233,7 @@ public class DeploymentOverlayDeploymentUnitProcessor implements DeploymentUnitP
         }
     }
 
-
     protected static void close(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException ignore) {
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 }

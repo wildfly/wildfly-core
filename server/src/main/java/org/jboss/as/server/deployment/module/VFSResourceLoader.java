@@ -23,6 +23,7 @@
 package org.jboss.as.server.deployment.module;
 
 import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -180,7 +181,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                     final long size = file.getSize();
                     final ClassSpec spec = new ClassSpec();
                     synchronized (VFSResourceLoader.this) {
-                        final InputStream is = file.openStream();
+                        InputStream is = file.openStream();
                         try {
                             if (size <= Integer.MAX_VALUE) {
                                 final int castSize = (int) size;
@@ -193,6 +194,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                                 while (is.read() != -1) {}
                                 // done
                                 is.close();
+                                is = null; // avoid double close
                                 spec.setBytes(bytes);
                                 final CodeSigner[] entryCodeSigners = file.getCodeSigners();
                                 final CodeSigners codeSigners = entryCodeSigners == null || entryCodeSigners.length == 0 ? EMPTY_CODE_SIGNERS : new CodeSigners(entryCodeSigners);
@@ -206,7 +208,7 @@ public class VFSResourceLoader extends AbstractResourceLoader implements Iterabl
                                 throw ServerLogger.ROOT_LOGGER.resourceTooLarge();
                             }
                         } finally {
-                            VFSUtils.safeClose(is);
+                            safeClose(is);
                         }
                     }
                 }

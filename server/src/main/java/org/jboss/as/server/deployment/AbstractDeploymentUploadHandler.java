@@ -18,6 +18,8 @@
  */
 package org.jboss.as.server.deployment;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.EnumSet;
@@ -79,14 +81,4 @@ public abstract class AbstractDeploymentUploadHandler implements OperationStepHa
 
     protected abstract InputStream getContentInputStream(OperationContext context, ModelNode operation) throws IOException, OperationFailedException;
 
-    private static void safeClose(InputStream is) {
-        if (is != null) {
-            try {
-                is.close();
-            }
-            catch (Exception e) {
-                ServerLogger.ROOT_LOGGER.caughtExceptionClosingContentInputStream(e);
-            }
-        }
-    }
 }

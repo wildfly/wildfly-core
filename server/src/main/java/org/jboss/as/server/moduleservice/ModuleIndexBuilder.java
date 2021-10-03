@@ -23,6 +23,7 @@ package org.jboss.as.server.moduleservice;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -51,17 +52,14 @@ public class ModuleIndexBuilder {
             final Set<Index> indexes = new HashSet<Index>();
             while (resources.hasMoreElements()) {
                 final URL url = resources.nextElement();
-                InputStream stream = url.openStream();
-                try {
+                try (InputStream stream = url.openStream()) {
                     IndexReader reader = new IndexReader(stream);
                     indexes.add(reader.read());
-                } finally {
-                    stream.close();
                 }
             }
             return new CompositeIndex(indexes);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
 
     }

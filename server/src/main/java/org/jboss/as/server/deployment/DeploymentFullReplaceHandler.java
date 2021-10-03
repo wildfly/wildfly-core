@@ -34,6 +34,7 @@ import static org.jboss.as.server.deployment.DeploymentHandlerUtils.asString;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.createFailureException;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.getInputStream;
 import static org.jboss.as.server.deployment.DeploymentHandlerUtils.hasValidContentAdditionParameterDefined;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +48,6 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.repository.ContentReference;
 import org.jboss.as.repository.ContentRepository;
 import org.jboss.as.server.controller.resources.DeploymentAttributes;
@@ -204,16 +204,13 @@ public class DeploymentFullReplaceHandler implements OperationStepHandler {
         InputStream in = getInputStream(context, contentItemNode);
         InputStream transformed = null;
         try {
-            try {
-                transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
-                hash = contentRepository.addContent(transformed);
-            } catch (IOException e) {
-                throw createFailureException(e.toString());
-            }
-
+            transformed = deploymentTransformation.doTransformation(context, contentItemNode, name, in);
+            hash = contentRepository.addContent(transformed);
+        } catch (IOException e) {
+            throw createFailureException(e.toString());
         } finally {
-            StreamUtils.safeClose(in);
-            StreamUtils.safeClose(transformed);
+            safeClose(in);
+            safeClose(transformed);
         }
         contentItemNode.clear(); // AS7-1029
         contentItemNode.get(CONTENT_HASH.getName()).set(hash);

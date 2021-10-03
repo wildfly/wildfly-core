@@ -68,11 +68,11 @@ import org.wildfly.client.config.ConfigXMLParseException;
 public class GitRepository implements Closeable {
 
     private final Set<String> ignored;
-    private final Repository repository;
+    private Repository repository;
     private final Path basePath;
     private final String defaultRemoteRepository;
     private final String branch;
-    private final SshdSessionFactory sshdSessionFactory;
+    private SshdSessionFactory sshdSessionFactory;
 
     public GitRepository(GitRepositoryConfiguration gitConfig)
             throws IllegalArgumentException, IOException, ConfigXMLParseException, GeneralSecurityException {
@@ -266,10 +266,33 @@ public class GitRepository implements Closeable {
 
     @Override
     public void close() {
-        if (sshdSessionFactory != null) {
-            this.sshdSessionFactory.close();
+        SshdSessionFactory toCloseSshdSessionFactory = sshdSessionFactory;
+        sshdSessionFactory = null;
+        RuntimeException rex = null;
+        if (toCloseSshdSessionFactory != null) {
+            try {
+                toCloseSshdSessionFactory.close();
+            } catch (RuntimeException e) {
+                rex = e;
+            }
         }
-        this.repository.close();
+
+        Repository toCloseRepository = repository;
+        repository = null;
+        if (toCloseRepository != null) {
+            try {
+                toCloseRepository.close();
+            } catch (RuntimeException e) {
+                if (rex == null) {
+                    rex = e;
+                } else {
+                    rex.addSuppressed(e);
+                }
+            }
+        }
+        if (rex != null) {
+            throw rex;
+        }
     }
 
     public String getPattern(File file) {

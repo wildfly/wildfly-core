@@ -61,7 +61,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class HostControllerClient implements AbstractControllerService.ControllerInstabilityListener, Closeable {
 
     private final String serverName;
-    private final HostControllerConnection connection;
+    private HostControllerConnection connection;
     private final ManagementChannelHandler channelHandler;
     private final RemoteFileRepositoryExecutorImpl repositoryExecutor;
     private volatile ModelController controller;
@@ -154,8 +154,10 @@ public class HostControllerClient implements AbstractControllerService.Controlle
 
     @Override
     public void close() throws IOException {
-        if(connection != null) {
-            connection.close();
+        HostControllerConnection toClose = connection;
+        connection = null;
+        if(toClose != null) {
+            toClose.close();
         }
     }
 

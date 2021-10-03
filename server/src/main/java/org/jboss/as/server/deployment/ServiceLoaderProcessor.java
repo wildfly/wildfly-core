@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.deployment;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +37,6 @@ import java.util.Map;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.ResourceRoot;
-import org.jboss.vfs.VFSUtils;
 import org.jboss.vfs.VirtualFile;
 
 /**
@@ -91,7 +92,7 @@ public final class ServiceLoaderProcessor implements DeploymentUnitProcessor {
                         list.add(className);
                     }
                 } finally {
-                    VFSUtils.safeClose(stream);
+                    safeClose(stream);
                 }
             } catch (IOException e) {
                 throw ServerLogger.ROOT_LOGGER.failedToReadVirtualFile(child, e);

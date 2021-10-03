@@ -22,6 +22,8 @@
 
 package org.jboss.as.server.moduleservice;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -46,7 +48,6 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.vfs.VFSUtils;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -80,7 +81,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
             if (jars != null)
                 for (File jar : jars)
                     try {
-                        final JarFile jarFile = new JarFile(jar);
+                        JarFile jarFile = new JarFile(jar);
                         try {
                             final Manifest manifest = jarFile.getManifest();
                             if (manifest == null) {
@@ -97,6 +98,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             final String specVersion = mainAttributes.getValue(Attributes.Name.SPECIFICATION_VERSION);
                             final String implVendorId = mainAttributes.getValue(Attributes.Name.IMPLEMENTATION_VENDOR_ID);
                             jarFile.close();
+                            jarFile = null; // avoid double close
                             Set<ExtensionJar> extensionJarSet = extensions.get(extensionName);
                             if (extensionJarSet == null)
                                 extensions.put(extensionName, extensionJarSet = new LinkedHashSet<ExtensionJar>());
@@ -123,7 +125,7 @@ public final class ExtensionIndexService implements Service<ExtensionIndex>, Ext
                             extensionJarSet.add(extensionJar);
 
                         } finally {
-                            VFSUtils.safeClose(jarFile);
+                            safeClose(jarFile);
                         }
                     } catch (IOException e) {
                         log.debugf("Failed to process JAR manifest for %s: %s", jar, e);

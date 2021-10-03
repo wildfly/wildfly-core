@@ -22,6 +22,9 @@
 
 package org.jboss.as.server.deployment.module;
 
+import static java.security.AccessController.doPrivileged;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,9 +38,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.threads.JBossThreadFactory;
 import org.jboss.vfs.TempFileProvider;
-import org.jboss.vfs.VFSUtils;
 
-import static java.security.AccessController.doPrivileged;
 
 /**
  * Service responsible for managing the life-cycle of a TempFileProvider.
@@ -74,7 +75,7 @@ public class TempFileProviderService implements Service<TempFileProvider> {
      * {@inheritDoc}
      */
     public void stop(StopContext context) {
-        VFSUtils.safeClose(PROVIDER);
+        safeClose(PROVIDER);
     }
 
     /**
