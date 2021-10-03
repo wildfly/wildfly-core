@@ -18,7 +18,6 @@
  */
 package org.jboss.as.protocol.mgmt;
 
-import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,9 +26,9 @@ import java.io.OutputStream;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class FlushableDataOutputImpl implements FlushableDataOutput, Closeable {
+class FlushableDataOutputImpl implements FlushableDataOutput {
 
-    private final DataOutputStream delegate;
+    private DataOutputStream delegate;
 
     public FlushableDataOutputImpl(DataOutputStream delegate) {
         this.delegate = delegate;
@@ -120,6 +119,10 @@ class FlushableDataOutputImpl implements FlushableDataOutput, Closeable {
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        DataOutputStream toClose = delegate;
+        delegate = null;
+        if (toClose != null) {
+            toClose.close();
+        }
     }
 }

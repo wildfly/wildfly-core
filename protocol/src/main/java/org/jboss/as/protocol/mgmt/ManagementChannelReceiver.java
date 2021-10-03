@@ -22,12 +22,13 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.remoting3.MessageInputStream;
@@ -61,10 +62,11 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
 
     @Override
     public void handleMessage(final Channel channel, final MessageInputStream message) {
+        MessageInputStream messageInputStream = message;
         try {
             ProtocolLogger.ROOT_LOGGER.tracef("%s handling incoming data", this);
             lastMessageTime = System.currentTimeMillis();
-            final DataInput input = new DataInputStream(message);
+            final DataInput input = new DataInputStream(messageInputStream);
             final ManagementProtocolHeader header = ManagementProtocolHeader.parse(input);
             final byte type = header.getType();
             try {
@@ -87,20 +89,21 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
             } finally {
                 try {
                     //noinspection StatementWithEmptyBody
-                    while (message.read() != -1) {
+                    while (messageInputStream.read() != -1) {
                         // drain the message to workaround a potential remoting buffer leak
                     }
                 } catch (IOException ignore) {
                     //
                 }
             }
-            message.close();
+            messageInputStream.close();
+            messageInputStream = null; //avoid double close
         } catch(IOException e) {
             handleError(channel, e);
         } catch (Exception e) {
             handleError(channel, new IOException(e));
         } finally {
-            StreamUtils.safeClose(message);
+            safeClose(messageInputStream);
             ProtocolLogger.ROOT_LOGGER.tracef("%s done handling incoming data", this);
         }
         channel.receiveMessage(this);
@@ -116,20 +119,12 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
     @Override
     public void handleError(final Channel channel, final IOException error) {
         ProtocolLogger.ROOT_LOGGER.tracef(error, "%s error handling incoming data", this);
-        try {
-            channel.close();
-        } catch (IOException e) {
-            ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
-        }
+        safeClose(channel);
     }
 
     @Override
     public void handleEnd(final Channel channel) {
-        try {
-            channel.close();
-        } catch (IOException e) {
-            ProtocolLogger.ROOT_LOGGER.errorClosingChannel(e.getMessage());
-        }
+        safeClose(channel);
     }
 
     /**
@@ -141,12 +136,13 @@ public final class ManagementChannelReceiver implements Channel.Receiver {
      */
     private static void handlePing(final Channel channel, final ManagementProtocolHeader header) throws IOException {
         final ManagementProtocolHeader response = new ManagementPongHeader(header.getVersion());
-        final MessageOutputStream output = channel.writeMessage();
+        MessageOutputStream output = channel.writeMessage();
         try {
             writeHeader(response, output);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 

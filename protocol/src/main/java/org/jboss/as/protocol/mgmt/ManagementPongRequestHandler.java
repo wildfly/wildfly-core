@@ -22,10 +22,10 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.IOException;
-
-import org.jboss.as.protocol.StreamUtils;
 
 /**
  * {@link ManagementRequestHandlerFactory} for dealing with a {@link ManagementPingRequest}.
@@ -53,14 +53,15 @@ public class ManagementPongRequestHandler implements ManagementRequestHandlerFac
 
         final ManagementResponseHeader response = ManagementResponseHeader.create(context.getRequestHeader());
 
-        final FlushableDataOutput output = context.writeMessage(response);
+        FlushableDataOutput output = context.writeMessage(response);
         try {
             output.write(ManagementProtocol.TYPE_PONG);
             output.writeLong(connectionId);
             output.writeByte(ManagementProtocol.RESPONSE_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
         resultHandler.done(null);
     }

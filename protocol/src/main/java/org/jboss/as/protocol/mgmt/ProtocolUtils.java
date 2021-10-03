@@ -22,6 +22,8 @@
 
 package org.jboss.as.protocol.mgmt;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
@@ -29,7 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.jboss.as.protocol.logging.ProtocolLogger;
-import org.jboss.as.protocol.StreamUtils;
 
 /**
  * Utility class providing methods for common management tasks.
@@ -47,12 +48,13 @@ public final class ProtocolUtils {
             @Override
             public void execute(final ManagementRequestContext<A> context) throws Exception {
                 final ManagementResponseHeader header = ManagementResponseHeader.create(context.getRequestHeader());
-                final FlushableDataOutput output = context.writeMessage(header);
+                FlushableDataOutput output = context.writeMessage(header);
                 try {
                     output.writeByte(ManagementProtocol.RESPONSE_END);
                     output.close();
+                    output = null; //avoid double close
                 } finally {
-                    StreamUtils.safeClose(output);
+                    safeClose(output);
                 }
             }
         };
@@ -64,13 +66,14 @@ public final class ProtocolUtils {
     }
 
     public static <A> void writeResponse(final ResponseWriter writer, final ManagementRequestContext<A> context, final ManagementResponseHeader header) throws IOException {
-        final FlushableDataOutput output = context.writeMessage(header);
+        FlushableDataOutput output = context.writeMessage(header);
         try {
             writer.write(output);
             output.writeByte(ManagementProtocol.RESPONSE_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
 
     }

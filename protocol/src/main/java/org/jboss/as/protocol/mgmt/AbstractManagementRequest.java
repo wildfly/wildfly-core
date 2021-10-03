@@ -22,9 +22,9 @@
 
 package org.jboss.as.protocol.mgmt;
 
-import java.io.IOException;
+import static org.xnio.IoUtils.safeClose;
 
-import org.jboss.as.protocol.StreamUtils;
+import java.io.IOException;
 
 /**
  * utility class for creating management requests.
@@ -48,13 +48,14 @@ public abstract class AbstractManagementRequest<T, A> implements ManagementReque
 
     @Override
     public void sendRequest(final ActiveOperation.ResultHandler<T> resultHandler, final ManagementRequestContext<A> context) throws IOException {
-        final FlushableDataOutput output = context.writeMessage(context.getRequestHeader());
+        FlushableDataOutput output = context.writeMessage(context.getRequestHeader());
         try {
             sendRequest(resultHandler, context, output);
             output.writeByte(ManagementProtocol.REQUEST_END);
             output.close();
+            output = null; //avoid double close
         } finally {
-            StreamUtils.safeClose(output);
+            safeClose(output);
         }
     }
 
