@@ -32,8 +32,6 @@ import java.net.Socket;
 
 import javax.xml.stream.XMLStreamWriter;
 
-import org.jboss.as.protocol.logging.ProtocolLogger;
-
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
@@ -61,35 +59,49 @@ public final class StreamUtils {
         }
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(Closeable)} directly instead.
+     */
     public static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            ProtocolLogger.ROOT_LOGGER.failedToCloseResource(t, closeable);
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(Socket)} directly instead.
+     */
     public static void safeClose(final Socket socket) {
-        if (socket != null) try {
-            socket.close();
-        } catch (Throwable t) {
-            ProtocolLogger.ROOT_LOGGER.failedToCloseResource(t, socket);
-        }
+        org.xnio.IoUtils.safeClose(socket);
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(ServerSocket)} directly instead.
+     */
     public static void safeClose(final ServerSocket serverSocket) {
-        if (serverSocket != null) try {
-            serverSocket.close();
-        } catch (IOException e) {
-            ProtocolLogger.ROOT_LOGGER.failedToCloseServerSocket(e, serverSocket);
-        }
+        org.xnio.IoUtils.safeClose(serverSocket);
     }
 
+    /**
+     * Close a resource, logging an error if an error occurs. Relies on {@link org.xnio.IoUtils#safeClose}.
+     * You can obtain the log with logger name {@code org.xnio.safe-close} with {@code TRACE} level.
+     * @param closeable the resource to close
+     *
+     * @deprecated Use underlying {@link org.xnio.IoUtils#safeClose(AutoCloseable)} with a lambda {@code writer::close} call instead.
+     */
     public static void safeClose(final XMLStreamWriter writer) {
-        if (writer != null) try {
-            writer.close();
-        } catch (Throwable t) {
-            ProtocolLogger.ROOT_LOGGER.failedToCloseResource(t, writer);
+        if (writer != null) {
+            org.xnio.IoUtils.safeClose((AutoCloseable) writer::close);
         }
     }
 }
