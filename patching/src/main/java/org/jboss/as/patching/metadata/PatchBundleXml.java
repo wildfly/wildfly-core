@@ -22,7 +22,7 @@
 
 package org.jboss.as.patching.metadata;
 
-import static org.jboss.as.patching.IoUtils.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;

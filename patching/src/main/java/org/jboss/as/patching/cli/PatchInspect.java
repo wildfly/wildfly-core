@@ -15,6 +15,8 @@ limitations under the License.
  */
 package org.jboss.as.patching.cli;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,18 +102,8 @@ public class PatchInspect implements Command<CLICommandInvocation> {
         } catch (XMLStreamException e) {
             throw new CommandException("Failed to parse patch.xml", e);
         } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                }
-            }
-            if (patchZip != null) {
-                try {
-                    patchZip.close();
-                } catch (IOException e) {
-                }
-            }
+            safeClose(is);
+            safeClose(patchZip);
         }
     }
 
