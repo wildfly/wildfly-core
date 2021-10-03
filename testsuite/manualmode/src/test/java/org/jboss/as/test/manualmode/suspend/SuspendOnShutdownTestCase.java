@@ -22,6 +22,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REA
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_STATE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND_TIMEOUT;
+import static org.xnio.IoUtils.safeClose;
 
 import java.net.HttpURLConnection;
 import java.net.SocketPermission;
@@ -58,7 +59,6 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
-import org.xnio.IoUtils;
 
 /**
  * Tests the graceful shutdown in standalone server.
@@ -87,7 +87,7 @@ public class SuspendOnShutdownTestCase {
         try {
             serverController.stop();
         } finally {
-            IoUtils.safeClose(managementClient);
+            safeClose(managementClient);
         }
     }
 

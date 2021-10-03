@@ -45,6 +45,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UDP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -75,7 +76,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xnio.IoUtils;
+
 
 /**
  * @author: Kabir Khan
@@ -508,7 +509,7 @@ public class AuditLogTestCase {
                 list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
             }
         } finally {
-            IoUtils.safeClose(reader);
+            safeClose(reader);
         }
         Assert.assertEquals(list.toString(), expectedRecords, list.size());
         return list;

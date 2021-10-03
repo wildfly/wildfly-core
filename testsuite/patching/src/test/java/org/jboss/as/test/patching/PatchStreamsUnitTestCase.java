@@ -26,6 +26,7 @@ import static org.jboss.as.patching.IoUtils.newFile;
 import static org.jboss.as.test.patching.PatchingTestUtil.BASE_MODULE_DIRECTORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -297,7 +298,7 @@ public class PatchStreamsUnitTestCase extends PatchInfoTestBase {
         try {
             props.store(os, "");
         } finally {
-            IoUtils.safeClose(os);
+            safeClose(os);
         }
     }
 

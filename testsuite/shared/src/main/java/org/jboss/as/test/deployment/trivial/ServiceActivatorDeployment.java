@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.deployment.trivial;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -77,12 +79,7 @@ public class ServiceActivatorDeployment implements ServiceActivator, Service<Voi
             } catch (IOException e) {
                 throw new StartException(e);
             } finally {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                    //
-                }
-
+                safeClose(is);
             }
         } else {
             properties.setProperty(DEFAULT_SYS_PROP_NAME, DEFAULT_SYS_PROP_VALUE);

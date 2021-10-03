@@ -39,7 +39,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.shared.FileUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -303,11 +302,7 @@ public class DomainTestSupport implements AutoCloseable {
     }
 
     public static void safeClose(final AutoCloseable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            log.errorf(t, "Failed to close resource %s", closeable);
-        }
+        org.xnio.IoUtils.safeClose(closeable);
     }
 
     private static void processFutures(Future<?>[] futures, long timeout) {
@@ -518,7 +513,7 @@ public class DomainTestSupport implements AutoCloseable {
                 domainMasterLifecycleUtil.close();
             }
         } finally {
-            StreamUtils.safeClose(sharedClientConfig);
+            org.xnio.IoUtils.safeClose(sharedClientConfig);
         }
     }
 

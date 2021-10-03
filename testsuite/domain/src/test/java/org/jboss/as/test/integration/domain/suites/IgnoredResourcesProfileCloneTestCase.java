@@ -38,6 +38,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 import static org.junit.Assert.assertEquals;
+import static org.xnio.IoUtils.safeClose;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-import org.xnio.IoUtils;
+
 
 
 /**
@@ -128,8 +129,8 @@ public class IgnoredResourcesProfileCloneTestCase {
                 DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(PROFILE, CLONED_PROFILE)), masterClient);
             }
         } finally {
-            IoUtils.safeClose(slaveClient);
-            IoUtils.safeClose(masterClient);
+            safeClose(slaveClient);
+            safeClose(masterClient);
         }
     }
 
@@ -282,8 +283,8 @@ public class IgnoredResourcesProfileCloneTestCase {
                 reloadSlave(slaveLifecycleUtil);
             }
         } finally {
-            IoUtils.safeClose(slaveClient);
-            IoUtils.safeClose(masterClient);
+            safeClose(slaveClient);
+            safeClose(masterClient);
         }
     }
 

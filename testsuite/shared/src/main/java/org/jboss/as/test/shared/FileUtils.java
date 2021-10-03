@@ -1,5 +1,7 @@
 package org.jboss.as.test.shared;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -43,13 +45,7 @@ public class FileUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    //ignore
-                }
-            }
+            safeClose(stream);
         }
     }
 
@@ -119,10 +115,7 @@ public class FileUtils {
 
 
     public static void close(Closeable closeable) {
-        try {
-            closeable.close();
-        } catch (IOException ignore) {
-        }
+        safeClose(closeable);
     }
 
 

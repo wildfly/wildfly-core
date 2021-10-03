@@ -18,7 +18,7 @@
  */
 package org.jboss.as.test.integration.domain.management.util;
 
-import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.IOException;

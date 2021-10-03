@@ -24,6 +24,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOCAL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SECURITY_REALM;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,7 +46,6 @@ import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuild
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
-import org.xnio.IoUtils;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -140,7 +140,7 @@ abstract class AbstractLogFieldsOfLogTestCase {
                 list.add(ModelNode.fromJSONString(writer.getBuffer().toString()));
             }
         } finally {
-            IoUtils.safeClose(reader);
+            safeClose(reader);
         }
         if (trimModulesLoaderUnregister) {
             for (Iterator<ModelNode> it = list.iterator() ; it.hasNext() ; ) {

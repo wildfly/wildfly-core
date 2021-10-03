@@ -34,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.junit.Assert.assertEquals;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +70,6 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -236,7 +236,7 @@ public class ResponseStreamTestCase {
             processResponseStream(response, uuid, true, false);
 
         } finally {
-            StreamUtils.safeClose(response);
+            safeClose(response);
         }
     }
 
@@ -500,7 +500,7 @@ public class ResponseStreamTestCase {
             processResponseStream(response, result.asString(), forServer, client == masterClient);
 
         } finally {
-            StreamUtils.safeClose(response);
+            safeClose(response);
         }
 
     }

@@ -21,6 +21,8 @@
  */
 package org.wildfly.client.old.server.util;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -30,8 +32,6 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import org.xnio.IoUtils;
 
 /**
  * @author Kabir Khan
@@ -102,7 +102,7 @@ public class OldVersionCopier {
 
             }
         } finally {
-            IoUtils.safeClose(zipFile);
+            safeClose(zipFile);
         }
 
         File[] files = versionDir.listFiles();
@@ -125,10 +125,10 @@ public class OldVersionCopier {
                     len = in.read(buf);
                 }
             } finally {
-                IoUtils.safeClose(out);
+                safeClose(out);
             }
         } finally {
-            IoUtils.safeClose(in);
+            safeClose(in);
         }
     }
 

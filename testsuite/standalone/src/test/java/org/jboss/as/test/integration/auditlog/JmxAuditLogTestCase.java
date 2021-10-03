@@ -30,6 +30,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import javax.inject.Inject;
@@ -51,7 +52,6 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 @RunWith(WildflyTestRunner.class)
 //@RunAsClient
@@ -76,7 +76,7 @@ public class JmxAuditLogTestCase {
 
     @After
     public void closeConnection() throws Exception {
-        IoUtils.safeClose(connector);
+        safeClose(connector);
     }
 
     @Test

@@ -35,6 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -164,13 +165,7 @@ public class DeploymentTestCase {
                     Future<?> future = manager.execute(manager.newDeploymentPlan().replace(deploymentName, is).build());
                     awaitDeploymentExecution(future);
                 } finally {
-                    if (is != null) {
-                        try {
-                            is.close();
-                        } catch (IOException ignore) {
-                            //
-                        }
-                    }
+                    safeClose(is);
                 }
             }
 

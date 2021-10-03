@@ -18,6 +18,8 @@
 
 package org.jboss.as.test.integration.management.api;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -34,7 +36,6 @@ import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
-import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.dmr.ModelNode;
@@ -292,7 +293,7 @@ public abstract class ClientCompatibilityUnitTestBase {
 
             }
         } finally {
-            StreamUtils.safeClose(client);
+            safeClose(client);
         }
     }
 

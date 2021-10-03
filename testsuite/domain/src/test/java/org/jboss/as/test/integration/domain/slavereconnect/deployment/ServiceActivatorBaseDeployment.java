@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.domain.slavereconnect.deployment;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,10 +78,7 @@ public class ServiceActivatorBaseDeployment implements ServiceActivator, Service
                     throw new StartException(e);
                 }
             } finally {
-                try {
-                    in.close();
-                } catch (IOException ignore){
-                }
+                safeClose(in);
             }
         }
     }

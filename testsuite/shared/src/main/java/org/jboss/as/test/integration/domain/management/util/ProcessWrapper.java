@@ -22,7 +22,8 @@
 
 package org.jboss.as.test.integration.domain.management.util;
 
-import org.jboss.as.process.protocol.StreamUtils;
+import static org.xnio.IoUtils.safeClose;
+
 import org.wildfly.core.launcher.CommandBuilder;
 import org.wildfly.core.launcher.Launcher;
 
@@ -162,7 +163,7 @@ class ProcessWrapper {
                     e.printStackTrace(target);
                 }
             } finally {
-                StreamUtils.safeClose(source);
+                safeClose(source);
             }
         }
     }

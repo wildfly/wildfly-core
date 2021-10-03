@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -64,7 +65,6 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.test.jmx.Dynamic;
 import org.wildfly.test.jmx.ServiceActivatorDeploymentUtil;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -93,7 +93,7 @@ public class ModelControllerMBeanTestCase {
 
     @After
     public void closeConnection() throws Exception {
-        IoUtils.safeClose(connector);
+        safeClose(connector);
     }
 
     /**

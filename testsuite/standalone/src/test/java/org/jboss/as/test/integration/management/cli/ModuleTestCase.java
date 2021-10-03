@@ -23,6 +23,7 @@ package org.jboss.as.test.integration.management.cli;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -58,7 +59,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
 import org.wildfly.core.testrunner.WildflyTestRunner;
-import org.xnio.IoUtils;
 
 /**
  * This tests 'module add/remove' CLI command.
@@ -187,7 +187,7 @@ public class ModuleTestCase extends AbstractCliTestBase {
             out = new PrintWriter(new File(metaInfDir, "version.txt"));
             out.println("main");
         } finally {
-            IoUtils.safeClose(out);
+            safeClose(out);
         }
 
         testRemove(slot, false);

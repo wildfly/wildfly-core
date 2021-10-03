@@ -25,6 +25,7 @@ package org.jboss.as.test.integration.management.cli;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -72,13 +73,7 @@ public class RcFileTestCase {
         } catch(IOException e) {
             fail(e.getLocalizedMessage());
         } finally {
-            if(writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+            safeClose(writer);
         }
     }
 

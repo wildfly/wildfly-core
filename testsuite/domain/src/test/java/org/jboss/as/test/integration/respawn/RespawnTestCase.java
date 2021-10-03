@@ -36,6 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SER
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SHUTDOWN;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.jboss.as.test.integration.domain.management.util.Authentication.getCallbackHandler;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -73,7 +74,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
-import org.xnio.IoUtils;
 
 /**
  * RespawnTestCase
@@ -192,8 +192,8 @@ public class RespawnTestCase {
             processController.shutdown();
             processController = null;
         }
-        IoUtils.safeClose(client);
-        IoUtils.safeClose(utils);
+        safeClose(client);
+        safeClose(utils);
     }
 
     @Test
@@ -554,10 +554,10 @@ public class RespawnTestCase {
                     i = in.read();
                 }
             } finally {
-                IoUtils.safeClose(out);
+                safeClose(out);
             }
         } finally {
-            IoUtils.safeClose(in);
+            safeClose(in);
         }
     }
 
@@ -653,7 +653,7 @@ public class RespawnTestCase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                IoUtils.safeClose(input);
+                safeClose(input);
             }
             return processes;
         }

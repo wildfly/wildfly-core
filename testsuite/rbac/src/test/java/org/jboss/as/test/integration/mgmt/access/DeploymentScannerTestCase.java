@@ -27,6 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -42,7 +43,6 @@ import javax.inject.Inject;
 
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.protocol.StreamUtils;
 import org.jboss.as.test.deployment.DeploymentScannerSetupTask;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.dmr.ModelNode;
@@ -138,10 +138,10 @@ public class DeploymentScannerTestCase {
                             i = in.read();
                         }
                     } finally {
-                        StreamUtils.safeClose(out);
+                        safeClose(out);
                     }
                 } finally {
-                    StreamUtils.safeClose(in);
+                    safeClose(in);
                 }
 
                 Assert.assertTrue(file.exists());

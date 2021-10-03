@@ -28,6 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.xnio.IoUtils.safeClose;
 
 import java.util.HashMap;
 import java.util.List;
@@ -56,7 +57,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xnio.IoUtils;
 
 /**
  *
@@ -109,8 +109,8 @@ public class JMXHostSubsystemTestCase {
 
     @After
     public void closeConnection() throws Exception {
-        IoUtils.safeClose(masterConnector);
-        IoUtils.safeClose(slaveConnector);
+        safeClose(masterConnector);
+        safeClose(slaveConnector);
     }
 
     /**
