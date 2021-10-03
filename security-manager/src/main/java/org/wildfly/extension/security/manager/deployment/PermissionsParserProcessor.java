@@ -22,7 +22,8 @@
 
 package org.wildfly.extension.security.manager.deployment;
 
-import java.io.IOException;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.function.Function;
@@ -159,20 +160,19 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
             throws DeploymentUnitProcessingException {
 
         InputStream inputStream = null;
+        ExpressionStreamReaderDelegate expressionStreamReaderDelegate = null;
         try {
             inputStream = file.openStream();
             final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            final ExpressionStreamReaderDelegate expressionStreamReaderDelegate = new ExpressionStreamReaderDelegate(inputFactory.createXMLStreamReader(inputStream), exprExpandFunction);
+            expressionStreamReaderDelegate = new ExpressionStreamReaderDelegate(inputFactory.createXMLStreamReader(inputStream), exprExpandFunction);
             return PermissionsParser.parse(expressionStreamReaderDelegate, loader, identifier);
         } catch (Exception e) {
             throw new DeploymentUnitProcessingException(e.getMessage(), e);
         } finally {
-            try {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-            } catch (IOException e) {
+            if (expressionStreamReaderDelegate != null) {
+                safeClose((AutoCloseable) expressionStreamReaderDelegate::close);
             }
+            safeClose(inputStream);
         }
     }
 }
