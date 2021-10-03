@@ -24,6 +24,7 @@ package org.jboss.as.server.deploymentoverlay;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -81,13 +82,7 @@ public class ReadContentHandler implements OperationStepHandler {
             }
             return builder.toString();
         } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException e) {
-                    //ignore
-                }
-            }
+            safeClose(stream);
         }
     }
 

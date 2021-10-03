@@ -1,9 +1,10 @@
 package org.jboss.as.server.deployment;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.vfs.TempFileProvider;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
-import org.xnio.IoUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -27,7 +28,7 @@ public class MountedDeploymentOverlay implements Closeable {
     }
 
     public void remountAsZip(boolean expanded) throws IOException {
-        IoUtils.safeClose(closeable);
+        safeClose(closeable);
         if(expanded) {
             closeable = VFS.mountZipExpanded(realFile, mountPoint, tempFileProvider);
         } else {

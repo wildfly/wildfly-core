@@ -22,7 +22,8 @@
 
 package org.jboss.as.server.deployment.jbossallxml;
 
-import java.io.Closeable;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -147,31 +148,14 @@ public class JBossAllXMLParsingProcessor implements DeploymentUnitProcessor {
             try {
                 mapper.parseDocument(context, streamReader);
             } finally {
-                safeClose(streamReader);
+                if (streamReader != null) {
+                    safeClose((AutoCloseable) streamReader::close);
+                }
             }
         } catch (XMLStreamException e) {
             throw ServerLogger.ROOT_LOGGER.errorLoadingJBossXmlFile(file.getPath(), e);
         }
     }
-
-    private static void safeClose(final Closeable closeable) {
-        if (closeable != null)
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                // ignore
-            }
-    }
-
-    private static void safeClose(final XMLStreamReader streamReader) {
-        if (streamReader != null)
-            try {
-                streamReader.close();
-            } catch (XMLStreamException e) {
-                // ignore
-            }
-    }
-
 
     private static class Parser implements XMLElementReader<JBossAllXmlParseContext> {
 
