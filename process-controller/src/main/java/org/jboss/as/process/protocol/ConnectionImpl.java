@@ -22,6 +22,8 @@
 
 package org.jboss.as.process.protocol;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
 import java.io.FilterInputStream;
@@ -211,6 +213,7 @@ final class ConnectionImpl implements Connection {
                                 boolean done;
                                 if (mos != null) {
                                     mos.close();
+                                    mos = null; //avoid double close
                                     pipe.await();
                                 }
                                 synchronized (lock) {
@@ -218,7 +221,7 @@ final class ConnectionImpl implements Connection {
                                     done = writeDone;
                                 }
                                 if (done) {
-                                    StreamUtils.safeClose(socket);
+                                    safeClose(socket);
                                     safeHandleFinished();
                                 }
                                 closed = true;
@@ -270,7 +273,7 @@ final class ConnectionImpl implements Connection {
                 } catch (IOException e) {
                     safeHandlerFailure(e);
                 } finally {
-                    StreamUtils.safeClose(mos);
+                    safeClose(mos);
                     if (!closed) {
                         closed();
                     }
@@ -292,7 +295,7 @@ final class ConnectionImpl implements Connection {
             ProcessLogger.PROTOCOL_CONNECTION_LOGGER.failedToReadMessage(e);
             throw e;
         } finally {
-            StreamUtils.safeClose(pis);
+            safeClose(pis);
         }
     }
 

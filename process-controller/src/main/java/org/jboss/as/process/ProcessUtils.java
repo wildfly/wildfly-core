@@ -1,7 +1,8 @@
 package org.jboss.as.process;
 
+import static org.xnio.IoUtils.safeClose;
+
 import org.jboss.as.process.logging.ProcessLogger;
-import org.jboss.as.process.protocol.StreamUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -107,7 +108,7 @@ abstract class ProcessUtils {
                 }
             }
         } finally {
-            StreamUtils.safeClose(input);
+            safeClose(input);
         }
         if(processes.size() == 1) {
             final String proc = processes.get(0);

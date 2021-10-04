@@ -22,6 +22,8 @@
 
 package org.jboss.as.process;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -255,13 +257,14 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.PROCESS_ADDED);
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_ADDED", e);
@@ -274,13 +277,14 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.PROCESS_STARTED);
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_STARTED", e);
@@ -294,14 +298,15 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.PROCESS_STOPPED);
                         StreamUtils.writeUTFZBytes(os, processName);
                         StreamUtils.writeLong(os, uptime);
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_STOPPED", e);
@@ -315,13 +320,14 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.PROCESS_REMOVED);
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_REMOVED " + processName, e);
@@ -335,7 +341,7 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.PROCESS_INVENTORY);
                         final Collection<ManagedProcess> processCollection = processes.values();
@@ -347,8 +353,9 @@ public final class ProcessController {
                             StreamUtils.writeBoolean(os, process.isStopping());
                         }
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_INVENTORY", e);
@@ -374,14 +381,15 @@ public final class ProcessController {
         synchronized (lock) {
             for (Connection connection : managedConnections) {
                 try {
-                    final OutputStream os = connection.writeMessage();
+                    OutputStream os = connection.writeMessage();
                     try {
                         os.write(Protocol.OPERATION_FAILED);
                         os.write(operationType.getCode());
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
+                        os = null; //avoid double close
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("OPERATION_FAILED", e);

@@ -27,10 +27,10 @@ import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readLong;
 import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
 import static org.jboss.as.process.protocol.StreamUtils.readUnsignedByte;
-import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 import static org.jboss.as.process.protocol.StreamUtils.writeBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.writeInt;
 import static org.jboss.as.process.protocol.StreamUtils.writeUTFZBytes;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public final class ProcessControllerClient implements Closeable {
 
     public static final String HOST_CONTROLLER_PROCESS_NAME = Main.HOST_CONTROLLER_PROCESS_NAME;
 
-    private final Connection connection;
+    private Connection connection;
 
     ProcessControllerClient(final Connection connection) {
         this.connection = connection;
@@ -202,7 +202,7 @@ public final class ProcessControllerClient implements Closeable {
         if (authKey.length() != ProcessController.AUTH_BYTES_ENCODED_LENGTH) {
             throw ProcessLogger.ROOT_LOGGER.invalidAuthKeyLen();
         }
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.ADD_PROCESS);
             writeUTFZBytes(os, processName);
@@ -224,6 +224,7 @@ public final class ProcessControllerClient implements Closeable {
             }
             writeUTFZBytes(os, workingDir);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -231,11 +232,12 @@ public final class ProcessControllerClient implements Closeable {
 
     public void startProcess(String processName) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.START_PROCESS);
             writeUTFZBytes(os, processName);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -243,11 +245,12 @@ public final class ProcessControllerClient implements Closeable {
 
     public void stopProcess(String processName) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.STOP_PROCESS);
             writeUTFZBytes(os, processName);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -255,21 +258,23 @@ public final class ProcessControllerClient implements Closeable {
 
     public void removeProcess(String processName) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.REMOVE_PROCESS);
             writeUTFZBytes(os, processName);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
     }
 
     public void requestProcessInventory() throws IOException {
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.REQUEST_PROCESS_INVENTORY);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -277,7 +282,7 @@ public final class ProcessControllerClient implements Closeable {
 
     public void reconnectProcess(final String processName, final URI managementURI, final boolean managementSubsystemEndpoint, final String authKey) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try{
             os.write(Protocol.RECONNECT_PROCESS);
             writeUTFZBytes(os, processName);
@@ -287,6 +292,7 @@ public final class ProcessControllerClient implements Closeable {
             writeBoolean(os, managementSubsystemEndpoint);
             os.write(authKey.getBytes(Charset.forName("US-ASCII")));
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -297,11 +303,12 @@ public final class ProcessControllerClient implements Closeable {
     }
 
     public void shutdown(int exitCode) throws IOException {
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.SHUTDOWN);
             writeInt(os, exitCode);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -309,11 +316,12 @@ public final class ProcessControllerClient implements Closeable {
 
     public void destroyProcess(String processName) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.DESTROY_PROECESS);
             writeUTFZBytes(os, processName);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
@@ -321,17 +329,22 @@ public final class ProcessControllerClient implements Closeable {
 
     public void killProcess(String processName) throws IOException {
         Assert.checkNotNullParam("processName", processName);
-        final OutputStream os = connection.writeMessage();
+        OutputStream os = connection.writeMessage();
         try {
             os.write(Protocol.KILL_PROCESS);
             writeUTFZBytes(os, processName);
             os.close();
+            os = null; //avoid double close
         } finally {
             safeClose(os);
         }
     }
 
     public void close() throws IOException {
-        connection.close();
+        Connection toClose = connection;
+        connection = null;
+        if (toClose != null) {
+            connection.close();
+        }
     }
 }

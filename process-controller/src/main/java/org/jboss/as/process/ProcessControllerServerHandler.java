@@ -27,7 +27,7 @@ import static org.jboss.as.process.protocol.StreamUtils.readFully;
 import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
 import static org.jboss.as.process.protocol.StreamUtils.readUnsignedByte;
-import static org.jboss.as.process.protocol.StreamUtils.safeClose;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,7 +85,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
             final ManagedProcess process = processController.getServerByAuthCode(authCode);
             if (process == null) {
                 ProcessLogger.SERVER_LOGGER.receivedUnknownCredentials(connection.getPeerAddress());
-                StreamUtils.safeClose(connection);
+                safeClose(connection);
                 return;
             }
             ProcessLogger.SERVER_LOGGER.tracef("Received authentic connection from %s", connection.getPeerAddress());
@@ -279,12 +279,13 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                     if(operationType != null && processName != null) {
                         safeClose(dataStream);
                         try {
-                            final OutputStream os = connection.writeMessage();
+                            OutputStream os = connection.writeMessage();
                             try {
                                 os.write(Protocol.OPERATION_FAILED);
                                 os.write(operationType.getCode());
                                 StreamUtils.writeUTFZBytes(os, processName);
                                 os.close();
+                                os = null; //avoid double close
                             } finally {
                                 safeClose(os);
                             }

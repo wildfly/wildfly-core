@@ -23,6 +23,7 @@
 package org.jboss.as.process;
 
 import static java.lang.Thread.holdsLock;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -254,7 +255,7 @@ final class ManagedProcess {
             }
             log.stoppingProcess(processName);
             stopRequested = true;
-            StreamUtils.safeClose(stdin);
+            safeClose(stdin);
             state = State.STOPPING;
         }
     }
@@ -325,7 +326,7 @@ final class ManagedProcess {
             if (state == State.STARTED) {
                 log.stoppingProcess(processName);
                 stopRequested = true;
-                StreamUtils.safeClose(stdin);
+                safeClose(stdin);
                 state = State.STOPPING;
             } else if (state == State.STOPPING) {
                 return;
@@ -445,7 +446,7 @@ final class ManagedProcess {
     }
 
     private final class ReadTask implements Runnable {
-        private final InputStream source;
+        private InputStream source;
         private final PrintStream target;
 
         private ReadTask(final InputStream source, final PrintStream target) {
@@ -454,10 +455,10 @@ final class ManagedProcess {
         }
 
         public void run() {
-            final InputStream source = this.source;
+            InputStream source = this.source;
             final String processName = ManagedProcess.this.processName;
             try {
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(source), StandardCharsets.UTF_8));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(source), StandardCharsets.UTF_8));
                 final OutputStreamWriter writer = new OutputStreamWriter(target, StandardCharsets.UTF_8);
                 String s;
                 String prevEscape = "";
@@ -492,11 +493,14 @@ final class ManagedProcess {
                         }
                     }
                 }
-                source.close();
+                reader.close(); //indirectly closes source
+                reader = null;
+                source = null;
             } catch (IOException e) {
                 log.streamProcessingFailed(processName, e);
             } finally {
-                StreamUtils.safeClose(source);
+                safeClose(this.source); //cleanup instance
+                this.source = null;
             }
         }
     }

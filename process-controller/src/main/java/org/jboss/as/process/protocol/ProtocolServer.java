@@ -22,6 +22,8 @@
 
 package org.jboss.as.process.protocol;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -84,11 +86,7 @@ public final class ProtocolServer {
                                 ok = true;
                             } finally {
                                 if (! ok) {
-                                    try {
-                                        socket.close();
-                                    } catch (IOException e) {
-                                        ProcessLogger.PROTOCOL_CLIENT_LOGGER.failedToCloseSocket(e);
-                                    }
+                                    safeClose(socket);
                                 }
                             }
                             safeHandleConnection(socket);
@@ -104,7 +102,7 @@ public final class ProtocolServer {
 
                     }
                 } finally {
-                    StreamUtils.safeClose(serverSocket);
+                    safeClose(serverSocket);
                 }
             }
         });
@@ -126,7 +124,8 @@ public final class ProtocolServer {
             // thread.interrupt may not actually interrupt socket.accept()
             thread.interrupt();
         }
-        StreamUtils.safeClose(serverSocket);
+        safeClose(serverSocket);
+        serverSocket = null;
     }
 
     private void safeHandleConnection(final Socket socket) {
@@ -144,12 +143,8 @@ public final class ProtocolServer {
         } catch (IOException e) {
             ProcessLogger.PROTOCOL_CLIENT_LOGGER.failedToHandleIncomingConnection(e);
         } finally {
-            if (! ok) {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    ProcessLogger.PROTOCOL_CLIENT_LOGGER.failedToCloseSocket(e);
-                }
+            if (!ok) {
+                safeClose(socket);
             }
         }
     }
