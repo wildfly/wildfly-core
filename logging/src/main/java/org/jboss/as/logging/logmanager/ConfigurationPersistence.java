@@ -22,7 +22,8 @@
 
 package org.jboss.as.logging.logmanager;
 
-import java.io.Closeable;
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -129,14 +130,6 @@ public class ConfigurationPersistence implements Configurator, LogContextConfigu
     public static ConfigurationPersistence getConfigurationPersistence(final LogContext logContext) {
         if (logContext == null) return null;
         return (ConfigurationPersistence) logContext.getAttachment(CommonAttributes.ROOT_LOGGER_NAME, Configurator.ATTACHMENT_KEY);
-    }
-
-    private static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            LoggingLogger.ROOT_LOGGER.failedToCloseResource(t, closeable);
-        }
     }
 
     @Override

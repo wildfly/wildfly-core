@@ -22,7 +22,6 @@
 
 package org.jboss.as.logging.deployments;
 
-import java.io.Closeable;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -160,14 +159,6 @@ abstract class AbstractLoggingDeploymentProcessor implements DeploymentUnitProce
             return new ArrayList<>(deploymentUnit.getAttachmentList(Attachments.SUB_DEPLOYMENTS));
         }
         return Collections.emptyList();
-    }
-
-    static void safeClose(final Closeable closable) {
-        if (closable != null) try {
-            closable.close();
-        } catch (Exception e) {
-            // no-op
-        }
     }
 
     /**

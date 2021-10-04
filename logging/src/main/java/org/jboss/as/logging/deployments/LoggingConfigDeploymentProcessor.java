@@ -22,6 +22,8 @@
 
 package org.jboss.as.logging.deployments;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
