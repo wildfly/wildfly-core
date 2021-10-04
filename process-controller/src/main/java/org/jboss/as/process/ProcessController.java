@@ -22,6 +22,8 @@
 
 package org.jboss.as.process;
 
+import static org.xnio.IoUtils.safeClose;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -261,7 +263,7 @@ public final class ProcessController {
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_ADDED", e);
@@ -280,7 +282,7 @@ public final class ProcessController {
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_STARTED", e);
@@ -301,7 +303,7 @@ public final class ProcessController {
                         StreamUtils.writeLong(os, uptime);
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_STOPPED", e);
@@ -321,7 +323,7 @@ public final class ProcessController {
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_REMOVED " + processName, e);
@@ -348,7 +350,7 @@ public final class ProcessController {
                         }
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("PROCESS_INVENTORY", e);
@@ -381,7 +383,7 @@ public final class ProcessController {
                         StreamUtils.writeUTFZBytes(os, processName);
                         os.close();
                     } finally {
-                        StreamUtils.safeClose(os);
+                        safeClose(os);
                     }
                 } catch (IOException e) {
                     ProcessLogger.ROOT_LOGGER.failedToWriteMessage("OPERATION_FAILED", e);

@@ -50,5 +50,6 @@
         <module name="org.jboss.marshalling.river" services="import"/>
         <module name="org.jboss.modules"/>
         <module name="org.jboss.threads"/>
+        <module name="org.jboss.xnio"/>
     </dependencies>
 </module>

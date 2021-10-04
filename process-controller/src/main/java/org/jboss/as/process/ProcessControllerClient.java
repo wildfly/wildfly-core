@@ -27,10 +27,10 @@ import static org.jboss.as.process.protocol.StreamUtils.readInt;
 import static org.jboss.as.process.protocol.StreamUtils.readLong;
 import static org.jboss.as.process.protocol.StreamUtils.readUTFZBytes;
 import static org.jboss.as.process.protocol.StreamUtils.readUnsignedByte;
-import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 import static org.jboss.as.process.protocol.StreamUtils.writeBoolean;
 import static org.jboss.as.process.protocol.StreamUtils.writeInt;
 import static org.jboss.as.process.protocol.StreamUtils.writeUTFZBytes;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.Closeable;
 import java.io.IOException;

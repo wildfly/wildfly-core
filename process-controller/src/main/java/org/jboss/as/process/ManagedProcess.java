@@ -23,6 +23,7 @@
 package org.jboss.as.process;
 
 import static java.lang.Thread.holdsLock;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -254,7 +255,7 @@ final class ManagedProcess {
             }
             log.stoppingProcess(processName);
             stopRequested = true;
-            StreamUtils.safeClose(stdin);
+            safeClose(stdin);
             state = State.STOPPING;
         }
     }
@@ -325,7 +326,7 @@ final class ManagedProcess {
             if (state == State.STARTED) {
                 log.stoppingProcess(processName);
                 stopRequested = true;
-                StreamUtils.safeClose(stdin);
+                safeClose(stdin);
                 state = State.STOPPING;
             } else if (state == State.STOPPING) {
                 return;
@@ -496,7 +497,7 @@ final class ManagedProcess {
             } catch (IOException e) {
                 log.streamProcessingFailed(processName, e);
             } finally {
-                StreamUtils.safeClose(source);
+                safeClose(source);
             }
         }
     }
