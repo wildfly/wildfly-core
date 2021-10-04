@@ -23,9 +23,9 @@
 package org.jboss.as.logging;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.xnio.IoUtils.safeClose;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -319,14 +319,6 @@ public class LoggingResourceDefinition extends TransformerResourceDefinition {
             } finally {
                 safeClose(reader);
             }
-        }
-    }
-
-    private static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Throwable t) {
-            LoggingLogger.ROOT_LOGGER.failedToCloseResource(t, closeable);
         }
     }
 

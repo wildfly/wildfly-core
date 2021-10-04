@@ -293,7 +293,7 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
     }
 
     static final class LifoFileInputStream extends InputStream {
-        private final RandomAccessFile raf;
+        private RandomAccessFile raf;
         private final long len;
         private long start;
         private long end;
@@ -351,7 +351,11 @@ class LogFileResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         public void close() throws IOException {
-            raf.close();
+            RandomAccessFile toClose = raf;
+            raf = null;
+            if (toClose != null) {
+                toClose.close();
+            }
         }
     }
 
