@@ -80,7 +80,7 @@ import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
- * Parser and marshaller for standalone server configuration xml documents (e.g. standalone.xml) that use the urn:jboss:domain:11.0 schema.
+ * Parser and marshaller for standalone server configuration xml documents (e.g. standalone.xml) that use the urn:jboss:domain:11.0 schema and up.
  *
  * @author Brian Stansberry
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>

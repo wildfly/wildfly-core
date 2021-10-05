@@ -111,53 +111,31 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
                 new StandaloneXml_5(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
             case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
                 new StandaloneXml_6(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            case 7:
-                new StandaloneXml_7(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 8:
-                new StandaloneXml_8(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 9:
-                new StandaloneXml_9(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 10:
-                new StandaloneXml_10(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
             case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
                 new StandaloneXml_11(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            case 12:
-                new StandaloneXml_12(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 13:
-                new StandaloneXml_13(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 14:
-                new StandaloneXml_14(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 15:
-                new StandaloneXml_15(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 16:
-                new StandaloneXml_16(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
-            case 17:
-                new StandaloneXml_17(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
             case 18:
-                new StandaloneXml_18(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
-                break;
             default:
-                new StandaloneXml_19(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
+                new StandaloneXml_18(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new StandaloneXml_19(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
+        new StandaloneXml_18(extensionHandler, CURRENT, deferredExtensionContext, parsingOptions).writeContent(writer, context);
     }
 
     class DefaultExtensionHandler implements ExtensionHandler {
