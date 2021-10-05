@@ -167,11 +167,10 @@ public class HTTPServerEnableAuthCommand extends AbstractEnableAuthenticationCom
     protected void secure(CommandContext ctx, AuthSecurityBuilder builder) throws Exception {
         ApplicationSecurityDomain secDomain = HTTPServer.getSecurityDomain(ctx, securityDomain);
         if (secDomain != null) {
-            if (secDomain.getSecurityDomain() != null) {
-                if (!secDomain.getSecurityDomain().equals(builder.getReferencedSecurityDomain())) {
-                    // re-write the existing security domain
-                    HTTPServer.writeReferencedSecurityDomain(builder, securityDomain, ctx);
-                }
+            if (secDomain.getSecurityDomain() != null && builder.getReferencedSecurityDomain() != null
+                    && !secDomain.getSecurityDomain().equals(builder.getReferencedSecurityDomain())) {
+                // re-write the existing security domain
+                HTTPServer.writeReferencedSecurityDomain(builder, securityDomain, ctx);
             }
         } else {
             // add a new security domain resource
@@ -185,6 +184,7 @@ public class HTTPServerEnableAuthCommand extends AbstractEnableAuthenticationCom
         if (!HTTPServer.isReferencedSecurityDomainSupported(context)) {
             return super.buildSecurityRequest(context);
         }
+        ApplicationSecurityDomain existingDomain = HTTPServer.getSecurityDomain(ctx, securityDomain);
         AuthSecurityBuilder builder = null;
         if (getMechanism() == null) {
             if (referencedSecurityDomain == null) {
@@ -194,9 +194,12 @@ public class HTTPServerEnableAuthCommand extends AbstractEnableAuthenticationCom
                 throw new CommandException("Can't enable HTTP Authentication, security domain "
                         + referencedSecurityDomain + " doesn't exist");
             }
+            if (existingDomain != null && existingDomain.getFactory() != null) {
+                throw new CommandException("Can't mix mechanism and referenced security domain");
+            }
             builder = new AuthSecurityBuilder(referencedSecurityDomain);
         } else {
-            if (referencedSecurityDomain != null) {
+            if (referencedSecurityDomain != null || (existingDomain != null && existingDomain.getSecurityDomain() != null)) {
                 throw new CommandException("Can't mix mechanism and referenced security domain");
             }
             return super.buildSecurityRequest(context);
