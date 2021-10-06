@@ -545,7 +545,7 @@ abstract class AbstractOperationContext implements OperationContext {
         ModelNode operation = activeStep.operation;
 
         assert operation != null;
-        return operation.get(NAME).asString();
+        return operation.get(OP).asString();
     }
 
     @Override
