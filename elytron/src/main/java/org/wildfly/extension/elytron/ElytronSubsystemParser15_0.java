@@ -19,7 +19,6 @@
 package org.wildfly.extension.elytron;
 
 import org.jboss.as.controller.PersistentResourceXMLDescription;
-
 /**
  * The subsystem parser, which uses stax to read and write to and from xml.
  *

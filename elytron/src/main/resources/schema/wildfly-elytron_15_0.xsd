@@ -1297,7 +1297,6 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-
     <xs:complexType name="authenticationQueryType">
         <xs:annotation>
             <xs:documentation>
@@ -6018,6 +6017,7 @@
         </xs:attribute>
     </xs:complexType>
 
+<<<<<<< HEAD
     <xs:complexType name="basicFileTypeOptional">
         <xs:annotation>
             <xs:documentation>
@@ -6041,6 +6041,8 @@
         </xs:attribute>
     </xs:complexType>
 
+=======
+>>>>>>> 129ac49b92 (Revert "Revert "[WFCORE-5469] Add version 15 of the WildFly Elytron model and schema"")
     <xs:complexType name="fileType">
         <xs:annotation>
             <xs:documentation>
