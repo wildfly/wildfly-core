@@ -34,7 +34,9 @@ import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -42,11 +44,18 @@ import org.mockito.Mockito;
  *
  * @author rmartinc
  */
-public class SystemPropertiesParsingTest {
+public class SystemPropertiesParsingTestCase {
 
     private static final String namespace = Namespace.DOMAIN_8_0.getUriString();
     private ControllerLogger mockedLogger;
     private ControllerLogger realLogger;
+
+    @BeforeClass
+    public static void workAroundWFLY5637() {
+        String versionString = System.getProperty("java.specification.version");
+        versionString = versionString.startsWith("1.") ? versionString.substring(2) : versionString;
+        Assume.assumeTrue("WFLY-5637 Tests failing if the JDK in use is after 16.", Integer.parseInt(versionString) < 17);
+    }
 
     @Before
     public void before() throws Exception {
