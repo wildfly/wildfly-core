@@ -31,8 +31,6 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.runner.RunWith;
-import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
@@ -75,11 +73,6 @@ public class KerberosNativeMgmtSaslTestCase extends AbstractKerberosMgmtSaslTest
 
 
     private static final String NAME = KerberosNativeMgmtSaslTestCase.class.getSimpleName();
-
-    @BeforeClass
-    public static void noJDK14Plus() {
-        Assume.assumeFalse("Avoiding JDK 14 due to https://issues.jboss.org/browse/WFCORE-4532", "14".equals(System.getProperty("java.specification.version")));
-    }
 
     /**
      * Configures test sasl-server-factory to use given mechanism. It also enables/disables SSL based on provided flag.

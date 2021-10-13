@@ -31,8 +31,6 @@ import org.jboss.as.test.integration.management.util.ServerReload;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
-import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.WildflyTestRunner;
 import org.wildfly.security.auth.permission.LoginPermission;
@@ -76,11 +74,6 @@ import org.wildfly.test.security.common.other.SimpleSocketBinding;
 public class KerberosHttpMgmtSaslTestCase extends AbstractKerberosMgmtSaslTestBase {
 
     private static final String NAME = KerberosHttpMgmtSaslTestCase.class.getSimpleName();
-
-    @BeforeClass
-    public static void noJDK14Plus() {
-        Assume.assumeFalse("Avoiding JDK 14 due to https://issues.jboss.org/browse/WFCORE-4532", "14".equals(System.getProperty("java.specification.version")));
-    }
 
     private static final ModelControllerClient client = ModelControllerClient.Factory
             .create(new ModelControllerClientConfiguration.Builder().setHostName(CoreUtils.getDefaultHost(false))
