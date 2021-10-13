@@ -308,11 +308,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
         }
     }
 
-    @BeforeClass
-    public static void noJDK14Plus() {
-        Assume.assumeFalse("Avoiding JDK 14 due to https://issues.jboss.org/browse/WFCORE-4532", "14".equals(System.getProperty("java.specification.version")));
-    }
-
     private static boolean isJDK14Plus() {
         return "14".equals(System.getProperty("java.specification.version"));
     }
