@@ -31,9 +31,9 @@
         <module name="java.xml">
             <exports>
                 <include-set>
-                    <path name="java/xml/stream"/>
-                    <path name="java/xml/stream/events"/>
-                    <path name="java/xml/stream/util"/>
+                    <path name="javax/xml/stream"/>
+                    <path name="javax/xml/stream/events"/>
+                    <path name="javax/xml/stream/util"/>
                 </include-set>
             </exports>
         </module>

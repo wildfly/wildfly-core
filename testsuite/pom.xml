@@ -185,22 +185,6 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-host-controller</artifactId>
         </dependency>
-        <!-- needed to make JAXP work properly -->
-        <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>xalan</groupId>
-            <artifactId>xalan</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-core-testsuite-shared</artifactId>
@@ -300,7 +284,7 @@
                         </execution>
                     </executions>
                     <!-- WFLY-3361 - use external xalan for XML transformations to
-                    ensure consistent behaviour on all platrforms.-->
+                    ensure consistent behaviour on all platforms.-->
                     <dependencies>
                         <dependency>
                             <groupId>xalan</groupId>
