@@ -53,7 +53,6 @@
         <module name="org.jboss.remoting"/>
         <module name="org.wildfly.common"/>
         <module name="io.undertow.core" optional="true" />
-        <module name="org.wildfly.common"/>
         <module name="org.wildfly.extension.io"  />
     </dependencies>
 </module>
