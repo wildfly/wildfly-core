@@ -82,53 +82,33 @@ public final class HostXml implements XMLElementReader<List<ModelNode>>, XMLElem
                 new HostXml_5(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
             case 6:
-                new HostXml_6(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
             case 7:
-                new HostXml_7(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
             case 8:
-                new HostXml_8(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
             case 9:
-                new HostXml_9(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_6(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
             case 10:
                 new HostXml_10(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
             case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
                 new HostXml_11(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
                 break;
-            case 12:
-                new HostXml_12(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
-            case 13:
-                new HostXml_13(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
-            case 14:
-                new HostXml_14(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
-            case 15:
-                new HostXml_15(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
-            case 16:
-                new HostXml_16(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
-            case 17:
-                new HostXml_17(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
             case 18:
-                new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
-                break;
             default:
-                new HostXml_19(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
+                new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, readerNS).readElement(reader, operationList);
         }
     }
 
     @Override
     public void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
             throws XMLStreamException {
-        new HostXml_19(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
+        new HostXml_18(defaultHostControllerName, runningMode, isCachedDc, extensionRegistry, extensionXml, CURRENT).writeContent(writer, context);
     }
 
 }
