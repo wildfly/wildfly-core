@@ -614,18 +614,18 @@ public class TlsTestCase extends AbstractSubsystemTest {
         operation.get(ElytronDescriptionConstants.PATH).set(resources + INIT_TEST_FILE);
         operation.get(ElytronDescriptionConstants.TYPE).set("JKS");
         operation.get(CredentialReference.CREDENTIAL_REFERENCE).get(CredentialReference.CLEAR_TEXT).set("Elytron");
-        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
         operation.get(ElytronDescriptionConstants.KEY_STORE).set(INIT_TEST_TRUSTSTORE);
-        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
 
         ServiceName serviceName = Capabilities.TRUST_MANAGER_RUNTIME_CAPABILITY.getCapabilityServiceName(INIT_TEST_TRUSTMANAGER);
         X509ExtendedTrustManager trustManager = (X509ExtendedTrustManager) services.getContainer().getService(serviceName).getValue();
         Assert.assertNotNull(trustManager);
-        Assert.assertEquals(trustManager.getAcceptedIssuers().length, 1);
+        Assert.assertEquals(1, trustManager.getAcceptedIssuers().length);
 
         X509Certificate originalFoundDN = trustManager.getAcceptedIssuers()[0];
         Assert.assertEquals(originalFoundDN.getIssuerX500Principal().getName(), ISSUER_DN.getName());
@@ -643,14 +643,14 @@ public class TlsTestCase extends AbstractSubsystemTest {
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.KEY_STORE, INIT_TEST_TRUSTSTORE);
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.LOAD);
-        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
 
         operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR).add("subsystem", "elytron").add(ElytronDescriptionConstants.TRUST_MANAGER, INIT_TEST_TRUSTMANAGER);
         operation.get(ClientConstants.OP).set(ElytronDescriptionConstants.INIT);
-        Assert.assertEquals(services.executeOperation(operation).get(OUTCOME).asString(), SUCCESS);
+        Assert.assertEquals(SUCCESS, services.executeOperation(operation).get(OUTCOME).asString());
 
-        Assert.assertEquals(trustManager.getAcceptedIssuers().length, 1);
+        Assert.assertEquals(1, trustManager.getAcceptedIssuers().length);
 
         // See if the trust manager contains the new certificate
         X509Certificate newFoundDN = trustManager.getAcceptedIssuers()[0];
