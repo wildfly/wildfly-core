@@ -195,7 +195,7 @@ public class RemoteChannelManagementTestCase {
         } catch(CancellationException expected) {
             //
         }
-        Assert.assertEquals(future.getStatus(), AsyncFuture.Status.CANCELLED);
+        Assert.assertEquals(AsyncFuture.Status.CANCELLED, future.getStatus());
     }
 
     @Test
@@ -224,10 +224,10 @@ public class RemoteChannelManagementTestCase {
         };
         final AsyncFuture<Integer> future = client.execute(request);
         final AsyncFuture.Status completed = future.await(1, TimeUnit.SECONDS);
-        Assert.assertEquals(completed, AsyncFuture.Status.WAITING);
+        Assert.assertEquals(AsyncFuture.Status.WAITING, completed);
         future.cancel(false);
         latch.await();
-        Assert.assertEquals(future.getStatus(), AsyncFuture.Status.CANCELLED);
+        Assert.assertEquals(AsyncFuture.Status.CANCELLED, future.getStatus());
     }
 
     @Test
@@ -249,7 +249,7 @@ public class RemoteChannelManagementTestCase {
         };
         final AsyncFuture<Integer> future = client.execute(request);
         final AsyncFuture.Status completed = future.await(1, TimeUnit.SECONDS);
-        Assert.assertEquals(completed, AsyncFuture.Status.WAITING);
+        Assert.assertEquals(AsyncFuture.Status.WAITING, completed);
         client.shutdown();
         boolean done = client.awaitCompletion(1, TimeUnit.SECONDS);
         Assert.assertFalse(done);
