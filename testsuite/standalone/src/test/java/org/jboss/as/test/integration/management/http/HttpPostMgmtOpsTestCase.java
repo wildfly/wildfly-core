@@ -115,7 +115,7 @@ public class HttpPostMgmtOpsTestCase {
 
         ModelNode result = ret.get("result");
         // check that a boolean is returned
-        assertEquals(result.getType(), ModelType.BOOLEAN);
+        assertEquals(ModelType.BOOLEAN, result.getType());
 
     }
 

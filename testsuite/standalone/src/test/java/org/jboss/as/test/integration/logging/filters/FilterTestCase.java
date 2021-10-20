@@ -209,7 +209,7 @@ public class FilterTestCase extends AbstractLoggingTestCase {
     private int test(final String msg, final String expectedMsg, final int offset) throws IOException {
         int linesRead = 0;
         final int statusCode = getResponse(msg);
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         // Validate each line
         final List<String> jsonLines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
