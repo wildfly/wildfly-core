@@ -22,14 +22,13 @@
 package org.jboss.as.test.integration.management.cli;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import org.jboss.as.cli.CommandContext;
-import org.jboss.as.cli.CommandFormatException;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.integration.management.cli.ifelse.CLISystemPropertyTestBase;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -138,21 +137,24 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
     public void testErrorInCatch() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle("try");
             ctx.handle(this.getReadNonexistingPropReq());
             ctx.handle("catch");
             ctx.handle(this.getReadNonexistingPropReq());
-            ctx.handle("end-try");
-            fail("catch is expected to throw an exception");
-        } catch(CommandLineException e) {
-            // expected
+            try {
+                ctx.handle("end-try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+            }
         } finally {
             ctx.handleSafe(getRemovePropertyReq());
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("catch is expected to throw an exception", expectedEx);
     }
 
     @Test
@@ -203,6 +205,7 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
     public void testErrorInTryErrorInCatchFinally() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle("try");
@@ -211,8 +214,12 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.handle(this.getReadNonexistingPropReq());
             ctx.handle("finally");
             ctx.handle(this.getAddPropertyReq("finally"));
-            ctx.handle("end-try");
-            fail("catch is expceted to throw an exception");
+            try {
+                ctx.handle("end-try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e;
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -222,20 +229,26 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("catch is expceted to throw an exception", expectedEx);
     }
 
     @Test
     public void testErrorInFinally() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle("try");
             ctx.handle(this.getAddPropertyReq("try"));
             ctx.handle("finally");
             ctx.handle(this.getReadNonexistingPropReq());
-            ctx.handle("end-try");
-            fail("finally is expceted to throw an exception");
+            try {
+                ctx.handle("end-try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e;
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -245,12 +258,14 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("finally is expected to throw an exception", expectedEx);
     }
 
     @Test
     public void testNonBatchedBlocks() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("try", "1"));
@@ -265,8 +280,12 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.handle("finally");
             ctx.handle(getWritePropertyReq("finally", "2"));
             ctx.handle(getReadNonexistingPropReq());
-            ctx.handle("end-try");
-            fail("catch is expceted to throw an exception");
+            try {
+                ctx.handle("end-try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq("try"));
@@ -284,12 +303,14 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testBatchedBlocks() throws Exception {
         cliOut.reset();
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("try", "1"));
@@ -310,8 +331,12 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.handle(getWritePropertyReq("finally", "2"));
             ctx.handle(getReadNonexistingPropReq());
             ctx.handle("run-batch");
-            ctx.handle("end-try");
-            fail("expceted an exception");
+            try {
+                ctx.handle("end-try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq("try"));
@@ -329,6 +354,7 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
@@ -382,22 +408,19 @@ public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
     @Test
     public void testTryInsideTry() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
-        boolean failed = false;
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle("try");
-            ctx.handle("try");
-        } catch (CommandFormatException ex) {
-            failed = true;
-        } finally {
             try {
-                if (!failed) {
-                    throw new Exception("try inside try should have failed");
-                }
-            } finally {
-                ctx.terminateSession();
-                cliOut.reset();
+                ctx.handle("try");
+            } catch (CommandLineException e) {
+                expectedEx = e;
             }
+        } finally {
+            ctx.terminateSession();
+            cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 }
