@@ -22,6 +22,7 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
+import org.wildfly.common.iteration.ByteIterator;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
@@ -33,16 +34,21 @@ import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.PasswordFactory;
 import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.ClearPassword;
+import org.wildfly.security.password.interfaces.DigestPassword;
 import org.wildfly.security.password.interfaces.OneTimePassword;
 import org.wildfly.security.password.spec.ClearPasswordSpec;
+import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.OneTimePasswordSpec;
 
 import java.io.IOException;
-
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.Principal;
 import java.security.spec.KeySpec;
 import java.util.Iterator;
@@ -79,11 +85,14 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         ServiceName serviceName2 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("ClearPropertyRealm");
         SecurityRealm securityRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
         testAbstractPropertyRealm(securityRealm2);
+        testExternalModificationPropertyRealm(securityRealm2, "users-clear.properties", "user999", "password999", "password999");
 
         // base64 encoded using UTF-8
         ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64Encoded");
         SecurityRealm securityRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
         performHashedFileTest(securityRealm3, "elytron","passwd12#$");
+        testExternalModificationPropertyRealm(securityRealm3, "users-hashedbase64.properties", "user999",
+                "password999", generateHashedPassword("user999", "password999", "ManagementRealm"));
 
         // base64 encoded using charset GB2312
         ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("HashedPropertyRealmBase64EncodedCharset");
@@ -129,6 +138,38 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         Assert.assertFalse(identity9.exists());
         Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
         identity9.dispose();
+    }
+
+    private String generateHashedPassword(String username, String password, String realm) throws Exception {
+        EncryptablePasswordSpec passwordSpec = new EncryptablePasswordSpec(password.toCharArray(), new DigestPasswordAlgorithmSpec(username, realm), StandardCharsets.UTF_8);
+        PasswordFactory passwordFactory = PasswordFactory.getInstance(DigestPassword.ALGORITHM_DIGEST_MD5);
+        DigestPassword digestPwd = passwordFactory.generatePassword(passwordSpec).castAs(DigestPassword.class);
+        return ByteIterator.ofBytes(digestPwd.getDigest()).base64Encode().drainToString();
+    }
+
+    /* Performs a manual modification of the properties file and checks if it is refreshed */
+    private void testExternalModificationPropertyRealm(SecurityRealm securityRealm, String fileName, String username, String password, String hash) throws Exception {
+        // assert the username principal does not exist in the realm
+        RealmIdentity identity = securityRealm.getRealmIdentity(fromName(username));
+        Assert.assertFalse("Identity " + username + " already exists in the realm", identity.exists());
+        identity.dispose();
+
+        URL url = getClass().getResource(fileName);
+        Assert.assertNotNull("The properties file " + fileName + " does not exist", url);
+        byte[] backup = Files.readAllBytes(Paths.get(url.toURI()));
+        try {
+            // modify the properties file adding the username and hashed password
+            String line = System.lineSeparator() + username + "=" + hash;
+            Files.write(Paths.get(url.toURI()), line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+
+            // assert that the property realm detects the external modification
+            identity = securityRealm.getRealmIdentity(fromName(username));
+            Assert.assertTrue("Identity " + username + " is not detected after external modification", identity.exists());
+            Assert.assertTrue("Invalid password for the added identity", identity.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
+            identity.dispose();
+        } finally {
+            Files.write(Paths.get(url.toURI()), backup, StandardOpenOption.TRUNCATE_EXISTING);
+        }
     }
 
     /* Test filesystem-realm with existing filesystem from resources, without relative-to */
