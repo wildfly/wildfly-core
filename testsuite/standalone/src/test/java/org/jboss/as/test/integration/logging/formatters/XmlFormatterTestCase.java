@@ -149,7 +149,7 @@ public class XmlFormatterTestCase extends AbstractLoggingTestCase {
         expectedKeys.add("sourceModuleName");
 
         final int statusCode = getResponse(msg, params);
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         final DocumentBuilder builder = factory.newDocumentBuilder();
@@ -196,7 +196,7 @@ public class XmlFormatterTestCase extends AbstractLoggingTestCase {
         configure(Collections.emptyMap(), Collections.emptyMap(), false);
         final String msg = "Logging test: XmlFormatterTestCase.testNoExceptions";
         int statusCode = getResponse(msg, Collections.singletonMap(LoggingServiceActivator.LOG_EXCEPTION_KEY, "false"));
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         final List<String> expectedKeys = createDefaultKeys();
 
@@ -220,7 +220,7 @@ public class XmlFormatterTestCase extends AbstractLoggingTestCase {
 
         final String msg = "Logging test: XmlFormatterTestCase.testNoExceptions";
         int statusCode = getResponse(msg, Collections.singletonMap(LoggingServiceActivator.LOG_EXCEPTION_KEY, "true"));
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         final List<String> expectedKeys = createDefaultKeys();
         expectedKeys.add("stackTrace");
@@ -245,7 +245,7 @@ public class XmlFormatterTestCase extends AbstractLoggingTestCase {
 
         final String msg = "Logging test: XmlFormatterTestCase.testNoExceptions";
         int statusCode = getResponse(msg, Collections.singletonMap(LoggingServiceActivator.LOG_EXCEPTION_KEY, "true"));
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         final List<String> expectedKeys = createDefaultKeys();
         expectedKeys.add("exception");
@@ -276,7 +276,7 @@ public class XmlFormatterTestCase extends AbstractLoggingTestCase {
 
         final String msg = "Logging test: XmlFormatterTestCase.testNoExceptions";
         int statusCode = getResponse(msg, Collections.singletonMap(LoggingServiceActivator.LOG_EXCEPTION_KEY, "false"));
-        Assert.assertEquals("Invalid response statusCode: " + statusCode, statusCode, HttpStatus.SC_OK);
+        Assert.assertEquals("Invalid response statusCode: " + statusCode, HttpStatus.SC_OK, statusCode);
 
         final List<String> expectedKeys = createDefaultKeys();
 
