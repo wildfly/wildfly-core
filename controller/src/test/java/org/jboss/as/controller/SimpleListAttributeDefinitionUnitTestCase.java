@@ -180,7 +180,7 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         writer.writeEndElement();
         writer.close();
 
-        Assert.assertEquals(stringWriter.toString(), "<resource connectors=\"foo bar\"></resource>");
+        Assert.assertEquals("<resource connectors=\"foo bar\"></resource>", stringWriter.toString());
 
         // Validate that parsing and marshalling of empty string is symmetric (WFCORE-763)
         model = new ModelNode();
@@ -197,7 +197,7 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         writer.writeEndElement();
         writer.close();
 
-        Assert.assertEquals(stringWriter.toString(), "<resource connectors=\"\"></resource>");
+        Assert.assertEquals("<resource connectors=\"\"></resource>", stringWriter.toString());
     }
 
     private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
