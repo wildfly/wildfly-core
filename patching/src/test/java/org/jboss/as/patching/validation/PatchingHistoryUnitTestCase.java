@@ -29,6 +29,7 @@ import static org.jboss.as.patching.runner.TestUtils.touch;
 import static org.jboss.as.patching.validation.PatchHistoryValidations.validateRollbackState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -40,10 +41,10 @@ import java.util.List;
 import org.jboss.as.patching.Constants;
 import org.jboss.as.patching.IoUtils;
 import org.jboss.as.patching.PatchingException;
+import org.jboss.as.patching.installation.InstalledIdentity;
 import org.jboss.as.patching.tests.AbstractPatchingTest;
 import org.jboss.as.patching.tests.PatchingTestBuilder;
 import org.jboss.as.patching.tests.PatchingTestStepBuilder;
-import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -232,14 +233,14 @@ public class PatchingHistoryUnitTestCase extends AbstractPatchingTest {
     }
 
     protected void cannotRollbackPatch(final String patchID) throws Exception {
+        InstalledIdentity installedIdentity = updateInstallationManager().getDefaultIdentity();
+        PatchingException expectedEx = null;
         try {
-            validateRollbackState(patchID, updateInstallationManager().getDefaultIdentity());
-            Assert.fail("should not be able to rollback " + patchID);
+            validateRollbackState(patchID, installedIdentity);
         } catch (PatchingException e) {
-            // ok
-        } catch (Exception e) {
-            throw e;
+            expectedEx = e;
         }
+        assertNotNull("should not be able to rollback " + patchID, expectedEx);
     }
 
     protected PatchingTestBuilder installOneOffCpOneOff() throws IOException, PatchingException {
