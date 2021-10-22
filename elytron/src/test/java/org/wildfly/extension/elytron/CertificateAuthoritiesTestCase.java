@@ -23,7 +23,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -252,7 +251,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
             operation.get(ElytronDescriptionConstants.AGREE_TO_TERMS_OF_SERVICE).set(true);
             assertSuccess(services.executeOperation(operation));
             assertEquals(NEW_ACCT_LOCATION, acmeAccount.getAccountUrl());
-            assertNotNull(accountsKeyStore.containsAlias(alias));
+            assertTrue(accountsKeyStore.containsAlias(alias));
             assertTrue(accountsKeyStore.getEntry(alias, new KeyStore.PasswordProtection(KEYSTORE_PASSWORD.toCharArray())) instanceof KeyStore.PrivateKeyEntry);
         } finally {
             removeCertificateAuthorityAccount();
