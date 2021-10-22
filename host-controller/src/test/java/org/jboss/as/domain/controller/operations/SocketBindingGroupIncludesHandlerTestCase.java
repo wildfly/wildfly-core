@@ -154,26 +154,28 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 
     @Test
     public void testIncludesWithOverriddenSocketBindings() throws Exception {
-        try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getSocketBindingGroupAddress("binding-four");
-            ModelNode list = new ModelNode().add("binding-three");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource subsystemA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
-                            .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), subsystemA);
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getSocketBindingGroupAddress("binding-four");
+        ModelNode list = new ModelNode().add("binding-three");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr,
+                new RootResourceInitializer() {
+                    @Override
+                    public void addAdditionalResources(Resource root) {
+                        Resource subsystemA = Resource.Factory.create();
+                        root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
+                                .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), subsystemA);
 
-                    Resource subsystemB = Resource.Factory.create();
-                    Resource SocketBindingGroup4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
-                    SocketBindingGroup4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), subsystemB);
-                }
-            });
-            SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
+                        Resource subsystemB = Resource.Factory.create();
+                        Resource SocketBindingGroup4 = root
+                                .getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
+                        SocketBindingGroup4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), subsystemB);
+                    }
+                });
+        SocketBindingGroupResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
+        try {
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -187,30 +189,31 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 
     @Test
     public void testGroupWithBindingsIncludesSameBindings() throws Exception {
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getSocketBindingGroupAddress("binding-five");
+        ModelNode list = new ModelNode().add("binding-three").add("binding-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr,
+                new RootResourceInitializer() {
+                    @Override
+                    public void addAdditionalResources(Resource root) {
+                        Resource bindingA = Resource.Factory.create();
+                        root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
+                                .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
+
+                        Resource bindingB = Resource.Factory.create();
+                        Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
+                        group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
+
+                        Resource bindingC = Resource.Factory.create();
+                        Resource group5 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-five"));
+                        group5.registerChild(PathElement.pathElement(SOCKET_BINDING, "x"), bindingC);
+                    }
+                });
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getSocketBindingGroupAddress("binding-five");
-            ModelNode list = new ModelNode().add("binding-three").add("binding-four");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource bindingA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
-                            .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
-
-                    Resource bindingB = Resource.Factory.create();
-                    Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
-                    group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
-
-                    Resource bindingC = Resource.Factory.create();
-                    Resource group5 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-five"));
-                    group5.registerChild(PathElement.pathElement(SOCKET_BINDING, "x"), bindingC);
-                }
-            });
-            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -224,28 +227,29 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
 
     @Test
     public void testEmptyGroupIncludesSameBindings() throws Exception {
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getSocketBindingGroupAddress("binding-five");
+        ModelNode list = new ModelNode().add("binding-three").add("binding-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr,
+                new RootResourceInitializer() {
+                    @Override
+                    public void addAdditionalResources(Resource root) {
+                        Resource bindingA = Resource.Factory.create();
+                        root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
+                                .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
+
+                        Resource bindingB = Resource.Factory.create();
+                        Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
+                        group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
+
+                        // binding-five is empty
+                    }
+                });
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getSocketBindingGroupAddress("binding-five");
-            ModelNode list = new ModelNode().add("binding-three").add("binding-four");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSocketBindingIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource bindingA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-three"))
-                            .registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingA);
-
-                    Resource bindingB = Resource.Factory.create();
-                    Resource group4 = root.getChild(PathElement.pathElement(SOCKET_BINDING_GROUP, "binding-four"));
-                    group4.registerChild(PathElement.pathElement(SOCKET_BINDING, "a"), bindingB);
-
-                    //binding-five is empty
-                }
-            });
-            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -256,7 +260,6 @@ public class SocketBindingGroupIncludesHandlerTestCase extends AbstractOperation
             Assert.assertTrue(expected.getMessage().contains("'a'"));
         }
     }
-
 
     private PathAddress getSocketBindingGroupAddress(String SocketBindingGroupName) {
         return PathAddress.pathAddress(SOCKET_BINDING_GROUP, SocketBindingGroupName);
