@@ -120,7 +120,7 @@ class SaslResource extends ConnectorChildResource {
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
             if (resourceModel.hasDefined(attribute.getName())) {
                 List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
-                if (list.size() > 0) {
+                if (!list.isEmpty()) {
                     writer.writeEmptyElement(element.getLocalName());
                     StringBuilder sb = new StringBuilder();
                     for (ModelNode child : list) {
