@@ -81,7 +81,7 @@ public class DeploymentSetPlanImpl implements DeploymentSetPlan, Serializable {
     }
 
     public DeploymentAction getLastAction() {
-        return deploymentActions.size() == 0 ? null : deploymentActions.get(deploymentActions.size() - 1);
+        return deploymentActions.isEmpty() ? null : deploymentActions.get(deploymentActions.size() - 1);
     }
 
     @Override
