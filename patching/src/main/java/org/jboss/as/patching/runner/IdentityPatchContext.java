@@ -820,7 +820,7 @@ class IdentityPatchContext implements PatchContentProvider {
         @Override
         public void invalidateRoot(final File moduleRoot) throws IOException {
             final List<File> files = listFiles(moduleRoot);
-            if (files != null && files.size() > 0) {
+            if (files != null && !files.isEmpty()) {
                 for (final File file : files) {
                     moduleInvalidations.add(file);
                     if (mode == Mode.ROLLBACK) {
@@ -835,7 +835,7 @@ class IdentityPatchContext implements PatchContentProvider {
             if (item.getContentType() == ContentType.MODULE) {
                 final File targetFile = delegate.getDirectoryStructure().getModulePatchDirectory(patchId);
                 final List<File> files = listFiles(targetFile);
-                if (files != null && files.size() > 0) {
+                if (files != null && !files.isEmpty()) {
                     for (final File file : files) {
                         moduleInvalidations.add(file);
                         PatchModuleInvalidationUtils.processFile(IdentityPatchContext.this, file, PatchingTaskContext.Mode.ROLLBACK);
@@ -850,7 +850,7 @@ class IdentityPatchContext implements PatchContentProvider {
             }
             final File modulePath = PatchContentLoader.getModulePath(getDirectoryStructure().getModuleRoot(), item.getName(), ((ModuleItem)item).getSlot());
             final List<File> files = listFiles(modulePath);
-            if (files != null && files.size() > 0) {
+            if (files != null && !files.isEmpty()) {
                 for (final File file : files) {
                     modulesToReenable.add(file);
                 }
@@ -863,7 +863,7 @@ class IdentityPatchContext implements PatchContentProvider {
             }
             final File modulePath = PatchContentLoader.getModulePath(getDirectoryStructure().getModuleRoot(), item.getName(), ((ModuleItem)item).getSlot());
             final List<File> files = listFiles(modulePath);
-            if (files != null && files.size() > 0) {
+            if (files != null && !files.isEmpty()) {
                 for (final File file : files) {
                     modulesToDisable.add(file);
                 }
