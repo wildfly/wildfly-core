@@ -95,7 +95,7 @@ public abstract class CommandLineArgumentUsage {
             width = 35;
         }
 
-        if( input.size() > 0 ) {
+        if (!input.isEmpty()) {
             StringBuilder argumentsString = new StringBuilder();
             for( int i = 0; i < input.size(); ){
                 // Trim in case an argument is too large for the width. Shouldn't happen.
