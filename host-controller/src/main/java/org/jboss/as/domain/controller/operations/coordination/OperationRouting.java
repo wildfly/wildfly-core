@@ -324,7 +324,7 @@ class OperationRouting {
     }
 
     boolean isLocalCallNeeded(final String localHostName) {
-        return hosts.size() == 0 || hosts.contains(localHostName);
+        return hosts.isEmpty() || hosts.contains(localHostName);
     }
 
     @Override

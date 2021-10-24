@@ -662,7 +662,7 @@ public class ServerOperationResolver {
             } else if (SOCKET_BINDING_GROUP.equals(attr)) {
                 String groupName = address.getElement(0).getValue();
                 Set<ServerIdentity> servers = getServersForGroup(groupName, host, localHostName, serverProxies);
-                if (servers.size() > 0) {
+                if (!servers.isEmpty()) {
                     //Get rid of servers overriding the socket-binding-group
                     Set<ServerIdentity> affectedServers = new HashSet<>();
                     for (ServerIdentity server : servers) {
@@ -844,7 +844,7 @@ public class ServerOperationResolver {
                 }
             }
 
-            if (servers != null && servers.size() > 0) {
+            if (servers != null && !servers.isEmpty()) {
                 Map<ModelNode, Set<ServerIdentity>> ops = new HashMap<ModelNode, Set<ServerIdentity>>();
                 for (ServerIdentity server : servers) {
                     ModelNode serverOp = getServerSystemPropertyOperation(operation, propName, server, level, domain, host);

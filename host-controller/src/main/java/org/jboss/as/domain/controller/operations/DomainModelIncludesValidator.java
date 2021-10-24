@@ -152,7 +152,7 @@ public class DomainModelIncludesValidator implements OperationStepHandler {
                 }
             }
 
-            if (missingEntries.size() > 0) {
+            if (!missingEntries.isEmpty()) {
                 //We are missing some entries, don't continue with the validation since it has failed
                 return;
             }
@@ -178,7 +178,7 @@ public class DomainModelIncludesValidator implements OperationStepHandler {
                 seen.add(resourceName);
                 Set<String> includes = resourceIncludes.get(resourceName);
                 Set<String> children = resourceChildren.get(resourceName);
-                if (includes.size() == 0 && children.size() == 0) {
+                if (includes.isEmpty() && children.isEmpty()) {
                     return;
                 }
                 for (String child : resourceChildren.get(resourceName)) {

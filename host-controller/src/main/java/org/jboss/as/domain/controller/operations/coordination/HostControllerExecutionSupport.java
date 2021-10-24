@@ -378,7 +378,7 @@ interface HostControllerExecutionSupport {
                         domainSteps.add(stepNode);
                     }
                 }
-                if (domainSteps.size() == 0) {
+                if (domainSteps.isEmpty()) {
                     //Nothing to do, return null
                     return null;
                 }

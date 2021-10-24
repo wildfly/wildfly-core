@@ -115,7 +115,7 @@ public abstract class DeploymentRemoveHandler implements OperationStepHandler {
                 }
             }
 
-            if (badGroups.size() > 0) {
+            if (!badGroups.isEmpty()) {
                 throw new OperationFailedException(DomainControllerLogger.ROOT_LOGGER.cannotRemoveDeploymentInUse(deploymentName, badGroups));
             }
         }

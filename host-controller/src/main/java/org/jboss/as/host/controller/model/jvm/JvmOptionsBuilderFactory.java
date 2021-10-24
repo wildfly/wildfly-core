@@ -85,7 +85,7 @@ public final class JvmOptionsBuilderFactory {
             command.add(jvmElement.getDebugOptions());
         }
         List<String> options = jvmElement.getJvmOptions().getOptions();
-        if (options.size() > 0) {
+        if (!options.isEmpty()) {
             String jvmName = jvmElement.getName();
             for (String option : options) {
 

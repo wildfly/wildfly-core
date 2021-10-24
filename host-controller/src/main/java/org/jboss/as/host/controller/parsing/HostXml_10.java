@@ -849,7 +849,7 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -913,7 +913,7 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -944,7 +944,7 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -1124,7 +1124,7 @@ final class HostXml_10 extends CommonXml implements ManagementXmlDelegate {
             }
         }
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 

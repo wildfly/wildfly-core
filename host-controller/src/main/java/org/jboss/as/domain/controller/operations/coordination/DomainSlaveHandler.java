@@ -113,7 +113,7 @@ public class DomainSlaveHandler implements OperationStepHandler {
         boolean completeStepCalled = false;
         try {
             long timeout = 0;
-            while (outstanding.size() > 0) {
+            while (!outstanding.isEmpty()) {
                 timeout = blockingTimeout.getDomainBlockingTimeout(false);
                 TransactionalProtocolClient.PreparedOperation<HostControllerUpdateTask.ProxyOperation> prepared = null;
                 try {
