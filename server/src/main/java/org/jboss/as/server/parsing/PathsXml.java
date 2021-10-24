@@ -179,7 +179,7 @@ class PathsXml {
             }
         }
 
-        if (paths.size() > 0) {
+        if (!paths.isEmpty()) {
             writer.writeStartElement(Element.PATHS.getLocalName());
 
             for (final Property path : paths) {

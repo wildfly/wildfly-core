@@ -165,7 +165,7 @@ class SystemPropertiesXml {
     void writeProperties(final XMLExtendedStreamWriter writer, final ModelNode modelNode, Element element,
             boolean standalone) throws XMLStreamException {
         final List<Property> properties = modelNode.asPropertyList();
-        if (properties.size() > 0) {
+        if (!properties.isEmpty()) {
             writer.writeStartElement(element.getLocalName());
             for (Property prop : properties) {
                 writer.writeStartElement(Element.PROPERTY.getLocalName());
