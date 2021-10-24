@@ -88,7 +88,7 @@ class ResourceAccessControlUtil {
         } else {
             final ModelNode accessControl = result.get(RESULT, ACCESS_CONTROL);
             ModelNode useAccessControl = null;
-            if (accessControl.hasDefined(EXCEPTIONS) && accessControl.get(EXCEPTIONS).keys().size() > 0) {
+            if (accessControl.hasDefined(EXCEPTIONS) && !accessControl.get(EXCEPTIONS).keys().isEmpty()) {
                 String key = address.toModelNode().asString();
                 ModelNode exception = accessControl.get(EXCEPTIONS, key);
                 if (exception.isDefined()) {

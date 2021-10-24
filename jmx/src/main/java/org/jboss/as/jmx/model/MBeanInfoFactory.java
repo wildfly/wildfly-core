@@ -352,7 +352,7 @@ public class MBeanInfoFactory {
         if (!opNode.hasDefined(REPLY_PROPERTIES)) {
             return SimpleType.VOID;
         }
-        if (opNode.get(REPLY_PROPERTIES).asList().size() == 0) {
+        if (opNode.get(REPLY_PROPERTIES).asList().isEmpty()) {
             return SimpleType.VOID;
         }
 
