@@ -23,7 +23,7 @@ package org.jboss.as.test.integration.management.cli.ifelse;
 
 import javax.inject.Inject;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotNull;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
@@ -46,14 +46,19 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
     @Test
     public void testIfNoBatchBoot() throws Exception {
         final CommandContext ctx = new CommandContextImpl(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.bindClient(managementClient.getControllerClient());
             ctx.handle(getAddPropertyReq("1"));
             ctx.handle("if result.value==\"1\" of " + getReadPropertyReq());
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -63,19 +68,25 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testIfNoBatch() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("1"));
             ctx.handle("if result.value==\"1\" of " + getReadPropertyReq());
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch (CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -85,11 +96,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testIfBatchBoot() throws Exception {
         final CommandContext ctx = new CommandContextImpl(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.bindClient(managementClient.getControllerClient());
             ctx.handle(getAddPropertyReq("1"));
@@ -98,8 +111,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
             ctx.handle("run-batch");
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -109,11 +126,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testIfBatch() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("1"));
@@ -122,8 +141,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
             ctx.handle("run-batch");
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch (CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -133,11 +156,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testElseNoBatchBoot() throws Exception {
         final CommandContext ctx = new CommandContextImpl(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.bindClient(managementClient.getControllerClient());
             ctx.handle(getAddPropertyReq("1"));
@@ -145,8 +170,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle("else");
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -156,11 +185,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testElseNoBatch() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("1"));
@@ -168,8 +199,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle("else");
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch (CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -179,11 +214,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testElseBatchBoot() throws Exception {
         final CommandContext ctx = new CommandContextImpl(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.bindClient(managementClient.getControllerClient());
             ctx.handle(getAddPropertyReq("1"));
@@ -193,8 +230,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
             ctx.handle("run-batch");
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch (CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -204,11 +245,13 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 
     @Test
     public void testElseBatch() throws Exception {
         final CommandContext ctx = CLITestUtil.getCommandContext(cliOut);
+        CommandLineException expectedEx = null;
         try {
             ctx.connectController();
             ctx.handle(getAddPropertyReq("1"));
@@ -218,8 +261,12 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.handle(getWritePropertyReq("2"));
             ctx.handle(getReadNonexistingPropReq());
             ctx.handle("run-batch");
-            ctx.handle("end-if");
-            fail("expected exception");
+            try {
+                ctx.handle("end-if");
+            } catch (CommandLineException e) {
+                expectedEx = e;
+                throw e; // for cleanup
+            }
         } catch(CommandLineException e) {
             cliOut.reset();
             ctx.handle(getReadPropertyReq());
@@ -229,5 +276,6 @@ public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
             ctx.terminateSession();
             cliOut.reset();
         }
+        assertNotNull("expected exception", expectedEx);
     }
 }
