@@ -22,6 +22,7 @@
 
 package org.jboss.as.controller;
 
+
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -59,6 +60,14 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
     @SuppressWarnings("WeakerAccess")
     public ParameterValidator getElementValidator() {
         return elementValidator;
+    }
+
+    /**
+     * Returns an AttributeDefinition describing the content of the list.
+     * @return an AttributeDefinition describing the content of the list - null if none is defined.
+     */
+    public AttributeDefinition getValueAttributeDefinition() {
+        return null;
     }
 
     /**

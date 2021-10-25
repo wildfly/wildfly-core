@@ -231,14 +231,18 @@ public class AuditLogBootingSyslogTest {
     }
 
     void resetElytron(final CompositeOperationBuilder compositeOp) {
-        ModelNode op = Operations.createOperation("map-remove", userAuthAddress);
+        ModelNode op = Operations.createOperation("map-clear", userAuthAddress);
         op.get("name").set("properties");
-        op.get("key").set(DEFAULT_USER_KEY);
         compositeOp.addStep(op.clone());
         op = Operations.createOperation("map-put", userAuthAddress);
         op.get("name").set("properties");
         op.get("key").set(DEFAULT_USER_KEY);
         op.get("value").set("$local");
+        compositeOp.addStep(op.clone());
+        op = Operations.createOperation("map-put", userAuthAddress);
+        op.get("name").set("properties");
+        op.get("key").set("wildfly.sasl.local-user.challenge-path");
+        op.get("value").set("${jboss.server.temp.dir}/auth");
         compositeOp.addStep(op.clone());
         compositeOp.addStep(Operations.createRemoveOperation(PathAddress.parseCLIStyleAddress("/subsystem=elytron/credential-store=test").toModelNode()));
         compositeOp.addStep(Operations.createWriteAttributeOperation(userIdentRealmAddress, "identity", "$local"));

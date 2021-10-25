@@ -53,8 +53,12 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
         assert valueType.getType() != ModelType.OBJECT && valueType.getType() != ModelType.LIST;
     }
 
-
     public AttributeDefinition getValueType() {
+        return getValueAttributeDefinition();
+    }
+
+    @Override
+    public AttributeDefinition getValueAttributeDefinition() {
         return valueType;
     }
 
@@ -162,7 +166,7 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
 
         public Builder(final SimpleListAttributeDefinition basis) {
             super(basis);
-            valueType = basis.getValueType();
+            valueType = basis.getValueAttributeDefinition();
         }
 
         public static Builder of(final String name, final AttributeDefinition valueType) {

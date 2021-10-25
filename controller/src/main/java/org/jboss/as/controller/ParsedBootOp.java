@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -41,6 +40,7 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class ParsedBootOp {
+
     public final ModelNode operation;
     public final String operationName;
     public final PathAddress address;
@@ -82,7 +82,7 @@ public class ParsedBootOp {
 
     boolean isExtensionAdd() {
         return address.size() == 1 && address.getElement(0).getKey().equals(EXTENSION)
-                    && operationName.equals(ADD);
+                && operationName.equals(ADD);
     }
 
     boolean isInterfaceOperation() {
@@ -93,7 +93,16 @@ public class ParsedBootOp {
         return address.size() > 0 && address.getElement(0).getKey().equals(SOCKET_BINDING_GROUP);
     }
 
-    List<ModelNode> getChildOperations() {
-        return childOperations == null ? Collections.<ModelNode>emptyList() : childOperations;
+    public List<ModelNode> getChildOperations() {
+        return childOperations == null ? Collections.<ModelNode>emptyList() : Collections.unmodifiableList(childOperations);
+    }
+
+    public PathAddress getAddress() {
+        return address;
+    }
+
+    @Override
+    public String toString() {
+        return "ParsedBootOp{" + "operation=" + operation + ", operationName=" + operationName + ", address=" + address + ", handler=" + handler + ", response=" + response + ", childOperations=" + childOperations + '}';
     }
 }

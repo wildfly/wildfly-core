@@ -96,6 +96,7 @@ public class Server {
     private String gitBranch;
     private String gitAuthConfiguration;
     private Path configDir;
+    private Path[] yamlFiles = null;
 
     public Server() {
         this(null, false);
@@ -162,6 +163,10 @@ public class Server {
         this.gitRepository = checkNotNullParamWithNullPointerException("gitRepository", gitRepository);
         this.gitBranch = gitBranch;
         this.gitAuthConfiguration = gitAuthConfig;
+    }
+
+    public void setYamlFiles(Path[] yamlFiles) {
+        this.yamlFiles = yamlFiles;
     }
 
     public void setConfigDir(Path configDir) {
@@ -243,6 +248,8 @@ public class Server {
                 if (gitRepository != null) {
                     commandBuilder.setGitRepository(gitRepository, gitBranch, gitAuthConfiguration);
                 }
+
+                commandBuilder.setYamlFiles(yamlFiles);
 
                 if (configDir != null) {
                     commandBuilder.addJavaOption("-Djboss.server.config.dir="+configDir.toString());

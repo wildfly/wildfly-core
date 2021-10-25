@@ -59,6 +59,7 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
 
     @After
     public void stopContainer() throws Exception {
+        executeOperation(Operations.createUndefineAttributeOperation(createAddress(), API_DEPENDENCIES));
         // No need to undeploy the deployment should be in error, but check the deployments and undeploy if necessary,
         // for example if the test failed
         final ModelNode op = Operations.createReadResourceOperation(PathAddress.pathAddress("deployment", "*").toModelNode());
@@ -70,8 +71,6 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
                 log.warn("Error undeploying", e);
             }
         }
-
-        executeOperation(Operations.createWriteAttributeOperation(createAddress(), API_DEPENDENCIES, true));
         container.stop();
     }
 
