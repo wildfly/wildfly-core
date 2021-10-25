@@ -554,7 +554,7 @@ public class JMXExtension implements Extension {
                 JmxAuditLoggerResourceDefinition.LOG_READ_ONLY.marshallAsAttribute(auditLog, writer);
                 JmxAuditLoggerResourceDefinition.ENABLED.marshallAsAttribute(auditLog, writer);
 
-                if (auditLog.hasDefined(HANDLER) && auditLog.get(HANDLER).keys().size() > 0) {
+                if (auditLog.hasDefined(HANDLER) && !auditLog.get(HANDLER).keys().isEmpty()) {
                     writer.writeStartElement(CommonAttributes.HANDLERS);
                     for (String key : auditLog.get(HANDLER).keys()) {
                         writer.writeEmptyElement(CommonAttributes.HANDLER);

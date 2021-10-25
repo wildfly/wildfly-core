@@ -514,7 +514,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         try {
             //No authorization needed to get the names of the domains
             ArrayList<String> result = new ArrayList<String>();
-            if (delegates.size() > 0) {
+            if (!delegates.isEmpty()) {
                 for (MBeanServerPlugin delegate : delegates) {
                     String[] domains = delegate.getDomains();
                     if (domains.length > 0) {
@@ -540,7 +540,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         boolean shouldLog = false;
         try {
             int i = 0;
-            if (delegates.size() > 0) {
+            if (!delegates.isEmpty()) {
                 for (MBeanServerPlugin delegate : delegates) {
                     //Only include the count if the user is authorized to see the beans in the domain
                     if (authorizeMBeanOperation(delegate, ObjectName.WILDCARD, GET_MBEAN_COUNT, null, JmxAction.Impact.READ_ONLY, false)) {
@@ -763,7 +763,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         Boolean shouldAuditLog = null;
         final boolean readOnly = true;
         try {
-            if (delegates.size() > 0) {
+            if (!delegates.isEmpty()) {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (delegate.accepts(name) && delegate.isRegistered(name)) {
                         authorizeMBeanOperation(delegate, name, IS_REGISTERED, null, JmxAction.Impact.READ_ONLY);
@@ -796,7 +796,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         boolean shouldAuditLog = false;
         try {
             Set<ObjectInstance> result = new HashSet<ObjectInstance>();
-            if (delegates.size() > 0) {
+            if (!delegates.isEmpty()) {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (name == null || (name.getDomain() != null && delegate.accepts(name))) {
                         //Only include the mbeans if the user is authorized to see the beans in the domain
@@ -832,7 +832,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         boolean shouldAuditLog = false;
         try {
             Set<ObjectName> result = new HashSet<ObjectName>();
-            if (delegates.size() > 0) {
+            if (!delegates.isEmpty()) {
                 for (MBeanServerPlugin delegate : delegates) {
                     if (name == null || (name.getDomain() != null && delegate.accepts(name))) {
                         //Only include the mbeans if the user is authorized to see the beans in the domain
@@ -1099,7 +1099,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         if (name == null) {
             throw JmxLogger.ROOT_LOGGER.objectNameCantBeNull();
         }
-        if (delegates.size() > 0) {
+        if (!delegates.isEmpty()) {
             for (MBeanServerPlugin delegate : delegates) {
                 if (delegate.accepts(name) && delegate.isRegistered(name)) {
                     return delegate;
@@ -1117,7 +1117,7 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
             return rootMBeanServer;
         }
 
-        if (delegates.size() > 0) {
+        if (!delegates.isEmpty()) {
             for (MBeanServerPlugin delegate : delegates) {
                 if (delegate.accepts(name)) {
                     return delegate;
