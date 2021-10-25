@@ -361,7 +361,7 @@ public class ModelTestModelDescriptionValidator {
             errors.add(validationElement.createValidationFailure("Missing description"));
         }
         if (reply && rawDescription.isDefined()) {
-          if (rawDescription.keys().size() == 0) {
+          if (rawDescription.keys().isEmpty()) {
               return;
           }
         }

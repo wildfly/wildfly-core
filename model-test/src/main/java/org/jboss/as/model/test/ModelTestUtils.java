@@ -466,7 +466,7 @@ public class ModelTestUtils {
                         if (!copy.hasDefined(key)) {
                             copy.remove(key);
                         } else if (copy.get(key).getType() == ModelType.OBJECT) {     //this is stupid workaround
-                            if (copy.get(key).keys().size() == 0) {
+                            if (copy.get(key).keys().isEmpty()) {
                                 copy.remove(key);
                             }
                         }
