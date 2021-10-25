@@ -695,8 +695,9 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
         MBeanInfo info = connection.getMBeanInfo(name);
         CompositeType complexType = assertCast(CompositeType.class, findAttribute(info.getAttributes(), "complex").getOpenType());
+        CompositeData compositeData = createComplexData(connection, complexType, 1, BigDecimal.valueOf(2.0));
         try {
-            connection.setAttribute(name, new Attribute("complex", createComplexData(connection, complexType, 1, BigDecimal.valueOf(2.0))));
+            connection.setAttribute(name, new Attribute("complex", compositeData));
             Assert.fail("Complex not writable");
         } catch (Exception expected) {
             //expected
