@@ -292,16 +292,13 @@ class PatchModuleInvalidationUtils {
                     // confirm that firstLoc is indeed the first local file
                     long fileFirstLoc = scanForLocSig(channel);
                     if (firstLoc != fileFirstLoc) {
-                        if (fileFirstLoc == 0) {
-                            return false;
-                        } else {
-                            // scanForLocSig() found a LOCSIG, but not at position zero and not
-                            // at the expected position.
-                            // With a file like this, we can't tell if we're in a nested zip
-                            // or we're in an outer zip and had the bad luck to find random bytes
-                            // that look like LOCSIG.
-                            return false;
-                        }
+                        // fileFirstLoc == 0 same as
+                        // scanForLocSig() found a LOCSIG, but not at position zero and not
+                        // at the expected position.
+                        // With a file like this, we can't tell if we're in a nested zip
+                        // or we're in an outer zip and had the bad luck to find random bytes
+                        // that look like LOCSIG.
+                        return false;
                     }
                 }
 
