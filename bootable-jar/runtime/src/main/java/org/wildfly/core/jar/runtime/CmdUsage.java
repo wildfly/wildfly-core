@@ -17,6 +17,7 @@
 package org.wildfly.core.jar.runtime;
 
 import java.io.PrintStream;
+import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineArgumentUsage;
 import org.jboss.as.process.CommandLineConstants;
@@ -67,6 +68,11 @@ final class CmdUsage extends CommandLineArgumentUsage {
 
         addArguments(CommandLineConstants.VERSION);
         instructions.add(BootableJarLogger.ROOT_LOGGER.argVersion());
+
+        if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()) {
+            addArguments(ConfigurationExtensionFactory.getCommandLineUsageArguments());
+            instructions.add(ConfigurationExtensionFactory.getCommandLineInstructions());
+        }
     }
 
     public static void printUsage(final PrintStream out) {

@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineConstants;
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
@@ -107,6 +108,9 @@ final class Arguments {
                 if (!Files.exists(cliScript) || !Files.isReadable(cliScript)) {
                     throw new Exception("File doesn't exist or is not readable: " + cliScript);
                 }
+             } else if (ConfigurationExtensionFactory.isConfigurationExtensionSupported()
+                    && ConfigurationExtensionFactory.commandLineContainsArgument(a)) {
+                serverArguments.add(a);
             } else {
                 throw BootableJarLogger.ROOT_LOGGER.unknownArgument(a);
             }
