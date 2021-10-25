@@ -212,7 +212,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
 
         }
 
-        if (!context.isBooting() && operations.getAllOps().size() > 0 && parameters.isFullModelTransfer()) {
+        if (!context.isBooting() && !operations.getAllOps().isEmpty() && parameters.isFullModelTransfer()) {
             //Only do this is if it is a full model transfer as a result of a _reconnect_ to the DC.
             //When fetching missing configuration while connected, the servers will get put into reload-required as a
             // result of changing the server-group, profile or the socket-binding-group
@@ -647,7 +647,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
 
         private static Set<String> getOrderedInsertCapable(Node current) {
-            if (current.orderedChildTypes.size() > 0) {
+            if (!current.orderedChildTypes.isEmpty()) {
                 return new HashSet<String>(current.orderedChildTypes);
             } else {
                 return Collections.emptySet();
@@ -655,7 +655,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
         }
 
         private static Set<String> getOrderedNotInsertCapable(Node current, Node remote) {
-            if (remote.orderedChildTypes.size() > 0) {
+            if (!remote.orderedChildTypes.isEmpty()) {
                 HashSet<String> orderedNotInsertCapable = null;
                 for (String type : remote.orderedChildTypes) {
                     if (!current.orderedChildTypes.contains(type)) {
@@ -748,7 +748,7 @@ class SyncModelOperationHandler implements OperationStepHandler {
             for (ModelNode op : nonExtensionAdds) {
                 nonExtensionSteps.add(op);
             }
-            if (nonExtensionSteps.asList().size() > 0) {
+            if (!nonExtensionSteps.asList().isEmpty()) {
                 result.add(nonExtensionComposite);
             }
             result.addAll(extensionAdds);

@@ -156,7 +156,7 @@ public class JvmAttributes {
                 public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
                     if (resourceModel.hasDefined(attribute.getName())) {
                         List<ModelNode> list = resourceModel.get(attribute.getName()).asList();
-                        if (list.size() > 0) {
+                        if (!list.isEmpty()) {
                             writer.writeStartElement(attribute.getName());
                             for (ModelNode child : list) {
                                 writer.writeEmptyElement(Element.OPTION.getLocalName());

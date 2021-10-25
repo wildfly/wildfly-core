@@ -133,7 +133,7 @@ public class ReadMasterDomainModelUtil {
         description.get(DOMAIN_RESOURCE_ADDRESS).set(base.toModelNode());
         description.get(DOMAIN_RESOURCE_MODEL).set(resource.getModel());
         Set<String> orderedChildren = resource.getOrderedChildTypes();
-        if (orderedChildren.size() > 0) {
+        if (!orderedChildren.isEmpty()) {
             ModelNode orderedChildTypes = description.get(DOMAIN_RESOURCE_PROPERTIES, ORDERED_CHILD_TYPES_PROPERTY);
             for (String type : orderedChildren) {
                 orderedChildTypes.add(type);

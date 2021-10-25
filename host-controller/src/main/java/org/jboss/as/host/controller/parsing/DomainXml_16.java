@@ -712,7 +712,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
     private void writeDomainDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
 
         final Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
+        if (!deploymentNames.isEmpty()) {
             writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
             for (String uniqueName : deploymentNames) {
                 final ModelNode deployment = modelNode.get(uniqueName);
@@ -732,7 +732,7 @@ final class DomainXml_16 extends CommonXml implements ManagementXmlDelegate {
     private void writeServerGroupDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
 
         final Set<String> deploymentNames = modelNode.keys();
-        if (deploymentNames.size() > 0) {
+        if (!deploymentNames.isEmpty()) {
             writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
             for (String uniqueName : deploymentNames) {
                 final ModelNode deployment = modelNode.get(uniqueName);

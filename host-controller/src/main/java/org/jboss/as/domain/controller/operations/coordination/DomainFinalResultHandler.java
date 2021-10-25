@@ -365,7 +365,7 @@ class DomainFinalResultHandler implements OperationStepHandler {
                     if(responseHeaders.hasDefined(WARNINGS)){
                         responseHeaders.remove(WARNINGS);
                     }
-                    if(responseHeaders.keys().size() == 0){
+                    if (responseHeaders.keys().isEmpty()) {
                         hostResult.remove(RESPONSE_HEADERS);
                     }
                 }

@@ -103,7 +103,7 @@ public class HostAddHandler extends AbstractAddStepHandler {
 
         // see if a host has already been added.
         Resource root = context.readResourceFromRoot(PathAddress.EMPTY_ADDRESS, false);
-        if (root.getChildrenNames(HOST).size() > 0) {
+        if (!root.getChildrenNames(HOST).isEmpty()) {
             // there is a host already registered
             final String exists = root.getChildrenNames(HOST).iterator().next();
             throw HostControllerLogger.ROOT_LOGGER.cannotAddHostAlreadyRegistered(exists);

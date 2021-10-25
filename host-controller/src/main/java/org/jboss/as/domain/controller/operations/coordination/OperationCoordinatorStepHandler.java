@@ -177,10 +177,10 @@ public class OperationCoordinatorStepHandler {
 
             // Add steps to invoke on the HC for each relevant slave
             Set<String> remoteHosts = new HashSet<String>(routing.getHosts());
-            boolean global = remoteHosts.size() == 0;
+            boolean global = remoteHosts.isEmpty();
             remoteHosts.remove(localHostName);
 
-            if (remoteHosts.size() > 0 || global) {
+            if (!remoteHosts.isEmpty() || global) {
 
                 if (routing.isMultiphase()) {
                     // Lock the controller to ensure there are no topology changes mid-op.

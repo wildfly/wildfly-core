@@ -163,7 +163,7 @@ public class MasterDomainControllerOperationHandlerService extends AbstractModel
 
             try {
                 if (domainControllerLockId != null) {
-                    assert operation.getInputStreams().size() == 0; // we don't support associating streams with an active op
+                    assert operation.getInputStreams().isEmpty(); // we don't support associating streams with an active op
                     ModelNode responseNode = executor.joinActiveOperation(operation.getOperation(), messageHandler, control, handler, domainControllerLockId);
                     return OperationResponse.Factory.createSimple(responseNode);
                 } else {
