@@ -146,26 +146,26 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
     @Test
     public void testIncludesWithOverriddenSubsystems() throws Exception {
-        try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getProfileAddress("profile-four");
-            ModelNode list = new ModelNode().add("profile-three");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource subsystemA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
-                            .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getProfileAddress("profile-four");
+        ModelNode list = new ModelNode().add("profile-three");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource subsystemA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
+                        .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
 
-                    Resource subsystemB = Resource.Factory.create();
-                    Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
-                    profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
-                }
-            });
-            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
+                Resource subsystemB = Resource.Factory.create();
+                Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
+                profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
+            }
+        });
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
+        try {
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -178,30 +178,30 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
     @Test
     public void testProfileWithSubsystemsIncludesSameSubsystems() throws Exception {
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getProfileAddress("profile-five");
+        ModelNode list = new ModelNode().add("profile-three").add("profile-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource subsystemA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
+                        .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
+
+                Resource subsystemB = Resource.Factory.create();
+                Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
+                profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
+
+                Resource subsystemC = Resource.Factory.create();
+                Resource profile5 = root.getChild(PathElement.pathElement(PROFILE, "profile-five"));
+                profile5.registerChild(PathElement.pathElement(SUBSYSTEM, "x"), subsystemC);
+            }
+        });
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getProfileAddress("profile-five");
-            ModelNode list = new ModelNode().add("profile-three").add("profile-four");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource subsystemA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
-                            .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
-
-                    Resource subsystemB = Resource.Factory.create();
-                    Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
-                    profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
-
-                    Resource subsystemC = Resource.Factory.create();
-                    Resource profile5 = root.getChild(PathElement.pathElement(PROFILE, "profile-five"));
-                    profile5.registerChild(PathElement.pathElement(SUBSYSTEM, "x"), subsystemC);
-                }
-            });
-            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
@@ -215,28 +215,28 @@ public class ProfileIncludesHandlerTestCase extends AbstractOperationTestCase {
 
     @Test
     public void testEmptyProfileIncludesSameSubsystems() throws Exception {
+        // Here we test changing the includes attribute value
+        // Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
+        // so we test that in ServerManagementTestCase
+        PathAddress addr = getProfileAddress("profile-five");
+        ModelNode list = new ModelNode().add("profile-three").add("profile-four");
+        ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
+        MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
+            @Override
+            public void addAdditionalResources(Resource root) {
+                Resource subsystemA = Resource.Factory.create();
+                root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
+                        .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
+
+                Resource subsystemB = Resource.Factory.create();
+                Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
+                profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
+
+                // profile-four is empty
+            }
+        });
+        ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
         try {
-            //Here we test changing the includes attribute value
-            //Testing what happens when adding subsystems at runtime becomes a bit too hard to mock up
-            //so we test that in ServerManagementTestCase
-            PathAddress addr = getProfileAddress("profile-five");
-            ModelNode list = new ModelNode().add("profile-three").add("profile-four");
-            ModelNode op = Util.getWriteAttributeOperation(addr, INCLUDES, list);
-            MockOperationContext operationContext = getOperationContextForSubsystemIncludes(addr, new RootResourceInitializer() {
-                @Override
-                public void addAdditionalResources(Resource root) {
-                    Resource subsystemA = Resource.Factory.create();
-                    root.getChild(PathElement.pathElement(PROFILE, "profile-three"))
-                            .registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemA);
-
-                    Resource subsystemB = Resource.Factory.create();
-                    Resource profile4 = root.getChild(PathElement.pathElement(PROFILE, "profile-four"));
-                    profile4.registerChild(PathElement.pathElement(SUBSYSTEM, "a"), subsystemB);
-
-                    //profile-four is empty
-                }
-            });
-            ProfileResourceDefinition.createIncludesValidationHandler().execute(operationContext, op);
             operationContext.executeNextStep();
             Assert.fail("Expected error");
         } catch (OperationFailedException expected) {
