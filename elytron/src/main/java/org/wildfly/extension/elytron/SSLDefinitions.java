@@ -1410,7 +1410,7 @@ class SSLDefinitions {
                 ModelNode hostContextMap = HOST_CONTEXT_MAP.resolveModelAttribute(context, model);
 
                 Set<String> keys;
-                if (hostContextMap.isDefined() && (keys = hostContextMap.keys()).size() > 0) {
+                if (hostContextMap.isDefined() && !(keys = hostContextMap.keys()).isEmpty()) {
                     final Map<String, InjectedValue<SSLContext>> sslContextMap = new HashMap<>(keys.size());
                     for (String host : keys) {
                         String sslContextName = hostContextMap.require(host).asString();

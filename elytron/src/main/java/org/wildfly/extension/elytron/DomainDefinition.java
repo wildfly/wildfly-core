@@ -354,7 +354,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         final Set<SecurityDomain> outflowSecurityDomains = new HashSet<>();
 
         installInitialService(context, initialName, model, trustedSecurityDomains::contains,
-                outflowSecurityDomainNames.size() > 0 ? i -> outflow(i, outflowAnonymous, outflowSecurityDomains) : UnaryOperator.identity());
+                !outflowSecurityDomainNames.isEmpty() ? i -> outflow(i, outflowAnonymous, outflowSecurityDomains) : UnaryOperator.identity());
 
         TrivialService<SecurityDomain> finalDomainService = new TrivialService<SecurityDomain>();
         finalDomainService.setValueSupplier(new ValueSupplier<SecurityDomain>() {

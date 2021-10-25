@@ -288,7 +288,7 @@ class TokenRealmDefinition extends SimpleResourceDefinition {
                 if (keyMap.isDefined()) {
                     Set<String> kids = keyMap.keys();
 
-                    if (kids.size() > 0) {
+                    if (!kids.isEmpty()) {
                         for (String kid : kids) {
                             byte[] pemKey = keyMap.get(kid).asString().getBytes(StandardCharsets.UTF_8);
 
