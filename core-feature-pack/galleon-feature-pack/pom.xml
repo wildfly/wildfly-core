@@ -118,6 +118,15 @@
                             <resources>
                                 <resource>
                                     <directory>${common.resources.directory}</directory>
+                                    <excludes>
+                                        <exclude>modules/**/module.xml</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>${common.resources.directory}</directory>
+                                    <includes>
+                                        <include>modules/**/module.xml</include>
+                                    </includes>
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
