@@ -155,7 +155,7 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <version.com.googlecode.javaewah>1.1.12</version.com.googlecode.javaewah>
+        <version.com.googlecode.javaewah>1.1.13</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
         <version.com.google.guava>30.1.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
