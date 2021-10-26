@@ -483,7 +483,7 @@ final class SubsystemTestDelegate {
 
         ModelDescriptionValidator validator = new ModelDescriptionValidator(address, model, arbitraryDescriptors);
         List<ModelDescriptionValidator.ValidationFailure> validationMessages = validator.validateResource();
-        if (validationMessages.size() > 0) {
+        if (!validationMessages.isEmpty()) {
             final StringBuilder builder = new StringBuilder("VALIDATION ERRORS IN MODEL:");
             for (ModelDescriptionValidator.ValidationFailure failure : validationMessages) {
                 builder.append(failure);

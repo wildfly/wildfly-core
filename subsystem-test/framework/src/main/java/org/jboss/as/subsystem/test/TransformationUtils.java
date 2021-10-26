@@ -113,7 +113,7 @@ class TransformationUtils {
             }
             allFields.remove(name);
         }
-        if (!value.isDefined() && model.isDefined() && reg.getChildAddresses(PathAddress.EMPTY_ADDRESS).size() == 0) {
+        if (!value.isDefined() && model.isDefined() && reg.getChildAddresses(PathAddress.EMPTY_ADDRESS).isEmpty()) {
             value.setEmptyObject();
         }
         res.writeModel(value);
