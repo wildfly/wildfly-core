@@ -105,7 +105,7 @@ class DeploymentOverlaysXml {
         }
 
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
         ModelNode addr = baseAddress.clone();
@@ -155,7 +155,7 @@ class DeploymentOverlaysXml {
         requireNoContent(reader);
 
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -193,7 +193,7 @@ class DeploymentOverlaysXml {
         requireNoContent(reader);
 
 
-        if (required.size() > 0) {
+        if (!required.isEmpty()) {
             throw missingRequired(reader, required);
         }
 
@@ -211,7 +211,7 @@ class DeploymentOverlaysXml {
     void writeDeploymentOverlays(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
 
         Set<String> names = modelNode.keys();
-        if (names.size() > 0) {
+        if (!names.isEmpty()) {
             writer.writeStartElement(Element.DEPLOYMENT_OVERLAYS.getLocalName());
             for (String uniqueName : names) {
                 final ModelNode contentItem = modelNode.get(uniqueName);
@@ -235,7 +235,7 @@ class DeploymentOverlaysXml {
                 if (contentItem.hasDefined(DEPLOYMENT)) {
                     final ModelNode deployments = contentItem.get(DEPLOYMENT);
                     Set<String> deploymentNames = deployments.keys();
-                    if (deploymentNames.size() > 0) {
+                    if (!deploymentNames.isEmpty()) {
                         for (String deploymentName : deploymentNames) {
                             final ModelNode depNode = deployments.get(deploymentName);
                             writer.writeStartElement(Element.DEPLOYMENT.getLocalName());

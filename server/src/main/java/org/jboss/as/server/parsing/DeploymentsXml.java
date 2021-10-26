@@ -126,7 +126,7 @@ class DeploymentsXml {
                     }
                 }
             }
-            if (requiredAttributes.size() > 0) {
+            if (!requiredAttributes.isEmpty()) {
                 throw missingRequired(reader, requiredAttributes);
             }
 
