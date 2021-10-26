@@ -37,6 +37,7 @@ import org.jboss.as.model.test.ChildFirstClassLoaderBuilder;
 import org.jboss.as.process.protocol.StreamUtils;
 import org.jboss.as.test.integration.management.ManagementOperations;
 import org.jboss.as.test.integration.management.util.ServerReload;
+import org.jboss.as.test.shared.AssumeTestGroupUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -44,7 +45,6 @@ import org.jboss.shrinkwrap.api.asset.ByteArrayAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -134,6 +134,8 @@ public abstract class ClientCompatibilityUnitTestBase {
 
     @Test
     public void test711Final() throws Exception {
+        // This hangs on SE 17. No good reason to sort out why a 2011 client doesn't work on a 2021 SE, so ignore
+        AssumeTestGroupUtil.assumeJDKVersionBefore(12);
         testAS7("7.1.1.Final");
     }
 
@@ -147,21 +149,9 @@ public abstract class ClientCompatibilityUnitTestBase {
         test(createClient(WF_CLIENT, "8.0.0.Final", CONTROLLER_ADDRESS, 9999));
     }
 
-    @Ignore("http upgrade compat issue")
-    @Test
-    public void test800FinalHttp() throws Exception {
-        test(createClient(WF_CLIENT, "8.0.0.Final", CONTROLLER_ADDRESS, 9990));
-    }
-
     @Test
     public void test810Final() throws Exception {
         test(createClient(WF_CLIENT, "8.1.0.Final", CONTROLLER_ADDRESS, 9999));
-    }
-
-    @Ignore("http upgrade compat issue")
-    @Test
-    public void test810FinalHttp() throws Exception {
-        test(createClient(WF_CLIENT, "8.1.0.Final", CONTROLLER_ADDRESS, 9990));
     }
 
     @Test
@@ -169,21 +159,9 @@ public abstract class ClientCompatibilityUnitTestBase {
         test(createClient(WF_CLIENT, "8.2.0.Final", CONTROLLER_ADDRESS, 9999));
     }
 
-    @Ignore("http upgrade compat issue")
-    @Test
-    public void test820FinalHttp() throws Exception {
-        test(createClient(WF_CLIENT, "8.2.0.Final", CONTROLLER_ADDRESS, 9990));
-    }
-
     @Test
     public void test821Final() throws Exception {
         test(createClient(WF_CLIENT, "8.2.1.Final", CONTROLLER_ADDRESS, 9999));
-    }
-
-    @Ignore("http upgrade compat issue")
-    @Test
-    public void test821FinalHttp() throws Exception {
-        test(createClient(WF_CLIENT, "8.2.1.Final", CONTROLLER_ADDRESS, 9990));
     }
 
     @Test
