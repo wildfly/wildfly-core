@@ -127,7 +127,7 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
             } else {
                 ModuleSpecification parentSpecification = deploymentUnit.getParent().getAttachment(Attachments.MODULE_SPECIFICATION);
                 List<PermissionFactory> factories = parentSpecification.getPermissionFactories();
-                if (factories != null && factories.size() > 0) {
+                if (factories != null && !factories.isEmpty()) {
                     // parent deployment contains permissions: subdeployments inherit those permissions.
                     for (PermissionFactory factory : factories) {
                         moduleSpecification.addPermissionFactory(factory);
