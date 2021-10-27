@@ -333,19 +333,31 @@ class PropertiesRealmDefinition {
 
         @Override
         public RealmIdentity getRealmIdentity(Principal principal) throws RealmUnavailableException {
-            return delegate.getRealmIdentity(principal);
+            try {
+                reloadIfNeeded();
+                return delegate.getRealmIdentity(principal);
+            } catch (IOException e) {
+                throw new RealmUnavailableException(e);
+            }
         }
 
         @Override
         public RealmIdentity getRealmIdentity(Evidence evidence) throws RealmUnavailableException {
-            return delegate.getRealmIdentity(evidence);
+            try {
+                reloadIfNeeded();
+                return delegate.getRealmIdentity(evidence);
+            } catch (IOException e) {
+                throw new RealmUnavailableException(e);
+            }
         }
 
+        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName)
                 throws RealmUnavailableException {
             return delegate.getCredentialAcquireSupport(credentialType, algorithmName);
         }
 
+        @Override
         public SupportLevel getCredentialAcquireSupport(Class<? extends Credential> credentialType, String algorithmName, AlgorithmParameterSpec parameterSpec)
                 throws RealmUnavailableException {
             return delegate.getCredentialAcquireSupport(credentialType, algorithmName);
@@ -366,12 +378,30 @@ class PropertiesRealmDefinition {
             return delegate.getLoadTime();
         }
 
+        void reloadIfNeeded() throws IOException {
+            long loadTime = delegate.getLoadTime();
+            if (loadTime < usersFile.lastModified() || (groupsFile != null && loadTime < groupsFile.lastModified())) {
+                synchronized(this) {
+                    loadTime = delegate.getLoadTime();
+                    if (loadTime < usersFile.lastModified() || (groupsFile != null && loadTime < groupsFile.lastModified())) {
+                        reloadInternal();
+                    }
+                }
+            }
+        }
+
         void reload() throws OperationFailedException {
+            try {
+                reloadInternal();
+            } catch (IOException e) {
+                throw ROOT_LOGGER.unableToReLoadPropertiesFiles(e);
+            }
+        }
+
+        void reloadInternal() throws IOException {
             try (InputStream usersInputStream = new FileInputStream(usersFile);
                     InputStream groupsInputStream = groupsFile != null ? new FileInputStream(groupsFile) : null) {
                 delegate.load(usersInputStream, groupsInputStream);
-            } catch (IOException e) {
-                throw ROOT_LOGGER.unableToReLoadPropertiesFiles(e);
             }
         }
 
