@@ -52,7 +52,6 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.executeForResult;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.exists;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.getRunningServerAddress;
-import org.junit.Assert;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathAddress;
@@ -62,10 +61,20 @@ import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.extension.VersionedExtensionCommon;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Emanuel Muckenhuber
@@ -229,6 +238,11 @@ public class OperationTransformationTestCase {
 
         // Test expression replacement
         testPropertiesModel();
+
+        // verifies WFCORE-5675, we should not have WFLYPRT0018 due to Null Pointer Exceptions sending transformer operations
+        List<String> linesFound = checkHostControllerLogFile(master.getConfiguration(), "WFLYPRT0018");
+        Assert.assertTrue("The slave host-controller.log file contains unexpected warning errors: " + linesFound,
+                linesFound.isEmpty());
     }
 
     protected void testPropertiesModel() throws Exception {
@@ -308,4 +322,20 @@ public class OperationTransformationTestCase {
         Assert.assertEquals(version.getMicro(), v.get(MANAGEMENT_MICRO_VERSION).asInt());
     }
 
+    private List<String> checkHostControllerLogFile(WildFlyManagedConfiguration appConfiguration, String containString) throws IOException {
+        final File logFile = new File(appConfiguration.getDomainDirectory(), "log" + File.separator + "host-controller.log");
+        if (!logFile.exists()) {
+            throw new IOException("Log file '" + logFile + "' does not exist");
+        }
+        List<String> linesFound = new ArrayList<>();
+        try (Reader reader = new FileReader(logFile); BufferedReader in = new BufferedReader(reader)) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                if (line.contains(containString)) {
+                    linesFound.add(line);
+                }
+            }
+        }
+        return linesFound;
+    }
 }

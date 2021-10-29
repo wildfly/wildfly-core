@@ -109,12 +109,18 @@ class HostControllerUpdateTask {
                     } else {
                         HOST_CONTROLLER_LOGGER.tracef("Sending %s (untransformed) to %s", transformedOperation, name);
                     }
+                    final AsyncFuture<OperationResponse> result = client.execute(subsystemListener, proxyOperation);
+                    return new ExecutedHostRequest(result, transformationResult);
                 } else {
-                    HOST_CONTROLLER_LOGGER.tracef("Sending %s (transformed to null) to %s", operation, name);
+                    // We assume here that if we have a null transformedOperation, it means the operation must be discarded and not be sent to the slave.
+                    // The prepared step for this discarded operation will be a SucceededOperation. Later, when the DomainSlaveHandler handler is building up the
+                    // final results, it will use transformationResult.getResultTransformer() as the final result for this discarded operation, which makes the
+                    // transformed to decide what to do with this discarded operation.
+                    HOST_CONTROLLER_LOGGER.tracef("Discard sending %s (transformed to null) for %s", operation, name);
+                    final TransactionalProtocolClient.PreparedOperation<ProxyOperation> result = BlockingQueueOperationListener.SucceededOperation.create(proxyOperation);
+                    subsystemListener.operationPrepared(result);
+                    return new ExecutedHostRequest(result.getFinalResult(), transformationResult);
                 }
-
-                final AsyncFuture<OperationResponse> result = client.execute(subsystemListener, proxyOperation);
-                return new ExecutedHostRequest(result, transformationResult);
             } catch (IOException e) {
                 // Handle protocol failures
                 final TransactionalProtocolClient.PreparedOperation<ProxyOperation> result = BlockingQueueOperationListener.FailedOperation.create(proxyOperation, e);
