@@ -199,4 +199,71 @@ public class BlockingQueueOperationListener<T extends TransactionalProtocolClien
 
     }
 
+    public static class SucceededOperation<T extends TransactionalProtocolClient.Operation>
+            implements TransactionalProtocolClient.PreparedOperation<T> {
+
+        private final T operation;
+        private final ModelNode finalResult;
+
+        /**
+         * Create a succeeded operation.
+         *
+         * @param operation the operation
+         * @param <T> the operation type
+         * @return the succeeded operation
+         */
+        public static <T extends TransactionalProtocolClient.Operation> TransactionalProtocolClient.PreparedOperation<T> create(
+                final T operation) {
+            final ModelNode succeededResult = new ModelNode();
+            succeededResult.get(ModelDescriptionConstants.OUTCOME).set(ModelDescriptionConstants.SUCCESS);
+            succeededResult.get(ModelDescriptionConstants.RESULT);
+            return new SucceededOperation<>(operation, succeededResult);
+        }
+
+        public SucceededOperation(final T operation, final ModelNode finalResult) {
+            this.operation = operation;
+            this.finalResult = finalResult;
+        }
+
+        @Override
+        public T getOperation() {
+            return operation;
+        }
+
+        @Override
+        public ModelNode getPreparedResult() {
+            return finalResult;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public boolean isFailed() {
+            return false;
+        }
+
+        @Override
+        public boolean isTimedOut() {
+            return false;
+        }
+
+        @Override
+        public AsyncFuture<OperationResponse> getFinalResult() {
+            return new CompletedFuture<>(OperationResponse.Factory.createSimple(finalResult));
+        }
+
+        @Override
+        public void commit() {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public void rollback() {
+            throw new IllegalStateException();
+        }
+    }
+
 }
