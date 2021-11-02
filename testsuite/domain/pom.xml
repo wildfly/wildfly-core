@@ -187,7 +187,7 @@
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
                         <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
                         <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>
-                        <jboss.test.host.server.byteman.javaagent>${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar},sys:${org.wildfly.core:wildfly-core-testsuite-shared:jar},script:${project.build.directory}/test-classes/byteman-scripts/</jboss.test.host.server.byteman.javaagent>
+                        <jboss.test.host.server.byteman.javaagent>${org.jboss.byteman:byteman:jar}=port:${byteman.port},address:${byteman.host},boot:${org.jboss.byteman:byteman:jar},script:${project.build.directory}/test-classes/byteman-scripts/</jboss.test.host.server.byteman.javaagent>
                     </systemPropertyVariables>
                     <includes>
                         <include>org/jboss/as/test/integration/domain/autoignore/*TestCase.java</include>
