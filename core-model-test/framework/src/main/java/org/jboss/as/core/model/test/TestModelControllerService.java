@@ -537,7 +537,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
             final DomainController domainController = new MockDomainController();
             DomainRootDefinition domainDefinition = null;
             Constructor<?>[] constructors = DomainRootDefinition.class.getConstructors();
-            if(constructors.length == 1 && constructors[0].getParameterTypes().length == 10) { // For EAP 6.2 compatibility
+            if(constructors.length == 1 && constructors[0].getParameterCount() == 10) { // For EAP 6.2 compatibility
                 try {
                     domainDefinition = (DomainRootDefinition) constructors[0].newInstance(domainController, env, persister, injectedContentRepository.getValue(),
                             hostFileRepository, true, info, extensionRegistry, null, pathManagerService);

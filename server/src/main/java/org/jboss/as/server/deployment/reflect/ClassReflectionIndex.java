@@ -333,7 +333,7 @@ public final class ClassReflectionIndex {
         final Collection<Method> methods = new ArrayList<Method>();
         for (Map<Class<?>, Method> map : nameMap.values()) {
             for (Method method : map.values()) {
-                if (method.getParameterTypes().length == paramCount) {
+                if (method.getParameterCount() == paramCount) {
                     methods.add(method);
                 }
             }
