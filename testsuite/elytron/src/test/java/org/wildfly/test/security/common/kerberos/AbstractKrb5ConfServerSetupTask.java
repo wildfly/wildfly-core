@@ -98,7 +98,7 @@ public abstract class AbstractKrb5ConfServerSetupTask implements ServerSetupTask
         final String cannonicalHost = NetworkUtils.formatPossibleIpv6Address(CoreUtils.getCannonicalHost(TestSuiteEnvironment.getServerAddress()));
         final Map<String, String> map = new HashMap<String, String>();
         map.put("hostname", cannonicalHost);
-        final String supportedEncTypes = CoreUtils.IBM_JDK ? getSupportedEncTypes() : "des-cbc-md5,des3-cbc-sha1-kd";
+        final String supportedEncTypes = getSupportedEncTypes();
         map.put("enctypes", supportedEncTypes);
         LOGGER.trace("Supported enctypes in krb5.conf: " + supportedEncTypes);
         FileUtils.write(
