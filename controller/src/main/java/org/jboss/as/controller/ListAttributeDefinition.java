@@ -166,12 +166,9 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
                                                                       final ResourceDescriptionResolver resolver,
                                                                       final Locale locale, final ResourceBundle bundle);
 
-    protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
-                                                                      final ResourceDescriptionResolver resolver,
-                                                                      final Locale locale, final ResourceBundle bundle) {
-        //TODO WFCORE-1178: use reply value types description instead of parameter value type
-        addOperationParameterValueTypeDescription(node, operationName, resolver, locale, bundle);
-    }
+    protected abstract void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                                  final ResourceDescriptionResolver resolver,
+                                                                  final Locale locale, final ResourceBundle bundle);
 
     @Override
     public void marshallAsElement(ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {

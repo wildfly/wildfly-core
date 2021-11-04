@@ -339,6 +339,13 @@ public class InterfaceDefinition extends SimpleResourceDefinition {
                 setValueType(node);
             }
 
+            @Override
+            protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                                 final ResourceDescriptionResolver resolver,
+                                                                 final Locale locale, final ResourceBundle bundle) {
+                setValueType(node);
+            }
+
             private void setValueType(ModelNode node) {
                 node.get(ModelDescriptionConstants.VALUE_TYPE).set(ModelType.STRING);
             }

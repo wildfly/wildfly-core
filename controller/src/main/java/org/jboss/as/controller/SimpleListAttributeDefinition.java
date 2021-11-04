@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.PrimitiveListAttributeDefinition.parseSingleElementToList;
 
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -117,6 +118,30 @@ public class SimpleListAttributeDefinition extends ListAttributeDefinition {
     @Override
     protected void addOperationParameterValueTypeDescription(final ModelNode node, final String operationName, final ResourceDescriptionResolver resolver, final Locale locale, final ResourceBundle bundle) {
         addValueTypeDescription(node);
+    }
+
+    @Override
+    protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                         final ResourceDescriptionResolver resolver,
+                                                         final Locale locale, final ResourceBundle bundle) {
+        try {
+            final ModelNode valueTypeDescription = new ModelNode();
+            valueTypeDescription.get(ModelDescriptionConstants.TYPE).set(valueType.getType());
+            String operationLocal = String.format("%s.%s", operationName, getName());
+            if (resolver != null) {
+                final String key = String.format("%s.%s", operationLocal, valueType.getName());
+                valueTypeDescription.get(ModelDescriptionConstants.DESCRIPTION)
+                        .set(resolver.getResourceAttributeDescription(key, locale, bundle));
+            } else {
+                valueTypeDescription.get(ModelDescriptionConstants.DESCRIPTION)
+                        .set(valueType.getAttributeTextDescription(bundle, operationLocal));
+            }
+            node.get(ModelDescriptionConstants.VALUE_TYPE, valueType.getName()).set(valueTypeDescription);
+        }
+        catch (MissingResourceException e) {
+            // Value type description not found in the bundle. Fallback to "value-type" => ModelType instead
+            node.get(ModelDescriptionConstants.VALUE_TYPE).set(valueType.getType());
+        }
     }
 
     /**

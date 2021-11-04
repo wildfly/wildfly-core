@@ -38,6 +38,7 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -208,5 +209,34 @@ public class OperationDefinitionTestCase {
         } catch(MissingResourceException e) {
             assertThat(e.getMessage(), CoreMatchers.containsString("simple.operation.reply.not-defined-parameter"));
         }
+    }
+
+    @Test
+    public void testReplyValueTypesDescription(){
+        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder("operation",
+                new StandardResourceDescriptionResolver("simple", OperationDefinitionTestCase.class.getName(), Thread.currentThread().getContextClassLoader()));
+        builder.addParameter(create("parameter", ModelType.STRING, true).setAllowExpression(true).build());
+        builder.addParameter(create("deprecated-parameter", ModelType.STRING, true).setDeprecated(ModelVersion.CURRENT).setAllowExpression(true).build());
+        builder.addParameter(create("duplicated", ModelType.STRING, true).setAllowExpression(true).build());
+        builder.setReplyType(ModelType.LIST);
+        builder.setReplyParameters(new SimpleListAttributeDefinition.Builder("reply-list",
+                create("parameter", ModelType.STRING, true).setAllowExpression(true).build()).build());
+        ModelNode description = builder.build().getDescriptionProvider().getModelDescription(Locale.ROOT);
+
+        assertEquals("Simple operation reply list parameter",
+                description.get(REPLY_PROPERTIES, VALUE_TYPE, "reply-list", VALUE_TYPE, "parameter", DESCRIPTION).asString());
+
+        SimpleOperationDefinitionBuilder simpleBuilder = new SimpleOperationDefinitionBuilder("operation",
+                new StandardResourceDescriptionResolver("simple", OperationDefinitionTestCase.class.getName(), Thread.currentThread().getContextClassLoader()));
+        simpleBuilder.addParameter(create("parameter", ModelType.STRING, true).setAllowExpression(true).build());
+        simpleBuilder.addParameter(create("deprecated-parameter", ModelType.STRING, true).setDeprecated(ModelVersion.CURRENT).setAllowExpression(true).build());
+        simpleBuilder.addParameter(create("duplicated", ModelType.STRING, true).setAllowExpression(true).build());
+        simpleBuilder.setReplyType(ModelType.LIST);
+        simpleBuilder.setReplyParameters(new SimpleListAttributeDefinition.Builder("reply-list",
+                create("non-existing-parameter", ModelType.STRING, true).setAllowExpression(true).build()).build());
+        ModelNode simpleDescription = simpleBuilder.build().getDescriptionProvider().getModelDescription(Locale.ROOT);
+
+        assertEquals(ModelType.STRING.toString(), simpleDescription.get(REPLY_PROPERTIES, VALUE_TYPE, "reply-list", VALUE_TYPE).asString());
+
     }
 }

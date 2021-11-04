@@ -95,6 +95,13 @@ public class PrimitiveListAttributeDefinition extends ListAttributeDefinition {
     }
 
     @Override
+    protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                         final ResourceDescriptionResolver resolver,
+                                                         final Locale locale, final ResourceBundle bundle) {
+        addValueTypeDescription(node);
+    }
+
+    @Override
     public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
         handleCapabilityRequirements(context, resource, attributeValue, false);
     }

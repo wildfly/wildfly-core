@@ -114,6 +114,13 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
     }
 
     @Override
+    protected void addOperationReplyValueTypeDescription(final ModelNode node, final String operationName,
+                                                         final ResourceDescriptionResolver resolver,
+                                                         final Locale locale, final ResourceBundle bundle) {
+        addValueTypeDescription(node, getName(), bundle, true, resolver, locale);
+    }
+
+    @Override
     public void marshallAsElement(final ModelNode resourceModel, final boolean marshalDefault, final XMLStreamWriter writer) throws XMLStreamException {
         if (resourceModel.hasDefined(getName())) {
             writer.writeStartElement(getXmlName());
