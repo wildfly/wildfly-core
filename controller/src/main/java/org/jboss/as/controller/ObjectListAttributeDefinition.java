@@ -33,10 +33,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
-import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
-import org.jboss.as.controller.operations.validation.MinMaxValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
@@ -167,62 +165,6 @@ public class ObjectListAttributeDefinition extends ListAttributeDefinition {
 
     protected void addValueTypeDescription(final ModelNode node, final String prefix, final ResourceBundle bundle,
                                            boolean forOperation, final ResourceDescriptionResolver resolver, Locale locale) {
-        node.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
-        node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
-        node.get(ModelDescriptionConstants.REQUIRED).set(valueType.isRequired());
-        // TODO why before WFCORE-1556 did we use valueType for REQUIRED but not for NILLABLE?
-        node.get(ModelDescriptionConstants.NILLABLE).set(valueType.isNillable());
-        final ModelNode defaultValue = valueType.getDefaultValue();
-        if (!forOperation && defaultValue != null && defaultValue.isDefined()) {
-            node.get(ModelDescriptionConstants.DEFAULT).set(defaultValue);
-        }
-        MeasurementUnit measurementUnit = valueType.getMeasurementUnit();
-        if (measurementUnit != null && measurementUnit != MeasurementUnit.NONE) {
-            node.get(ModelDescriptionConstants.UNIT).set(measurementUnit.getName());
-        }
-        final String[] alternatives = valueType.getAlternatives();
-        if (alternatives != null) {
-            for (final String alternative : alternatives) {
-                node.get(ModelDescriptionConstants.ALTERNATIVES).add(alternative);
-            }
-        }
-        final String[] requires = valueType.getRequires();
-        if (requires != null) {
-            for (final String required : requires) {
-                node.get(ModelDescriptionConstants.REQUIRES).add(required);
-            }
-        }
-        final ParameterValidator validator = valueType.getValidator();
-        if (validator instanceof MinMaxValidator) {
-            MinMaxValidator minMax = (MinMaxValidator) validator;
-            Long min = minMax.getMin();
-            if (min != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        node.get(ModelDescriptionConstants.MIN_LENGTH).set(min);
-                        break;
-                    default:
-                        node.get(ModelDescriptionConstants.MIN).set(min);
-                }
-            }
-            Long max = minMax.getMax();
-            if (max != null) {
-                switch (valueType.getType()) {
-                    case STRING:
-                    case LIST:
-                    case OBJECT:
-                    case BYTES:
-                        node.get(ModelDescriptionConstants.MAX_LENGTH).set(max);
-                        break;
-                    default:
-                        node.get(ModelDescriptionConstants.MAX).set(max);
-                }
-            }
-        }
-        addAllowedValuesToDescription(node, validator);
         valueType.addValueTypeDescription(node, prefix, bundle, forOperation, resolver,locale);
     }
 
