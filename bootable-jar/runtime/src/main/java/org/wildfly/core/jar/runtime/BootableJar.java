@@ -65,6 +65,10 @@ import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_CLASS;
 import static org.wildfly.core.jar.runtime.Constants.LOG_MANAGER_PROP;
 import static org.wildfly.core.jar.runtime.Constants.STANDALONE_CONFIG;
 
+import org.jboss.stdio.LoggingOutputStream;
+import org.jboss.stdio.NullInputStream;
+import org.jboss.stdio.SimpleStdioContextSelector;
+import org.jboss.stdio.StdioContext;
 import org.wildfly.core.jar.runtime._private.BootableJarLogger;
 
 import org.w3c.dom.Document;
@@ -210,6 +214,20 @@ public final class BootableJar implements ShutdownHandler {
             LogContext ctx = configureLogContext();
             // Use our own LogContextSelector which returns the configured context.
             LogContext.setLogContextSelector(() -> ctx);
+
+            // Make sure our original stdio is properly captured.
+            try {
+                Class.forName(org.jboss.logmanager.handlers.ConsoleHandler.class.getName(), true, org.jboss.logmanager.handlers.ConsoleHandler.class.getClassLoader());
+            } catch (Throwable ignored) {
+            }
+            // Install JBoss Stdio to avoid any nasty crosstalk, after command line arguments are processed.
+            StdioContext.install();
+            final StdioContext context = StdioContext.create(
+                    new NullInputStream(),
+                    new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stdout"), org.jboss.logmanager.Level.INFO),
+                    new LoggingOutputStream(org.jboss.logmanager.Logger.getLogger("stderr"), org.jboss.logmanager.Level.ERROR)
+            );
+            StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
         }
     }
 
