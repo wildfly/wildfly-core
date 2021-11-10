@@ -98,7 +98,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     public void registerTransformers(SubsystemTransformerRegistration registration) {
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // 15.0.0 (WildFly 25) to 14.0.0 (WildFly 24)
+        // 15.0.0 (WildFly 26) to 14.0.0 (WildFly 25)
         from15(chainedBuilder);
         // 14.0.0 (WildFly 24) to 13.0.0 (WildFly 23)
         from14(chainedBuilder);
