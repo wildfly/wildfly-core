@@ -32,7 +32,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -114,7 +114,7 @@ public final class Main {
         );
         StdioContext.setStdioContextSelector(new SimpleStdioContextSelector(context));
 
-        create(args, new String(authKey, Charset.forName("US-ASCII")));
+        create(args, new String(authKey, StandardCharsets.US_ASCII));
 
         while (in.read() != -1) {}
         exit();
