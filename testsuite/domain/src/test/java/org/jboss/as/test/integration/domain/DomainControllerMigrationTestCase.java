@@ -23,6 +23,7 @@ package org.jboss.as.test.integration.domain;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER;
 
 import java.io.File;
@@ -268,6 +269,7 @@ public class DomainControllerMigrationTestCase {
     private Set<String> getHosts(DomainLifecycleUtil hostUtil) throws IOException {
         ModelNode readOp = new ModelNode();
         readOp.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.READ_RESOURCE_OPERATION);
+        readOp.get(INCLUDE_RUNTIME).set(true);
         ModelNode domain = hostUtil.executeForResult(readOp);
         Assert.assertTrue(domain.get("host").isDefined());
         return domain.get("host").keys();
