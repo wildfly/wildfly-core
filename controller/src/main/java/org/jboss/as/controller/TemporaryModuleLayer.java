@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -178,7 +179,7 @@ class TemporaryModuleLayer implements Closeable {
             if (!layersList.exists()) {
                 return new LayersConfig();
             }
-            try (final Reader reader = new InputStreamReader(new FileInputStream(layersList), "UTF-8")) {
+            try (final Reader reader = new InputStreamReader(new FileInputStream(layersList), StandardCharsets.UTF_8)) {
                 Properties props = new Properties();
                 props.load(reader);
                 return new LayersConfig(props);
