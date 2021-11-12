@@ -180,6 +180,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
             RuntimeCapability.Builder.of("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class)
                     .build();
 
+    /**
+     * Name of a capability that extensions that provide {@link ExpressionResolverExtension} implementations
+     * can use to register their extensions with the core {@link ExpressionResolver}.
+     */
+    protected static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
+            "org.wildfly.management.expression-resolver-extension-registry";
+
     private static final OperationDefinition INIT_CONTROLLER_OP = new SimpleOperationDefinitionBuilder("boottime-controller-initializer-step", null)
         .setPrivateEntry()
         .build();

@@ -37,11 +37,11 @@ import org.junit.Test;
  */
 public class ExpressionResolverUnitTestCase {
 
-    @Test(expected = OperationFailedException.class)
+    @Test(expected = ExpressionResolver.ExpressionResolutionUserException.class)
     public void testDefaultExpressionResolverWithNoResolutions() throws OperationFailedException {
         ModelNode unresolved = createModelNode();
         ExpressionResolver.TEST_RESOLVER.resolveExpressions(unresolved);
-        fail("Did not fail with OFE: " + unresolved);
+        fail("Did not fail with ERUE: " + unresolved);
     }
 
     @Test
@@ -149,7 +149,7 @@ public class ExpressionResolverUnitTestCase {
         checkResolved(node);
     }
 
-    @Test(expected = OperationFailedException.class)
+    @Test(expected = ExpressionResolver.ExpressionResolutionUserException.class)
     public void testPluggableExpressionResolverNotResolved() throws OperationFailedException {
         ModelNode unresolved = createModelNode();
         new ExpressionResolverImpl() {
@@ -159,7 +159,7 @@ public class ExpressionResolverUnitTestCase {
 
         }.resolveExpressions(unresolved);
 
-        fail("Did not fail with OFE: " + unresolved);
+        fail("Did not fail with ERUE: " + unresolved);
     }
 
     @Test
@@ -366,12 +366,12 @@ public class ExpressionResolverUnitTestCase {
     /**
      * Test that a incomplete expression to a system property reference throws an ISE
      */
-    @Test(expected = OperationFailedException.class)
+    @Test(expected = ExpressionResolver.ExpressionResolutionUserException.class)
     public void testIncompleteReference() throws OperationFailedException {
         System.setProperty("test.property1", "test.property1.value");
         try {
             ModelNode resolved = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.property1"));
-            fail("Did not fail with OFE: " + resolved);
+            fail("Did not fail with ERUE: " + resolved);
         } finally {
             System.clearProperty("test.property1");
         }
@@ -388,12 +388,12 @@ public class ExpressionResolverUnitTestCase {
     /**
      * Test that a incomplete expression to a system property reference throws an ISE
      */
-    @Test(expected = OperationFailedException.class)
+    @Test(expected = ExpressionResolver.ExpressionResolutionUserException.class)
     public void testIncompleteReferenceFollowingSuccessfulResolve() throws OperationFailedException {
         System.setProperty("test.property1", "test.property1.value");
         try {
             ModelNode resolved = ExpressionResolver.TEST_RESOLVER.resolveExpressions(expression("${test.property1} ${test.property1"));
-            fail("Did not fail with OFE: "+ resolved);
+            fail("Did not fail with ERUE: "+ resolved);
         } finally {
             System.clearProperty("test.property1");
         }

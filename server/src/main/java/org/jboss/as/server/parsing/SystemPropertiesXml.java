@@ -144,7 +144,7 @@ class SystemPropertiesXml {
                 if (oldPropertyValue != null && !oldPropertyValue.equals(newPropertyValue)) {
                     ControllerLogger.ROOT_LOGGER.systemPropertyAlreadyExist(name);
                 }
-            } catch (OperationFailedException e) {
+            } catch (OperationFailedException | ExpressionResolver.ExpressionResolutionUserException e) {
                 ServerLogger.AS_ROOT_LOGGER.tracef(e, "Failed to resolve value for system property %s at parse time.", name);
             }
 
@@ -153,7 +153,7 @@ class SystemPropertiesXml {
                 //only do this for standalone servers
                 try {
                     System.setProperty(name, SystemPropertyResourceDefinition.VALUE.resolveValue(ExpressionResolver.SIMPLE, op.get(VALUE)).asString());
-                } catch (OperationFailedException e) {
+                } catch (OperationFailedException | ExpressionResolver.ExpressionResolutionUserException e) {
                     ServerLogger.AS_ROOT_LOGGER.tracef(e, "Failed to set property %s at parse time, it will be set later in the boot process", name);
                 }
             }

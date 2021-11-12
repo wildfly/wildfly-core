@@ -456,7 +456,7 @@ public class OperationValidator {
         ModelNode resolved;
         try {
             resolved = expressionResolver.resolveExpressions(value);
-        } catch (OperationFailedException e) {
+        } catch (OperationFailedException | ExpressionResolver.ExpressionResolutionUserException e) {
             // Dealing with an unresolvable expression is beyond what this class can do.
             // So fall through and see what happens. Basically if modelType is EXPRESSION or STRING
             // it will pass, otherwise an IAE will be thrown
