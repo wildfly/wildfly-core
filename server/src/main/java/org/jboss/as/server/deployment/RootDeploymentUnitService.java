@@ -87,7 +87,6 @@ final class RootDeploymentUnitService extends AbstractDeploymentUnitService {
 
     protected DeploymentUnit createAndInitializeDeploymentUnit(final ServiceRegistry registry) {
         final DeploymentUnit deploymentUnit = new DeploymentUnitImpl(parent, name, registry);
-        deploymentUnit.putAttachment(Attachments.RUNTIME_NAME, name);
         deploymentUnit.putAttachment(Attachments.MANAGEMENT_NAME, managementName);
         deploymentUnit.putAttachment(Attachments.DEPLOYMENT_CONTENTS, contentsInjector.getValue());
         deploymentUnit.putAttachment(DeploymentResourceSupport.REGISTRATION_ATTACHMENT, registration);
