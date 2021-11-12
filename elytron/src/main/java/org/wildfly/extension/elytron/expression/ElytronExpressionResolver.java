@@ -32,8 +32,10 @@ import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.wildfly.common.function.ExceptionBiConsumer;
 import org.wildfly.common.function.ExceptionFunction;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.credential.SecretKeyCredential;
 import org.wildfly.security.credential.store.CredentialStore;
 import org.wildfly.security.credential.store.CredentialStoreException;
@@ -68,9 +70,27 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
     }
 
     @Override
-    public String resolveExpression(String fullExpression, OperationContext operationContext) {
-        checkNotNullParam("fullExpression", fullExpression);
-        checkNotNullParam("context", operationContext);
+    public String resolveExpression(String expression, OperationContext context) {
+        checkNotNullParam("expression", expression);
+        checkNotNullParam("context", context);
+        return resolveExpressionInternal(expression, context, null);
+    }
+
+    /**
+     * Resolves expressions found in deployment resources.
+     *
+     * @param expression the expression string. Cannot be {@code null}
+     * @param serviceSupport support object to use to resolve the needed {@link CredentialStore}. Cannot be {@code null}
+     * @return the resolved expression string or {@code null} if {@code expression} isn't a credential store expression
+     *         or 'looks like' one but doesn't use the prefix supported by this resolver.
+     */
+    String resolveDeploymentExpression(String expression, CapabilityServiceSupport serviceSupport) {
+        return resolveExpressionInternal(expression, null, serviceSupport);
+    }
+
+    private String resolveExpressionInternal(String fullExpression, OperationContext operationContext, CapabilityServiceSupport serviceSupport) {
+        assert operationContext == null || serviceSupport == null;
+        assert operationContext != null || serviceSupport != null;
 
         if (fullExpression.length() > 3) {
             String expression = fullExpression.substring(2, fullExpression.length() - 1);
@@ -98,7 +118,7 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
 
                 ROOT_LOGGER.tracef("Attempting to decrypt expression '%s' using credential store '%s' and alias '%s'.",
                         fullExpression, resolverConfiguration.credentialStore, resolverConfiguration.alias);
-                CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), operationContext);
+                CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), operationContext, serviceSupport);
                 SecretKey secretKey;
                 try {
                     SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(),
@@ -132,7 +152,7 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
             throw ROOT_LOGGER.noResolverWithSpecifiedName(resolvedResolver);
         }
 
-        CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), context);
+        CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), context, null);
         SecretKey secretKey;
         try {
             SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(), SecretKeyCredential.class);
@@ -203,6 +223,13 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
                 if (initialised == false) {
                     try {
                         this.initialisingFor.set(initialisingFor);
+                        if (context == null) {
+                            // If a caller that can't provide an OperationContext needs to initialize,
+                            // there's a programming bug as this object should be initialized
+                            // before any call paths are executed that don't come through
+                            // the OperationStepHandlers that provide a context.
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.illegalNonManagementInitialization(getClass());
+                        }
                         configurator.accept(this, context);
                         initialised = true;
                     } catch (OperationFailedException e) {
@@ -221,6 +248,7 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
      *
      * @param credentialStore the credential store resource name. Cannot be {@code null}.
      * @param operationContext OperationContext to use for capability resolution. Can be {@code null} if {@code serviceSupport} is not {@code null}
+     * @param serviceSupport CapabilityServiceSupport to use for capability resolution. Can be {@code null} if {@code operationContext} is not {@code null}
      * @return the CredentialStore
      *
      * @throws ExpressionResolver.ExpressionResolutionUserException if the credential store is not initialized and a failure occurs initializing it
@@ -233,27 +261,32 @@ public class ElytronExpressionResolver implements ExpressionResolverExtension {
      *                               have been initialized by their OperationStepHandler.)
      */
     @SuppressWarnings("unchecked")
-    private CredentialStore resolveCredentialStore(String credentialStore, OperationContext operationContext) {
+    private CredentialStore resolveCredentialStore(String credentialStore, OperationContext operationContext, CapabilityServiceSupport serviceSupport) {
 
         ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> function;
         RuntimeException toThrow;
         try {
-            try {
-                function = operationContext.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStore, ExceptionFunction.class);
-            } catch (IllegalStateException re) {
-                if (operationContext.getCurrentStage() == OperationContext.Stage.MODEL) {
-                    // Assume ISE is because capability lookups are not allowed in Stage.MODEL
-                    throw ROOT_LOGGER.modelStageResolutionNotSupported(re);
-                } else {
-                    throw re;
+            if (operationContext != null) {
+                try {
+                    function = operationContext.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStore, ExceptionFunction.class);
+                } catch (IllegalStateException re) {
+                    if (operationContext.getCurrentStage() == OperationContext.Stage.MODEL) {
+                        // Assume ISE is because capability lookups are not allowed in Stage.MODEL
+                        throw ROOT_LOGGER.modelStageResolutionNotSupported(re);
+                    } else {
+                        throw re;
+                    }
                 }
+            } else {
+                checkNotNullParam("serviceSupport", serviceSupport);
+                function = serviceSupport.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStore, ExceptionFunction.class);
             }
 
             return function.apply(operationContext);
         } catch (ExpressionResolver.ExpressionResolutionServerException | ExpressionResolver.ExpressionResolutionUserException ree) {
             // Initializing the CredentialStore can itself trigger expression resolution, which can fail. Just propagate those.
             toThrow = ree;
-        } catch (OperationFailedException | RuntimeException e) {
+        } catch (OperationFailedException | CapabilityServiceSupport.NoSuchCapabilityException | RuntimeException e) {
             // Wrap in one of the ExpressionResolver.ResolverExtension exception types
             // so exception handlers know the expression was relevant to us
             if (e instanceof OperationClientException) {

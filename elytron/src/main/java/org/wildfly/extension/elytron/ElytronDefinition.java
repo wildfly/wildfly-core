@@ -87,6 +87,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.wildfly.extension.elytron.capabilities.CredentialSecurityFactory;
 import org.wildfly.extension.elytron.capabilities.PrincipalTransformer;
 import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener;
+import org.wildfly.extension.elytron.expression.DeploymentExpressionResolverProcessor;
 import org.wildfly.security.Version;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
@@ -517,6 +518,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
                 context.addStep(new AbstractDeploymentChainStep() {
                     @Override
                     protected void execute(DeploymentProcessorTarget processorTarget) {
+                        processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_ELYTRON_EXPRESSION_RESOLVER, new DeploymentExpressionResolverProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.STRUCTURE,  Phase.STRUCTURE_SECURITY_METADATA, new SecurityMetaDataProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.PARSE, Phase.PARSE_DEFINE_VIRTUAL_DOMAIN_NAME, new VirtualSecurityDomainNameProcessor());
                         processorTarget.addDeploymentProcessor(ElytronExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_ELYTRON, new DependencyProcessor());

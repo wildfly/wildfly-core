@@ -50,7 +50,7 @@ public final class SecureExpressionUtil {
      * Data class for passing information about secure expressions from/to the caller
      * of the SecurityExpressionUtil utility methods.
      */
-    public static final class SecureExpressionData {
+    public static class SecureExpressionData {
         private final String clearText;
         private volatile String expression;
 

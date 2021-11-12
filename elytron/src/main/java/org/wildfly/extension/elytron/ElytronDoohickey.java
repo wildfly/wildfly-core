@@ -38,6 +38,7 @@ import org.jboss.msc.service.StartException;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.common.function.ExceptionSupplier;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
+import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 
 /**
  * The {@code Doohickey} is the central point for resource initialisation allowing a resource to be
@@ -81,6 +82,13 @@ abstract class ElytronDoohickey<T> implements ExceptionFunction<OperationContext
                 checkCycle();
                 try {
                     if (value == null) {
+                        if (foreignContext == null) {
+                            // If a caller that can't provide an OperationContext needs to initialize,
+                            // there's a programming bug as this object should be initialized
+                            // before any call paths are executed that don't come through
+                            // the OperationStepHandlers that provide a context.
+                            throw ElytronSubsystemMessages.ROOT_LOGGER.illegalNonManagementInitialization(getClass());
+                        }
                         resolveRuntime(foreignContext, true);
                         value = createImmediately(foreignContext);
                     }

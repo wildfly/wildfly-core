@@ -51,6 +51,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver.ResolverConfiguration;
+import org.wildfly.extension.elytron.expression.ExpressionResolverRuntimeHandler;
 
 /**
  * The {@link ResourceDefinition} for the expression resolver resource.
@@ -212,6 +213,8 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+            ExpressionResolverRuntimeHandler.initializeResolver(context);
 
             ExpressionResolver.ResolverExtensionRegistry registry =
                     context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
