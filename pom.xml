@@ -1797,6 +1797,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-http-stateful-basic</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-http-bearer</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
