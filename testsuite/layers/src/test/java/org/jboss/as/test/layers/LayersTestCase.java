@@ -48,7 +48,11 @@ public class LayersTestCase {
         // Not currently used internally
         "org.wildfly.event.logger",
         // wildfly-elytron-http-stateful-basic
-        "org.wildfly.security.http.sfbasic"
+        "org.wildfly.security.http.sfbasic",
+        // wildfly-elytron-tool
+        "org.apache.commons.cli",
+        "org.apache.commons.lang3",
+        "org.wildfly.security.elytron-tool"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
