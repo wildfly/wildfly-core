@@ -66,6 +66,7 @@
         <ldap-realm name="LDAPRealmEncodingCharset" dir-context="dirContext" hash-encoding="hex" hash-charset="GB2312">
             <identity-mapping rdn-identifier="uid"></identity-mapping>
         </ldap-realm>
+        <jaas-realm name="myJaasRealm" entry="Entry" />
     </security-realms>
     <dir-contexts>
         <dir-context name="dirContext" url="ldap://localhost:11390" principal="uid=server,dc=elytron,dc=wildfly,dc=org" enable-connection-pooling="true">

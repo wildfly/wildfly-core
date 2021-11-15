@@ -17,17 +17,23 @@
  */
 package org.wildfly.extension.elytron;
 
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
 import org.junit.Test;
 import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
+import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
@@ -57,6 +63,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -113,12 +124,12 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         RealmIdentity identity1 = realm.getRealmIdentity(fromName(username));
         Assert.assertTrue(identity1.exists());
         Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
-        Assert.assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
+        assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
         identity1.dispose();
 
         RealmIdentity identity9 = realm.getRealmIdentity(fromName("user9"));
-        Assert.assertFalse(identity9.exists());
-        Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
+        assertFalse(identity9.exists());
+        assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
         identity9.dispose();
     }
 
@@ -129,7 +140,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         RealmIdentity identity1 = securityRealm.getRealmIdentity(fromName("user1"));
         Assert.assertTrue(identity1.exists());
         Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence("password1".toCharArray())));
-        Assert.assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
+        assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
         identity1.dispose();
 
         RealmIdentity identity2 = securityRealm.getRealmIdentity(fromName("user2"));
@@ -138,8 +149,8 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         identity2.dispose();
 
         RealmIdentity identity9 = securityRealm.getRealmIdentity(fromName("user9"));
-        Assert.assertFalse(identity9.exists());
-        Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
+        assertFalse(identity9.exists());
+        assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
         identity9.dispose();
     }
 
@@ -154,7 +165,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
     private void testExternalModificationPropertyRealm(SecurityRealm securityRealm, String fileName, String username, String password, String hash) throws Exception {
         // assert the username principal does not exist in the realm
         RealmIdentity identity = securityRealm.getRealmIdentity(fromName(username));
-        Assert.assertFalse("Identity " + username + " already exists in the realm", identity.exists());
+        assertFalse("Identity " + username + " already exists in the realm", identity.exists());
         identity.dispose();
         long current = System.currentTimeMillis();
 
@@ -241,12 +252,12 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         RealmIdentity identity1 = securityRealm.getRealmIdentity(fromName(username));
         Assert.assertTrue(identity1.exists());
         Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence(password.toCharArray())));
-        Assert.assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
+        assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("password2".toCharArray())));
         identity1.dispose();
 
         RealmIdentity identity9 = securityRealm.getRealmIdentity(fromName("user9"));
-        Assert.assertFalse(identity9.exists());
-        Assert.assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
+        assertFalse(identity9.exists());
+        assertFalse(identity9.verifyEvidence(new PasswordGuessEvidence("password9".toCharArray())));
         identity9.dispose();
     }
 
@@ -259,7 +270,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
 
         // create identity
         ModifiableRealmIdentity identity1 = securityRealm.getRealmIdentityForUpdate(fromName("createdUser"));
-        Assert.assertFalse(identity1.exists());
+        assertFalse(identity1.exists());
         identity1.create();
         Assert.assertTrue(identity1.exists());
 
@@ -287,7 +298,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
 
         // delete identity
         identity1.delete();
-        Assert.assertFalse(identity1.exists());
+        assertFalse(identity1.exists());
         identity1.dispose();
     }
 
@@ -363,6 +374,92 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         identity1.dispose();
     }
 
+    @Test
+    public void testJAASRealm() throws Exception {
+        try {
+            System.setProperty("java.security.auth.login.config", RealmsTestCase.class.getResource("jaas-login.config").toString());
+            KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+            if (!services.isSuccessfulBoot()) {
+                Assert.fail(services.getBootError().toString());
+            }
+
+            ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
+            JaasSecurityRealm securityRealm = (JaasSecurityRealm) services.getContainer().getService(serviceName).getValue();
+            Assert.assertNotNull(securityRealm);
+
+            RealmIdentity identity1 = securityRealm.getRealmIdentity(new NamePrincipal("user"));
+
+            // verify password
+            assertFalse(identity1.verifyEvidence(new PasswordGuessEvidence("incorrectPassword".toCharArray())));
+            Assert.assertTrue(identity1.verifyEvidence(new PasswordGuessEvidence("userPassword".toCharArray())));
+
+            Assert.assertTrue(identity1.exists());
+
+            RealmIdentity identity2 = securityRealm.getRealmIdentity(new NamePrincipal("nonexistentUser"));
+            // verify password
+            assertFalse(identity2.verifyEvidence(new PasswordGuessEvidence("password".toCharArray())));
+            // even nonexistent identity will return true for exists() method,
+            // because we have no way of finding this out, but at least the authorization identity always exists
+            Assert.assertTrue(identity2.exists());
+            Assert.assertTrue(identity2.getAuthorizationIdentity().getAttributes().isEmpty());
+
+            SecurityDomain securityDomain = SecurityDomain.builder().setDefaultRealmName("default").addRealm("default", securityRealm).build()
+                    .setPermissionMapper(((permissionMappable, roles) -> LoginPermission.getInstance()))
+                    .build();
+
+            ServerAuthenticationContext sac1 = securityDomain.createNewAuthenticationContext();
+            sac1.setAuthenticationPrincipal(new NamePrincipal("user"));
+            assertFalse(sac1.verifyEvidence(new PasswordGuessEvidence("incorrect".toCharArray())));
+            assertTrue(sac1.verifyEvidence(new PasswordGuessEvidence("userPassword".toCharArray())));
+            Assert.assertTrue(sac1.authorize());
+            Assert.assertFalse(sac1.getAuthorizedIdentity().getAttributes().containsKey("Roles"));
+            Assert.assertTrue(sac1.getAuthorizedIdentity().getAttributes().containsKey("NamePrincipal"));
+            Assert.assertFalse(sac1.getAuthorizedIdentity().getAttributes().containsKey("NonexistentPrincipal"));
+            Assert.assertEquals("User", sac1.getAuthorizedIdentity().getAttributes().getFirst("NamePrincipal"));
+        } finally {
+            System.clearProperty("java.security.auth.login.config");
+        }
+    }
+
+    @Test
+    public void testEntryInJAASConfigMustBeProvided() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR)
+                .add("subsystem", "elytron").add("jaas-realm", "my-jaas-realm");
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+//        operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
+        ModelNode response = services.executeOperation(operation);
+        // operation will fail because path does not exist
+        if (! response.get(OUTCOME).asString().equals(FAILED)) {
+            Assert.fail(response.toJSONString(false));
+        }
+        Assert.assertTrue(response.asString().contains("'entry' may not be null"));
+    }
+
+    @Test
+    public void testPathToJAASConfigFileDoesNotExist() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+        ModelNode operation = new ModelNode();
+        operation.get(ClientConstants.OP_ADDR)
+                .add("subsystem", "elytron").add("jaas-realm", "my-jaas-realm");
+        operation.get(ClientConstants.OP).set(ClientConstants.ADD);
+        operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
+        operation.get(ElytronDescriptionConstants.PATH).set("this/is/non/existen/path");
+        ModelNode response = services.executeOperation(operation);
+        // operation will fail because path does not exist
+        if (! response.get(OUTCOME).asString().equals(FAILED)) {
+            Assert.fail(response.toJSONString(false));
+        }
+        Assert.assertTrue(response.asString().contains("JAAS configuration file does not exist."));
+    }
+
     static void testModifiability(ModifiableSecurityRealm securityRealm) throws Exception {
 
         // obtain original count of identities
@@ -371,7 +468,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
 
         // create identity
         ModifiableRealmIdentity identity1 = securityRealm.getRealmIdentityForUpdate(fromName("createdUser"));
-        Assert.assertFalse(identity1.exists());
+        assertFalse(identity1.exists());
         identity1.create();
         Assert.assertTrue(identity1.exists());
 
@@ -409,7 +506,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         // delete identity
         identity1 = securityRealm.getRealmIdentityForUpdate(fromName("createdUser"));
         identity1.delete();
-        Assert.assertFalse(identity1.exists());
+        assertFalse(identity1.exists());
         identity1.dispose();
     }
 
