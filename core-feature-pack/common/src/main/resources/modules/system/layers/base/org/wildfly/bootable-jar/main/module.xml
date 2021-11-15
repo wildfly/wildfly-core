@@ -45,12 +45,14 @@
 
         <module name="java.xml"/>
         <module name="java.desktop"/>
+        <module name="java.logging"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.controller-client"/>
         <module name="org.jboss.logging"/>
         <module name="org.jboss.logmanager" services="import"/>
         <module name="org.jboss.modules"/>
+        <module name="org.jboss.stdio"/>
         <module name="org.jboss.threads"/>
         <module name="org.jboss.dmr"/>
         <module name="org.jboss.as.process-controller"/>
