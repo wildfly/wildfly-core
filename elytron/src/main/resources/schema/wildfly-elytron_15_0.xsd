@@ -1020,6 +1020,7 @@
             <xs:element name="caching-realm" type="cachingRealmType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="distributed-realm" type="distributedRealmType" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="failover-realm" type="failoverRealmType" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="jaas-realm" type="jaasRealmType" minOccurs="0" maxOccurs="unbounded" />
         </xs:choice>
     </xs:complexType>
 
@@ -1248,6 +1249,48 @@
                         <xs:documentation>
                             The character set to use when converting the password string
                             to a byte array.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="jaasRealmType">
+        <xs:annotation>
+            <xs:documentation>
+                A realm definition which uses JAAS Login Context to verify user's credentials.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="realmType">
+                <xs:all minOccurs="0">
+                    <xs:element name="file" type="basicFileTypeOptional">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The location of the file with JAAS Login Context configuration.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:all>
+                <xs:attribute name="entry" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The name of the entry defined in JAAS configuration file that should be used.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="module" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The module with custom login module classes and optional custom callback handler class.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="callback-handler" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The class name of the callback handler to pass to JAAS Login Context.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:attribute>
@@ -5967,6 +6010,29 @@
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="path" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The remaining path to the file referenced.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="basicFileTypeOptional">
+        <xs:annotation>
+            <xs:documentation>
+                Minimal attributes required to specify the location to a file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="relative-to" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A reference to a previously defined path that the file name is
+                    relative to.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="path" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>
                     The remaining path to the file referenced.

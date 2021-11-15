@@ -336,6 +336,12 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 44, value = "Unexpected name of servicename's parent - %s")
     IllegalStateException invalidServiceNameParent(String canonicalName);
 
+    @Message(id = 45, value = "Failed to load CallbackHandler from the provided module.")
+    IllegalStateException failedToLoadCallbackhandlerFromProvidedModule();
+
+    @Message(id = 46, value = "Provided path '%s' to JAAS configuration file does not exist.")
+    StartException jaasFileDoesNotExist(final String path);
+
     /*
      * Credential Store Section.
      */

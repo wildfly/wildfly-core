@@ -51,7 +51,6 @@ public interface Constants {
     String CLIENT_AUTH = "client-auth";
     String CODE = "code";
     String DEEP_COPY_SUBJECT_MODE = "deep-copy-subject-mode";
-    String DEFAULT_CALLBACK_HANDLER_CLASS_NAME = "default-callback-handler-class-name";
     String EXTENDS = "extends";
     String FLAG = "flag";
     String IDENTITY_TRUST = "identity-trust";

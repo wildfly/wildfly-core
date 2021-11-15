@@ -215,6 +215,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new CachingRealmDefinition());
         resourceRegistration.registerSubModel(new DistributedRealmDefinition());
         resourceRegistration.registerSubModel(new FailoverRealmDefinition());
+        resourceRegistration.registerSubModel(new JaasRealmDefinition());
 
         // Security Factories
         resourceRegistration.registerSubModel(new CustomComponentDefinition<>(CredentialSecurityFactory.class, Function.identity(), ElytronDescriptionConstants.CUSTOM_CREDENTIAL_SECURITY_FACTORY, SECURITY_FACTORY_CREDENTIAL_RUNTIME_CAPABILITY));
