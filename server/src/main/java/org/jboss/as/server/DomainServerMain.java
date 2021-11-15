@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.net.URI;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import org.jboss.as.network.NetworkUtils;
 
@@ -140,7 +140,7 @@ public final class DomainServerMain {
                 final boolean managementSubsystemEndpoint = StreamUtils.readBoolean(initialInput);
                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
                 StreamUtils.readFully(initialInput, authBytes);
-                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
+                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
                 URI hostControllerUri = new URI(scheme, null, NetworkUtils.formatPossibleIpv6Address(hostName), port, null, null, null);
                 // Get the host-controller server client
                 final ServiceContainer container = containerFuture.get();
