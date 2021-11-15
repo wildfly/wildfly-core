@@ -41,6 +41,7 @@
         <module name="org.jboss.logmanager" />
         <module name="org.slf4j" />
         <module name="org.wildfly.security.elytron-private" />
+        <module name="org.wildfly.security.elytron-tool-addons" services="import" optional="true"/>
         <module name="org.wildfly.common" />
     </dependencies>
 </module>
