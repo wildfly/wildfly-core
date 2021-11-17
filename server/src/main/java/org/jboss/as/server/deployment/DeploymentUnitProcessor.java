@@ -58,5 +58,7 @@ public interface DeploymentUnitProcessor {
      *
      * @param context the deployment unit context
      */
-    void undeploy(DeploymentUnit context);
+    default void undeploy(DeploymentUnit context) {
+        // no-op
+    }
 }

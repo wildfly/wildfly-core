@@ -19,7 +19,6 @@ package org.wildfly.extension.elytron;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
@@ -37,11 +36,5 @@ class SSLContextDependencyProcessor implements DeploymentUnitProcessor {
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         phaseContext.addDeploymentDependency(DefaultSSLContextService.SERVICE_NAME, ElytronExtension.SSL_CONTEXT_KEY);
     }
-
-    /**
-     * @see org.jboss.as.server.deployment.DeploymentUnitProcessor#undeploy(org.jboss.as.server.deployment.DeploymentUnit)
-     */
-    @Override
-    public void undeploy(DeploymentUnit context) {}
 
 }

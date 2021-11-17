@@ -46,8 +46,4 @@ public class CleanupAnnotationIndexProcessor implements DeploymentUnitProcessor 
 
     }
 
-    @Override
-    public void undeploy(final DeploymentUnit context) {
-
-    }
 }

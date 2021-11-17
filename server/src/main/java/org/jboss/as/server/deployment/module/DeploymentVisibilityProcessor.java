@@ -85,8 +85,4 @@ public class DeploymentVisibilityProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    @Override
-    public void undeploy(final DeploymentUnit context) {
-
-    }
 }

@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment.reflect;
 
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
@@ -41,7 +40,4 @@ public final class CleanupReflectionIndexProcessor implements DeploymentUnitProc
         phaseContext.getDeploymentUnit().removeAttachment(Attachments.PROXY_REFLECTION_INDEX);
     }
 
-    /** {@inheritDoc} */
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

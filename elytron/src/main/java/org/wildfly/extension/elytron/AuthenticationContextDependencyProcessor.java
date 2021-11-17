@@ -22,7 +22,6 @@ import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_
 
 import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.msc.service.ServiceName;
@@ -46,11 +45,6 @@ class AuthenticationContextDependencyProcessor implements DeploymentUnitProcesso
             ServiceName serviceName = capabilityServiceSupport.getCapabilityServiceName(AUTHENTICATION_CONTEXT_CAPABILITY, defaultAuthenticationContext);
             context.addDependency(serviceName, ElytronExtension.AUTHENTICATION_CONTEXT_KEY);
         }
-    }
-
-    @Override
-    public void undeploy(DeploymentUnit unit) {
-        // This phase just sets the dependency so nothing to undeploy.
     }
 
     public void setDefaultAuthenticationContext(String defaultAuthenticationContext) {

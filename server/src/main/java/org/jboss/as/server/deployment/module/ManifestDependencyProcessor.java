@@ -132,9 +132,6 @@ public final class ManifestDependencyProcessor implements DeploymentUnitProcesso
 
     }
 
-    public void undeploy(final DeploymentUnit context) {
-    }
-
     private boolean containsParam(final String[] parts, final String expected) {
         if (parts.length > 1) {
             for (int i = 1; i < parts.length; i++) {

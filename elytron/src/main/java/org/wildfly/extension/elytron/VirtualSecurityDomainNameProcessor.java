@@ -43,7 +43,4 @@ public class VirtualSecurityDomainNameProcessor implements DeploymentUnitProcess
         }
     }
 
-    @Override
-    public void undeploy(DeploymentUnit context) {}
-
 }

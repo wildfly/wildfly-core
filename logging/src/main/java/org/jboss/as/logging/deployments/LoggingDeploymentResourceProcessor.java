@@ -92,7 +92,4 @@ public class LoggingDeploymentResourceProcessor implements DeploymentUnitProcess
         }
     }
 
-    @Override
-    public final void undeploy(final DeploymentUnit context) {
-    }
 }

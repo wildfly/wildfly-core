@@ -68,7 +68,4 @@ public class LoggingDependencyDeploymentProcessor implements DeploymentUnitProce
         }
     }
 
-    @Override
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

@@ -292,13 +292,6 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void undeploy(final DeploymentUnit context) {
-    }
-
-
     private class RootEntry {
         private final ResourceRoot resourceRoot;
         private final Attachable target;

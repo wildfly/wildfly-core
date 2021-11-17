@@ -81,7 +81,4 @@ public final class ManifestExtensionNameProcessor implements DeploymentUnitProce
         phaseContext.addToAttachmentList(Attachments.NEXT_PHASE_DEPS, Services.JBOSS_DEPLOYMENT_EXTENSION_INDEX);
     }
 
-    /** {@inheritDoc} */
-    public void undeploy(final DeploymentUnit context) {
-    }
 }
