@@ -23,8 +23,6 @@
 package org.jboss.as.process.protocol;
 
 import org.jboss.as.process.logging.ProcessLogger;
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.Unmarshaller;
 
 import javax.xml.stream.XMLStreamWriter;
 import java.io.Closeable;
@@ -41,60 +39,6 @@ import java.net.Socket;
 public final class StreamUtils {
 
     private StreamUtils() {
-    }
-
-    public static int readChar(final InputStream input) throws IOException {
-        final int a = input.read();
-        //System.err.println((char)a + "(" + a + ")");
-        if (a < 0) {
-            return -1;
-        } else if (a == 0) {
-            return -1;
-        } else if (a < 0x80) {
-            return (char)a;
-        } else if (a < 0xc0) {
-            throw ProcessLogger.ROOT_LOGGER.invalidByte();
-        } else if (a < 0xe0) {
-            final int b = input.read();
-            if (b == -1) {
-                throw new EOFException();
-            } else if ((b & 0xc0) != 0x80) {
-                throw ProcessLogger.ROOT_LOGGER.invalidByte((char)a, a);
-            }
-            return (a & 0x1f) << 6 | b & 0x3f;
-        } else if (a < 0xf0) {
-            final int b = input.read();
-            if (b == -1) {
-                throw new EOFException();
-            } else if ((b & 0xc0) != 0x80) {
-            throw ProcessLogger.ROOT_LOGGER.invalidByte();
-            }
-            final int c = input.read();
-            if (c == -1) {
-                throw new EOFException();
-            } else if ((c & 0xc0) != 0x80) {
-            throw ProcessLogger.ROOT_LOGGER.invalidByte();
-            }
-            return (a & 0x0f) << 12 | (b & 0x3f) << 6 | c & 0x3f;
-        } else {
-            throw ProcessLogger.ROOT_LOGGER.invalidByte();
-        }
-    }
-
-    public static void readToEol(final InputStream input) throws IOException {
-        for (;;) {
-            switch (input.read()) {
-                case -1: return;
-                case '\n': return;
-            }
-        }
-    }
-
-    public static byte[] readBytesWithLength(final InputStream in) throws IOException {
-        int expectedLength = readInt(in);
-        byte[] bytes = new byte[expectedLength];
-        readFully(in, bytes, 0, expectedLength);
-        return bytes;
     }
 
     public static boolean readBoolean(final InputStream input) throws IOException {
@@ -304,22 +248,6 @@ public final class StreamUtils {
             serverSocket.close();
         } catch (IOException e) {
             ProcessLogger.PROTOCOL_LOGGER.failedToCloseServerSocket(e, serverSocket);
-        }
-    }
-
-    public static void safeFinish(final Marshaller marshaller) {
-        if (marshaller != null) try {
-            marshaller.finish();
-        } catch (IOException e) {
-            ProcessLogger.PROTOCOL_LOGGER.failedToFinishMarshaller(e, marshaller);
-        }
-    }
-
-    public static void safeFinish(final Unmarshaller unmarshaller) {
-        if (unmarshaller != null) try {
-            unmarshaller.finish();
-        } catch (IOException e) {
-            ProcessLogger.PROTOCOL_LOGGER.failedToFinishUnmarshaller(e, unmarshaller);
         }
     }
 
