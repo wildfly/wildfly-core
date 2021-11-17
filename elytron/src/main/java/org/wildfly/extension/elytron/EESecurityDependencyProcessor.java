@@ -47,7 +47,4 @@ class EESecurityDependencyProcessor implements DeploymentUnitProcessor {
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, AUTH_MESSAGE_API, false, false, true, false));
     }
 
-    @Override
-    public void undeploy(DeploymentUnit context) {}
-
 }

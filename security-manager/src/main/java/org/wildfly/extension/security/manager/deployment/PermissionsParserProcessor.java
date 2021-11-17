@@ -137,10 +137,6 @@ public class PermissionsParserProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    @Override
-    public void undeploy(final DeploymentUnit context) {
-    }
-
     /**
      * <p>
      * Parses the permissions declared in the specified file. The permissions are wrapped in factory objects so they can

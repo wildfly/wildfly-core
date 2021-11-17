@@ -59,7 +59,4 @@ class VirtualSecurityDomainProcessor implements DeploymentUnitProcessor {
         serviceBuilder.install();
     }
 
-    @Override
-    public void undeploy(DeploymentUnit deploymentUnit) {}
-
 }

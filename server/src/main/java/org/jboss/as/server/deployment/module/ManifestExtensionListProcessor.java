@@ -101,7 +101,4 @@ public final class ManifestExtensionListProcessor implements DeploymentUnitProce
         }
     }
 
-    /** {@inheritDoc} */
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

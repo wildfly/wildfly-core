@@ -61,7 +61,4 @@ public class ClassFileTransformerProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    @Override
-    public void undeploy(DeploymentUnit context) {
-    }
 }
