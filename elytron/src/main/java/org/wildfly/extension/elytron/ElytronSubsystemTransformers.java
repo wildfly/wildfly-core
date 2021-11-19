@@ -32,6 +32,8 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUD
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE_ALIAS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
@@ -141,6 +143,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from16(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_16_0_0, ELYTRON_15_1_0);
+        builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, KEY_STORE)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, KEY_STORE_ALIAS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, KEY_STORE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, KEY_STORE_ALIAS);
     }
 
     private static void from15_1(ChainedTransformationDescriptionBuilder chainedBuilder) {

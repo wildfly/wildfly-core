@@ -23,6 +23,7 @@ import static org.jboss.logging.Logger.Level.WARN;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
 import java.security.Policy;
 import java.security.Provider;
@@ -699,6 +700,27 @@ public interface ElytronSubsystemMessages extends BasicLogger {
 
     @Message(id = 1211, value = "Unable to load the credential store.")
     OperationFailedException unableToLoadCredentialStore(@Cause Throwable cause);
+
+    @Message(id = 1212, value = "KeyStore does not contain a PrivateKey for KeyStore: [%s] and alias: [%s].")
+    StartException missingPrivateKey(String keyStore, String alias);
+
+    @Message(id = 1213, value = "KeyStore does not contain a PublicKey for KeyStore: [%s] and alias: [%s].")
+    StartException missingPublicKey(String keyStore, String alias);
+
+    @Message(id = 1214, value = "Unable to verify the integrity of the filesystem realm: %s")
+    OperationFailedException unableToVerifyIntegrity(@Cause Exception cause, String causeMessage);
+
+    @Message(id = 1215, value = "Filesystem realm is missing key pair configuration, integrity checking is not enabled")
+    OperationFailedException filesystemMissingKeypair();
+
+    @Message(id = 1216, value = "Filesystem realm is unable to obtain key store password")
+    RuntimeException unableToGetKeyStorePassword();
+
+    @Message(id = 1217, value = "Realm verification failed, invalid signatures for the identities: %s")
+    OperationFailedException filesystemIntegrityInvalid(String identities);
+
+    @Message(id = 1218, value = "Keystore used by filesystem realm does not contain the alias: %s")
+    KeyStoreException keyStoreMissingAlias(String alias);
 
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><identity xmlns="urn:elytron:identity:1.2">
+    <principal name="user"/>
+    <credentials>
+        <password algorithm="clear" format="base64">AXBhc3N3b3Jk</password>
+    </credentials>
+    <attributes>
+        <attribute name="firstName" value="John"/>
+    </attributes>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>x2JtLa+FLMUtnj4RTwZqkCaUeUXd65v0OPKNHTWaavA=</DigestValue></Reference></SignedInfo><SignatureValue>CCGeQs4Tlnu1dIwg27KUpKerZPiqeZVzAG44AAptOflJQUbrHUBVx74I6OAQXHoxEc6Y6Pwsx57f&#13;
+AOrjbmRwAx2TYvGYzu1ccK/KiOuOmMs1mvufhECK9CWpGCIT1LdOmi39za9txaFKOfuHpbQDE5Au&#13;
+E6/NPCq+F3UzhbwjtMA=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>gtRFtSoBpoP0zSCN5ZCvJG4G9G5zO80aEJAJpcR2H7w7AiWuJ6LpATbwAWWVlbFR2+4UyxwbVzn6&#13;
+aezoo13l4STSWALyf2jB/XkWV/vV6D+u/q1ig3yM0O0y0Z5ANMgAJ65D2trh+J2xbiOk3ojL/yAS&#13;
+YDOX+jziihXDPsFq5t8=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue></KeyInfo></Signature></identity>
