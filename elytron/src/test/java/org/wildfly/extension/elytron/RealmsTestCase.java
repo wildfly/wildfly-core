@@ -17,12 +17,45 @@
  */
 package org.wildfly.extension.elytron;
 
-import org.jboss.as.controller.client.helpers.ClientConstants;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.security.AccessController;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.spec.KeySpec;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.xml.crypto.dsig.Reference;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.XMLSignatureFactory;
+import javax.xml.crypto.dsig.dom.DOMValidateContext;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -31,10 +64,12 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.wildfly.common.iteration.ByteIterator;
-import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.common.iteration.CodePointIterator;
 import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
@@ -50,6 +85,7 @@ import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
 import org.wildfly.security.password.PasswordFactory;
+import org.wildfly.security.password.WildFlyElytronPasswordProvider;
 import org.wildfly.security.password.interfaces.BCryptPassword;
 import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.DigestPassword;
@@ -59,31 +95,6 @@ import org.wildfly.security.password.spec.DigestPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.OneTimePasswordSpec;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.security.AccessController;
-import java.security.Principal;
-import java.security.PrivilegedAction;
-import java.security.Provider;
-import java.security.Security;
-import java.security.spec.KeySpec;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -358,6 +369,107 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         identity_empty.dispose();
     }
 
+    /**
+     * Test the signature of the filesystem realm when enabling integrity support
+     */
+    @Test
+    public void testFilesystemRealmIntegrity() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrity");
+        ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
+        ServiceName serviceNameBoth = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrityAndEncryption");
+        ModifiableSecurityRealm securityRealmBoth = (ModifiableSecurityRealm) services.getContainer().getService(serviceNameBoth).getValue();
+        Assert.assertNotNull(securityRealm);
+        Assert.assertNotNull(securityRealmBoth);
+
+        String targetDir = Paths.get("target/test-classes/org/wildfly/extension/elytron/").toAbsolutePath().toString();
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        char[] keyStorePassword = "secret".toCharArray();
+        keyStore.load(new FileInputStream(targetDir + "/keystore"), keyStorePassword);
+        PublicKey publicKey = keyStore.getCertificate("localhost").getPublicKey();
+        PublicKey fakePublicKey = KeyPairGenerator.getInstance("RSA").generateKeyPair().getPublic();
+
+
+        char[] password = "password".toCharArray();
+        ModifiableRealmIdentity identity = securityRealm.getRealmIdentityForUpdate(fromName("user"));
+        Assert.assertTrue(identity.exists());
+        Assert.assertTrue(identity.verifyEvidence(new PasswordGuessEvidence(password)));
+        Assert.assertFalse(identity.verifyEvidence(new PasswordGuessEvidence("secretPassword123".toCharArray())));
+
+
+        File identityFile = new File(targetDir + "/filesystem-realm-integrity/u/user-OVZWK4Q.xml");
+        assertTrue(validateDigitalSignature(identityFile, publicKey));
+        assertFalse(validateDigitalSignature(identityFile, fakePublicKey));
+
+        MapAttributes newAttributes = new MapAttributes();
+        newAttributes.addFirst("firstName", "John");
+        newAttributes.addFirst("lastName", "Smith");
+        newAttributes.addAll("roles", Arrays.asList("Employee", "Manager", "Admin"));
+        identity.setAttributes(newAttributes);
+        // Test that the publicKey still works correctly after signature is changed
+        assertTrue(validateDigitalSignature(identityFile, publicKey));
+
+        // Verify that an identity with an incorrect signature doesn't validate
+        RealmIdentity identity2 = securityRealm.getRealmIdentity(fromName("user2"));
+        Assert.assertTrue(identity.exists());
+        File identityFile2 = new File(targetDir + "/filesystem-realm-integrity/u/user2-OVZWK4RS.xml");
+        assertFalse(validateDigitalSignature(identityFile2, publicKey));
+
+        // Verify a new identity generates a signature and is correct
+        ModifiableRealmIdentity identity3 = securityRealm.getRealmIdentityForUpdate(new NamePrincipal("user3"));
+        identity3.create();
+        identity3.setAttributes(newAttributes);
+        PasswordFactory factory = PasswordFactory.getInstance(ClearPassword.ALGORITHM_CLEAR, WildFlyElytronPasswordProvider.getInstance());
+        ClearPassword clearPassword = (ClearPassword) factory.generatePassword(new ClearPasswordSpec(password));
+        identity3.setCredentials(Collections.singleton(new PasswordCredential(clearPassword)));
+        File identityFile3 = new File(targetDir + "/filesystem-realm-integrity/u/user3-OVZWK4RT.xml");
+        assertTrue(validateDigitalSignature(identityFile3, publicKey));
+
+        identity.dispose();
+        identity2.dispose();
+        identity3.dispose();
+
+        // Verify that this works for a realm with encryption and integrity enabled
+        identity = securityRealmBoth.getRealmIdentityForUpdate(new NamePrincipal("user1"));
+        identity.create();
+        identity.setAttributes(newAttributes);
+        identity.setCredentials(Collections.singleton(new PasswordCredential(clearPassword)));
+        identityFile = new File(targetDir + "/filesystem-realm-integrity-encryption/O/OVZWK4RR.xml");
+        assertTrue(validateDigitalSignature(identityFile, publicKey));
+        identity.dispose();
+    }
+
+    private boolean validateDigitalSignature(File path, PublicKey publicKey) {
+        try {
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setNamespaceAware(true);
+            Document doc = dbf.newDocumentBuilder().parse(path);
+            NodeList nl = doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
+            if (nl.getLength() == 0) {
+                return false;
+            }
+            XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
+            DOMValidateContext valContext = new DOMValidateContext(publicKey, nl.item(0));
+            XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+            boolean coreValidity = signature.validate(valContext);
+            if (!coreValidity) {
+                boolean sv = signature.getSignatureValue().validate(valContext);
+                // check the validation status of each Reference
+                Iterator i = signature.getSignedInfo().getReferences().iterator();
+                for (int j = 0; i.hasNext(); j++) {
+                    ((Reference) i.next()).validate(valContext);
+                }
+                return false;
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
 
     private void testAbstractFilesystemRealm(SecurityRealm securityRealm, String username, String password) throws Exception {

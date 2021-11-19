@@ -288,6 +288,7 @@ interface ElytronDescriptionConstants {
     String KEY_MAP = "key-map";
     String KEY_SIZE = "key-size";
     String KEY_STORE = "key-store";
+    String KEY_STORE_ALIAS = "key-store-alias";
     String KEY_STORE_REALM = "key-store-realm";
     String KEY_STORES = "key-stores";
     String KID = "kid";

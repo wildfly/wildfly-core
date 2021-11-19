@@ -108,6 +108,8 @@ class RealmParser {
             .addAttribute(FileSystemRealmDefinition.HASH_CHARSET)
             .addAttribute(FileSystemRealmDefinition.CREDENTIAL_STORE)
             .addAttribute(FileSystemRealmDefinition.SECRET_KEY)
+            .addAttribute(FileSystemRealmDefinition.KEY_STORE)
+            .addAttribute(FileSystemRealmDefinition.KEY_STORE_ALIAS)
             .build();
     private final PersistentResourceXMLDescription tokenRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM), null)
             .addAttributes(TokenRealmDefinition.ATTRIBUTES)

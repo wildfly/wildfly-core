@@ -32,6 +32,8 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUD
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE_ALIAS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
@@ -136,12 +138,17 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
     private static void from15(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_15_0_0, ELYTRON_14_0_0);
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.JAAS_REALM));
+
         builder.addChildResource(PathElement.pathElement(FILESYSTEM_REALM))
                 .getAttributeBuilder()
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, CREDENTIAL_STORE)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, SECRET_KEY)
                 .addRejectCheck(RejectAttributeChecker.DEFINED, CREDENTIAL_STORE)
-                .addRejectCheck(RejectAttributeChecker.DEFINED, SECRET_KEY);
+                .addRejectCheck(RejectAttributeChecker.DEFINED, SECRET_KEY)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, KEY_STORE)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, KEY_STORE_ALIAS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, KEY_STORE)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, KEY_STORE_ALIAS);
     }
 
     private static void from14(ChainedTransformationDescriptionBuilder chainedBuilder) {

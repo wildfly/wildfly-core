@@ -690,6 +690,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1210, value = "Initialisation of an %s without an active management OperationContext is not allowed.")
     ExpressionResolver.ExpressionResolutionServerException illegalNonManagementInitialization(Class<?> initialzingClass);
 
+    @Message(id = 1211, value = "KeyStore does not contain a PublicKey and PrivateKey for KeyStore: [%s] and alias: [%s].")
+    StartException invalidKeyPair(String keyStore, String alias);
+
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *

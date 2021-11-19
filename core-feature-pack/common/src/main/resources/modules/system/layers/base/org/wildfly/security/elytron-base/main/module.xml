@@ -109,6 +109,7 @@
         <module name="java.security.sasl"/>
         <module name="java.sql"/>
         <module name="java.xml"/>
+        <module name="java.xml.crypto"/>
         <module name="javax.json.api"/>
         <module name="jdk.security.auth"/>
         <module name="jdk.unsupported"/>

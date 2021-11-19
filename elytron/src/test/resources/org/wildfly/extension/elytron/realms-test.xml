@@ -48,8 +48,16 @@
             <file path="filesystem-realm-6" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
 
-        <filesystem-realm name="FilesystemRealmExpression" levels="1" encoded="false" credential-store="${exp.credential-store:secretkeycredstore}" secret-key="${exp.secret-key:key}">
+        <filesystem-realm name="FilesystemRealmExpression" levels="1" encoded="false" credential-store="${exp.credential-store:secretkeycredstore}" secret-key="${exp.secret-key:key}" key-store="${exp.key-store:keystore}" key-store-alias="${exp.key-store-alias:localhost}">
             <file path="filesystem-realm-expression" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealmIntegrity" levels="1" encoded="true" key-store="keystore" key-store-alias="localhost">
+            <file path="filesystem-realm-integrity" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
+
+        <filesystem-realm name="FilesystemRealmIntegrityAndEncryption" levels="1" encoded="true" key-store="keystore" key-store-alias="localhost" credential-store="secretkeycredentialstore" secret-key="key">
+            <file path="filesystem-realm-integrity-encryption" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
 
         <token-realm name="JwtRealm" principal-claim="sub">
@@ -84,6 +92,11 @@
                 <credential-reference clear-text="Elytron"/>
                 <implementation type="JKS" />
                 <file path="target/test-classes/org/wildfly/extension/elytron/ca.truststore"/>
+            </key-store>
+            <key-store name="keystore">
+                <credential-reference clear-text="secret"/>
+                <implementation type="JKS"/>
+                <file path="target/test-classes/org/wildfly/extension/elytron/keystore"/>
             </key-store>
         </key-stores>
         <trust-managers>
