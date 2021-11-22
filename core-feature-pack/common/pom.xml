@@ -690,6 +690,11 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-elytron-tool-wrapper</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-io</artifactId>
         </dependency>
 

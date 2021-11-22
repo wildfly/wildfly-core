@@ -257,6 +257,7 @@
         <module>domain-http</module>
         <module>domain-management</module>
         <module>elytron</module>
+        <module>elytron-tool-wrapper</module>
         <module>embedded</module>
         <module>event-logger</module>
         <module>host-controller</module>
@@ -1526,6 +1527,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-elytron-integration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-elytron-tool-wrapper</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
