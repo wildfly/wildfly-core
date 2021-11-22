@@ -597,12 +597,9 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public ModelNode resolveModelAttribute(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        return resolveModelAttribute(new ExpressionResolver() {
-            @Override
-            public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                return context.resolveExpressions(node);
-            }
-        }, model);
+        // OperationContext is a subinterface of ExpressionResolver but that distinction
+        // is not relevant to us so just use the method that takes ExpressionResolver
+        return resolveModelAttribute((ExpressionResolver) context, model);
     }
 
     /**
@@ -639,12 +636,9 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public ModelNode resolveValue(final OperationContext context, final ModelNode value) throws OperationFailedException {
-        return resolveValue(new ExpressionResolver() {
-            @Override
-            public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                return context.resolveExpressions(node);
-            }
-        }, value);
+        // OperationContext is a subinterface of ExpressionResolver but that distinction
+        // is not relevant to us so just use the method that takes ExpressionResolver
+        return resolveValue((ExpressionResolver) context, value);
     }
 
     /**
