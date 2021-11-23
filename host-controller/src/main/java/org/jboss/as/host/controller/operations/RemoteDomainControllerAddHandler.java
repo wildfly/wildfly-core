@@ -30,7 +30,6 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.host.controller.descriptions.HostResolver;
 import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
-import org.jboss.as.remoting.Protocol;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -62,8 +61,6 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
     public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
             .setRequired(false)
             .setAllowExpression(true)
-            .setValidator(EnumValidator.create(Protocol.class))
-            .setDefaultValue(Protocol.REMOTE.toModelNode())
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .setRequires(ModelDescriptionConstants.HOST, ModelDescriptionConstants.PORT)
             .build();

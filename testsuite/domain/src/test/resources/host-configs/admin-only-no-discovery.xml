@@ -25,7 +25,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote authentication-context="secondaryHostAContext" ignore-unused-configuration="true" admin-only-policy="${jboss.test.admin-only-policy}">
+        <remote protocol="remote" authentication-context="secondaryHostAContext" ignore-unused-configuration="true" admin-only-policy="${jboss.test.admin-only-policy}">
             <!--<discovery-options>
                 <static-discovery name="primary" host="${jboss.test.host.primary.address}" port="9999"/>
             </discovery-options>-->

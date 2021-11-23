@@ -49,7 +49,7 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.primary.address}" port="9999" authentication-context="secondaryHostAContext">
+        <remote protocol="remote" host="${jboss.test.host.primary.address}" port="9999" authentication-context="secondaryHostAContext">
             <ignored-resources type="extension">
                 <instance name="org.jboss.as.jsr77"/>
             </ignored-resources>
