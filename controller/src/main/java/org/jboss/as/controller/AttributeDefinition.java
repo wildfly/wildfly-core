@@ -505,6 +505,21 @@ public abstract class AttributeDefinition {
             ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName(),
                     PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
         }
+
+
+        // overriding the value of an attribute using an env var is performed only when the operation
+        // containers a PathAddress. This method is also used for validating parameters (that are not necessary
+        // providing an address (e.g. AbstractWriteAttributeHandler.execute)
+        if (EnvVarAttributeOverrider.isEnabled() &&
+                operationObject.has(ModelDescriptionConstants.OP_ADDR) &&
+                ! COMPLEX_TYPES.contains(type)) {
+            PathAddress pathAddress = PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR));
+            String overriddenValue = EnvVarAttributeOverrider.getOverriddenValueFromEnvVar(pathAddress, name);
+            if (overriddenValue != null) {
+                operationObject.get(name).set(overriddenValue);
+            }
+        }
+
         // AS7-6224 -- convert expression strings to ModelType.EXPRESSION *before* correcting
         ModelNode newValue = convertParameterExpressions(operationObject.get(name));
         final ModelNode correctedValue = correctValue(newValue, model.get(name));

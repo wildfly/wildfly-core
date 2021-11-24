@@ -168,4 +168,53 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <environmentVariables>
+                                <!-- Used in EnvVarAttributeOverrideModelTestCase -->
+                                <!-- This corresponds to the /subsystem=custom resource and its my-attr attribute -->
+                                <SUBSYSTEM_CUSTOM__MY_ATTR>5678</SUBSYSTEM_CUSTOM__MY_ATTR>
+                            </environmentVariables>
+                            <excludes>
+                                <exclude>org/jboss/as/controller/EnvVarAttributeOverrideModel$EnabledOverridingEnvVarTestCase</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>env-var-overrides</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <environmentVariables>
+                                <!-- Used in EnvVarAttributeOverrideModelTestCase -->
+                                <!-- The presence of this env var is required to trigger the overridding feature -->
+                                <WILDFLY_OVERRIDING_ENV_VARS>1</WILDFLY_OVERRIDING_ENV_VARS>
+                                <!-- This corresponds to the /subsystem=custom resource and its my-attr attribute -->
+                                <SUBSYSTEM_CUSTOM__MY_ATTR>5678</SUBSYSTEM_CUSTOM__MY_ATTR>
+                                <!-- test that a complex attribute is not overidden -->
+                                <SUBSYSTEM_CUSTOM__MY_LIST_ATTR>[a, b, c]</SUBSYSTEM_CUSTOM__MY_LIST_ATTR>
+                            </environmentVariables>
+                            <includes>
+                                <include>org/jboss/as/controller/EnvVarAttributeOverrideModel$EnabledOverridingEnvVarTestCase</include>
+                            </includes>
+                            <excludes>
+                                <exclude></exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
