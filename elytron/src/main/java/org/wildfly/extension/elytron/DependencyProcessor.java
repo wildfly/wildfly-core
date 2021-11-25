@@ -46,8 +46,4 @@ class DependencyProcessor implements DeploymentUnitProcessor {
         moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, elytronIdentifier, false, false, true, false));
     }
 
-    @Override
-    public void undeploy(DeploymentUnit unit) {
-    }
-
 }

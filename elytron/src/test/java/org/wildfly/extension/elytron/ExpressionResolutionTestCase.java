@@ -37,10 +37,12 @@ import java.util.Set;
 
 import javax.crypto.SecretKey;
 
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.security.CredentialReference;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
@@ -122,6 +124,11 @@ public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
             cleanUp(csTwo);
             cleanUp(csThree);
         }
+    }
+
+    protected AdditionalInitialization createAdditionalInitialization() {
+        // Our use of the expression=encryption resource requires kernel capability setup that TestEnvironment provides
+        return new TestEnvironment(RunningMode.ADMIN_ONLY);
     }
 
     private static void cleanUp(CredentialStoreUtility csUtil) {

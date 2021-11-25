@@ -505,6 +505,21 @@ public abstract class AttributeDefinition {
             ControllerLogger.DEPRECATED_LOGGER.attributeDeprecated(getName(),
                     PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR)).toCLIStyleString());
         }
+
+
+        // overriding the value of an attribute using an env var is performed only when the operation
+        // containers a PathAddress. This method is also used for validating parameters (that are not necessary
+        // providing an address (e.g. AbstractWriteAttributeHandler.execute)
+        if (EnvVarAttributeOverrider.isEnabled() &&
+                operationObject.has(ModelDescriptionConstants.OP_ADDR) &&
+                ! COMPLEX_TYPES.contains(type)) {
+            PathAddress pathAddress = PathAddress.pathAddress(operationObject.get(ModelDescriptionConstants.OP_ADDR));
+            String overriddenValue = EnvVarAttributeOverrider.getOverriddenValueFromEnvVar(pathAddress, name);
+            if (overriddenValue != null) {
+                operationObject.get(name).set(overriddenValue);
+            }
+        }
+
         // AS7-6224 -- convert expression strings to ModelType.EXPRESSION *before* correcting
         ModelNode newValue = convertParameterExpressions(operationObject.get(name));
         final ModelNode correctedValue = correctValue(newValue, model.get(name));
@@ -597,12 +612,9 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public ModelNode resolveModelAttribute(final OperationContext context, final ModelNode model) throws OperationFailedException {
-        return resolveModelAttribute(new ExpressionResolver() {
-            @Override
-            public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                return context.resolveExpressions(node);
-            }
-        }, model);
+        // OperationContext is a subinterface of ExpressionResolver but that distinction
+        // is not relevant to us so just use the method that takes ExpressionResolver
+        return resolveModelAttribute((ExpressionResolver) context, model);
     }
 
     /**
@@ -639,12 +651,9 @@ public abstract class AttributeDefinition {
      * @throws OperationFailedException if the value is not valid
      */
     public ModelNode resolveValue(final OperationContext context, final ModelNode value) throws OperationFailedException {
-        return resolveValue(new ExpressionResolver() {
-            @Override
-            public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-                return context.resolveExpressions(node);
-            }
-        }, value);
+        // OperationContext is a subinterface of ExpressionResolver but that distinction
+        // is not relevant to us so just use the method that takes ExpressionResolver
+        return resolveValue((ExpressionResolver) context, value);
     }
 
     /**

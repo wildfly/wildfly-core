@@ -28,6 +28,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -50,6 +51,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver;
 import org.wildfly.extension.elytron.expression.ElytronExpressionResolver.ResolverConfiguration;
+import org.wildfly.extension.elytron.expression.ExpressionResolverRuntimeHandler;
 
 /**
  * The {@link ResourceDefinition} for the expression resolver resource.
@@ -62,6 +64,8 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER =
             ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
 
+    private static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
+            "org.wildfly.management.expression-resolver-extension-registry";
     /*
      * As this resource is attempting to make available an ExpressionResolver for use at runtime we need all values to be known before
      * first use so the use of expressions is disabled on this resource.
@@ -129,7 +133,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     ExpressionResolverResourceDefinition(OperationStepHandler add, OperationStepHandler remove,
-            RuntimeCapability<ExpressionResolver> expressionResolverRuntimeCapability) {
+            RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
         super(new Parameters(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION),
                 RESOURCE_RESOLVER)
                 .setAddHandler(add)
@@ -182,26 +186,68 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
         ElytronExpressionResolver expressionResolver = new ElytronExpressionResolver(
                 (e, c) -> configureExpressionResolver(resourceAddress, e, c));
-        RuntimeCapability<ExpressionResolver> expressionResolverRuntimeCapability =  RuntimeCapability
-                .Builder.<ExpressionResolver>of(EXPRESSION_RESOLVER_CAPABILITY, false, expressionResolver)
+        RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability =  RuntimeCapability
+                .Builder.<ExpressionResolverExtension>of(EXPRESSION_RESOLVER_CAPABILITY, false, expressionResolver)
                 .build();
 
         AbstractAddStepHandler add = new ExpressionResolverAddHandler(expressionResolverRuntimeCapability);
-        OperationStepHandler remove = new TrivialCapabilityServiceRemoveHandler(add, expressionResolverRuntimeCapability);
+        OperationStepHandler remove = new ExpressionResolverRemoveHandler(add, expressionResolverRuntimeCapability);
 
         return new ExpressionResolverResourceDefinition(add, remove, expressionResolverRuntimeCapability);
     }
 
     private static class ExpressionResolverAddHandler extends BaseAddHandler {
 
-        ExpressionResolverAddHandler(RuntimeCapability<ExpressionResolver> expressionResolverRuntimeCapability) {
+        private final ElytronExpressionResolver expressionResolver;
+
+        ExpressionResolverAddHandler(RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
             super(expressionResolverRuntimeCapability, ATTRIBUTES);
+            expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
         }
 
         @Override
         protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
                 throws OperationFailedException {
             super.recordCapabilitiesAndRequirements(context, operation, resource);
+        }
+
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+            ExpressionResolverRuntimeHandler.initializeResolver(context);
+
+            ExpressionResolver.ResolverExtensionRegistry registry =
+                    context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
+                            ExpressionResolver.ResolverExtensionRegistry.class);
+            registry.addResolverExtension(expressionResolver);
+        }
+
+    }
+
+    private static class ExpressionResolverRemoveHandler extends TrivialCapabilityServiceRemoveHandler {
+
+        private final ElytronExpressionResolver expressionResolver;
+
+        ExpressionResolverRemoveHandler(AbstractAddStepHandler add, RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
+            super(add, expressionResolverRuntimeCapability);
+            expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
+        }
+
+        @Override
+        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
+                throws OperationFailedException {
+            super.recordCapabilitiesAndRequirements(context, operation, resource);
+        }
+
+        @Override
+        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
+            if (context.isResourceServiceRestartAllowed()) {
+                ExpressionResolver.ResolverExtensionRegistry registry =
+                        context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
+                                ExpressionResolver.ResolverExtensionRegistry.class);
+                registry.removeResolverExtension(expressionResolver);
+            }
+            super.performRuntime(context, operation, model);
         }
 
     }
@@ -213,8 +259,8 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             String resolver = RESOLVER_PARAM.resolveModelAttribute(context, operation).asStringOrNull();
             String clearText = CLEAR_TEXT.resolveModelAttribute(context, operation).asString();
 
-            ExpressionResolver expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolver.class);
-            String expression = ((ElytronExpressionResolver) expressionResolver).createExpression(resolver, clearText, context);
+            ElytronExpressionResolver expressionResolver = (ElytronExpressionResolver) context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolverExtension.class);
+            String expression = expressionResolver.createExpression(resolver, clearText, context);
 
             context.getResult().get(ElytronDescriptionConstants.EXPRESSION).set(expression);
         }

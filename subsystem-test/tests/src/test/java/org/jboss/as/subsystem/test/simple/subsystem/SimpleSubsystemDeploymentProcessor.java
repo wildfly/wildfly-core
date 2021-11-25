@@ -2,7 +2,6 @@ package org.jboss.as.subsystem.test.simple.subsystem;
 
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
@@ -34,10 +33,6 @@ public class SimpleSubsystemDeploymentProcessor implements DeploymentUnitProcess
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         log.info("Deploy");
-    }
-
-    @Override
-    public void undeploy(DeploymentUnit context) {
     }
 
 }

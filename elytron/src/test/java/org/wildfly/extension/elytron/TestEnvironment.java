@@ -20,7 +20,14 @@ package org.wildfly.extension.elytron;
 import mockit.Mock;
 import mockit.MockUp;
 
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.controller.capability.registry.RuntimeCapabilityRegistry;
+import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.RuntimeExpressionResolver;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.ControllerInitializer;
 import org.jboss.as.subsystem.test.KernelServices;
@@ -130,6 +137,21 @@ class TestEnvironment extends AdditionalInitialization {
         createTemporaryKeyStoreFile(localhostKeyStore, localhostFile);
     }
 
+    private final RunningMode runningMode;
+
+    TestEnvironment() {
+        this(RunningMode.NORMAL);
+    }
+
+    TestEnvironment(RunningMode runningMode) {
+        this.runningMode = runningMode;
+    }
+
+    @Override
+    protected RunningMode getRunningMode() {
+        return runningMode;
+    }
+
     @Override
     protected ControllerInitializer createControllerInitializer() {
         ControllerInitializer initializer = new ControllerInitializer();
@@ -149,6 +171,15 @@ class TestEnvironment extends AdditionalInitialization {
         }
 
         return initializer;
+    }
+
+    @Override
+    protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+        super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+        RuntimeCapability<ExpressionResolver.ResolverExtensionRegistry> extRegCap =
+                RuntimeCapability.Builder.of("org.wildfly.management.expression-resolver-extension-registry",
+                        (ExpressionResolver.ResolverExtensionRegistry) new RuntimeExpressionResolver()).build();
+        registerCapabilities(capabilityRegistry, extRegCap);
     }
 
     public static void startLdapService() {

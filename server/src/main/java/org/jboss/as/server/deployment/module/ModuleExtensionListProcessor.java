@@ -139,9 +139,4 @@ public final class ModuleExtensionListProcessor implements DeploymentUnitProcess
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

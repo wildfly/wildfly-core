@@ -50,6 +50,7 @@ import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
@@ -174,6 +175,7 @@ public final class ServerService extends AbstractControllerService {
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
     private final SuspendController suspendController;
+    private final RuntimeExpressionResolver expressionResolver;
     public static final String SERVER_NAME = "server";
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
@@ -197,16 +199,17 @@ public final class ServerService extends AbstractControllerService {
                           final Bootstrap.Configuration configuration, final ControlledProcessState processState,
                           final OperationStepHandler prepareStep, final BootstrapListener bootstrapListener, final ServerDelegatingResourceDefinition rootResourceDefinition,
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
-                          final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry,
-                          final SuspendController suspendController) {
+                          final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                          final CapabilityRegistry capabilityRegistry, final SuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
         super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
-                rootResourceDefinition, prepareStep, new RuntimeExpressionResolver(), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.configuration = configuration;
         this.bootstrapListener = bootstrapListener;
         this.processState = processState;
         this.runningModeControl = runningModeControl;
         this.rootResourceDefinition = rootResourceDefinition;
         this.suspendController = suspendController;
+        this.expressionResolver = expressionResolver;
     }
 
     static ProcessType getProcessType(ServerEnvironment serverEnvironment) {
@@ -250,6 +253,7 @@ public final class ServerService extends AbstractControllerService {
                 .install();
 
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
+        final RuntimeExpressionResolver expressionResolver = new RuntimeExpressionResolver();
 
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER);
         final boolean allowMCE = configuration.getServerEnvironment().isAllowModelControllerExecutor();
@@ -257,7 +261,7 @@ public final class ServerService extends AbstractControllerService {
         final boolean isDomainEnv = configuration.getServerEnvironment().getLaunchType() == ServerEnvironment.LaunchType.DOMAIN;
         final Supplier<ControllerInstabilityListener> cilSupplier = isDomainEnv ? serviceBuilder.requires(HostControllerConnectionService.SERVICE_NAME) : null;
         ServerService service = new ServerService(esSupplier, cilSupplier, configuration, processState, null, bootstrapListener, new ServerDelegatingResourceDefinition(),
-                runningModeControl, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController);
+                runningModeControl, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, suspendController, expressionResolver);
         serviceBuilder.setInstance(service);
         serviceBuilder.addDependency(DeploymentMountProvider.SERVICE_NAME,DeploymentMountProvider.class, service.injectedDeploymentRepository);
         serviceBuilder.addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.injectedContentRepository);
@@ -495,6 +499,12 @@ public final class ServerService extends AbstractControllerService {
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(CONSOLE_AVAILABILITY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
+        RuntimeCapability<ExpressionResolver.ResolverExtensionRegistry> extRegCap =
+                RuntimeCapability.Builder.of(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME, (ExpressionResolver.ResolverExtensionRegistry) expressionResolver).build();
+        capabilityRegistry.registerCapability(
+                new RuntimeCapabilityRegistration(extRegCap, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
         ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
@@ -504,6 +514,7 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
         rootRegistration.registerCapability(EXTERNAL_MODULE_CAPABILITY);
         rootRegistration.registerCapability(CONSOLE_AVAILABILITY_CAPABILITY);
+        rootRegistration.registerCapability(extRegCap);
     }
 
     @Override

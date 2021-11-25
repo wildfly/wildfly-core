@@ -17,6 +17,6 @@
  */
 
 /**
- * ExpressionResolver implementation.
+ * ExpressionResolver implementation and integration.
  */
 package org.wildfly.extension.elytron.expression;

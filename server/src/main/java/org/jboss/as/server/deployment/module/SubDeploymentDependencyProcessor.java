@@ -85,8 +85,4 @@ public class SubDeploymentDependencyProcessor implements DeploymentUnitProcessor
         }
     }
 
-    @Override
-    public void undeploy(DeploymentUnit context) {
-    }
-
 }

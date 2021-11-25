@@ -23,11 +23,6 @@
 package org.jboss.as.process.protocol;
 
 import org.jboss.as.process.logging.ProcessLogger;
-import org.jboss.marshalling.Marshaller;
-import org.jboss.marshalling.MarshallerFactory;
-import org.jboss.marshalling.Marshalling;
-import org.jboss.marshalling.MarshallingConfiguration;
-import org.jboss.marshalling.Unmarshaller;
 
 import java.io.DataInput;
 import java.io.IOException;
@@ -38,43 +33,24 @@ import java.io.InputStream;
  *
  * @author John Bailey
  */
-public class    ProtocolUtils {
-    private static final MarshallerFactory MARSHALLER_FACTORY;
-
-    static {
-        MARSHALLER_FACTORY = Marshalling.getMarshallerFactory("river", ProtocolUtils.class.getClassLoader());
-    }
+public final class ProtocolUtils {
 
     private ProtocolUtils() {
+        // forbidden instantiation
     }
 
-    public static <T> T unmarshal(final Unmarshaller unmarshaller, final Class<T> expectedType) throws IOException {
-        try {
-            return unmarshaller.readObject(expectedType);
-        } catch (ClassNotFoundException e) {
-            throw ProcessLogger.ROOT_LOGGER.failedToReadObject(e);
-        }
-    }
-
-    public static Marshaller getMarshaller(final MarshallingConfiguration config) throws IOException {
-        return MARSHALLER_FACTORY.createMarshaller(config);
-    }
-
-    public static Unmarshaller getUnmarshaller(final MarshallingConfiguration config) throws IOException {
-        return MARSHALLER_FACTORY.createUnmarshaller(config);
-    }
-
-    public static void expectHeader(final InputStream input, int expected) throws IOException {
+    public static void expectHeader(final InputStream input, final int expected) throws IOException {
         expectHeader(StreamUtils.readByte(input), expected);
     }
 
-    public static void expectHeader(final DataInput input, int expected) throws IOException {
+    public static void expectHeader(final DataInput input, final int expected) throws IOException {
         expectHeader(input.readByte(), expected);
     }
 
-    public static void expectHeader(final byte actual, int expected) throws IOException {
+    public static void expectHeader(final byte actual, final int expected) throws IOException {
         if (actual != (byte) expected) {
             throw ProcessLogger.ROOT_LOGGER.invalidByteToken(expected, actual);
         }
     }
+
 }

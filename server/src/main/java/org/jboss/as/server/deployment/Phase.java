@@ -208,6 +208,7 @@ public enum Phase {
     @Deprecated
     public static final int STRUCTURE_OSGI_METADATA                     = 0x0430;
     public static final int STRUCTURE_REMOUNT_EXPLODED                  = 0x0450;
+    public static final int STRUCTURE_ELYTRON_EXPRESSION_RESOLVER       = 0x0480;
     public static final int STRUCTURE_EE_SPEC_DESC_PROPERTY_REPLACEMENT = 0x0500;
     public static final int STRUCTURE_EE_JBOSS_DESC_PROPERTY_REPLACEMENT= 0x0550;
     public static final int STRUCTURE_EE_EJB_ANNOTATION_PROPERTY_REPLACEMENT  =  0x0555;
@@ -215,7 +216,8 @@ public enum Phase {
     public static final int STRUCTURE_EE_DEPLOYMENT_PROPERTY_RESOLVER   = 0x0561;
     public static final int STRUCTURE_EE_VAULT_PROPERTY_RESOLVER        = 0x0562;
     public static final int STRUCTURE_EE_SYSTEM_PROPERTY_RESOLVER       = 0x0563;
-    public static final int STRUCTURE_EE_PROPERTY_RESOLVER              = 0x0564;
+    public static final int STRUCTURE_EE_FUNCTIONAL_RESOLVERS           = 0x0564;
+    public static final int STRUCTURE_EE_PROPERTY_RESOLVER              = 0x0565;
     public static final int STRUCTURE_JDBC_DRIVER                       = 0x0600;
     public static final int STRUCTURE_RAR                               = 0x0700;
     public static final int STRUCTURE_WAR_DEPLOYMENT_INIT               = 0x0800;

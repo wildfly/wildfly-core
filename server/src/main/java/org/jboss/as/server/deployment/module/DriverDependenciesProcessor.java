@@ -58,8 +58,4 @@ public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    @Override
-    public void undeploy(final DeploymentUnit context) {
-        // no-op
-    }
 }

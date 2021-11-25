@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
@@ -50,7 +52,7 @@ public class ResolveExpressionAttributesTestCase extends AbstractSubsystemBaseTe
 
     @Before
     public void init() throws Exception {
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT)
+        KernelServicesBuilder builder = createKernelServicesBuilder(createAdditionalInitialization())
                 .setSubsystemXml(getSubsystemXml());
         KernelServices kernelServices = builder.build();
         Assert.assertTrue("Subsystem boot failed!", kernelServices.isSuccessfulBoot());
@@ -61,6 +63,12 @@ public class ResolveExpressionAttributesTestCase extends AbstractSubsystemBaseTe
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("elytron-expressions.xml");
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        // Our use of the expression=encryption resource requires kernel capability setup that TestEnvironment provides
+        return new TestEnvironment(RunningMode.ADMIN_ONLY);
     }
 
     @Test

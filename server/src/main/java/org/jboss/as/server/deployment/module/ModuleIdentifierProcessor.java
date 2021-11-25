@@ -60,9 +60,4 @@ public class ModuleIdentifierProcessor implements DeploymentUnitProcessor {
         return moduleIdentifier;
     }
 
-    @Override
-    public void undeploy(DeploymentUnit deploymentUnit) {
-
-    }
-
 }

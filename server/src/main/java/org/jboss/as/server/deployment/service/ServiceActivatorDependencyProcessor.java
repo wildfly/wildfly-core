@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment.service;
 
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.ServicesAttachment;
@@ -61,6 +60,4 @@ public class ServiceActivatorDependencyProcessor implements DeploymentUnitProces
         }
     }
 
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

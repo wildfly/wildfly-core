@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronExtension.ISO_8601_FORMAT;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.RELATIVE_TO;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
+import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
 import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.io.File;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.Principal;
+import java.security.PrivilegedAction;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -380,14 +382,18 @@ class PropertiesRealmDefinition {
 
         void reloadIfNeeded() throws IOException {
             long loadTime = delegate.getLoadTime();
-            if (loadTime < usersFile.lastModified() || (groupsFile != null && loadTime < groupsFile.lastModified())) {
+            if (shouldReload(loadTime)) {
                 synchronized(this) {
                     loadTime = delegate.getLoadTime();
-                    if (loadTime < usersFile.lastModified() || (groupsFile != null && loadTime < groupsFile.lastModified())) {
+                    if (shouldReload(loadTime)) {
                         reloadInternal();
                     }
                 }
             }
+        }
+
+        boolean shouldReload(long loadTime) {
+            return doPrivileged((PrivilegedAction<Boolean>) () -> loadTime < usersFile.lastModified() || (groupsFile != null && loadTime < groupsFile.lastModified()));
         }
 
         void reload() throws OperationFailedException {

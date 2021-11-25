@@ -42,11 +42,13 @@ import org.wildfly.security.password.spec.EncryptablePasswordSpec;
 import org.wildfly.security.password.spec.IteratedSaltedPasswordAlgorithmSpec;
 import org.wildfly.security.password.spec.OneTimePasswordSpec;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.Principal;
@@ -54,6 +56,7 @@ import java.security.spec.KeySpec;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
@@ -153,14 +156,29 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         RealmIdentity identity = securityRealm.getRealmIdentity(fromName(username));
         Assert.assertFalse("Identity " + username + " already exists in the realm", identity.exists());
         identity.dispose();
+        long current = System.currentTimeMillis();
 
         URL url = getClass().getResource(fileName);
         Assert.assertNotNull("The properties file " + fileName + " does not exist", url);
-        byte[] backup = Files.readAllBytes(Paths.get(url.toURI()));
+        Path propsPath = Paths.get(url.toURI());
+        byte[] backup = Files.readAllBytes(propsPath);
         try {
             // modify the properties file adding the username and hashed password
             String line = System.lineSeparator() + username + "=" + hash;
-            Files.write(Paths.get(url.toURI()), line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+            Files.write(propsPath, line.getBytes(StandardCharsets.UTF_8), StandardOpenOption.APPEND);
+            File file = propsPath.toFile();
+            if (current >= file.lastModified()) {
+                boolean modified = false;
+                for (int i = 0; !modified && i < 10; i++) {
+                    TimeUnit.MILLISECONDS.sleep(200);
+                    file.setLastModified(System.currentTimeMillis());
+                    modified = current < file.lastModified();
+                }
+                if (!modified) {
+                    // file system is not updating the last modified time, so test won't work
+                    Assert.fail("File System is not updating the modification timestamp");
+                }
+            }
 
             // assert that the property realm detects the external modification
             identity = securityRealm.getRealmIdentity(fromName(username));

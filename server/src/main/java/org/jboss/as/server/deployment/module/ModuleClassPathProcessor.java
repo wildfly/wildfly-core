@@ -73,6 +73,4 @@ public final class ModuleClassPathProcessor implements DeploymentUnitProcessor {
         }
     }
 
-    public void undeploy(final DeploymentUnit context) {
-    }
 }

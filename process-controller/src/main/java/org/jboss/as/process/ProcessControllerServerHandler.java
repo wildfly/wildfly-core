@@ -32,7 +32,7 @@ import static org.jboss.as.process.protocol.StreamUtils.safeClose;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -163,7 +163,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 }
                                 final String workingDirectory = readUTFZBytes(dataStream);
                                 ProcessLogger.SERVER_LOGGER.tracef("Received add_process for process %s", processName);
-                                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
+                                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
                                 processController.addProcess(processName, processId, authKey, Arrays.asList(command), env, workingDirectory, false, false);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring add_process message from untrusted source");
@@ -226,7 +226,7 @@ public final class ProcessControllerServerHandler implements ConnectionHandler {
                                 final boolean managementSubsystemEndpoint = readBoolean(dataStream);
                                 final byte[] authBytes = new byte[ProcessController.AUTH_BYTES_ENCODED_LENGTH];
                                 readFully(dataStream, authBytes);
-                                final String authKey = new String(authBytes, Charset.forName("US-ASCII"));
+                                final String authKey = new String(authBytes, StandardCharsets.US_ASCII);
                                 processController.sendReconnectProcess(processName, scheme, hostName, port, managementSubsystemEndpoint, authKey);
                             } else {
                                 ProcessLogger.SERVER_LOGGER.tracef("Ignoring reconnect_process message from untrusted source");

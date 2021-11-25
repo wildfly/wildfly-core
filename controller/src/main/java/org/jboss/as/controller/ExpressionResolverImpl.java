@@ -250,7 +250,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
                                 continue;
                             }
                             String toResolve = getStringToResolve(initialValue, stack, i);
-                            final String resolved = resolveExpressionString(toResolve, context); // TODO we could catch OFE here
+                            final String resolved = resolveExpressionString(toResolve, context); // TODO we could catch OFE or ERUE here
                                                                                         // and if lenient respond with
                                                                                         // the initial value, else rethrow
                                                                                         // But for now it's a corner case
@@ -366,10 +366,8 @@ public class ExpressionResolverImpl implements ExpressionResolver {
      * Perform a standard {@link org.jboss.dmr.ModelNode#resolve()} on the given {@code unresolved} node.
      * @param unresolved  the unresolved node, which should be of type {@link org.jboss.dmr.ModelType#EXPRESSION}
      * @return a node of type {@link ModelType#STRING}
-     *
-     * @throws OperationFailedException if {@code ignoreFailures} is {@code false} and the expression cannot be resolved
      */
-    private static String resolveStandardExpression(final ModelNode unresolved) throws OperationFailedException {
+    private static String resolveStandardExpression(final ModelNode unresolved) {
         try {
             return unresolved.resolve().asString();
         } catch (SecurityException e) {
@@ -377,7 +375,7 @@ public class ExpressionResolverImpl implements ExpressionResolver {
             // this method for any expression will have ignoreUnresolvable set to 'false' which means a basic test of
             // ability to read system properties will have already passed. So a failure with ignoreUnresolvable set to
             // true means a specific property caused the failure, and that should not be ignored
-            throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(unresolved, e));
+            throw ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(unresolved, e);
         } catch (IllegalStateException e) {
             return unresolved.asString();
         }

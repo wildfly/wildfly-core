@@ -22,7 +22,6 @@
 package org.wildfly.extension.requestcontroller;
 
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
-import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 
@@ -35,8 +34,4 @@ public class RequestControllerDeploymentUnitProcessor implements DeploymentUnitP
         RequestControllerActivationMarker.mark(phaseContext.getDeploymentUnit());
     }
 
-    @Override
-    public void undeploy(DeploymentUnit context) {
-
-    }
 }
