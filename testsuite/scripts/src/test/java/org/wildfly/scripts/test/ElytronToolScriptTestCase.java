@@ -23,10 +23,12 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@Ignore("https://issues.jboss.org/browse/WFCORE-5729")
 public class ElytronToolScriptTestCase extends ScriptTestCase {
 
     public ElytronToolScriptTestCase() {
