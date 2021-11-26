@@ -20,7 +20,9 @@ package org.wildfly.extension.elytron;
 
 import java.io.IOException;
 
+import org.jboss.as.controller.RunningMode;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
 
 /**
  *
@@ -35,6 +37,12 @@ public class ElytronSubsystem15_0TestCase extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("elytron-subsystem-15.0.xml");
+    }
+
+    @Override
+    protected AdditionalInitialization createAdditionalInitialization() {
+        // Our use of the expression=encryption resource requires kernel capability setup that TestEnvironment provides
+        return new TestEnvironment(RunningMode.ADMIN_ONLY);
     }
 
 }
