@@ -101,11 +101,10 @@ public class ResolveExpressionHandler implements OperationStepHandler {
                     }
                     context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
                 } catch (SecurityException e) {
-                    throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e));
-                } catch (IllegalStateException e) {
-                    final ModelNode failureDescription = ControllerLogger.ROOT_LOGGER.cannotResolveExpression(toResolve.asString()).getFailureDescription();
-                    deferFailureReporting(context, failureDescription);
-                } catch (OperationFailedException e) {
+                    throw ControllerLogger.ROOT_LOGGER.noPermissionToResolveExpression(toResolve, e);
+                } catch (IllegalStateException | ExpressionResolver.ExpressionResolutionServerException e) {
+                    deferFailureReporting(context, new ModelNode(e.getLocalizedMessage()));
+                } catch (OperationFailedException | ExpressionResolver.ExpressionResolutionUserException e) {
                     deferFailureReporting(context, e.getFailureDescription());
                 }
             }

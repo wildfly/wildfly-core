@@ -44,6 +44,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -2394,7 +2395,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return an {@link OperationFailedException} for the caller
      */
     @Message(id = 210, value = "Caught SecurityException attempting to resolve expression '%s' -- %s")
-    String noPermissionToResolveExpression(ModelNode toResolve, SecurityException e);
+    ExpressionResolver.ExpressionResolutionUserException noPermissionToResolveExpression(ModelNode toResolve, SecurityException e);
 
     /**
      * Creates an exception message indicating an expression could not be resolved due to no corresponding system property
@@ -2404,7 +2405,7 @@ public interface ControllerLogger extends BasicLogger {
      * @return an {@link OperationFailedException} for the caller
      */
     @Message(id = 211, value = "Cannot resolve expression '%s'")
-    OperationFailedException cannotResolveExpression(String toResolve);
+    ExpressionResolver.ExpressionResolutionUserException cannotResolveExpression(String toResolve);
 
     /**
      * Creates an exception indicating the resource is a duplicate.
@@ -3243,7 +3244,7 @@ public interface ControllerLogger extends BasicLogger {
     String unsupportedUsageOfExpression();
 
     @Message(id = 370, value="Incomplete expression: %s")
-    OperationFailedException incompleteExpression(String expression);
+    ExpressionResolver.ExpressionResolutionUserException incompleteExpression(String expression);
 
     @Message(id = 371, value="The element '%s' is no longer supported, please use '%s' instead")
     XMLStreamException unsupportedElement(QName name, @Param Location location, String supportedElement);

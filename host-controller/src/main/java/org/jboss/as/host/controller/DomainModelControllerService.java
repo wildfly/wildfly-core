@@ -110,6 +110,7 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.ImmutableCapabilityRegistry;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -327,7 +328,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
         super(executorService, null, environment.getProcessType(), runningModeControl, null, processState,
-                rootResourceDefinition, prepareStepHandler, new RuntimeExpressionResolver(), auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                rootResourceDefinition, prepareStepHandler, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
         this.environment = environment;
         this.runningModeControl = runningModeControl;
         this.processState = processState;
@@ -573,12 +574,19 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 new RuntimeCapabilityRegistration(PROCESS_STATE_NOTIFIER_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
         capabilityReg.registerCapability(
                 new RuntimeCapabilityRegistration(CONSOLE_AVAILABILITY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
+        RuntimeCapability<ExpressionResolver.ResolverExtensionRegistry> extRegCap =
+                RuntimeCapability.Builder.of(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME, (ExpressionResolver.ResolverExtensionRegistry) expressionResolver).build();
+        capabilityReg.registerCapability(
+                new RuntimeCapabilityRegistration(extRegCap, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
         rootRegistration.registerCapability(PATH_MANAGER_CAPABILITY);
         rootRegistration.registerCapability(EXECUTOR_CAPABILITY);
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
         rootRegistration.registerCapability(CONSOLE_AVAILABILITY_CAPABILITY);
+        rootRegistration.registerCapability(extRegCap);
 
         // Register the slave host info
         ResourceProvider.Tool.addResourceProvider(HOST_CONNECTION, new ResourceProvider() {

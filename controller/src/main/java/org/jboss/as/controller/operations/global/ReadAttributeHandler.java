@@ -266,31 +266,38 @@ public class ReadAttributeHandler extends GlobalOperationHandlers.AbstractMultiT
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             ModelNode unresolvedResult = context.hasResult() ? context.getResult().clone() : new ModelNode();
-            // For now, don't use the context to resolve, as we don't want to support vault resolution
-            // from a remote management client. The purpose of the vault is to require someone to have
-            // access to both the config (i.e. the expression) and to the vault itself in order to read, and
+            // Don't use the context to resolve, as we don't want to support secure expression resolution
+            // from a remote management client. The design idea of secure expressions is to require someone to have
+            // access to both the config (i.e. the expression) and to the backing store itself in order to read, and
             // allowing a remote user to use the management API to read defeats the purpose.
-            //ModelNode resolved = context.resolveExpressions(result);
-            // Instead we use a resolver that will not complain about unresolvable stuff (i.e. vault expressions),
+            // Instead we use a resolver that will not complain about unresolvable stuff (i.e. secure expressions),
             // simply returning them unresolved.
-            ModelNode answer = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(unresolvedResult);
-            if (!answer.equals(unresolvedResult)) {
+            ModelNode simpleAnswer = ExpressionResolver.SIMPLE_LENIENT.resolveExpressions(unresolvedResult);
+            if (!simpleAnswer.equals(unresolvedResult)) {
                 // SIMPLE_LENIENT will not resolve everything the context can, e.g. vault or credential store expressions.
-                // And we don't want to provide such resolution, as that kind of security-sensitive resolution should
-                // not escape the server process by being sent in a management op response. But if the true
-                // resolution differs from what SIMPLE_LENIENT did, we should just not resolve in our response and
+                // If the normal resolution using the OperationContext differs from what SIMPLE_LENIENT did, that
+                // tells us we're dealing with a secure expression and we should just not resolve in our response and
                 // include a warning to that effect.
-                ModelNode fullyResolved = context.resolveExpressions(unresolvedResult);
-                if (!answer.equals(fullyResolved)) {
-                    answer = unresolvedResult;
+                boolean secureExpression;
+                try {
+                    ModelNode fullyResolved = context.resolveExpressions(unresolvedResult);
+                    secureExpression = !simpleAnswer.equals(fullyResolved);
+                } catch (ExpressionResolver.ExpressionResolutionUserException | ExpressionResolver.ExpressionResolutionServerException e) {
+                    // either of these exceptions indicate a ResolverExtension regarded the expression
+                    // as relevant but failed to resolve it. We don't care about the failure, just the
+                    // fact that the string was relevant to the ResolverExtension.
+                    secureExpression = true;
+                }
+                if (secureExpression) {
                     context.addResponseWarning(Level.WARNING,
                             ControllerLogger.MGMT_OP_LOGGER.attributeUnresolvableUsingSimpleResolution(
                                     operation.get(NAME).asString(),
                                     context.getCurrentAddress().toCLIStyleString(),
                                     unresolvedResult));
+                } else {
+                    context.getResult().set(simpleAnswer);
                 }
             }
-            context.getResult().set(answer);
         }
     }
 

@@ -105,6 +105,13 @@ public final class Attachments {
      */
     public static final AttachmentKey<Function<String, String>> WFLY_DESCRIPTOR_EXPR_EXPAND_FUNCTION = AttachmentKey.create(Function.class);
 
+    /**
+     * Functions that can be used to resolve expressions found in deployment resources.
+     * Functions that cannot resolve a particular input must return null.
+     */
+    public static final AttachmentKey<AttachmentList<Function<String, String>>>
+            DEPLOYMENT_EXPRESSION_RESOLVERS = AttachmentKey.createList(Function.class);
+
     //
     // STRUCTURE
     //

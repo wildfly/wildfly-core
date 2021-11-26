@@ -646,7 +646,7 @@
                                         <exclude>org.jboss.as.test.manualmode.mgmt.elytron.ElytronModelControllerClientTestCase</exclude>
                                         
                                         <!--- remove a module after having closed the server -->
-                                        <exclude>org.jboss.as.test.manualmode.vault.CustomVaultInModuleTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.expressions.CredentialStoreExpressionsTestCase</exclude>
                                         
                                         <!-- admin mode -->
                                         <exclude>org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase</exclude>

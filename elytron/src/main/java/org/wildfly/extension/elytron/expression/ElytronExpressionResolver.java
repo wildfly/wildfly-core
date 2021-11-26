@@ -28,9 +28,10 @@ import java.util.Map;
 import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverExtension;
+import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.dmr.ModelNode;
 import org.wildfly.common.function.ExceptionBiConsumer;
 import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -42,7 +43,7 @@ import org.wildfly.security.credential.store.CredentialStoreException;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronExpressionResolver implements ExpressionResolver {
+public class ElytronExpressionResolver implements ExpressionResolverExtension {
 
     private static final String CREDENTIAL_STORE_API_CAPABILITY = "org.wildfly.security.credential-store-api";
 
@@ -60,21 +61,28 @@ public class ElytronExpressionResolver implements ExpressionResolver {
     public ElytronExpressionResolver(ExceptionBiConsumer<ElytronExpressionResolver, OperationContext, OperationFailedException> configurator) {
         this.configurator = configurator;
     }
+
     @Override
-    public ModelNode resolveExpressions(ModelNode node) throws OperationFailedException {
-        // We know this will fail but it is an internal bug if we come in this way.
-        return resolveExpressions(node, null);
+    public void initialize(OperationContext context) throws OperationFailedException {
+        ensureInitialised(null, context);
     }
 
     @Override
-    public ModelNode resolveExpressions(ModelNode node, OperationContext context) throws OperationFailedException {
-        checkNotNullParam("context", context);
+    public String resolveExpression(String fullExpression, OperationContext operationContext) {
+        checkNotNullParam("fullExpression", fullExpression);
+        checkNotNullParam("context", operationContext);
 
-        String fullExpression = node.asString();
         if (fullExpression.length() > 3) {
             String expression = fullExpression.substring(2, fullExpression.length() - 1);
 
-            ensureInitialised(fullExpression, context);
+            try {
+                ensureInitialised(fullExpression, operationContext);
+            } catch (OperationFailedException e) {
+                // Shouldn't happen. Any use that provides an OperationContext should have
+                // called initialize before trying to resolve. And ensureInitialized should not
+                // throw OFE if no OperationContext is provided
+                throw new IllegalStateException(e);
+            }
 
             if (expression.startsWith(completePrefix)) {
                 int delimiter = expression.indexOf(':', completePrefix.length());
@@ -88,12 +96,9 @@ public class ElytronExpressionResolver implements ExpressionResolver {
                     throw ROOT_LOGGER.invalidResolver(fullExpression);
                 }
 
-                ROOT_LOGGER.tracef("Attemting to decrypt expression '%s' using credential store '%s' and alias '%s'.",
+                ROOT_LOGGER.tracef("Attempting to decrypt expression '%s' using credential store '%s' and alias '%s'.",
                         fullExpression, resolverConfiguration.credentialStore, resolverConfiguration.alias);
-                ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context
-                        .getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, resolverConfiguration.getCredentialStore(),
-                                ExceptionFunction.class);
-                CredentialStore credentialStore = credentialStoreApi.apply(context);
+                CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), operationContext);
                 SecretKey secretKey;
                 try {
                     SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(),
@@ -106,13 +111,10 @@ public class ElytronExpressionResolver implements ExpressionResolver {
                 String token = expression.substring(expression.lastIndexOf(':') + 1);
 
                 try {
-                    String clearText = decrypt(token, secretKey);
-
-                    return new ModelNode(clearText);
+                    return decrypt(token, secretKey);
                 } catch (GeneralSecurityException e) {
                     throw ROOT_LOGGER.unableToDecryptExpression(fullExpression, e);
                 }
-
             }
         }
         return null;
@@ -130,9 +132,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
             throw ROOT_LOGGER.noResolverWithSpecifiedName(resolvedResolver);
         }
 
-        ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY,
-                resolverConfiguration.getCredentialStore(), ExceptionFunction.class);
-        CredentialStore credentialStore = credentialStoreApi.apply(context);
+        CredentialStore credentialStore = resolveCredentialStore(resolverConfiguration.getCredentialStore(), context);
         SecretKey secretKey;
         try {
             SecretKeyCredential credential = credentialStore.retrieve(resolverConfiguration.getAlias(), SecretKeyCredential.class);
@@ -141,7 +141,7 @@ public class ElytronExpressionResolver implements ExpressionResolver {
             }
             secretKey = credential.getSecretKey();
         } catch (CredentialStoreException e) {
-            throw ROOT_LOGGER.unableToLoadCredential(e);
+            throw new OperationFailedException(ROOT_LOGGER.unableToLoadCredential(e));
         }
 
         String cipherTextToken;
@@ -176,12 +176,18 @@ public class ElytronExpressionResolver implements ExpressionResolver {
         return this;
     }
 
-    private void ensureInitialised(String initialisingFor, OperationContext context) throws OperationFailedException {
+    // Package-protected so ExpressionResolverRuntimeHandler can initialize
+    // on behalf of the add op that adds the /subsystem=elytron/expression=encryption resource
+    void ensureInitialised(String initialisingFor, OperationContext context) throws OperationFailedException {
         if (initialised == false) {
 
             if (firstFailure != null) {
-                // We wrap the original Exception to ensure we have an appropriate stack trace on the
-                // subsequent error.
+                // We wrap the original OperationFaileException to ensure we have an appropriate stack trace on the
+                // subsequent error. Wrap with IllegalStateException as we don't want to repeatedly
+                // treat this failure as a user mistake; the user mistake was reported with the throw
+                // of the initial OFE. Don't wrap with ResolverExtensionException because that
+                // is only used if we tried to resolve an expression we know is appropriate for us,
+                // and this method is called before we know that.
                 throw ROOT_LOGGER.expressionResolverInitialisationAlreadyFailed(firstFailure);
             }
 
@@ -208,6 +214,58 @@ public class ElytronExpressionResolver implements ExpressionResolver {
                 }
             }
         }
+    }
+
+    /**
+     * Gets the CredentialStore provided by the management resource with the given name.
+     *
+     * @param credentialStore the credential store resource name. Cannot be {@code null}.
+     * @param operationContext OperationContext to use for capability resolution. Can be {@code null} if {@code serviceSupport} is not {@code null}
+     * @return the CredentialStore
+     *
+     * @throws ExpressionResolver.ExpressionResolutionUserException if the credential store is not initialized and a failure occurs initializing it
+     * @throws ExpressionResolver.ExpressionResolutionServerException if capability lookup is disabled due to being in Stage.MODEL,
+     *                               if there is no credential store resource with the given name or if there is one
+     *                               but the store wasn't initialized and no OperationContext was provided to
+     *                               initialize it. (Both would indicate program flaws; the former a flaw in validating
+     *                               the data in a ResolverConfiguration; the latter an unexpected call pattern where
+     *                               deployment resource expression resolution can occur before credential store resources
+     *                               have been initialized by their OperationStepHandler.)
+     */
+    @SuppressWarnings("unchecked")
+    private CredentialStore resolveCredentialStore(String credentialStore, OperationContext operationContext) {
+
+        ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> function;
+        RuntimeException toThrow;
+        try {
+            try {
+                function = operationContext.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStore, ExceptionFunction.class);
+            } catch (IllegalStateException re) {
+                if (operationContext.getCurrentStage() == OperationContext.Stage.MODEL) {
+                    // Assume ISE is because capability lookups are not allowed in Stage.MODEL
+                    throw ROOT_LOGGER.modelStageResolutionNotSupported(re);
+                } else {
+                    throw re;
+                }
+            }
+
+            return function.apply(operationContext);
+        } catch (ExpressionResolver.ExpressionResolutionServerException | ExpressionResolver.ExpressionResolutionUserException ree) {
+            // Initializing the CredentialStore can itself trigger expression resolution, which can fail. Just propagate those.
+            toThrow = ree;
+        } catch (OperationFailedException | RuntimeException e) {
+            // Wrap in one of the ExpressionResolver.ResolverExtension exception types
+            // so exception handlers know the expression was relevant to us
+            if (e instanceof OperationClientException) {
+                // Use ExpressionResolutionUserException to wrap user failures
+                toThrow = ROOT_LOGGER.unableToInitializeCredentialStore(credentialStore, e.getLocalizedMessage(), e);
+            } else {
+                // Use ExpressionResolutionServerException to wrap other failures
+                toThrow = ROOT_LOGGER.unableToResolveCredentialStore(credentialStore, e.getLocalizedMessage(), e);
+            }
+        }
+
+        throw toThrow;
     }
 
     public static class ResolverConfiguration {
