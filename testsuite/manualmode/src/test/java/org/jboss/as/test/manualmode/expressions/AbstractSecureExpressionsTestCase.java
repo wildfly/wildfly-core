@@ -20,8 +20,11 @@ package org.jboss.as.test.manualmode.expressions;
 
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.ATTR;
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.MODULE_NAME;
+import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.OUTPUT_PROPERTY;
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.PARAM_EXPRESSION;
+import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.PARAM_SYS_PROP;
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.PATH;
+import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.READ_SYS_PROP;
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.RESOLVE;
 
 import java.io.File;
@@ -40,6 +43,8 @@ import org.jboss.as.test.shared.SecureExpressionUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.ValueExpression;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.Test;
@@ -80,6 +85,42 @@ abstract class AbstractSecureExpressionsTestCase {
 
         op = createResolveExpressionOp(getInvalidExpression());
         ModelTestUtils.checkFailed(client.getControllerClient().execute(op));
+    }
+
+    /**
+     * Exercise deployment expression resolution via the test subsystem's custom DUP,
+     * which accesses the DeploymentUnit expression resolution facility, resolves a
+     * known expression, and sets a system property to the resolved value. The
+     * test subsystem resource provides a custom OSH that will return the system property value.
+     */
+    @Test
+    public void testDeploymentResolution() throws Exception {
+        ManagementClient client = containerController.getClient();
+
+        ModelNode op = Util.createOperation(READ_SYS_PROP.getName(), SUBSYSTEM_ADDRESS);
+        op.get(PARAM_SYS_PROP.getName()).set(OUTPUT_PROPERTY);
+        op.protect();
+
+        // Confirm correct initial system state
+        ModelNode result = client.executeForResult(op);
+        Assert.assertFalse(result.toString(), result.isDefined());
+
+        // The real test. Deploy to trigger resolution and the setting of the property, then check the property
+        String deploymentName = getClass().getSimpleName() + ".jar";
+        JavaArchive archive = ShrinkWrap.create(JavaArchive.class, deploymentName)
+                .add(new StringAsset("empty"), "empty.txt");
+        containerController.deploy(archive, deploymentName);
+        try {
+            result = client.executeForResult(op);
+            Assert.assertEquals(CLEAR_TEXT, result.asString());
+        } finally {
+            containerController.undeploy(deploymentName);
+        }
+
+        // Confirm we cleaned up the property. This isn't a test of
+        // production code, just a check on test tidiness
+        result = client.executeForResult(op);
+        Assert.assertFalse(result.toString(), result.isDefined());
     }
 
     /**
@@ -167,7 +208,9 @@ abstract class AbstractSecureExpressionsTestCase {
         jar.addClass(TestSecureExpressionsExtension.class)
                 .addClass(TestSecureExpressionsExtension.Parser.class)
                 .addClass(TestSecureExpressionsExtension.ResourceDescription.class)
+                .addClass(TestSecureExpressionsExtension.AddHandler.class)
                 .addClass(TestSecureExpressionsExtension.ResolveHandler.class)
+                .addClass(TestSecureExpressionsExtension.Processor.class)
                 .addAsServiceProvider(Extension.class, TestSecureExpressionsExtension.class);
 
         if (additionalModuleClasses != null) {

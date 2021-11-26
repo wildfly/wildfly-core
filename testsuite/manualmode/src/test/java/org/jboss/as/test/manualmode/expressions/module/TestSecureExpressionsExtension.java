@@ -22,9 +22,11 @@ import static org.jboss.as.controller.PersistentResourceXMLDescription.builder;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
-import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
@@ -46,6 +48,15 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.AbstractDeploymentChainStep;
+import org.jboss.as.server.DeploymentProcessorTarget;
+import org.jboss.as.server.deployment.Attachments;
+import org.jboss.as.server.deployment.DeploymentPhaseContext;
+import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
+import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 
@@ -60,6 +71,8 @@ public class TestSecureExpressionsExtension implements Extension {
 
     public static final String MODULE_NAME = "test.secure.expressions.module";
     public static final String SUBSYSTEM_NAME = "test-secure-expressions";
+    public static final String INPUT_PROPERTY = "test.secure.expression.input";
+    public static final String OUTPUT_PROPERTY = "test.secure.expression.output";
 
 
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
@@ -115,7 +128,7 @@ public class TestSecureExpressionsExtension implements Extension {
 
         public ResourceDescription() {
             super(new SimpleResourceDefinition.Parameters(PATH, new NonResolvingResourceDescriptionResolver())
-                    .setAddHandler(new AbstractAddStepHandler(ATTR))
+                    .setAddHandler(new AddHandler())
                     .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
         }
 
@@ -131,6 +144,31 @@ public class TestSecureExpressionsExtension implements Extension {
             return Collections.singleton(ATTR);
         }
 
+    }
+
+    public static final class AddHandler extends AbstractBoottimeAddStepHandler {
+
+        private AddHandler() {
+            super(ATTR);
+        }
+
+        @Override
+        protected void performBoottime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+
+            // Clean up any left behind trash
+            System.clearProperty(OUTPUT_PROPERTY);
+
+            System.setProperty(INPUT_PROPERTY, operation.get(ATTR.getName()).asString());
+
+            if (context.isNormalServer()) {
+                context.addStep(new AbstractDeploymentChainStep() {
+                    @Override
+                    protected void execute(DeploymentProcessorTarget processorTarget) {
+                        processorTarget.addDeploymentProcessor(SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_EE_FUNCTIONAL_RESOLVERS, new Processor());
+                    }
+                }, OperationContext.Stage.RUNTIME);
+            }
+        }
     }
 
     public static class ResolveHandler implements OperationStepHandler {
@@ -163,5 +201,34 @@ public class TestSecureExpressionsExtension implements Extension {
             }
         }
 
+    }
+
+    public static final class Processor implements DeploymentUnitProcessor {
+
+        @Override
+        public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
+
+            String secureExpressionInput = System.getProperty(INPUT_PROPERTY);
+            if (secureExpressionInput == null) throw new IllegalStateException("null " + INPUT_PROPERTY);
+
+            // Sanity check
+            String secureExpressionOutput = System.getProperty(OUTPUT_PROPERTY);
+            if (secureExpressionOutput != null) throw new IllegalStateException(OUTPUT_PROPERTY + " is already defined");
+
+            log.fine("Resolving " + secureExpressionInput + " for " + phaseContext.getDeploymentUnit().getName());
+
+            List<Function<String, String>> functions = phaseContext.getDeploymentUnit().getAttachment(Attachments.DEPLOYMENT_EXPRESSION_RESOLVERS);
+            for (Function<String, String> funct : functions) {
+                secureExpressionOutput = funct.apply(secureExpressionInput);
+                if (secureExpressionOutput != null) {
+                    System.setProperty(OUTPUT_PROPERTY, secureExpressionOutput);
+                }
+            }
+        }
+
+        @Override
+        public void undeploy(DeploymentUnit context) {
+            System.clearProperty(OUTPUT_PROPERTY);
+        }
     }
 }
