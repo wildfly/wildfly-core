@@ -46,7 +46,9 @@ public class LayersTestCase {
         "org.jboss.as.patching",
         "org.jboss.as.patching.cli",
         // Not currently used internally
-        "org.wildfly.event.logger"
+        "org.wildfly.event.logger",
+        // wildfly-elytron-http-stateful-basic
+        "org.wildfly.security.http.sfbasic"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
