@@ -55,6 +55,11 @@
         <token-realm name="OAuth2Realm" principal-claim="sub">
             <oauth2-introspection client-id="a" client-secret="b" introspection-url="https://localhost/token/introspect" client-ssl-context="ClientCaSslContext" host-name-verification-policy="ANY" />
         </token-realm>
+
+        <jaas-realm name="myJaasRealm"  entry="${jaas.realm.login.context.entry:Entry1}" >
+            <file path="${path.to.jaas.config.file:src/test/resources/org/wildfly/extension/elytron/jaas-login.config}"/>
+        </jaas-realm>
+
     </security-realms>
 
     <mappers>
