@@ -56,7 +56,7 @@ if not exist "%JBOSS_HOME%\jboss-modules.jar" (
   goto END
 )
 
-set JBOSS_CLI=%JBOSS_HOME%\bin\jboss-cli.bat
+set "JBOSS_CLI=%JBOSS_HOME%\bin\jboss-cli.bat"
 set "DEPENDENCIES=java.logging,org.apache.commons.lang3,org.apache.commons.cli,org.apache.sshd,org.jboss.logging,org.jboss.logmanager,org.slf4j,org.wildfly.security.elytron-private,org.wildfly.common"
 set "MODULE_REMOVE_COMMAND=module remove --name=org.wildfly.security.elytron-tool-addons"
 set "MODULE_ADD_COMMAND=module add --name=org.wildfly.security.elytron-tool-addons --resources=%ELYTRON_TOOL_ADDONS% --dependencies=%DEPENDENCIES%"
@@ -64,9 +64,9 @@ set "MODULE_ADD_COMMAND=module add --name=org.wildfly.security.elytron-tool-addo
 if not "x%ELYTRON_TOOL_ADDONS%" == "x" (
   if exist "%JBOSS_MODULEPATH%\org\wildfly\security\elytron-tool-addons" (
 
-    call %JBOSS_CLI% --command=^"%MODULE_REMOVE_COMMAND%^" > nul
+    call "%JBOSS_CLI%" --command=^"%MODULE_REMOVE_COMMAND%^" > nul
   )
-  call %JBOSS_CLI% --command=^"%MODULE_ADD_COMMAND%^" > nul
+  call "%JBOSS_CLI%" --command=^"%MODULE_ADD_COMMAND%^" > nul
 )
 
 "%JAVA%" %JAVA_OPTS% ^

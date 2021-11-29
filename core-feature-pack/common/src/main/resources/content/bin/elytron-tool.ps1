@@ -25,17 +25,17 @@ if ($env:ELYTRON_TOOL_ADDONS) {
   $JBOSS_CLI=$JBOSS_HOME + "\bin\jboss-cli.ps1"
   # Same deps as elytron-tool module
   $DEPENDENCIES="java.logging,org.apache.commons.lang3,org.apache.commons.cli,org.apache.sshd,org.jboss.logging,org.jboss.logmanager,org.slf4j,org.wildfly.security.elytron-private,org.wildfly.common"
-  if(Test-Path -Path ($JBOSS_MODULEPATH+"\org\wildfly\security\elytron-tool-addons")) {
+  if(Test-Path -Path ("$JBOSS_MODULEPATH"+"\org\wildfly\security\elytron-tool-addons")) {
     $MODULE_REMOVE_COMMAND="module remove --name=org.wildfly.security.elytron-tool-addons";
-    & $JBOSS_CLI --command='"'$MODULE_REMOVE_COMMAND'"'
+    & "$JBOSS_CLI" --command='"'$MODULE_REMOVE_COMMAND'"'
   }
   $MODULE_ADD_COMMAND="module add --name=org.wildfly.security.elytron-tool-addons --resources=$env:ELYTRON_TOOL_ADDONS --dependencies=$DEPENDENCIES"
-  & $JBOSS_CLI --command='"'$MODULE_ADD_COMMAND'"'
+  & "$JBOSS_CLI" --command='"'$MODULE_ADD_COMMAND'"'
 }
 
 # Sample JPDA settings for remote socket debugging
 #$JAVA_OPTS+="-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y"
 
-& $JAVA $JAVA_OPTS -jar $JBOSS_HOME\jboss-modules.jar -mp $JBOSS_MODULEPATH org.wildfly.security.elytron-tool $args
+& $JAVA $JAVA_OPTS -jar "$JBOSS_HOME\jboss-modules.jar" -mp "$JBOSS_MODULEPATH" org.wildfly.security.elytron-tool $args
 
 Env-Clean-Up
