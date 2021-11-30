@@ -15,7 +15,7 @@ if ($ARGS.Count -gt 0){
   $ELYTRON_TOOL_OPTS+=$ARGS[1..$ARGS.Count]
 }
 
-$JAVA_OPTS = @()
+$JAVA_OPTS = $Env:JAVA_OPTS
 
 if (! $env:JBOSS_MODULEPATH) {
   $JBOSS_MODULEPATH=$JBOSS_HOME + "\modules"
