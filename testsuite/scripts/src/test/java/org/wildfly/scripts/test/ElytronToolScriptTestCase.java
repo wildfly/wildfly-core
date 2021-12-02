@@ -23,12 +23,10 @@ import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@Ignore("https://issues.jboss.org/browse/WFCORE-5729")
 public class ElytronToolScriptTestCase extends ScriptTestCase {
 
     public ElytronToolScriptTestCase() {
@@ -39,7 +37,7 @@ public class ElytronToolScriptTestCase extends ScriptTestCase {
     void testScript(final ScriptProcess script) throws InterruptedException, TimeoutException, IOException {
         try {
             // Read an attribute
-            script.start("mask", "--salt", "12345678", "--iteration", "123", "--secret", "supersecretstorepassword");
+            script.start(MAVEN_JAVA_OPTS, "mask", "--salt", "12345678", "--iteration", "123", "--secret", "supersecretstorepassword");
             Assert.assertNotNull("The process is null and may have failed to start.", script);
             Assert.assertTrue("The process is not running and should be", script.isAlive());
 

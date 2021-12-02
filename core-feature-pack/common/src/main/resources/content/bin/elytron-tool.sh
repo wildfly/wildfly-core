@@ -70,15 +70,31 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
+if [ "x$JBOSS_MODULEPATH" = "x" ]; then
+    JBOSS_MODULEPATH="$JBOSS_HOME/modules"
+fi
+
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
     JBOSS_HOME=`cygpath --path --windows "$JBOSS_HOME"`
+    JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
+    JBOSS_MODULEPATH=`cygpath --path --windows "$JBOSS_MODULEPATH"`
 fi
 
 if [ "x$ELYTRON_TOOL_ADDONS" != "x" ]; then
-    ELYTRON_TOOL_SEP=:
-fi    
+    JBOSS_CLI="$JBOSS_HOME/bin/jboss-cli.sh"
+    # Same deps as elytron-tool module
+    DEPENDENCIES="java.logging,org.apache.commons.lang3,org.apache.commons.cli,org.apache.sshd,org.jboss.logging,org.jboss.logmanager,org.slf4j,org.wildfly.security.elytron-private,org.wildfly.common"
+    if [ -d "$JBOSS_MODULEPATH/org/wildfly/security/elytron-tool-addons" ]; then
+        MODULE_REMOVE_COMMAND="module remove --name=org.wildfly.security.elytron-tool-addons";
+        $JBOSS_CLI --command="$MODULE_REMOVE_COMMAND" >/dev/null 2>&1
+    fi
+    MODULE_ADD_COMMAND="module add --name=org.wildfly.security.elytron-tool-addons --resources=$ELYTRON_TOOL_ADDONS --dependencies=$DEPENDENCIES"
+    $JBOSS_CLI --command="$MODULE_ADD_COMMAND" >/dev/null 2>&1
+fi
 
-eval \"$JAVA\" $JAVA_OPTS -cp \""$JBOSS_HOME"/bin/wildfly-elytron-tool.jar$ELYTRON_TOOL_SEP$ELYTRON_TOOL_ADDONS\" \
-         org.wildfly.security.tool.ElytronTool \
+eval \"$JAVA\" $JAVA_OPTS \
+         -jar \""$JBOSS_HOME"/jboss-modules.jar\" \
+         -mp \""${JBOSS_MODULEPATH}"\" \
+         org.wildfly.security.elytron-tool \
          '{"$0"}"$@"'
