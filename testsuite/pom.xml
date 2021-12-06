@@ -138,7 +138,7 @@
         <surefire.memory.args>-Xmx512m -XX:MetaspaceSize=128m</surefire.memory.args>
         <surefire.jpda.args></surefire.jpda.args>
         <as.debug.port>8787</as.debug.port>
-        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist} ${surefire.jacoco.args}</surefire.system.args>
+        <surefire.system.args>${surefire.memory.args} ${surefire.jpda.args} ${modular.jdk.args} ${modular.jdk.props} -Djboss.dist=${jboss.dist} ${surefire.jacoco.args} -Djava.io.tmpdir=${project.build.directory}</surefire.system.args>
         <surefire.forked.process.timeout>1500</surefire.forked.process.timeout>
 
         <!-- If servers should be killed before the test suite is run-->

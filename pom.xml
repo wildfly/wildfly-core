@@ -106,7 +106,7 @@
         <!-- Surefire args -->
         <surefire.jpda.args></surefire.jpda.args>
         <surefire.system.args>${modular.jdk.args} ${modular.jdk.props} -ea -Duser.region=US -Duser.language=en -Duser.timezone=America/Chicago -XX:MaxMetaspaceSize=256m
-            ${surefire.jpda.args} ${surefire.jacoco.args}
+            ${surefire.jpda.args} ${surefire.jacoco.args} -Djava.io.tmpdir=${project.build.directory}
         </surefire.system.args>
         <test.level>INFO</test.level>
 
@@ -2269,7 +2269,7 @@
                 <!-- match 9+ -->
             </activation>
             <properties>
-                <!-- 
+                <!--
                     java.base/sun.security.ssl - Added as TLS configuration within Elytron loads SunJSSE provider directly.
                 -->
                 <modular.jdk.args>
