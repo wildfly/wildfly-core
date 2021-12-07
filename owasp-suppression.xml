@@ -19,7 +19,7 @@
         <cve>CVE-1999-1125</cve>
     </suppress>
 
-    <!-- [wildfly-core] wildfly 21.0.0 is shipped with netty 4.1.51 -->
+    <!-- [wildfly-core] the suppressed CVEs relate to netty version 4.1.43 comes from mockserver dependency, which is a part of a testsuite.  -->
     <suppress>
         <notes><![CDATA[
    file name: netty-buffer-4.1.43.Final.jar
@@ -33,6 +33,11 @@
         <cve>CVE-2019-20445</cve>
         <cve>CVE-2020-11612</cve>
         <cve>CVE-2020-7238</cve>
+        <cve>CVE-2021-21290</cve>
+        <cve>CVE-2021-21295</cve>
+        <cve>CVE-2021-21409</cve>
+        <cve>CVE-2021-37136</cve>
+        <cve>CVE-2021-37137</cve>
     </suppress>
 
     <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
