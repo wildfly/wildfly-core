@@ -32,6 +32,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.Server;
@@ -48,6 +49,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 @RunWith(WildflyTestRunner.class)
 @ServerControl(manual = true)
+@Ignore
 public class YamlExtensionTestCase {
 
     private static final ModelNode READ_CONFIG = Util.createEmptyOperation("read-config-as-xml", PathAddress.EMPTY_ADDRESS);
