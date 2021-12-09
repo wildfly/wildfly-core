@@ -6,10 +6,6 @@
 
     <feature-group name="unsecured-management"/>
 
-    <feature spec="core-service.management.access.identity">
-        <param name="security-domain" value="ManagementDomain"/>
-    </feature>
-
     <feature spec="core-service.management.management-interface.http-interface">
         <param name="socket-binding" value="management-http"/>
         <param name="http-authentication-factory" value="management-http-authentication"/>

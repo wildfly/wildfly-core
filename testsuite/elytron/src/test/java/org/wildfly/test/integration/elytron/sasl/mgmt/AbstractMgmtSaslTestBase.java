@@ -286,8 +286,7 @@ public abstract class AbstractMgmtSaslTestBase {
     }
 
     protected void assertDigestMechPassWhoAmI(String mechanismName, String digestAlg) {
-        // as the "digest-*" users are not in the ManagementFsRealm, the management identity will be "anonymous" here
-        createValidConfigForMechanism(mechanismName, digestAlg).run(() -> assertWhoAmI("anonymous"));
+        createValidConfigForMechanism(mechanismName, digestAlg).run(() -> assertWhoAmI(digestAlg));
     }
 
     /**
