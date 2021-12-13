@@ -168,7 +168,7 @@
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
         <version.junit>4.13.1</version.junit>
-        <version.log4j>1.2.17</version.log4j>
+        <version.log4j>2.12.1</version.log4j>
         <version.org.aesh>2.4</version.org.aesh>
         <version.org.aesh-extensions>1.8</version.org.aesh-extensions>
         <version.org.aesh-readline>2.2</version.org.aesh-readline>
