@@ -55,6 +55,13 @@ public enum ModelTestControllerVersion {
     @Deprecated
     EAP_7_3_0("7.3.0.GA-redhat-00004", true, "18.0.0", "10.1.2.Final-redhat-00001", "7.3.0"),
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
+
+    // https://issues.redhat.com/browse/WFCORE-5753
+    // Once EAP XP 4 is out, we need to replace the following live with
+    // EAP_XP_4("4.0.0.GA-redhat-0000x", true, "24.0.0", "18.0.0.Final-redhat-0000x", "xp4")
+    // We will also need to remove the *-wf26 files in wildfly-legacy-test and replace them with *-xp4 ones
+    // generated from EAP 7.4.0 with XP 4 installed
+    EAP_XP_4("26.0.0.Beta1", false, "25.0.0", "18.0.0.Final", "wf26")
     ;
 
     private final String mavenGavVersion;
