@@ -22,12 +22,14 @@ import static org.wildfly.extension.elytron.ElytronExtension.isServerOrHostContr
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.ObjectListAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
@@ -60,12 +62,12 @@ import org.wildfly.extension.elytron.expression.ExpressionResolverRuntimeHandler
  */
 class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
+    public static final Pattern INITIAL_PATTERN = Pattern.compile("\\$\\{.+::.*:.+}");
+
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER =
             ElytronExtension.getResourceDescriptionResolver(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION);
 
-    private static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
-            "org.wildfly.management.expression-resolver-extension-registry";
     /*
      * As this resource is attempting to make available an ExpressionResolver for use at runtime we need all values to be known before
      * first use so the use of expressions is disabled on this resource.
@@ -181,7 +183,7 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
             .setResolverConfigurations(resolverConfigurations);
     }
 
-    static ResourceDefinition getExpressionResolverDefinition(PathAddress parentAddress) {
+    static ResourceDefinition getExpressionResolverDefinition(PathAddress parentAddress, AtomicReference<ExpressionResolverExtension> resolverRef) {
         final PathAddress resourceAddress = parentAddress.append(PathElement.pathElement(ElytronDescriptionConstants.EXPRESSION, ElytronDescriptionConstants.ENCRYPTION));
 
         ElytronExpressionResolver expressionResolver = new ElytronExpressionResolver(
@@ -190,8 +192,8 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
                 .Builder.<ExpressionResolverExtension>of(EXPRESSION_RESOLVER_CAPABILITY, false, expressionResolver)
                 .build();
 
-        AbstractAddStepHandler add = new ExpressionResolverAddHandler(expressionResolverRuntimeCapability);
-        OperationStepHandler remove = new ExpressionResolverRemoveHandler(add, expressionResolverRuntimeCapability);
+        AbstractAddStepHandler add = new ExpressionResolverAddHandler(expressionResolverRuntimeCapability, resolverRef);
+        OperationStepHandler remove = new ExpressionResolverRemoveHandler(expressionResolverRuntimeCapability, resolverRef);
 
         return new ExpressionResolverResourceDefinition(add, remove, expressionResolverRuntimeCapability);
     }
@@ -199,55 +201,56 @@ class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
     private static class ExpressionResolverAddHandler extends BaseAddHandler {
 
         private final ElytronExpressionResolver expressionResolver;
+        private final AtomicReference<ExpressionResolverExtension> resolverRef;
 
-        ExpressionResolverAddHandler(RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
+        ExpressionResolverAddHandler(RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability,
+                                     AtomicReference<ExpressionResolverExtension> resolverRef) {
             super(expressionResolverRuntimeCapability, ATTRIBUTES);
-            expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
+            this.expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
+            this.resolverRef = resolverRef;
         }
 
         @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
+        protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {
+            super.populateModel(context, operation, resource);
+            resolverRef.set(expressionResolver);
         }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
             ExpressionResolverRuntimeHandler.initializeResolver(context);
-
-            ExpressionResolver.ResolverExtensionRegistry registry =
-                    context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
-                            ExpressionResolver.ResolverExtensionRegistry.class);
-            registry.addResolverExtension(expressionResolver);
         }
 
     }
 
-    private static class ExpressionResolverRemoveHandler extends TrivialCapabilityServiceRemoveHandler {
+    private static class ExpressionResolverRemoveHandler extends AbstractRemoveStepHandler implements ElytronOperationStepHandler {
 
         private final ElytronExpressionResolver expressionResolver;
+        private final AtomicReference<ExpressionResolverExtension> resolverRef;
 
-        ExpressionResolverRemoveHandler(AbstractAddStepHandler add, RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability) {
-            super(add, expressionResolverRuntimeCapability);
-            expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
+        ExpressionResolverRemoveHandler(RuntimeCapability<ExpressionResolverExtension> expressionResolverRuntimeCapability,
+                                        AtomicReference<ExpressionResolverExtension> resolverRef) {
+            super(expressionResolverRuntimeCapability);
+            this.expressionResolver = (ElytronExpressionResolver) expressionResolverRuntimeCapability.getRuntimeAPI();
+            this.resolverRef = resolverRef;
         }
 
         @Override
-        protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource)
-                throws OperationFailedException {
-            super.recordCapabilitiesAndRequirements(context, operation, resource);
+        protected boolean requiresRuntime(final OperationContext context) {
+            return isServerOrHostController(context);
         }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
             if (context.isResourceServiceRestartAllowed()) {
-                ExpressionResolver.ResolverExtensionRegistry registry =
-                        context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
-                                ExpressionResolver.ResolverExtensionRegistry.class);
-                registry.removeResolverExtension(expressionResolver);
+                resolverRef.set(null);
             }
-            super.performRuntime(context, operation, model);
+        }
+
+        @Override
+        protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+            resolverRef.set(this.expressionResolver);
         }
 
     }

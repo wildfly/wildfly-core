@@ -36,7 +36,7 @@ public final class DeploymentExpressionResolverProcessor implements DeploymentUn
         DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         CapabilityServiceSupport serviceSupport = deploymentUnit.getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
         try {
-            final ElytronExpressionResolver resolver = serviceSupport.getCapabilityRuntimeAPI("org.wildfly.controller.expression-resolver", ElytronExpressionResolver.class);
+            final ElytronExpressionResolver resolver = serviceSupport.getCapabilityRuntimeAPI("org.wildfly.security.expression-resolver", ElytronExpressionResolver.class);
             deploymentUnit.addToAttachmentList(Attachments.DEPLOYMENT_EXPRESSION_RESOLVERS, (s) -> resolver.resolveDeploymentExpression(s, serviceSupport));
         } catch (CapabilityServiceSupport.NoSuchCapabilityException e) {
             // /subsystem=elytron/expression=encryption resource is not present, so there's nothing to do.

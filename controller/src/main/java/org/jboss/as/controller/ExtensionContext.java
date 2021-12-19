@@ -23,6 +23,9 @@
 package org.jboss.as.controller;
 
 
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+
 import org.jboss.as.controller.services.path.PathManager;
 
 /**
@@ -144,6 +147,65 @@ public interface ExtensionContext {
      */
     @Deprecated
     SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated);
+
+    /**
+     * Registers that the extension <strong>may</strong> provide an {@link ExpressionResolverExtension} if one of its
+     * subsystems is appropriately configured. Calling this informs the management kernel that the resolver extension
+     * may be installed at some point and provides a supplier via which the resolver extension can be obtained. It also
+     * instructs the management kernel as to how to handle expression strings that might be of interest to the
+     * resolver extension if it were configured.
+     * <p>
+     * Once this is invoked, the kernel expression resolver will begin calling the given {@code supplier} whenever it
+     * needs to resolve an expression string. If it returns a non-null value, the returned {@link ExpressionResolverExtension}
+     * will be invoked to ensure it is {@link ExpressionResolverExtension#initialize(OperationContext) initialized} and
+     * to try and {@link ExpressionResolverExtension#resolveExpression(String, OperationContext) resolve the expression string.}
+     * </p>
+     * <p>
+     * If the given {@code supplier} returns [@code null}, that indicates the resolver extension has not yet been
+     * configured (and perhaps never will be.) The management kernel resolver will however continue to account for the
+     * resolver extension in the following ways:
+     * <ol>
+     *     <li>It will check if any unresolved expression string matches the provided {@code expressionPatterns}. If not
+     *     no further action is taken with respect to this resolver extension.</li>
+     *     <li>If it does match, and the expression resolution is occurring in {@link OperationContext.Stage#MODEL}, an
+     *     exception will be thrown. The effect of this is calling this method disables {@code Stage.MODEL} resolution
+     *     of expressions that match the pattern. Resolving in Stage.MODEL is generally an anti-pattern though, although
+     *     there are cases where it is attempted, particular with {@code system-property} resources.</li>
+     *     <li>If it does match and the expression resolution is occurring <strong>after</strong> {@link OperationContext.Stage#MODEL},
+     *     the behavior depends on the provided {@code requiresRuntimeResolution} parameter. If {@code true}, an
+     *     exception will be thrown, as the required resolution could not be performed. If {@code false}, no
+     *     resolution will be attempted and the overall resolution will continue on. Setting this to false allows
+     *     expressions that match the pattern but which aren't definitely meant for handling by the resolver extension
+     *     to still be processed.</li>
+     * </ol>
+     * </p>
+     * <p>
+     * Note that if multiple callers register resolver extensions, the management kernel will apply the above logic to
+     * each in turn until one provides a resolved string or all have been given an opportunity to try. Only when all
+     * have been given an opportunity to try will any exception resulting from one of the attempts be propagated. If none
+     * provide a resolved string, but none throw an exception, the expression resolution will move on to trying
+     * the core management kernel expression resolution mechanism.
+     * </p>
+     *
+     * @param supplier function to be checked during expression resolution to determine if the resolver extension
+     *                 is available. Supplier should return {@code null} if the resolver extension isn't actually configured
+     *                 by a subsystem. The supplier itself cannot be {@code null}.
+     * @param expressionPattern if the {@code supplier} returns {@code null}, the pattern the kernel expression resolver
+     *                          should use to determine if a given expression string would be of interest to the
+     *                          resolver extension if it was available.
+     * @param requiresRuntimeResolution {@code true} if the kernel resolver should throw an expression resolution
+     *                                  exception if the {@code supplier} returns {@code null}, the expression string
+     *                                  to resolves matches the given {@code expressionPattern}, and the resolution
+     *                                  is occuring outside of {@link OperationContext.Stage#MODEL}.
+     */
+    default void registerExpressionResolverExtension(Supplier<ExpressionResolverExtension> supplier, Pattern expressionPattern,
+                                                     boolean requiresRuntimeResolution) {
+        // The only actual impl of this interface in the WildFly Core / WildFly code overrides and implements this.
+        // If there are custom impls out there used for tests and those tests call this method, they'll need to override.
+        // The method has a default impl because if there are custom impls for tests (not likely) its reasonably likely
+        // that those tests will not result in this method being called.
+        throw new UnsupportedOperationException();
+    }
 
     /**
      * Gets the type of this context.

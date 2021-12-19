@@ -275,6 +275,8 @@ class Capabilities {
             .Builder.of(JACC_POLICY_CAPABILITY, false, Policy.class)
             .build();
 
+    static final String EXPRESSION_RESOLVER_CAPABILITY = CAPABILITY_BASE + "expression-resolver";
+
     /**
      * Requirements, capabilities from other subsystems.
      */
@@ -283,7 +285,5 @@ class Capabilities {
      * Required by the {@link JdbcRealmDefinition}.
      */
     static final String DATA_SOURCE_CAPABILITY_NAME = "org.wildfly.data-source";
-
-    static final String EXPRESSION_RESOLVER_CAPABILITY = "org.wildfly.controller.expression-resolver";
 
 }

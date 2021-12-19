@@ -36,17 +36,22 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.ModelVersionRange;
 import org.jboss.as.controller.NotificationDefinition;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -109,7 +114,7 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  * </ul>
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class ExtensionRegistry {
+public final class ExtensionRegistry {
 
     // Hack to restrict the extensions to which we expose ExtensionContextSupplement
     private static final Set<String> legallySupplemented;
@@ -124,6 +129,7 @@ public class ExtensionRegistry {
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
+    private volatile ExpressionResolver.ResolverExtensionRegistry resolverExtensionRegistry;
 
     private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<String, ExtensionInfo>();
     // subsystem -> extension
@@ -184,6 +190,10 @@ public class ExtensionRegistry {
      */
     public void setPathManager(final PathManager pathManager) {
         this.pathManager = pathManager;
+    }
+
+    public void setResolverExtensionRegistry(ExpressionResolver.ResolverExtensionRegistry registry) {
+        this.resolverExtensionRegistry = registry;
     }
 
     public SubsystemInformation getSubsystemInfo(final String name) {
@@ -333,6 +343,11 @@ public class ExtensionRegistry {
         if (extension != null) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (extension) {
+
+                if (extension.expressionResolverExtension != null) {
+                    resolverExtensionRegistry.removeResolverExtension(extension.expressionResolverExtension);
+                }
+
                 Set<String> subsystemNames = extension.subsystems.keySet();
 
                 final boolean dcExtension = processType.isHostController() ?
@@ -582,6 +597,7 @@ public class ExtensionRegistry {
             return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
         }
 
+        @Override
         public SubsystemRegistration registerSubsystem(String name, ModelVersion version, boolean deprecated) {
             assert name != null : "name is null";
             checkNewSubystem(extension.extensionModuleName, name);
@@ -597,6 +613,23 @@ public class ExtensionRegistry {
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
             return result;
+        }
+
+        @Override
+        public void registerExpressionResolverExtension(Supplier<ExpressionResolverExtension> supplier, Pattern expressionPattern,
+                                                        boolean requireRuntimeResolution) {
+
+            if (resolverExtensionRegistry == null) {
+                if (extensionRegistryType.getContextType() != ContextType.DOMAIN) {
+                    // some test cases might not configure a registry,
+                    // but they need to if they will use an extension that registers one
+                    throw new IllegalStateException();
+                } // else we don't use ExpressionResolverExtension's from extension when processing the domain config
+            } else {
+                this.extension.expressionResolverExtension =
+                        new FutureExpressionResolverExtension(supplier, expressionPattern, requireRuntimeResolution);
+                resolverExtensionRegistry.addResolverExtension(this.extension.expressionResolverExtension);
+            }
         }
 
         @Override
@@ -832,6 +865,7 @@ public class ExtensionRegistry {
         private final String extensionModuleName;
         private XMLMapper xmlMapper;
         private ProfileParsingCompletionHandler parsingCompletionHandler;
+        private volatile ExpressionResolverExtension expressionResolverExtension;
 
         public ExtensionInfo(String extensionModuleName) {
             this.extensionModuleName = extensionModuleName;
@@ -1226,4 +1260,39 @@ public class ExtensionRegistry {
             return false;
         }
     };
+
+    private static final class FutureExpressionResolverExtension implements ExpressionResolverExtension {
+
+        private final Pattern expressionPattern;
+        private final Supplier<ExpressionResolverExtension> delegateSupplier;
+        private final boolean requireRuntimeDelegate;
+
+        private FutureExpressionResolverExtension(Supplier<ExpressionResolverExtension> delegateSupplier, Pattern expressionPattern,
+                                                 boolean requireRuntimeDelegate) {
+            this.delegateSupplier = delegateSupplier;
+            this.expressionPattern = expressionPattern;
+            this.requireRuntimeDelegate = requireRuntimeDelegate;
+        }
+
+        @Override
+        public void initialize(OperationContext context) throws OperationFailedException {
+            ExpressionResolverExtension delegate = delegateSupplier.get();
+            if (delegate != null) {
+                delegate.initialize(context);
+            } // else we have no initialization logic of our own
+        }
+
+        @Override
+        public String resolveExpression(String expression, OperationContext context) {
+            ExpressionResolverExtension delegate = delegateSupplier.get();
+            if (delegate != null) {
+                return delegate.resolveExpression(expression, context);
+            } else if (expressionPattern.matcher(expression).matches()){
+                if (context.getCurrentStage() == OperationContext.Stage.MODEL || requireRuntimeDelegate) {
+                    throw ControllerLogger.ROOT_LOGGER.cannotResolveExpression(expression);
+                }
+            }
+            return null;
+        }
+    }
 }

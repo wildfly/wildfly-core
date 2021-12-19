@@ -20,8 +20,10 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
+import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
@@ -153,10 +155,12 @@ public class ElytronExtension implements Extension {
         // Elytron is expected to be used everywhere.
         subsystemRegistration.setHostCapable();
 
-        final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(ElytronDefinition.INSTANCE);
+        AtomicReference<ExpressionResolverExtension> resolverRef = new AtomicReference<>();
+        final ManagementResourceRegistration registration = subsystemRegistration.registerSubsystemModel(new ElytronDefinition(resolverRef));
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
-
         subsystemRegistration.registerXMLElementWriter(() -> new ElytronSubsystemParser15_0());
+
+        context.registerExpressionResolverExtension(resolverRef::get, ExpressionResolverResourceDefinition.INITIAL_PATTERN, false);
     }
 
     @SuppressWarnings("unchecked")
