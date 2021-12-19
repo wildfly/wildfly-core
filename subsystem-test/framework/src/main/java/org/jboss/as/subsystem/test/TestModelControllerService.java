@@ -99,6 +99,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
            this.additionalInit = additionalInit;
            this.controllerInitializer = controllerInitializer;
            this.extensionRegistry = extensionRegistry;
+           if (expressionResolver instanceof ExpressionResolver.ResolverExtensionRegistry) {
+               extensionRegistry.setResolverExtensionRegistry((ExpressionResolver.ResolverExtensionRegistry) expressionResolver);
+           }
            this.runningModeControl = runningModeControl;
            this.registerTransformers = registerTransformers;
 

@@ -28,6 +28,7 @@ import java.util.Set;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.ExpressionResolverImpl;
+import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
@@ -41,8 +42,6 @@ import org.jboss.logging.Logger;
 public class RuntimeExpressionResolver extends ExpressionResolverImpl implements ExpressionResolver.ResolverExtensionRegistry {
 
     private static final Logger log = Logger.getLogger(RuntimeExpressionResolver.class);
-
-    private static final String EXPRESSION_RESOLVER_CAPABILITY = "org.wildfly.controller.expression-resolver";
 
     // guarded by this
     private final Set<ExpressionResolverExtension> extensions = new HashSet<>();
@@ -61,45 +60,47 @@ public class RuntimeExpressionResolver extends ExpressionResolverImpl implements
     protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
         String expression = node.asString();
         if (context != null && expression.length() > 3) {
-            String result = null;
 
-            // First try registered plugins
+            // Cycle through all registered extensions until one returns a result.
+            // Cache any exceptions (first of each type) so we can propagate them
+            // if none return a result
+            String result = null;
+            OperationFailedException ofe = null;
+            RuntimeException operationClientException = null;
+            RuntimeException otherRe = null;
+
             synchronized (extensions) {
                 Iterator<ExpressionResolverExtension> iter = extensions.iterator();
                 while (result == null && iter.hasNext()) {
-                    result = resolveExpression(expression, iter.next(), context);
+                    try {
+                        result = resolveExpression(expression, iter.next(), context);
+                    } catch (OperationFailedException oe) {
+                        if (ofe == null) {
+                            ofe = oe;
+                        }
+                    } catch (RuntimeException re) {
+                        if (re instanceof OperationClientException) {
+                            if (operationClientException == null) {
+                                operationClientException = re;
+                            }
+                        } else if (otherRe == null) {
+                            otherRe = re;
+                        }
+                    }
                 }
             }
 
-            // Due to the concurrent nature of boot, some subsystems may need to resolve extension expressions before
-            // the subsystem that provides an RegistryExtension reaches the point in OperationContext.Stage#RUNTIME
-            // where it can access the org.wildfly.management.expression-resolver-extension-registry capability
-            // and register its extension.
-            // It's also possible that a composite op that adds resources in the subsystem that registers
-            // the resolver extension will include expressions that need resolution along with a step adding
-            // the resource that provides the resolver extension. In that case resolution will be needed
-            // before the resolver extension is registered.
-            // To handles these cases, fall back onto the ability for a single extension to register in
-            // OperationContext.Stage.MODEL a capability that we can use.
-            // TODO update capability handling to support multiple runtime API registrations under the same capability
-            // in order that this fallback can work for more than one resolver extension.
-            if (result == null && context.getCurrentStage() != OperationContext.Stage.MODEL) {
-                ExpressionResolverExtension expressionResolver = null;
-                try {
-                    expressionResolver = context.getCapabilityRuntimeAPI(EXPRESSION_RESOLVER_CAPABILITY, ExpressionResolverExtension.class);
-                    result = expressionResolver.resolveExpression(expression, context);
-                } catch (IllegalStateException ise) {
-                    // No fallback extension is available.
-                    // We can't cache this state as it could be added in a later operation.
-                    log.tracef("Not resolving %s -- runtime capability not available.", expression.substring(2, expression.length() -1));
-                }
-                if (expressionResolver != null) {
-                    result = resolveExpression(expression, expressionResolver, context);
-                }
-            }
-
+            // If we have a result use it, otherwise throw an exception caught,
+            // preferring OFEs, then other OperationClientExceptions, then server faults.
+            // If no exceptions and no results, the caller will just carry on.
             if (result != null) {
                 node.set(result);
+            } else if (ofe != null) {
+                throw ofe;
+            } else if (operationClientException != null) {
+                throw operationClientException;
+            } else if (otherRe != null) {
+                throw otherRe;
             }
         }
     }

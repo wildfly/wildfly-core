@@ -42,6 +42,7 @@ import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -52,6 +53,7 @@ import javax.security.auth.message.config.AuthConfigFactory;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
+import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -161,15 +163,16 @@ class ElytronDefinition extends SimpleResourceDefinition {
     static final PropertiesAttributeDefinition SECURITY_PROPERTIES = new PropertiesAttributeDefinition.Builder("security-properties", true)
             .build();
 
-    public static final ElytronDefinition INSTANCE = new ElytronDefinition();
+    private final AtomicReference<ExpressionResolverExtension> resolverReference;
 
-    private ElytronDefinition() {
+    ElytronDefinition(AtomicReference<ExpressionResolverExtension> resolverReference) {
         super(new Parameters(ElytronExtension.SUBSYSTEM_PATH, ElytronExtension.getResourceDescriptionResolver())
                 .setAddHandler(new ElytronAdd())
                 .setRemoveHandler(new ElytronRemove())
                 .setCapabilities(ELYTRON_RUNTIME_CAPABILITY)
                 .addAccessConstraints(new SensitiveTargetAccessConstraintDefinition(new SensitivityClassification(ElytronExtension.SUBSYSTEM_NAME, ElytronDescriptionConstants.ELYTRON_SECURITY, true, true, true)),
                 new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig(ElytronExtension.SUBSYSTEM_NAME, ElytronDescriptionConstants.ELYTRON_SECURITY, false))));
+        this.resolverReference = resolverReference;
     }
 
     @Override
@@ -177,7 +180,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         final boolean serverOrHostController = isServerOrHostController(resourceRegistration);
 
         // Expression Resolver
-        resourceRegistration.registerSubModel(ExpressionResolverResourceDefinition.getExpressionResolverDefinition(resourceRegistration.getPathAddress()));
+        resourceRegistration.registerSubModel(ExpressionResolverResourceDefinition.getExpressionResolverDefinition(resourceRegistration.getPathAddress(), resolverReference));
 
         // Provider Loader
         resourceRegistration.registerSubModel(ProviderDefinitions.getAggregateProvidersDefinition());

@@ -26,7 +26,10 @@ public interface ExpressionResolverExtension {
 
     /**
      * Initialize the extension using the given {@link OperationContext}. May be called multiple times
-     * for a given extension, so extensions should handle that appropriately.
+     * for a given extension, so extensions should handle that appropriately. Note that this method
+     * may be invoked in {@link OperationContext.Stage#MODEL}. Implementations are not required to support initialization
+     * in [@code OperationContext.Stage.MODEL} but should throw {@link org.jboss.as.controller.ExpressionResolver.ExpressionResolutionServerException}
+     * if they do not.
      *
      * @param context the {@link OperationContext}. Will not be {@code null}
      * @throws OperationFailedException if a problem initializing occurs that indicates a user mistake
@@ -34,12 +37,19 @@ public interface ExpressionResolverExtension {
      *                                  Do not use for non-user-driven problems; use runtime exceptions for those.
      *                                  Throwing a runtime exception that implements {@link OperationClientException}
      *                                  is also a valid way to handle user mistakes.
+     * @throws org.jboss.as.controller.ExpressionResolver.ExpressionResolutionServerException if a non-user-driven
+     *                                 problem occurs, including an invocation during {@link OperationContext.Stage#MODEL}
+     *                                 if that is not supported.
      */
     void initialize(OperationContext context) throws OperationFailedException;
 
     /**
      * Resolve a given simple expression string, returning {@code null} if the string is not of a form
      * recognizable to the plugin.
+     * <p>
+     * <strong>Note:</strong> A thread invoking this method must immediately precede the invocation with a call to
+     * {@link #initialize(OperationContext)}.
+     * </p>
      *
      * @param expression a string that begins with <code>${</code> and ends with <code>}</code> and that does not have
      *                   any substrings that match that pattern.
