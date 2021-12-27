@@ -88,7 +88,7 @@ public class DomainServerLifecycleHandlers {
 
     private static final AttributeDefinition START_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(StartMode.NORMAL.toString()))
-            .setValidator(new EnumValidator<>(StartMode.class, true, true))
+            .setValidator(new EnumValidator<>(StartMode.class, EnumSet.allOf(StartMode.class)))
             .build();
 
     @Deprecated

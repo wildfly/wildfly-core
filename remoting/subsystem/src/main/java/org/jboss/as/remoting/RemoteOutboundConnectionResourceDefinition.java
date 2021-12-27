@@ -24,6 +24,8 @@ package org.jboss.as.remoting;
 
 import static org.jboss.as.remoting.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationStepHandler;
@@ -73,7 +75,7 @@ class RemoteOutboundConnectionResourceDefinition extends AbstractOutboundConnect
 
     public static final SimpleAttributeDefinition PROTOCOL = new SimpleAttributeDefinitionBuilder(
             CommonAttributes.PROTOCOL, ModelType.STRING, true).setValidator(
-                    new EnumValidator<Protocol>(Protocol.class, true, false))
+                    new EnumValidator<Protocol>(Protocol.class, EnumSet.allOf(Protocol.class)))
             .setDefaultValue(new ModelNode(Protocol.HTTP_REMOTING.toString()))
             .setAllowExpression(true)
             .setAlternatives(CommonAttributes.AUTHENTICATION_CONTEXT)

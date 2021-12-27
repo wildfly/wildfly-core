@@ -104,7 +104,7 @@ class RoleMapperDefinitions {
     static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOGICAL_OPERATION, ModelType.STRING, false)
         .setAllowExpression(true)
         .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.MINUS, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR)
-        .setValidator(EnumValidator.create(LogicalOperation.class, false, true))
+        .setValidator(EnumValidator.create(LogicalOperation.class))
         .setMinSize(1)
         .setRestartAllServices()
         .build();

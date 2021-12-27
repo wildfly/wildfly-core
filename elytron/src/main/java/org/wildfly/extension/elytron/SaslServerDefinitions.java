@@ -147,7 +147,7 @@ class SaslServerDefinitions {
         .setDefaultValue(new ModelNode(ElytronDescriptionConstants.LESS_THAN))
         .setRequires(ElytronDescriptionConstants.PROVIDER_VERSION)
         .setAllowedValues(ElytronDescriptionConstants.LESS_THAN, ElytronDescriptionConstants.GREATER_THAN)
-        .setValidator(EnumValidator.create(Comparison.class, true, true))
+        .setValidator(EnumValidator.create(Comparison.class))
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .build();
@@ -168,7 +168,7 @@ class SaslServerDefinitions {
         .setAllowExpression(true)
         .setXmlName("predefined")
         .setAllowedValues(NamePredicate.names())
-        .setValidator(EnumValidator.create(NamePredicate.class, true, true))
+        .setValidator(EnumValidator.create(NamePredicate.class))
         .setMinSize(1)
         .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
         .setAlternatives(ElytronDescriptionConstants.PATTERN_FILTER)

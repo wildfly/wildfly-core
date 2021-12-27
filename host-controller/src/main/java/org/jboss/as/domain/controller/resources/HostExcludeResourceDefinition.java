@@ -116,7 +116,7 @@ public class HostExcludeResourceDefinition extends SimpleResourceDefinition {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.HOST_RELEASE, ModelType.STRING, false)
                     .setXmlName("id")
                     .setAlternatives(ModelDescriptionConstants.MANAGEMENT_MAJOR_VERSION)
-                    .setValidator(EnumValidator.create(KnownRelease.class, false, false))
+                    .setValidator(EnumValidator.create(KnownRelease.class))
                     .build();
 
     public static final SimpleAttributeDefinition MANAGEMENT_MAJOR_VERSION =

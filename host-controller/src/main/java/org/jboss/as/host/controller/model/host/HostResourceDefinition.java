@@ -24,6 +24,7 @@ package org.jboss.as.host.controller.model.host;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DOMAIN_ORGANIZATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
+import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.ControlledProcessState;
@@ -71,7 +72,6 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
-import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 import org.jboss.as.domain.controller.DomainController;
 import org.jboss.as.domain.controller.operations.DomainServerLifecycleHandlers;
 import org.jboss.as.domain.controller.operations.HostProcessReloadHandler;
@@ -203,7 +203,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition DIRECTORY_GROUPING = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.DIRECTORY_GROUPING, ModelType.STRING, true).
             addFlag(AttributeAccess.Flag.RESTART_ALL_SERVICES).
             setDefaultValue(DirectoryGrouping.defaultValue().toModelNode()).
-            setValidator(EnumValidator.create(DirectoryGrouping.class, true, true)).
+            setValidator(EnumValidator.create(DirectoryGrouping.class)).
             setAllowExpression(true).
             build();
     public static final SimpleAttributeDefinition MASTER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MASTER, ModelType.BOOLEAN, true)

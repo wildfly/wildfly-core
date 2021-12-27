@@ -32,6 +32,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STO
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUSPEND;
 import static org.jboss.as.controller.services.path.PathResourceDefinition.PATH_CAPABILITY;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.BootErrorCollector;
 import org.jboss.as.controller.CapabilityRegistry;
@@ -135,6 +137,7 @@ import org.jboss.as.server.services.net.SpecifiedInterfaceResolveHandler;
 import org.jboss.as.server.suspend.SuspendController;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -212,19 +215,19 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
     public static final SimpleAttributeDefinition LAUNCH_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.LAUNCH_TYPE, ModelType.STRING)
-            .setValidator(new EnumValidator<LaunchType>(LaunchType.class, false, false))
+            .setValidator(new EnumValidator<LaunchType>(LaunchType.class, EnumSet.allOf(LaunchType.class)))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
     public static final AttributeDefinition RUNNING_MODE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.RUNNING_MODE, ModelType.STRING)
-            .setValidator(new EnumValidator<RunningMode>(RunningMode.class, false, false))
+            .setValidator(new EnumValidator<RunningMode>(RunningMode.class, EnumSet.allOf(RunningMode.class)))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
 
     public static final AttributeDefinition SUSPEND_STATE = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.SUSPEND_STATE, ModelType.STRING)
-            .setValidator(new EnumValidator<SuspendController.State>(SuspendController.State.class, false, false))
+            .setValidator(new EnumValidator<SuspendController.State>(SuspendController.State.class, EnumSet.allOf(SuspendController.State.class)))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();

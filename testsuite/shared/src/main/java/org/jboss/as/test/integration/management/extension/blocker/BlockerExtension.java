@@ -78,7 +78,7 @@ public class BlockerExtension implements Extension {
     public static final AttributeDefinition TARGET_HOST = SimpleAttributeDefinitionBuilder.create(HOST, ModelType.STRING, true).build();
     public static final AttributeDefinition TARGET_SERVER = SimpleAttributeDefinitionBuilder.create(SERVER, ModelType.STRING, true).build();
     public static final AttributeDefinition BLOCK_POINT = SimpleAttributeDefinitionBuilder.create("block-point", ModelType.STRING)
-            .setValidator(EnumValidator.create(BlockPoint.class, false, false))
+            .setValidator(EnumValidator.create(BlockPoint.class))
             .build();
     public static final AttributeDefinition BLOCK_TIME = SimpleAttributeDefinitionBuilder.create("block-time", ModelType.LONG, true)
             .setDefaultValue(new ModelNode(20000))

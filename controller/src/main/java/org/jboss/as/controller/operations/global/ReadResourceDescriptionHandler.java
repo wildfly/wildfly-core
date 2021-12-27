@@ -118,7 +118,7 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
     private static final SimpleAttributeDefinition ACCESS_CONTROL = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ACCESS_CONTROL, ModelType.STRING)
             .setRequired(false)
             .setDefaultValue(new ModelNode(AccessControl.NONE.toString()))
-            .setValidator(EnumValidator.create(AccessControl.class, true, AccessControl.NONE, AccessControl.COMBINED_DESCRIPTIONS, AccessControl.TRIM_DESCRIPTONS))
+            .setValidator(EnumValidator.create(AccessControl.class, AccessControl.NONE, AccessControl.COMBINED_DESCRIPTIONS, AccessControl.TRIM_DESCRIPTONS))
             .build();
 
 

@@ -51,7 +51,7 @@ public class SimpleAttributeDefinitionUnitTestCase {
     @Test
     public void testAllowedValuesWithValidator() {
         SimpleAttributeDefinition ad = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING)
-                .setValidator(new EnumValidator<TestEnum>(TestEnum.class, false, false, TestEnum.A, TestEnum.B))
+                .setValidator(new EnumValidator<TestEnum>(TestEnum.class, TestEnum.A, TestEnum.B))
                 .build();
 
         ParameterValidator pv = ad.getValidator();

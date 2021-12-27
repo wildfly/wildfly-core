@@ -58,7 +58,7 @@ class MemoryPoolResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static AttributeDefinition TYPE = SimpleAttributeDefinitionBuilder.create(PlatformMBeanConstants.TYPE, ModelType.STRING, false)
-            .setValidator(new EnumValidator<MemoryType>(MemoryType.class, false))
+            .setValidator(new EnumValidator<MemoryType>(MemoryType.class))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
