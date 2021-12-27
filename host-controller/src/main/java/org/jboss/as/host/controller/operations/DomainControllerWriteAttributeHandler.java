@@ -25,17 +25,15 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.LOC
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
-import java.util.EnumSet;
-
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.operations.validation.EnumValidator;
@@ -55,7 +53,6 @@ import org.jboss.as.repository.HostFileRepository;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.security.auth.client.AuthenticationContext;
-
 
 /**
  *
@@ -88,7 +85,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.ADMIN_ONLY_POLICY, ModelType.STRING, true)
                     .setAllowExpression(true)
                     .setFlags(AttributeAccess.Flag.RESTART_JVM)
-                    .setValidator(new EnumValidator<AdminOnlyDomainConfigPolicy>(AdminOnlyDomainConfigPolicy.class, EnumSet.allOf(AdminOnlyDomainConfigPolicy.class)))
+                    .setValidator(EnumValidator.create(AdminOnlyDomainConfigPolicy.class))
                     .setDefaultValue(new ModelNode(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString()))
                     .build();
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG =
@@ -109,7 +106,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROTOCOL, ModelType.STRING)
                     .setRequired(false)
                     .setAllowExpression(true)
-                    .setValidator(new EnumValidator(Protocol.class, EnumSet.allOf(Protocol.class)))
+                    .setValidator(EnumValidator.create(Protocol.class))
                     .setDefaultValue(org.jboss.as.remoting.Protocol.REMOTE.toModelNode())
                     .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
                     .setRequires(ModelDescriptionConstants.HOST, ModelDescriptionConstants.PORT)

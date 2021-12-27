@@ -25,8 +25,6 @@ package org.jboss.as.domain.management.access;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXCLUDE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE;
 
-import java.util.EnumSet;
-
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -56,7 +54,7 @@ public class PrincipalResourceDefinition extends SimpleResourceDefinition {
     }
 
     public static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TYPE,
-            ModelType.STRING, false).setValidator(new EnumValidator<>(Type.class, EnumSet.allOf(Type.class))).build();
+            ModelType.STRING, false).setValidator(EnumValidator.create(Type.class)).build();
 
     public static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.REALM,
             ModelType.STRING, true).setDeprecated(ModelVersion.create(5)).build();

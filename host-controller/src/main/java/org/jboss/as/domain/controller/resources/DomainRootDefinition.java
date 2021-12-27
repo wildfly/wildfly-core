@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROL
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -164,7 +163,7 @@ public class DomainRootDefinition extends SimpleResourceDefinition {
             .setValidator(NOT_NULL_STRING_LENGTH_ONE_VALIDATOR)
             .build();
     public static final SimpleAttributeDefinition LAUNCH_TYPE = SimpleAttributeDefinitionBuilder.create(ServerDescriptionConstants.LAUNCH_TYPE, ModelType.STRING)
-            .setValidator(new EnumValidator<LaunchType>(LaunchType.class, EnumSet.allOf(LaunchType.class)))
+            .setValidator(EnumValidator.create(LaunchType.class))
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();

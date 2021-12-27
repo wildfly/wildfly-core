@@ -39,7 +39,6 @@ import static org.jboss.as.domain.management.audit.SyslogAuditLogHandlerService.
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -87,7 +86,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
         .setRequired(false)
         .setDefaultValue(new ModelNode(SyslogHandler.SyslogType.RFC5424.toString()))
         .setAllowExpression(true)
-        .setValidator(new EnumValidator<>(SyslogHandler.SyslogType.class, EnumSet.allOf(SyslogHandler.SyslogType.class)))
+        .setValidator(EnumValidator.create(SyslogHandler.SyslogType.class))
         .setMinSize(1)
         .build();
 
@@ -105,7 +104,7 @@ public class SyslogAuditLogHandlerResourceDefinition extends AuditLogHandlerReso
 
     public static final SimpleAttributeDefinition FACILITY = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.FACILITY, ModelType.STRING)
         .setRequired(false)
-        .setValidator(new EnumValidator<SyslogAuditLogHandler.Facility>(SyslogAuditLogHandler.Facility.class, EnumSet.allOf(SyslogAuditLogHandler.Facility.class)))
+        .setValidator(EnumValidator.create(SyslogAuditLogHandler.Facility.class))
         .setDefaultValue(new ModelNode(SyslogAuditLogHandler.Facility.USER_LEVEL.name()))
         .setAllowExpression(true)
         .build();

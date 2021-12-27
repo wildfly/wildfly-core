@@ -39,7 +39,6 @@ import static org.jboss.as.server.controller.resources.ServerRootResourceDefinit
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
@@ -133,7 +132,7 @@ public class ServerConfigResourceDefinition extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ServerStatusHandler.ATTRIBUTE_NAME, ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setValidator(new EnumValidator<ServerStatus>(ServerStatus.class, EnumSet.allOf(ServerStatus.class)))
+            .setValidator(EnumValidator.create(ServerStatus.class))
             .build();
 
     /**
