@@ -429,7 +429,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthProtocolOnlyServerSupportsSSLv2Hello() throws Throwable {
-        String[] serverEnabledProtocols = JdkUtils.isIbmJdk() ? new String[]{"TLSv1"} : new String[]{"SSLv2Hello", "TLSv1"};
+        String[] serverEnabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
         String[] clientEnabledProtocols = new String[]{"TLSv1"};
 
         HashMap<String, String[]> protocolChecker = new HashMap<>();
