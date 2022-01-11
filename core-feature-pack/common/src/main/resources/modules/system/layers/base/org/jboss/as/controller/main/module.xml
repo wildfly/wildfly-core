@@ -28,6 +28,7 @@
     </properties>
 
     <resources>
+        <resource-root path="dir"/>
         <artifact name="${org.wildfly.core:wildfly-controller}"/>
     </resources>
 
@@ -51,5 +52,6 @@
         <module name="org.jboss.staxmapper"/>
         <module name="org.jboss.threads"/>
         <module name="org.projectodd.vdx"/>
+        <module name="org.yaml.snakeyaml"/>
     </dependencies>
 </module>

@@ -71,6 +71,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.persistence.ConfigurationExtension;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
 import org.jboss.as.controller.persistence.ConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -207,6 +208,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
     private final CapabilityRegistry capabilityRegistry;
+    private final ConfigurationExtension configExtension;
 
     /**
      * Construct a new instance.
@@ -230,7 +232,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
                                         final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
         this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
     }
 
     /**
@@ -254,7 +256,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(null, null, processType, runningModeControl, configurationPersister, processState, null, rootDescriptionProvider,
                 prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()));
+                new CapabilityRegistry(processType.isServer()), null);
 
     }
 
@@ -278,7 +280,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver) {
         this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()));
+                new CapabilityRegistry(processType.isServer()), null);
     }
 
     /**
@@ -301,8 +303,35 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final DelegatingConfigurableAuthorizer authorizer) {
         this(null, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
                 prepareStep, expressionResolver, auditLogger, authorizer, new ManagementSecurityIdentitySupplier(),
-                new CapabilityRegistry(processType.isServer()));
+                new CapabilityRegistry(processType.isServer()), null);
 
+    }
+    /**
+     * Construct a new instance.
+     *
+     * @param processType             the type of process being controlled
+     * @param runningModeControl      the controller of the process' running mode
+     * @param configurationPersister  the configuration persister
+     * @param processState            the controlled process state
+     * @param rootResourceDefinition  the root resource definition
+     * @param prepareStep             the prepare step to prepend to operation execution
+     * @param expressionResolver      the expression resolver
+     * @param auditLogger             the audit logger
+     * @param authorizer              handles authorization
+     * @param capabilityRegistry      the capability registry
+     */
+    @Deprecated
+    protected AbstractControllerService(final Supplier<ExecutorService> executorService,
+                                        final Supplier<ControllerInstabilityListener> instabilityListener,
+                                        final ProcessType processType, final RunningModeControl runningModeControl,
+                                        final ConfigurationPersister configurationPersister,
+                                        final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
+                                        final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
+                                        final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                                        final CapabilityRegistry capabilityRegistry) {
+        this(executorService, instabilityListener, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
     }
 
     /**
@@ -326,9 +355,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                         final ControlledProcessState processState, final ResourceDefinition rootResourceDefinition,
                                         final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver,
                                         final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer,
-                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier, final CapabilityRegistry capabilityRegistry) {
+                                        final ManagementSecurityIdentitySupplier securityIdentitySupplier,
+                                        final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
         this(executorService, instabilityListener, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null,
-                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry);
+                prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, configExtension);
     }
 
     private AbstractControllerService(final Supplier<ExecutorService> executorService,
@@ -338,7 +368,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                                       final ResourceDefinition rootResourceDefinition, final DescriptionProvider rootDescriptionProvider,
                                       final OperationStepHandler prepareStep, final ExpressionResolver expressionResolver, final ManagedAuditLogger auditLogger,
                                       final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
-                                      final CapabilityRegistry capabilityRegistry) {
+                                      final CapabilityRegistry capabilityRegistry, final ConfigurationExtension configExtension) {
         assert rootDescriptionProvider == null: "description provider cannot be used anymore";
         assert rootResourceDefinition != null: "Null root resource definition";
         assert expressionResolver != null : "Null expressionResolver";
@@ -360,6 +390,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.securityIdentitySupplier = securityIdentitySupplier;
         this.bootErrorCollector = new BootErrorCollector();
         this.capabilityRegistry = capabilityRegistry.createShadowCopy(); //create shadow copy of proper registry so changes can only be visible by .publish()
+        this.configExtension = configExtension;
     }
 
     @Override
@@ -522,7 +553,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
                            MutableRootResourceRegistrationProvider parallelBootRootResourceRegistrationProvider) throws ConfigurationPersistenceException {
         return controller.boot(bootOperations, OperationMessageHandler.logging, ModelController.OperationTransactionControl.COMMIT,
                 rollbackOnRuntimeFailure, parallelBootRootResourceRegistrationProvider, skipModelValidation,
-                getPartialModelIndicator().isModelPartial());
+                getPartialModelIndicator().isModelPartial(), configExtension);
     }
 
     /** @deprecated internal use only  only for use by legacy test controllers */

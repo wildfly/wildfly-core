@@ -1394,6 +1394,9 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 289, value = "Unable to create auth dir %s.")
     IllegalStateException unableToCreateAuthDir(String dir);
 
+    @Message(id = 290, value = "Couldn't find the specified YAML file %s")
+    IllegalArgumentException unableToFindYaml(String file);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

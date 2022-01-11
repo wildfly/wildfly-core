@@ -94,6 +94,7 @@ public class ReloadOpsTestCase extends AbstractCliTestBase {
         assertTrue(result.isIsOutcomeSuccess());
         value = (String) result.getResult();
         assertThat(value, is("false"));
+        cli.sendLine("/subsystem=logging:write-attribute(name=add-logging-api-dependencies, value=true)");
     }
 
     protected void checkResponseHeadersForProcessState(CLIOpResult result) {

@@ -253,7 +253,7 @@ public class HostControllerConfigurationPersister implements ExtensibleConfigura
         final String defaultDomainConfig = WildFlySecurityManager.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_DEFAULT_CONFIG, "domain.xml");
         final String initialDomainConfig = environment.getInitialDomainConfig();
         return new ConfigurationFile(environment.getDomainConfigurationDir(), defaultDomainConfig,
-                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteractionPolicy(), false);
+                initialDomainConfig == null ? environment.getDomainConfig() : initialDomainConfig, environment.getDomainConfigurationFileInteractionPolicy(), false, null);
     }
 
     private ConfigurationFile getBackupDomainConfigurationFile() {

@@ -1,0 +1,5 @@
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=foo2:add(host="host1", port=7777)
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=foo2:write-attribute(name=port,value=9999)
+/system-property=foo:add(value=bar)
+/subsystem=elytron/properties-realm=bootable-realm:add(users-properties={path=bootable-users.properties, plain-text=true, relative-to=jboss.server.config.dir}, groups-properties={path=bootable-groups.properties, relative-to=jboss.server.config.dir})
+/subsystem=elytron/security-domain=BootableDomain:add(default-realm=bootable-realm, permission-mapper=default-permission-mapper, realms=[{realm=bootable-realm, role-decoder=groups-to-roles}])

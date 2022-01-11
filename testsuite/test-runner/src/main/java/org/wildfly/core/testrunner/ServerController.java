@@ -71,7 +71,7 @@ public class ServerController {
      * @param readOnly
      */
     public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out, boolean readOnly) {
-     start(serverConfig, authConfigUri, startMode, out, readOnly, null, null, null, null);
+     start(serverConfig, authConfigUri, startMode, out, readOnly, null, null, null, null, null);
     }
 
     /**
@@ -92,7 +92,7 @@ public class ServerController {
      */
     public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out,
                       boolean readOnly, final String gitRepository, final String gitBranch, final String gitAuthConfig) {
-        start(serverConfig, authConfigUri, startMode, out, readOnly, gitRepository, gitBranch, gitAuthConfig, null);
+        start(serverConfig, authConfigUri, startMode, out, readOnly, gitRepository, gitBranch, gitAuthConfig, null, null);
     }
 
     /**
@@ -111,11 +111,14 @@ public class ServerController {
      * @param gitBranch     the git branch to use to get the server configuration
      * @param gitAuthConfig the path
      * @param configDir     Server configuration directory
+     * @param yamlFiles     YAML files
      */
     public void start(final String serverConfig, final URI authConfigUri, Server.StartMode startMode, PrintStream out,
-                      boolean readOnly, final String gitRepository, final String gitBranch, final String gitAuthConfig, Path configDir) {
+                      boolean readOnly, final String gitRepository, final String gitBranch, final String gitAuthConfig,
+                      Path configDir, Path[] yamlFiles) {
         if (started.compareAndSet(false, true)) {
             server = new Server(authConfigUri, readOnly);
+            server.setYamlFiles(yamlFiles);
             if (serverConfig != null) {
                 server.setServerConfig(serverConfig);
             }
@@ -154,7 +157,7 @@ public class ServerController {
     }
 
     public void startReadOnly(Path configDir){
-        start(null, null, Server.StartMode.NORMAL, System.out, true, null, null, null, configDir);
+        start(null, null, Server.StartMode.NORMAL, System.out, true, null, null, null, configDir, null);
     }
 
     public void startSuspended() {
@@ -163,6 +166,10 @@ public class ServerController {
 
     public void startGitBackedConfiguration(final String gitRepository, final String gitBranch, final String gitAuthConfig) {
         start(null, null, Server.StartMode.NORMAL, System.out, false, gitRepository, gitBranch, gitAuthConfig);
+    }
+
+    public void startYamlExtension(final Path[] yamlFiles) {
+        start(null, null, Server.StartMode.NORMAL, System.out, false, null, null, null, null, yamlFiles);
     }
 
     public void stop() {
