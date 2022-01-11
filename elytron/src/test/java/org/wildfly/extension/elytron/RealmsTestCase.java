@@ -377,15 +377,21 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
     @Test
     public void testJAASRealm() throws Exception {
         try {
-            System.setProperty("java.security.auth.login.config", RealmsTestCase.class.getResource("jaas-login.config").toString());
             KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
             if (!services.isSuccessfulBoot()) {
                 Assert.fail(services.getBootError().toString());
             }
 
-            ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
-            JaasSecurityRealm securityRealm = (JaasSecurityRealm) services.getContainer().getService(serviceName).getValue();
-            Assert.assertNotNull(securityRealm);
+            JaasSecurityRealm securityRealm;
+            if (!(JdkUtils.isIbmJdk() && JdkUtils.getJavaSpecVersion() <= 8)) {
+                ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
+                securityRealm = (JaasSecurityRealm) services.getContainer().getService(serviceName).getValue();
+                Assert.assertNotNull(securityRealm);
+            } else {
+                // IBM JDK 8 does not recognize default policy type "JavaLoginConfig" so the path to JAAS configuration file must be provided via system property
+                System.setProperty("java.security.auth.login.config", RealmsTestCase.class.getResource("jaas-login.config").toString());
+                securityRealm = new JaasSecurityRealm("Entry1");
+            }
 
             RealmIdentity identity1 = securityRealm.getRealmIdentity(new NamePrincipal("user"));
 
@@ -431,7 +437,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         operation.get(ClientConstants.OP_ADDR)
                 .add("subsystem", "elytron").add("jaas-realm", "my-jaas-realm");
         operation.get(ClientConstants.OP).set(ClientConstants.ADD);
-//        operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
+        // operation.get(ElytronDescriptionConstants.ENTRY).set("any_entry");
         ModelNode response = services.executeOperation(operation);
         // operation will fail because path does not exist
         if (! response.get(OUTCOME).asString().equals(FAILED)) {
