@@ -18,11 +18,24 @@
 
 package org.jboss.as.controller;
 
+import java.util.regex.Pattern;
+
 /**
  * Object that can be used to extend the functionality of an {@link ExpressionResolver} by handling
  * expression strings in formats not understood by the expression resolver.
+ * <p>
+ * Extension expressions must be of the form {@code ${extensionidentifier::someextensionspecificdetails}}, where
+ * {@code extensionidentifier} is some string that identifies the desired extension. All resolver extensions in
+ * a process must have unique identifiers. Best practice is for subsystems that register extensions to allow end user
+ * configuration control over the identifier so they can provide non-conflicting identifiers.  The
+ * {@code someextensionspecificdetails} part of the expression is an opaque string understood by the relevant
+ * resolver extension.
+ * </p>
  */
 public interface ExpressionResolverExtension {
+
+    /** A {@link Pattern} that strings must match for any ExpressionResolverExtension to handle them. */
+    Pattern EXTENSION_EXPRESSION_PATTERN = Pattern.compile("\\$\\{.+::.+}");
 
     /**
      * Initialize the extension using the given {@link OperationContext}. May be called multiple times
@@ -51,7 +64,7 @@ public interface ExpressionResolverExtension {
      * {@link #initialize(OperationContext)}.
      * </p>
      *
-     * @param expression a string that begins with <code>${</code> and ends with <code>}</code> and that does not have
+     * @param expression a string that matches {@link #EXTENSION_EXPRESSION_PATTERN} and that does not have
      *                   any substrings that match that pattern.
      * @param context    the current {@code OperationContext} to provide additional contextual information.
      * @return a string representing the resolve expression, or {@code null} if {@code expression} is not of a
