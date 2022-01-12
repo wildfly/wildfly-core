@@ -179,6 +179,10 @@
                         <groupId>org.bouncycastle</groupId>
                         <artifactId>bcutil-jdk15on</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.mozilla</groupId>
+                        <artifactId>rhino</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
