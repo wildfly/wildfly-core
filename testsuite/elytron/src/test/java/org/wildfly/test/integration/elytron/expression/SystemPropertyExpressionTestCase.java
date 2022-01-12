@@ -122,6 +122,7 @@ public class SystemPropertyExpressionTestCase {
             ModelNode addOp = Util.createAddOperation(CREDENTIAL_STORE_ADDRESS);
             addOp.get("location").set(CS_PATH);
             addOp.get("credential-reference", "clear-text").set(CNAME);
+            addOp.get("providers").set("combined-providers");
             managementClient.executeForResult(addOp);
         }
 
