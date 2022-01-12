@@ -35,7 +35,7 @@ import org.jboss.dmr.ModelNode;
 public interface ExpressionResolver {
 
     /** A {@link Pattern} that can be used to identify strings that include expression syntax */
-    Pattern EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{.*\\}.*");
+    Pattern EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{.*}.*");
 
     /**
      * Resolves any expressions in the passed in ModelNode.
@@ -93,21 +93,21 @@ public interface ExpressionResolver {
     /**
      * An {@code ExpressionResolver} that can only resolve from system properties
      * and environment variables. Should not be used for most product resolution use cases as it does
-     * not support resolution from a security vault.
+     * not support resolution from resolver extensions.
      */
     ExpressionResolver SIMPLE = new ExpressionResolverImpl();
 
     /**
      * An {@code ExpressionResolver} suitable for test cases that can only resolve from system properties
      * and environment variables.
-     * Should not be used for production code as it does not support resolution from a security vault.
+     * Should not be used for production code as it does not support resolution from resolver extensions.
      */
     ExpressionResolver TEST_RESOLVER = SIMPLE;
 
     /**
      * An expression resolver that will not throw an {@code OperationFailedException} when it encounters an
      * unresolvable expression, instead simply returning that expression. Should not be used for most product
-     * resolution use cases as it does not support resolution from a security vault.
+     * resolution use cases as it does not support resolution from resolver extensions.
      */
     ExpressionResolver SIMPLE_LENIENT = new ExpressionResolverImpl(true);
 
@@ -125,6 +125,23 @@ public interface ExpressionResolver {
             }
             // It wasn't an expression anyway; convert the node to type STRING
             node.set(expression);
+        }
+    };
+
+    /**
+     * An expression resolver that throws an {@link ExpressionResolutionServerException} if any
+     * {@link ExpressionResolverExtension#EXTENSION_EXPRESSION_PATTERN extension expressions} are found, otherwise
+     * providing the same behavior as {@link #SIMPLE}.
+     * Intended for use in cases where {@link ExpressionResolverExtension}s cannot be available but non-extension
+     * expression resolution is wanted.
+     */
+    ExpressionResolver EXTENSION_REJECTING = new ExpressionResolverImpl() {
+        @Override
+        protected void resolvePluggableExpression(ModelNode node, OperationContext context) throws OperationFailedException {
+            String expression = node.asString();
+            if (ExpressionResolverExtension.EXTENSION_EXPRESSION_PATTERN.matcher(expression).matches()) {
+                throw ControllerLogger.ROOT_LOGGER.resolverExtensionExpressionsNotAllowed(expression);
+            } // else do nothing and standard resolution will take over
         }
     };
 
@@ -170,7 +187,7 @@ public interface ExpressionResolver {
      * where this is unclear.
      * <p>
      * <strong>Note:</strong> this should only be thrown to report problems resulting from user
-     * errors. Use {@link ExpressionResolverExtension.ExpressionResolutionServerException} to report faults in
+     * errors. Use {@link ExpressionResolutionServerException} to report faults in
      * {@link ExpressionResolverExtension#resolveExpression(String, OperationContext)} execution that
      * are not due to user inputs.
      */

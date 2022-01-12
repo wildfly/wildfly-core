@@ -24,6 +24,8 @@ import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
@@ -85,10 +87,14 @@ public class SystemPropertiesParsingTestCase {
         System.setProperty("org.jboss.as.server.parsing.test", "test-value");
         System.setProperty("org.jboss.as.server.parsing.secret", "super-secret-value");
         System.setProperty("org.jboss.as.server.parsing.secret-nested", "super-secret-value");
+
+        Mockito.when(mockedLogger.resolverExtensionExpressionsNotAllowed(Mockito.anyString())).thenReturn(new ExpressionResolver.ExpressionResolutionServerException("not allowed"));
         try {
             final String xml = "<?xml version='1.0' encoding='UTF-8'?>"
                     + "<server name=\"example\" xmlns=\"urn:jboss:domain:8.0\">"
                     + "    <system-properties>\n"
+                    + "        <property name=\"org.jboss.as.server.parsing.secret\" value=\"${XYZ::vb::password::1}\"/>\n"
+                    + "        <property name=\"org.jboss.as.server.parsing.secret-nested\" value=\"${ABC::vb::${not-found:pword}::1}\"/>\n"
                     + "        <property name=\"org.jboss.as.server.parsing.test\" value=\"other-value\"/>\n"
                     + "    </system-properties>\n"
                     + "</server>";
@@ -103,6 +109,13 @@ public class SystemPropertiesParsingTestCase {
             // assert the method is called only once for test
             Mockito.verify(mockedLogger, Mockito.times(1)).systemPropertyAlreadyExist(Mockito.anyString());
             Mockito.verify(mockedLogger, Mockito.times(1)).systemPropertyAlreadyExist(Mockito.eq("org.jboss.as.server.parsing.test"));
+            // Verify the extension expression resolution failed twice
+            //noinspection ThrowableNotThrown
+            Mockito.verify(mockedLogger, Mockito.times(2)).resolverExtensionExpressionsNotAllowed(Mockito.anyString());
+            //noinspection ThrowableNotThrown
+            Mockito.verify(mockedLogger, Mockito.times(1)).resolverExtensionExpressionsNotAllowed(Mockito.eq("${XYZ::vb::password::1}"));
+            //noinspection ThrowableNotThrown
+            Mockito.verify(mockedLogger, Mockito.times(1)).resolverExtensionExpressionsNotAllowed(Mockito.eq("${ABC::vb::pword::1}"));
         } finally {
             System.clearProperty("org.jboss.as.server.parsing.test");
             System.clearProperty("org.jboss.as.server.parsing.secret");
