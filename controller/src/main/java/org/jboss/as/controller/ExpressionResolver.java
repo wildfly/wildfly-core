@@ -23,6 +23,8 @@ package org.jboss.as.controller;
 
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
+import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.dmr.ModelNode;
 
@@ -144,26 +146,6 @@ public interface ExpressionResolver {
             } // else do nothing and standard resolution will take over
         }
     };
-
-    /**
-     * Registry for {@link ExpressionResolverExtension extensions} to a server or host controller's {@link ExpressionResolver}.
-     * The registry will be available using the {@code org.wildfly.management.expression-resolver-extension-registry}
-     * capability.
-     */
-    interface ResolverExtensionRegistry {
-
-        /**
-         * Adds an extension to the set used by the {@link ExpressionResolver}.
-         * @param extension the extension. Cannot be {@code null}
-         */
-        void addResolverExtension(ExpressionResolverExtension extension);
-
-        /**
-         * Removes an extension from the set used by the {@link ExpressionResolver}.
-         * @param extension the extension. Cannot be {@code null}
-         */
-        void removeResolverExtension(ExpressionResolverExtension extension);
-    }
 
     /**
      * Runtime exception used to indicate some user-driven problem that prevented expression

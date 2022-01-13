@@ -25,12 +25,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.ExpressionResolverExtension;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.ExpressionResolverImpl;
 import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 
@@ -39,7 +39,7 @@ import org.jboss.logging.Logger;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class RuntimeExpressionResolver extends ExpressionResolverImpl implements ExpressionResolver.ResolverExtensionRegistry {
+public class RuntimeExpressionResolver extends ExpressionResolverImpl implements ResolverExtensionRegistry {
 
     private static final Logger log = Logger.getLogger(RuntimeExpressionResolver.class);
 

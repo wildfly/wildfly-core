@@ -26,6 +26,7 @@ package org.jboss.as.controller;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.services.path.PathManager;
 
 /**

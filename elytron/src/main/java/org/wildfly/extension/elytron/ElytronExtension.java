@@ -23,7 +23,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLContext;
 
-import org.jboss.as.controller.ExpressionResolverExtension;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
