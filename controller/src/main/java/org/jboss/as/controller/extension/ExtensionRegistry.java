@@ -41,8 +41,6 @@ import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.ExpressionResolverExtension;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
@@ -129,7 +127,7 @@ public final class ExtensionRegistry {
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
-    private volatile ExpressionResolver.ResolverExtensionRegistry resolverExtensionRegistry;
+    private volatile ResolverExtensionRegistry resolverExtensionRegistry;
 
     private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<String, ExtensionInfo>();
     // subsystem -> extension
@@ -192,7 +190,7 @@ public final class ExtensionRegistry {
         this.pathManager = pathManager;
     }
 
-    public void setResolverExtensionRegistry(ExpressionResolver.ResolverExtensionRegistry registry) {
+    public void setResolverExtensionRegistry(ResolverExtensionRegistry registry) {
         this.resolverExtensionRegistry = registry;
     }
 

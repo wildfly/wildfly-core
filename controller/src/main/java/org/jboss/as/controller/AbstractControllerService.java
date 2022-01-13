@@ -66,7 +66,9 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
@@ -212,7 +214,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final BootErrorCollector bootErrorCollector;
     private final CapabilityRegistry capabilityRegistry;
     private final ConfigurationExtension configExtension;
-    private final RuntimeCapability<ExpressionResolver.ResolverExtensionRegistry> extensionRegistryCapability;
+    private final RuntimeCapability<ResolverExtensionRegistry> extensionRegistryCapability;
 
     /**
      * Construct a new instance.
@@ -389,10 +391,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.processState = processState;
         this.prepareStep = prepareStep;
         this.expressionResolver = expressionResolver;
-        if (expressionResolver instanceof ExpressionResolver.ResolverExtensionRegistry) {
+        if (expressionResolver instanceof ResolverExtensionRegistry) {
             this.extensionRegistryCapability =
                     RuntimeCapability.Builder.of(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
-                            (ExpressionResolver.ResolverExtensionRegistry) expressionResolver).build();
+                            (ResolverExtensionRegistry) expressionResolver).build();
         } else {
             this.extensionRegistryCapability = null;
         }

@@ -28,7 +28,7 @@ import java.util.Map;
 import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.ExpressionResolver;
-import org.jboss.as.controller.ExpressionResolverExtension;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.OperationClientException;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;

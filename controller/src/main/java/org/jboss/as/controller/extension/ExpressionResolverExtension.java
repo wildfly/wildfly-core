@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2021 Red Hat, Inc., and individual contributors
+ * Copyright 2022 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,9 +16,14 @@
  * limitations under the License.
  */
 
-package org.jboss.as.controller;
+package org.jboss.as.controller.extension;
 
 import java.util.regex.Pattern;
+
+import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.OperationClientException;
+import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
 
 /**
  * Object that can be used to extend the functionality of an {@link ExpressionResolver} by handling
