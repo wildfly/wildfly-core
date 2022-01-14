@@ -822,6 +822,11 @@
             <artifactId>wildfly-discovery-client</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

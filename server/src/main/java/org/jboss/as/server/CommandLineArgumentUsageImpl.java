@@ -23,6 +23,7 @@
 package org.jboss.as.server;
 
 import java.io.PrintStream;
+import org.jboss.as.controller.persistence.ConfigurationExtensionFactory;
 
 import org.jboss.as.process.CommandLineArgumentUsage;
 import org.jboss.as.process.CommandLineConstants;
@@ -88,6 +89,12 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
 
         addArguments(CommandLineConstants.GIT_AUTH + " <auth_config>", CommandLineConstants.GIT_AUTH + "=<auth_config>");
         instructions.add(ServerLogger.ROOT_LOGGER.argGitAuth());
+
+        if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()) {
+            addArguments(ConfigurationExtensionFactory.getCommandLineUsageArguments());
+            instructions.add(ConfigurationExtensionFactory.getCommandLineInstructions());
+        }
+
     }
 
     public static void printUsage(final PrintStream out) {

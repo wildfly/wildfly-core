@@ -1,0 +1,19 @@
+wildfly-configuration:
+    extension:
+      org.jboss.as.failure:
+        module: org.jboss.as.failure
+    socket-binding-group:
+        standard-sockets:
+          default-interface: public
+          port-offset: ${jboss.socket.binding.port-offset:0}
+          socket-binding:
+              http:
+                interface: public
+              https:
+          remote-destination-outbound-socket-binding:
+            mail-snmt:  
+              host: foo
+              port: 8081
+            foo2:
+              host: foo2
+              port: 8082
