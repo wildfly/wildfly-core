@@ -42,6 +42,8 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
     static final String HOME_DIR = Environment.HOME_DIR;
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
+    static final String ALLOW_VALUE = "allow";
+    static final String SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE = "-D" + SECURITY_MANAGER_PROP + "=" + ALLOW_VALUE;
     static final String[] DEFAULT_VM_ARGUMENTS;
     static final Collection<String> DEFAULT_MODULAR_VM_ARGUMENTS;
 

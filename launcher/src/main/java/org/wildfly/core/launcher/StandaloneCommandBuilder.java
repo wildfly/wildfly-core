@@ -126,7 +126,13 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
                     }
                     break;
                 case SECURITY_MANAGER_PROP:
-                    setUseSecurityManager(true);
+                    if (ALLOW_VALUE.equals(argument.getValue())) {
+                        // [WFCORE-5778] java.security.manager system property with value "allow" detected.
+                        // It doesn't mean SM is going to be installed but it indicates SM can be installed dynamically.
+                        setUseSecurityManager(false);
+                    } else {
+                        setUseSecurityManager(true);
+                    }
                     break;
                 default:
                     javaOpts.add(argument);
@@ -546,6 +552,9 @@ public class StandaloneCommandBuilder extends AbstractCommandBuilder<StandaloneC
         cmd.addAll(getJavaOptions());
         if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
+        if (environment.getJvm().enhancedSecurityManagerAvailable()) {
+            cmd.add(SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
         // Add these to JVM level system properties
         addSystemPropertyArg(cmd, HOME_DIR, getWildFlyHome());
