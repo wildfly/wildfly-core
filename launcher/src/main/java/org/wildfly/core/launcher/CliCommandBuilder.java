@@ -620,6 +620,9 @@ public class CliCommandBuilder implements CommandBuilder {
         if (environment.getJvm().isModular()) {
             cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
         }
+        if (environment.getJvm().enhancedSecurityManagerAvailable()) {
+            cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
+        }
         cmd.add("-jar");
         cmd.add(environment.getModuleJar().toString());
         cmd.add("-mp");

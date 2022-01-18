@@ -39,9 +39,12 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
 @SuppressWarnings("unused")
 abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> implements CommandBuilder {
 
+    private static final String ALLOW_VALUE = "allow";
+    private static final String DISALLOW_VALUE = "disallow";
     static final String HOME_DIR = Environment.HOME_DIR;
     static final String SECURITY_MANAGER_ARG = "-secmgr";
     static final String SECURITY_MANAGER_PROP = "java.security.manager";
+    static final String SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE = "-D" + SECURITY_MANAGER_PROP + "=" + ALLOW_VALUE;
     static final String[] DEFAULT_VM_ARGUMENTS;
     static final Collection<String> DEFAULT_MODULAR_VM_ARGUMENTS;
 
@@ -657,5 +660,9 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         if (value != null) {
             cmd.add("-D" + key + "=" + value);
         }
+    }
+
+    protected static boolean isJavaSecurityManagerConfigured(final Argument argument) {
+        return !ALLOW_VALUE.equals(argument.getValue()) && !DISALLOW_VALUE.equals(argument.getValue());
     }
 }
