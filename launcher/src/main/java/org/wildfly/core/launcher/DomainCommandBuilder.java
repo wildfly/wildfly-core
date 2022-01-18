@@ -581,7 +581,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         if (arg != null && !arg.trim().isEmpty()) {
             final Argument argument = Arguments.parse(arg);
             if (argument.getKey().equals(SECURITY_MANAGER_PROP)) {
-                setUseSecurityManager(true);
+                // [WFCORE-5778] java.security.manager system property with value "allow" detected.
+                // It doesn't mean SM is going to be installed but it indicates SM can be installed dynamically.
+                setUseSecurityManager(isJavaSecurityManagerConfigured(argument));
             } else {
                 processControllerJavaOpts.add(argument);
             }
@@ -714,6 +716,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         if (environment.getJvm().isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
+        if (environment.getJvm().enhancedSecurityManagerAvailable()) {
+            cmd.add(SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
+        }
 
         cmd.add(getBootLogArgument("process-controller.log"));
         cmd.add(getLoggingPropertiesArgument("logging.properties"));
@@ -741,6 +746,9 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.addAll(hostControllerJavaOpts.asList());
         if (hostControllerJvm.isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
+        }
+        if (hostControllerJvm.enhancedSecurityManagerAvailable()) {
+            cmd.add(SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
 
         cmd.add("--");
