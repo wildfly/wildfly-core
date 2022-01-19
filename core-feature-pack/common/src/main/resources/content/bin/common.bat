@@ -15,6 +15,18 @@ if exist "%COMMON_CONF%" (
 )
 goto :eof
 
+:setEnhancedSecurityManager
+    "%JAVA%" -Djava.security.manager=allow -version >nul 2>&1 && (set ENHANCED_SM=true) || (set ENHANCED_SM=false)
+goto :eof
+
+:setSecurityManagerDefault
+  call :setEnhancedSecurityManager
+  if "!ENHANCED_SM!" == "true" (
+    rem Needed to be able to install Security Manager dynamically since JDK18
+    set "SECURITY_MANAGER_CONFIG_OPTION=-Djava.security.manager=allow"
+  )
+goto:eof
+
 :setModularJdk
     "%JAVA%" --add-modules=java.se -version >nul 2>&1 && (set MODULAR_JDK=true) || (set MODULAR_JDK=false)
 goto :eof

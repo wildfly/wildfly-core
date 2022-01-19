@@ -111,6 +111,31 @@ Function Get-Java-Opts {
 	return $JAVA_OPTS
 }
 
+Function SetEnhancedSecurityManager {
+    $ENHANCED_SM = $false
+    & $JAVA -Djava.security.manager=allow -version >$null 2>&1
+    if ($LastExitCode -eq 0){
+        $ENHANCED_SM = $true
+    }
+    return $ENHANCED_SM
+}
+
+Function Get-Security-Manager-Default {
+Param(
+   [bool]$enhancedSM
+
+) #end param
+    if($PRESERVE_JAVA_OPTS -eq 'true') {
+        return $null
+    }
+    $SECURITY_MANAGER_CONFIG_OPTION = @()
+    if ($enhancedSM) {
+        # Needed to be able to install Security Manager dynamically since JDK18
+        $SECURITY_MANAGER_CONFIG_OPTION += "-Djava.security.manager=allow"
+    }
+    return $SECURITY_MANAGER_CONFIG_OPTION
+}
+
 Function SetModularJDK {
     $MODULAR_JDK = $false
     & $JAVA --add-modules java.se -version >$null 2>&1
@@ -188,6 +213,8 @@ Param(
   $MODULAR_JDK = SetModularJDK
   $JAVA_OPTS = Get-Java-Opts #takes care of looking at defind settings and/or using env:JAVA_OPTS
   $DEFAULT_MODULAR_JVM_OPTS = Get-Default-Modular-Jvm-Options -opts $JAVA_OPTS -modularJDK $MODULAR_JDK
+  $ENHANCED_SM = SetEnhancedSecurityManager
+  $SECURITY_MANAGER_CONFIG_OPT = Get-Security-Manager-Default -enhancedSM $ENHANCED_SM
 
   $PROG_ARGS = @()
   if ($JAVA_OPTS -ne $null){
@@ -195,6 +222,9 @@ Param(
   }
   if ($DEFAULT_MODULAR_JVM_OPTS -ne $null){
   	$PROG_ARGS += $DEFAULT_MODULAR_JVM_OPTS
+  }
+  if ($SECURITY_MANAGER_CONFIG_OPT -ne $null){
+  	$PROG_ARGS += $SECURITY_MANAGER_CONFIG_OPT
   }
   if ($logFile){
   	$PROG_ARGS += "-Dorg.jboss.boot.log.file=$logFile"

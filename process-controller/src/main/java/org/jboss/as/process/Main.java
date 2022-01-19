@@ -153,7 +153,7 @@ public final class Main {
                         i += pcSocketConfig.getArgIncrement();
                     } else {
                         // Windows batch scripts can't filter out parameters, ignore the -Djava.security.manager system property
-                        if (arg.startsWith("-Djava.security.manager")) {
+                        if (isJavaSecurityManagerConfigured(arg)) {
                             // Turn on the security manager
                             securityManagerEnabled = true;
                         } else {
@@ -258,6 +258,12 @@ public final class Main {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
 
         return processController;
+    }
+
+    private static boolean isJavaSecurityManagerConfigured(final String arg) {
+        return arg.startsWith("-Djava.security.manager")
+                && !"-Djava.security.manager=allow".equals(arg)
+                && !"-Djava.security.manager=disallow".equals(arg);
     }
 
     private static String parseValue(final String arg, final String key) {

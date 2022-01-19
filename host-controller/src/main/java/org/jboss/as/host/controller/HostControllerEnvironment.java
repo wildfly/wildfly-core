@@ -493,8 +493,14 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         this.backupDomainFiles = backupDomainFiles;
         this.useCachedDc = useCachedDc;
         this.productConfig = productConfig;
-        this.securityManagerEnabled = securityManagerEnabled || hostSystemProperties.containsKey("java.security.manager");
+        // Note the java.security.manager property shouldn't be set, but we'll check to ensure the security manager should be enabled
+        this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
+    }
+
+    private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {
+        final String value = props.get("java.security.manager");
+        return value != null && !"allow".equals(value) && !"disallow".equals(value);
     }
 
     /**
