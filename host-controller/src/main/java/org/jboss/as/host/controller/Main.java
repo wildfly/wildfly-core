@@ -217,8 +217,8 @@ public final class Main {
         ConfigurationFile.InteractionPolicy domainConfigInteractionPolicy = ConfigurationFile.InteractionPolicy.STANDARD;
         String modulePath = null;
 
-        // Note the java.security.manager shouldn't be set, but we'll check to ensure the security manager gets enabled
-        boolean securityManagerEnabled = System.getSecurityManager() != null || hostSystemProperties.containsKey("java.security.manager");
+        // Note the java.security.manager property shouldn't be set, but we'll check to ensure the security manager should be enabled
+        boolean securityManagerEnabled = System.getSecurityManager() != null || isJavaSecurityManagerConfigured(hostSystemProperties);
 
         final int argsLength = args.length;
         for (int i = 0; i < argsLength; i++) {
@@ -477,6 +477,11 @@ public final class Main {
                 pmAddress, pmPort, pcSocketConfig.getBindAddress(), pcSocketConfig.getBindPort(), defaultJVM, domainConfig,
                 initialDomainConfig, hostConfig, initialHostConfig, initialRunningMode, backupDomainFiles, cachedDc,
                 productConfig, securityManagerEnabled, startTime, processType, hostConfigInteractionPolicy, domainConfigInteractionPolicy));
+    }
+
+    private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {
+        final String value = props.get("java.security.manager");
+        return value != null && !"allow".equals(value) && !"disallow".equals(value);
     }
 
     private static String parseValue(final String arg, final String key) {
