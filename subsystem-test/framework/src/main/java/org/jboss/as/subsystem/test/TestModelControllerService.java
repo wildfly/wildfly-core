@@ -44,6 +44,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.ExtensionRegistryType;
+import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -99,6 +100,9 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
            this.additionalInit = additionalInit;
            this.controllerInitializer = controllerInitializer;
            this.extensionRegistry = extensionRegistry;
+           if (expressionResolver instanceof ResolverExtensionRegistry) {
+               extensionRegistry.setResolverExtensionRegistry((ResolverExtensionRegistry) expressionResolver);
+           }
            this.runningModeControl = runningModeControl;
            this.registerTransformers = registerTransformers;
 

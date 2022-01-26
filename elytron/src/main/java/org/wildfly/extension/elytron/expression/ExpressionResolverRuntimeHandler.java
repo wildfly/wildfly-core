@@ -28,7 +28,7 @@ import org.jboss.as.controller.OperationFailedException;
 public final class ExpressionResolverRuntimeHandler {
 
     public static void initializeResolver(OperationContext context) throws OperationFailedException {
-        ElytronExpressionResolver resolver = context.getCapabilityRuntimeAPI("org.wildfly.controller.expression-resolver", ElytronExpressionResolver.class);
+        ElytronExpressionResolver resolver = context.getCapabilityRuntimeAPI("org.wildfly.security.expression-resolver", ElytronExpressionResolver.class);
         resolver.ensureInitialised(null, context);
     }
 }

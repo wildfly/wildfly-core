@@ -122,9 +122,9 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
     TestModelControllerService(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, TestDelegatingResourceDefinition rootResourceDefinition, ControlledProcessState processState, ExtensionRegistry extensionRegistry,
-            CapabilityRegistry capabilityRegistry) {
+            CapabilityRegistry capabilityRegistry, RuntimeExpressionResolver expressionResolver) {
         super(processType, runningModeControl, null, persister, validateOpsFilter, rootResourceDefinition, processState,
-                new RuntimeExpressionResolver(), capabilityRegistry);
+                expressionResolver, capabilityRegistry);
         this.type = type;
         this.runningModeControl = runningModeControl;
         this.pathManagerService = type == TestModelType.STANDALONE ? new ServerPathManagerService(capabilityRegistry) : new HostPathManagerService(capabilityRegistry);
@@ -145,8 +145,10 @@ class TestModelControllerService extends ModelTestModelControllerService {
 
     static TestModelControllerService create(ProcessType processType, RunningModeControl runningModeControl, StringConfigurationPersister persister, ModelTestOperationValidatorFilter validateOpsFilter,
             TestModelType type, ModelInitializer modelInitializer, ExtensionRegistry extensionRegistry, CapabilityRegistry capabilityRegistry) {
+        RuntimeExpressionResolver expressionResolver = new RuntimeExpressionResolver();
+        extensionRegistry.setResolverExtensionRegistry(expressionResolver);
         return new TestModelControllerService(processType, runningModeControl, persister, validateOpsFilter, type, modelInitializer,
-                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, capabilityRegistry);
+                new TestDelegatingResourceDefinition(type), new ControlledProcessState(true), extensionRegistry, capabilityRegistry, expressionResolver);
     }
 
     InjectedValue<ContentRepository> getContentRepositoryInjector(){
