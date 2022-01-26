@@ -227,6 +227,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
 
             // Check the type of the configuration file
             if (isLog4jConfiguration(fileName)) {
+                LoggingLogger.ROOT_LOGGER.usageOfLog4j1Config(configFile.getPathName(), root.getRootName());
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
                 final LogContext old = logContextSelector.setLocalContext(logContext);
                 try {
