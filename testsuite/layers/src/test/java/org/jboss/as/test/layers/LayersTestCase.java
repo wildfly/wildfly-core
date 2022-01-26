@@ -52,7 +52,9 @@ public class LayersTestCase {
         // wildfly-elytron-tool
         "org.apache.commons.cli",
         "org.apache.commons.lang3",
-        "org.wildfly.security.elytron-tool"
+        "org.wildfly.security.elytron-tool",
+        //internal json 1 API
+        "internal.javax.json.api.ee8"
     };
     // Packages that are not referenced from the module graph but needed.
     // This is the expected set of un-referenced modules found when scanning
@@ -81,7 +83,7 @@ public class LayersTestCase {
         // Brought by galleon ServerRootResourceDefinition
         "wildflyee.api",
         // bootable jar runtime
-        "org.wildfly.bootable-jar"
+        "org.wildfly.bootable-jar",
     };
 
     /**
