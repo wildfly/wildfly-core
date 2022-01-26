@@ -199,6 +199,7 @@ final class HandlerOperations {
                 // Check the POJO names
                 final PojoConfiguration log4jPojo = logContextConfiguration.getPojoConfiguration(name);
                 if (log4jPojo != null) {
+                    LoggingLogger.ROOT_LOGGER.usageOfAppender(log4jPojo.getClassName());
                     replaceHandler = (!className.equals(log4jPojo.getClassName()) || (moduleName == null ? log4jPojo.getModuleName() != null : !moduleName.equals(log4jPojo.getModuleName())));
                 }
             } else if (!className.equals(configuration.getClassName()) || (moduleName == null ? configuration.getModuleName() != null : !moduleName.equals(configuration.getModuleName()))) {
@@ -253,6 +254,7 @@ final class HandlerOperations {
                 try {
                     final Class<?> actualClass = Class.forName(className, false, moduleLoader.loadModule(moduleName).getClassLoader());
                     if (Appender.class.isAssignableFrom(actualClass)) {
+                        LoggingLogger.ROOT_LOGGER.usageOfAppender(actualClass.getCanonicalName());
                         final PojoConfiguration pojoConfiguration;
                         // Check for construction parameters
                         if (constructionProperties == null) {
