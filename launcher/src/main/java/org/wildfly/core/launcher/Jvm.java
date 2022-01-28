@@ -42,6 +42,7 @@ class Jvm {
     private static final String JAVA_EXE;
     private static final Path JAVA_HOME;
     private static final boolean MODULAR_JVM;
+    private static final boolean ENHANCED_SECURITY_MANAGER;
 
     static {
         String exe = "java";
@@ -58,23 +59,28 @@ class Jvm {
         // Shouldn't happen, but we'll assume we're not a modular environment
         final String javaSpecVersion = System.getProperty("java.specification.version");
         boolean modularJvm = false;
+        boolean enhancedSecurityManager = false;
         if (javaSpecVersion != null) {
             final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
             if (matcher.find()) {
                 modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
+                enhancedSecurityManager = Integer.parseInt(matcher.group(1)) >= 12;
             }
         }
         MODULAR_JVM = modularJvm;
+        ENHANCED_SECURITY_MANAGER = enhancedSecurityManager;
     }
 
-    private static final Jvm DEFAULT = new Jvm(JAVA_HOME, MODULAR_JVM);
+    private static final Jvm DEFAULT = new Jvm(JAVA_HOME, MODULAR_JVM, ENHANCED_SECURITY_MANAGER);
 
     private final Path path;
     private final boolean isModular;
+    private final boolean enhancedSecurityManager;
 
-    private Jvm(final Path path, final boolean isModular) {
+    private Jvm(final Path path, final boolean isModular, final boolean enhancedSecurityManager) {
         this.path = path;
         this.isModular = isModular;
+        this.enhancedSecurityManager = enhancedSecurityManager;
     }
 
     /**
@@ -112,7 +118,7 @@ class Jvm {
             return DEFAULT;
         }
         final Path path = validateJavaHome(javaHome);
-        return new Jvm(path, isModularJavaHome(path));
+        return new Jvm(path, isModularJavaHome(path), hasEnhancedSecurityManager(javaHome));
     }
 
     /**
@@ -142,6 +148,18 @@ class Jvm {
         return isModular;
     }
 
+    /**
+     * Indicates whether or not this is a modular JVM supporting special SecurityManager values like "allow", "disallow" & "default"
+     *
+     * @return {@code true} if this is a modular JVM with enhanced SecurityManager, otherwise {@code false}
+     */
+    public boolean enhancedSecurityManagerAvailable() {
+        return enhancedSecurityManager;
+    }
+
+    private static boolean javaHomeWithEnhancedSecurityManager(final Path javaHome) {
+        return isModularJavaHome(javaHome) ? hasEnhancedSecurityManager(javaHome) : false;
+    }
 
     private static boolean isModularJavaHome(final Path javaHome) {
         final Path jmodsDir = javaHome.resolve("jmods");
@@ -189,6 +207,20 @@ class Jvm {
         return false;
     }
 
+    /**
+     * Checks to see if the {@code javaHome} supports special security manager tokens like "allow", "disallow" & "default"
+     *
+     * @param javaHome the Java Home if {@code null} an attempt to discover the Java Home will be done
+     *
+     * @return {@code true} if this is a modular environment
+     */
+    private static boolean hasEnhancedSecurityManager(final Path javaHome) {
+        final List<String> cmd = new ArrayList<>();
+        cmd.add(resolveJavaCommand(javaHome));
+        cmd.add("-Djava.security.manager=allow");
+        cmd.add("-version");
+        return checkProcessStatus(cmd);
+    }
 
     /**
      * Checks to see if the {@code javaHome} is a modular JVM.
@@ -198,11 +230,21 @@ class Jvm {
      * @return {@code true} if this is a modular environment
      */
     private static boolean isModular(final Path javaHome) {
-        boolean result;
         final List<String> cmd = new ArrayList<>();
         cmd.add(resolveJavaCommand(javaHome));
         cmd.add("--add-modules=java.se");
         cmd.add("-version");
+        return checkProcessStatus(cmd);
+    }
+    /**
+     * Checks the process status.
+     *
+     * @param cmd command to execute
+     *
+     * @return {@code true} if command was successful, {@code false} if process failed.
+     */
+    private static boolean checkProcessStatus(final List<String> cmd) {
+        boolean result;
         final ProcessBuilder builder = new ProcessBuilder(cmd);
         Process process = null;
         Path stdout = null;

@@ -453,6 +453,9 @@ public class BootableJarCommandBuilder implements CommandBuilder {
         if (jvm.isModular()) {
             cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
         }
+        if (jvm.enhancedSecurityManagerAvailable()) {
+            cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
+        }
         if (modulesLocklessArg != null) {
             cmd.add(modulesLocklessArg);
         }

@@ -256,6 +256,13 @@ public class CommandBuilderTest {
     }
 
     private void testModularJvmArguments(final Collection<String> command, final int expectedCount) {
+        // If we're using Java 12+ ensure enhanced security manager option was added
+        if (Jvm.current().enhancedSecurityManagerAvailable()) {
+            assertArgumentExists(command, "-Djava.security.manager=allow", expectedCount);
+        } else {
+            Assert.assertFalse("Did not expect \"-Djava.security.manager=allow\" to be in the command list",
+                    command.contains("-Djava.security.manager=allow"));
+        }
         // If we're using Java 9+ ensure the modular JDK options were added
         if (Jvm.current().isModular()) {
             assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
