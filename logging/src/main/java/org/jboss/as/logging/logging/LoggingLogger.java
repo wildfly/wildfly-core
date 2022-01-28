@@ -1029,4 +1029,25 @@ public interface LoggingLogger extends BasicLogger {
 //     */
 //    @Message(id = 98, value = "Cannot remove filter %s as it's assigned to: %s")
 //    OperationFailedException cannotRemoveFilter(String name, Collection<String> references);
+
+    /**
+     * Logs a warning message indicating the deprecation of an appender being used for custom-handler.
+     *
+     * @param appenderType the appender being used
+     */
+    @Message(id = 99, value = "Usage of a log4j appender (%s) found in a custom-handler. Support for using appenders as " +
+            "custom handlers has been deprecated and will be removed in a future release.")
+    @LogMessage(level = WARN)
+    void usageOfAppender(String appenderType);
+
+    /**
+     * Logs a warning message indicating the deprecation of log4j configuration files in a deployment.
+     *
+     * @param fileName       the log4j configuration file
+     * @param deploymentName the deployment name
+     */
+    @Message(id = 100, value = "Usage of a log4j configuration file (%s) was found in deployment %s. Support for log4j " +
+            "configuration files in deployments has been deprecated and will be removed in a future release.")
+    @LogMessage(level = WARN)
+    void usageOfLog4j1Config(String fileName, String deploymentName);
 }
