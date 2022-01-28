@@ -12,6 +12,18 @@ if [ -r "$COMMON_CONF" ]; then
   . "$COMMON_CONF"
 fi
 
+setEnhancedSecurityManager() {
+  "$JAVA" -Djava.security.manager=allow -version > /dev/null 2>&1 && ENHANCED_SM=true || ENHANCED_SM=false
+}
+
+setSecurityManagerDefault() {
+  setEnhancedSecurityManager
+  if [ "$ENHANCED_SM" = "true" ]; then
+    # Needed to be able to install Security Manager dynamically since JDK18
+    SECURITY_MANAGER_CONFIG_OPTION="-Djava.security.manager=allow"
+  fi
+}
+
 setModularJdk() {
   "$JAVA" --add-modules=java.se -version > /dev/null 2>&1 && MODULAR_JDK=true || MODULAR_JDK=false
 }
