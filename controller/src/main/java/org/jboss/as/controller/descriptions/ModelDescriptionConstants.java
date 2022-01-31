@@ -413,6 +413,7 @@ public class ModelDescriptionConstants {
     public static final String READ_CHILDREN_RESOURCES_OPERATION = "read-children-resources";
     public static final String READ_CONFIG_AS_FEATURES_OPERATION = "read-config-as-features";
     public static final String READ_CONFIG_AS_XML_OPERATION = "read-config-as-xml";
+    public static final String READ_CONFIG_AS_XML_FILE_OPERATION = "read-config-as-xml-file";
     public static final String READ_CONTENT = "read-content";
     public static final String READ_FEATURE_DESCRIPTION_OPERATION = "read-feature-description";
     public static final String READ_ONLY = "read-only";

@@ -395,6 +395,12 @@ public class ManagementReadsTestCase {
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
         // TODO make some more assertions about result content
+        request = new ModelNode();
+        request.get(OP).set("read-config-as-xml-file");
+        request.get(OP_ADDR).setEmptyList();
+
+        response = domainClient.execute(request);
+        validateResponse(response);
     }
 
     @Test
@@ -406,6 +412,18 @@ public class ManagementReadsTestCase {
         request.get(OP_ADDR).setEmptyList().add(HOST, "master");
 
         ModelNode response = domainClient.execute(request);
+        validateResponse(response);
+        // TODO make some more assertions about result content
+
+        request.get(OP_ADDR).setEmptyList().add(HOST, "slave");
+        response = domainClient.execute(request);
+        validateResponse(response);
+
+        request = new ModelNode();
+        request.get(OP).set("read-config-as-xml-file");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "master");
+
+        response = domainClient.execute(request);
         validateResponse(response);
         // TODO make some more assertions about result content
 
@@ -425,6 +443,23 @@ public class ManagementReadsTestCase {
         address.add(SERVER, "main-one");
 
         ModelNode response = domainClient.execute(request);
+        validateResponse(response);
+        // TODO make some more assertions about result content
+
+        address.setEmptyList();
+        address.add(HOST, "slave");
+        address.add(SERVER, "main-three");
+        response = domainClient.execute(request);
+        validateResponse(response);
+        // TODO make some more assertions about result content
+
+        request = new ModelNode();
+        request.get(OP).set("read-config-as-xml-file");
+        address = request.get(OP_ADDR);
+        address.add(HOST, "master");
+        address.add(SERVER, "main-one");
+
+        response = domainClient.execute(request);
         validateResponse(response);
         // TODO make some more assertions about result content
 

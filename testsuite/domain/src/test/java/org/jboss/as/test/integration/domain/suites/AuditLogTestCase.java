@@ -289,6 +289,7 @@ public class AuditLogTestCase {
         ModelNode slaveServerOp = getOp(slaveServerRecord);
         Assert.assertEquals(domainUUID, slaveServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
         compareOpsWithoutHeaders(addOp, slaveServerOp, BOOT_TIME);
+        masterLifecycleUtil.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, propertyName)));
     }
 
     @Test

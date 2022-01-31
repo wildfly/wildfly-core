@@ -30,12 +30,14 @@ import static org.jboss.as.controller.client.helpers.Operations.createOperation;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import org.jboss.as.controller.PathAddress;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -111,6 +113,8 @@ public class FullReplaceUndeployTestCase {
         // Validate the subsystem child names
         result = execute(client, readServerSubsystems);
         validateSubsystemModel("/host=master/server=main-one", result);
+        execute(client, Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "main-server-group").append(DEPLOYMENT, name)));
+        execute(client, Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT, name)));
     }
 
     private void validateSubsystemModel(final String address, final ModelNode subsystemModel) {

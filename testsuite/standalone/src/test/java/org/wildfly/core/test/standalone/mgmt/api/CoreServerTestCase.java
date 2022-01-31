@@ -40,7 +40,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UUID;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import javax.inject.Inject;
+import org.apache.commons.io.IOUtils;
+import org.jboss.as.controller.client.Operation;
+import org.jboss.as.controller.client.OperationMessageHandler;
+import org.jboss.as.controller.client.OperationResponse;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -49,6 +61,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * Simple test to validate the server's model availability and reading it as XML or from the root.
@@ -74,6 +87,36 @@ public class CoreServerTestCase {
         ModelNode r = managementClient.getControllerClient().execute(request);
 
         Assert.assertEquals(SUCCESS, r.require(OUTCOME).asString());
+    }
+
+    /**
+     * Validates that the model can be read in xml form.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testReadConfigAsXmlFile() throws Exception {
+        ModelNode request = new ModelNode();
+        request.get("operation").set("read-config-as-xml-file");
+        request.get("address").setEmptyList();
+        OperationResponse response = managementClient.getControllerClient().executeOperation(Operation.Factory.create(request), OperationMessageHandler.DISCARD);
+        Assert.assertEquals(1, response.getInputStreams().size());
+        Assert.assertEquals(SUCCESS, response.getResponseNode().require(OUTCOME).asString());
+        String uuid = response.getResponseNode().require(RESULT).require(UUID).asStringOrNull();
+        Assert.assertNotNull(uuid);
+        OperationResponse.StreamEntry stream = response.getInputStream(uuid);
+        Assert.assertNotNull(stream);
+        Assert.assertEquals("application/xml", stream.getMimeType());
+        String xml = null;
+        try (InputStream in = stream.getStream();
+                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            IOUtils.copy(in, out);
+            xml = new String(out.toByteArray(), StandardCharsets.UTF_8);
+        }
+        final String jbossHome = WildFlySecurityManager.getPropertyPrivileged("jboss.home", ".");
+        Path standalone = Paths.get(jbossHome, "standalone", "configuration", "standalone.xml");
+        String expectedXml = new String(Files.readAllBytes(standalone));
+        Assert.assertEquals(expectedXml , xml);
     }
 
     /**
@@ -103,7 +146,6 @@ public class CoreServerTestCase {
         validateOps(r);
 
         // Make sure the inherited op descriptions work as well
-
         request = new ModelNode();
         request.get("operation").set("read-resource-description");
         request.get("address").setEmptyList();
@@ -115,7 +157,7 @@ public class CoreServerTestCase {
         Assert.assertEquals("response with failure details:" + r.toString(), SUCCESS, r.require(OUTCOME).asString());
     }
 
-    private void validateOps(ModelNode response){
+    private void validateOps(ModelNode response) {
         ModelNode operations = response.get(RESULT, OPERATIONS);
         validateOperation(operations, RELOAD, null, ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE);
         validateOperation(operations, RESUME, null);

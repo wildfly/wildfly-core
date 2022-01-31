@@ -81,7 +81,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
         try {
             XMLStreamWriter streamWriter = null;
             try {
-                streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(output);
+                streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(output, "UTF-8");
                 final ModelMarshallingContext extensibleModel = new ModelMarshallingContext() {
 
                     @Override

@@ -67,32 +67,37 @@ public class ProductInfoUnitTestCase extends ContainerResourceMgmtTestBase {
     public void testProductInfo() throws Exception {
         final ModelNode setOrganizationOp = Util.getWriteAttributeOperation(PathAddress.EMPTY_ADDRESS, ORGANIZATION, "wildfly-core");
         executeOperation(setOrganizationOp, true);
-        final ModelNode operation = new ModelNode();
-        operation.get(OP_ADDR).set(PathAddress.EMPTY_ADDRESS.toModelNode());
-        operation.get(OP).set(OPERATION_NAME);
+        try {
+            final ModelNode operation = new ModelNode();
+            operation.get(OP_ADDR).set(PathAddress.EMPTY_ADDRESS.toModelNode());
+            operation.get(OP).set(OPERATION_NAME);
 
-        final List<Property> result = executeOperation(operation, true).asPropertyList();
-        assertThat(result.size(), is(1));
-        assertThat(result.get(0).getName(), is(SUMMARY));
-        final ModelNode report = result.get(0).getValue();
-        assertThat(report.isDefined(), is(true));
-        assertThat(report.hasDefined(NODE_NAME), is(false));
-        assertThat(report.hasDefined(HOSTNAME), is(true));
-        assertThat(report.hasDefined(HOSTNAME), is(true));
-        assertThat(report.hasDefined(ORGANIZATION), is(true));
-        assertThat(report.get(ORGANIZATION).asString(), is("wildfly-core"));
-        assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));
-        assertThat(report.get(PRODUCT_COMMUNITY_IDENTIFIER).asString(), is(PROJECT_TYPE));
-        assertThat(report.hasDefined(STANDALONE_DOMAIN_IDENTIFIER), is(true));
-        assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.STANDALONE_SERVER.name()));
-        assertThat(report.hasDefined(OS), is(true));
-        assertThat(report.hasDefined(CPU), is(true));
-        assertThat(report.get(CPU).hasDefined(ARCH), is(true));
-        assertThat(report.get(CPU).hasDefined(AVAILABLE_PROCESSORS), is(true));
-        assertThat(report.hasDefined(JVM), is(true));
-        assertThat(report.get(JVM).hasDefined(NAME), is(true));
-        assertThat(report.get(JVM).hasDefined(JVM_VENDOR), is(true));
-        assertThat(report.get(JVM).hasDefined(JVM_VERSION), is(true));
-        assertThat(report.get(JVM).hasDefined(JVM_HOME), is(true));
+            final List<Property> result = executeOperation(operation, true).asPropertyList();
+            assertThat(result.size(), is(1));
+            assertThat(result.get(0).getName(), is(SUMMARY));
+            final ModelNode report = result.get(0).getValue();
+            assertThat(report.isDefined(), is(true));
+            assertThat(report.hasDefined(NODE_NAME), is(false));
+            assertThat(report.hasDefined(HOSTNAME), is(true));
+            assertThat(report.hasDefined(HOSTNAME), is(true));
+            assertThat(report.hasDefined(ORGANIZATION), is(true));
+            assertThat(report.get(ORGANIZATION).asString(), is("wildfly-core"));
+            assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));
+            assertThat(report.get(PRODUCT_COMMUNITY_IDENTIFIER).asString(), is(PROJECT_TYPE));
+            assertThat(report.hasDefined(STANDALONE_DOMAIN_IDENTIFIER), is(true));
+            assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.STANDALONE_SERVER.name()));
+            assertThat(report.hasDefined(OS), is(true));
+            assertThat(report.hasDefined(CPU), is(true));
+            assertThat(report.get(CPU).hasDefined(ARCH), is(true));
+            assertThat(report.get(CPU).hasDefined(AVAILABLE_PROCESSORS), is(true));
+            assertThat(report.hasDefined(JVM), is(true));
+            assertThat(report.get(JVM).hasDefined(NAME), is(true));
+            assertThat(report.get(JVM).hasDefined(JVM_VENDOR), is(true));
+            assertThat(report.get(JVM).hasDefined(JVM_VERSION), is(true));
+            assertThat(report.get(JVM).hasDefined(JVM_HOME), is(true));
+        } finally {
+            final ModelNode unsetOrganizationOp = Util.getUndefineAttributeOperation(PathAddress.EMPTY_ADDRESS, ORGANIZATION);
+            executeOperation(unsetOrganizationOp);
+        }
     }
 }

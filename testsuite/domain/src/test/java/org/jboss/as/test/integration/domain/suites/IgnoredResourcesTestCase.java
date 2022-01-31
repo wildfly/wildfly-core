@@ -328,6 +328,8 @@ public class IgnoredResourcesTestCase {
             Assert.assertTrue(exists(domainMasterLifecycleUtil, hash));
             Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
 
+            domainMasterLifecycleUtil.getDomainClient().execute(Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "minimal").append(DEPLOYMENT, "test.jar")));
+
         } finally {
             if (is != null) try {
                 is.close();

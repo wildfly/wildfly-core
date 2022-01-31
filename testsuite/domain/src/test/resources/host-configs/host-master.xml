@@ -1,24 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <!--
-  ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2010, Red Hat, Inc., and individual contributors
-  ~ as indicated by the @author tags. See the copyright.txt file in the
-  ~ distribution for a full listing of individual contributors.
-  ~
-  ~ This is free software; you can redistribute it and/or modify it
-  ~ under the terms of the GNU Lesser General Public License as
-  ~ published by the Free Software Foundation; either version 2.1 of
-  ~ the License, or (at your option) any later version.
-  ~
-  ~ This software is distributed in the hope that it will be useful,
-  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
-  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-  ~ Lesser General Public License for more details.
-  ~
-  ~ You should have received a copy of the GNU Lesser General Public
-  ~ License along with this software; if not, write to the Free
-  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
-  -->
+~ JBoss, Home of Professional Open Source.
+~ Copyright 2010, Red Hat, Inc., and individual contributors
+~ as indicated by the @author tags. See the copyright.txt file in the
+~ distribution for a full listing of individual contributors.
+~
+~ This is free software; you can redistribute it and/or modify it
+~ under the terms of the GNU Lesser General Public License as
+~ published by the Free Software Foundation; either version 2.1 of
+~ the License, or (at your option) any later version.
+~
+~ This software is distributed in the hope that it will be useful,
+~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+~ Lesser General Public License for more details.
+~
+~ You should have received a copy of the GNU Lesser General Public
+~ License along with this software; if not, write to the Free
+~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
 
 <host xmlns="urn:jboss:domain:19.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -41,8 +42,8 @@
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
-                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
+                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
             </handlers>
             <logger log-boot="true" log-read-only="true" enabled="false">
                 <handlers>
@@ -67,7 +68,7 @@
     </management>
 
     <domain-controller>
-       <local/>
+        <local/>
     </domain-controller>
 
     <interfaces>
@@ -77,15 +78,15 @@
         <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-           <jvm-options>
-               <option value="-ea"/>
-           </jvm-options>
-          <environment-variables>
-              <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-          </environment-variables>
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="128m"/>
+            <jvm-options>
+                <option value="-ea"/>
+            </jvm-options>
+            <environment-variables>
+                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+            </environment-variables>
             <!--
             <jvm-options>
                 <option value="-Xdebug"/>
@@ -95,8 +96,8 @@
 
             </jvm-options>
             -->
-       </jvm>
- 	</jvms>
+        </jvm>
+    </jvms>
 
     <servers>
         <server name="main-one" group="main-server-group">
@@ -110,9 +111,9 @@
             </interfaces>
             <!-- server-one inherits the default socket-group declared in the server-group -->
             <jvm name="default">
-	             <environment-variables>
-	                 <variable name="DOMAIN_TEST_SERVER" value="server"/>
-	             </environment-variables>
+                <environment-variables>
+                    <variable name="DOMAIN_TEST_SERVER" value="server"/>
+                </environment-variables>
             </jvm>
         </server>
         <server name="main-two" group="main-server-group" auto-start="false">
@@ -122,11 +123,11 @@
                 </interface>
             </interfaces>
             <!-- server-two avoids port conflicts by incrementing the ports in
-                 the default socket-group declared in the server-group -->
-            <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
+            the default socket-group declared in the server-group -->
             <jvm name="default">
                 <heap size="64m" max-size="256m"/>
             </jvm>
+            <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
         </server>
         <server name="other-one" group="other-server-group" auto-start="false">
             <interfaces>
@@ -135,9 +136,9 @@
                 </interface>
             </interfaces>
             <!-- server-three avoids port conflicts by incrementing the ports in
-                 the default socket-group declared in the server-group -->
-            <socket-bindings port-offset="250"/>
+            the default socket-group declared in the server-group -->
             <jvm name="default" />
+            <socket-bindings port-offset="250"/>
         </server>
         <server name="reload-one" group="reload-test-group" auto-start="false">
             <interfaces>
@@ -150,6 +151,7 @@
     </servers>
 
     <profile>
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
         <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <providers>
                 <aggregate-providers name="combined-providers">
@@ -233,8 +235,6 @@
             <expose-resolved-model/>
             <expose-expression-model/>
             <remoting-connector/>
-        </subsystem>
-        <subsystem xmlns="urn:jboss:domain:core-management:1.0">
         </subsystem>
     </profile>
 </host>
