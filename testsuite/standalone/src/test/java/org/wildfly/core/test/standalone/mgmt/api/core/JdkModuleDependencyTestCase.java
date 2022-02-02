@@ -112,14 +112,6 @@ public class JdkModuleDependencyTestCase {
     private ManagementClient managementClient;
 
     @Test
-    public void testJdk8ModuleEmulation() throws Exception {
-        Assume.assumeTrue("Skipping testJdk8ModuleEmulation, test is not ran on JDK 1.8.",
-                System.getProperty("java.specification.version").equals("1.8"));
-
-        testModuleDependencies(REQUIRED_1_8_EMULATED_MODULES);
-    }
-
-    @Test
     public void testJdk9ModuleDependencies() throws Exception {
         Assume.assumeTrue("Skipping testJdk9ModuleDependencies, test is not ran on JDK 9.",
                 System.getProperty("java.specification.version").equals("9"));

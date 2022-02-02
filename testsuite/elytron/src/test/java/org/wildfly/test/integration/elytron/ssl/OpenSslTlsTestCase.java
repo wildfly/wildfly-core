@@ -139,11 +139,6 @@ public class OpenSslTlsTestCase {
     }
 
     @BeforeClass
-    public static void isJDK11Plus() {
-        Assume.assumeTrue("OpenSSL only supports TLSv1.3 with JDK 11+", getJavaSpecVersion() >= 11);
-    }
-
-    @BeforeClass
     public static void isOpenSSL111OrHigher() {
         Assume.assumeTrue("OpenSSL version in use does not support TLS 1.3", isOpenSslTls13Enabled());
     }
@@ -165,7 +160,6 @@ public class OpenSslTlsTestCase {
     }
 
     private static int getJavaSpecVersion() {
-        if ("1.8".equals(javaSpecVersion)) return 8;
         return Integer.parseInt(javaSpecVersion);
     }
 

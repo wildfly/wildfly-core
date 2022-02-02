@@ -28,7 +28,6 @@ final class JdkUtils {
     private JdkUtils() {}
 
     static int getJavaSpecVersion() {
-        if ("1.8".equals(javaSpecVersion)) return 8;
         return Integer.parseInt(javaSpecVersion);
     }
 

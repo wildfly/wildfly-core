@@ -50,15 +50,12 @@ class Jvm {
             exe = "java.exe";
         }
         JAVA_EXE = exe;
-        String javaHome = System.getenv("JAVA_HOME");
-        if (javaHome == null) {
-            javaHome = System.getProperty("java.home");
-        }
+        final String javaHome = System.getProperty("java.home");
         JAVA_HOME = Paths.get(javaHome);
 
-        // Shouldn't happen, but we'll assume we're not a modular environment
+        // Assume we're in a modular environment
         final String javaSpecVersion = System.getProperty("java.specification.version");
-        boolean modularJvm = false;
+        boolean modularJvm = true;
         boolean enhancedSecurityManager = false;
         if (javaSpecVersion != null) {
             final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(javaSpecVersion);
@@ -155,10 +152,6 @@ class Jvm {
      */
     public boolean enhancedSecurityManagerAvailable() {
         return enhancedSecurityManager;
-    }
-
-    private static boolean javaHomeWithEnhancedSecurityManager(final Path javaHome) {
-        return isModularJavaHome(javaHome) ? hasEnhancedSecurityManager(javaHome) : false;
     }
 
     private static boolean isModularJavaHome(final Path javaHome) {

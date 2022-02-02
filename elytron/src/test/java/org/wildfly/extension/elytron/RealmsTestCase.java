@@ -383,7 +383,7 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
             }
 
             JaasSecurityRealm securityRealm;
-            if (!(JdkUtils.isIbmJdk() && JdkUtils.getJavaSpecVersion() <= 8)) {
+            if (!(JdkUtils.isIbmJdk())) {
                 ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("myJaasRealm");
                 securityRealm = (JaasSecurityRealm) services.getContainer().getService(serviceName).getValue();
                 Assert.assertNotNull(securityRealm);
