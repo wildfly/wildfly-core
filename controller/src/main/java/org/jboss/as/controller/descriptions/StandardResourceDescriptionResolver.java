@@ -157,7 +157,8 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
         if (locale == null) {
             locale = Locale.getDefault();
         }
-        return ResourceBundle.getBundle(bundleBaseName, locale, bundleLoader.get());
+        return ResourceBundle.getBundle(bundleBaseName, locale, bundleLoader.get(),
+                ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES));
     }
 
     /** {@inheritDoc} */
