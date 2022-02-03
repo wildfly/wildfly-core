@@ -71,7 +71,7 @@ class ThreadPoolResourceDescriptionResolver extends StandardResourceDescriptionR
     @Override
     public String getResourceAttributeValueTypeDescription(String attributeName, Locale locale, ResourceBundle bundle, String... suffixes) {
         if (COMMON_ATTRIBUTE_NAMES.contains(attributeName)) {
-            return bundle.getString(getVariableBundleKey(new String[] {attributeName}, suffixes));
+            return bundle.getString(getVariableBundleKey(COMMON_PREFIX, new String[] {attributeName}, suffixes));
         }
         return super.getResourceAttributeValueTypeDescription(attributeName, locale, bundle, suffixes);
     }
@@ -87,28 +87,13 @@ class ThreadPoolResourceDescriptionResolver extends StandardResourceDescriptionR
     @Override
     public String getOperationParameterValueTypeDescription(String operationName, String paramName, Locale locale, ResourceBundle bundle, String... suffixes) {
         if (ModelDescriptionConstants.ADD.equals(operationName) && COMMON_ATTRIBUTE_NAMES.contains(paramName)) {
-            return bundle.getString(getVariableBundleKey(new String[] {paramName}, suffixes));
+            return bundle.getString(getVariableBundleKey(COMMON_PREFIX, new String[] {paramName}, suffixes));
         }
         return super.getOperationParameterValueTypeDescription(operationName, paramName, locale, bundle, suffixes);
     }
 
 
     private String getKey(String... args) {
-        return getVariableBundleKey(args);
-    }
-
-    private String getVariableBundleKey(String[] fixed, String... variable) {
-        StringBuilder sb = new StringBuilder(COMMON_PREFIX);
-        for (String arg : fixed) {
-            sb.append('.');
-            sb.append(arg);
-        }
-        if (variable != null) {
-            for (String arg : variable) {
-                sb.append('.');
-                sb.append(arg);
-            }
-        }
-        return sb.toString();
+        return getVariableBundleKey(COMMON_PREFIX, args);
     }
 }

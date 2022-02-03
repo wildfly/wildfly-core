@@ -175,7 +175,7 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
     /** {@inheritDoc} */
     @Override
     public String getResourceAttributeValueTypeDescription(String attributeName, Locale locale, ResourceBundle bundle, String... suffixes) {
-        return bundle.getString(getVariableBundleKey(new String[]{attributeName}, suffixes));
+        return bundle.getString(getVariableBundleKey(keyPrefix, new String[]{attributeName}, suffixes));
     }
 
     /** {@inheritDoc} */
@@ -202,7 +202,7 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
         } else {
             fixed = new String[]{operationName, paramName};
         }
-        return bundle.getString(getVariableBundleKey(fixed, suffixes));
+        return bundle.getString(getVariableBundleKey(keyPrefix, fixed, suffixes));
     }
 
     /** {@inheritDoc} */
@@ -219,7 +219,7 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
     @Override
     public String getOperationReplyValueTypeDescription(String operationName, Locale locale, ResourceBundle bundle, String... suffixes) {
         try {
-            return bundle.getString(getVariableBundleKey(new String[]{operationName, REPLY}, suffixes));
+            return bundle.getString(getVariableBundleKey(keyPrefix, new String[]{operationName, REPLY}, suffixes));
         } catch (MissingResourceException e) {
             try {
                 return getOperationParameterValueTypeDescription(operationName, suffixes[0], locale, bundle);
@@ -278,24 +278,32 @@ public class StandardResourceDescriptionResolver implements ResourceDescriptionR
     }
 
     protected String getBundleKey(String... args) {
-        return getVariableBundleKey(args);
+        return getVariableBundleKey(keyPrefix, args);
     }
 
-    private String getVariableBundleKey(String[] fixed, String... variable) {
-        StringBuilder sb = new StringBuilder(keyPrefix);
+    /**
+     * Creates a resource entry key with key prefix, fixed parts, and variable parts.
+     * This method is declared static so that a caller can call it with any prefix,
+     * which may be different from the prefix associated with any instances of this class.
+     *
+     * @param prefix  the key fix
+     * @param fixed  the fixed parts for the key
+     * @param variable  the variable parts for the key
+     * @return a key with all the above parts
+     */
+    protected static String getVariableBundleKey(String prefix, String[] fixed, String... variable) {
+        StringBuilder sb = new StringBuilder(prefix);
         for (String arg : fixed) {
             if (sb.length() > 0) {
                 sb.append('.');
             }
             sb.append(arg);
         }
-        if (variable != null) {
-            for (String arg : variable) {
-                if (sb.length() > 0) {
-                    sb.append('.');
-                }
-                sb.append(arg);
+        for (String arg : variable) {
+            if (sb.length() > 0) {
+                sb.append('.');
             }
+            sb.append(arg);
         }
         return sb.toString();
     }
