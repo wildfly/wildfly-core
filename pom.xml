@@ -26,7 +26,7 @@
     <parent>
       <groupId>org.jboss</groupId>
       <artifactId>jboss-parent</artifactId>
-      <version>37</version>
+      <version>39</version>
       <!-- The empty relativePath makes Maven lookup it in the repository. Missing tag default is ../pom.xml. -->
       <relativePath/>
     </parent>
@@ -78,9 +78,15 @@
 
         <!-- Keep consistent with README.md and .mvn/wrapper/maven-wrapper.properties -->
         <maven.min.version>3.6.0</maven.min.version>
+        <!-- Require Java 11 -->
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
 
         <!-- Modularized JDK support (various workarounds) - activated via profile -->
-        <modular.jdk.args></modular.jdk.args>
+        <modular.jdk.args>
+            --add-opens=java.base/java.security=ALL-UNNAMED
+            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+        </modular.jdk.args>
         <modular.jdk.props></modular.jdk.props>
 
         <!--
@@ -385,7 +391,7 @@
                     </configuration>
                 </plugin>
 
-                <!-- Ban bad dependencies and require Java 8 for deploying -->
+                <!-- Ban bad dependencies and require Java 11 for deploying -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
@@ -460,7 +466,7 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <id>require-java8</id>
+                            <id>require-java11</id>
                             <goals>
                                 <goal>enforce</goal>
                             </goals>
@@ -468,7 +474,7 @@
                             <configuration>
                                 <rules>
                                     <requireJavaVersion>
-                                        <version>[1.8,9)</version>
+                                        <version>[11,12)</version>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
@@ -2292,26 +2298,6 @@
     <!-- Profiles -->
     <profiles>
         <!--
-          Name: JDK9+
-          Descr: various workarounds activation for JDK9 and up
-        -->
-        <profile>
-            <id>JDK9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-                <!-- match 9+ -->
-            </activation>
-            <properties>
-                <!--
-                    java.base/sun.security.ssl - Added as TLS configuration within Elytron loads SunJSSE provider directly.
-                -->
-                <modular.jdk.args>
-	            --add-opens=java.base/java.security=ALL-UNNAMED
-	            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
-                </modular.jdk.args>
-            </properties>
-        </profile>
-        <!--
           Name: jpda
           Descr: Enable JPDA remote debuging
         -->
@@ -2323,7 +2309,7 @@
                 </property>
             </activation>
             <properties>
-                <surefire.jpda.args>-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y</surefire.jpda.args>
+                <surefire.jpda.args>-agentlib:jdwp=transport=dt_socket,address=*:8787,server=y,suspend=y</surefire.jpda.args>
             </properties>
         </profile>
         <profile>

@@ -61,9 +61,6 @@
                             <bomDescription>WildFly Core: Component Matrix</bomDescription>
                             <inheritExclusions>true</inheritExclusions>
                             <licenses>true</licenses>
-                            <includeProfiles>
-                                <profile>JDK9</profile>
-                            </includeProfiles>
                         </configuration>
                     </execution>
                 </executions>

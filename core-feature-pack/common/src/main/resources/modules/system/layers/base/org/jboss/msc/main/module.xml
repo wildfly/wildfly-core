@@ -25,7 +25,7 @@
 <module xmlns="urn:jboss:module:1.9" name="org.jboss.msc">
 
     <properties>
-        <property name="jboss.require-java-version" value="1.8"/>
+        <property name="jboss.require-java-version" value="11"/>
     </properties>
 
     <main-class name="org.jboss.msc.Version"/>

@@ -151,25 +151,6 @@
                 <byteman.host>::1</byteman.host>
             </properties>
         </profile>
-        <profile>
-            <id>JDK9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>${version.compiler.plugin}</version>
-                        <configuration>
-                            <release>8</release>
-                        </configuration>
-                    </plugin>
-
-                </plugins>
-            </build>
-        </profile>
     </profiles>
 
 </project>
