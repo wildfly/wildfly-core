@@ -74,7 +74,6 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -354,7 +353,6 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
 
     /** Tests building an entire server config from scratch */
     @Test
-    @Ignore("[WFCORE-5555] CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron.")
     public void testBuildServerConfig() throws Exception {
 
         String line = "embed-server --server-config=standalone-cli.xml --empty-config --remove-existing " + JBOSS_HOME;
@@ -366,26 +364,19 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         cli.sendLine("/extension=org.jboss.as.jmx:add");
         cli.sendLine("/extension=org.jboss.as.logging:add");
         cli.sendLine("/extension=org.jboss.as.remoting:add");
+        cli.sendLine("/extension=org.wildfly.extension.elytron:add");
         cli.sendLine("/extension=org.wildfly.extension.io:add");
         cli.sendLine("/extension=org.wildfly.extension.request-controller:add");
         cli.sendLine("run-batch");
 
         // Another batch for everything else
         cli.sendLine("batch");
-        cli.sendLine("/core-service=management/security-realm=ManagementRealm:add(map-groups-to-roles=false)");
-        cli.sendLine("/core-service=management/security-realm=ManagementRealm/authentication=local:add(default-user=\"$local\",skip-group-loading=true)");
-        cli.sendLine("/core-service=management/security-realm=ManagementRealm/authentication=properties:add(path=mgmt-users.properties,relative-to=jboss.server.config.dir)");
-        cli.sendLine("/core-service=management/security-realm=ManagementRealm/authorization=properties:add(path=mgmt-groups.properties,relative-to=jboss.server.config.dir)");
-        cli.sendLine("/core-service=management/security-realm=ApplicationRealm:add");
-        cli.sendLine("/core-service=management/security-realm=ApplicationRealm/authentication=local:add(default-user=\"$local\",allowed-users=*,skip-group-loading=true)");
-        cli.sendLine("/core-service=management/security-realm=ApplicationRealm/authentication=properties:add(path=application-users.properties,relative-to=jboss.server.config.dir)");
-        cli.sendLine("/core-service=management/security-realm=ApplicationRealm/authorization=properties:add(path=application-roles.properties,relative-to=jboss.server.config.dir)");
         cli.sendLine("/core-service=management/access=audit:add");
         cli.sendLine("/core-service=management/access=audit/json-formatter=json-formatter:add");
         cli.sendLine("/core-service=management/access=audit/file-handler=file:add(formatter=json-formatter,relative-to=jboss.server.data.dir,path=audit-log.log)");
         cli.sendLine("/core-service=management/access=audit/logger=audit-log:add(log-boot=true,log-read-only=false,enabled=true)");
         cli.sendLine("/core-service=management/access=audit/logger=audit-log/handler=file:add");
-        cli.sendLine("/core-service=management/management-interface=http-interface:add(security-realm=ManagementRealm,http-upgrade-enabled=true,socket-binding=management-http)");
+        cli.sendLine("/core-service=management/management-interface=http-interface:add(http-authentication-factory=management-http-authentication,http-upgrade={sasl-authentication-factory=management-sasl-authentication,enabled=true},socket-binding=management-http)");
         cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=simple)");
         cli.sendLine("/core-service=management/access=authorization/role-mapping=SuperUser:add");
         cli.sendLine("/core-service=management/access=authorization/role-mapping=SuperUser/include=\"user-$local\":add(type=user,name=\"$local\")");
@@ -420,6 +411,13 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
         cli.sendLine("/subsystem=remoting:add");
         cli.sendLine("/subsystem=remoting/configuration=endpoint:add(worker=default)");
         cli.sendLine("/subsystem=remoting/http-connector=http-remoting-connector:add(connector-ref=default,security-realm=ApplicationRealm)");
+        CLIEmbedUtil.configureElytronManagement(cli, null);
+        cli.sendLine("/subsystem=elytron/security-domain=ApplicationDomain:add(permission-mapper=default-permission-mapper,default-realm=ApplicationRealm,realms=[{realm=ApplicationRealm,role-decoder=groups-to-roles},{realm=local}])");
+        cli.sendLine("/subsystem=elytron/properties-realm=ApplicationRealm:add(users-properties={path=application-users.properties,relative-to=jboss.server.config.dir,digest-realm-name=ApplicationRealm},groups-properties={path=application-roles.properties,relative-to=jboss.server.config.dir})");
+        cli.sendLine("/subsystem=elytron/sasl-authentication-factory=application-sasl-authentication:add(security-domain=ApplicationDomain,sasl-server-factory=configured,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ApplicationRealm}]}])");
+        cli.sendLine("/subsystem=elytron/key-store=applicationKS:add(type=JKS,credential-reference={clear-text=password},path=application.keystore,relative-to=jboss.server.config.dir)");
+        cli.sendLine("/subsystem=elytron/key-manager=applicationKM:add(key-store=applicationKS,credential-reference={clear-text=password},generate-self-signed-certificate-host=localhost)");
+        cli.sendLine("/subsystem=elytron/server-ssl-context=applicationSSC:add(key-manager=applicationKM)");
         cli.sendLine("deploy " + serviceActivatorDeploymentFile.getAbsolutePath());
         cli.sendLine("run-batch");
 
