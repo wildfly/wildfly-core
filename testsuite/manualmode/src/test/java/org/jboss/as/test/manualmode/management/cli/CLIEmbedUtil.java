@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.codehaus.plexus.util.FileUtils;
+import org.jboss.as.test.integration.management.util.CLIWrapper;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -65,5 +66,42 @@ public class CLIEmbedUtil {
             result.add(line);
         }
         return result;
+    }
+
+    /**
+     * Sends commands to set up an elytron subsystem with resources relevant to securing process management.
+     * This method assumes/requires that the caller is configuring a CLI batch, and thus should be invoked after
+     * the caller has sent a "batch" command that the caller will later execute with a "run-batch".
+     *
+     * @param cli CLIWrapper to use for sending commands
+     * @param hostName name of the host controller on which the subystem is being configured,
+     *                or null if this is for a server
+     */
+    static void configureElytronManagement(CLIWrapper cli, String hostName) {
+
+        String prefix = hostName == null ? "" : "/host=" + hostName;
+        String pathType = hostName == null ? "server" : "domain";
+
+        cli.sendLine(prefix + "/subsystem=elytron:add(final-providers=combined-providers,disallowed-providers=[OracleUcrypto])");
+        cli.sendLine(prefix + "/subsystem=elytron/aggregate-providers=combined-providers:add(providers=[elytron,openssl])");
+        cli.sendLine(prefix + "/subsystem=elytron/provider-loader=elytron:add(module=org.wildfly.security.elytron)");
+        cli.sendLine(prefix + "/subsystem=elytron/provider-loader=openssl:add(module=org.wildfly.openssl)");
+        cli.sendLine(prefix + "/subsystem=elytron/file-audit-log=local-audit:add(path=audit.log,relative-to=jboss."+ pathType + ".log.dir,format=JSON)");
+        cli.sendLine(prefix + "/subsystem=elytron/security-domain=ManagementDomain:add(permission-mapper=default-permission-mapper,default-realm=ManagementRealm,realms=[{realm=ManagementRealm,role-decoder=groups-to-roles},{realm=local,role-mapper=super-user-mapper}])");
+        cli.sendLine(prefix + "/subsystem=elytron/identity-realm=local:add(identity=\"$local\")");
+        cli.sendLine(prefix + "/subsystem=elytron/properties-realm=ManagementRealm:add(users-properties={path=mgmt-users.properties,relative-to=jboss." + pathType + ".config.dir,digest-realm-name=ManagementRealm},groups-properties={path=mgmt-groups.properties,relative-to=jboss." + pathType + ".config.dir})");
+        cli.sendLine(prefix + "/subsystem=elytron/simple-permission-mapper=default-permission-mapper:add(mapping-mode=first,permission-mappings=[{principals=[anonymous],permission-sets=[{permission-set=default-permissions}]},{match-all=true,permission-sets=[{permission-set=login-permission},{permission-set=default-permissions}]}])");
+        cli.sendLine(prefix + "/subsystem=elytron/constant-realm-mapper=local:add(realm-name=local)");
+        cli.sendLine(prefix + "/subsystem=elytron/simple-role-decoder=groups-to-roles:add(attribute=groups)");
+        cli.sendLine(prefix + "/subsystem=elytron/constant-role-mapper=super-user-mapper:add(roles=[SuperUser])");
+        cli.sendLine(prefix + "/subsystem=elytron/permission-set=login-permission:add(permissions=[{class-name=org.wildfly.security.auth.permission.LoginPermission}])");
+        cli.sendLine(prefix + "/subsystem=elytron/permission-set=default-permissions:add()");
+        cli.sendLine(prefix + "/subsystem=elytron/http-authentication-factory=management-http-authentication:add(security-domain=ManagementDomain,http-server-mechanism-factory=global,mechanism-configurations=[{mechanism-name=DIGEST,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])");
+        cli.sendLine(prefix + "/subsystem=elytron/provider-http-server-mechanism-factory=global:add()");
+        cli.sendLine(prefix + "/subsystem=elytron/sasl-authentication-factory=management-sasl-authentication:add(security-domain=ManagementDomain,sasl-server-factory=configured,mechanism-configurations=[{mechanism-name=JBOSS-LOCAL-USER,realm-mapper=local},{mechanism-name=DIGEST-MD5,mechanism-realm-configurations=[{realm-name=ManagementRealm}]}])");
+        cli.sendLine(prefix + "/subsystem=elytron/configurable-sasl-server-factory=configured:add(sasl-server-factory=elytron,properties={wildfly.sasl.local-user.default-user=\"$local\",wildfly.sasl.local-user.challenge-path=\"${jboss." + pathType + ".temp.dir}/auth\"})");
+        cli.sendLine(prefix + "/subsystem=elytron/mechanism-provider-filtering-sasl-server-factory=elytron:add(sasl-server-factory=global,filters=[{provider-name=WildFlyElytron}])");
+        cli.sendLine(prefix + "/subsystem=elytron/provider-sasl-server-factory=global:add()");
+
     }
 }

@@ -59,7 +59,6 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
@@ -68,7 +67,6 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  *
  * @author Ken Wills (c) 2016 Red Hat Inc.
  */
-@Ignore("[WFCORE-5555] CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron.")
 public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
     /**
@@ -541,15 +539,10 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine(line);
         cli.sendLine("/host=foo:add()");
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        configureManagementInterface("foo");
         cli.sendLine("reload --host=foo --admin-only=true");
         assertTrue(cli.isConnected());
-        cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("foo");
         cli.sendLine(":read-attribute(name=local-host-name)");
         final CLIOpResult result = cli.readAllAsOpResult();
         final ModelNode response = result.getResponseNode();
@@ -565,19 +558,14 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/host=foo:add()");
         assertTrue(cli.isConnected());
 
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        configureManagementInterface("foo");
         cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
         cli.sendLine("/host=foo:reload(admin-only=true)");
         assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
 
         assertTrue(cli.isConnected());
 
-        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("renamed-foo");
         cli.sendLine(":read-attribute(name=local-host-name)");
 
         final CLIOpResult result = cli.readAllAsOpResult();
@@ -593,15 +581,10 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine(line);
         cli.sendLine("/host=foo:add(persist-name=true)");
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        configureManagementInterface("foo");
         cli.sendLine("reload --host=foo --admin-only=true");
         assertTrue(cli.isConnected());
-        cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("foo");
 
         cli.sendLine("stop-embedded-host-controller");
         cli.sendLine("embed-host-controller --std-out=echo --host-config=host-empty-cli.xml " + JBOSS_HOME);
@@ -612,9 +595,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         assertTrue(response.has(OUTCOME));
         assertEquals(SUCCESS, response.get(OUTCOME).asString());
         assertEquals("foo", response.get(RESULT).asList().get(0).asString());
-        cli.sendLine("ls /host=foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("foo");
         assertTrue(cli.isConnected());
 
         cli.sendLine(":read-attribute(name=local-host-name)");
@@ -631,18 +612,14 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine(line);
         cli.sendLine("/host=foo:add(persist-name=true)");
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=foo/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=foo/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=foo/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+
+        configureManagementInterface("foo");
 
         cli.sendLine("/host=foo:write-attribute(name=name,value=renamed-foo)");
         cli.sendLine("/host=foo:reload(admin-only=true)");
         assertState("running", TimeoutUtil.adjust(30000), "/host=renamed-foo:read-attribute(name=host-state)");
 
-        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("renamed-foo");
 
         cli.sendLine("stop-embedded-host-controller");
         cli.sendLine("embed-host-controller --std-out=echo --host-config=host-empty-cli.xml " + JBOSS_HOME);
@@ -653,9 +630,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         assertTrue(response.has(OUTCOME));
         assertEquals(SUCCESS, response.get(OUTCOME).asString());
         assertEquals("renamed-foo", response.get(RESULT).asList().get(0).asString());
-        cli.sendLine("ls /host=renamed-foo/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=renamed-foo/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=renamed-foo/core-service=management/management-interface=http-interface");
+        readManagementInterface("renamed-foo");
         assertTrue(cli.isConnected());
 
         cli.sendLine(":read-attribute(name=local-host-name)");
@@ -672,16 +647,11 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine(line);
         cli.sendLine("/host=foo33f:add(persist-name=false)");
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=foo33f/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=foo33f/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=foo33f/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=foo33f/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+        configureManagementInterface("foo33f");
         cli.sendLine("reload --host=foo33f --admin-only=true");
         // should still be foo after reload
         assertTrue(cli.isConnected());
-        cli.sendLine("ls /host=foo33f/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=foo33f/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=foo33f/core-service=management/management-interface=http-interface");
+        readManagementInterface("foo33f");
 
         cli.sendLine("stop-embedded-host-controller");
         // should be default derived local host name after stop and start
@@ -727,10 +697,8 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         // host-empty-cli.xml
         assertTrue(cli.isConnected());
         cli.sendLine("/host=master1:add()");
-        cli.sendLine("/host=master1/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=master1/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=master1/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=master1/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+
+        configureManagementInterface("master1");
 
         // domain-empty-cli.xml
         cli.sendLine("/interface=test-interface:add(any-address)");
@@ -745,13 +713,12 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("ls /socket-binding-group=test-sbg");
         cli.sendLine("ls /profile=test-profile");
         cli.sendLine("ls /server-group=test-server-group");
-        cli.sendLine("ls /host=master1/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=master1/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=master1/core-service=management/management-interface=http-interface");
+
+        readManagementInterface("master1");
     }
 
     @Test
-    public void addNewDomainSlave() throws Exception {
+    public void testAddNewDomainSlave() throws Exception {
         // this adds a new slave HC. Note that most of the add ops below are just to get to a minimal config that will allow the reload to be
         // successful.
         final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
@@ -760,17 +727,15 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/host=fooslave:add()");
         // host-empty-cli.xml
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=fooslave/core-service=management/security-realm=test-realm:add()");
-        cli.sendLine("/host=fooslave/core-service=management/security-realm=test-realm/authentication=local:add(default-user=\"$local\", skip-group-loading=true)");
-        cli.sendLine("/host=fooslave/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
-        cli.sendLine("/host=fooslave/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, security-realm=test-realm, http-upgrade-enabled=true, port=${jboss.management.http.port:9990})");
+
+        configureManagementInterface("fooslave");
+
         // add the remote DC
         cli.sendLine("/host=fooslave:write-remote-domain-controller(host=foomaster)");
         cli.sendLine("reload --host=fooslave --admin-only=true");
         assertTrue(cli.isConnected());
-        cli.sendLine("ls /host=fooslave/core-service=management/security-realm=test-realm");
-        cli.sendLine("ls /host=fooslave/interface=test-mgmt-interface");
-        cli.sendLine("ls /host=fooslave/core-service=management/management-interface=http-interface");
+
+        readManagementInterface("fooslave");
         cli.sendLine("/host=fooslave:read-attribute(name=domain-controller)");
         final CLIOpResult resp = cli.readAllAsOpResult();
         final ModelNode result = resp.getResponseNode();
@@ -847,6 +812,28 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         WildFlySecurityManager.setPropertyPrivileged(JBOSS_DOMAIN_DATA_DIR, newBaseDir + File.separator + "data");
         WildFlySecurityManager.setPropertyPrivileged(JBOSS_DOMAIN_LOG_DIR, newBaseDir + File.separator + "log");
         WildFlySecurityManager.setPropertyPrivileged(JBOSS_DOMAIN_TEMP_DIR, newBaseDir + File.separator + "tmp");
+    }
+
+    private void configureManagementInterface(String hostName) {
+        String hostPath = "/host=" + hostName;
+
+        cli.sendLine(hostPath + "/extension=org.wildfly.extension.elytron:add");
+
+        // Set up elytron in a batch
+        cli.sendLine("batch");
+        CLIEmbedUtil.configureElytronManagement(cli, hostName);
+        cli.sendLine("run-batch");
+
+        cli.sendLine(hostPath + "/interface=test-mgmt-interface:add(inet-address=${jboss.bind.address.management:127.0.0.1})");
+        cli.sendLine(hostPath + "/core-service=management/management-interface=http-interface:add(interface=test-mgmt-interface, port=${jboss.management.http.port:9990}, http-authentication-factory=management-http-authentication,http-upgrade={sasl-authentication-factory=management-sasl-authentication,enabled=true})");
+
+    }
+
+    private void readManagementInterface(String hostName) {
+        String hostPath = "/host=" + hostName;
+        cli.sendLine("ls " + hostPath + "/subsystem=elytron");
+        cli.sendLine("ls " + hostPath + "/interface=test-mgmt-interface");
+        cli.sendLine("ls " + hostPath + "/core-service=management/management-interface=http-interface");
     }
 
 }
