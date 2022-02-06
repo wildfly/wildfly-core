@@ -27,11 +27,8 @@ import static org.xnio.Options.SSL_CLIENT_AUTH_MODE;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLContext;
@@ -110,7 +106,6 @@ public class ManagementHttpServer {
     }
 
     private static final String DEFAULT_SECURITY_REALM = "ManagementRealm";
-    private static final Map<Pattern, Charset> USER_AGENT_CHARSET_MAP = generateCharsetMap();
 
     private static final Set<String> RESERVED_CONTEXTS;
 
@@ -412,15 +407,6 @@ public class ManagementHttpServer {
         }
 
         return domainHandler;
-    }
-
-    private static Map<Pattern, Charset> generateCharsetMap() {
-        final Map<Pattern, Charset> charsetMap = new HashMap<>();
-        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*\\) Gecko/.* Firefox/.*"), StandardCharsets.ISO_8859_1);
-        charsetMap.put(Pattern.compile("(?!.*OPR)(?!.*Chrome)Mozilla/5\\.0 \\(.*\\).* Safari/.*"), StandardCharsets.ISO_8859_1);
-        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.*; Trident/.*; rv:.*\\).*"), StandardCharsets.ISO_8859_1);
-        charsetMap.put(Pattern.compile("Mozilla/5\\.0 \\(.* MSIE.* Trident/.*\\)"), StandardCharsets.ISO_8859_1);
-        return Collections.unmodifiableMap(charsetMap);
     }
 
     private static HttpHandler secureDomainAccessElytron(HttpHandler domainHandler, final HttpAuthenticationFactory httpAuthenticationFactory) {
