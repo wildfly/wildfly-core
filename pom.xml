@@ -167,6 +167,7 @@
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.4</version.commons-cli>
+        <version.org.apache.santuario>2.2.3</version.org.apache.santuario>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-lang3>3.11</version.commons-lang3>
         <version.io.undertow>2.2.16.Final</version.io.undertow>
@@ -240,9 +241,15 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.18.3.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>1.18.4.CR1-SNAPSHOT</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>1.10.1.Final</version.org.wildfly.security.elytron-web>
         <version.org.yaml.snakeyaml>1.29</version.org.yaml.snakeyaml>
+        <version.commons-codec>1.15</version.commons-codec>
+        <version.sun.jaxb>2.3.3-b02</version.sun.jaxb>
+        <version.org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec>2.0.1.Final</version.org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec>
+        <version.com.sun.istack>3.0.10</version.com.sun.istack>
+        <version.com.sun.activation.jakarta.activation>1.2.2</version.com.sun.activation.jakarta.activation>
+
     </properties>
 
     <modules>
@@ -743,6 +750,97 @@
                 <version>${version.commons-cli}</version>
             </dependency>
             <dependency>
+                <groupId>com.sun.xml.bind.external</groupId>
+                <artifactId>relaxng-datatype</artifactId>
+                <version>${version.sun.jaxb}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-jxc</artifactId>
+                <version>${version.sun.jaxb}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun</groupId>
+                        <artifactId>tools</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.sun.jaxb}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.activation</groupId>
+                        <artifactId>javax.activation-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>javax.xml.bind</groupId>
+                        <artifactId>jaxb-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jvnet.staxex</groupId>
+                        <artifactId>stax-ex</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-xjc</artifactId>
+                <version>${version.sun.jaxb}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.dtd-parser</groupId>
+                        <artifactId>dtd-parser</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>xsom</artifactId>
+                <version>${version.sun.jaxb}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind.external</groupId>
+                        <artifactId>relaxng-datatype</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>relaxngDatatype</groupId>
+                        <artifactId>relaxngDatatype</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>txw2</artifactId>
+                <version>${version.sun.jaxb}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${version.com.sun.activation.jakarta.activation}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind.external</groupId>
+                <artifactId>rngom</artifactId>
+                <version>${version.sun.jaxb}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>relaxngDatatype</groupId>
+                        <artifactId>relaxngDatatype</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind.external</groupId>
+                        <artifactId>relaxng-datatype</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${version.commons-codec}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${version.commons-lang}</version>
@@ -882,6 +980,42 @@
                 <version>${version.org.apache.geronimo.json.api}</version>
             </dependency>
             <dependency>
+                <groupId>org.jboss.spec.javax.xml.bind</groupId>
+                <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+                <version>${version.org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.istack</groupId>
+                <artifactId>istack-commons-runtime</artifactId>
+                <version>${version.com.sun.istack}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.istack</groupId>
+                <artifactId>istack-commons-tools</artifactId>
+                <version>${version.com.sun.istack}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun</groupId>
+                        <artifactId>tools</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>codemodel</artifactId>
+                <version>${version.sun.jaxb}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${version.org.apache.httpcomponents.httpcore}</version>
@@ -919,7 +1053,21 @@
                 <artifactId>johnzon-core</artifactId>
                 <version>${version.org.apache.johnzon}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.apache.santuario</groupId>
+                <artifactId>xmlsec</artifactId>
+                <version>${version.org.apache.santuario}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.woodstox</groupId>
+                        <artifactId>woodstox-core-asl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
