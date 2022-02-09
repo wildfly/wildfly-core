@@ -174,6 +174,8 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
         # Needed by Netty
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
+        # Needed by WildFly Elytron Extension
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/com.sun.net.ssl.internal.ssl=ALL-UNNAMED"
         # Needed if Hibernate applications use Javassist
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
         # Needed by the MicroProfile REST Client subsystem
