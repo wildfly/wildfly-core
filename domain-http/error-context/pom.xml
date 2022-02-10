@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-domain-http</artifactId>
-        <version>19.0.0.Beta4</version>
+        <version>19.0.0.Beta5-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-domain-http-error-context</artifactId>
