@@ -36,10 +36,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STE
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.client.helpers.domain.ServerStatus;
 import org.jboss.as.controller.operations.common.Util;
@@ -47,6 +49,7 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -86,6 +89,8 @@ public class HostControllerBootOperationsTestCase {
 
     private static List<String> slaveChildrenTypes;
     private static List<String> emptyAddressChildrenTypes;
+
+    private static final int SLEEP_TIME_MILLIS = 100;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -148,19 +153,28 @@ public class HostControllerBootOperationsTestCase {
 
         slaveLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.STARTING);
         // At this point server-three should be waiting before being registered in the domain and HC is still booting up, this gives us a window
-        // where we can tests the operations that were failing and reporting errors in HAL on WFCORE-4283
+        // where we can test the operations that were failing and reporting errors in HAL on WFCORE-4283
         // The slave write lock is acquired at this time because the servers are starting, although they have not been registered in the domain yet
-        // Read operations should pass, even those that use proxies because at this point, the servers are not registered, proxies does not exists yet
+        // Read operations should pass, even those that use proxies because at this point, the servers are not registered, proxies does not exist yet
 
         checkReadOperations(false);
 
-        //assert the server at this point reports STOPPED, which means it has not been registered yet in the domain
-        Assert.assertTrue("server-three should be stopped at this point to validate this test conditions. Check if a previous read operation acquired the write lock or if the \"Delay Server Registration Request\" byteman rule needs more time sleeping the server registration request",
-                DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), "server-state"), masterClient).asString().equals("STOPPED")
-        );
+        String message = "server-three should be stopped at this point to validate this test conditions. Check if a previous read operation acquired the write lock or if the \"Delay Server Registration Request\" byteman rule needs more time sleeping the server registration request";
+        try {
+            ModelNode result = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), "server-state"), masterClient);
+            //assert the server at this point reports STOPPED, which means it has not been registered yet in the domain
+            Assert.assertTrue(message, result.asString().equals("STOPPED"));
+        } catch (MgmtOperationException e) {
+            ModelNode failed = e.getResult();
+            if (failed.get("failure-description").asString().startsWith("WFLYCTL0379")) {
+                // Server-three was already registered in the domain and it is still starting
+                Assert.fail(message);
+            }
+        }
 
-        // Wait until the delayed server is registered in the domain
-        DomainTestUtils.waitUntilState(masterClient, SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), ServerStatus.STARTING.toString());
+        // Wait until the delayed server is registered in the domain. As soon it is registered, it will be paused on the booting phase due to byteman, if we read the server state
+        // directly, we will get a message telling us the server is starting
+        waitUntilServerRegisteredButStarting(masterClient, SLAVE_ADDR.append(SERVER_MAIN_THREE));
 
         // At this point server-three should be waiting before transitioning to STARTED, this gives us a window to test operations that are
         // likely to fail since the server is still starting, write operations should fail, read operations should pass except those executed with proxies enabled
@@ -173,10 +187,10 @@ public class HostControllerBootOperationsTestCase {
 
         // assert server is still starting at this moment
         Assert.assertTrue("server-three should be starting at this point to validate this test conditions. Check if the \"Delay Server Started Request\" byteman rule needs more time sleeping the server started request",
-                DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), "status"), masterClient).asString().equals(ServerStatus.STARTING.toString())
+                DomainTestUtils.executeForFailure(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), "server-state"), masterClient).asString().startsWith("WFLYCTL0379")
         );
 
-        // Wait for all the servers until they are started and HC is running
+        // Wait for all the servers until the servers are started and HC is running
         slaveLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
         DomainTestUtils.waitUntilState(masterClient, SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), ServerStatus.STARTED.toString());
 
@@ -186,6 +200,7 @@ public class HostControllerBootOperationsTestCase {
     }
 
     private void checkReadOperations(boolean skipServerDirectReads) throws IOException, MgmtOperationException {
+        long start = System.currentTimeMillis();
         ModelNode op;
 
         // assert we are also able to read the Domain model recursively
@@ -255,6 +270,10 @@ public class HostControllerBootOperationsTestCase {
 
         op = Util.createEmptyOperation("find-non-progressing-operation", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT).append(SERVICE_MANAGEMENT_OPERATIONS));
         DomainTestUtils.executeForResult(op, masterClient);
+
+        long end = System.currentTimeMillis();
+        long duration = end - start;
+        System.out.println("Read Operations took " + TimeUnit.MILLISECONDS.toSeconds(duration) + " seconds.");
     }
 
     private ModelNode createComposite(List<ModelNode> steps) {
@@ -299,5 +318,32 @@ public class HostControllerBootOperationsTestCase {
         }
 
         return steps;
+    }
+
+    private static void waitUntilServerRegisteredButStarting(final ModelControllerClient client, final PathAddress serverAddress) throws IOException, MgmtOperationException {
+        final long deadline = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(TimeoutUtil.adjust(60));
+        for(;;) {
+            final long remaining = deadline - System.currentTimeMillis();
+            if(remaining <= 0) {
+                break;
+            }
+            try {
+                ModelNode result = DomainTestUtils.executeForFailure(Util.getReadAttributeOperation(serverAddress, "server-state"), client);
+                if (result.asString().startsWith("WFLYCTL0379")) {
+                    return;
+                }
+                break;
+            } catch (MgmtOperationException e) {
+                // ignore, not an error yet
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(SLEEP_TIME_MILLIS);
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        ModelNode result = DomainTestUtils.executeForFailure(Util.getReadAttributeOperation(serverAddress, "server-state"), client);
+        Assert.assertTrue(result.asString().startsWith("WFLYCTL0379"));
     }
 }
