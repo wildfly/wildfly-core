@@ -116,7 +116,7 @@ import org.junit.Test;
 public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
     static final AttributeDefinition ATTR = new SimpleAttributeDefinitionBuilder("attr", ModelType.STRING, true).build();
-    static final OperationDefinition TRIGGER_SYNC = new SimpleOperationDefinitionBuilder("trigger-sync", new NonResolvingResourceDescriptionResolver())
+    static final OperationDefinition TRIGGER_SYNC = new SimpleOperationDefinitionBuilder("trigger-sync", NonResolvingResourceDescriptionResolver.INSTANCE)
             .addParameter(ATTR)
             .build();
 

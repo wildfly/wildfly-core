@@ -157,7 +157,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
 
         public ParentResourceDefinition() {
             super(PARENT_MAIN,
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
@@ -176,7 +176,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
     private static class OrderedChildResourceDefinition extends SimpleResourceDefinition {
 
         public OrderedChildResourceDefinition() {
-            super(new Parameters(CHILD, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(CHILD, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler(REQUEST_ATTRIBUTES))
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());

@@ -39,7 +39,7 @@ public class BootCliReloadHandler implements OperationStepHandler {
 
     public static final BootCliReloadHandler INSTANCE = new BootCliReloadHandler();
 
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("reload", new NonResolvingResourceDescriptionResolver())
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("reload", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setRuntimeOnly()
             .build();
     Map<String, ModelNode> parameters;

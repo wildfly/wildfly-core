@@ -859,7 +859,7 @@ public class ExpressionTypeConverterUnitTestCase {
                                         .build()
                         ).build())
                         .build();
-        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), new NonResolvingResourceDescriptionResolver(), Locale.ENGLISH, null);
+        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), NonResolvingResourceDescriptionResolver.INSTANCE, Locale.ENGLISH, null);
         TypeConverter converter = getConverter(def, desc);
 
         ModelNode node = new ModelNode();
@@ -901,7 +901,7 @@ public class ExpressionTypeConverterUnitTestCase {
                                         .build()
                         ).build())
                         .build();
-        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), new NonResolvingResourceDescriptionResolver(), Locale.ENGLISH, null);
+        ModelNode desc = def.addResourceAttributeDescription(new ModelNode(), NonResolvingResourceDescriptionResolver.INSTANCE, Locale.ENGLISH, null);
         TypeConverter converter = getConverter(def, desc);
 
         ModelNode node = new ModelNode();

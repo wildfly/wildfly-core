@@ -97,7 +97,7 @@ public class LogStreamExtension implements Extension {
 
         private final OperationStepHandler handler;
         private LogStreamSubsystemResourceDefinition() {
-            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
+            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(),
                     ModelOnlyRemoveStepHandler.INSTANCE);
             this.handler = new LogStreamHandler();
@@ -123,7 +123,7 @@ public class LogStreamExtension implements Extension {
     private static class LogStreamHandler implements OperationStepHandler {
 
         private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(STREAM_LOG_FILE,
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReplyType(ModelType.INT)
                 .build();
 

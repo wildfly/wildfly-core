@@ -243,7 +243,7 @@ public class RecursiveDiscardAndRemoveTestCase {
         return TransformationTargetImpl.create(null, registry, version, Collections.<PathAddress, ModelVersion>emptyMap(), type);
     }
 
-    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
+    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE);
 
     protected void assertRejected(final ModelNode original, final TransformedOperation transformed) {
         Assert.assertNotNull(transformed);

@@ -56,7 +56,7 @@ public class DependencySubsystemExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(new SimpleResourceDefinition(
                 PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME),
-                new NonResolvingResourceDescriptionResolver(),
+                NonResolvingResourceDescriptionResolver.INSTANCE,
                 DependencySubsystemAdd.INSTANCE,
                 ReloadRequiredRemoveStepHandler.INSTANCE
         ));

@@ -108,7 +108,7 @@ public class ErrorExtension implements Extension {
 
         private final boolean forHost;
         private BlockerSubsystemResourceDefinition(boolean forHost) {
-            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
+            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(), ErrorRemovingBlockingSubsystemStepHandler.REMOVE_SUBSYSTEM_INSTANCE);
             this.forHost = forHost;
         }
@@ -147,7 +147,7 @@ public class ErrorExtension implements Extension {
 
     private static class ErroringHandler implements OperationStepHandler {
 
-        private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("error", new NonResolvingResourceDescriptionResolver())
+        private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("error", NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(CALLER, TARGET_HOST, TARGET_SERVER, ERROR_POINT)
                 .build();
 

@@ -108,7 +108,7 @@ public class BlockerExtension implements Extension {
 
         private final boolean forHost;
         private BlockerSubsystemResourceDefinition(boolean forHost) {
-            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver(),
+            super(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(),
                     ModelOnlyRemoveStepHandler.INSTANCE);
             this.forHost = forHost;
@@ -144,7 +144,7 @@ public class BlockerExtension implements Extension {
 
     private static class BlockHandler implements OperationStepHandler {
 
-        private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", new NonResolvingResourceDescriptionResolver())
+        private static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(CALLER, TARGET_HOST, TARGET_SERVER, BLOCK_POINT, BLOCK_TIME)
                 .setRuntimeOnly()
                 .build();

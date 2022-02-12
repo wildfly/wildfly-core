@@ -311,7 +311,7 @@ public class WriteAttributeTestCase extends AbstractRbacTestBase {
     private static final class TestResourceDefinition extends SimpleResourceDefinition {
 
         TestResourceDefinition(String path, AccessConstraintDefinition... constraintDefinitions) {
-            super(new Parameters(pathElement(path), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(pathElement(path), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraintDefinitions));

@@ -197,7 +197,7 @@ abstract class AbstractCapabilityResolutionTestCase {
 
     private static ResourceDefinition createResourceDefinition(String key) {
         PathElement pe = key == null ? null : PathElement.pathElement(key);
-        return ResourceBuilder.Factory.create(pe, new NonResolvingResourceDescriptionResolver()).build();
+        return ResourceBuilder.Factory.create(pe, NonResolvingResourceDescriptionResolver.INSTANCE).build();
     }
 
     private static class ModelControllerService extends TestModelControllerService {
@@ -221,7 +221,7 @@ abstract class AbstractCapabilityResolutionTestCase {
             // real address pattern a bit, as those patterns are what drive the WFCORE-750 capability resolution logic
             rootRegistration.registerSubModel(createResourceDefinition(GLOBAL));
             ManagementResourceRegistration profile = rootRegistration.registerSubModel(createResourceDefinition(PROFILE));
-            OperationDefinition od = new SimpleOperationDefinitionBuilder("include", new NonResolvingResourceDescriptionResolver()).build();
+            OperationDefinition od = new SimpleOperationDefinitionBuilder("include", NonResolvingResourceDescriptionResolver.INSTANCE).build();
             OperationStepHandler includeHandler = new ParentIncludeHandler();
             profile.registerOperationHandler(od, includeHandler);
             profile.registerSubModel(createResourceDefinition(SUBSYSTEM));

@@ -29,13 +29,18 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * Resource description resovler that does no resolving at all.
+ * Resource description resolver that does no resolving at all.
  *
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a> (c) 2012 Red Hat Inc.
  */
 public class NonResolvingResourceDescriptionResolver extends StandardResourceDescriptionResolver {
-    public static NonResolvingResourceDescriptionResolver INSTANCE = new NonResolvingResourceDescriptionResolver();
+    public static final NonResolvingResourceDescriptionResolver INSTANCE = new NonResolvingResourceDescriptionResolver();
 
+    /**
+     * No-arg constructor.
+     * @deprecated use {@link #INSTANCE} instead
+     */
+    @Deprecated
     public NonResolvingResourceDescriptionResolver() {
         super("", "", NonResolvingResourceDescriptionResolver.class.getClassLoader());
     }
@@ -122,6 +127,6 @@ public class NonResolvingResourceDescriptionResolver extends StandardResourceDes
 
     @Override
     public StandardResourceDescriptionResolver getChildResolver(String key) {
-        return new NonResolvingResourceDescriptionResolver();
+        return NonResolvingResourceDescriptionResolver.INSTANCE;
     }
 }

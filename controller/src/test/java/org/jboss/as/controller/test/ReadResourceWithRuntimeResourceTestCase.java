@@ -130,13 +130,13 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         ManagementResourceRegistration subsystemRegistration = registration.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "mysubsystem"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "mysubsystem"), NonResolvingResourceDescriptionResolver.INSTANCE));
         // /subsystem=mysubsystem/resource=A is a regular resource
         subsystemRegistration.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("resource", "A"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("resource", "A"), NonResolvingResourceDescriptionResolver.INSTANCE));
         // /subsystem=mysubsystem/resource=B is a runtime-only resource
         ManagementResourceRegistration runtimeResource = subsystemRegistration.registerSubModel(
-                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("resource", "B"), new NonResolvingResourceDescriptionResolver()).setRuntime()));
+                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("resource", "B"), NonResolvingResourceDescriptionResolver.INSTANCE).setRuntime()));
         AttributeDefinition runtimeAttr = TestUtils.createAttribute("attr", ModelType.LONG);
         runtimeResource.registerReadOnlyAttribute(runtimeAttr, new OperationStepHandler() {
             @Override
@@ -147,7 +147,7 @@ public class ReadResourceWithRuntimeResourceTestCase extends AbstractControllerT
 
         // /subsystem=mysubsystem/resource=D is a runtime-only resource fail at Stage.Runtime
         ManagementResourceRegistration runtimeResourceD = subsystemRegistration.registerSubModel(
-                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("resource", "D"), new NonResolvingResourceDescriptionResolver()).setRuntime()));
+                new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("resource", "D"), NonResolvingResourceDescriptionResolver.INSTANCE).setRuntime()));
         AttributeDefinition runtimeAttrD = TestUtils.createAttribute("attrD", ModelType.LONG);
         runtimeResourceD.registerReadOnlyAttribute(runtimeAttrD, new OperationStepHandler() {
             @Override

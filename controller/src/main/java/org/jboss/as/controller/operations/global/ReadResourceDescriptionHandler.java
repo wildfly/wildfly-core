@@ -403,11 +403,11 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
      */
     static final class CheckResourceAccessHandler implements OperationStepHandler {
 
-        static final OperationDefinition DEFAULT_DEFINITION = new SimpleOperationDefinitionBuilder(GlobalOperationHandlers.CHECK_DEFAULT_RESOURCE_ACCESS, new NonResolvingResourceDescriptionResolver())
+        static final OperationDefinition DEFAULT_DEFINITION = new SimpleOperationDefinitionBuilder(GlobalOperationHandlers.CHECK_DEFAULT_RESOURCE_ACCESS, NonResolvingResourceDescriptionResolver.INSTANCE)
             .setPrivateEntry()
             .build();
 
-        static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(GlobalOperationHandlers.CHECK_RESOURCE_ACCESS, new NonResolvingResourceDescriptionResolver())
+        static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(GlobalOperationHandlers.CHECK_RESOURCE_ACCESS, NonResolvingResourceDescriptionResolver.INSTANCE)
             .setPrivateEntry()
             .build();
 

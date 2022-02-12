@@ -47,7 +47,7 @@ import org.jboss.dmr.ModelType;
 public class Subsystem1RootResource extends SimpleResourceDefinition {
 
     public Subsystem1RootResource() {
-        super(PathElement.pathElement("subsystem", "subsystem1"), new NonResolvingResourceDescriptionResolver());
+        super(PathElement.pathElement("subsystem", "subsystem1"), NonResolvingResourceDescriptionResolver.INSTANCE);
     }
 
     @Override
@@ -69,14 +69,14 @@ public class Subsystem1RootResource extends SimpleResourceDefinition {
     public void registerChildren(ManagementResourceRegistration profileSub1Reg) {
         super.registerChildren(profileSub1Reg);
         ResourceDefinition profileSub1RegType1Def = ResourceBuilder.Factory.create(PathElement.pathElement("type1", "*"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .addReadOnlyAttribute(createAttribute("name", ModelType.STRING))
                 .addReadOnlyAttribute(createAttribute("value", ModelType.INT))
                 .build();
         profileSub1Reg.registerSubModel(profileSub1RegType1Def);
 
         ResourceDefinition profileSub1RegType2Def = ResourceBuilder.Factory.create(PathElement.pathElement("type2", "other"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .addReadOnlyAttribute(createAttribute("name", ModelType.STRING))
                 .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("default", ModelType.STRING).setRequired(false).setDefaultValue(new ModelNode("Default string")).build())
                 .build();

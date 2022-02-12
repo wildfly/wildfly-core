@@ -280,7 +280,7 @@ public abstract class AbstractControllerTestBase {
 
         public ModelControllerService(final ManagedAuditLogger auditLogger) {
             super(AbstractControllerTestBase.this.processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     auditLogger, initializer, capabilityRegistry);
         }
 

@@ -67,7 +67,7 @@ public class ValidateModelTestCase extends AbstractControllerTestBase {
 
     private static ResourceDefinition createDummyProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(TEST_ADDRESS.getElement(0),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler() {
 
                     @Override

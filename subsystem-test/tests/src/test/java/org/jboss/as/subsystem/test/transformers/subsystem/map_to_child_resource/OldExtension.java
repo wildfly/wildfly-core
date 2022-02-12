@@ -95,7 +95,7 @@ public class OldExtension implements Extension {
     protected static class TestResourceDefinition extends SimpleResourceDefinition {
         protected TestResourceDefinition() {
             super(SUBSYSTEM_PATH,
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new ModelOnlyAddStepHandler(TEST),
                     ModelOnlyRemoveStepHandler.INSTANCE);
         }
@@ -114,7 +114,7 @@ public class OldExtension implements Extension {
     protected static class PropertyResourceDefinition extends SimpleResourceDefinition {
         protected PropertyResourceDefinition() {
             super(PathElement.pathElement("property"),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new ModelOnlyAddStepHandler(VALUE),
                     ModelOnlyRemoveStepHandler.INSTANCE);
         }

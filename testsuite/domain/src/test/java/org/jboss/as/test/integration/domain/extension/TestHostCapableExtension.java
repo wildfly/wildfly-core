@@ -106,10 +106,10 @@ public class TestHostCapableExtension implements Extension {
                 new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.SOCKET_BINDING, ModelType.STRING, true)
                 .setCapabilityReference(SOCKET_CAPABILITY_NAME, TEST_CAPABILITY_NAME)
                 .build();
-        private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", new NonResolvingResourceDescriptionResolver()).build();
+        private static final OperationDefinition TEST_OP = new SimpleOperationDefinitionBuilder("test-op", NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
         public RootResourceDefinition(String name) {
-            super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SUBSYSTEM, name), new NonResolvingResourceDescriptionResolver())
+            super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SUBSYSTEM, name), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AddSubsystemHandler())
                     .setRemoveHandler(new RemoveSubsystemHandler())
                     .addCapabilities(TEST_CAPABILITY));

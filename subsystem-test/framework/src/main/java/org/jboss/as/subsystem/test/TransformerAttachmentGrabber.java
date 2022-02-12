@@ -48,7 +48,7 @@ public class TransformerAttachmentGrabber implements OperationStepHandler {
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.VALUE, ModelType.OBJECT).build();
 
     static final OperationDefinition DESC =
-            new SimpleOperationDefinitionBuilder("execute-grab-attachment-and-transform", new NonResolvingResourceDescriptionResolver())
+            new SimpleOperationDefinitionBuilder("execute-grab-attachment-and-transform", NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setParameters(VALUE)
                     .build();
 

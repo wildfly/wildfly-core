@@ -46,7 +46,7 @@ public class ChildResourceDefinition extends SimpleResourceDefinition {
     private static final SimpleAttributeDefinition CHILD_ATTRIBUTE = new SimpleAttributeDefinitionBuilder("child-attr", ModelType.STRING, true).build();
 
     ChildResourceDefinition() {
-        super(new Parameters(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(PathElement.pathElement("child"), NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AddChildHandler())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setIncorporatingCapabilities(Collections.singleton(RootResourceDefinition.CAPABILITY))

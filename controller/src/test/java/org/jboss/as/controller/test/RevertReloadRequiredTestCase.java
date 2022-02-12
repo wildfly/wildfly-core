@@ -78,7 +78,7 @@ public class RevertReloadRequiredTestCase extends AbstractControllerTestBase {
 
         public TestResource() {
             super(PathElement.pathElement("test"),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new TestResourceAddHandler(),
                     new AbstractRemoveStepHandler() {
                     });

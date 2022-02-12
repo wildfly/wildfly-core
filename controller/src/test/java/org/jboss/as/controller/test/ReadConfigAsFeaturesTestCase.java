@@ -218,7 +218,7 @@ public class ReadConfigAsFeaturesTestCase extends AbstractControllerTestBase {
         this.registration = registration;
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
 
-        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder("setup", new NonResolvingResourceDescriptionResolver())
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder("setup", NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setPrivateEntry()
                 .build()
                 , new OperationStepHandler() {

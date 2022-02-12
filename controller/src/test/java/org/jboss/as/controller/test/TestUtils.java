@@ -38,7 +38,7 @@ import org.jboss.dmr.ModelType;
  */
 public class TestUtils {
 
-    static final OperationDefinition SETUP_OPERATION_DEF = new SimpleOperationDefinitionBuilder("setup", new NonResolvingResourceDescriptionResolver())
+    static final OperationDefinition SETUP_OPERATION_DEF = new SimpleOperationDefinitionBuilder("setup", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setPrivateEntry()
             .build();
 
@@ -108,13 +108,13 @@ public class TestUtils {
     }
 
     public static OperationDefinition createOperationDefinition(String name, AttributeDefinition... parameters) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
+        return new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(parameters)
                 .build();
     }
 
     public static OperationDefinition createOperationDefinition(String name, boolean runtimeOnly, AttributeDefinition... parameters) {
-        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
+        SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(parameters);
         if (runtimeOnly) {
             builder.setRuntimeOnly();

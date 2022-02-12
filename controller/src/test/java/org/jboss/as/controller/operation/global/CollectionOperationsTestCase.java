@@ -60,7 +60,7 @@ public class CollectionOperationsTestCase extends AbstractCollectionOperationsTe
     @Override
     protected ResourceDefinition createProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(TEST_ADDRESS.getElement(0),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler() {
                     @Override
                     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {

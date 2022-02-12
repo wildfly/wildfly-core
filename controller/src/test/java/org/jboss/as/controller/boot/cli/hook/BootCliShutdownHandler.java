@@ -39,7 +39,7 @@ public class BootCliShutdownHandler implements OperationStepHandler {
 
     public static final BootCliShutdownHandler INSTANCE = new BootCliShutdownHandler();
 
-    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("shutdown", new NonResolvingResourceDescriptionResolver())
+    public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("shutdown", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setRuntimeOnly()
             .build();
     Map<String, ModelNode> parameters;

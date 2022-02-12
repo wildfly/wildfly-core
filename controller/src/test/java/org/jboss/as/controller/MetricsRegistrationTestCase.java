@@ -258,7 +258,7 @@ public class MetricsRegistrationTestCase {
                 .build();
 
         public TestResourceDefinition() {
-            super(ELEMENT, new NonResolvingResourceDescriptionResolver(),
+            super(ELEMENT, NonResolvingResourceDescriptionResolver.INSTANCE,
                     new ModelOnlyAddStepHandler(), new ModelOnlyRemoveStepHandler());
         }
 

@@ -69,7 +69,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
 
     @Before
     public void setup() {
-        rootRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()));
+        rootRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     @Test
     public void testHandlersOnChildResource() throws Exception {
 
-        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerOperationHandler(getOpDef("one"), TestHandler.ONE);
         child.registerOperationHandler(getOpDef("two", OperationEntry.Flag.READ_ONLY), TestHandler.TWO);
 
@@ -126,11 +126,11 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         rootRegistration.registerOperationHandler(getOpDef("three", OperationEntry.Flag.READ_ONLY), TestHandler.PARENT, true);
         rootRegistration.registerOperationHandler(getOpDef("four", OperationEntry.Flag.READ_ONLY), TestHandler.PARENT, false);
 
-        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerOperationHandler(getOpDef("one"), TestHandler.CHILD, true);
         child.registerOperationHandler(getOpDef("two", OperationEntry.Flag.MASTER_HOST_CONTROLLER_ONLY), TestHandler.CHILD, true);
 
-        ManagementResourceRegistration grandchild = child.registerSubModel(new SimpleResourceDefinition(grandchildElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration grandchild = child.registerSubModel(new SimpleResourceDefinition(grandchildElement, NonResolvingResourceDescriptionResolver.INSTANCE));
 
         OperationStepHandler oneHandler = child.getOperationHandler(PathAddress.EMPTY_ADDRESS, "one");
         assertSame(TestHandler.CHILD, oneHandler);
@@ -206,7 +206,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     @Test
     public void testFlagsOnChildResource() throws Exception {
 
-        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerOperationHandler(getOpDef("one"), TestHandler.INSTANCE);
         child.registerOperationHandler(getOpDef("two", OperationEntry.Flag.READ_ONLY), TestHandler.INSTANCE, false);
 
@@ -243,11 +243,11 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         rootRegistration.registerOperationHandler(getOpDef("three", OperationEntry.Flag.READ_ONLY), TestHandler.INSTANCE, true);
         rootRegistration.registerOperationHandler(getOpDef("four", OperationEntry.Flag.READ_ONLY), TestHandler.INSTANCE, false);
 
-        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = rootRegistration.registerSubModel(new SimpleResourceDefinition(childElement, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerOperationHandler(getOpDef("one"), TestHandler.INSTANCE, true);
         child.registerOperationHandler(getOpDef("two", OperationEntry.Flag.MASTER_HOST_CONTROLLER_ONLY), TestHandler.INSTANCE, true);
 
-        ManagementResourceRegistration grandchild = child.registerSubModel(new SimpleResourceDefinition(grandchildElement, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration grandchild = child.registerSubModel(new SimpleResourceDefinition(grandchildElement, NonResolvingResourceDescriptionResolver.INSTANCE));
 
         Set<OperationEntry.Flag> oneFlags = child.getOperationFlags(PathAddress.EMPTY_ADDRESS, "one");
         assertNotNull(oneFlags);
@@ -335,7 +335,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     @Test
     public void testInheritedAccessConstraints() {
 
-        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(null, new NonResolvingResourceDescriptionResolver())
+        ResourceDefinition rootRd = new SimpleResourceDefinition(new Parameters(null, NonResolvingResourceDescriptionResolver.INSTANCE)
             .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.EXTENSIONS, ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         ManagementResourceRegistration root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootRd);
 
@@ -345,7 +345,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
         assertTrue(acds.contains(ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
 
         ResourceDefinition childRd = new SimpleResourceDefinition(
-                new Parameters(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver())
+                new Parameters(PathElement.pathElement("child"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN, ApplicationTypeAccessConstraintDefinition.DEPLOYMENT));
         ManagementResourceRegistration child = root.registerSubModel(childRd);
         acds = child.getAccessConstraints();
@@ -372,7 +372,7 @@ public class CoreManagementResourceRegistrationUnitTestCase {
     }
 
     static OperationDefinition getOpDef(String name, OperationEntry.Flag... flags) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
+        return new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .withFlags(flags)
                 .build();
     }

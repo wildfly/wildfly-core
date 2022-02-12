@@ -76,7 +76,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
     static String bootError = null;
 
     RootResourceDefinition() {
-        super(new Parameters(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(PathElement.pathElement(SUBSYSTEM, TestExtension.SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AddSubsystemHandler())
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setCapabilities(CAPABILITY)
@@ -101,7 +101,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerChildren(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("key", "value"), new NonResolvingResourceDescriptionResolver())
+        resourceRegistration.registerSubModel(new SimpleResourceDefinition(new Parameters(PathElement.pathElement("key", "value"), NonResolvingResourceDescriptionResolver.INSTANCE)
         .setAddHandler(new AbstractAddStepHandler() {
 
             @Override

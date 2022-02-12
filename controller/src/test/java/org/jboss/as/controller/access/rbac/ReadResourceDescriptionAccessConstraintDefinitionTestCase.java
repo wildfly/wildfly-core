@@ -81,7 +81,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
     private static final AccessConstraintDefinition SENSITIVE_CONSTRAINT = new SensitiveTargetAccessConstraintDefinition(new SensitivityClassification("test", "SENSITIVE-CONSTRAINT", true, true, true));
     private static final AccessConstraintDefinition DEPLOYMENT_APPLICATION_CONSTRAINT = new ApplicationTypeAccessConstraintDefinition(ApplicationTypeConfig.DEPLOYMENT);
     private static final AccessConstraintDefinition APPLICATION_CONSTRAINT = new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("test", "APPLICATION-CONSTRAINT", true));
-    private static final OperationDefinition CUSTOM_OPERATION = new SimpleOperationDefinitionBuilder("custom", new NonResolvingResourceDescriptionResolver())
+    private static final OperationDefinition CUSTOM_OPERATION = new SimpleOperationDefinitionBuilder("custom", NonResolvingResourceDescriptionResolver.INSTANCE)
         .addAccessConstraint(SOCKET_CONFIG_SENSITIVE_CONSTRAINT)
         .build();
 
@@ -233,7 +233,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
     private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
@@ -259,7 +259,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
     private static class ConstrainedChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         ConstrainedChildResourceDefinition(){
-            super(new Parameters(PathElement.pathElement("constrained-resource"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("constrained-resource"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(SOCKET_CONFIG_SENSITIVE_CONSTRAINT));
@@ -285,7 +285,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
     private static class NonConstrainedChildResourceDefinition extends SimpleResourceDefinition {
         NonConstrainedChildResourceDefinition(){
-            super(new Parameters(PathElement.pathElement("nonconstrained-resource"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("nonconstrained-resource"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
@@ -298,7 +298,7 @@ public class ReadResourceDescriptionAccessConstraintDefinitionTestCase extends A
 
     private static class ApplicationChildResourceDefinition extends SimpleResourceDefinition implements ResourceDefinition {
         ApplicationChildResourceDefinition(){
-            super(new Parameters(PathElement.pathElement("application-resource"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("application-resource"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(DEPLOYMENT_APPLICATION_CONSTRAINT));
