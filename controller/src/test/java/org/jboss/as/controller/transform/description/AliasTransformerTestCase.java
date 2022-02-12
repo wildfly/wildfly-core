@@ -183,7 +183,7 @@ public class AliasTransformerTestCase {
         return getTransfomers(target).transformOperation(context, operation);
     }
 
-    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
+    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE);
 
     private static ModelNode success() {
         final ModelNode result = new ModelNode();
@@ -203,7 +203,7 @@ public class AliasTransformerTestCase {
 
     static class AbstractChildResourceDefinition extends SimpleResourceDefinition {
         public AbstractChildResourceDefinition(PathElement element) {
-            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new ModelOnlyAddStepHandler())
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());

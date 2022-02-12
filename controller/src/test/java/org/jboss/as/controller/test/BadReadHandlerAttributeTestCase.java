@@ -132,7 +132,7 @@ public class BadReadHandlerAttributeTestCase extends AbstractControllerTestBase 
     private static class TestResource extends SimpleResourceDefinition {
 
         public TestResource() {
-            super(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver(),
+            super(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE,
                     new TestResourceAddHandler(), new AbstractRemoveStepHandler() {
                     });
         }

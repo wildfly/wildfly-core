@@ -2022,7 +2022,7 @@ public class ReadResourceDescriptionAccessControlTestCase extends AbstractContro
 
     private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
@@ -2040,7 +2040,7 @@ public class ReadResourceDescriptionAccessControlTestCase extends AbstractContro
         private final List<OperationDefinition> operations = Collections.synchronizedList(new ArrayList<OperationDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraints));
@@ -2063,7 +2063,7 @@ public class ReadResourceDescriptionAccessControlTestCase extends AbstractContro
         }
 
         void addOperation(String name, boolean readOnly, boolean runtimeOnly, AccessConstraintDefinition...constraints) {
-            SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver());
+            SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE);
             if (constraints != null) {
                 builder.setAccessConstraints(constraints);
             }

@@ -71,7 +71,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
 
 
     public ConstrainedResource(PathElement pathElement) {
-        super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN, AUTHENTICATION_INFLOW))
                 .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("datasources", "datasource"))));

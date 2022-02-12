@@ -83,7 +83,7 @@ public class DefaultAttributeTestCase extends AbstractControllerTestBase {
 
     private static class TestResource extends SimpleResourceDefinition {
         public TestResource() {
-            super(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver(), new TestResourceAddHandler(), new AbstractRemoveStepHandler() {});
+            super(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE, new TestResourceAddHandler(), new AbstractRemoveStepHandler() {});
         }
 
         @Override

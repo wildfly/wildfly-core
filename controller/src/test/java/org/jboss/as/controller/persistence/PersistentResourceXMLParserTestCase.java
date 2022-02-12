@@ -670,7 +670,7 @@ public class PersistentResourceXMLParserTestCase {
                 .build();
 
 
-        static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition RESOURCE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("resource"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -689,7 +689,7 @@ public class PersistentResourceXMLParserTestCase {
             }
         };
 
-        static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition BUFFER_CACHE_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("buffer-cache"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -702,7 +702,7 @@ public class PersistentResourceXMLParserTestCase {
             }
         };
 
-        static final PersistentResourceDefinition OBJECT_TYPE_TEST = new PersistentResourceDefinition(PathElement.pathElement("object-type-test"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition OBJECT_TYPE_TEST = new PersistentResourceDefinition(PathElement.pathElement("object-type-test"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -712,7 +712,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("server"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -732,7 +732,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition CUSTOM_SERVER_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("custom"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -749,7 +749,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), new NonResolvingResourceDescriptionResolver()) {
+        static final PersistentResourceDefinition SESSION_INSTANCE = new PersistentResourceDefinition(PathElement.pathElement("mail-session"), NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public Collection<AttributeDefinition> getAttributes() {
                 Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -765,7 +765,7 @@ public class PersistentResourceXMLParserTestCase {
         };
 
 
-        PersistentResourceDefinition SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+        PersistentResourceDefinition SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(SUBSYSTEM_PATH, NonResolvingResourceDescriptionResolver.INSTANCE) {
 
             @Override
             public Collection<AttributeDefinition> getAttributes() {
@@ -1189,7 +1189,7 @@ public class PersistentResourceXMLParserTestCase {
         static final IIOPRootDefinition INSTANCE = new IIOPRootDefinition();
 
         private IIOPRootDefinition() {
-            super(PathElement.pathElement("subsystem", "orb"), new NonResolvingResourceDescriptionResolver());
+            super(PathElement.pathElement("subsystem", "orb"), NonResolvingResourceDescriptionResolver.INSTANCE);
         }
 
         @Override
@@ -1395,7 +1395,7 @@ public class PersistentResourceXMLParserTestCase {
                     .build();
         }
 
-    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), new NonResolvingResourceDescriptionResolver()) {
+    static final PersistentResourceDefinition SERVICE_PROCESS_RESOURCE = new PersistentResourceDefinition(PathElement.pathElement("service"), NonResolvingResourceDescriptionResolver.INSTANCE) {
         @Override
         public Collection<AttributeDefinition> getAttributes() {
             Collection<AttributeDefinition> attributes = new ArrayList<>();
@@ -1409,7 +1409,7 @@ public class PersistentResourceXMLParserTestCase {
 
     protected static final PathElement PROCESS_SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "process");
 
-    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver()) {
+    PersistentResourceDefinition PROCESS_SUBSYSTEM_ROOT_INSTANCE = new PersistentResourceDefinition(PROCESS_SUBSYSTEM_PATH, NonResolvingResourceDescriptionResolver.INSTANCE) {
 
               @Override
               public Collection<AttributeDefinition> getAttributes() {

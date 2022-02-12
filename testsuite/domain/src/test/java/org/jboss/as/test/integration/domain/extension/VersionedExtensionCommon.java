@@ -49,13 +49,13 @@ public abstract class VersionedExtensionCommon implements Extension {
     static AttributeDefinition TEST_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create("test-attribute", ModelType.STRING, true).build();
 
     protected static ResourceDefinition createResourceDefinition(final PathElement element) {
-        return new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(element, new NonResolvingResourceDescriptionResolver())
+        return new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
         .setAddHandler(new AbstractAddStepHandler())
         .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
     }
 
     static OperationDefinition getOperationDefinition(String name) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
+        return new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReadOnly()
                 .build();
     }

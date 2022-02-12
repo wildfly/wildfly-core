@@ -41,7 +41,7 @@ public class CliExtCommandsSubsystemResourceDescription extends SimpleResourceDe
     public static final PathElement PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, CliExtCommandsExtension.SUBSYSTEM_NAME);
 
     public CliExtCommandsSubsystemResourceDescription() {
-        super(PATH, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler(){});
+        super(PATH, NonResolvingResourceDescriptionResolver.INSTANCE, new ModelOnlyAddStepHandler(), new AbstractRemoveStepHandler(){});
     }
 
     @Override

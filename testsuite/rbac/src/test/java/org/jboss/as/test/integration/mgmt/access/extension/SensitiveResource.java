@@ -40,7 +40,7 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 public class SensitiveResource extends SimpleResourceDefinition {
 
     public SensitiveResource(PathElement pathElement) {
-        super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AbstractAddStepHandler())
                 .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN,

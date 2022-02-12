@@ -160,7 +160,7 @@ public class ReadAttributeGroupTestCase extends AbstractControllerTestBase {
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
         ManagementResourceRegistration basicResourceRegistration = registration.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "basicSubsystem"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "basicSubsystem"), NonResolvingResourceDescriptionResolver.INSTANCE));
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("first", ModelType.STRING, "group1", false), null);
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("second", ModelType.STRING, "group1", false), null);
         basicResourceRegistration.registerReadOnlyAttribute(TestUtils.createAttribute("third", ModelType.STRING, "group2", false), null);

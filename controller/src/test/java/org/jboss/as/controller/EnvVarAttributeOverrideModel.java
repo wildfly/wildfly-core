@@ -73,7 +73,7 @@ public abstract class EnvVarAttributeOverrideModel extends AbstractControllerTes
 
     private static ResourceDefinition createDummyProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(CUSTOM_RESOURCE_ADDR.getElement(0),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler(Arrays.asList(MY_ATTR, MY_LIST_ATTR)))
                 .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addReadWriteAttribute(MY_ATTR, null, new ReloadRequiredWriteAttributeHandler(MY_ATTR))

@@ -87,7 +87,7 @@ public class CustomContextExtension implements Extension {
     private static class CustomContextSubsystemResourceDefinition extends SimpleResourceDefinition {
 
         private CustomContextSubsystemResourceDefinition() {
-            super(new Parameters(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(ADD_HANDLER)
                     .setRemoveHandler(REMOVE_HANDLER)
                     .setCapabilities(CAP)

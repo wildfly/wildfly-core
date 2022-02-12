@@ -926,7 +926,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         boolean ok = boot(Collections.singletonList(registerModelControllerServiceInitializationBootStep(context)), true, true);
         // until a host is added with the host add op, there is no root description provider delegate. We just install a non-resolving one for now, so the
         // CLI doesn't get a lot of NPEs from :read-resource-description etc.
-        SimpleResourceDefinition def = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(null, new NonResolvingResourceDescriptionResolver()));
+        SimpleResourceDefinition def = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(null, NonResolvingResourceDescriptionResolver.INSTANCE));
         rootResourceDefinition.setFakeDelegate(def);
         // just initialize the persister and return, we have to wait for /host=foo:add()
         hostControllerConfigurationPersister.initializeDomainConfigurationPersister(false);

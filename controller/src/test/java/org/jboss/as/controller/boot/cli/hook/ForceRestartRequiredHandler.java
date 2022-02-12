@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class ForceRestartRequiredHandler implements OperationStepHandler {
     static final String NAME = "force-reload-required";
-    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(NAME, new NonResolvingResourceDescriptionResolver())
+    static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(NAME, NonResolvingResourceDescriptionResolver.INSTANCE)
             .setPrivateEntry()
             .setRuntimeOnly()
             .build();

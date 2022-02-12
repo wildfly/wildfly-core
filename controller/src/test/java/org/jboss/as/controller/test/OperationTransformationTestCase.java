@@ -336,7 +336,7 @@ public class OperationTransformationTestCase {
         }
     };
 
-    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
+    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE);
 
     private static final ExpressionResolver resolver = new ExpressionResolver() {
         @Override

@@ -242,7 +242,7 @@ public class OperationTimeoutUnitTestCase {
     }
 
     public static class BlockingServiceHandler implements OperationStepHandler {
-        static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", new NonResolvingResourceDescriptionResolver())
+        static final SimpleOperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder("block", NonResolvingResourceDescriptionResolver.INSTANCE)
                 // this isn't really runtime-only but we lie and say it is to let
                 // testBlockAwaitingRuntimeLock() work. That test relies on first
                 // messing up MSC in order to how the next op that blocks waiting

@@ -134,7 +134,7 @@ public class RemoveNotEsistingResourceTestCase {
 
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(EXTENSION),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new FakeExtensionAddHandler(rootRegistration, getMutableRootResourceRegistrationProvider()),
                     ReloadRequiredRemoveStepHandler.INSTANCE
             ){
@@ -168,7 +168,7 @@ public class RemoveNotEsistingResourceTestCase {
 
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(SUBSYSTEM, module),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(),
                     ReloadRequiredRemoveStepHandler.INSTANCE
             ){
@@ -187,7 +187,7 @@ public class RemoveNotEsistingResourceTestCase {
 
         public FakeSubmodelChild() {
             super(PathElement.pathElement(SUBMODEL_NAME),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(),
                     new RestartParentResourceRemoveHandler("attr") {
 

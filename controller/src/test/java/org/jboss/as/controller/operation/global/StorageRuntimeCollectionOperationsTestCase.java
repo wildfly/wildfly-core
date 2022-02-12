@@ -59,7 +59,7 @@ public class StorageRuntimeCollectionOperationsTestCase extends AbstractCollecti
 
     protected ResourceDefinition createProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(TEST_ADDRESS.getElement(0),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler() {
 
                     @Override

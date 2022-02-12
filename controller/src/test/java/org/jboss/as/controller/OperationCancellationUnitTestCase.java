@@ -173,7 +173,7 @@ public class OperationCancellationUnitTestCase {
 
             GlobalNotifications.registerGlobalNotifications(rootRegistration, processType);
 
-            rootRegistration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("child"), new NonResolvingResourceDescriptionResolver()));
+            rootRegistration.registerSubModel(new SimpleResourceDefinition(PathElement.pathElement("child"), NonResolvingResourceDescriptionResolver.INSTANCE));
             this.managementControllerResource = modelControllerResource;
         }
     }

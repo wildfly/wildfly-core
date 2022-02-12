@@ -133,7 +133,7 @@ public class WildcardReadResourceUnitTestCase extends AbstractControllerTestBase
         root.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         root.registerOperationHandler(SimpleOperationDefinitionBuilder.of("setup",
-                new NonResolvingResourceDescriptionResolver()).build(), new OperationStepHandler() {
+                NonResolvingResourceDescriptionResolver.INSTANCE).build(), new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
 
@@ -155,10 +155,10 @@ public class WildcardReadResourceUnitTestCase extends AbstractControllerTestBase
         GlobalNotifications.registerGlobalNotifications(root, processType);
 
 
-        final ManagementResourceRegistration hosts = root.registerSubModel(new SimpleResourceDefinition(host, new NonResolvingResourceDescriptionResolver()));
-        final ManagementResourceRegistration servers = hosts.registerSubModel(new SimpleResourceDefinition(server, new NonResolvingResourceDescriptionResolver()));
-        final ManagementResourceRegistration subsystems = servers.registerSubModel(new SimpleResourceDefinition(subsystem, new NonResolvingResourceDescriptionResolver()));
-        final ManagementResourceRegistration connectors = subsystems.registerSubModel(new SimpleResourceDefinition(connector, new NonResolvingResourceDescriptionResolver()));
+        final ManagementResourceRegistration hosts = root.registerSubModel(new SimpleResourceDefinition(host, NonResolvingResourceDescriptionResolver.INSTANCE));
+        final ManagementResourceRegistration servers = hosts.registerSubModel(new SimpleResourceDefinition(server, NonResolvingResourceDescriptionResolver.INSTANCE));
+        final ManagementResourceRegistration subsystems = servers.registerSubModel(new SimpleResourceDefinition(subsystem, NonResolvingResourceDescriptionResolver.INSTANCE));
+        final ManagementResourceRegistration connectors = subsystems.registerSubModel(new SimpleResourceDefinition(connector, NonResolvingResourceDescriptionResolver.INSTANCE));
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("1", ModelType.STRING), null);
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("2", ModelType.STRING), null);
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("3", ModelType.STRING), null);
@@ -184,7 +184,7 @@ public class WildcardReadResourceUnitTestCase extends AbstractControllerTestBase
         });
         final ManagementResourceRegistration stats = specialConnectors.registerSubModel(
                 new SimpleResourceDefinition(PathElement.pathElement("statistics", "test"),
-                        new NonResolvingResourceDescriptionResolver()));
+                        NonResolvingResourceDescriptionResolver.INSTANCE));
         stats.registerReadOnlyAttribute(TestUtils.createNillableAttribute("7", ModelType.STRING), null);
     }
 }
