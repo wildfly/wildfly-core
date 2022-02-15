@@ -40,7 +40,7 @@ public class SessionDefinition extends SimpleResourceDefinition {
     public static SessionDefinition INSTANCE = new SessionDefinition();
 
     private SessionDefinition() {
-        super(PathElement.pathElement("session"), new NonResolvingResourceDescriptionResolver());
+        super(PathElement.pathElement("session"), NonResolvingResourceDescriptionResolver.INSTANCE);
     }
 
     protected static final SimpleAttributeDefinition JNDI_NAME =
@@ -77,7 +77,7 @@ public class SessionDefinition extends SimpleResourceDefinition {
     }
 
     private static OperationDefinition createOperationDefinition(String name, AttributeDefinition... parameters) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver())
+        return new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(parameters)
                 .build();
     }

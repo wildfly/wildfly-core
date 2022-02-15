@@ -127,7 +127,7 @@ public class OpTypesExtension implements Extension {
         private final ProcessType processType;
 
         private OperationTypesSubsystemResourceDefinition(ProcessType processType) {
-            super(new Parameters(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new ModelOnlyAddStepHandler())
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
             );

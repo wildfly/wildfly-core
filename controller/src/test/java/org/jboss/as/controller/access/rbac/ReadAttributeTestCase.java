@@ -291,7 +291,7 @@ public class ReadAttributeTestCase extends AbstractRbacTestBase {
         private final boolean useDefaultReadAttributeHandler;
 
         TestResourceDefinition(String path, boolean useDefaultReadAttributeHandler, AccessConstraintDefinition... constraintDefinitions) {
-             super(new Parameters(pathElement(path), new NonResolvingResourceDescriptionResolver())
+             super(new Parameters(pathElement(path), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraintDefinitions));

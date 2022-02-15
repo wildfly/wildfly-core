@@ -84,7 +84,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
 
         complex = new ObjectTypeAttributeDefinition.Builder("complex", intValue, bigDecimal).build();
         AttributeDefinition param1 = new ObjectTypeAttributeDefinition.Builder("param1", intValue, bigDecimal).build();
-        COMPLEX_OP_DEF = new SimpleOperationDefinitionBuilder("complex", new NonResolvingResourceDescriptionResolver())
+        COMPLEX_OP_DEF = new SimpleOperationDefinitionBuilder("complex", NonResolvingResourceDescriptionResolver.INSTANCE)
                 .addParameter(param1)
                 .setReplyType(ModelType.OBJECT)
                 .setReplyParameters(complex)
@@ -96,7 +96,7 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
 
 
     public ModelControllerResourceDefinition(boolean allowExpressions, boolean forStandalone) {
-        super(PathElement.pathElement("subsystem", "test"), new NonResolvingResourceDescriptionResolver(),
+        super(PathElement.pathElement("subsystem", "test"), NonResolvingResourceDescriptionResolver.INSTANCE,
                 TestSubystemAdd.INSTANCE,
                 ReloadRequiredRemoveStepHandler.INSTANCE
         );
@@ -178,10 +178,10 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
     static class VoidOperationNoParams implements OperationStepHandler {
         static final String OPERATION_NAME = "void-no-params";
 
-        static final OperationDefinition DEFINITION_STANDALONE = new SimpleOperationDefinitionBuilder(VoidOperationNoParams.OPERATION_NAME, new NonResolvingResourceDescriptionResolver())
+        static final OperationDefinition DEFINITION_STANDALONE = new SimpleOperationDefinitionBuilder(VoidOperationNoParams.OPERATION_NAME, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReadOnly()
                 .build();
-        static final OperationDefinition DEFINITION_DOMAIN = new SimpleOperationDefinitionBuilder(VoidOperationNoParams.OPERATION_NAME, new NonResolvingResourceDescriptionResolver())
+        static final OperationDefinition DEFINITION_DOMAIN = new SimpleOperationDefinitionBuilder(VoidOperationNoParams.OPERATION_NAME, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReadOnly()
                 .setRuntimeOnly()
                 .build();
@@ -214,11 +214,11 @@ public class ModelControllerResourceDefinition extends SimpleResourceDefinition 
                 .setValidator(new IntAllowedValuesValidator(3, 5, 7))
                 .build();
 
-        final OperationDefinition DEFINITION_STANDALONE = new SimpleOperationDefinitionBuilder(IntOperationWithParams.OPERATION_NAME, new NonResolvingResourceDescriptionResolver())
+        final OperationDefinition DEFINITION_STANDALONE = new SimpleOperationDefinitionBuilder(IntOperationWithParams.OPERATION_NAME, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(param1, param2, param3, param4, param5)
                 .setReplyType(ModelType.STRING)
                 .build();
-        final OperationDefinition DEFINITION_DOMAIN = new SimpleOperationDefinitionBuilder(IntOperationWithParams.OPERATION_NAME, new NonResolvingResourceDescriptionResolver())
+        final OperationDefinition DEFINITION_DOMAIN = new SimpleOperationDefinitionBuilder(IntOperationWithParams.OPERATION_NAME, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setParameters(param1, param2, param3, param4, param5)
                 .setReplyType(ModelType.STRING)
                 .setRuntimeOnly()

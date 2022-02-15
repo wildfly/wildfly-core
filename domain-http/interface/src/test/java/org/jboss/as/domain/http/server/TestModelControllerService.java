@@ -49,7 +49,7 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     private final CapabilityRegistry capabilityRegistry;
 
     protected TestModelControllerService(ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
-        this(processType, configurationPersister, processState, ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+        this(processType, configurationPersister, processState, ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,

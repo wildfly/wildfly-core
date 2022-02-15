@@ -65,7 +65,7 @@ public class ChainedOperationBuilderTestCase {
 
     private static PathElement PATH = PathElement.pathElement("toto", "testSubsystem");
 
-    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver());
+    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE);
     private static final ModelVersion V1_0_0 = ModelVersion.create(1, 0, 0);
     private static final ModelVersion V2_0_0 = ModelVersion.create(2, 0, 0);
     private static final ModelVersion V3_0_0 = ModelVersion.create(3, 0, 0);

@@ -69,7 +69,7 @@ class SubsystemWithChildrenExtension implements Extension {
 
         final SubsystemRegistration subsystem = context.registerSubsystem("test", ModelVersion.create(1));
 
-        ResourceBuilder builder = ResourceBuilder.Factory.create(SUBSYSTEM_PATH, new NonResolvingResourceDescriptionResolver())
+        ResourceBuilder builder = ResourceBuilder.Factory.create(SUBSYSTEM_PATH, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(TestSubystemAdd.INSTANCE)
                 .pushChild(getChildElement())
                 .setAddOperation(TestChildAdd.INSTANCE)

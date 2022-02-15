@@ -87,14 +87,14 @@ public class TestSecureExpressionsExtension implements Extension {
             .setAllowExpression(true)
             .build();
 
-    public static final OperationDefinition RESOLVE = new SimpleOperationDefinitionBuilder("resolve", new NonResolvingResourceDescriptionResolver())
+    public static final OperationDefinition RESOLVE = new SimpleOperationDefinitionBuilder("resolve", NonResolvingResourceDescriptionResolver.INSTANCE)
             .addParameter(PARAM_EXPRESSION)
             .build();
 
     public static final AttributeDefinition PARAM_SYS_PROP = SimpleAttributeDefinitionBuilder.create("system-property", ModelType.STRING, false)
             .build();
 
-    public static final OperationDefinition READ_SYS_PROP = new SimpleOperationDefinitionBuilder("read-system-property", new NonResolvingResourceDescriptionResolver())
+    public static final OperationDefinition READ_SYS_PROP = new SimpleOperationDefinitionBuilder("read-system-property", NonResolvingResourceDescriptionResolver.INSTANCE)
             .addParameter(PARAM_SYS_PROP)
             .build();
 
@@ -127,7 +127,7 @@ public class TestSecureExpressionsExtension implements Extension {
     public static class ResourceDescription extends PersistentResourceDefinition {
 
         public ResourceDescription() {
-            super(new SimpleResourceDefinition.Parameters(PATH, new NonResolvingResourceDescriptionResolver())
+            super(new SimpleResourceDefinition.Parameters(PATH, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AddHandler())
                     .setRemoveHandler(ReloadRequiredRemoveStepHandler.INSTANCE));
         }

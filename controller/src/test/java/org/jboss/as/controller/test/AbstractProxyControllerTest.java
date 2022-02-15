@@ -632,7 +632,7 @@ public abstract class AbstractProxyControllerTest {
 
         MainModelControllerService(final Supplier<ModelController> proxy, ControlledProcessState processState) {
             super(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), processState,
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
             this.proxy = proxy;
         }
 
@@ -653,7 +653,7 @@ public abstract class AbstractProxyControllerTest {
                 }
             });
 
-            rootRegistration.registerSubModel(ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"), new NonResolvingResourceDescriptionResolver())
+            rootRegistration.registerSubModel(ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .addReadOnlyAttribute(TestUtils.createNillableAttribute("name",ModelType.STRING))
                     .build());
 
@@ -667,7 +667,7 @@ public abstract class AbstractProxyControllerTest {
 
         ProxyModelControllerService(final ControlledProcessState processState) {
             super(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), processState,
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
         }
 
         @Override
@@ -705,7 +705,7 @@ public abstract class AbstractProxyControllerTest {
             );
 
             ManagementResourceRegistration serverReg = rootRegistration.registerSubModel(
-                    new SimpleResourceDefinition(PathElement.pathElement("serverchild", "*"),new NonResolvingResourceDescriptionResolver()));
+                    new SimpleResourceDefinition(PathElement.pathElement("serverchild", "*"),NonResolvingResourceDescriptionResolver.INSTANCE));
             serverReg.registerReadOnlyAttribute(createAttribute("name", ModelType.STRING), null);
             /*ManagementResourceRegistration serverReg = rootRegistration.registerSubModel(PathElement.pathElement("serverchild", "*"), new DescriptionProvider() {
 
@@ -726,7 +726,7 @@ public abstract class AbstractProxyControllerTest {
 
 
             ManagementResourceRegistration serverChildReg = serverReg.registerSubModel(
-                    new SimpleResourceDefinition(PathElement.pathElement("child", "*"),new NonResolvingResourceDescriptionResolver()));
+                    new SimpleResourceDefinition(PathElement.pathElement("child", "*"),NonResolvingResourceDescriptionResolver.INSTANCE));
 
             /*ManagementResourceRegistration serverChildReg = serverReg.registerSubModel(PathElement.pathElement("child", "*"), new DescriptionProvider() {
 

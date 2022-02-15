@@ -491,7 +491,7 @@ public class BasicRbacTestCase extends AbstractRbacTestBase {
         }
 
         TestResourceDefinition(PathElement element, AccessConstraintDefinition... constraintDefinitions) {
-            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraintDefinitions));
@@ -510,12 +510,12 @@ public class BasicRbacTestCase extends AbstractRbacTestBase {
 
     private static final class TestOperationStepHandler implements OperationStepHandler {
         private static final SimpleOperationDefinition RO_DEFINITION
-                = new SimpleOperationDefinitionBuilder(READONLY_OPERATION, new NonResolvingResourceDescriptionResolver())
+                = new SimpleOperationDefinitionBuilder(READONLY_OPERATION, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReplyType(ModelType.INT)
                 .build();
 
         private static final SimpleOperationDefinition RW_DEFINITION
-                = new SimpleOperationDefinitionBuilder(READWRITE_OPERATION, new NonResolvingResourceDescriptionResolver())
+                = new SimpleOperationDefinitionBuilder(READWRITE_OPERATION, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setReplyType(ModelType.INT)
                 .build();
 

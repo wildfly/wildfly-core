@@ -68,7 +68,7 @@ public class SensitiveTargetConstraintUnitTestCase {
     private static final SensitiveTargetAccessConstraintDefinition stacda = new SensitiveTargetAccessConstraintDefinition(a);
     private static final SensitiveTargetAccessConstraintDefinition stacdb = new SensitiveTargetAccessConstraintDefinition(b);
 
-    private static final OperationDefinition READ_CONFIG_DEF = new SimpleOperationDefinitionBuilder("read-config", new NonResolvingResourceDescriptionResolver())
+    private static final OperationDefinition READ_CONFIG_DEF = new SimpleOperationDefinitionBuilder("read-config", NonResolvingResourceDescriptionResolver.INSTANCE)
             .setReadOnly()
             .build();
 
@@ -90,7 +90,7 @@ public class SensitiveTargetConstraintUnitTestCase {
     }
 
     private void setupResources() {
-        ResourceDefinition rootRd = new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
+        ResourceDefinition rootRd = new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return rootResourceConstraints;
@@ -99,7 +99,7 @@ public class SensitiveTargetConstraintUnitTestCase {
         ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootRd);
         rootRegistration.registerOperationHandler(READ_CONFIG_DEF, NoopOperationStepHandler.WITH_RESULT, true);
         PathElement childPE = PathElement.pathElement("child");
-        ResourceDefinition childRd = new SimpleResourceDefinition(childPE, new NonResolvingResourceDescriptionResolver()) {
+        ResourceDefinition childRd = new SimpleResourceDefinition(childPE, NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return childResourceConstraints;

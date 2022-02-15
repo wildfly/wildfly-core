@@ -207,7 +207,7 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
 
     private static class RootResourceDefinition extends SimpleResourceDefinition {
         RootResourceDefinition() {
-            super(new Parameters(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {}));
         }
@@ -223,7 +223,7 @@ public class RemoveResourceTestCase extends AbstractControllerTestBase {
         private final List<AttributeDefinition> attributes = Collections.synchronizedList(new ArrayList<AttributeDefinition>());
 
         ChildResourceDefinition(PathElement element, AccessConstraintDefinition...constraints){
-            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraints));

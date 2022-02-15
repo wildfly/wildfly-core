@@ -224,7 +224,7 @@ public class RegistryProxyControllerTestCase {
     }
 
     private ManagementResourceRegistration registerSubModel(final ManagementResourceRegistration parent, final PathElement address) {
-        return parent.registerSubModel(new SimpleResourceDefinition(address, new NonResolvingResourceDescriptionResolver()));
+        return parent.registerSubModel(new SimpleResourceDefinition(address, NonResolvingResourceDescriptionResolver.INSTANCE));
     }
 
     static class TestProxyController implements ProxyController {

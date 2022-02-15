@@ -143,7 +143,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         );
 
         ResourceDefinition profileDef = ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, false).setMinSize(1).build())
                 .build();
 
@@ -192,21 +192,21 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
                 });
 
         ManagementResourceRegistration profileASub2Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG);
         profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
 
         ManagementResourceRegistration profileBSub3Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), NonResolvingResourceDescriptionResolver.INSTANCE));
         ManagementResourceRegistration squatter1Reg = profileBSub3Reg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("service", "squatter1"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("service", "squatter1"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition squatter1Name = TestUtils.createAttribute("name", ModelType.STRING);
         squatter1Reg.registerReadWriteAttribute(squatter1Name, null, new ModelOnlyWriteAttributeHandler(squatter1Name));
         AttributeDefinition squatter1Thing = TestUtils.createAttribute("thing1", ModelType.STRING);
         squatter1Reg.registerReadWriteAttribute(squatter1Thing, null, new ModelOnlyWriteAttributeHandler(squatter1Thing));
 
         ManagementResourceRegistration squatter3Reg = profileBSub3Reg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("service", "squatter3"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("service", "squatter3"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition squatter3Name = TestUtils.createAttribute("name", ModelType.STRING);
         squatter3Reg.registerReadWriteAttribute(squatter3Name, null, new ModelOnlyWriteAttributeHandler(squatter3Name));
         AttributeDefinition squatter3Thing = TestUtils.createAttribute("thing3", ModelType.LONG);
@@ -269,10 +269,10 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         );
 
         ManagementResourceRegistration profileCSub4Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem4"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem4"), NonResolvingResourceDescriptionResolver.INSTANCE));
 
         ManagementResourceRegistration profileCSub5Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileCSub5Reg.registerReadOnlyAttribute(TestUtils.createAttribute("name", ModelType.STRING), new OperationStepHandler() {
 
             @Override
@@ -282,12 +282,12 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         });
 
         ResourceDefinition profileCSub5Type1RegDef = ResourceBuilder.Factory.create(PathElement.pathElement("type1", "thing1"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .build();
         ManagementResourceRegistration profileCSub5Type1Reg = profileCSub5Reg.registerSubModel(profileCSub5Type1RegDef);
 
         ManagementResourceRegistration profileCSub6Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem6"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem6"), NonResolvingResourceDescriptionResolver.INSTANCE));
 
         profileCSub6Reg.registerOperationHandler(TestUtils.createOperationDefinition("testA", true),
                 new OperationStepHandler() {
@@ -299,11 +299,11 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
         );
 
         ManagementResourceRegistration profileESub7Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem7"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem7"), NonResolvingResourceDescriptionResolver.INSTANCE));
         ManagementResourceRegistration profileESub7TypeReg = profileESub7Reg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("type"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("type"), NonResolvingResourceDescriptionResolver.INSTANCE));
         ManagementResourceRegistration profileESub7TypeSquatterOneReg = profileESub7TypeReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("squatter", "one"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("squatter", "one"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileESub7TypeReg.registerAlias(PathElement.pathElement("squatter-alias", "ONE"), new AliasEntry(profileESub7TypeSquatterOneReg) {
             @Override
             public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {
@@ -321,7 +321,7 @@ public class GlobalOperationsAliasesTestCase extends AbstractGlobalOperationsTes
 
         });
         ManagementResourceRegistration profileESub7TypeWildcardReg = profileESub7TypeReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("wildcard"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("wildcard"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileESub7TypeReg.registerAlias(PathElement.pathElement("wildcard-alias"), new AliasEntry(profileESub7TypeWildcardReg) {
             @Override
             public PathAddress convertToTargetAddress(PathAddress address, AliasContext aliasContext) {

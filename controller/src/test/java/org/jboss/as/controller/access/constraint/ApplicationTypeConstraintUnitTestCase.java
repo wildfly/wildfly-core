@@ -69,7 +69,7 @@ public class ApplicationTypeConstraintUnitTestCase {
     private static final ApplicationTypeAccessConstraintDefinition atacda = new ApplicationTypeAccessConstraintDefinition(a);
     private static final ApplicationTypeAccessConstraintDefinition atacdb = new ApplicationTypeAccessConstraintDefinition(b);
 
-    private static final OperationDefinition WRITE_CONFIG_DEF = new SimpleOperationDefinitionBuilder("write-config", new NonResolvingResourceDescriptionResolver())
+    private static final OperationDefinition WRITE_CONFIG_DEF = new SimpleOperationDefinitionBuilder("write-config", NonResolvingResourceDescriptionResolver.INSTANCE)
             .build();
 
     private static final Constraint DEPLOYER_WRITE_CONFIG = ApplicationTypeConstraint.FACTORY.getStandardUserConstraint(StandardRole.DEPLOYER, Action.ActionEffect.WRITE_CONFIG);
@@ -88,7 +88,7 @@ public class ApplicationTypeConstraintUnitTestCase {
         a.setConfiguredApplication(isA);
         b.setConfiguredApplication(isB);
 
-        ResourceDefinition rootRd = new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()) {
+        ResourceDefinition rootRd = new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return rootResourceConstraints;
@@ -98,7 +98,7 @@ public class ApplicationTypeConstraintUnitTestCase {
         rootRegistration.registerOperationHandler(WRITE_CONFIG_DEF, NoopOperationStepHandler.WITHOUT_RESULT, true);
 
         PathElement childPE = PathElement.pathElement("child");
-        ResourceDefinition childRd = new SimpleResourceDefinition(childPE, new NonResolvingResourceDescriptionResolver()) {
+        ResourceDefinition childRd = new SimpleResourceDefinition(childPE, NonResolvingResourceDescriptionResolver.INSTANCE) {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return childResourceConstraints;

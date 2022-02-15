@@ -159,7 +159,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addOperation(SimpleOperationDefinitionBuilder.of("add-cap",
-                            new NonResolvingResourceDescriptionResolver()).build(),
+                            NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerCapability(TEST_CAPABILITY1);
@@ -186,14 +186,14 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addCapability(TEST_CAPABILITY2)
             .addOperation(SimpleOperationDefinitionBuilder.of("add-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()).build(),
+                            NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.registerSubModel(SUB_RESOURCE);
                     })
 
             .addOperation(SimpleOperationDefinitionBuilder.of("remove-sub-resource",
-                            new NonResolvingResourceDescriptionResolver()).build(),
+                            NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     (context, operation) -> {
                         ManagementResourceRegistration mrr = context.getResourceRegistrationForUpdate();
                         mrr.unregisterSubModel(SUB_RESOURCE.getPathElement());

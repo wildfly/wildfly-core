@@ -65,7 +65,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         registration.registerOperationHandler(CompositeOperationHandler.DEFINITION, CompositeOperationHandler.INSTANCE);
 
-        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(MY_OPERATION, new NonResolvingResourceDescriptionResolver())
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(MY_OPERATION, NonResolvingResourceDescriptionResolver.INSTANCE)
                         .setParameters(FAIL_OPERATION)
                 .setPrivateEntry()
                 .build(),
@@ -82,7 +82,7 @@ public class NotificationCompositeOperationTestCase extends AbstractControllerTe
                     }
                 }
         );
-        registration.registerNotification(NotificationDefinition.Builder.create(MY_NOTIFICATION_TYPE, new NonResolvingResourceDescriptionResolver()).build());
+        registration.registerNotification(NotificationDefinition.Builder.create(MY_NOTIFICATION_TYPE, NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
     @Test

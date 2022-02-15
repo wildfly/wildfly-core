@@ -93,7 +93,7 @@ public class OrderedChildResourceExtension implements Extension {
 
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_PATH,
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
@@ -118,7 +118,7 @@ public class OrderedChildResourceExtension implements Extension {
     private static class OrderedChildResourceDefinition extends SimpleResourceDefinition {
 
         public OrderedChildResourceDefinition() {
-            super(new Parameters(CHILD, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(CHILD, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler())
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());

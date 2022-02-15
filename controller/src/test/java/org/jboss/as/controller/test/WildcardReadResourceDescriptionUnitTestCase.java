@@ -406,13 +406,13 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
         root.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
 
         root.registerOperationHandler(SimpleOperationDefinitionBuilder.of("setup",
-                new NonResolvingResourceDescriptionResolver()).build(), NoopOperationStepHandler.WITHOUT_RESULT);
+                NonResolvingResourceDescriptionResolver.INSTANCE).build(), NoopOperationStepHandler.WITHOUT_RESULT);
 
         GlobalNotifications.registerGlobalNotifications(root, processType);
 
 
-        final ManagementResourceRegistration subsystemW = root.registerSubModel(new SimpleResourceDefinition(webSubsystem, new NonResolvingResourceDescriptionResolver()));
-        final ManagementResourceRegistration connectors = subsystemW.registerSubModel(new SimpleResourceDefinition(connector, new NonResolvingResourceDescriptionResolver()));
+        final ManagementResourceRegistration subsystemW = root.registerSubModel(new SimpleResourceDefinition(webSubsystem, NonResolvingResourceDescriptionResolver.INSTANCE));
+        final ManagementResourceRegistration connectors = subsystemW.registerSubModel(new SimpleResourceDefinition(connector, NonResolvingResourceDescriptionResolver.INSTANCE));
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("1", ModelType.STRING), null);
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("2", ModelType.STRING), null);
         connectors.registerReadOnlyAttribute(TestUtils.createNillableAttribute("3", ModelType.STRING), null);
@@ -438,12 +438,12 @@ public class WildcardReadResourceDescriptionUnitTestCase  extends AbstractContro
         });
         final ManagementResourceRegistration stats = specialConnectors.registerSubModel(
                 new SimpleResourceDefinition(statistics,
-                        new NonResolvingResourceDescriptionResolver()));
+                        NonResolvingResourceDescriptionResolver.INSTANCE));
         stats.registerReadOnlyAttribute(TestUtils.createNillableAttribute("7", ModelType.STRING), null);
 
-        ManagementResourceRegistration otherSubsystemModel = root.registerSubModel(new SimpleResourceDefinition(otherSubsystem, new NonResolvingResourceDescriptionResolver()));
-        ManagementResourceRegistration serverModel = otherSubsystemModel.registerSubModel(new SimpleResourceDefinition(server, new NonResolvingResourceDescriptionResolver()));
-        serverModel.registerSubModel(new SimpleResourceDefinition(resource, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration otherSubsystemModel = root.registerSubModel(new SimpleResourceDefinition(otherSubsystem, NonResolvingResourceDescriptionResolver.INSTANCE));
+        ManagementResourceRegistration serverModel = otherSubsystemModel.registerSubModel(new SimpleResourceDefinition(server, NonResolvingResourceDescriptionResolver.INSTANCE));
+        serverModel.registerSubModel(new SimpleResourceDefinition(resource, NonResolvingResourceDescriptionResolver.INSTANCE));
 
     }
 }

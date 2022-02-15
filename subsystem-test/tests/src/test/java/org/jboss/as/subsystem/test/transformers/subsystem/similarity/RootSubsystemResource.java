@@ -36,7 +36,7 @@ public class RootSubsystemResource extends SimpleResourceDefinition {
 
     private RootSubsystemResource() {
         super(PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, "test-subsystem"),
-                new NonResolvingResourceDescriptionResolver(),
+                NonResolvingResourceDescriptionResolver.INSTANCE,
                 NoopOperationStepHandler.WITHOUT_RESULT,
                 ReloadRequiredRemoveStepHandler.INSTANCE);
     }

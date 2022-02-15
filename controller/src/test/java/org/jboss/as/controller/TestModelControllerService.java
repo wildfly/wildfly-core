@@ -61,12 +61,12 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
         this(processType, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
     protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
         this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build());
+                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
     protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
@@ -129,6 +129,6 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     }
 
     static SimpleOperationDefinitionBuilder getODBuilder(String name) {
-        return new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver());
+        return new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE);
     }
 }

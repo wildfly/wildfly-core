@@ -64,7 +64,7 @@ public class ValidateSubsystemExtension implements Extension {
         final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(1));
         SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
                 PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
         );
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(subsystemResource);
         //We always need to add an 'add' operation

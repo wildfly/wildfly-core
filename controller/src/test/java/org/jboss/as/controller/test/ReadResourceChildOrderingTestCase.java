@@ -131,7 +131,7 @@ public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBas
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
         GlobalOperationHandlers.registerGlobalOperations(registration, processType);
-        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder("setup", new NonResolvingResourceDescriptionResolver())
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder("setup", NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setPrivateEntry()
                 .build()
                 , new OperationStepHandler() {
@@ -143,7 +143,7 @@ public class ReadResourceChildOrderingTestCase extends AbstractControllerTestBas
 
         GlobalNotifications.registerGlobalNotifications(registration, processType);
 
-        ManagementResourceRegistration child = registration.registerSubModel(new SimpleResourceDefinition(testSubsystem, new NonResolvingResourceDescriptionResolver()));
+        ManagementResourceRegistration child = registration.registerSubModel(new SimpleResourceDefinition(testSubsystem, NonResolvingResourceDescriptionResolver.INSTANCE));
         child.registerReadOnlyAttribute(TestUtils.createNillableAttribute("prop", ModelType.STRING), null);
 
 

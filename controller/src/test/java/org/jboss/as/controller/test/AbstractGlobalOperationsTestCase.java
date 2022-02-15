@@ -161,7 +161,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         );
 
         ResourceDefinition profileDef = ResourceBuilder.Factory.create(PathElement.pathElement("profile", "*"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .addReadOnlyAttribute(SimpleAttributeDefinitionBuilder.create("name", ModelType.STRING, false).setMinSize(1).build())
                 .build();
 
@@ -171,7 +171,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
         ManagementResourceRegistration profileSub1Reg = profileReg.registerSubModel(new Subsystem1RootResource());
 
         ManagementResourceRegistration profileASub2Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem2"), NonResolvingResourceDescriptionResolver.INSTANCE));
         AttributeDefinition longAttr = TestUtils.createAttribute("long", ModelType.LONG, "number");
         profileASub2Reg.registerReadWriteAttribute(longAttr, null, new ModelOnlyWriteAttributeHandler(longAttr));
         profileASub2Reg.registerReadOnlyAttribute(TestUtils.createAttribute("type", ModelType.TYPE), null);
@@ -195,7 +195,7 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                 .setCapabilityReference("org.wildfly.test.capability", att1, att2)
                 .build();
         ManagementResourceRegistration profileBSub3Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem3"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileBSub3Reg.registerReadOnlyAttribute(att1, null);
         profileBSub3Reg.registerReadOnlyAttribute(att2, null);
         profileBSub3Reg.registerReadOnlyAttribute(ref, null);
@@ -229,11 +229,11 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                 .setCapabilityReference("org.wildfly.test.capability")
                 .build();
         ManagementResourceRegistration profileCSub4Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem4"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem4"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileCSub4Reg.registerReadOnlyAttribute(simpleRef, null);
 
         ManagementResourceRegistration profileCSub5Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem5"), NonResolvingResourceDescriptionResolver.INSTANCE));
         profileCSub5Reg.registerReadOnlyAttribute(TestUtils.createAttribute("name", ModelType.STRING, "varchar"), new OperationStepHandler() {
 
             @Override
@@ -249,13 +249,13 @@ public abstract class AbstractGlobalOperationsTestCase extends AbstractControlle
                                 "org.wildfly.test.capability.req")));
 
         ResourceDefinition profileCSub5Type1RegDef = ResourceBuilder.Factory.create(PathElement.pathElement("type1"),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .build();
 
         ManagementResourceRegistration profileCSub5Type1Reg = profileCSub5Reg.registerSubModel(profileCSub5Type1RegDef);
 
         ManagementResourceRegistration profileCSub6Reg = profileReg.registerSubModel(
-                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem6"), new NonResolvingResourceDescriptionResolver()));
+                new SimpleResourceDefinition(PathElement.pathElement("subsystem", "subsystem6"), NonResolvingResourceDescriptionResolver.INSTANCE));
 
         profileCSub6Reg.registerOperationHandler(TestUtils.createOperationDefinition("testA", true),
                 new OperationStepHandler() {

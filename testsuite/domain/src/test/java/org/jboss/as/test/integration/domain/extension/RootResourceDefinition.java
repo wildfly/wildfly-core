@@ -50,7 +50,7 @@ public class RootResourceDefinition extends SimpleResourceDefinition {
     private static final SimpleAttributeDefinition NAME = new SimpleAttributeDefinitionBuilder("name", ModelType.STRING, false).build();
 
     public RootResourceDefinition(String name) {
-        super(PathElement.pathElement(SUBSYSTEM, name), new NonResolvingResourceDescriptionResolver(),
+        super(PathElement.pathElement(SUBSYSTEM, name), NonResolvingResourceDescriptionResolver.INSTANCE,
                 new AddSubsystemHandler(), ReloadRequiredRemoveStepHandler.INSTANCE);
     }
 

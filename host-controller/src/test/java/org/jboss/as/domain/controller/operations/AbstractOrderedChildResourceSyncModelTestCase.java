@@ -96,7 +96,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     static final PathElement EXTRA_CHILD = PathElement.pathElement("extra-child");
     static final AttributeDefinition ATTR = new SimpleAttributeDefinitionBuilder("attr", ModelType.STRING, true).build();
     static final AttributeDefinition[] REQUEST_ATTRIBUTES = new AttributeDefinition[]{ATTR};
-    static final OperationDefinition TRIGGER_SYNC = new SimpleOperationDefinitionBuilder("trigger-sync", new NonResolvingResourceDescriptionResolver())
+    static final OperationDefinition TRIGGER_SYNC = new SimpleOperationDefinitionBuilder("trigger-sync", NonResolvingResourceDescriptionResolver.INSTANCE)
             .addParameter(ATTR)
             .build();
 
@@ -277,7 +277,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
         public SubsystemResourceDefinition() {
             super(SUBSYSTEM_ELEMENT,
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(REQUEST_ATTRIBUTES),
                     new ModelOnlyRemoveStepHandler());
         }
@@ -298,7 +298,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     static class NonOrderedChildResourceDefinition extends SimpleResourceDefinition {
 
         public NonOrderedChildResourceDefinition() {
-            super(NON_ORDERED_CHILD, new NonResolvingResourceDescriptionResolver(), new ModelOnlyAddStepHandler(REQUEST_ATTRIBUTES), new ModelOnlyRemoveStepHandler());
+            super(NON_ORDERED_CHILD, NonResolvingResourceDescriptionResolver.INSTANCE, new ModelOnlyAddStepHandler(REQUEST_ATTRIBUTES), new ModelOnlyRemoveStepHandler());
         }
 
 
@@ -309,7 +309,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
 
     abstract class AbstractChildResourceDefinition extends SimpleResourceDefinition {
         public AbstractChildResourceDefinition(PathElement element, OperationStepHandler addHandler) {
-            super(new Parameters(element, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(element, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(addHandler)
                     .setRemoveHandler(new ModelOnlyRemoveStepHandler())
                     .setOrderedChild());

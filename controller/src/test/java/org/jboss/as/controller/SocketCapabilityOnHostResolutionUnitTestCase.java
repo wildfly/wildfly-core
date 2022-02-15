@@ -203,7 +203,7 @@ public class SocketCapabilityOnHostResolutionUnitTestCase {
 
     private static ResourceDefinition createResourceDefinition(String key) {
         PathElement pe = key == null ? null : PathElement.pathElement(key);
-        return ResourceBuilder.Factory.create(pe, new NonResolvingResourceDescriptionResolver()).build();
+        return ResourceBuilder.Factory.create(pe, NonResolvingResourceDescriptionResolver.INSTANCE).build();
     }
 
     private static class CapabilityOSH implements OperationStepHandler {

@@ -100,7 +100,7 @@ public class ObjectNameAddressUtilTestCase {
     @Test
     public void testToPathAddress() {
 
-        NonResolvingResourceDescriptionResolver resolver = new NonResolvingResourceDescriptionResolver();
+        NonResolvingResourceDescriptionResolver resolver = NonResolvingResourceDescriptionResolver.INSTANCE;
 
         ManagementResourceRegistration rootRegistration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootResourceDef);
         ManagementResourceRegistration subsystemRegistration = rootRegistration.registerSubModel(new SimpleResourceDefinition(pathElement("subsystem", "foo"), resolver));
