@@ -824,7 +824,7 @@ public class CoreModelTestDelegate {
                 }
                 throw new Exception(t);
             }
-            Assert.assertTrue(reverseServices.getBootError() == null ? "error" : reverseServices.getBootError().getMessage(), reverseServices.isSuccessfulBoot());
+            Assert.assertTrue(reverseServices.getBootErrorDescription(), reverseServices.isSuccessfulBoot() && !reverseServices.hasBootErrorCollectorFailures());
 
             ModelNode mainModel = mainServices.readWholeModel();
             if (reverseCheckMainModelFixer != null) {

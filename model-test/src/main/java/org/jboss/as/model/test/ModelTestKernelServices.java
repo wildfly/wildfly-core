@@ -27,11 +27,17 @@ import java.util.List;
 import org.jboss.as.controller.ModelController.OperationTransactionControl;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.PathAddress;
+import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.transform.OperationTransformer.TransformedOperation;
 import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceContainer;
+
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 
 /**
  *
@@ -183,4 +189,50 @@ public interface ModelTestKernelServices<T extends ModelTestKernelServices<T>> {
 
     ImmutableManagementResourceRegistration getRootRegistration();
 
+    /**
+     * Get information about error on boot from both BootErrorCollector and BootError
+     *
+     * @return BootErrorCollector description if any and BootError printed stack trace if any, empty string otherwise
+     */
+    default String getBootErrorDescription(){
+        String errorDescription = "";
+        ModelNode result = getBootErrorCollectorFailures();
+        if (hasBootErrorCollectorFailures()) {
+            errorDescription += "BootErrorCollector failures: " + result.asString() + System.lineSeparator();
+        }
+        if (getBootError() != null) {
+            errorDescription += "BootError: " + getBootError().toString() + getBootError().getStackTrace().toString();
+        }
+        return errorDescription;
+    }
+
+    /**
+     * Retrieve failures collected by BootErrorCollector if there are any
+     * and in case of OperationFailedException thrown by executeForResult will be outputted
+     * the error message containing exception description
+     *
+     * @return failures from BootErrorCollector or null when retrieved none or undefined failure
+     */
+    default ModelNode getBootErrorCollectorFailures(){
+        ModelNode readBootErrorsOp = Util.createOperation("read-boot-errors", PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT)));
+        ModelNode result = null;
+        try {
+            result = executeForResult(readBootErrorsOp);
+            if (result.asString().equals("undefined")) {
+                return null;
+            }
+        } catch (OperationFailedException e) {
+            System.err.println("Error getting BootErrorCollector failures: " + e.toString());
+        }
+        return result;
+    }
+
+    /**
+     * Returns whether BootErrorCollector collected any failure
+     *
+     * @return true if BootErrorCollector collected any failure
+     */
+    default boolean hasBootErrorCollectorFailures() {
+        return getBootErrorCollectorFailures() != null;
+    }
 }
