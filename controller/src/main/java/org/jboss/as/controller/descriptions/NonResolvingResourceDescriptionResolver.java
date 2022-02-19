@@ -24,7 +24,6 @@ package org.jboss.as.controller.descriptions;
 
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -47,17 +46,7 @@ public class NonResolvingResourceDescriptionResolver extends StandardResourceDes
 
     @Override
     public ResourceBundle getResourceBundle(Locale locale) {
-        return new ResourceBundle() {
-            @Override
-            protected Object handleGetObject(String key) {
-                return key;
-            }
-
-            @Override
-            public Enumeration<String> getKeys() {
-                return Collections.enumeration(new HashSet<String>());
-            }
-        };
+        return EmptyResourceBundle.INSTANCE;
     }
 
     @Override
@@ -128,5 +117,19 @@ public class NonResolvingResourceDescriptionResolver extends StandardResourceDes
     @Override
     public StandardResourceDescriptionResolver getChildResolver(String key) {
         return NonResolvingResourceDescriptionResolver.INSTANCE;
+    }
+
+    private static class EmptyResourceBundle extends ResourceBundle {
+        private static final EmptyResourceBundle INSTANCE = new EmptyResourceBundle();
+
+        @Override
+        protected Object handleGetObject(String key) {
+            return key;
+        }
+
+        @Override
+        public Enumeration<String> getKeys() {
+            return Collections.emptyEnumeration();
+        }
     }
 }
