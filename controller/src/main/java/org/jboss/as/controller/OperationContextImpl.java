@@ -2735,12 +2735,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             return requires(serviceName);
         }
 
-        @Override
-        public <I> CapabilityServiceBuilder<T> addInjection(Injector<? super I> target, I value) {
-            super.addInjection(target, value);
-            return this;
-        }
-
         private ServiceName getCapabilityServiceName(String capabilityName, Class<?> serviceType) {
             return getCapabilityServiceName(capabilityName, serviceType, targetAddress);
         }
