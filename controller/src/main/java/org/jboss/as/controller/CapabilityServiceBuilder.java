@@ -92,14 +92,6 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     /**
      * {@inheritDoc}
      * @return this builder
-     * @deprecated This method will be removed in a future release.
-     */
-    @Deprecated
-    <I> CapabilityServiceBuilder<T> addInjection(Injector<? super I> target, I value);
-
-    /**
-     * {@inheritDoc}
-     * @return this builder
      */
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
