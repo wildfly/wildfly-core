@@ -54,7 +54,6 @@ import org.jboss.as.controller.test.AbstractControllerTestBase;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.State;
-import org.jboss.msc.service.ServiceController.Transition;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StabilityMonitor;
 import org.junit.Assert;
@@ -816,20 +815,6 @@ public class PathsTestCase extends AbstractControllerTestBase {
         registration.registerSubModel(PathResourceDefinition.createSpecified(pathManagerService));
 
         pathManagerService.addPathManagerResources(managementModel.getRootResource());
-    }
-
-    private static class ExpectedResultBuilder {
-        LinkedHashMap<Transition, ServiceName> map = new LinkedHashMap<ServiceController.Transition, ServiceName>();
-
-        ExpectedResultBuilder addUp(ServiceName name) {
-            map.put(Transition.STARTING_to_UP, name);
-            return this;
-        }
-
-        ExpectedResultBuilder addRemove(ServiceName name) {
-            map.put(Transition.REMOVING_to_REMOVED, name);
-            return this;
-        }
     }
 
     private static class PerformChangeCallback implements PathManager.Callback {
