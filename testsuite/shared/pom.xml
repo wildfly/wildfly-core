@@ -197,11 +197,6 @@
             <groupId>xom</groupId>
             <artifactId>xom</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mock-server</groupId>
-            <artifactId>mockserver-netty</artifactId>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
 </project>
