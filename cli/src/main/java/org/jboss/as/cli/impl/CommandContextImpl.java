@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -286,7 +287,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     /** The TrustManager in use by the SSLContext, a reference is kept to rejected certificates can be captured. */
     private volatile LazyDelagatingTrustManager trustManager;
     /** various key/value pairs */
-    private Map<Scope, Map<String, Object>> map = new HashMap<>();
+    private final Map<Scope, Map<String, Object>> map = new EnumMap<>(Scope.class);
     /** operation request address prefix */
     private final OperationRequestAddress prefix = new DefaultOperationRequestAddress();
     /** the prefix formatter */
@@ -296,7 +297,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     /** operation request handler */
     private final OperationRequestHandler operationHandler;
     /** batches */
-    private BatchManager batchManager = new DefaultBatchManager();
+    private final BatchManager batchManager = new DefaultBatchManager();
     /** the default command completer */
     private final CommandLineCompleter cmdCompleter;
     /** the timeout handler */
@@ -304,7 +305,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
     /** the client bind address */
     private final String clientBindAddress;
 
-    private List<CliEventListener> listeners = new ArrayList<CliEventListener>();
+    private final List<CliEventListener> listeners = new ArrayList<>();
 
     /** the value of this variable will be used as the exit code of the vm, it is reset by every command/operation executed */
     private int exitCode;
@@ -336,7 +337,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     private static final short DEFAULT_TIMEOUT = 0;
     private int timeout = DEFAULT_TIMEOUT;
-    private int configTimeout;
+    private final int configTimeout;
     private ControllerAddress connectionAddress;
 
     private boolean redefinedOutput;
@@ -811,7 +812,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
     private StringBuilder lineBuffer;
     private StringBuilder origLineBuffer;
-    private CommandExecutor executor = new CommandExecutor(this);
+    private final CommandExecutor executor = new CommandExecutor(this);
 
     @Override
     public void handle(String line) throws CommandLineException {
@@ -2307,7 +2308,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         private final String trustStorePassword;
         private final boolean modifyTrustStore;
 
-        private Set<X509Certificate> temporarilyTrusted = new HashSet<X509Certificate>();
+        private final Set<X509Certificate> temporarilyTrusted = new HashSet<X509Certificate>();
         private X509TrustManager delegate;
 
         LazyDelagatingTrustManager(String trustStore, String trustStorePassword, boolean modifyTrustStore) {
