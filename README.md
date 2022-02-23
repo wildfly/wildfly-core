@@ -14,8 +14,8 @@ Building
 
 Prerequisites:
 
-* JDK 8 or newer
-* Maven 3.6.0 or newer
+* JDK 11 or newer - check `java -version`
+* Maven 3.6.0 or newer - check `mvn -v`
 
 To build with your own Maven installation:
 
@@ -56,12 +56,14 @@ https://github.com/wildfly/wildfly
 
 Contributing
 ------------------
-https://community.jboss.org/wiki/HackingOnWildFly
+* Git Setup: https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_hacking/github_setup.adoc
+* Contributing: https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_hacking/contributing.adoc
+* Pull request standard: https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_hacking/pullrequest_standards.adoc
 
 Using Eclipse
 -------------
 1. Install the latest version of Eclipse.
-2. Make sure Xmx in Eclipse.ini is at least 1280M, and it's using java 7
+2. Make sure Xmx in Eclipse.ini is at least 1280M, and it's using java 11
 3. Launch Eclipse and install the m2e plugin, make sure it uses your repo configs
    (get it from: https://www.eclipse.org/m2e/
    or install "Maven Integration for Eclipse" from the Eclipse Marketplace).
