@@ -1,0 +1,12 @@
+wildfly-configuration:
+    extension:
+      org.jboss.as.failure:
+        module: org.jboss.as.failure
+    connector:
+      my-connector:
+          type: test
+          acceptor:
+              my-acceptor:
+                  type: acceptor
+      old-connector: !remove
+
