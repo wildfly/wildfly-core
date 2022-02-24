@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:15.0" register-jaspi-factory="false">
+<subsystem xmlns="urn:wildfly:elytron:15.1" register-jaspi-factory="false">
     <jaspi>
         <jaspi-configuration name="test" layer="HttpServlet" application-context="default /test" description="Test Definition">
             <server-auth-modules>
