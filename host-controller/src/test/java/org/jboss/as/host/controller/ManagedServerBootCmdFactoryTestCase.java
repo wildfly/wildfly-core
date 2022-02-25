@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.dmr.ModelNode;
@@ -126,11 +127,11 @@ public class ManagedServerBootCmdFactoryTestCase {
         System.out.println("getServerLaunchCommand");
         ManagedServerBootCmdFactory instance = new ManagedServerBootCmdFactory("test-server", getDomainModel(), getHostModel(), getTestHostEnvironment(), ExpressionResolver.TEST_RESOLVER, false);
         List<String> result = instance.getServerLaunchCommand();
-        Assert.assertThat(result.size(), is(notNullValue()));
+        MatcherAssert.assertThat(result.size(), is(notNullValue()));
         if (result.size() > 18) {
-            Assert.assertThat(result.size(), is(29));
+            MatcherAssert.assertThat(result.size(), is(29));
         } else {
-            Assert.assertThat(result.size(), is(18));
+            MatcherAssert.assertThat(result.size(), is(18));
         }
         Assert.assertTrue("Missing -javaagent:test-agent.jar entry: " + result, result.contains("-javaagent:test-agent.jar"));
         boolean sawDServer = false;
@@ -138,11 +139,11 @@ public class ManagedServerBootCmdFactoryTestCase {
         boolean sawJbmAgent = false;
         for (String arg : result) {
             if (arg.startsWith("-Djboss.server.log.dir")) {
-                Assert.assertThat(arg, is(not("-Djboss.server.log.dir=/tmp/")));
+                MatcherAssert.assertThat(arg, is(not("-Djboss.server.log.dir=/tmp/")));
             } else if (arg.startsWith("-Djboss.server.temp.dir")) {
-                Assert.assertThat(arg, is(not("-Djboss.server.temp.dir=/tmp/")));
+                MatcherAssert.assertThat(arg, is(not("-Djboss.server.temp.dir=/tmp/")));
             } else if (arg.startsWith("-Djboss.domain.log.dir")) {
-                Assert.assertThat(arg, is("-Djboss.domain.log.dir=/tmp/"));
+                MatcherAssert.assertThat(arg, is("-Djboss.domain.log.dir=/tmp/"));
             } else if (arg.equals("-D[" + ManagedServer.getServerProcessName("test-server") + "]")) {
                 sawDServer = true;
             } else if (arg.startsWith("-D[pcid:") && arg.endsWith("]")) {

@@ -31,6 +31,7 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.SaslException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.ModelControllerClientConfiguration;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -135,8 +136,8 @@ public class DefaultSaslConfigTestCase {
             executeWhoAmI(null);
         } catch (IOException e) {
             Throwable cause = e.getCause();
-            Assert.assertThat(cause, is(instanceOf(ConnectException.class)));
-            Assert.assertThat(cause.getCause(), is(instanceOf(SaslException.class)));
+            MatcherAssert.assertThat(cause, is(instanceOf(ConnectException.class)));
+            MatcherAssert.assertThat(cause.getCause(), is(instanceOf(SaslException.class)));
         }
     }
 

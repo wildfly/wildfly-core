@@ -33,6 +33,7 @@ import java.io.IOException;
 import javax.inject.Inject;
 import org.aesh.command.Command;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.cli.CommandHandlerProvider;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
@@ -47,7 +48,6 @@ import org.jboss.shrinkwrap.api.ArchivePath;
 import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,8 +100,8 @@ public class CliExtCommandsTestCase {
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
         cli.executeNonInteractive();
-        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
-        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'test-cli-ext-commands'"));
+        MatcherAssert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        MatcherAssert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'test-cli-ext-commands'"));
     }
 
     /**
@@ -114,8 +114,8 @@ public class CliExtCommandsTestCase {
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommandHandler.NAME);
         cli.executeNonInteractive();
-        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
-        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommandHandler.OUTPUT));
+        MatcherAssert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        MatcherAssert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommandHandler.OUTPUT));
     }
 
     /**
@@ -127,8 +127,8 @@ public class CliExtCommandsTestCase {
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommand.NAME);
         cli.executeNonInteractive();
-        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
-        Assert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'useless'"));
+        MatcherAssert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(not(0)));
+        MatcherAssert.assertThat("Wrong error message", cli.getOutput(), containsString("Unexpected command 'useless'"));
     }
 
     /**
@@ -141,8 +141,8 @@ public class CliExtCommandsTestCase {
                 .addCliArgument("--controller=" + client.getMgmtAddress() + ":" + client.getMgmtPort())
                 .addCliArgument(CliExtCommand.NAME);
         cli.executeNonInteractive();
-        Assert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
-        Assert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommand.OUTPUT));
+        MatcherAssert.assertThat("Wrong CLI return value", cli.getProcessExitValue(), is(0));
+        MatcherAssert.assertThat("Wrong CLI output", cli.getOutput(), containsString(CliExtCommand.OUTPUT));
     }
 
     @Test

@@ -43,7 +43,7 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.PROJECT_TYPE;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.SUMMARY;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
 import org.jboss.as.controller.PathAddress;

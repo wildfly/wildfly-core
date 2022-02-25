@@ -32,6 +32,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOC
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.common.Util;
@@ -93,7 +94,7 @@ public class DomainServerGroupTestCase extends AbstractCoreModelTest {
                 }
             }).getMessage();
             expectedMessage = expectedMessage.substring(expectedMessage.indexOf("WFLYCTL0073:"));
-            Assert.assertThat(ex.getMessage(), containsString(expectedMessage));
+            MatcherAssert.assertThat(ex.getMessage(), containsString(expectedMessage));
         }
     }
 

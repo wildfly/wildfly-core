@@ -39,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.SimpleAttributeDefinitionBuilder.create;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.MissingResourceException;

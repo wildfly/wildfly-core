@@ -24,10 +24,10 @@ package org.jboss.as.test.integration.management.cli;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertTrue;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -148,7 +148,7 @@ public class HelpTestCase extends AbstractCliTestBase {
     @Test
     public void invalidOperationTest() {
         cli.sendLine("help :nonsence");
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Error getting operation help"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Error getting operation help"));
     }
 
     /**
@@ -159,7 +159,7 @@ public class HelpTestCase extends AbstractCliTestBase {
             cli.sendLineForValidation(cmd);
             throw new RuntimeException("CLI doesn't throw exception if help for non-existing command is called");
         } catch (CommandLineException e) {
-            Assert.assertThat("Wrong error message", e.getMessage(), containsString("not exist"));
+            MatcherAssert.assertThat("Wrong error message", e.getMessage(), containsString("not exist"));
         }
     }
 

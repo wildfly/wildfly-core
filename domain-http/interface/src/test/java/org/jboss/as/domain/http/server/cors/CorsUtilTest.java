@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_REQUEST_HEADERS;
 import static org.jboss.as.domain.http.server.cors.CorsHeaders.ACCESS_CONTROL_REQUEST_METHOD;
 import static org.jboss.as.domain.http.server.cors.CorsHeaders.ORIGIN;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.HeaderMap;

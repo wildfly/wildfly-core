@@ -30,7 +30,7 @@ import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkExist;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.checkMissing;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.deploymentInfo;
 import static org.jboss.as.test.deployment.DeploymentInfoUtils.legacyDeploymentInfo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.File;

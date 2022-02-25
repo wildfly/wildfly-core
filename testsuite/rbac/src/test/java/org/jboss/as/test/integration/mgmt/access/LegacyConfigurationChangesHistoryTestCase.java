@@ -67,7 +67,7 @@ import static org.jboss.as.test.integration.management.rbac.RbacUtil.MAINTAINER_
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.OPERATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.SUPERUSER_USER;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
 import java.util.List;

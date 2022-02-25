@@ -16,6 +16,7 @@
 
 package org.wildfly.test.integration.elytron.ssl;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.jboss.as.test.integration.management.util.ServerReload;
 import org.junit.After;
@@ -53,19 +54,19 @@ public class ServerSslSniContextTestCase {
     public void testInvalidHostContextMapValue() {
         boolean success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"\\\\?.invalid.com\"=exampleSslContext})", true);
         Assert.assertFalse(success);
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
         success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"invalid\\\\.\\\\.example.com\"=exampleSslContext})", true);
         Assert.assertFalse(success);
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
         success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"*\\.invalid.com\"=exampleSslContext})", true);
         Assert.assertFalse(success);
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
         success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"invalid.com-\"=exampleSslContext})", true);
         Assert.assertFalse(success);
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
         success = cli.sendLine("/subsystem=elytron/server-ssl-sni-context=exampleSslSniContext:write-attribute(name=host-context-map,value={\"invalid.com\\\\.\"=exampleSslContext})", true);
         Assert.assertFalse(success);
-        Assert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
+        MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("Invalid value of host context map"));
     }
 
     @Test

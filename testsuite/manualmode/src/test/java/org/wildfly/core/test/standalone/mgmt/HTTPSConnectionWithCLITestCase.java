@@ -31,7 +31,7 @@ import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.HT
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_NATIVE_PORT;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.File;
 import java.net.InetAddress;

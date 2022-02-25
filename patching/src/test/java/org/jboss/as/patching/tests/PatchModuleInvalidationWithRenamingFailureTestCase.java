@@ -49,7 +49,7 @@ import java.util.zip.ZipFile;
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2014 Red Hat, inc.

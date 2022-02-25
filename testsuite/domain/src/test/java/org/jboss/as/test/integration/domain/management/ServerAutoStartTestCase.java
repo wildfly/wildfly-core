@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -48,7 +49,6 @@ import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -228,25 +228,25 @@ public class ServerAutoStartTestCase {
     private void assertAutoStartStatus(final ModelControllerClient client, ModelNode address, boolean autostart) throws IOException {
         final ModelNode operation = Operations.createReadAttributeOperation(address, AUTO_START);
         ModelNode result = validateResponse(client.execute(operation));
-        Assert.assertThat(result.asBoolean(), is(autostart));
+        MatcherAssert.assertThat(result.asBoolean(), is(autostart));
     }
 
     private void assertAutoStartNotUpdated(Path dir, String serverName) throws IOException {
         Path startedFile = dir.resolve(serverName + STARTED_EXT);
         Path stoppedFile = dir.resolve(serverName + STOPPED_EXT);
-        Assert.assertThat(Files.exists(startedFile), is(false));
-        Assert.assertThat(Files.exists(stoppedFile), is(false));
+        MatcherAssert.assertThat(Files.exists(startedFile), is(false));
+        MatcherAssert.assertThat(Files.exists(stoppedFile), is(false));
     }
 
     private void assertAutoStartUpdated(Path dir, String serverName, boolean autostart) throws IOException {
         Path startedFile = dir.resolve(serverName + STARTED_EXT);
         Path stoppedFile = dir.resolve(serverName + STOPPED_EXT);
         if (autostart) {
-            Assert.assertThat(Files.exists(startedFile), is(true));
-            Assert.assertThat(Files.exists(stoppedFile), is(false));
+            MatcherAssert.assertThat(Files.exists(startedFile), is(true));
+            MatcherAssert.assertThat(Files.exists(stoppedFile), is(false));
         } else {
-            Assert.assertThat(Files.exists(startedFile), is(false));
-            Assert.assertThat(Files.exists(stoppedFile), is(true));
+            MatcherAssert.assertThat(Files.exists(startedFile), is(false));
+            MatcherAssert.assertThat(Files.exists(stoppedFile), is(true));
         }
     }
 

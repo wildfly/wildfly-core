@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.repository.PathUtil;
@@ -50,7 +51,6 @@ import org.jboss.shrinkwrap.api.exporter.StreamExporter;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -307,7 +307,7 @@ public class ProcessStateListenerTestCase {
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             //MatcherAssert.assertThat(lines, Is.is(changes));
             for(int i = 0; i <lines.size(); i++) {
-                Assert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
+                MatcherAssert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
             }
         }
     }

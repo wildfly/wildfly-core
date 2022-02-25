@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Properties;
 import javax.inject.Inject;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -50,7 +51,6 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -454,7 +454,7 @@ public class ProcessStateListenerTestCase extends AbstractLoggingTestCase {
             List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
             //MatcherAssert.assertThat(lines, Is.is(changes));
             for(int i = 0; i <lines.size(); i++) {
-                Assert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
+                MatcherAssert.assertThat("Incorrect match at line " + i + " " + lines.get(i), lines.get(i), is(changes.get(i)));
             }
         }
     }

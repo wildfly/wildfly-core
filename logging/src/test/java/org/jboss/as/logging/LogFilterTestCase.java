@@ -24,11 +24,13 @@ package org.jboss.as.logging;
 import java.io.IOException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.jboss.as.controller.client.helpers.ClientConstants.RESULT;
-import static org.junit.Assert.*;
 
 import org.jboss.as.controller.client.helpers.Operations;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.junit.Assert.assertEquals;
+
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
