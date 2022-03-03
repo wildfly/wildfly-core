@@ -49,7 +49,7 @@ import static org.jboss.as.patching.runner.PatchUtils.BACKUP_EXT;
 import static org.jboss.as.patching.runner.PatchUtils.JAR_EXT;
 import static org.jboss.as.patching.runner.TestUtils.createModule0;
 import static org.jboss.as.patching.runner.TestUtils.randomString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 /**

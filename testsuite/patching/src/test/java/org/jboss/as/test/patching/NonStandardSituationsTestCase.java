@@ -36,6 +36,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.setFileContent;
 
 import java.io.File;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.patching.metadata.ContentModification;
 import org.jboss.as.patching.metadata.Patch;
 import org.jboss.as.patching.metadata.PatchBuilder;
@@ -136,7 +137,7 @@ public class NonStandardSituationsTestCase extends AbstractPatchingTestCase {
             boolean success = cli.sendLine("patch apply " + new File(wrongPatchFile).getAbsolutePath(), true);
             // check error status
             Assert.assertFalse("Patch should not be applied successfully", success);
-            Assert.assertThat("Wrong error message", cli.readOutput(), containsString("WFLYPAT0046"));
+            MatcherAssert.assertThat("Wrong error message", cli.readOutput(), containsString("WFLYPAT0046"));
         }
         controller.stop();
     }

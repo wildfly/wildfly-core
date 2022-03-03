@@ -25,6 +25,7 @@ import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamException;
 import static org.hamcrest.CoreMatchers.containsString;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.core.model.test.AbstractCoreModelTest;
 import org.jboss.as.core.model.test.KernelServices;
@@ -80,7 +81,7 @@ public class StandaloneDeploymentUnicityTestCase extends AbstractCoreModelTest {
                 }
             }).getMessage();
             expectedMessage = expectedMessage.substring(expectedMessage.indexOf("WFLYCTL0073:"));
-            Assert.assertThat(ex.getMessage(), containsString(expectedMessage));
+            MatcherAssert.assertThat(ex.getMessage(), containsString(expectedMessage));
         }
     }
 }

@@ -32,6 +32,7 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 
 import java.io.IOException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
@@ -39,7 +40,6 @@ import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport.Configuration;
 import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -137,9 +137,9 @@ public class ServerStartFailureTestCase {
 
         validateResponse(startServer(client, "master", "main-one"));
         ModelNode result = validateResponse(startServer(client, "slave", "failure-two"));
-        Assert.assertThat(result.asString(), is("FAILED"));
+        MatcherAssert.assertThat(result.asString(), is("FAILED"));
         result = validateResponse(startServer(client, "slave", "failure-three"));
-        Assert.assertThat(result.asString(), is("FAILED"));
+        MatcherAssert.assertThat(result.asString(), is("FAILED"));
     }
 
     private ModelNode startServer(final ModelControllerClient client, String host, String serverName) throws IOException {

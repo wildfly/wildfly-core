@@ -34,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 
 import java.util.List;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.operations.common.Util;
@@ -76,28 +77,28 @@ public class StandaloneBootErrorsTestCase extends AbstractBootErrorTestCase {
         Assert.assertTrue(kernelServices.isSuccessfulBoot());
         ModelNode readBootErrorsOp = Util.createOperation("read-boot-errors", PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MANAGEMENT)));
         ModelNode result = kernelServices.executeForResult(readBootErrorsOp);
-        Assert.assertThat(result, is(notNullValue()));
-        Assert.assertThat(result.asString(), result.getType(), is(ModelType.LIST));
+        MatcherAssert.assertThat(result, is(notNullValue()));
+        MatcherAssert.assertThat(result.asString(), result.getType(), is(ModelType.LIST));
         List<ModelNode> errors = result.asList();
-        Assert.assertThat(errors.size(), is(3));
+        MatcherAssert.assertThat(errors.size(), is(3));
         ModelNode error = errors.get(0);
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-udp\")]"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
-        Assert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-udp\")]"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
         error = errors.get(1);
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-tcp\")]"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
-        Assert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-tcp\")]"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
         error = errors.get(2);
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
-        Assert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-tls\")]"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
-        Assert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
-        Assert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(OP).asString(), is(ADD));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILED_OPERATION).get(ADDRESS).asString(), is("[(\"core-service\" => \"management\"),(\"access\" => \"audit\"),(\"syslog-handler\" => \"syslog-tls\")]"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILURE_DESCRIPTION), is(true));
+        MatcherAssert.assertThat(error.asString(), error.get(FAILURE_DESCRIPTION).asString(), containsString("testhost"));
+        MatcherAssert.assertThat(error.asString(), error.hasDefined(FAILED_SERVICES), is(false));
         kernelServices.shutdown();
     }
 }

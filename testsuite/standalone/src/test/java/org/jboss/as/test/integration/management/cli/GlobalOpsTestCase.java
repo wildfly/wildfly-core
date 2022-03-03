@@ -28,10 +28,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.List;
 import java.util.Map;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -233,7 +233,7 @@ public class GlobalOpsTestCase extends AbstractCliTestBase {
             assertTrue(result.isIsOutcomeSuccess());
             Map<String, Object> resource = result.getResultAsMap();
             assertTrue(resource.containsKey("filter-spec"));
-            Assert.assertThat((String) resource.get("filter-spec"), org.hamcrest.CoreMatchers.is("substituteAll(\"JBAS\",\"DUMMY\")"));
+            MatcherAssert.assertThat((String) resource.get("filter-spec"), org.hamcrest.CoreMatchers.is("substituteAll(\"JBAS\",\"DUMMY\")"));
         } finally {
             cli.sendLine("/subsystem=logging/console-handler=TEST-FILTER:remove");
         }

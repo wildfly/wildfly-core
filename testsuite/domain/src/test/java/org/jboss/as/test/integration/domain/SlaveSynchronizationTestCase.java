@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -175,7 +177,7 @@ public class SlaveSynchronizationTestCase {
         //Synchronization error
         String msg = HostControllerLogger.ROOT_LOGGER.hostDomainSynchronizationError("");
         msg = msg.substring(0, msg.length() -1);
-        Assert.assertThat(DomainTestSupport.validateFailedResponse(result).asString(), containsString(msg));
+        MatcherAssert.assertThat(DomainTestSupport.validateFailedResponse(result).asString(), containsString(msg));
         Assert.assertTrue(exists(masterClient, hc2RemovedServer));
         Assert.assertTrue(exists(masterClient, hc2RemovedServerConfig));
     }

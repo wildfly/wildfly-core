@@ -26,7 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Base64;
 
-import org.junit.Assert;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
 /**
@@ -37,6 +37,6 @@ public class ServerInventoryImplTestCase {
     public void testEncodingAndDecoding() throws UnsupportedEncodingException {
         byte[] array = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x00, 0x57, 0x6f, 0x72, 0x6c, 0x64};
         byte[] expected = new byte[]{0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x00, 0x57, 0x6f, 0x72, 0x6c, 0x64};
-        Assert.assertThat(Arrays.equals(Base64.getDecoder().decode(Base64.getEncoder().encode(array)), expected), is(true));
+        MatcherAssert.assertThat(Arrays.equals(Base64.getDecoder().decode(Base64.getEncoder().encode(array)), expected), is(true));
     }
 }

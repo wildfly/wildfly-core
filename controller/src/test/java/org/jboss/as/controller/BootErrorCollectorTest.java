@@ -28,7 +28,7 @@ import static org.jboss.as.controller.access.Action.ActionEffect.READ_CONFIG;
 import static org.jboss.as.controller.access.Action.ActionEffect.READ_RUNTIME;
 import static org.jboss.as.controller.access.Action.ActionEffect.WRITE_CONFIG;
 import static org.jboss.as.controller.access.Action.ActionEffect.WRITE_RUNTIME;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

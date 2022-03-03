@@ -19,6 +19,7 @@ package org.wildfly.test.security.common.elytron;
 
 import static org.hamcrest.core.StringContains.containsString;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.After;
 import org.junit.Assert;
@@ -56,7 +57,7 @@ public class CasePrincipalTransformerTest {
 
         success = cli.sendLine("/subsystem=elytron/case-principal-transformer=my-case-transformer:read-attribute(name=upper-case)", true);
         Assert.assertTrue(success);
-        Assert.assertThat(cli.readOutput(), containsString("\"result\" => false"));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("\"result\" => false"));
 
         success = cli.sendLine("/subsystem=elytron/case-principal-transformer=my-case-transformer:remove", true);
         Assert.assertTrue(success);
@@ -67,6 +68,6 @@ public class CasePrincipalTransformerTest {
         boolean success =
                 cli.sendLine("/subsystem=elytron/case-principal-transformer=my-case-principal2:add(lower-case=\"\", replacement=\"any\", keep-non-mapped=\"false\", replace-all=\"true\")", true);
         Assert.assertFalse(success);
-        Assert.assertThat(cli.readOutput(), containsString("is not found among the supported properties: [upper-case]"));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("is not found among the supported properties: [upper-case]"));
     }
 }

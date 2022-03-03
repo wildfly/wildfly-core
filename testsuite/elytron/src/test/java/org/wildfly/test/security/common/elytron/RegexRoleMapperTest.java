@@ -1,5 +1,6 @@
 package org.wildfly.test.security.common.elytron;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.After;
 import org.junit.Assert;
@@ -30,11 +31,11 @@ public class RegexRoleMapperTest {
         boolean success =
                 cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm2:add(pattern=\"\", replacement=\"any\", keep-non-mapped=\"false\", replace-all=\"true\")", true);
         Assert.assertFalse(success);
-        Assert.assertThat(cli.readOutput(), containsString("'' is an invalid value for parameter pattern. Values must have a minimum length of 1 characters\""));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("'' is an invalid value for parameter pattern. Values must have a minimum length of 1 characters\""));
 
         success = cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm2:add(pattern=\"any\", replacement=\"\", keep-non-mapped=\"false\", replace-all=\"true\")", true);
         Assert.assertFalse(success);
-        Assert.assertThat(cli.readOutput(), containsString("'' is an invalid value for parameter replacement. Values must have a minimum length of 1 characters\""));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("'' is an invalid value for parameter replacement. Values must have a minimum length of 1 characters\""));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class RegexRoleMapperTest {
 
         success = cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm:read-attribute(name=pattern)", true);
         Assert.assertTrue(success);
-        Assert.assertThat(cli.readOutput(), containsString("\"result\" => \"updatedPattern\""));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("\"result\" => \"updatedPattern\""));
 
         success = cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm:write-attribute(name=replacement,value=\"updatedReplacement\")", true);
         Assert.assertTrue(success);
@@ -57,7 +58,7 @@ public class RegexRoleMapperTest {
 
         success = cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm:read-attribute(name=replacement)", true);
         Assert.assertTrue(success);
-        Assert.assertThat(cli.readOutput(), containsString("\"result\" => \"updatedReplacement\""));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("\"result\" => \"updatedReplacement\""));
 
         success = cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm:remove", true);
         Assert.assertTrue(success);

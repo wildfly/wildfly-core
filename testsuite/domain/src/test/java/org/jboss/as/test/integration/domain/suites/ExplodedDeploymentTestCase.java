@@ -75,6 +75,7 @@ import java.util.concurrent.TimeoutException;
 import org.jboss.as.controller.HashUtil;
 import org.jboss.as.controller.PathAddress;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.OperationBuilder;
@@ -385,12 +386,12 @@ public class ExplodedDeploymentTestCase {
         OperationResponse response = awaitReadContentExecution(future);
         Assert.assertTrue(response.getResponseNode().toString(), Operations.isSuccessfulOutcome(response.getResponseNode()));
         List<OperationResponse.StreamEntry> streams = response.getInputStreams();
-        Assert.assertThat(streams, is(notNullValue()));
-        Assert.assertThat(streams.size(), is(1));
+        MatcherAssert.assertThat(streams, is(notNullValue()));
+        MatcherAssert.assertThat(streams.size(), is(1));
         try (InputStream in = streams.get(0).getStream()) {
             Properties content = new Properties();
             content.load(in);
-            Assert.assertThat(content.getProperty("service"), is(expectedValue));
+            MatcherAssert.assertThat(content.getProperty("service"), is(expectedValue));
         }
     }
 

@@ -77,7 +77,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateFailedResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestUtils.checkServerState;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
 import java.util.Collections;

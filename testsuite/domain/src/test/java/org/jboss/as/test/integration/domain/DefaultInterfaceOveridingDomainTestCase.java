@@ -33,6 +33,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Set;
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -126,18 +127,18 @@ public class DefaultInterfaceOveridingDomainTestCase {
         // check that the failover-h1 is acting as domain controller and all three servers are registered
         Set<String> hosts = getHosts(hostUtils);
         Assert.assertTrue(hosts.contains("slave"));
-        Assert.assertThat(getServerDefaultInterface(hostUtils, "main-one"), is("public"));
-        Assert.assertThat(getServerDefaultInterface(hostUtils, "other-two"), is("public-two"));
+        MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "main-one"), is("public"));
+        MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "other-two"), is("public-two"));
     }
 
     private String getServerDefaultInterface(DomainLifecycleUtil hostUtil, String serverName) throws IOException {
         ModelNode opAdress = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"), PathElement.pathElement(SERVER, serverName)).toModelNode();
         ModelNode readOp = Operations.createReadResourceOperation(opAdress, true);
         ModelNode domain = hostUtil.executeForResult(readOp);
-        Assert.assertThat(domain.get(SOCKET_BINDING_GROUP).isDefined(), is(true));
+        MatcherAssert.assertThat(domain.get(SOCKET_BINDING_GROUP).isDefined(), is(true));
         Property socketBindingGroup = domain.get(SOCKET_BINDING_GROUP).asProperty();
-        Assert.assertThat(socketBindingGroup.getName(), is("standard-sockets"));
-        Assert.assertThat(socketBindingGroup.getValue().hasDefined(DEFAULT_INTERFACE), is(true));
+        MatcherAssert.assertThat(socketBindingGroup.getName(), is("standard-sockets"));
+        MatcherAssert.assertThat(socketBindingGroup.getValue().hasDefined(DEFAULT_INTERFACE), is(true));
         return socketBindingGroup.getValue().get(DEFAULT_INTERFACE).asString();
     }
 

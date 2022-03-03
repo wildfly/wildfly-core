@@ -16,6 +16,7 @@
 
 package org.wildfly.test.security.common.elytron;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,7 +51,7 @@ public class SecurityDomainTest {
     public void testReadIdentityFromSecurityDomain() {
         boolean success = cli.sendLine("/subsystem=elytron/security-domain=mySD:read-identity(name=myIdentity)", true);
         Assert.assertTrue(success);
-        Assert.assertThat(cli.readOutput(), containsString("\"name\" => \"myIdentity\""));
+        MatcherAssert.assertThat(cli.readOutput(), containsString("\"name\" => \"myIdentity\""));
     }
 
     private void removeTestResources() {
