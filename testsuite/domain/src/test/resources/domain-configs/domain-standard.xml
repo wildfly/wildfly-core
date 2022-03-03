@@ -117,7 +117,7 @@
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:core-management:1.0">
             </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>
@@ -251,7 +251,7 @@
             <subsystem xmlns="urn:jboss:domain:remoting:4.0">
                 <http-connector name="http-remoting-connector" connector-ref="default" sasl-authentication-factory="application-sasl-authentication"/>
             </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>

@@ -101,7 +101,7 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>
@@ -233,7 +233,7 @@
             <subsystem xmlns="urn:jboss:domain:jmx:1.0">
                 <jmx-connector registry-binding="jmx-connector-registry" server-binding="jmx-connector-server"/>
             </subsystem>
-            <subsystem xmlns="urn:wildfly:elytron:15.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
                 <providers>
                     <aggregate-providers name="combined-providers">
                         <providers name="elytron"/>
