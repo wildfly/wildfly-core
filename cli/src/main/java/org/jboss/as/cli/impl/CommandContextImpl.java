@@ -1715,9 +1715,6 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
 
             if (parsedCmd.getFormat() == OperationFormat.INSTANCE) {
                 final ModelNode request = this.parsedCmd.toOperationRequest(this);
-                StringBuilder op = new StringBuilder();
-                op.append(prefixFormatter.format(parsedCmd.getAddress()));
-                op.append(line.substring(line.indexOf(':')));
                 return new HandledRequest(request, null);
             }
 
