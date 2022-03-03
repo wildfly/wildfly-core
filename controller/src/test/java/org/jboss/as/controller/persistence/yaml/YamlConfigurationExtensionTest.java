@@ -17,7 +17,6 @@ package org.jboss.as.controller.persistence.yaml;
 
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
@@ -393,33 +392,56 @@ public class YamlConfigurationExtensionTest {
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_remove.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(6, postExtensionOps.size());
+        assertEquals(4, postExtensionOps.size());
         //Preparation OPS
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("connector", "old-connector"), postExtensionOps.get(0).address);
         assertTrue(postExtensionOps.get(0).operation.hasDefined("type"));
         assertEquals("prepare-test", postExtensionOps.get(0).operation.get("type").asString());
+        //YAML OPS
         assertEquals(ADD, postExtensionOps.get(1).operationName);
-        assertEquals(PathAddress.pathAddress("connector", "old-connector").append("acceptor", "old-acceptor"), postExtensionOps.get(1).address);
+        assertEquals(PathAddress.pathAddress("connector", "my-connector"), postExtensionOps.get(1).address);
+        assertTrue(postExtensionOps.get(1).operation.hasDefined("type"));
+        assertEquals("test", postExtensionOps.get(1).operation.get("type").asString());
+        assertEquals(ADD, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("connector", "my-connector").append("acceptor", "my-acceptor"), postExtensionOps.get(2).address);
+        assertTrue(postExtensionOps.get(2).operation.hasDefined("type"));
+        assertEquals("acceptor", postExtensionOps.get(2).operation.get("type").asString());
+        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(3).operationName);
+        assertEquals(PathAddress.pathAddress("connector", "old-connector"), postExtensionOps.get(3).address);
+        assertTrue(postExtensionOps.get(3).operation.hasDefined("name"));
+        assertEquals("type", postExtensionOps.get(3).operation.get("name").asString());
+        assertTrue(postExtensionOps.get(3).operation.hasDefined("value"));
+        assertEquals("old-test", postExtensionOps.get(3).operation.get("value").asString());
+    }
+
+    /**
+     * Verify removing a resource.
+     *
+     * @throws java.net.URISyntaxException
+     */
+    @Test
+    public void testRemoveParentResource() throws URISyntaxException {
+        List<ParsedBootOp> postExtensionOps = new ArrayList<>();
+        ModelNode oldConnector = Operations.createAddOperation(PathAddress.pathAddress("connector", "old-connector").toModelNode());
+        oldConnector.get("type").set("prepare-test");
+        postExtensionOps.add(new ParsedBootOp(oldConnector, null));
+        ModelNode oldAcceptor = Operations.createAddOperation(PathAddress.pathAddress("connector", "old-connector").append("acceptor", "old-acceptor").toModelNode());
+        oldAcceptor.get("type").set("acceptor");
+        postExtensionOps.add(new ParsedBootOp(oldAcceptor, null));
+        ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple_parent_remove.yml").toURI()));
+        instance.processOperations(rootRegistration, postExtensionOps);
+        assertFalse(postExtensionOps.isEmpty());
+        assertEquals(2, postExtensionOps.size());
+        //Preparation OPS
+        //YAML OPS
+        assertEquals(ADD, postExtensionOps.get(0).operationName);
+        assertEquals(PathAddress.pathAddress("connector", "my-connector"), postExtensionOps.get(0).address);
+        assertTrue(postExtensionOps.get(0).operation.hasDefined("type"));
+        assertEquals("test", postExtensionOps.get(0).operation.get("type").asString());
+        assertEquals(ADD, postExtensionOps.get(1).operationName);
+        assertEquals(PathAddress.pathAddress("connector", "my-connector").append("acceptor", "my-acceptor"), postExtensionOps.get(1).address);
         assertTrue(postExtensionOps.get(1).operation.hasDefined("type"));
         assertEquals("acceptor", postExtensionOps.get(1).operation.get("type").asString());
-        //YAML OPS
-        assertEquals(ADD, postExtensionOps.get(2).operationName);
-        assertEquals(PathAddress.pathAddress("connector", "my-connector"), postExtensionOps.get(2).address);
-        assertTrue(postExtensionOps.get(2).operation.hasDefined("type"));
-        assertEquals("test", postExtensionOps.get(2).operation.get("type").asString());
-        assertEquals(ADD, postExtensionOps.get(3).operationName);
-        assertEquals(PathAddress.pathAddress("connector", "my-connector").append("acceptor", "my-acceptor"), postExtensionOps.get(3).address);
-        assertTrue(postExtensionOps.get(3).operation.hasDefined("type"));
-        assertEquals("acceptor", postExtensionOps.get(3).operation.get("type").asString());
-        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(4).operationName);
-        assertEquals(PathAddress.pathAddress("connector", "old-connector"), postExtensionOps.get(4).address);
-        assertTrue(postExtensionOps.get(4).operation.hasDefined("name"));
-        assertEquals("type", postExtensionOps.get(4).operation.get("name").asString());
-        assertTrue(postExtensionOps.get(4).operation.hasDefined("value"));
-        assertEquals("old-test", postExtensionOps.get(4).operation.get("value").asString());
-        assertEquals(REMOVE, postExtensionOps.get(5).operationName);
-        assertEquals(PathAddress.pathAddress("connector", "old-connector").append("acceptor", "old-acceptor"), postExtensionOps.get(5).address);
-        assertFalse(postExtensionOps.get(5).operation.hasDefined("type"));
     }
 }
