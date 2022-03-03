@@ -68,6 +68,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceTarget;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.wildfly.extension.io.IOServices;
 import org.wildfly.extension.io.WorkerService;
@@ -187,7 +188,7 @@ public class RemotingLegacySubsystemTestCase extends AbstractRemotingSubsystemBa
         ModelNode connector = subsystem.require(CommonAttributes.CONNECTOR).require("test-connector");
         assertEquals(1, connector.require(CommonAttributes.PROPERTY).require("org.xnio.Options.WORKER_ACCEPT_THREADS").require(CommonAttributes.VALUE).asInt());
     }
-
+    @Ignore("WFCORE-5386")
     @Test
     public void testSubsystemWithConnectorPropertyChange() throws Exception {
         KernelServices services = createKernelServicesBuilder(createRuntimeAdditionalInitialization(false))
