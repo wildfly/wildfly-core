@@ -544,7 +544,16 @@ class ModelControllerImpl implements ModelController {
                     // stop
                     break;
                 } else {
-                    postExtContext.addBootStep(parsedOp);
+                    if(parsedOp.handler instanceof ParallelBootOperationStepHandler &&
+                            ((ParallelBootOperationStepHandler)parsedOp.handler).getParsedBootOp().getChildOperations().size() != parsedOp.getChildOperations().size()) {
+                        ParallelBootOperationStepHandler updatedHandler =  new ParallelBootOperationStepHandler(executorService, managementModel.get().getRootResourceRegistration(), processState, this, operationID, extraValidationStepHandler);
+                        for(ModelNode childOp : parsedOp.getChildOperations()) {
+                            updatedHandler.addSubsystemOperation(new ParsedBootOp(childOp));
+                        }
+                        postExtContext.addBootStep(new ParsedBootOp(parsedOp.operation, updatedHandler));
+                    } else {
+                        postExtContext.addBootStep(parsedOp);
+                    }
                 }
             }
             resultAction = postExtContext.executeOperation();
