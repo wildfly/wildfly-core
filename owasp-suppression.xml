@@ -151,5 +151,30 @@
         <packageUrl regex="true">^pkg:maven/org\.mock\-server/mockserver\-.*$</packageUrl>
         <cve>CVE-2021-32827</cve>
     </suppress>
-
+    <!-- ManagedSieve of Apache James not found in WildFly distribution -->
+    <!-- Jazzer of Apache James not found in WildFly distribution  -->
+    <suppress>
+        <notes><![CDATA[
+   file name: commons-lang-2.6.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-lang/commons\-lang@.*$</packageUrl>
+        <cve>CVE-2021-40525</cve>
+        <cve>CVE-2021-40110</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: commons-lang3-3.5.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-lang3@.*$</packageUrl>
+        <cve>CVE-2021-40525</cve>
+        <cve>CVE-2021-40110</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-elytron-tool-1.13.1.Final.jar (shaded: commons-cli:commons-cli:1.4)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/commons\-cli/commons\-cli@.*$</packageUrl>
+        <cve>CVE-2021-40525</cve>
+        <cve>CVE-2021-40110</cve>
+    </suppress>
 </suppressions>
