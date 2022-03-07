@@ -7,6 +7,7 @@
        <!-- required for CLI and users management -->
         <package name="org.jboss.as.cli"/>
         <package name="org.jboss.as.domain-add-user"/>
+        <package name="org.wildfly.security.elytron-tool"/>
         <package name="tools"/>
     </packages>
 </layer-spec>
