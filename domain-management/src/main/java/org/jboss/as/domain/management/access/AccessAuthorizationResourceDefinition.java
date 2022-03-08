@@ -76,12 +76,12 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
     public static final SimpleAttributeDefinition PERMISSION_COMBINATION_POLICY =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PERMISSION_COMBINATION_POLICY, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(CombinationPolicy.PERMISSIVE.toString()))
-            .setValidator(new EnumValidator<CombinationPolicy>(CombinationPolicy.class, true, false))
+            .setValidator(EnumValidator.create(CombinationPolicy.class))
             .build();
 
     public static final SimpleAttributeDefinition PROVIDER = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PROVIDER, ModelType.STRING, true)
             .setDefaultValue(new ModelNode(Provider.SIMPLE.toString()))
-            .setValidator(new EnumValidator<Provider>(Provider.class, true, false))
+            .setValidator(EnumValidator.create(Provider.class))
             .build();
 
     public static final SimpleAttributeDefinition USE_IDENTITY_ROLES = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.USE_IDENTITY_ROLES, ModelType.BOOLEAN, true)

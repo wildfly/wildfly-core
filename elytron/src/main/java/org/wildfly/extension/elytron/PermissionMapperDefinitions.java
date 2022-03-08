@@ -90,7 +90,7 @@ class PermissionMapperDefinitions {
     static final SimpleAttributeDefinition LOGICAL_OPERATION = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.LOGICAL_OPERATION, ModelType.STRING, false)
             .setAllowExpression(true)
             .setAllowedValues(ElytronDescriptionConstants.AND, ElytronDescriptionConstants.OR, ElytronDescriptionConstants.XOR, ElytronDescriptionConstants.UNLESS)
-            .setValidator(EnumValidator.create(LogicalMapperOperation.class, false, true))
+            .setValidator(EnumValidator.create(LogicalMapperOperation.class))
             .setMinSize(1)
             .setRestartAllServices()
             .build();

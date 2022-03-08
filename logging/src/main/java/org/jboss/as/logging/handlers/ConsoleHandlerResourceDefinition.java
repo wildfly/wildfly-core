@@ -50,7 +50,7 @@ public class ConsoleHandlerResourceDefinition extends AbstractHandlerDefinition 
             .setAttributeMarshaller(ElementAttributeMarshaller.NAME_ATTRIBUTE_MARSHALLER)
             .setDefaultValue(new ModelNode(Target.SYSTEM_OUT.toString()))
             .setResolver(TargetResolver.INSTANCE)
-            .setValidator(EnumValidator.create(Target.class, true, false))
+            .setValidator(EnumValidator.create(Target.class))
             .build();
 
     private static final AttributeDefinition[] ATTRIBUTES = Logging.join(DEFAULT_ATTRIBUTES, AUTOFLUSH, TARGET, NAMED_FORMATTER);

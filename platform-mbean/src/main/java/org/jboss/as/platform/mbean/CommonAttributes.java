@@ -84,7 +84,7 @@ class CommonAttributes {
             .build();
 
     static final SimpleAttributeDefinition THREAD_STATE = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.THREAD_STATE, ModelType.STRING, true)
-            .setValidator(new EnumValidator<Thread.State>(Thread.State.class, false))
+            .setValidator(new EnumValidator<Thread.State>(Thread.State.class))
             .build();
 
     static final SimpleAttributeDefinition BLOCKED_TIME = new SimpleAttributeDefinitionBuilder(PlatformMBeanConstants.BLOCKED_TIME, ModelType.LONG, false)

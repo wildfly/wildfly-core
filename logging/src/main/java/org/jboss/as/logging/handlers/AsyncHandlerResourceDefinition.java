@@ -89,7 +89,7 @@ public class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
             .setDefaultValue(new ModelNode(OverflowAction.BLOCK.name()))
             .setPropertyName("overflowAction")
             .setResolver(OverflowActionResolver.INSTANCE)
-            .setValidator(EnumValidator.create(OverflowAction.class, false, false))
+            .setValidator(EnumValidator.create(OverflowAction.class))
             .build();
 
     static final SimpleAttributeDefinition HANDLER = SimpleAttributeDefinitionBuilder.create("handler", ModelType.STRING)

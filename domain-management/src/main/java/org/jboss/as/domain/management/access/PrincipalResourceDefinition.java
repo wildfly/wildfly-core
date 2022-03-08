@@ -54,7 +54,7 @@ public class PrincipalResourceDefinition extends SimpleResourceDefinition {
     }
 
     public static final SimpleAttributeDefinition TYPE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.TYPE,
-            ModelType.STRING, false).setValidator(new EnumValidator<>(Type.class, false, false)).build();
+            ModelType.STRING, false).setValidator(EnumValidator.create(Type.class)).build();
 
     public static final SimpleAttributeDefinition REALM = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.REALM,
             ModelType.STRING, true).setDeprecated(ModelVersion.create(5)).build();

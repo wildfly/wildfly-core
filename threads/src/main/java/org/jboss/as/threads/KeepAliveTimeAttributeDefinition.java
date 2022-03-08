@@ -65,7 +65,7 @@ class KeepAliveTimeAttributeDefinition extends ObjectTypeAttributeDefinition {
     static final SimpleAttributeDefinition KEEPALIVE_TIME_UNIT = new SimpleAttributeDefinitionBuilder(CommonAttributes.UNIT, ModelType.STRING, false)
             .setXmlName("unit")
             .setAllowExpression(true)
-            .setValidator(new EnumValidator<TimeUnit>(TimeUnit.class, false, true))
+            .setValidator(EnumValidator.create(TimeUnit.class))
             .setAttributeMarshaller( new DefaultAttributeMarshaller(){
                 @Override
                 public void marshallAsAttribute(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {

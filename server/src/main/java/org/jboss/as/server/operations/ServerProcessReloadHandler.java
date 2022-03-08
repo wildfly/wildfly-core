@@ -65,7 +65,7 @@ public class ServerProcessReloadHandler extends ProcessReloadHandler<RunningMode
             .build();
 
     protected static final AttributeDefinition START_MODE = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.START_MODE, ModelType.STRING, true)
-            .setValidator(new EnumValidator<>(StartMode.class, true, false))
+            .setValidator(EnumValidator.create(StartMode.class))
             .setAlternatives(ModelDescriptionConstants.ADMIN_ONLY)
             .setDefaultValue(new ModelNode(StartMode.NORMAL.toString())).build();
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {ADMIN_ONLY, USE_CURRENT_SERVER_CONFIG, SERVER_CONFIG, START_MODE};
