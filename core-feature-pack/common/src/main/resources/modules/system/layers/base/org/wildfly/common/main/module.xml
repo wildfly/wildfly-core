@@ -33,6 +33,7 @@
 
     <dependencies>
         <module name="java.management"/>
+        <module name="java.xml"/>
         <module name="org.jboss.logging"/>
     </dependencies>
 </module>
