@@ -367,7 +367,16 @@ public class ConfigurationFile {
             mainName = stripPrefixSuffix(name);
         }
         if (mainName != null) {
-            return new File(configurationDir, new File(mainName).getName());
+            try {
+                final File mainFile = new File(configurationDir, name != null ? name : mainName);
+                if (mainFile.getCanonicalPath().startsWith(configurationDir.getCanonicalPath())) {
+                    return new File(configurationDir, new File(mainName).getName());
+                } else if (interactionPolicy.isReadOnly()) {
+                    return mainFile;
+                }
+            } catch (IOException ioe) {
+                throw ControllerLogger.ROOT_LOGGER.canonicalMainFileNotFound(ioe, mainFile);
+            }
         }
 
         throw ControllerLogger.ROOT_LOGGER.mainFileNotFound(name != null ? name : rawName, configurationDir);
