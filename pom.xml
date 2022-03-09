@@ -225,7 +225,7 @@
         <version.org.slf4j>1.7.36</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
-        <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
+        <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.2.1.Final</version.org.wildfly.discovery>
         <version.org.wildfly.legacy.test>7.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.2.0.Final</version.org.wildfly.openssl>
