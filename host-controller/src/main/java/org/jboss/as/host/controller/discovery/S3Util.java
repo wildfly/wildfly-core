@@ -55,13 +55,14 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.jboss.as.host.controller.logging.HostControllerLogger;
+import org.wildfly.common.xml.XMLReaderFactoryUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * Collection of utility methods required for S3 discovery. Some methods here are based on similar ones from JGroups'
@@ -1625,14 +1626,14 @@ public class S3Util {
 
         static XMLReader createXMLReader() {
             try {
-                return XMLReaderFactory.createXMLReader();
+                return XMLReaderFactoryUtil.create();
             } catch (SAXException e) {
                 // oops, lets try doing this (needed in 1.4)
                 System.setProperty("org.xml.sax.driver", "org.apache.crimson.parser.XMLReaderImpl");
             }
             try {
                 // try once more
-                return XMLReaderFactory.createXMLReader();
+                return XMLReaderFactoryUtil.create();
             } catch (SAXException e) {
                 throw HostControllerLogger.ROOT_LOGGER.cannotInitializeSaxDriver();
             }
