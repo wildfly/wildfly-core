@@ -50,7 +50,7 @@ import org.jboss.as.controller.logging.ControllerLogger;
  *
  * @author Jason T. Greene
  */
-class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Cloneable, Serializable {
+public class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Cloneable, Serializable {
     /**
      * Marks null keys.
      */
