@@ -22,28 +22,37 @@
 package org.jboss.as.test.manualmode.management.cli;
 
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.UnknownHostException;
 
 import javax.inject.Inject;
 
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
+import org.wildfly.core.testrunner.WildflyTestRunner;
 
 /**
  *
  * @author jdenise@redhat.com
  */
+@RunWith(WildflyTestRunner.class)
+@ServerControl(manual = true)
 public class ReloadRedirectTestCase {
 
     private static final String IBM_OVERRIDE_DEFAULT_TLS = "-Dcom.ibm.jsse2.overrideDefaultTLS=true";
@@ -52,29 +61,28 @@ public class ReloadRedirectTestCase {
     @Inject
     private static ServerController container;
 
-    private static boolean elytron;
-
     public static void setupNativeInterface(ServerController controller) throws Exception {
         ModelControllerClient client = controller.getClient().getControllerClient();
 
         // Set up native management so we can use it to do cleanup without dealing with https
-        // add native socket binding
+
+        // Add native socket binding
         ModelNode operation = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native", ModelDescriptionConstants.ADD);
         operation.get("port").set(MANAGEMENT_NATIVE_PORT);
         operation.get("interface").set("management");
         CoreUtils.applyUpdate(operation, client);
 
-        // add a temp realm socket binding
-        operation = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
-        operation.get("steps").add(createOpNode("core-service=management/security-realm=native-realm", ModelDescriptionConstants.ADD));
-        ModelNode localAuth = createOpNode("core-service=management/security-realm=native-realm/authentication=local", ModelDescriptionConstants.ADD);
-        localAuth.get("default-user").set("$local");
-        operation.get("steps").add(localAuth);
-        CoreUtils.applyUpdate(operation, client);
+        // Find the sasl-authentication-factory that's already known to be working so it can be reused
+        ModelNode op = createOpNode("core-service=management/"
+                + "management-interface=http-interface/", "read-attribute");
+        op.get("name").set("http-upgrade");
+        ModelNode result = container.getClient().executeForResult(op);
+        String saslFactory = result.get("sasl-authentication-factory").asStringOrNull();
+        assertNotNull("Invalid http-upgrade setting: " + result, saslFactory);
 
         // create native interface
         operation = createOpNode("core-service=management/management-interface=native-interface", ModelDescriptionConstants.ADD);
-        operation.get("security-realm").set("native-realm");
+        operation.get("sasl-authentication-factory").set(saslFactory);
         operation.get("socket-binding").set("management-native");
         CoreUtils.applyUpdate(operation, client);
     }
@@ -84,28 +92,38 @@ public class ReloadRedirectTestCase {
         try {
             removeNativeMgmt(client);
         } catch (Exception ex) {
-            if (e == null) {
-                e = ex;
-            }
+            e = ex;
         } finally {
             try {
-                removeNativeRealm(client);
+                remoteNativeMgmtPort(client);
             } catch (Exception ex) {
                 if (e == null) {
                     e = ex;
-                }
-            } finally {
-                try {
-                    remoteNativeMgmtPort(client);
-                } catch (Exception ex) {
-                    if (e == null) {
-                        e = ex;
-                    }
                 }
             }
         }
         if (e != null) {
             throw e;
+        }
+    }
+
+
+    @BeforeClass
+    public static void initServer() throws Exception {
+        container.start();
+
+        setupNativeInterface(container);
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        try {
+            // Even though we don't reuse this server, the next test uses the config so we
+            // need to revert the config changes the test made
+            ManagementClient client = getCleanupClient();
+            cleanConfig(client);
+        } finally {
+            container.stop();
         }
     }
 
@@ -140,17 +158,13 @@ public class ReloadRedirectTestCase {
     }
 
     private static void removeSsl(ManagementClient client) throws UnsuccessfulOperationException {
-        if (elytron) {
-            ModelNode undefine = createOpNode("core-service=management/management-interface=http-interface",
-                    "undefine-attribute");
-            undefine.get("name").set("ssl-context");
-            client.executeForResult(undefine);
-            remove(client, "subsystem=elytron/server-ssl-context=elytronHttpsSSC");
-            remove(client, "subsystem=elytron/key-manager=elytronHttpsKM");
-            remove(client, "subsystem=elytron/key-store=elytronHttpsKS");
-        } else {
-            remove(client, "core-service=management/security-realm=ManagementRealm/server-identity=ssl");
-        }
+        ModelNode undefine = createOpNode("core-service=management/management-interface=http-interface",
+                "undefine-attribute");
+        undefine.get("name").set("ssl-context");
+        client.executeForResult(undefine);
+        remove(client, "subsystem=elytron/server-ssl-context=elytronHttpsSSC");
+        remove(client, "subsystem=elytron/key-manager=elytronHttpsKM");
+        remove(client, "subsystem=elytron/key-store=elytronHttpsKS");
     }
 
     private static void remove(ManagementClient client, String addr) {
@@ -175,12 +189,6 @@ public class ReloadRedirectTestCase {
         client.executeForResult(remove);
     }
 
-    private static void removeNativeRealm(ManagementClient client) throws UnsuccessfulOperationException {
-        ModelNode remove = createOpNode("core-service=management/security-realm=native-realm",
-                "remove");
-        client.executeForResult(remove);
-    }
-
     private static void remoteNativeMgmtPort(ManagementClient client) throws UnsuccessfulOperationException {
         ModelNode remove = createOpNode("socket-binding-group=standard-sockets/socket-binding=management-native",
                 "remove");
@@ -193,20 +201,107 @@ public class ReloadRedirectTestCase {
         return new ManagementClient(mcc, TestSuiteEnvironment.getServerAddress(), MANAGEMENT_NATIVE_PORT, "remote");
     }
 
-    private void setupSSL(CliProcessWrapper cliProc) throws Exception {
-        if (elytron) {
-            setupElytronSSL(cliProc);
-        } else {
-            setupLegacySSL(cliProc);
+    /**
+     * We should have the same test with "shutdown --restart" but testing
+     * framework doesn't allow to restart the server (not launched from server
+     * script file). "shutdown --restart" must be tested manually.
+     *
+     * @throws Exception if one happens
+     */
+    @Test
+    public void testReloadwithRedirect() throws Exception {
+        CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
+                .addCliArgument("--connect")
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort());
+        try {
+            cliProc.executeInteractive();
+            cliProc.clearOutput();
+            setupSSL(cliProc);
+            boolean promptFound = cliProc.pushLineAndWaitForResults("reload", "Accept certificate");
+            assertTrue("No certificate prompt " + cliProc.getOutput(), promptFound);
+        } finally {
+            cliProc.ctrlCAndWaitForClose();
         }
-        boolean promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
-                + "management-interface=http-interface:"
-                + "write-attribute(name=secure-socket-binding,value=management-https)", null);
-        assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
-        cliProc.clearOutput();
     }
 
-    private void setupElytronSSL(CliProcessWrapper cliProc) throws Exception {
+    @Test
+    @Ignore("[WFCORE-5799] Restore tests now that WFCORE-5522 is resolved.")
+    public void testRedirectWithSecurityCommands() throws Throwable {
+
+        CliProcessWrapper cliProc = new CliProcessWrapper()
+                .addJavaOption(IBM_OVERRIDE_DEFAULT_TLS)
+                .addCliArgument("--connect")
+                .addCliArgument("--no-color-output")
+                .addCliArgument("--controller="
+                        + TestSuiteEnvironment.getServerAddress() + ":"
+                        + TestSuiteEnvironment.getServerPort());
+        Throwable exception = null;
+        try {
+            cliProc.executeInteractive();
+            cliProc.clearOutput();
+            Assert.assertTrue("No certificate prompt " + cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security enable-ssl-management"
+                    + " --key-store-path=target/server.keystore.jks"
+                    + " --key-store-password=secret"
+                    + " --new-key-store-name=nks"
+                    + " --new-key-manager-name=nkm"
+                    + " --new-ssl-context-name=nsslctx", "Accept certificate"));
+            cliProc.clearOutput();
+            Assert.assertTrue(cliProc.getOutput(),
+                    cliProc.pushLineAndWaitForResults("T", "[standalone@"));
+            cliProc.clearOutput();
+            Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("security disable-ssl-management",
+                    "[standalone@"));
+        } catch (Throwable ex) {
+            exception = ex;
+        } finally {
+            try {
+                cliProc.clearOutput();
+                Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/server-ssl-context=nsslctx:remove", null));
+                Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+            } catch (Throwable ex) {
+                if (exception == null) {
+                    exception = ex;
+                }
+            } finally {
+                try {
+                    cliProc.clearOutput();
+                    Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-manager=nkm:remove", null));
+                    Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+                } catch (Throwable ex) {
+                    if (exception == null) {
+                        exception = ex;
+                    }
+                } finally {
+                    try {
+                        cliProc.clearOutput();
+                        Assert.assertTrue(cliProc.getOutput(), cliProc.pushLineAndWaitForResults("/subsystem=elytron/key-store=nks:remove", null));
+                        Assert.assertFalse(cliProc.getOutput(), cliProc.getOutput().contains("failed"));
+                    } catch (Throwable ex) {
+                        if (exception == null) {
+                            exception = ex;
+                        }
+                    } finally {
+                        try {
+                            cliProc.ctrlCAndWaitForClose();
+                        } catch (Throwable ex) {
+                            if (exception == null) {
+                                exception = ex;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
+    private void setupSSL(CliProcessWrapper cliProc) throws Exception {
+
         boolean promptFound = cliProc.
                 pushLineAndWaitForResults("/subsystem=elytron/key-store=elytronHttpsKS:"
                         + "add(path=target/server.keystore.jks,"
@@ -229,16 +324,10 @@ public class ReloadRedirectTestCase {
                 + "value=elytronHttpsSSC)", null);
         assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
         cliProc.clearOutput();
-    }
 
-    private void setupLegacySSL(CliProcessWrapper cliProc) throws Exception {
-        boolean promptFound = cliProc.
-                pushLineAndWaitForResults("/core-service=management/"
-                        + "security-realm=ManagementRealm/"
-                        + "server-identity=ssl:add(keystore-path=management.keystore,"
-                        + "keystore-relative-to=jboss.server.config.dir,"
-                        + "keystore-password=password,alias=server,key-password=password,"
-                        + "generate-self-signed-certificate-host=localhost)", null);
+        promptFound = cliProc.pushLineAndWaitForResults("/core-service=management/"
+                + "management-interface=http-interface:"
+                + "write-attribute(name=secure-socket-binding,value=management-https)", null);
         assertTrue("Invalid prompt" + cliProc.getOutput(), promptFound);
         cliProc.clearOutput();
     }
