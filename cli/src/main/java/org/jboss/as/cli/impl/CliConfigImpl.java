@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -50,6 +49,7 @@ import org.jboss.logging.Logger;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.common.xml.XMLInputFactoryUtil;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -183,7 +183,7 @@ class CliConfigImpl implements CliConfig {
             }
             FileInputStream is = new FileInputStream(f);
             input = new BufferedInputStream(is);
-            XMLStreamReader streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
+            XMLStreamReader streamReader = XMLInputFactoryUtil.create().createXMLStreamReader(input);
             mapper.parseDocument(config, streamReader);
             streamReader.close();
         } catch(Throwable t) {

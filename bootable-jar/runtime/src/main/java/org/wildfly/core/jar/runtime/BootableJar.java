@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import org.jboss.as.controller.client.ModelControllerClient;
@@ -75,6 +74,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.wildfly.common.xml.DocumentBuilderFactoryUtil;
+import org.wildfly.common.xml.TransformerFactoryUtil;
 import static org.wildfly.core.jar.runtime.Constants.DEPLOYMENTS;
 import static org.wildfly.core.jar.runtime.Constants.LOGGING_PROPERTIES;
 import static org.wildfly.core.jar.runtime.Constants.SERVER_LOG;
@@ -147,7 +148,7 @@ public final class BootableJar implements ShutdownHandler {
 
     private static void updateConfig(Path configFile, String name, boolean isExploded) throws Exception {
         try (FileInputStream fileInputStream = new FileInputStream(configFile.toFile())) {
-            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactoryUtil.create();
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             Document document = documentBuilder.parse(fileInputStream);
             Element root = document.getDocumentElement();
@@ -174,7 +175,7 @@ public final class BootableJar implements ShutdownHandler {
             deployments.appendChild(deployment);
 
             root.appendChild(deployments);
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            Transformer transformer = TransformerFactoryUtil.create().newTransformer();
             StreamResult output = new StreamResult(configFile.toFile());
             DOMSource input = new DOMSource(document);
 

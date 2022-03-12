@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -47,6 +46,7 @@ import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLMapper;
 import org.projectodd.vdx.core.XMLStreamValidationException;
 import org.projectodd.vdx.wildfly.WildFlyErrorReporter;
+import org.wildfly.common.xml.XMLInputFactoryUtil;
 
 /**
  * A configuration persister which uses an XML file for backing storage.
@@ -122,7 +122,7 @@ public class XmlConfigurationPersister extends AbstractConfigurationPersister {
         XMLStreamReader streamReader = null;
         try {
             input = new BufferedInputStream(new FileInputStream(fileName));
-            streamReader = XMLInputFactory.newInstance().createXMLStreamReader(input);
+            streamReader = XMLInputFactoryUtil.create().createXMLStreamReader(input);
             mapper.parseDocument(updates, streamReader);
         } catch (XMLStreamException e) {
             final boolean reported = reportValidationError(e);

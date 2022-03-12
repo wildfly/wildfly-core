@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
@@ -113,9 +112,8 @@ import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLMapper;
 import org.junit.Assert;
+import org.wildfly.common.xml.XMLInputFactoryUtil;
 import org.wildfly.legacy.test.spi.Version;
-
-
 
 /**
  *
@@ -643,7 +641,7 @@ public class CoreModelTestDelegate {
 
         @Override
         public List<ModelNode> parse(String xml) throws XMLStreamException {
-            final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
+            final XMLStreamReader reader = XMLInputFactoryUtil.create().createXMLStreamReader(new StringReader(xml));
             final List<ModelNode> operationList = new ArrayList<ModelNode>();
             xmlMapper.parseDocument(operationList, reader);
             return operationList;
