@@ -135,7 +135,7 @@ public class OrderedChildResourceTestCase extends AbstractControllerTestBase {
             Assert.assertTrue(result.hasDefined(CHILD.getKey()));
             ModelNode childNode = result.get(CHILD.getKey());
             String[] childNames = childNode.keys().toArray(new String[childNode.keys().size()]);
-            Assert.assertEquals(children, childNames);
+            Assert.assertArrayEquals(children, childNames);
 
         }
     }
