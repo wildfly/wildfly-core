@@ -188,6 +188,8 @@ Param(
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.management/javax.management=ALL-UNNAMED"
         # InitialContext proxy generation requires deep reflection in javax.naming
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.naming/javax.naming=ALL-UNNAMED"
+        # Needed when enabling jgroups dns.DNS_PING protocol
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
     }
     return $DEFAULT_MODULAR_JVM_OPTIONS
 }

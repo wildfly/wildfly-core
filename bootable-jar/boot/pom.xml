@@ -57,7 +57,7 @@
                         <manifestEntries>
                             <Multi-Release>true</Multi-Release>
                             <!-- NB: In case an update is made to these exports and opens, make sure that common.sh script is in sync. -->
-                            <Add-Exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap</Add-Exports>
+                            <Add-Exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap jdk.naming.dns/com.sun.jndi.dns</Add-Exports>
                             <Add-Opens>java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect java.base/java.io java.base/java.security java.base/java.util java.base/java.util.concurrent java.management/javax.management java.naming/javax.naming</Add-Opens>
                         </manifestEntries>
                     </archive>

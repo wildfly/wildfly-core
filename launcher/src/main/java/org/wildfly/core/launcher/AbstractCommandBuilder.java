@@ -73,6 +73,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
         modularJavaOpts.add("--add-opens=java.base/java.util.concurrent=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.management/javax.management=ALL-UNNAMED");
         modularJavaOpts.add("--add-opens=java.naming/javax.naming=ALL-UNNAMED");
+        modularJavaOpts.add("--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED");
         // As of jboss-modules 1.9.1.Final the java.se module is no longer required to be added. However as this API is
         // designed to work with older versions of the server we still need to add this argument of modular JVM's.
         modularJavaOpts.add("--add-modules=java.se");
