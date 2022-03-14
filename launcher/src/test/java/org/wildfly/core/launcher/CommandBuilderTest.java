@@ -268,6 +268,7 @@ public class CommandBuilderTest {
             assertArgumentExists(command, "--add-opens=java.base/java.util.concurrent=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.management/javax.management=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-opens=java.naming/javax.naming=ALL-UNNAMED", expectedCount);
+            assertArgumentExists(command, "--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED", expectedCount);
             assertArgumentExists(command, "--add-modules=java.se", expectedCount);
         } else {
             Assert.assertFalse("Did not expect \"--add-exports=java.base/sun.awt=ALL-UNNAMED\" to be in the command list",
@@ -292,6 +293,8 @@ public class CommandBuilderTest {
                     command.contains("--add-opens=java.management/javax.management=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-opens=java.naming/javax.naming=ALL-UNNAMED\" to be in the command list",
                     command.contains("--add-opens=java.naming/javax.naming=ALL-UNNAMED"));
+            Assert.assertFalse("Did not expect \"--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED\" to be in the command list",
+                    command.contains("--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"));
             Assert.assertFalse("Did not expect \"--add-modules=java.se\" to be in the command list", command.contains("--add-modules=java.se"));
         }
     }

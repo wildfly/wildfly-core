@@ -48,6 +48,8 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.management/javax.management=ALL-UNNAMED"
       rem InitialContext proxy generation requires deep reflection in javax.naming
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.naming/javax.naming=ALL-UNNAMED"
+      rem Needed when enabling jgroups dns.DNS_PING protocol
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
     ) else (
       set "DEFAULT_MODULAR_JVM_OPTIONS="
     )
