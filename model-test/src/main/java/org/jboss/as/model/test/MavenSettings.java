@@ -36,10 +36,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.wildfly.common.xml.XMLInputFactoryUtil;
 
 /**
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
@@ -112,7 +112,7 @@ final class MavenSettings {
 
             //reader.setFeature(FEATURE_PROCESS_NAMESPACES, false);
             InputStream source = Files.newInputStream(settings, StandardOpenOption.READ);
-            XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(source);
+            XMLStreamReader reader = XMLInputFactoryUtil.create().createXMLStreamReader(source);
 
             int eventType;
             while ((eventType = reader.next()) != END_DOCUMENT) {
