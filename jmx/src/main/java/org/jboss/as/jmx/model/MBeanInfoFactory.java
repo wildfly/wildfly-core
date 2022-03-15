@@ -175,13 +175,9 @@ public class MBeanInfoFactory {
         ModelNode attribute = providedDescription.require(ATTRIBUTES).require(name);
         AttributeAccess access = resourceRegistration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, name);
         if (access == null) {
-            // Check for a bogus attribute in the description that's really a child
-            Set<String> childTypes = resourceRegistration.getChildNames(PathAddress.EMPTY_ADDRESS);
-            if (childTypes.contains(name)) {
-                return null;
-            }
+            return null; // access is needed to create a new OpenMBeanAttributeInfoSupport object
         }
-        final boolean writable = mutabilityChecker.mutable(pathAddress) && (access != null && access.getAccessType() == AccessType.READ_WRITE);
+        final boolean writable = mutabilityChecker.mutable(pathAddress) && (access.getAccessType() == AccessType.READ_WRITE);
 
         return new OpenMBeanAttributeInfoSupport(
                 escapedName,
