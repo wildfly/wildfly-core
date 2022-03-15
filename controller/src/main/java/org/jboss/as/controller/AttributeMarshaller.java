@@ -283,11 +283,15 @@ public abstract class AttributeMarshaller {
     }
 
     static class WrappedSimpleAttributeMarshaller extends AttributeElementMarshaller {
+        final boolean unwrap;
+        WrappedSimpleAttributeMarshaller(boolean unwrap) {
+            this.unwrap = unwrap;
+        }
 
           @Override
           public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
               writer.writeStartElement(attribute.getXmlName());
-              marshallElementContent(resourceModel.get(attribute.getName()).asString(), writer);
+              marshallElementContent(unwrap ? resourceModel.asString() : resourceModel.get(attribute.getName()).asString(), writer);
               writer.writeEndElement();
           }
       }

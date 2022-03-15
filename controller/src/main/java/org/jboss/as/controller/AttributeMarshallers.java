@@ -169,6 +169,11 @@ public interface AttributeMarshallers {
         }
 
         @Override
+        public boolean isMarshallableAsElement() {
+            return true;
+        }
+
+        @Override
         public void marshallAsElement(AttributeDefinition attribute, ModelNode resourceModel, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
             assert attribute instanceof SimpleListAttributeDefinition;
             SimpleListAttributeDefinition attr = (SimpleListAttributeDefinition) attribute;
@@ -177,7 +182,7 @@ public interface AttributeMarshallers {
                     writer.writeStartElement(attribute.getXmlName());
                 }
                 for (ModelNode handler : resourceModel.get(attribute.getName()).asList()) {
-                    attr.getValueType().getMarshaller().marshallAsElement(attribute, handler, true, writer);
+                    attr.getValueType().getMarshaller().marshallAsElement(attr.getValueType(), handler, true, writer);
                 }
                 if (wrap) {
                     writer.writeEndElement();
@@ -248,7 +253,12 @@ public interface AttributeMarshallers {
     /**
      * marshalls attributes to element where element name is attribute name and its content is value of attribute
      */
-    AttributeMarshaller SIMPLE_ELEMENT = new AttributeMarshaller.WrappedSimpleAttributeMarshaller();
+    AttributeMarshaller SIMPLE_ELEMENT = new AttributeMarshaller.WrappedSimpleAttributeMarshaller(false);
+
+    /**
+     * marshalls attributes to element where element name is attribute name and its content is value of resourceModel
+     */
+    AttributeMarshaller SIMPLE_ELEMENT_UNWRAP = new AttributeMarshaller.WrappedSimpleAttributeMarshaller(true);
 
     /**
      * space delimited list marshaller
