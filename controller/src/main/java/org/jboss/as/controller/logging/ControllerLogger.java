@@ -3713,4 +3713,10 @@ public interface ControllerLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "The yaml configuration files for customizing the configuration. Paths can be absolute, relative to the current execution directory or relative to the standalone configuration directory.")
     String argYaml();
+
+    @Message(id = 495, value = "No OperationTransformerRegistry found for value %s")
+    IllegalStateException operationTransformerRegistryIsNull(String value);
+
+    @Message(id = 496, value = "No current ResourceRegistration found")
+    NullPointerException currentResourceRegistrationIsNull();
 }

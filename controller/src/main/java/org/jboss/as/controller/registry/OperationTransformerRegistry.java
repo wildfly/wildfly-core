@@ -23,6 +23,7 @@
 package org.jboss.as.controller.registry;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -355,7 +356,11 @@ public class OperationTransformerRegistry {
         }
 
         private void registerTransformer(Iterator<PathElement> iterator, String value, String operationName,  OperationTransformerEntry entry) {
-            get(value).registerTransformer(iterator, operationName, entry);
+            OperationTransformerRegistry operationTransformerRegistry = get(value);
+            if (operationTransformerRegistry == null) {
+                throw ROOT_LOGGER.operationTransformerRegistryIsNull(value);
+            }
+            operationTransformerRegistry.registerTransformer(iterator, operationName, entry);
         }
 
         private OperationTransformerRegistry get(final String value) {

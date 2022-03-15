@@ -130,6 +130,7 @@ public class OperationValidator {
         OperationEntry entry = root.getOperationEntry(address, name);
         if (entry == null) {
             throwOrWarnAboutDescriptorProblem(ControllerLogger.ROOT_LOGGER.noOperationEntry(name, address));
+            return; // in case of warning no further processing possible (entry causes NullPointer)
         }
         //noinspection ConstantConditions
         if (entry.getType() == EntryType.PRIVATE || entry.getFlags().contains(OperationEntry.Flag.HIDDEN)) {

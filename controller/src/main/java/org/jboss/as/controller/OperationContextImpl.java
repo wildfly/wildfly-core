@@ -1029,6 +1029,9 @@ final class OperationContextImpl extends AbstractOperationContext {
 
     private Resource createResourceInternal(PathAddress relativeAddress, int index) throws UnsupportedOperationException {
         ImmutableManagementResourceRegistration current = getResourceRegistration();
+        if (current == null) {
+            throw MGMT_OP_LOGGER.currentResourceRegistrationIsNull();
+        }
         ImmutableManagementResourceRegistration mrr = relativeAddress == PathAddress.EMPTY_ADDRESS ? current : current.getSubModel(relativeAddress);
         final Resource toAdd = Resource.Factory.create(mrr.isRuntimeOnly());
         addResourceInternal(relativeAddress, index, toAdd);

@@ -498,7 +498,9 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                             if (map != null && map.containsKey("index")) {
                                 op.get("index").set((Integer) map.get("index"));
                             }
-                            op.get(VALUE).set(processObjectAttribute((ObjectTypeAttributeDefinition) type, map));
+                            if (map != null) {
+                                op.get(VALUE).set(processObjectAttribute((ObjectTypeAttributeDefinition) type, map));
+                            }
                             break;
                         case LIST:
                             if (entry instanceof Map) {

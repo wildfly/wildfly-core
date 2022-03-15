@@ -824,7 +824,10 @@ public class ReadResourceDescriptionHandler extends GlobalOperationHandlers.Abst
         }
 
         public static AccessControl forName(String localName) {
-            final AccessControl value = localName != null ? MAP.get(localName.toLowerCase(Locale.ENGLISH)) : null;
+            if (localName == null) {
+                return null;
+            }
+            final AccessControl value = MAP.get(localName.toLowerCase(Locale.ENGLISH));
             return value == null ? AccessControl.valueOf(localName.toUpperCase(Locale.ENGLISH)) : value;
         }
 
