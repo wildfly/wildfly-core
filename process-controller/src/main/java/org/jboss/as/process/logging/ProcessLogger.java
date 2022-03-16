@@ -433,7 +433,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set the host controller's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start servers or, if this host controller is the master for the domain, accept incoming connections from slave host controllers.")
+    @Message(id = Message.NONE, value = "Set the host controller's running type to ADMIN_ONLY causing it to open administrative interfaces and accept management requests but not start servers or, if this host controller is the primary for the domain, accept incoming connections from secondary host controllers.")
     String argAdminOnly();
 
     /**
@@ -441,7 +441,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.address to the given value. In a default slave Host Controller config, this is used to configure the address of the master Host Controller.")
+    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.address to the given value. In a default secondary Host Controller config, this is used to configure the address of the primary Host Controller.")
     String argMasterAddress();
 
     /**
@@ -449,7 +449,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.port to the given value. In a default slave Host Controller config, this is used to configure the port used for native management communication by the master Host Controller.")
+    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.port to the given value. In a default secondary Host Controller config, this is used to configure the port used for native management communication by the primary Host Controller.")
     String argMasterPort();
 
     /**

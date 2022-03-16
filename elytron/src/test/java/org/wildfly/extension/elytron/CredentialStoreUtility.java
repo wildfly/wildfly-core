@@ -95,7 +95,7 @@ public class CredentialStoreUtility {
             LOGGER.error(t);
             throw new RuntimeException(t);
         }
-        LOGGER.debugf("Credential Store created [%s] with master password \"%s\"", credentialStoreFileName, storePassword);
+        LOGGER.debugf("Credential Store created [%s] with password \"%s\"", credentialStoreFileName, storePassword);
     }
 
     /**

@@ -359,9 +359,7 @@ public interface ControllerLogger extends BasicLogger {
     void gracefulManagementChannelHandlerShutdownFailed(@Cause Throwable cause);
 
     /**
-     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
-     * communication failed.
-     *
+     * Logs a warning indicating an invalid value for how long to wait for active management operations to clear before allowing a communication channel close to proceed.
      * @param cause        the the cause of the failure
      * @param propertyName the name of the system property
      * @param propValue    the value provided
@@ -3023,7 +3021,7 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 306, value = "read only context")
     IllegalStateException readOnlyContext();
 
-    @Message(id = 307, value = "We are trying to read data from the master host controller, which is currently busy executing another set of operations. This is a temporary situation, please retry")
+    @Message(id = 307, value = "We are trying to read data from the domain controller, which is currently busy executing another set of operations. This is a temporary situation, please retry")
     String cannotGetControllerLock();
 
 //    @Message(id = 308, value = "Cannot configure an interface to use 'any-ipv6-address' when system property java.net.preferIPv4Stack is true")
