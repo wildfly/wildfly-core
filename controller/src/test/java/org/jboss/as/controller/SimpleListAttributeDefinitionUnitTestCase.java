@@ -24,10 +24,13 @@ package org.jboss.as.controller;
 
 import static org.junit.Assert.fail;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
@@ -198,6 +201,46 @@ public class SimpleListAttributeDefinitionUnitTestCase {
         writer.close();
 
         Assert.assertEquals("<resource connectors=\"\"></resource>", stringWriter.toString());
+    }
+
+    @Test
+    public void testSimpleListAttributeDefinitionDefaultMarshaller() throws XMLStreamException {
+        AttributeDefinition ad = SimpleAttributeDefinitionBuilder.create("x", ModelType.INT)
+                .setAttributeMarshaller(AttributeMarshallers.SIMPLE_ELEMENT_UNWRAP).build();
+        SimpleListAttributeDefinition attributeDefinition = SimpleListAttributeDefinition.Builder.of("test", ad).build();
+
+        // parse the XML attribute
+        ModelNode model = new ModelNode();
+        attributeDefinition.getParser().parseAndSetParameter(attributeDefinition, "10 20", model, null);
+
+        Assert.assertEquals(2, model.get(attributeDefinition.getName()).asList().size());
+        Assert.assertEquals(10, model.get(attributeDefinition.getName()).asList().get(0).asInt());
+        Assert.assertEquals(20, model.get(attributeDefinition.getName()).asList().get(1).asInt());
+
+        StringWriter stringWriter = new StringWriter();
+        XMLOutputFactory factory = XMLOutputFactory.newInstance();
+        XMLStreamWriter writer = factory.createXMLStreamWriter(stringWriter);
+
+        // marshall the XML attribute
+        attributeDefinition.getMarshaller().marshall(attributeDefinition, model, true, writer);
+        writer.close();
+
+        Assert.assertEquals("<test><x>10</x><x>20</x></test>", stringWriter.toString());
+
+        XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(stringWriter.toString()));
+        model = new ModelNode();
+        attributeDefinition.getParser().parseAndSetParameter(attributeDefinition, "", model, reader);
+        reader.close();
+        Assert.assertEquals(0, model.get(attributeDefinition.getName()).asList().size());
+
+        stringWriter = new StringWriter();
+        writer = factory.createXMLStreamWriter(stringWriter);
+
+        // marshall the XML attribute
+        attributeDefinition.getMarshaller().marshall(attributeDefinition, model, true, writer);
+        writer.close();
+
+        Assert.assertEquals("<test></test>", stringWriter.toString());
     }
 
     private void validateOperation(AttributeDefinition attributeDefinition, ModelNode value, boolean expectSuccess) throws OperationFailedException {
