@@ -104,6 +104,11 @@ set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULA
 call "!DIRNAME!common.bat" :setDefaultModularJvmOptions "!HOST_CONTROLLER_JAVA_OPTS!"
 set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !DEFAULT_MODULAR_JVM_OPTIONS!"
 
+rem Set default Security Manager configuration value
+call "!DIRNAME!common.bat" :setSecurityManagerDefault"
+set "PROCESS_CONTROLLER_JAVA_OPTS=!PROCESS_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+set "HOST_CONTROLLER_JAVA_OPTS=!HOST_CONTROLLER_JAVA_OPTS! !SECURITY_MANAGER_CONFIG_OPTION!"
+
 rem Add -server to the JVM options, if supported by JDK
 echo "%JAVA_OPTS%" | findstr /I \-server > nul
 if errorlevel == 1 (
