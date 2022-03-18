@@ -729,7 +729,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private static class AddMissingHostSchemaLocationsAttributeForValidationHandler implements OperationStepHandler {
         static final OperationStepHandler INSTANCE = new AddMissingHostSchemaLocationsAttributeForValidationHandler();
         static final String NAME = "add-missing-schema-locations-attribute-for-validation-handler";
-        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, new NonResolvingResourceDescriptionResolver()).build();
+        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, NonResolvingResourceDescriptionResolver.INSTANCE).build();
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().get(SCHEMA_LOCATIONS).setEmptyList();
@@ -739,7 +739,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     private static class AddMissingHostNamespacesAttributeForValidationHandler implements OperationStepHandler {
         static final OperationStepHandler INSTANCE = new AddMissingHostNamespacesAttributeForValidationHandler();
         static final String NAME = "add-missing-namespaces-attribute-for-validation-handler";
-        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, new NonResolvingResourceDescriptionResolver()).build();
+        static final OperationDefinition DEF = new SimpleOperationDefinitionBuilder(NAME, NonResolvingResourceDescriptionResolver.INSTANCE).build();
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS).getModel().get(NAMESPACES).setEmptyList();

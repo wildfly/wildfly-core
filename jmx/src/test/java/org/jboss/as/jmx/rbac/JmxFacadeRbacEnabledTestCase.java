@@ -867,7 +867,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
 
     private static class TestResourceDefinition extends SimpleResourceDefinition {
         TestResourceDefinition(PathElement pathElement, AccessConstraintDefinition...constraints) {
-            super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+            super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(constraints));
@@ -893,7 +893,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         }
 
         void addOperation(String name, boolean readOnly, boolean runtimeOnly, SimpleAttributeDefinition[] parameters, AccessConstraintDefinition...constraints) {
-            SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, new NonResolvingResourceDescriptionResolver());
+            SimpleOperationDefinitionBuilder builder = new SimpleOperationDefinitionBuilder(name, NonResolvingResourceDescriptionResolver.INSTANCE);
             if (constraints != null) {
                 builder.setAccessConstraints(constraints);
             }

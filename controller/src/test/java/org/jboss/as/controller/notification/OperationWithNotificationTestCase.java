@@ -57,7 +57,7 @@ public class OperationWithNotificationTestCase extends AbstractControllerTestBas
     @Override
     protected void initModel(ManagementModel managementModel) {
         ManagementResourceRegistration registration = managementModel.getRootResourceRegistration();
-        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(MY_OPERATION, new NonResolvingResourceDescriptionResolver())
+        registration.registerOperationHandler(new SimpleOperationDefinitionBuilder(MY_OPERATION, NonResolvingResourceDescriptionResolver.INSTANCE)
                         .setPrivateEntry()
                         .build(),
                 new OperationStepHandler() {
@@ -68,7 +68,7 @@ public class OperationWithNotificationTestCase extends AbstractControllerTestBas
                     }
                 }
         );
-        registration.registerNotification(NotificationDefinition.Builder.create(MY_NOTIFICATION_TYPE, new NonResolvingResourceDescriptionResolver()).build());
+        registration.registerNotification(NotificationDefinition.Builder.create(MY_NOTIFICATION_TYPE, NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
     @Test

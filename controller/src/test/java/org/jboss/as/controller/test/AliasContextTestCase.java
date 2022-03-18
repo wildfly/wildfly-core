@@ -171,7 +171,7 @@ public class AliasContextTestCase extends AbstractControllerTestBase {
     private class MainResourceDefinition extends SimpleResourceDefinition {
 
         public MainResourceDefinition() {
-            super(PathElement.pathElement(MAIN), new NonResolvingResourceDescriptionResolver(), null, new ModelOnlyRemoveStepHandler());
+            super(PathElement.pathElement(MAIN), NonResolvingResourceDescriptionResolver.INSTANCE, null, new ModelOnlyRemoveStepHandler());
         }
 
         @Override

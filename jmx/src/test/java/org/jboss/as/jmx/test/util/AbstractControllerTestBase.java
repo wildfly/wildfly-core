@@ -172,7 +172,7 @@ public abstract class AbstractControllerTestBase {
 
         ModelControllerService(final ProcessType processType, final ManagedAuditLogger auditLogger, final DelegatingConfigurableAuthorizer authorizer) {
             super(processType, new EmptyConfigurationPersister(), new ControlledProcessState(true),
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     auditLogger, authorizer);
         }
 

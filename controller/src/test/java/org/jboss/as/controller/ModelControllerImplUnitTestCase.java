@@ -855,7 +855,7 @@ public class ModelControllerImplUnitTestCase {
 
             SimpleResourceDefinition childResource = new SimpleResourceDefinition(
                     PathElement.pathElement("child"),
-                    new NonResolvingResourceDescriptionResolver()
+                    NonResolvingResourceDescriptionResolver.INSTANCE
             );
             ManagementResourceRegistration childRegistration = rootRegistration.registerSubModel(childResource);
             childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute1", ModelType.INT), null);

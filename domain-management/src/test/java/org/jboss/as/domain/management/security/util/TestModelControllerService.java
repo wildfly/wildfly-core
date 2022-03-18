@@ -66,13 +66,13 @@ public abstract class TestModelControllerService extends AbstractControllerServi
 
     protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
         this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
+                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 AuditLogger.NO_OP_LOGGER);
     }
 
     protected TestModelControllerService(final ConfigurationPersister configurationPersister, final ControlledProcessState processState, ManagedAuditLogger auditLogger) {
         this(ProcessType.EMBEDDED_SERVER, configurationPersister, processState,
-                ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build(),
+                ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                 auditLogger);
     }
 

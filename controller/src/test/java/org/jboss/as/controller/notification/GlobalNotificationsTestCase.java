@@ -108,7 +108,7 @@ public class GlobalNotificationsTestCase extends AbstractControllerTestBase {
 
     private static ResourceDefinition createDummyProfileResourceDefinition() {
         return ResourceBuilder.Factory.create(RESOURCE_ADDRESS_PATTERN.getElement(0),
-                new NonResolvingResourceDescriptionResolver())
+                NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddOperation(new AbstractAddStepHandler() {
 
                     @Override

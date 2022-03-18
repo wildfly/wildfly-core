@@ -167,11 +167,11 @@ public class FilteredReadChildrenNamesTestCase extends AbstractRbacTestBase {
         GlobalNotifications.registerGlobalNotifications(registration, ProcessType.EMBEDDED_SERVER);
 
         registration.registerSubModel(new SimpleResourceDefinition(
-                new Parameters(pathElement(UNCONSTRAINED_RESOURCE), new NonResolvingResourceDescriptionResolver())
+                new Parameters(pathElement(UNCONSTRAINED_RESOURCE), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})));
         registration.registerSubModel(new SimpleResourceDefinition(
-                new Parameters(pathElement(SENSITIVE_CONSTRAINED_RESOURCE), new NonResolvingResourceDescriptionResolver())
+                new Parameters(pathElement(SENSITIVE_CONSTRAINED_RESOURCE), NonResolvingResourceDescriptionResolver.INSTANCE)
                     .setAddHandler(new AbstractAddStepHandler() {})
                     .setRemoveHandler(new AbstractRemoveStepHandler() {})
                     .setAccessConstraints(MY_SENSITIVE_CONSTRAINT)));

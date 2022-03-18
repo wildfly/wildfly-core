@@ -45,7 +45,7 @@ public class ProxyControllerRegistrationUnitTestCase {
 
     @Before
     public void setup() {
-        root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.HOST_CONTROLLER).createRegistration(new SimpleResourceDefinition(null, new NonResolvingResourceDescriptionResolver()));
+        root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.HOST_CONTROLLER).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
         proxyController = new ProxyController() {
             @Override
             public PathAddress getProxyNodeAddress() {

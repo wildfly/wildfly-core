@@ -90,31 +90,31 @@ public class ExtendWildCardRegistrationUnitTestCase {
 
     @BeforeClass
     public static void setup() {
-        registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(PathElement.pathElement("root","root"), new NonResolvingResourceDescriptionResolver()));
+        registration = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(new SimpleResourceDefinition(PathElement.pathElement("root","root"), NonResolvingResourceDescriptionResolver.INSTANCE));
 
-        parentWildReg = registration.registerSubModel(new SimpleResourceDefinition(parentWild, new NonResolvingResourceDescriptionResolver()));
+        parentWildReg = registration.registerSubModel(new SimpleResourceDefinition(parentWild, NonResolvingResourceDescriptionResolver.INSTANCE));
         parentWildReg.registerReadOnlyAttribute(wildAttr, parentWildAttr);
         parentWildReg.registerOperationHandler(getOpDef("wildOp"), parentWildOp);
         parentWildReg.registerReadOnlyAttribute(overrideAttr, parentWildOverrideAttr);
         parentWildReg.registerOperationHandler(getOpDef("overrideOp"), parentWildOverrideOp);
 
-        parentExtReg = registration.registerSubModel(new SimpleResourceDefinition(parentExt, new NonResolvingResourceDescriptionResolver()));
+        parentExtReg = registration.registerSubModel(new SimpleResourceDefinition(parentExt, NonResolvingResourceDescriptionResolver.INSTANCE));
         parentExtReg.registerReadOnlyAttribute(extAttr, parentExtAttr);
         parentExtReg.registerOperationHandler(getOpDef("extOp"), parentExtOp);
         parentExtReg.registerReadOnlyAttribute(overrideAttr, parentExtOverrideAttr);
         parentExtReg.registerOperationHandler(getOpDef("overrideOp"), parentExtOverrideOp);
 
-        childWildReg = parentWildReg.registerSubModel(new SimpleResourceDefinition(childWild, new NonResolvingResourceDescriptionResolver()));
+        childWildReg = parentWildReg.registerSubModel(new SimpleResourceDefinition(childWild, NonResolvingResourceDescriptionResolver.INSTANCE));
         childWildReg.registerReadOnlyAttribute(wildAttr, childWildAttr);
         childWildReg.registerOperationHandler(getOpDef("wildOp"), childWildOp);
         childWildReg.registerReadOnlyAttribute(overrideAttr, childWildOverrideAttr);
         childWildReg.registerOperationHandler(getOpDef("overrideOp"), childWildOverrideOp);
 
-        childWildExtReg = parentWildReg.registerSubModel(new SimpleResourceDefinition(childWildExt, new NonResolvingResourceDescriptionResolver()));
+        childWildExtReg = parentWildReg.registerSubModel(new SimpleResourceDefinition(childWildExt, NonResolvingResourceDescriptionResolver.INSTANCE));
         childWildExtReg.registerReadOnlyAttribute(wildExtAttr, childWildExtAttr);
         childWildExtReg.registerOperationHandler(getOpDef("wildExtOp"), childWildExtOp);
 
-        childExtReg = parentExtReg.registerSubModel(new SimpleResourceDefinition(childExt, new NonResolvingResourceDescriptionResolver()));
+        childExtReg = parentExtReg.registerSubModel(new SimpleResourceDefinition(childExt, NonResolvingResourceDescriptionResolver.INSTANCE));
         childExtReg.registerReadOnlyAttribute(extAttr, childExtAttr);
         childExtReg.registerOperationHandler(getOpDef("extOp"), childExtOp);
         childExtReg.registerReadOnlyAttribute(overrideAttr, childExtOverrideAttr);
@@ -336,21 +336,21 @@ public class ExtendWildCardRegistrationUnitTestCase {
     @Test
     public void testDuplicateSubModel() {
         try {
-            parentExtReg.registerSubModel(new SimpleResourceDefinition(childWildExt, new NonResolvingResourceDescriptionResolver()));
+            parentExtReg.registerSubModel(new SimpleResourceDefinition(childWildExt, NonResolvingResourceDescriptionResolver.INSTANCE));
             fail("Duplicate child not rejected");
         } catch (Exception good) {
             //
         }
 
         try {
-            parentExtReg.registerSubModel(new SimpleResourceDefinition( childWild, new NonResolvingResourceDescriptionResolver()));
+            parentExtReg.registerSubModel(new SimpleResourceDefinition( childWild, NonResolvingResourceDescriptionResolver.INSTANCE));
             fail("Duplicate child not rejected");
         } catch (Exception good) {
             //
         }
 
         try {
-            parentWildReg.registerSubModel(new SimpleResourceDefinition(childWild, new NonResolvingResourceDescriptionResolver()));
+            parentWildReg.registerSubModel(new SimpleResourceDefinition(childWild, NonResolvingResourceDescriptionResolver.INSTANCE));
             fail("Duplicate child not rejected");
         } catch (Exception good) {
             //
@@ -364,9 +364,9 @@ public class ExtendWildCardRegistrationUnitTestCase {
         PathElement grandchildExt = PathElement.pathElement("grandchild", "ext");
         PathElement anotherGranchild = PathElement.pathElement("another", "grandchild");
 
-        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, new NonResolvingResourceDescriptionResolver()));
-        childWildExtReg.registerSubModel(new SimpleResourceDefinition(grandchildExt, new NonResolvingResourceDescriptionResolver()));
-        childWildExtReg.registerSubModel(new SimpleResourceDefinition(anotherGranchild, new NonResolvingResourceDescriptionResolver()));
+        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, NonResolvingResourceDescriptionResolver.INSTANCE));
+        childWildExtReg.registerSubModel(new SimpleResourceDefinition(grandchildExt, NonResolvingResourceDescriptionResolver.INSTANCE));
+        childWildExtReg.registerSubModel(new SimpleResourceDefinition(anotherGranchild, NonResolvingResourceDescriptionResolver.INSTANCE));
 
         // Confirm setup.
 
@@ -416,7 +416,7 @@ public class ExtendWildCardRegistrationUnitTestCase {
         assertTrue(grandchildren.toString(), grandchildren.contains(anotherGranchild));
 
         // Restore state
-        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, new NonResolvingResourceDescriptionResolver()));
+        childWildReg.registerSubModel(new SimpleResourceDefinition(grandchildWild, NonResolvingResourceDescriptionResolver.INSTANCE));
 
         // 4) Removing a higher level override does not remove children of the related wildcard
         parentWildReg.unregisterSubModel(childWildExt);

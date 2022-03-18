@@ -103,7 +103,7 @@ public class ConstrainedResource extends SimpleResourceDefinition {
             .build();
 
     public ConstrainedResource(PathElement pathElement) {
-        super(new Parameters(pathElement, new NonResolvingResourceDescriptionResolver())
+        super(new Parameters(pathElement, NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AbstractAddStepHandler(PASSWORD, SECURITY_DOMAIN, AUTHENTICATION_INFLOW))
                 .setRemoveHandler(ModelOnlyRemoveStepHandler.INSTANCE)
                 .setAccessConstraints(new ApplicationTypeAccessConstraintDefinition(new ApplicationTypeConfig("rbac", "datasource"))));

@@ -211,7 +211,7 @@ public class ChildRedirectTestCase {
         return getTransfomers(target).transformOperation(context, operation);
     }
 
-    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), new NonResolvingResourceDescriptionResolver());
+    private static final ResourceDefinition ROOT = new SimpleResourceDefinition(PathElement.pathElement("test"), NonResolvingResourceDescriptionResolver.INSTANCE);
 
     private static ModelNode success() {
         final ModelNode result = new ModelNode();

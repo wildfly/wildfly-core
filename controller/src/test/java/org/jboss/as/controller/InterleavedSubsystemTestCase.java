@@ -147,7 +147,7 @@ public class InterleavedSubsystemTestCase {
             extensions.registerOperationHandler("add", new FakeExtensionAddHandler(rootRegistration), ModelControllerImplUnitTestCase.DESC_PROVIDER);*/
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(EXTENSION),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new FakeExtensionAddHandler(rootRegistration, getMutableRootResourceRegistrationProvider()),
                     ReloadRequiredRemoveStepHandler.INSTANCE
             ){
@@ -181,7 +181,7 @@ public class InterleavedSubsystemTestCase {
 
             SimpleResourceDefinition subsystemResource = new SimpleResourceDefinition(
                     PathElement.pathElement(SUBSYSTEM, module),
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new FakeSubsystemAddHandler(),
                     ReloadRequiredRemoveStepHandler.INSTANCE
             ){

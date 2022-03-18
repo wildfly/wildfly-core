@@ -117,7 +117,7 @@ public class YamlConfigurationExtensionTest {
                 .setValidator(new StringLengthValidator(0, true, true))
                 .build();
         ManagementResourceRegistration connectorRegistration = root.registerSubModel(new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
-                PathElement.pathElement("connector"), new NonResolvingResourceDescriptionResolver())
+                PathElement.pathElement("connector"), NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(new AbstractBoottimeAddStepHandler(connectorType) {
                 })
                 .setRemoveHandler(new AbstractRemoveStepHandler() {
@@ -126,7 +126,7 @@ public class YamlConfigurationExtensionTest {
         connectorRegistration.registerReadWriteAttribute(connectorType, null, new ModelOnlyWriteAttributeHandler(connectorType));
         ManagementResourceRegistration acceptorRegistration = connectorRegistration.registerSubModel(
                 new SimpleResourceDefinition(
-                        new SimpleResourceDefinition.Parameters(PathElement.pathElement("acceptor"), new NonResolvingResourceDescriptionResolver())
+                        new SimpleResourceDefinition.Parameters(PathElement.pathElement("acceptor"), NonResolvingResourceDescriptionResolver.INSTANCE)
                                 .setAddHandler(new AbstractBoottimeAddStepHandler(connectorType) {
                                 })
                                 .setRemoveHandler(new AbstractRemoveStepHandler() {

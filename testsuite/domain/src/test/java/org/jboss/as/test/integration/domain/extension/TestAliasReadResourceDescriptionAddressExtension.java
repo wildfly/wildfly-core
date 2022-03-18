@@ -76,7 +76,7 @@ public class TestAliasReadResourceDescriptionAddressExtension implements Extensi
     private static class AbstractResourceDefinition extends SimpleResourceDefinition {
         public AbstractResourceDefinition(PathElement pathElement) {
             super(pathElement,
-                    new NonResolvingResourceDescriptionResolver(),
+                    NonResolvingResourceDescriptionResolver.INSTANCE,
                     new AbstractAddStepHandler(),
                     new ModelOnlyRemoveStepHandler());
         }

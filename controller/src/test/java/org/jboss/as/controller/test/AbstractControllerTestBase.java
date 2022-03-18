@@ -207,7 +207,7 @@ public abstract class AbstractControllerTestBase {
 
         public ModelControllerService(final ProcessType processType, RunningModeControl runningModeControl, Supplier<ExecutorService> executorService) {
             super(processType, runningModeControl, executorService, new EmptyConfigurationPersister(), new ControlledProcessState(true),
-                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), new NonResolvingResourceDescriptionResolver()).build()
+                    ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build()
             );
         }
 
