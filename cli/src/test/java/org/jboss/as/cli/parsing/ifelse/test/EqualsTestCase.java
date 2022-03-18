@@ -93,4 +93,14 @@ public class EqualsTestCase extends ComparisonTestBase {
         node.get("result").set("undefined");
         assertFalse(node, "result == undefined");
     }
+
+    @Test
+    public void testWhitespace() throws Exception {
+        ModelNode node = new ModelNode();
+        node.get("result").set("foo bar");
+        assertTrue(node, "result == \"foo bar\"");
+
+        node.get("result").set("foo\nbar");
+        assertTrue(node, "result == \"foo\\nbar\"");
+    }
 }

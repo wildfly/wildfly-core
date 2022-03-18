@@ -289,7 +289,8 @@ public class ConditionArgument extends ArgumentWithValue {
         @Override
         public void character(ParsingContext ctx) throws CommandFormatException {
             //System.out.println(ctx.getState().getId() + ": " + ctx.getCharacter());
-            if(parenthesisState != ctx.getState() && !Character.isWhitespace(ctx.getCharacter())) {
+            if (parenthesisState != ctx.getState() && (!Character.isWhitespace(ctx.getCharacter())
+                    || ctx.getState().getId().equals(QuotesState.ID) || ctx.getState().getId().equals(EscapeCharacterState.ID))) {
                 buf.append(ctx.getCharacter());
             }
         }
