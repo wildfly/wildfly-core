@@ -226,6 +226,8 @@ public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
             FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncodingCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
+            .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM, "FilesystemRealmEncrypted")),
+                    FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.JDBC_REALM, "JDBCRealmCharset")),
                     FailedOperationTransformationConfig.REJECTED_RESOURCE)
             .addFailedAttribute(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(ElytronDescriptionConstants.LDAP_REALM, "LDAPRealmEncodingCharset")),

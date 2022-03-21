@@ -102,6 +102,9 @@
         <filesystem-realm name="FileRealm" levels="${exp.levels:2}" encoded="${exp.encoded:false}">
             <file path="filesystem-realm" relative-to="jboss.server.config.dir"/>
         </filesystem-realm>
+        <filesystem-realm name="FileSystemRealmEncrypted" levels="${exp.levels:2}" encoded="${exp.encoded:false}" credential-store="${exp.credstore:secretkeycredstore}" secret-key="${exp.secretkey:key}">
+            <file path="filesystem-realm-encrypted" relative-to="jboss.server.config.dir"/>
+        </filesystem-realm>
         <token-realm name="JwtRealmOne" principal-claim="${exp.principal:sub}" >
             <jwt issuer="${exp.issuer:some-issuer-a}" audience="${exp.audience:some-audience-a}" public-key="${exp.key:MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqP}"
                  certificate="${exp.cert:cert}">
@@ -433,6 +436,7 @@
         <credential-store name="test4" relative-to="jboss.server.data.dir" path="${exp.path:test1.store}" create="true">
             <credential-reference clear-text="secret2"/>
         </credential-store>
+        <secret-key-credential-store name="secretkeycredstore" relative-to="jboss.server.data.dir" path="mysecretkeycredstore.cs" create="${exp.create:true}" populate="${exp.populate:true}" />
         <secret-key-credential-store name="test3" relative-to="jboss.server.data.dir" path="test3.cs"
                                      create="${exp.create:false}" populate="${exp.populate:false}"
                                      key-size="${exp.key:192}" default-alias="${exp.alias:test3}" />
