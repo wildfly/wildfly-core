@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>18.1.0.Beta1-SNAPSHOT</version>
+        <version>18.1.0.Beta1</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
