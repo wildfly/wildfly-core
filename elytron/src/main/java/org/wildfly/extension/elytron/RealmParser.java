@@ -92,7 +92,22 @@ class RealmParser {
             .setMarshallDefaultValues(true)
             .build();
     private final PersistentResourceXMLDescription filesystemRealmParser_14_0 = builder(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM), null)
-            .addAttributes(FileSystemRealmDefinition.ATTRIBUTES)
+            .addAttributes(FileSystemRealmDefinition.PATH)
+            .addAttribute(FileSystemRealmDefinition.RELATIVE_TO)
+            .addAttribute(FileSystemRealmDefinition.LEVELS)
+            .addAttribute(FileSystemRealmDefinition.ENCODED)
+            .addAttribute(FileSystemRealmDefinition.HASH_ENCODING)
+            .addAttribute(FileSystemRealmDefinition.HASH_CHARSET)
+            .build();
+    private final PersistentResourceXMLDescription filesystemRealmParser_15_1 = builder(PathElement.pathElement(ElytronDescriptionConstants.FILESYSTEM_REALM), null)
+            .addAttributes(FileSystemRealmDefinition.PATH)
+            .addAttributes(FileSystemRealmDefinition.RELATIVE_TO)
+            .addAttributes(FileSystemRealmDefinition.LEVELS)
+            .addAttributes(FileSystemRealmDefinition.ENCODED)
+            .addAttributes(FileSystemRealmDefinition.HASH_ENCODING)
+            .addAttributes(FileSystemRealmDefinition.HASH_CHARSET)
+            .addAttributes(FileSystemRealmDefinition.CREDENTIAL_STORE) // new
+            .addAttributes(FileSystemRealmDefinition.SECRET_KEY) // new
             .build();
     private final PersistentResourceXMLDescription tokenRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.TOKEN_REALM), null)
             .addAttributes(TokenRealmDefinition.ATTRIBUTES)
@@ -194,6 +209,23 @@ class RealmParser {
             .addChild(propertiesRealmParser_14_0)
             .addChild(ldapRealmParser)
             .addChild(filesystemRealmParser_14_0)
+            .addChild(tokenRealmParser)
+            .addChild(cachingRealmParser)
+            .addChild(distributedRealmParser)
+            .addChild(failoverRealmParser)
+            .addChild(jaasRealmParser)
+            .build();
+
+    final PersistentResourceXMLDescription realmParser_15_1 = decorator(ElytronDescriptionConstants.SECURITY_REALMS)
+            .addChild(aggregateRealmParser_8_0)
+            .addChild(customRealmParser)
+            .addChild(customModifiableRealmParser)
+            .addChild(identityRealmParser)
+            .addChild(jdbcRealmParser_14_0)
+            .addChild(keyStoreRealmParser)
+            .addChild(propertiesRealmParser_14_0)
+            .addChild(ldapRealmParser)
+            .addChild(filesystemRealmParser_15_1)
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
             .addChild(distributedRealmParser)

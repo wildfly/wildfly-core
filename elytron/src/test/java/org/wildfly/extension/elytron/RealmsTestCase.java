@@ -23,8 +23,11 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.common.iteration.ByteIterator;
+import org.wildfly.common.iteration.CodePointIterator;
+import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.principal.NamePrincipal;
 import org.wildfly.security.auth.realm.JaasSecurityRealm;
@@ -34,6 +37,9 @@ import org.wildfly.security.auth.server.RealmIdentity;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
+import org.wildfly.security.authz.Attributes;
+import org.wildfly.security.authz.AuthorizationIdentity;
+import org.wildfly.security.authz.MapAttributes;
 import org.wildfly.security.credential.Credential;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.evidence.PasswordGuessEvidence;
@@ -57,8 +63,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.security.AccessController;
 import java.security.Principal;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.security.Security;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,7 +77,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -78,6 +92,12 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
+    private static final Provider wildFlyElytronProvider = new WildFlyElytronProvider();
+
+    @BeforeClass
+    public static void setUp() {
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
+    }
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("realms-test.xml");
@@ -244,6 +264,87 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
         testAbstractFilesystemRealm(securityRealm4, "plainUser", "password密码");
         testAddingAndDeletingEncodedHash(securityRealm4, Charset.forName("gb2312"), "password密码");
 
+    }
+
+    /**
+     * Test the filesystem realm can handle identities with different types of encrypted passwords and attributes. Also
+     * ensures a pre-assigned SecretKey as well as a newly generated SecretKey work.
+     */
+    @Test
+    public void testFilesystemRealmEncrypted() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm5");
+        ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
+        ServiceName serviceNameGeneratedKey = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm6");
+        ModifiableSecurityRealm securityRealmGeneratedKey = (ModifiableSecurityRealm) services.getContainer().getService(serviceNameGeneratedKey).getValue();
+
+        // Test Clear Encrypted Password
+        Assert.assertNotNull(securityRealm);
+        char[] password = "secretPassword".toCharArray();
+        RealmIdentity identityClear = securityRealm.getRealmIdentity(fromName("plainUser"));
+        Assert.assertTrue(identityClear.exists());
+        Assert.assertTrue(identityClear.verifyEvidence(new PasswordGuessEvidence(password)));
+        Assert.assertFalse(identityClear.verifyEvidence(new PasswordGuessEvidence("secretPassword123".toCharArray())));
+        identityClear.dispose();
+
+        // Test BCrypt Hashed Encrypted Password
+        RealmIdentity identityBcrypt = securityRealm.getRealmIdentity(fromName("plainUser1"));
+        Assert.assertTrue(identityBcrypt.exists());
+        Assert.assertTrue(identityBcrypt.verifyEvidence(new PasswordGuessEvidence(password)));
+        Assert.assertFalse(identityBcrypt.verifyEvidence(new PasswordGuessEvidence("secretPassword123".toCharArray())));
+        identityBcrypt.dispose();
+
+        // Test encrypted attributes
+        MapAttributes newAttributes = new MapAttributes();
+        newAttributes.addFirst("name", "plainUser");
+        newAttributes.addAll("roles", Arrays.asList("Employee", "Manager", "Admin"));
+
+        RealmIdentity identityAttribute = securityRealm.getRealmIdentity(fromName("attributeUser"));
+        Assert.assertTrue(identityAttribute.exists());
+        AuthorizationIdentity authorizationIdentity = identityAttribute.getAuthorizationIdentity();
+        Attributes existingAttributes = authorizationIdentity.getAttributes();
+        identityAttribute.dispose();
+
+        assertEquals(newAttributes.size(), existingAttributes.size());
+        assertTrue(newAttributes.get("name").containsAll(existingAttributes.get("name")));
+        assertTrue(newAttributes.get("roles").containsAll(existingAttributes.get("roles")));
+
+        // Test OTP and BCrypt Encrypted Passwords
+        RealmIdentity identityEverything = securityRealm.getRealmIdentity(fromName("plainUserEverything"));
+        byte[] hash = CodePointIterator.ofString("505d889f90085847").hexDecode().drain();
+        String seed = "ke1234";
+        Assert.assertTrue(identityEverything.exists());
+        Assert.assertTrue(identityEverything.verifyEvidence(new PasswordGuessEvidence(password)));
+        OneTimePassword otp = identityEverything.getCredential(PasswordCredential.class, OneTimePassword.ALGORITHM_OTP_SHA1).getPassword(OneTimePassword.class);
+        assertNotNull(otp);
+        assertEquals(OneTimePassword.ALGORITHM_OTP_SHA1, otp.getAlgorithm());
+        assertArrayEquals(hash, otp.getHash());
+        assertEquals(seed, otp.getSeed());
+        identityEverything.dispose();
+
+        // Test creating new encrypted realm with identity
+        List<Credential> credentials = new LinkedList<>();
+        PasswordFactory factory = PasswordFactory.getInstance(ClearPassword.ALGORITHM_CLEAR);
+        ClearPassword clearPassword = (ClearPassword) factory.generatePassword(new ClearPasswordSpec(password));
+        credentials.add(new PasswordCredential(clearPassword));
+
+        ModifiableRealmIdentity identityEmpty = securityRealmGeneratedKey.getRealmIdentityForUpdate(fromName("emptyIdentity"));
+        Assert.assertFalse(identityEmpty.exists());
+        identityEmpty.create();
+        Assert.assertTrue(identityEmpty.exists());
+        identityEmpty.setCredentials(credentials);
+        identityEmpty.dispose();
+
+        ModifiableRealmIdentity identityEmpty2 = securityRealmGeneratedKey.getRealmIdentityForUpdate(fromName("emptyIdentity"));
+        Assert.assertTrue(identityEmpty2.exists());
+        Assert.assertTrue(identityEmpty2.verifyEvidence(new PasswordGuessEvidence(password)));
+        identityEmpty.delete();
+        Assert.assertFalse(identityEmpty.exists());
+        identityEmpty.dispose();
     }
 
     private void testAbstractFilesystemRealm(SecurityRealm securityRealm, String username, String password) throws Exception {

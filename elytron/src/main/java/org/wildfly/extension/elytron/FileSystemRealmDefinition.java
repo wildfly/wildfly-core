@@ -18,17 +18,23 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.capability.RuntimeCapability.buildDynamicCapabilityName;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_API_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.CREDENTIAL_STORE_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathName;
 import static org.wildfly.extension.elytron.FileAttributeDefinitions.pathResolver;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.KeyStore;
+import javax.crypto.SecretKey;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
@@ -55,10 +61,15 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.ExceptionFunction;
 import org.wildfly.extension.elytron.FileAttributeDefinitions.PathResolver;
 import org.wildfly.security.auth.realm.FileSystemSecurityRealm;
+import org.wildfly.security.auth.realm.FileSystemSecurityRealmBuilder;
 import org.wildfly.security.auth.server.NameRewriter;
 import org.wildfly.security.auth.server.SecurityRealm;
+import org.wildfly.security.credential.SecretKeyCredential;
+import org.wildfly.security.credential.store.CredentialStore;
+import org.wildfly.security.credential.store.CredentialStoreException;
 import org.wildfly.security.password.spec.Encoding;
 
 
@@ -110,7 +121,26 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .build();
 
-    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, HASH_ENCODING, HASH_CHARSET};
+    static final SimpleAttributeDefinition CREDENTIAL_STORE =
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.CREDENTIAL_STORE, ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .setRequired(false)
+                    .setRequires(ElytronDescriptionConstants.SECRET_KEY)
+                    .setMinSize(1)
+                    .setRestartAllServices()
+                    .setCapabilityReference(CREDENTIAL_STORE_CAPABILITY, SECURITY_REALM_CAPABILITY)
+                    .build();
+
+    static final SimpleAttributeDefinition SECRET_KEY =
+            new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.SECRET_KEY, ModelType.STRING, false)
+                    .setAllowExpression(true)
+                    .setRequired(false)
+                    .setRequires(ElytronDescriptionConstants.CREDENTIAL_STORE)
+                    .setMinSize(1)
+                    .setRestartAllServices()
+                    .build();
+
+    static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[]{PATH, RELATIVE_TO, LEVELS, ENCODED, HASH_ENCODING, HASH_CHARSET, CREDENTIAL_STORE, SECRET_KEY};
 
     private static final AbstractAddStepHandler ADD = new RealmAddHandler();
     private static final OperationStepHandler REMOVE = new TrivialCapabilityServiceRemoveHandler(ADD, MODIFIABLE_SECURITY_REALM_RUNTIME_CAPABILITY, SECURITY_REALM_RUNTIME_CAPABILITY);
@@ -139,6 +169,20 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
             super(SECURITY_REALM_RUNTIME_CAPABILITY, ATTRIBUTES);
         }
 
+        private SecretKey getKey(OperationContext context, String credentialStoreReference, String alias) throws OperationFailedException{
+            ExceptionFunction<OperationContext, CredentialStore, OperationFailedException> credentialStoreApi = context.getCapabilityRuntimeAPI(CREDENTIAL_STORE_API_CAPABILITY, credentialStoreReference, ExceptionFunction.class);
+            CredentialStore credentialStoreResource = credentialStoreApi.apply(context);
+            try {
+                SecretKeyCredential credential = credentialStoreResource.retrieve(alias, SecretKeyCredential.class);
+                if (credential == null) {
+                    throw ROOT_LOGGER.credentialDoesNotExist(alias, SecretKeyCredential.class.getSimpleName());
+                }
+                return credential.getSecretKey();
+            } catch (CredentialStoreException e) {
+                throw ROOT_LOGGER.unableToLoadCredentialStore(e);
+            }
+        }
+
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
@@ -157,6 +201,14 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
             final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, model).asString();
             final String hashCharset = HASH_CHARSET.resolveModelAttribute(context, model).asString();
+            final String credentialStore = CREDENTIAL_STORE.resolveModelAttribute(context, model).asStringOrNull();
+            final String secretKey = SECRET_KEY.resolveModelAttribute(context, model).asStringOrNull();
+
+            SecretKey key = null;
+            if(credentialStore != null && secretKey != null) {
+                key = getKey(context, credentialStore, secretKey);
+            }
+            SecretKey finalKey = key;
 
             final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
             final InjectedValue<NameRewriter> nameRewriterInjector = new InjectedValue<>();
@@ -174,10 +226,23 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
                             NameRewriter nameRewriter = nameRewriterInjector.getOptionalValue();
                             Charset charset = Charset.forName(hashCharset);
                             Encoding encoding = HEX.equals(hashEncoding) ? Encoding.HEX : Encoding.BASE64;
+                            if (nameRewriter == null) {
+                                nameRewriter = NameRewriter.IDENTITY_REWRITER;
+                            }
+                            FileSystemSecurityRealmBuilder fileSystemRealmBuilder = FileSystemSecurityRealm.builder()
+                                    .setRoot(rootPath)
+                                    .setNameRewriter(nameRewriter)
+                                    .setLevels(levels)
+                                    .setEncoded(encoded)
+                                    .setHashEncoding(encoding)
+                                    .setHashCharset(charset);
 
-                            return nameRewriter != null ?
-                                    new FileSystemSecurityRealm(rootPath, nameRewriter, levels, encoded, encoding, charset) :
-                                    new FileSystemSecurityRealm(rootPath, NameRewriter.IDENTITY_REWRITER, levels, encoded, encoding, charset);
+                            if (finalKey != null) {
+                                fileSystemRealmBuilder.setSecretKey(finalKey);
+                            }
+
+                            return fileSystemRealmBuilder.build();
+
                         }
 
                         @Override
@@ -192,6 +257,9 @@ class FileSystemRealmDefinition extends SimpleResourceDefinition {
 
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(mainServiceName, fileSystemRealmService)
                     .addAliases(aliasServiceName);
+            if (credentialStore != null) {
+                serviceBuilder.requires(context.getCapabilityServiceName(buildDynamicCapabilityName(CREDENTIAL_STORE_CAPABILITY, credentialStore), CredentialStore.class));
+            }
 
             if (relativeTo != null) {
                 serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);

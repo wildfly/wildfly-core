@@ -690,6 +690,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1210, value = "Initialisation of an %s without an active management OperationContext is not allowed.")
     ExpressionResolver.ExpressionResolutionServerException illegalNonManagementInitialization(Class<?> initialzingClass);
 
+    @Message(id = 1211, value = "Unable to load the credential store.")
+    OperationFailedException unableToLoadCredentialStore(@Cause Throwable cause);
+
     /*
      * Don't just add new errors to the end of the file, there may be an appropriate section above for the resource.
      *
