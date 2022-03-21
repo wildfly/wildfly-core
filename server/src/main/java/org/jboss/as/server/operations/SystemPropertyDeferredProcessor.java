@@ -22,27 +22,33 @@
 
 package org.jboss.as.server.operations;
 
+import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
 
 /**
  * WFLY-1904: performs deferred resolution and storage of system properties,
- * after any security vault has had a chance to initialize. This makes
- * it possible for vault expressions to be used in the configured
- * property value.
+ * after any runtime services that back an {@code ExpressionResolverExtension}
+ * have had a chance to initialize. This makes it possible for expressions
+ * resolvable by an {@code ExpressionResolverExtension} to be used in the
+ * configured property value.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
+ *
+ * @deprecated Will be removed in the next major release
  */
+@Deprecated
 public interface SystemPropertyDeferredProcessor {
 
+    /**
+     *
+     */
     /**
      * Resolve and store any system properties that could not be resolved during
      * the normal handling of system properties.
      *
      * @param context the operation context
-     * @throws OperationFailedException if any properties could still not be resolved
      */
-    void processDeferredProperties(OperationContext context) throws OperationFailedException;
+    void processDeferredProperties(ExpressionResolver context);
 
     /** Key under which the {@code SystemPropertyDeferredProcessor} should be attached to the operation context. */
     OperationContext.AttachmentKey<SystemPropertyDeferredProcessor> ATTACHMENT_KEY = OperationContext.AttachmentKey.create(SystemPropertyDeferredProcessor.class);

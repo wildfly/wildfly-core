@@ -50,7 +50,6 @@ import org.jboss.as.controller.BootContext;
 import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.DelegatingResourceDefinition;
-import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.OperationStepHandler;
@@ -255,6 +254,7 @@ public final class ServerService extends AbstractControllerService {
 
         final CapabilityRegistry capabilityRegistry = configuration.getCapabilityRegistry();
         final RuntimeExpressionResolver expressionResolver = new RuntimeExpressionResolver();
+        configuration.getExtensionRegistry().setResolverExtensionRegistry(expressionResolver);
 
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(Services.JBOSS_SERVER_CONTROLLER);
         final boolean allowMCE = configuration.getServerEnvironment().isAllowModelControllerExecutor();
@@ -509,12 +509,6 @@ public final class ServerService extends AbstractControllerService {
         capabilityRegistry.registerCapability(
                 new RuntimeCapabilityRegistration(CONSOLE_AVAILABILITY_CAPABILITY, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
 
-        RuntimeCapability<ExpressionResolver.ResolverExtensionRegistry> extRegCap =
-                RuntimeCapability.Builder.of(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME, (ExpressionResolver.ResolverExtensionRegistry) expressionResolver).build();
-        capabilityRegistry.registerCapability(
-                new RuntimeCapabilityRegistration(extRegCap, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
-
-
         // Record the core capabilities with the root MRR so reads of it will show it as their provider
         // This also gets them recorded as 'possible capabilities' in the capability registry
         ManagementResourceRegistration rootRegistration = managementModel.getRootResourceRegistration();
@@ -524,7 +518,6 @@ public final class ServerService extends AbstractControllerService {
         rootRegistration.registerCapability(PROCESS_STATE_NOTIFIER_CAPABILITY);
         rootRegistration.registerCapability(EXTERNAL_MODULE_CAPABILITY);
         rootRegistration.registerCapability(CONSOLE_AVAILABILITY_CAPABILITY);
-        rootRegistration.registerCapability(extRegCap);
     }
 
     @Override

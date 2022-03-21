@@ -3701,6 +3701,9 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 493, value = "The attribute %s hasn't a valueType properly defined.")
     UnsupportedOperationException missingListAttributeValueType(String name);
 
+    @Message(id = 494, value = "Resolution of extension expression '%s' is not allowed at this point.")
+    ExpressionResolver.ExpressionResolutionServerException resolverExtensionExpressionsNotAllowed(String expression);
+
     @Message(id = NONE, value = "While constructing a mapping; %s; expected a mapping for merging, but found %s")
     String errorConstructingYAMLMapping(Mark mark, NodeId node);
 

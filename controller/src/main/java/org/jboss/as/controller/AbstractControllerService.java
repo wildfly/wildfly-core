@@ -66,7 +66,9 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
+import org.jboss.as.controller.extension.ResolverExtensionRegistry;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.controller.notification.NotificationSupport;
@@ -184,7 +186,10 @@ public abstract class AbstractControllerService implements Service<ModelControll
     /**
      * Name of a capability that extensions that provide {@link ExpressionResolverExtension} implementations
      * can use to register their extensions with the core {@link ExpressionResolver}.
+     *
+     * @deprecated Will be removed in an upcoming major version.
      */
+    @Deprecated
     protected static final String EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME =
             "org.wildfly.management.expression-resolver-extension-registry";
 
@@ -209,6 +214,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final BootErrorCollector bootErrorCollector;
     private final CapabilityRegistry capabilityRegistry;
     private final ConfigurationExtension configExtension;
+    private final RuntimeCapability<ResolverExtensionRegistry> extensionRegistryCapability;
 
     /**
      * Construct a new instance.
@@ -385,6 +391,13 @@ public abstract class AbstractControllerService implements Service<ModelControll
         this.processState = processState;
         this.prepareStep = prepareStep;
         this.expressionResolver = expressionResolver;
+        if (expressionResolver instanceof ResolverExtensionRegistry) {
+            this.extensionRegistryCapability =
+                    RuntimeCapability.Builder.of(EXPRESSION_RESOLVER_EXTENSION_REGISTRY_CAPABILITY_NAME,
+                            (ResolverExtensionRegistry) expressionResolver).build();
+        } else {
+            this.extensionRegistryCapability = null;
+        }
         this.auditLogger = auditLogger;
         this.authorizer = authorizer;
         this.securityIdentitySupplier = securityIdentitySupplier;
@@ -439,6 +452,11 @@ public abstract class AbstractControllerService implements Service<ModelControll
             final ServiceBuilder<?> notifyRegistrySB = target.addService(notifyRegistrySN);
             notifyRegistrySB.setInstance(new SimpleService(notifyRegistrySB.provides(notifyRegistrySN), controller.getNotificationRegistry()));
             notifyRegistrySB.install();
+        }
+        if (extensionRegistryCapability != null) {
+            capabilityRegistry.registerCapability(
+                    new RuntimeCapabilityRegistration(extensionRegistryCapability, CapabilityScope.GLOBAL, new RegistrationPoint(PathAddress.EMPTY_ADDRESS, null)));
+            rootResourceRegistration.registerCapability(extensionRegistryCapability);
         }
         capabilityRegistry.publish();  // These are visible immediately; no waiting for finishBoot
                                        // We publish even if we didn't register anything in case parent services did
