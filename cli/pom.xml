@@ -68,6 +68,9 @@
                                     <mainClass>org.jboss.as.cli.CommandLineMain</mainClass>
                                     <manifestEntries>
                                         <Multi-Release>true</Multi-Release>
+                                        <!-- Use sharable JPMS settings declared in the root pom -->
+                                        <Add-Exports>${embedding.jar.jpms.exports}</Add-Exports>
+                                        <Add-Opens>${embedding.jar.jpms.opens}</Add-Opens>
                                     </manifestEntries>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
