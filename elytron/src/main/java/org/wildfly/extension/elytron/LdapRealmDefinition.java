@@ -26,6 +26,7 @@ import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BASE64;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HEX;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.UTF_8;
+import static org.wildfly.extension.elytron._private.ElytronSubsystemMessages.ROOT_LOGGER;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -454,6 +455,10 @@ class LdapRealmDefinition extends SimpleResourceDefinition {
             final LdapSecurityRealmBuilder builder = LdapSecurityRealmBuilder.builder();
 
             if (DIRECT_VERIFICATION.resolveModelAttribute(context, model).asBoolean()) {
+                ModelNode identityMappingNode = IdentityMappingObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(context, model);
+                if (UserPasswordCredentialMappingObjectDefinition.OBJECT_DEFINITION.resolveModelAttribute(context, identityMappingNode).isDefined()) {
+                    ROOT_LOGGER.ldapRealmDirectVerificationAndUserPasswordMapper();
+                }
                 boolean allowBlankPassword = ALLOW_BLANK_PASSWORD.resolveModelAttribute(context, model).asBoolean();
                 builder.addDirectEvidenceVerification(allowBlankPassword);
             }
