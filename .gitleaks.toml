@@ -1,0 +1,32 @@
+# Gitleaks is a tool that detects potential leaks of secrets. This file defines an allowlist to avoid false positives.
+# The tool checks the commit history, some files that are not present anymore but contained example secrets has to be put in the allowlist as well
+[allowlist]
+  description = "Allowlist"
+  # ignore secrets present in the below test folders
+  paths = [
+	'''elytron\/src\/test\/resources\/org\/wildfly\/extension\/elytron''',
+	'''testsuite\/manualmode\/src\/test\/resources\/git-persistence''',
+	'''testsuite\/domain\/src\/test\/java\/org\/jboss\/as\/test\/integration\/domain''',
+  	# ignore this file
+  	'''^\.?gitleaks.toml$'''
+]
+  # ignore secrets from the below commits
+  commits = [
+	# all below commits contained language translations and LocalDescriptions properties files which contained string with the following format:
+	# "secret=Konfiguration", "secret=Configuration", "secret=Configuraci\\u00F3n", etc. These files are not present in the codebase anymore
+	'd1271fe64683bd9ecc4c0e4e03022d4f1bf49556',
+  	'c926f09a577712e002f1c31e06d2bfff4e7dc3a3',
+  	'bcd0b387f087c072978066eeec0c98cd9a17c8c3',
+  	'873d0a7898f4027a3d48cb1c0c57f69103536c9d',
+  	'd1cb7de2e65faabd1048e087f180dfa8ed1cf324',
+  	'f83d023cac5c2b780cea628f8ed35a601b7c55dc',
+  	'7e1ec6e99270ce21bbf4195bc3701feb2d88e33b',
+  ]
+  # ignore secrets that contain the below regexes
+  regexes = [
+  	# "somearbitrarycrazystringthatdoesnotmatter" and "someRandomWrongPass" were used in legacy and are not present anymore
+	'somearbitrarycrazystringthatdoesnotmatter',
+	'someRandomWrongPass',
+	# present in test class cli/src/test/java/org/jboss/as/cli/parsing/test/OperationParsingTestCase.java
+	'1234test'
+]
