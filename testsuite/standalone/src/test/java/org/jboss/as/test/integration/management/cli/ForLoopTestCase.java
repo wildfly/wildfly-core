@@ -15,7 +15,7 @@ limitations under the License.
  */
 package org.jboss.as.test.integration.management.cli;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.as.test.integration.management.base.AbstractCliTestBase;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;

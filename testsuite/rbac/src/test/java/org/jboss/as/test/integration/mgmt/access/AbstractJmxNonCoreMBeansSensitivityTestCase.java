@@ -32,7 +32,7 @@ import javax.management.JMRuntimeException;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jboss.as.test.integration.management.interfaces.JmxManagementInterface;
 import org.jboss.as.test.integration.management.rbac.RbacAdminCallbackHandler;
 import org.jboss.as.test.integration.management.rbac.RbacUtil;

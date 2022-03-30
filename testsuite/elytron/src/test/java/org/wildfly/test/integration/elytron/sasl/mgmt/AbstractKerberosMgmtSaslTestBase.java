@@ -54,7 +54,7 @@ import javax.security.sasl.SaslException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.apache.directory.api.ldap.model.constants.SupportedSaslMechanisms;
 import org.apache.directory.api.ldap.model.entry.DefaultEntry;
 import org.apache.directory.api.ldap.model.ldif.LdifEntry;
