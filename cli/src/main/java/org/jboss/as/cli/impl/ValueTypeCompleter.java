@@ -592,7 +592,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             // The user typed the start of a property name
             String nameChunk = null;
             if (last != null) {
-                if (!lastEnteredState.equals(EqualsState.ID)) {
+                if (!EqualsState.ID.equals(lastEnteredState)) {
                     if (last.value == null) {
                         nameChunk = last.name;
                     }
@@ -606,7 +606,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
             // On list separator, or when no property exists,
             // complete with the next item in the list or the next property
             // inside an Object
-            if (lastEnteredState.equals(ListItemSeparatorState.ID)
+            if (ListItemSeparatorState.ID.equals(lastEnteredState)
                     || last == null) {
                 return completeNewProperty(propType, visibility);
             }
@@ -615,7 +615,7 @@ public class ValueTypeCompleter implements CommandLineCompleter {
 
             // Are we completing after the equals?
             // If yes, complete with possible values.
-            if (lastEnteredState.equals(EqualsState.ID)) {
+            if (EqualsState.ID.equals(lastEnteredState)) {
                 // Wrong syntax, for example for a String value inside a list, user would type
                 // "[{role=<TAB>"
                 if (!isObject(propType)) {

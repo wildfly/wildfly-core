@@ -488,6 +488,9 @@ public abstract class ElytronUtil {
         if (sslContext != null) {
             String kmName = sslContext.get(Util.KEY_MANAGER).asString();
             ModelNode km = getChildResource(kmName, Util.KEY_MANAGER, context);
+            if (km == null) {
+                throw new IllegalArgumentException("The ServerSSLContext " + sslContextName + " references the KeyManager " + kmName + " that doesn't exist.");
+            }
             String ksName = km.get(Util.KEY_STORE).asString();
             KeyStore keyStore = new KeyStore(ksName, null, true);
             KeyManager keyManager = new KeyManager(kmName, keyStore, true);
