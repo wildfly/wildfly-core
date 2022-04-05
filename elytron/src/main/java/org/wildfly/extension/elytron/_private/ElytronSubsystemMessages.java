@@ -342,6 +342,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 46, value = "Provided path '%s' to JAAS configuration file does not exist.")
     StartException jaasFileDoesNotExist(final String path);
 
+    @LogMessage(level = WARN)
+    @Message(id = 47, value = "LDAP Realm is configured to use direct-verification and user-password-mapper which is invalid configuration.")
+    void ldapRealmDirectVerificationAndUserPasswordMapper();
+
     /*
      * Credential Store Section.
      */
