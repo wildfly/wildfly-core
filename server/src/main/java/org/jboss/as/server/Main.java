@@ -22,7 +22,7 @@
 
 package org.jboss.as.server;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GIT_MASTER_BRANCH;
 
 import java.io.File;
 import java.io.IOException;
@@ -146,7 +146,7 @@ public final class Main {
         final int argsLength = args.length;
         String serverConfig = null;
         String gitRepository = null;
-        String gitBranch = MASTER;
+        String gitBranch = GIT_MASTER_BRANCH;
         String gitAuthConfiguration = null;
         String supplementalConfiguration = null;
         RunningMode runningMode = RunningMode.NORMAL;
