@@ -626,6 +626,7 @@ public class ModelDescriptionConstants {
     public static final String WRITE = "write";
     public static final String WRITE_ATTRIBUTE_OPERATION = "write-attribute";
     public static final String XML_NAMESPACES = "xml-namespaces";
+    public static final String GIT_MASTER_BRANCH = "master";
 
     private ModelDescriptionConstants() {
     }
