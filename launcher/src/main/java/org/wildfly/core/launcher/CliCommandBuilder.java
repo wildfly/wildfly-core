@@ -47,6 +47,8 @@ import org.wildfly.core.launcher.logger.LauncherMessages;
 @SuppressWarnings("unused")
 public class CliCommandBuilder implements CommandBuilder {
 
+    private static Path cliClientJar = Paths.get("bin").resolve("client").resolve("jboss-cli-client.jar");
+
     enum CliArgument {
         CONNECT("--connect", "-c"),
         CONTROLLER("--controller", "controller"),
@@ -94,13 +96,17 @@ public class CliCommandBuilder implements CommandBuilder {
     private final Environment environment;
     private final Arguments javaOpts;
     private final Arguments cliArgs;
+    private final boolean modularLauncher;
 
-    private CliCommandBuilder(final Environment environment) {
+    private CliCommandBuilder(final Environment environment, boolean modularLauncher) {
         this.environment = environment;
+        this.modularLauncher = modularLauncher;
         javaOpts = new Arguments();
         cliArgs = new Arguments();
-        // Add the default logging.properties file
-        javaOpts.add("-Dlogging.configuration=file:" + environment.resolvePath("bin", "jboss-cli-logging.properties"));
+        if (modularLauncher) {
+            // Add the default logging.properties file
+            javaOpts.add("-Dlogging.configuration=file:" + environment.resolvePath("bin", "jboss-cli-logging.properties"));
+        }
     }
 
     /**
@@ -110,8 +116,8 @@ public class CliCommandBuilder implements CommandBuilder {
      *
      * @return a new builder
      */
-    public static CliCommandBuilder of(final Path wildflyHome) {
-        return new CliCommandBuilder(new Environment(wildflyHome));
+    public static CliCommandBuilder asModularLauncher(final Path wildflyHome) {
+        return new CliCommandBuilder(new Environment(wildflyHome), true);
     }
 
     /**
@@ -121,8 +127,34 @@ public class CliCommandBuilder implements CommandBuilder {
      *
      * @return a new builder
      */
-    public static CliCommandBuilder of(final String wildflyHome) {
-        return new CliCommandBuilder(new Environment(wildflyHome));
+    public static CliCommandBuilder asModularLauncher(final String wildflyHome) {
+        return new CliCommandBuilder(new Environment(wildflyHome), true);
+    }
+
+    /**
+     * Creates a command builder for a non-modular CLI instance launched from wildflyHome/bin/client/jboss-client.jar.
+     *
+     * @param wildflyHome the path to the WildFly home directory
+     *
+     * @return a new builder
+     */
+    public static CliCommandBuilder asJarLauncher(final Path wildflyHome) {
+        Environment environment = new Environment(wildflyHome);
+        Environment.validateJar(environment.getWildflyHome().resolve(cliClientJar));
+        return new CliCommandBuilder(environment, false);
+    }
+
+    /**
+     * Creates a command builder for a non-modular CLI instance launched from wildflyHome/bin/client/jboss-client.jar.
+     *
+     * @param wildflyHome the path to the WildFly home directory
+     *
+     * @return a new builder
+     */
+    public static CliCommandBuilder asJarLauncher(final String wildflyHome) {
+        Environment environment = new Environment(wildflyHome);
+        Environment.validateJar(environment.getWildflyHome().resolve(cliClientJar));
+        return new CliCommandBuilder(environment, false);
     }
 
     /**
@@ -617,21 +649,29 @@ public class CliCommandBuilder implements CommandBuilder {
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();
         cmd.addAll(getJavaOptions());
-        if (environment.getJvm().isModular()) {
-            cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
+        if (modularLauncher) {
+            if (environment.getJvm().isModular()) {
+                cmd.addAll(AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS);
+            }
         }
         if (environment.getJvm().enhancedSecurityManagerAvailable()) {
             cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
         cmd.add("-jar");
-        cmd.add(environment.getModuleJar().toString());
-        cmd.add("-mp");
-        cmd.add(getModulePaths());
-        cmd.add("org.jboss.as.cli");
-        cmd.add("-D" + Environment.HOME_DIR + "=" + environment.getWildflyHome());
+
+        if (modularLauncher) {
+            cmd.add(environment.getModuleJar().toString());
+            cmd.add("-mp");
+            cmd.add(getModulePaths());
+            cmd.add("org.jboss.as.cli");
+            cmd.add("-D" + Environment.HOME_DIR + "=" + environment.getWildflyHome());
+        } else {
+            cmd.add(environment.getWildflyHome().resolve(cliClientJar).toString());
+        }
 
         cmd.addAll(cliArgs.asList());
         return cmd;
+
     }
 
     @Override

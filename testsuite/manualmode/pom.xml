@@ -641,6 +641,7 @@
                                         <!-- no proper JBOSS_HOME dir -->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CliEmbedServerInProcessTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedServerTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.JbossCliClientJarJPMSSettingsTestCase</exclude>
                                         <!-- copy standalone.xml, stop/start...-->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIScriptSupportTestCase</exclude>
                                         <!-- remove some file after cleanup -->

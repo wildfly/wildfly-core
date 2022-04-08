@@ -241,18 +241,21 @@ class Environment {
         return result;
     }
 
-    static Path validateBootableJar(final Path bootableJar) {
-        if (bootableJar == null || Files.notExists(bootableJar)) {
-            throw LauncherMessages.MESSAGES.pathDoesNotExist(bootableJar);
+    static Path validateJar(final Path jarPath) {
+        if (jarPath == null || Files.notExists(jarPath)) {
+            throw LauncherMessages.MESSAGES.pathDoesNotExist(jarPath);
         }
-        if (Files.isDirectory(bootableJar)) {
-            throw LauncherMessages.MESSAGES.pathNotAFile(bootableJar);
+        if (Files.isDirectory(jarPath)) {
+            throw LauncherMessages.MESSAGES.pathNotAFile(jarPath);
         }
-        final Path result = bootableJar.toAbsolutePath().normalize();
+        final Path result = jarPath.toAbsolutePath().normalize();
         return result;
     }
 
-    static Path validateBootableJar(final String bootableJar) {
-        return validateBootableJar(Paths.get(bootableJar));
+    static Path validateJar(final String jarPath) {
+        if (jarPath == null) {
+            throw LauncherMessages.MESSAGES.pathDoesNotExist(null);
+        }
+        return validateJar(Paths.get(jarPath));
     }
 }

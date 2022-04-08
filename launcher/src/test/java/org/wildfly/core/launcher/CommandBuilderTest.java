@@ -199,7 +199,7 @@ public class CommandBuilderTest {
     @Test
     public void testCliBuilder() {
         // Set up a standalone command builder
-        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(WILDFLY_HOME)
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.asModularLauncher(WILDFLY_HOME)
                 .addJavaOption("-Djava.net.preferIPv4Stack=true")
                 .addJavaOption("-Djava.net.preferIPv4Stack=false");
 

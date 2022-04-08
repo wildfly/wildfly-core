@@ -40,6 +40,12 @@ import static org.junit.Assert.fail;
 public class CliProcessWrapper extends CliProcessBuilder {
 
     public CliProcessWrapper(){
+        super(true);
+        cliProcessWrapper = this;
+    }
+
+    public CliProcessWrapper(boolean modular){
+        super(modular);
         cliProcessWrapper = this;
     }
 
