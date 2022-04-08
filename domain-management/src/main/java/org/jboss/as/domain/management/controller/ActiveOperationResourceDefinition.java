@@ -31,9 +31,9 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -58,8 +58,7 @@ public class ActiveOperationResourceDefinition extends SimpleResourceDefinition 
     static final AttributeDefinition OPERATION_NAME =
             SimpleAttributeDefinitionBuilder.create(OP, ModelType.STRING).build();
     static final AttributeDefinition ADDRESS =
-            PrimitiveListAttributeDefinition.Builder.of(OP_ADDR, ModelType.PROPERTY)
-                    .build();
+            new SimpleMapAttributeDefinition.Builder(OP_ADDR, ModelType.STRING, false).build();
     private static final AttributeDefinition CALLER_THREAD =
             SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.CALLER_THREAD, ModelType.STRING).build();
     private static final AttributeDefinition ACCESS_MECHANISM =

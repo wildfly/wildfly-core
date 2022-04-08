@@ -278,7 +278,7 @@ class FileSystemDeploymentService implements DeploymentScanner, NotificationHand
         assert scheduledExecutor != null;
         assert deploymentDir != null;
 
-        this.resourceAddress = resourceAddress.toModelNode();
+        this.resourceAddress = resourceAddress.toModelNode().asObject();
         this.resourceAddress.protect();
         this.relativeTo = relativeTo;
         this.deploymentDir = deploymentDir;
