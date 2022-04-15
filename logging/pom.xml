@@ -199,12 +199,6 @@
             <artifactId>jboss-stdio</artifactId>
         </dependency>
 
-        <!-- Required for the json-formatter -->
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-        </dependency>
-
         <!-- Test dependencies -->
 
         <!-- Would be brought in transitively by wildfly-controller normally. Required for ParseUtils -->

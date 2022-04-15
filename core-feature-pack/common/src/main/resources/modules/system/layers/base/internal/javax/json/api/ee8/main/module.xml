@@ -28,15 +28,8 @@
     </properties>
 
     <resources>
-        <artifact name="${org.apache.geronimo.specs:geronimo-json_1.1_spec}"/>
-        <artifact name="${org.apache.johnzon:johnzon-core}"/>
+        <artifact name="${org.glassfish:jakarta.json}"/>
     </resources>
-
-    <provides>
-        <service name="javax.json.spi.JsonProvider">
-            <with-class name="org.apache.johnzon.core.JsonProviderImpl"></with-class>
-        </service>
-    </provides>
 
     <dependencies>
         <module name="java.logging"/>
