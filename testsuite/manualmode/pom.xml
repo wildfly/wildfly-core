@@ -266,6 +266,7 @@
                                 <module.path>${wildfly.home}/modules/</module.path>
                                 <jvm.args>${byteman.jvm.args} -Dorg.jboss.byteman.verbose=true -Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</jvm.args>
                                 <cli.jvm.args>${modular.jdk.args} -Dmaven.repo.local=${settings.localRepository}</cli.jvm.args>
+                                <cli.jvm.args.non-modular>-Dmaven.repo.local=${settings.localRepository}</cli.jvm.args.non-modular>
                                 <javax.net.ssl.trustStore>${basedir}/target/test-classes/ssl/jbossClient.truststore</javax.net.ssl.trustStore>
                                 <javax.net.ssl.keyStore>${basedir}/target/test-classes/ssl/jbossClient.keystore</javax.net.ssl.keyStore>
                                 <javax.net.ssl.trustStorePassword>clientPassword</javax.net.ssl.trustStorePassword>
@@ -641,6 +642,7 @@
                                         <!-- no proper JBOSS_HOME dir -->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CliEmbedServerInProcessTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIEmbedServerTestCase</exclude>
+                                        <exclude>org.jboss.as.test.manualmode.management.cli.JbossCliClientJarJPMSSettingsTestCase</exclude>
                                         <!-- copy standalone.xml, stop/start...-->
                                         <exclude>org.jboss.as.test.manualmode.management.cli.CLIScriptSupportTestCase</exclude>
                                         <!-- remove some file after cleanup -->

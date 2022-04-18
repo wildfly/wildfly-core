@@ -71,7 +71,7 @@ public class JBossCliXmlConfigTestCase {
             fail("jboss.dist system property is not set");
         }
 
-        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist);
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.asModularLauncher(jbossDist);
         commandBuilder.addJavaOptions("-Djboss.cli.config=" + f.toPath());
         commandBuilder.addJavaOptions(System.getProperty("cli.jvm.args", "").split("\\s+"));
         commandBuilder.addCliArgument("--command=help");
