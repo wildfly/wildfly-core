@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import static org.wildfly.core.launcher.AbstractCommandBuilder.DEFAULT_MODULAR_VM_ARGUMENTS;
 import static org.wildfly.core.launcher.AbstractCommandBuilder.DEFAULT_VM_ARGUMENTS;
 
 import org.wildfly.core.launcher.Arguments.Argument;
@@ -450,9 +449,6 @@ public class BootableJarCommandBuilder implements CommandBuilder {
     public List<String> buildArguments() {
         final List<String> cmd = new ArrayList<>();
         cmd.addAll(getJavaOptions());
-        if (jvm.isModular()) {
-            cmd.addAll(DEFAULT_MODULAR_VM_ARGUMENTS);
-        }
         if (jvm.enhancedSecurityManagerAvailable()) {
             cmd.add(AbstractCommandBuilder.SECURITY_MANAGER_PROP_WITH_ALLOW_VALUE);
         }
