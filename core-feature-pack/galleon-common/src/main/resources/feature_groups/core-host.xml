@@ -4,7 +4,7 @@
     <feature-group name="core-host-master"/>
 
     <feature spec="host">
-        <param name="host" value="master"/>
+        <param name="host" value="primary"/>
         <feature-group name="host-interfaces"/>
 
         <feature spec="host.server-config">

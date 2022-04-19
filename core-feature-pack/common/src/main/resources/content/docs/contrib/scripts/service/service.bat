@@ -118,7 +118,7 @@ set DISPLAYNAME=WildFly
 rem NO quotes around the description here !
 set DESCRIPTION=WildFly Application Server
 set CONTROLLER=localhost:9990
-set DC_HOST=master
+set DC_HOST=primary
 set IS_DOMAIN=false
 set LOGLEVEL=INFO
 set LOGPATH=
