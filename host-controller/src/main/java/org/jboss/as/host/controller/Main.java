@@ -379,8 +379,8 @@ public final class Main {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
                     value = fixPossibleIPv6URL(value);
-                    hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, value);
-                    WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, value);
+                    hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, value);
+                    WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, value);
                 } else if (arg.startsWith(CommandLineConstants.PRIMARY_PORT)) {
 
                     int idx = arg.indexOf('=');
@@ -394,8 +394,8 @@ public final class Main {
                         return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
                     }
 
-                    hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_PORT, value);
-                    WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_PORT, value);
+                    hostSystemProperties.put(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_PORT, value);
+                    WildFlySecurityManager.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_PORT, value);
                 } else if (CommandLineConstants.ADMIN_ONLY.equals(arg)) {
                     initialRunningMode = RunningMode.ADMIN_ONLY;
                 } else if (arg.startsWith(CommandLineConstants.SYS_PROP)) {

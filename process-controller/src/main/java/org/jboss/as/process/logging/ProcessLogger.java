@@ -441,7 +441,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.address to the given value. In a default slave Host Controller config, this is used to configure the address of the master Host Controller.")
+    @Message(id = Message.NONE, value = "Set system property jboss.domain.primary.address to the given value. In a default slave Host Controller config, this is used to configure the address of the master Host Controller.")
     String argMasterAddress();
 
     /**
@@ -449,7 +449,7 @@ public interface ProcessLogger extends BasicLogger {
      *
      * @return the message.
      */
-    @Message(id = Message.NONE, value = "Set system property jboss.domain.master.port to the given value. In a default slave Host Controller config, this is used to configure the port used for native management communication by the master Host Controller.")
+    @Message(id = Message.NONE, value = "Set system property jboss.domain.primary.port to the given value. In a default slave Host Controller config, this is used to configure the port used for native management communication by the master Host Controller.")
     String argMasterPort();
 
     /**
