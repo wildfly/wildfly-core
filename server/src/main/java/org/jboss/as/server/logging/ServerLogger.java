@@ -791,7 +791,7 @@ public interface ServerLogger extends BasicLogger {
 //                                                                                       String secureSocketBindingAttr);
 
     @Message(id = 115, value = "System property %s cannot be set via the xml configuration file or from a management client; " +
-            "it's value must be known at initial process start so it can only set from the commmand line")
+            "it's value must be known at initial process start so it can only set from the command line")
     OperationFailedException systemPropertyNotManageable(String propertyName);
 
 
