@@ -192,7 +192,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
-     * Sets the system property {@code jboss.domain.master.address}. In a default slave host configuration this is used
+     * Sets the system property {@code jboss.domain.primary.address}. In a default slave host configuration this is used
      * to configure the address of the master host controller. Ignores {@code null} values.
      * <p/>
      * <b>Note:</b> This option only works if the standard system property has not been removed from the remote host.
@@ -210,7 +210,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
-     * Sets the system property {@code jboss.domain.master.port}. In a default slave host configuration this is used
+     * Sets the system property {@code jboss.domain.primary.port}. In a default slave host configuration this is used
      * to configure the port of the master host controller. Ignores {@code null} values or values less than 0.
      * <p/>
      * <b>Note:</b> This option only works if the standard system property has not been removed from the remote host.
@@ -230,7 +230,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
     }
 
     /**
-     * Sets the system property {@code jboss.domain.master.port}. In a default slave host configuration this is used
+     * Sets the system property {@code jboss.domain.primary.port}. In a default slave host configuration this is used
      * to configure the port of the master host controller. Ignores values less than 0.
      * <p/>
      * <b>Note:</b> This option only works if the standard system property has not been removed from the remote host.

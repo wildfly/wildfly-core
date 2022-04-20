@@ -427,10 +427,10 @@ public class EmbeddedHostControllerFactory {
 
             // these are for compatibility with Main.determineEnvironment / HostControllerEnvironment
             // Once WFCORE-938 is resolved, --admin-only will allow a connection back to the DC for slaves,
-            // and support a method for setting the domain master address outside of -Djboss.domain.master.address
+            // and support a method for setting the domain master address outside of -Djboss.domain.primary.address
             // so we'll probably need a command line argument for this if its not specified as a system prop
-            if (SecurityActions.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, null) == null) {
-                SecurityActions.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_MASTER_ADDRESS, "127.0.0.1");
+            if (SecurityActions.getPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, null) == null) {
+                SecurityActions.setPropertyPrivileged(HostControllerEnvironment.JBOSS_DOMAIN_PRIMARY_ADDRESS, "127.0.0.1");
             }
             cmds.add(MODULE_PATH);
             cmds.add(SecurityActions.getPropertyPrivileged("module.path", ""));

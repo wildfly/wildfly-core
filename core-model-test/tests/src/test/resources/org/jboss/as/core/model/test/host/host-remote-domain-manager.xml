@@ -12,7 +12,7 @@
     </management>
 
     <domain-controller>
-       <remote host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9999}" protocol="remote" />
+       <remote host="${jboss.domain.primary.address:127.0.0.1}" port="${jboss.domain.primary.port:9999}" protocol="remote" />
     </domain-controller>
 
     <interfaces>

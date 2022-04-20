@@ -189,15 +189,15 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     public static final String JBOSS_DEFAULT_MULTICAST_ADDRESS = "jboss.default.multicast.address";
 
     /**
-     * The default system property used to store the master Host Controller's native management interface address
+     * The default system property used to store the primary Host Controller's native management interface address
      * from the command line.
      */
-    public static final String JBOSS_DOMAIN_MASTER_ADDRESS = "jboss.domain.master.address";
+    public static final String JBOSS_DOMAIN_PRIMARY_ADDRESS = "jboss.domain.primary.address";
 
     /**
-     * The default system property used to store the master Host Controller's native of the master port from the command line.
+     * The default system property used to store the primary Host Controller's native of the primary port from the command line.
      */
-    public static final String JBOSS_DOMAIN_MASTER_PORT = "jboss.domain.master.port";
+    public static final String JBOSS_DOMAIN_PRIMARY_PORT = "jboss.domain.primary.port";
 
     /**
      * The system property used to store the name of the default domain configuration file. If not set,

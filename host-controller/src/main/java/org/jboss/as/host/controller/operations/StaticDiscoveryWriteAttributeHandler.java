@@ -41,7 +41,7 @@ import org.jboss.dmr.Property;
  * discovery-options/static-discovery=primary:write-attribute(name=port,value=9999)
  * should be treated like the following
  * /host=slave/core-service=discovery-options:write-attribute(name=options,value=[{static-discovery={name=primary,
- * protocol="${jboss.domain.master.protocol:remote+http}",host="${jboss.domain.master.address}",port=9999}}]
+ * protocol="${jboss.domain.primary.protocol:remote+http}",host="${jboss.domain.primary.address}",port=9999}}]
  *
  * @author tmiyar
  *
