@@ -161,7 +161,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
         super.cleanup();
         IoUtils.safeClose(jmxConnector);
         jmxConnector = null;
-        kernelServices = kernelServices;
+        kernelServices = null;
     }
 
     @Test
