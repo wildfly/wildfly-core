@@ -120,8 +120,8 @@ public class CommandLineConstants {
 
     public static final String ADMIN_ONLY = "--admin-only";
 
-    public static final String MASTER_ADDRESS = "--master-address";
-    public static final String MASTER_PORT = "--master-port";
+    public static final String PRIMARY_ADDRESS = "--primary-address";
+    public static final String PRIMARY_PORT = "--primary-port";
 
     public static final String MODULE_PATH = "-mp";
     public static final String SECMGR = "-secmgr";

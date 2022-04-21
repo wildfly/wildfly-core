@@ -66,10 +66,10 @@ public class CommandLineArgumentUsageImpl extends CommandLineArgumentUsage {
         addArguments(CommandLineConstants.INTERPROCESS_HC_PORT + "=<port>");
         instructions.add(ProcessLogger.ROOT_LOGGER.argInterProcessHcPort());
 
-        addArguments(CommandLineConstants.MASTER_ADDRESS +"=<address>");
+        addArguments(CommandLineConstants.PRIMARY_ADDRESS +"=<address>");
         instructions.add(ProcessLogger.ROOT_LOGGER.argMasterAddress());
 
-        addArguments(CommandLineConstants.MASTER_PORT + "=<port>");
+        addArguments(CommandLineConstants.PRIMARY_PORT + "=<port>");
         instructions.add(ProcessLogger.ROOT_LOGGER.argMasterPort());
 
         addArguments(CommandLineConstants.READ_ONLY_DOMAIN_CONFIG + "=<config>");
