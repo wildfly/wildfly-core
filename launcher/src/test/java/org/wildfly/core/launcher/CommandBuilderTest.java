@@ -180,7 +180,7 @@ public class CommandBuilderTest {
 
         Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-b=0.0.0.0"));
 
-        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("--master-address=0.0.0.0"));
+        Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("--primary-address=0.0.0.0"));
 
         Assert.assertTrue("Missing -b=0.0.0.0", commands.contains("-bmanagement=0.0.0.0"));
 

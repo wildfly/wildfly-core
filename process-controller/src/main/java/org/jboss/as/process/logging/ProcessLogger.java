@@ -437,7 +437,7 @@ public interface ProcessLogger extends BasicLogger {
     String argAdminOnly();
 
     /**
-     * Instructions for the {@link CommandLineConstants#MASTER_ADDRESS} command line argument.
+     * Instructions for the {@link CommandLineConstants#PRIMARY_ADDRESS} command line argument.
      *
      * @return the message.
      */
@@ -445,7 +445,7 @@ public interface ProcessLogger extends BasicLogger {
     String argMasterAddress();
 
     /**
-     * Instructions for the {@link CommandLineConstants#MASTER_PORT} command line argument.
+     * Instructions for the {@link CommandLineConstants#PRIMARY_PORT} command line argument.
      *
      * @return the message.
      */

@@ -204,7 +204,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setMasterAddressHint(final String address) {
         if (address != null) {
-            setSingleServerArg("--master-address", address);
+            setSingleServerArg("--primary-address", address);
         }
         return this;
     }
@@ -242,7 +242,7 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
      */
     public DomainCommandBuilder setMasterPortHint(final int port) {
         if (port > -1) {
-            setSingleServerArg("--master-port", Integer.toString(port));
+            setSingleServerArg("--primary-port", Integer.toString(port));
         }
         return this;
     }
