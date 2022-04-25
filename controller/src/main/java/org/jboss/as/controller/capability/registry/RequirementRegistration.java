@@ -73,7 +73,9 @@ public class RequirementRegistration {
      */
     public RequirementRegistration(RuntimeRequirementRegistration toCopy) {
         this(toCopy.getRequiredName(), toCopy.getDependentId());
-        this.registrationPoints.putAll(((RequirementRegistration)toCopy).registrationPoints);
+        for (Map.Entry<PathAddress, List<RegistrationPoint>> entry : ((RequirementRegistration) toCopy).registrationPoints.entrySet()) {
+            this.registrationPoints.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
     }
 
     public String getRequiredName() {
