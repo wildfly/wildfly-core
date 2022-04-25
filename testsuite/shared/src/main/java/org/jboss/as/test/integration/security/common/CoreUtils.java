@@ -109,7 +109,7 @@ public class CoreUtils {
                 .setKeyAlgorithmName("RSA")
                 .setSignatureAlgorithmName("SHA256withRSA")
                 .setDn(principal)
-                .setKeySize(1024)
+                .setKeySize(2048)
                 .build();
         X509Certificate certificate = selfSignedX509CertificateAndSigningKey.getSelfSignedCertificate();
 
