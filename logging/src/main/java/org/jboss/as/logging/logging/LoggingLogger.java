@@ -25,7 +25,6 @@ package org.jboss.as.logging.logging;
 import static org.jboss.logging.Logger.Level.ERROR;
 import static org.jboss.logging.Logger.Level.WARN;
 
-import java.io.Closeable;
 import java.io.File;
 import java.util.Collection;
 import java.util.Set;
@@ -100,7 +99,7 @@ public interface LoggingLogger extends BasicLogger {
      */
     @LogMessage(level = ERROR)
     @Message(id = 6, value = "Failed to close resource %s")
-    void failedToCloseResource(@Cause Throwable cause, Closeable closeable);
+    void failedToCloseResource(@Cause Throwable cause, AutoCloseable closeable);
 
     /**
      * Logs a warning message indicating the attribute, represented by the {@code name} parameter, is not a
