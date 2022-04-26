@@ -18,6 +18,8 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.controller.security.CredentialReference.CREDENTIAL_REFERENCE;
 import static org.jboss.as.controller.security.CredentialReference.REJECT_CREDENTIAL_REFERENCE_WITH_BOTH_STORE_AND_CLEAR_TEXT;
+import static org.wildfly.extension.elytron.DistributedRealmDefinition.EMIT_EVENTS;
+import static org.wildfly.extension.elytron.DistributedRealmDefinition.IGNORE_UNAVAILABLE_REALMS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ALGORITHM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZATION_REALM;
@@ -25,6 +27,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
@@ -138,6 +141,13 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from15_1(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_15_1_0, ELYTRON_15_0_0);
+
+        builder.addChildResource(PathElement.pathElement(DISTRIBUTED_REALM))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, IGNORE_UNAVAILABLE_REALMS)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, EMIT_EVENTS)
+                .addRejectCheck(new RejectAttributeChecker.SimpleRejectAttributeChecker(ModelNode.TRUE), IGNORE_UNAVAILABLE_REALMS)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, EMIT_EVENTS);
 
         builder.addChildResource(PathElement.pathElement(ElytronDescriptionConstants.KEY_STORE))
         .addOperationTransformationOverride(ElytronDescriptionConstants.READ_ALIAS)
@@ -254,7 +264,7 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from11(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_11_0_0, ELYTRON_10_0_0);
-        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM));
+        builder.rejectChildResource(PathElement.pathElement(DISTRIBUTED_REALM));
         builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM));
     }
 

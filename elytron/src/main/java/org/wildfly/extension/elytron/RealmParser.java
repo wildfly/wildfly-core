@@ -118,6 +118,11 @@ class RealmParser {
     private final PersistentResourceXMLDescription distributedRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM), null)
             .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
             .build();
+    private final PersistentResourceXMLDescription distributedRealmParser_15_1 = builder(PathElement.pathElement(ElytronDescriptionConstants.DISTRIBUTED_REALM), null)
+            .addAttribute(DistributedRealmDefinition.REALMS, AttributeParser.STRING_LIST, AttributeMarshaller.STRING_LIST)
+            .addAttribute(DistributedRealmDefinition.IGNORE_UNAVAILABLE_REALMS)
+            .addAttribute(DistributedRealmDefinition.EMIT_EVENTS)
+            .build();
     private final PersistentResourceXMLDescription failoverRealmParser = builder(PathElement.pathElement(ElytronDescriptionConstants.FAILOVER_REALM), null)
             .addAttributes(FailoverRealmDefinition.ATTRIBUTES)
             .build();
@@ -228,7 +233,7 @@ class RealmParser {
             .addChild(filesystemRealmParser_15_1)
             .addChild(tokenRealmParser)
             .addChild(cachingRealmParser)
-            .addChild(distributedRealmParser)
+            .addChild(distributedRealmParser_15_1)
             .addChild(failoverRealmParser)
             .addChild(jaasRealmParser)
             .build();

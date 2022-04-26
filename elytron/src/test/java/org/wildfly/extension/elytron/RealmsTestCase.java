@@ -34,6 +34,7 @@ import org.wildfly.security.auth.realm.JaasSecurityRealm;
 import org.wildfly.security.auth.server.ModifiableRealmIdentity;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
 import org.wildfly.security.auth.server.RealmIdentity;
+import org.wildfly.security.auth.server.RealmUnavailableException;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
@@ -565,6 +566,46 @@ public class RealmsTestCase extends AbstractSubsystemBaseTest {
             Assert.fail(response.toJSONString(false));
         }
         Assert.assertTrue(response.asString().contains("JAAS configuration file does not exist."));
+    }
+
+    @Test
+    public void testDistributedRealm() throws Exception {
+        KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
+        if (!services.isSuccessfulBoot()) {
+            Assert.fail(services.getBootError().toString());
+        }
+
+        ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmOne");
+        SecurityRealm distributedRealm = (SecurityRealm) services.getContainer().getService(serviceName).getValue();
+        testDistributedRealmSuccessful(distributedRealm);
+
+        ServiceName serviceName2 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmTwo");
+        SecurityRealm distributedRealm2 = (SecurityRealm) services.getContainer().getService(serviceName2).getValue();
+        testDistributedRealmFailure(distributedRealm2);
+
+        ServiceName serviceName3 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmThree");
+        SecurityRealm distributedRealm3 = (SecurityRealm) services.getContainer().getService(serviceName3).getValue();
+        testDistributedRealmSuccessful(distributedRealm3);
+
+        ServiceName serviceName4 = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("DistributedRealmFour");
+        SecurityRealm distributedRealm4 = (SecurityRealm) services.getContainer().getService(serviceName4).getValue();
+        testDistributedRealmSuccessful(distributedRealm4);
+    }
+
+    private void testDistributedRealmSuccessful(SecurityRealm distributedRealm) throws RealmUnavailableException {
+        Assert.assertNotNull(distributedRealm);
+
+        RealmIdentity identity = distributedRealm.getRealmIdentity(fromName("firstUser"));
+        Assert.assertTrue(identity.exists());
+        identity.dispose();
+    }
+
+    private void testDistributedRealmFailure(SecurityRealm distributedRealm) throws RealmUnavailableException {
+        Assert.assertNotNull(distributedRealm);
+
+        Assert.assertThrows(RealmUnavailableException.class, () -> {
+            distributedRealm.getRealmIdentity(fromName("firstUser"));
+        });
     }
 
     static void testModifiability(ModifiableSecurityRealm securityRealm) throws Exception {

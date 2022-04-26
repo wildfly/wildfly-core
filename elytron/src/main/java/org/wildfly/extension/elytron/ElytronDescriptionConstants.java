@@ -253,6 +253,7 @@ interface ElytronDescriptionConstants {
     String IDENTITY = "identity";
     String IDENTITY_MAPPING = "identity-mapping";
     String IDENTITY_REALM = "identity-realm";
+    String IGNORE_UNAVAILABLE_REALMS = "ignore-unavailable-realms";
     String IMPLEMENTATION = "implementation";
     String IMPLEMENTATION_PROPERTIES = "implementation-properties";
     String IMPORT_CERTIFICATE = "import-certificate";

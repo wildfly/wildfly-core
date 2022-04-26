@@ -114,7 +114,7 @@
         <token-realm name="OAuth2Realm" principal-claim="sub">
             <oauth2-introspection client-id="${exp.id:a}" client-secret="${exp.secret:b}" introspection-url="${exp.url:https://localhost/token/introspect}" host-name-verification-policy="${exp.host:host}"/>
         </token-realm>
-        <distributed-realm name="DistributedRealm" realms="FileRealm PropRealm"/>
+        <distributed-realm name="DistributedRealm" realms="FileRealm PropRealm" ignore-unavailable-realms="${exp.ignore:true}" emit-events="${exp.emit:true}"/>
         <failover-realm name="FailoverRealm" delegate-realm="JdbcRealm" failover-realm="PropRealm" emit-events="${exp.emit:true}"/>
     </security-realms>
     <credential-security-factories>
