@@ -33,6 +33,7 @@ import java.util.LinkedList;
 
 import org.apache.http.HttpStatus;
 import org.jboss.as.controller.client.helpers.Operations;
+import org.jboss.as.test.shared.AssumeTestGroupUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.junit.AfterClass;
@@ -52,6 +53,7 @@ public class JBossLog4jXmlTestCase extends DeploymentBaseTestCase {
 
     @BeforeClass
     public static void deploy() throws Exception {
+        AssumeTestGroupUtil.assumeSecurityManagerDisabled();
         deploy(createDeployment("jboss-log4j.xml"), DEPLOYMENT_NAME);
     }
 
