@@ -32,7 +32,7 @@
         <module name="java.desktop"/>
         <module name="java.logging"/>
         <module name="java.xml"/>
-        <module name="javax.json.api"/>
+        <module name="internal.javax.json.api.ee8"/>
         <module name="org.jboss.modules"/>
         <module name="org.wildfly.common"/>
     </dependencies>
