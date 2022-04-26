@@ -183,6 +183,8 @@ public enum Phase {
     }
 
     // STRUCTURE
+    // This is 0 as it's a cleanup for logging resources during undeploy and needs to be run last
+    public static final int STRUCTURE_LOGGING_CLEANUP                   = 0x0000;
     public static final int STRUCTURE_EXPLODED_MOUNT                    = 0x0100;
     public static final int STRUCTURE_MOUNT                             = 0x0200;
     public static final int STRUCTURE_DEPLOYMENT_OVERLAY                = 0x0280;
