@@ -34,6 +34,8 @@ public interface ModuleConfig extends XMLElementWriter<ModuleConfig> {
 
     String getSchemaVersion();
 
+    void setSchemaVersion(String schemaVersion);
+
     String getModuleName();
 
     String getSlot();

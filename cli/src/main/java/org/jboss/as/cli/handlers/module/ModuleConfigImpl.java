@@ -48,7 +48,8 @@ public class ModuleConfigImpl implements ModuleConfig {
     static final String EXPORT = "export";
     static final String MAIN_CLASS = "main-class";
     static final String MODULE = "module";
-    static final String MODULE_NS = "urn:jboss:module:1.1";
+    static final String MODULE_NS_WITH_SLOT = "urn:jboss:module:1.5";
+    static final String MODULE_NS_CURRENT   = "urn:jboss:module:1.9";
     static final String NAME = "name";
     static final String SLOT = "slot";
     static final String PATH = "path";
@@ -58,8 +59,7 @@ public class ModuleConfigImpl implements ModuleConfig {
     static final String RESOURCE_ROOT = "resource-root";
     static final String VALUE = "value";
 
-
-    private String schemaVersion = MODULE_NS;
+    private String schemaVersion = MODULE_NS_CURRENT;
 
     private String moduleName;
     private String mainClass;
@@ -79,6 +79,11 @@ public class ModuleConfigImpl implements ModuleConfig {
     @Override
     public String getSchemaVersion() {
         return schemaVersion;
+    }
+
+    @Override
+    public void setSchemaVersion(String schemaVersion) {
+        this.schemaVersion = schemaVersion;
     }
 
     /* (non-Javadoc)
@@ -164,7 +169,7 @@ public class ModuleConfigImpl implements ModuleConfig {
 
         writer.writeStartDocument();
         writer.writeStartElement(MODULE);
-        writer.writeDefaultNamespace(MODULE_NS);
+        writer.writeDefaultNamespace(schemaVersion);
 
         if(moduleName == null) {
             throw new XMLStreamException("Module name is missing.");

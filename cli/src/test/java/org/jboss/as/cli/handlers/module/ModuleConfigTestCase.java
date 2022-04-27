@@ -46,7 +46,8 @@ import org.xml.sax.SAXParseException;
  */
 public class ModuleConfigTestCase {
 
-    private static final String MODULE_1_1_SCHEMA = "/schema/module-1_1.xsd";
+    private static final String MODULE_1_5_SCHEMA = "/schema/module-1_5.xsd";
+    private static final String MODULE_1_9_SCHEMA = "/schema/module-1_9.xsd";
 
     static final ErrorHandler ERROR_HANDLER = new ErrorHandler() {
         @Override
@@ -65,16 +66,40 @@ public class ModuleConfigTestCase {
         }
     };
 
-    @Test
-    public void validateGeneratedModuleXml() throws Exception {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        // Create a dummy module
-        final ModuleConfigImpl moduleConfig = new ModuleConfigImpl("org.jboss.as.cli.test.module");
+    private ModuleConfigImpl createDummyModule(String moduleName) {
+        ModuleConfigImpl moduleConfig = new ModuleConfigImpl(moduleName);
         moduleConfig.setMainClass("org.jboss.as.cli.test.Main");
         moduleConfig.addDependency(new ModuleDependency("org.jboss.logging"));
         moduleConfig.addDependency(new ModuleDependency("org.jboss.foo", true));
         moduleConfig.addResource(new ResourceRoot("fake.jar"));
         moduleConfig.setProperty("test.property", "value");
+        return moduleConfig;
+    }
+
+    @Test
+    public void validateGeneratedModuleXml() throws Exception {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // Create a dummy module
+        final ModuleConfigImpl moduleConfig = createDummyModule("org.jboss.as.cli.test.module");
+
+        final FormattingXMLStreamWriter writer = new FormattingXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(out));
+
+        try {
+            moduleConfig.writeContent(writer, moduleConfig);
+            writer.flush();
+        } finally {
+            writer.close();
+        }
+
+        validateXmlSchema(getClass().getResource(MODULE_1_9_SCHEMA), new ByteArrayInputStream(out.toByteArray()));
+    }
+
+    @Test
+    public void validateOldGeneratedModuleXml() throws Exception {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // Create a dummy module
+        final ModuleConfigImpl moduleConfig = createDummyModule("org.jboss.as.cli.test.oldmodule");
+        moduleConfig.setSchemaVersion(ModuleConfigImpl.MODULE_NS_WITH_SLOT);
         moduleConfig.setSlot("other");
 
         final FormattingXMLStreamWriter writer = new FormattingXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(out));
@@ -86,7 +111,7 @@ public class ModuleConfigTestCase {
             writer.close();
         }
 
-        validateXmlSchema(getClass().getResource(MODULE_1_1_SCHEMA), new ByteArrayInputStream(out.toByteArray()));
+        validateXmlSchema(getClass().getResource(MODULE_1_5_SCHEMA), new ByteArrayInputStream(out.toByteArray()));
     }
 
     private void validateXmlSchema(final URL schemaUrl, final InputStream data) throws IOException, SAXException {

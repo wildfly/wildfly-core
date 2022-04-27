@@ -49,7 +49,7 @@ ARGUMENTS
  --name          - (required) the name of the module to be added or removed.
                    NOTE: slot is not a part of the module name.
 
- --slot          - (optional) specifies a slot which should be created or
+ --slot          - (deprecated, optional) specifies a slot which should be created or
                    removed. If this argument is not specified, "main" slot is
                    assumed.
 

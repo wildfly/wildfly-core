@@ -1095,6 +1095,7 @@ public class CommandContextImpl implements CommandContext, ModelControllerClient
         print(message, true, true);
     }
 
+    @Override
     public void printLine(String message, String outcome) {
         if (isColorOutput()) {
             message = colorizeMessage(message, outcome);

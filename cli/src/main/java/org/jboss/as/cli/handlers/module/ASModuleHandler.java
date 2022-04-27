@@ -65,9 +65,12 @@ import org.jboss.as.cli.operation.ParsedCommandLine;
 import org.jboss.as.cli.parsing.ExpressionBaseState;
 import org.jboss.as.cli.parsing.ParsingState;
 import org.jboss.as.cli.parsing.WordCharacterHandler;
+import org.jboss.modules.xml.MXParser;
 import org.jboss.staxmapper.FormattingXMLStreamWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.wildfly.security.manager.WildFlySecurityManager;
+
+import static org.jboss.modules.xml.XmlPullParser.FEATURE_PROCESS_NAMESPACES;
 
 /**
  *
@@ -135,6 +138,7 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
     private final ArgumentWithValue moduleRootDir;
     private final ArgumentWithoutValue allowNonExistentResources;
     private File modulesDir;
+    private String detectedSchemaVersion;
 
     public ASModuleHandler(CommandContext ctx) {
         super("module", false);
@@ -486,6 +490,11 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
                 config.setMainClass(mainCls);
             }
 
+            final String schema = getSchemaVersion(ctx,slotVal != null);
+            if (schema != null) {
+                config.setSchemaVersion(schema);
+            }
+
             FileOutputStream fos = null;
             final File moduleFile = new File(moduleDir, "module.xml");
             try {
@@ -707,4 +716,38 @@ public class ASModuleHandler extends CommandHandlerWithHelp {
         }
     }
 
+    private String getSchemaVersion(CommandContext ctx, boolean hasSlot) {
+        if (detectedSchemaVersion == null) {
+            MXParser parser = new MXParser();
+            final File wfCommonModule = new File(modulesDir, "system.layers.base.org.wildfly.common.main.".replace('.', File.separatorChar) + "module.xml");
+            try {
+                parser.setFeature(FEATURE_PROCESS_NAMESPACES, true);
+                parser.setInput(new FileInputStream(wfCommonModule), null);
+                parser.nextTag();
+            } catch (Exception ignore) {
+            }
+            detectedSchemaVersion = parser.getNamespace();
+        }
+
+        if (hasSlot && detectedSchemaVersion != null) {
+            String[] version = shortSchemaVersion(detectedSchemaVersion).split("\\.");
+            int v1 = Integer.parseInt(version[0]);
+            int v2 = Integer.parseInt(version[1]);
+
+            // if user specified "--slot" and schema version is >= 1.6 warn the user and downgrade to 1.5
+            if (v1 > 1 || v2 > 5) {
+                ctx.printLine("The --slot parameter is deprecated, its use requires an older version of JBoss Module and should be avoided"
+                        +" (detected version " + shortSchemaVersion(detectedSchemaVersion) + ", downgraded to " + shortSchemaVersion(ModuleConfigImpl.MODULE_NS_WITH_SLOT) + ")","warning");
+                return ModuleConfigImpl.MODULE_NS_WITH_SLOT;
+            }
+        } else if (detectedSchemaVersion == null) {
+            return ModuleConfigImpl.MODULE_NS_WITH_SLOT;
+        }
+
+        return detectedSchemaVersion;
+    }
+
+    private String shortSchemaVersion(String schemaVersion) {
+        return schemaVersion.substring(schemaVersion.lastIndexOf(':') + 1);
+    }
 }

@@ -86,6 +86,17 @@ public interface CommandContext {
     void printLine(String message);
 
     /**
+     * Prints a string to the CLI's output. Terminates the message by writing
+     * the line separator string.
+     *
+     * @param message the message to print
+     * @param outcome the outcome of the message ("error", "warning", etc.)
+     */
+    default void printLine(String message, String outcome) {
+        printLine(message);
+    }
+
+    /**
      * Prints a ModelNode according to the current configuration.
      *
      * @param node The ModelNode to print.
