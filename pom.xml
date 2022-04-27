@@ -195,7 +195,7 @@
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.7.0</version.org.apache.sshd>
-        <version.org.bouncycastle>1.70</version.org.bouncycastle>
+        <version.org.bouncycastle>1.71</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
@@ -430,6 +430,11 @@
                                             <exclude>xalan:serializer</exclude>
                                             <exclude>xalan:xalan</exclude>
                                             <exclude>xerces:xercesImpl</exclude>
+                                            <!-- replaced by org.bouncycastle:*-jdk18on -->
+                                            <exclude>org.bouncycastle:bcpg-jdk15on</exclude>
+                                            <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
+                                            <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                                            <exclude>org.bouncycastle:bcutil-jdk15on</exclude>
                                             <exclude>org.jboss:jboss-common-core</exclude>
                                             <exclude>org.jboss.logging:jboss-logging-generator</exclude>
                                             <exclude>org.jboss.logging:jboss-logging-log4j</exclude>
@@ -1279,7 +1284,28 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcmail-jdk15on</artifactId>
+                <artifactId>bcmail-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcutil-jdk18on</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcjmail-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpg-jdk18on</artifactId>
+                <version>${version.org.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${version.org.bouncycastle}</version>
                 <exclusions>
                     <exclusion>
@@ -1290,33 +1316,12 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcjmail-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpg-jdk15on</artifactId>
-                <version>${version.org.bouncycastle}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${version.org.bouncycastle}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcutil-jdk15on</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${version.org.bouncycastle}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcutil-jdk15on</artifactId>
+                <artifactId>bcutil-jdk18on</artifactId>
                 <version>${version.org.bouncycastle}</version>
             </dependency>
 

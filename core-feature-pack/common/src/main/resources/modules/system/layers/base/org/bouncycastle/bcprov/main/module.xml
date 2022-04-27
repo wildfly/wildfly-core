@@ -26,7 +26,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.bouncycastle:bcprov-jdk15on}"/>
+        <artifact name="${org.bouncycastle:bcprov-jdk18on}"/>
     </resources>
     <provides>
         <service name="java.security.Provider">
