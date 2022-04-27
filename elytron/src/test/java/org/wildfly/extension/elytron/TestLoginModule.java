@@ -18,7 +18,10 @@
 
 package org.wildfly.extension.elytron;
 
-import org.wildfly.security.auth.principal.NamePrincipal;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
@@ -28,10 +31,8 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.wildfly.security.auth.principal.NamePrincipal;
 
 public class TestLoginModule implements LoginModule {
     private final Map<String, char[]> usersMap = new HashMap<>();

@@ -17,6 +17,10 @@
  */
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
+import static org.wildfly.security.authz.RoleDecoder.KEY_SOURCE_ADDRESS;
+
 import java.io.FilePermission;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -61,10 +65,6 @@ import org.wildfly.security.x500.cert.SubjectAlternativeNamesExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 import mockit.integration.junit4.JMockit;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.wildfly.security.authz.RoleDecoder.KEY_SOURCE_ADDRESS;
 
 
 /**

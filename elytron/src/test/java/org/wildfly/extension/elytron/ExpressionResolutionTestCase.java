@@ -41,7 +41,6 @@ import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.security.CredentialReference;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -58,7 +57,7 @@ import org.wildfly.security.encryption.SecretKeyUtil;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ExpressionResolutionTestCase extends AbstractSubsystemBaseTest {
+public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTest {
 
     private static final Provider PROVIDER = new WildFlyElytronCredentialStoreProvider();
 

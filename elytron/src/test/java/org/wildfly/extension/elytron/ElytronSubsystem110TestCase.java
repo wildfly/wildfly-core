@@ -20,13 +20,11 @@ package org.wildfly.extension.elytron;
 
 import java.io.IOException;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-
 /**
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem110TestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem110TestCase extends AbstractElytronSubsystemBaseTest {
 
     public ElytronSubsystem110TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());

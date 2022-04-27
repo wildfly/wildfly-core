@@ -18,14 +18,12 @@ package org.wildfly.extension.elytron;
 
 import java.io.IOException;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-
 /**
  * Tests of use of the wildfly-elytron_1_2.xsd.
  *
  * @author Brian Stansberry
  */
-public class ElytronSubsystem1_2TestCase extends AbstractSubsystemBaseTest {
+public class ElytronSubsystem1_2TestCase extends AbstractElytronSubsystemBaseTest {
 
     public ElytronSubsystem1_2TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());

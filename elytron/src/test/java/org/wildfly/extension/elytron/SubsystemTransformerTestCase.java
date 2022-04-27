@@ -22,11 +22,10 @@ import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_2_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_3_0;
 import static org.jboss.as.model.test.ModelTestControllerVersion.EAP_7_4_0;
 import static org.junit.Assert.assertTrue;
-
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.DISTRIBUTED_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FAILOVER_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AGGREGATE_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUST_MANAGER;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.model.test.FailedOperationTransformationConfig;
 import org.jboss.as.model.test.ModelTestControllerVersion;
 import org.jboss.as.model.test.ModelTestUtils;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
@@ -54,7 +52,7 @@ import org.junit.Test;
  * @author Brian Stansberry
  * @author Tomaz Cerar
  */
-public class SubsystemTransformerTestCase extends AbstractSubsystemBaseTest {
+public class SubsystemTransformerTestCase extends AbstractElytronSubsystemBaseTest {
 
     private static final PathAddress SUBSYSTEM_ADDRESS = PathAddress.pathAddress(ModelDescriptionConstants.SUBSYSTEM, ElytronExtension.SUBSYSTEM_NAME);
 

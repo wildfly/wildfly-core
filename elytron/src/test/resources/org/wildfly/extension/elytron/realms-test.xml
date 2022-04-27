@@ -69,7 +69,7 @@
         </token-realm>
 
         <jaas-realm name="myJaasRealm"  entry="${jaas.realm.login.context.entry:Entry1}" >
-            <file path="${path.to.jaas.config.file:src/test/resources/org/wildfly/extension/elytron/jaas-login.config}"/>
+            <file path="${path.to.jaas.config.file:target/test-classes/org/wildfly/extension/elytron/jaas-login.config}"/>
         </jaas-realm>
 
     </security-realms>
