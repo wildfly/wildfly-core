@@ -28,10 +28,10 @@
         <version>19.0.0.Beta8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>wildfly-core-jakartaee9</artifactId>
+    <artifactId>wildfly-core-jakartaee</artifactId>
 
-    <name>WildFly: Jakarta EE 9</name>
-    <description>Parent for EE 9 related modules</description>
+    <name>WildFly: Jakarta EE</name>
+    <description>Parent for EE transformed modules</description>
 
     <packaging>pom</packaging>
 

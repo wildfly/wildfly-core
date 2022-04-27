@@ -267,7 +267,7 @@
         <module>discovery</module>
         <module>domain-http</module>
         <module>domain-management</module>
-        <module>jakartaee9</module>
+        <module>jakartaee</module>
         <module>elytron</module>
         <module>elytron-tool-wrapper</module>
         <module>embedded</module>
