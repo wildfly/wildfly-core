@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-testsuite</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>19.0.0.Beta8-SNAPSHOT</version>
+        <version>19.0.0.Beta8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
