@@ -285,8 +285,8 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
                 ModuleRootMarker.mark(additionalResourceRoot);
             }
         }
-        for (final String classFileTransformer : rootDeploymentSpecification.getClassFileTransformers()) {
-            moduleSpec.addClassFileTransformer(classFileTransformer);
+        for (final String classTransformer : rootDeploymentSpecification.getClassTransformers()) {
+            moduleSpec.addClassTransformer(classTransformer);
         }
         // handle annotations
         for (final ModuleIdentifier dependency : rootDeploymentSpecification.getAnnotationModules()) {

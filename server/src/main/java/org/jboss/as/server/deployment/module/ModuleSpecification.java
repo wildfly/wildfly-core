@@ -73,7 +73,7 @@ public class ModuleSpecification extends SimpleAttachable {
     /**
      * The class transformers
      */
-    private final List<String> classFileTransformers = new ArrayList<String>();
+    private final List<String> classTransformers = new ArrayList<String>();
 
     private volatile List<ModuleDependency> allDependencies = null;
 
@@ -230,12 +230,12 @@ public class ModuleSpecification extends SimpleAttachable {
         return Collections.unmodifiableList(resourceLoaders);
     }
 
-    public void addClassFileTransformer(final String classFileTransformer) {
-        this.classFileTransformers.add(classFileTransformer);
+    public void addClassTransformer(final String classTransformer) {
+        this.classTransformers.add(classTransformer);
     }
 
-    public List<String> getClassFileTransformers() {
-        return Collections.unmodifiableList(classFileTransformers);
+    public List<String> getClassTransformers() {
+        return Collections.unmodifiableList(classTransformers);
     }
 
     public boolean isSubDeploymentModulesIsolated() {

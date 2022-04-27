@@ -23,9 +23,8 @@
 package org.jboss.as.server.deployment.module;
 
 import org.jboss.as.server.deployment.AttachmentKey;
-
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
+import org.jboss.modules.ClassTransformer;
+import java.nio.ByteBuffer;
 import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,19 +32,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author Marius Bogoevici
  */
-public class DelegatingClassFileTransformer implements ClassFileTransformer {
+public class DelegatingClassTransformer implements ClassTransformer {
 
-    private final List<ClassFileTransformer> delegateTransformers = new CopyOnWriteArrayList<ClassFileTransformer>();
+    private final List<ClassTransformer> delegateTransformers = new CopyOnWriteArrayList<ClassTransformer>();
 
-    public static final AttachmentKey<DelegatingClassFileTransformer> ATTACHMENT_KEY = AttachmentKey.create(DelegatingClassFileTransformer.class);
+    public static final AttachmentKey<DelegatingClassTransformer> ATTACHMENT_KEY = AttachmentKey.create(DelegatingClassTransformer.class);
 
     private volatile boolean active = false;
 
-    public DelegatingClassFileTransformer() {
+    public DelegatingClassTransformer() {
     }
 
-    public void addTransformer(ClassFileTransformer classFileTransformer) {
-        delegateTransformers.add(classFileTransformer);
+    public void addTransformer(ClassTransformer classTransformer) {
+        delegateTransformers.add(classTransformer);
     }
 
     public void setActive(boolean active) {
@@ -53,11 +52,11 @@ public class DelegatingClassFileTransformer implements ClassFileTransformer {
     }
 
     @Override
-    public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] originalBuffer) throws IllegalClassFormatException {
-        byte[] transformedBuffer = originalBuffer;
+    public ByteBuffer transform(ClassLoader loader, String className, ProtectionDomain protectionDomain, ByteBuffer originalBuffer) throws IllegalArgumentException {
+        ByteBuffer transformedBuffer = originalBuffer;
         if (active) {
-            for (ClassFileTransformer transformer : delegateTransformers) {
-                byte[] result = transformer.transform(loader, className, classBeingRedefined, protectionDomain, transformedBuffer);
+            for (ClassTransformer transformer : delegateTransformers) {
+                ByteBuffer result = transformer.transform(loader, className, protectionDomain, transformedBuffer);
                 if (result != null) {
                     transformedBuffer = result;
                 }
@@ -65,5 +64,4 @@ public class DelegatingClassFileTransformer implements ClassFileTransformer {
         }
         return transformedBuffer;
     }
-
 }

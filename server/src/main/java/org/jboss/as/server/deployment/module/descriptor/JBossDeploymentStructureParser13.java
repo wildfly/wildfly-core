@@ -928,7 +928,7 @@ public class JBossDeploymentStructureParser13 implements XMLElementReader<ParseR
                 case XMLStreamConstants.START_ELEMENT: {
                     switch (Element.of(reader.getName())) {
                         case TRANSFORMER:
-                            parseTransformer(reader, moduleSpec.getClassFileTransformers());
+                            parseTransformer(reader, moduleSpec.getClassTransformers());
                             break;
                         default:
                             throw unexpectedContent(reader);
