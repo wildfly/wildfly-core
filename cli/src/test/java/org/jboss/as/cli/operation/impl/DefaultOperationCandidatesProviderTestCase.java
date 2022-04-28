@@ -35,6 +35,8 @@ import org.jboss.dmr.Property;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 
@@ -213,7 +215,7 @@ public class DefaultOperationCandidatesProviderTestCase {
                     = DefaultOperationCandidatesProvider.
                     getProperty("http-upgrade",
                             ModelNode.fromString(nested_content));
-            assertFalse("Invalid property " + p, p == null);
+            assertNotNull("Invalid property " + p, p);
         }
 
         {
@@ -221,7 +223,7 @@ public class DefaultOperationCandidatesProviderTestCase {
                     = DefaultOperationCandidatesProvider.
                     getProperty("http-upgrade.sasl-authentication-factory",
                             ModelNode.fromString(nested_content));
-            assertFalse("Invalid property " + p, p == null);
+            assertNotNull("Invalid property " + p, p);
         }
 
         {
@@ -229,7 +231,7 @@ public class DefaultOperationCandidatesProviderTestCase {
                     = DefaultOperationCandidatesProvider.
                     getProperty("http-upgrade[190].sasl-authentication-factory",
                             ModelNode.fromString(nested_content));
-            assertFalse("Invalid property " + p, p == null);
+            assertNotNull("Invalid property " + p, p);
         }
 
         {
@@ -237,7 +239,7 @@ public class DefaultOperationCandidatesProviderTestCase {
                     = DefaultOperationCandidatesProvider.
                     getProperty("http-downgrade",
                             ModelNode.fromString(nested_content));
-            assertEquals("Invalid property " + p, p, null);
+            assertNull("Invalid property " + p, p);
         }
 
         {
@@ -245,7 +247,7 @@ public class DefaultOperationCandidatesProviderTestCase {
                     = DefaultOperationCandidatesProvider.
                     getProperty("http-upgrade.sasl-authentication-f",
                             ModelNode.fromString(nested_content));
-            assertEquals("Invalid property " + p, p, null);
+            assertNull("Invalid property " + p, p);
         }
     }
 }

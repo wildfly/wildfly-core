@@ -129,7 +129,7 @@ public class VariablesTestCase {
     public void testOperationPropertyName() throws Exception {
         final ParsedCommandLine parsed = parse(":write-attribute($" + OP_PROP_VAR_NAME + "=test)");
         assertEquals("write-attribute", parsed.getOperationName());
-        assertEquals(parsed.getPropertyValue(OP_PROP_VAR_VALUE), "test");
+        assertEquals("test", parsed.getPropertyValue(OP_PROP_VAR_VALUE));
     }
 
     @Test
@@ -174,7 +174,7 @@ public class VariablesTestCase {
     public void testCommandArgumentName() throws Exception {
         final ParsedCommandLine parsed = parse("command-name --$" + OP_PROP_VAR_NAME + "=test");
         assertEquals("command-name", parsed.getOperationName());
-        assertEquals(parsed.getPropertyValue("--" + OP_PROP_VAR_VALUE), "test");
+        assertEquals("test", parsed.getPropertyValue("--" + OP_PROP_VAR_VALUE));
     }
 
     @Test
@@ -182,7 +182,7 @@ public class VariablesTestCase {
         final ParsedCommandLine parsed = parse("command-name --$" + OP_PROP_VAR_NAME + "=$" + OP_PROP_VAR_NAME);
         assertEquals("command-name", parsed.getOperationName());
         // variables unlike system properties are always resolved
-        assertEquals(parsed.getPropertyValue("--" + OP_PROP_VAR_VALUE), OP_PROP_VAR_VALUE);
+        assertEquals(OP_PROP_VAR_VALUE, parsed.getPropertyValue("--" + OP_PROP_VAR_VALUE));
     }
 
     @Test
