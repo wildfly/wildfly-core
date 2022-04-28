@@ -27,6 +27,10 @@ import java.security.Permission;
 import java.util.Arrays;
 import java.util.PropertyPermission;
 
+import javax.management.MBeanPermission;
+import javax.management.MBeanServerPermission;
+import javax.management.ObjectName;
+
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
@@ -72,7 +76,11 @@ public class UndertowServiceActivator implements ServiceActivator {
             new PropertyPermission("jboss.bind.address", "read"),
             new PropertyPermission("jboss.http.port", "read"),
             new RuntimePermission("createXnioWorker"),
-            new SocketPermission("*", "listen,accept,connect")
+            new SocketPermission("*", "listen,accept,connect"),
+            new MBeanServerPermission("createMBeanServer"),
+            new MBeanPermission("org.jboss.threads.EnhancedQueueExecutor$MXBeanImpl", "*", ObjectName.WILDCARD, "registerMBean,unregisterMBean"),
+            new MBeanPermission("org.xnio.nio.NioXnioWorker$NioWorkerMetrics", "*", ObjectName.WILDCARD, "registerMBean,unregisterMBean"),
+            new MBeanPermission("org.xnio.nio.NioTcpServer$1","*", ObjectName.WILDCARD,  "registerMBean,unregisterMBean"),
     };
 
     public static final String DEFAULT_RESPONSE = "Response sent";
