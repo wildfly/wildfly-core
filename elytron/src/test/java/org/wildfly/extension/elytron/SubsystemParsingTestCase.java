@@ -21,7 +21,6 @@ package org.wildfly.extension.elytron;
 import java.io.IOException;
 import java.util.List;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
@@ -36,7 +35,7 @@ import org.junit.Test;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class SubsystemParsingTestCase extends AbstractSubsystemBaseTest {
+public class SubsystemParsingTestCase extends AbstractElytronSubsystemBaseTest {
 
     public SubsystemParsingTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());

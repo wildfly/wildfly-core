@@ -18,8 +18,12 @@
 
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
+
+import java.io.IOException;
+
 import org.jboss.as.controller.client.helpers.ClientConstants;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
@@ -30,15 +34,10 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.auth.server.ServerAuthenticationContext;
 import org.wildfly.security.authz.Roles;
 
-import java.io.IOException;
-
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-
 /**
  * @author <a href="mailto:mmazanek@redhat.com">Martin Mazanek</a>
  */
-public class RoleMappersTestCase extends AbstractSubsystemBaseTest {
+public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     private KernelServices services = null;
 
     public RoleMappersTestCase() {

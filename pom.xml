@@ -267,6 +267,7 @@
         <module>discovery</module>
         <module>domain-http</module>
         <module>domain-management</module>
+        <module>jakartaee</module>
         <module>elytron</module>
         <module>elytron-tool-wrapper</module>
         <module>embedded</module>
@@ -1543,6 +1544,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-elytron-integration</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-elytron-integration-jakarta</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

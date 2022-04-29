@@ -21,7 +21,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.wildfly.security.authz.RoleDecoder.KEY_SOURCE_ADDRESS;
 
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
+
+import javax.security.auth.x500.X500Principal;
+
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.msc.service.ServiceName;
 import org.junit.Assert;
@@ -43,20 +52,10 @@ import org.wildfly.security.x500.X500PrincipalBuilder;
 import org.wildfly.security.x500.cert.SubjectAlternativeNamesExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashSet;
-
-import javax.security.auth.x500.X500Principal;
-
 /**
  * @author <a href="mailto:jkalina@redhat.com">Jan Kalina</a>
  */
-public class MappersTestCase extends AbstractSubsystemBaseTest {
+public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public MappersTestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }

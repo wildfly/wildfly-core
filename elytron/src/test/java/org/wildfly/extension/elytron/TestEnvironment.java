@@ -17,20 +17,6 @@
  */
 package org.wildfly.extension.elytron;
 
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
-import org.jboss.as.subsystem.test.ControllerInitializer;
-import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.wildfly.security.x500.cert.BasicConstraintsExtension;
-import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
-import org.wildfly.security.x500.cert.X509CertificateBuilder;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,6 +35,20 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
 import javax.security.auth.x500.X500Principal;
+
+import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.capability.RuntimeCapability;
+import org.jboss.as.subsystem.test.AdditionalInitialization;
+import org.jboss.as.subsystem.test.ControllerInitializer;
+import org.jboss.as.subsystem.test.KernelServices;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.SelfSignedX509CertificateAndSigningKey;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
+
+import mockit.Mock;
+import mockit.MockUp;
 
 class TestEnvironment extends AdditionalInitialization {
 

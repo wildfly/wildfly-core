@@ -28,7 +28,6 @@ import java.util.List;
 
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
@@ -42,7 +41,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:szaldana@redhat.com">Sonia Zaldana</a>
  */
-public class ResolveExpressionAttributesTestCase extends AbstractSubsystemBaseTest {
+public class ResolveExpressionAttributesTestCase extends AbstractElytronSubsystemBaseTest {
 
     private ModelNode serverModel;
 

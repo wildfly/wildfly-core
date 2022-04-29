@@ -34,7 +34,6 @@ import java.io.IOException;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
-import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry
  */
-public class PoliciesTestCase extends AbstractSubsystemBaseTest {
+public class PoliciesTestCase extends AbstractElytronSubsystemBaseTest {
 
     private static final ModelNode JACC_POLICY;
     private static final ModelNode CUSTOM_POLICY;
