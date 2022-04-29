@@ -1,5 +1,5 @@
 <!-- for needs of SaslTestCase and KeyStoresTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:15.1" default-ssl-context="ClientSslContextNoAuth">
+<subsystem xmlns="urn:wildfly:elytron:16.0" default-ssl-context="ClientSslContextNoAuth">
     <providers>
         <provider-loader name="ManagerProviderLoader" class-names="sun.security.ssl.SunJSSE"/>
         <provider-loader name="openssl" module="org.wildfly.openssl"/>

@@ -4,7 +4,7 @@
     TODO Keep the from version up to date with later releases.
  -->
 
-<subsystem xmlns="urn:wildfly:elytron:15.1">
+<subsystem xmlns="urn:wildfly:elytron:16.0">
     <tls>
         <key-stores>
             <key-store name="accounts.keystore">
