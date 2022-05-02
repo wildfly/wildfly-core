@@ -29,6 +29,6 @@
     </resources>
 
     <dependencies>
-        <module name="javax.json.api"/>
+        <module name="internal.javax.json.api.ee8"/>
     </dependencies>
 </module>
