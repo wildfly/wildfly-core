@@ -196,7 +196,7 @@ public class PropertyReplacementTestCase {
     public void testOperationPropertyName() throws Exception {
         final ParsedCommandLine parsed = parse(":write-attribute(${" + OP_PROP_PROP_NAME + "}=test)");
         assertEquals("write-attribute", parsed.getOperationName());
-        assertEquals(parsed.getPropertyValue(OP_PROP_PROP_VALUE), "test");
+        assertEquals("test", parsed.getPropertyValue(OP_PROP_PROP_VALUE));
     }
 
     @Test
@@ -262,7 +262,7 @@ public class PropertyReplacementTestCase {
     public void testCommandArgumentName() throws Exception {
         final ParsedCommandLine parsed = parse("command-name --${" + OP_PROP_PROP_NAME + "}=test");
         assertEquals("command-name", parsed.getOperationName());
-        assertEquals(parsed.getPropertyValue("--" + OP_PROP_PROP_VALUE), "test");
+        assertEquals("test", parsed.getPropertyValue("--" + OP_PROP_PROP_VALUE));
     }
 
     @Test
