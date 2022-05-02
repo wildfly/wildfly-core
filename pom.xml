@@ -1912,11 +1912,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-jwt</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-keystore</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
