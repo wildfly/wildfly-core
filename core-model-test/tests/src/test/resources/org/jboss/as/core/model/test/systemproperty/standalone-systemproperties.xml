@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<server xmlns="urn:jboss:domain:19.0">
+<server xmlns="urn:jboss:domain:20.0">
     <system-properties>
         <property name="sys.prop.test.one" value="1"/>
         <property name="sys.prop.test.two" value="2"/>
