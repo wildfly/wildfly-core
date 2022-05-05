@@ -132,7 +132,7 @@
             <http>
                 <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
                     <mechanism-configuration>
-                        <mechanism mechanism-name="BASIC">
+                        <mechanism mechanism-name="DIGEST">
                             <mechanism-realm realm-name="ManagementRealm"/>
                         </mechanism>
                     </mechanism-configuration>
