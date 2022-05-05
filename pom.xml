@@ -33,7 +33,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>19.0.0.Beta9</version>
+    <version>19.0.0.Beta10-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
