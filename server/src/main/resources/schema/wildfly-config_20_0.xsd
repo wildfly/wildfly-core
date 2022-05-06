@@ -31,8 +31,8 @@
     <xs:element name="domain">
         <xs:annotation>
             <xs:documentation>
-                Root element for the master document specifying the core configuration
-                for the servers in a domain. There should be one such master
+                Root element for the main document specifying the core configuration
+                for the servers in a domain. There should be one such main
                 document per domain, available to the host controller that
                 is configured to act as the domain controller.
             </xs:documentation>
@@ -311,7 +311,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-    
+
         <xs:complexType name="extendedKeyStoreType">
         <xs:annotation>
             <xs:documentation>
@@ -1456,7 +1456,7 @@
                 <xs:documentation>
                      The remote domain controller's protocol. If not set, a discovery option must be provided,
                     or the --cached-dc startup option must be used, or the --admin-only startup option must be used
-                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
+                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-domain-controller'.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1465,7 +1465,7 @@
                 <xs:documentation>
                     The remote domain controller's host name. If not set, a discovery option must be provided,
                     or the --cached-dc startup option must be used, or the --admin-only startup option must be used
-                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
+                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-domain-controller'.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1474,7 +1474,7 @@
                 <xs:documentation>
                     The remote domain controller's port. If not set, a discovery option must be provided,
                     or the --cached-dc startup option must be used, or the --admin-only startup option must be used
-                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-master'.
+                    with the 'admin-only-policy' attribute set to a value other than 'fetch-from-domain-controller'.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1489,7 +1489,7 @@
         <xs:attribute name="ignore-unused-configuration" type="xs:boolean" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    When set to true, this instructs the master Host Controller to not forward configuration and
+                    When set to true, this instructs the Domain Controller to not forward configuration and
                     operations for profiles, socket binding groups and server groups which do not affect our servers.
                     Setting to false will ensure that all of this configuration information is copied. Note that using
                     the '--backup' startup option on the command line will set this to false if the value is unspecified
@@ -1504,7 +1504,7 @@
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[
-                    Policy options for how a slave host controller started in 'admin-only' mode and
+                    Policy options for how a secondary host controller started in 'admin-only' mode and
                     without the use of the '--cached-dc' startup option should deal with the absence
                     of a local copy of the domain-wide configuration.
 
@@ -1534,13 +1534,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="fetch-from-master">
+            <xs:enumeration value="fetch-from-domain-controller">
                 <xs:annotation>
                     <xs:documentation>
                         <![CDATA[
-                        Unless the --cached-dc startup option was used, contact the master host controller to pull down
-                        the current domain wide configuration, but do not actually register with the master as a member
-                        of the domain. If the master cannot be reached, the start of the host controller will fail.
+                        Unless the --cached-dc startup option was used, contact the Domain Controller to pull down
+                        the current domain wide configuration, but do not actually register with the Domain Controller as a member
+                        of the domain. If the Domain Controller cannot be reached, the start of the host controller will fail.
                         ]]>
                     </xs:documentation>
                 </xs:annotation>
@@ -1566,11 +1566,11 @@
         <xs:annotation>
             <xs:documentation>
                 Provides names of direct child resources of the domain root resource requests for which the
-                Host Controller should ignore. Only relevant on a slave Host Controller. Configuring such
+                Host Controller should ignore. Only relevant on a secondary Host Controller. Configuring such
                 "ignored resources" may help allow a Host Controller from an earlier release to function as a
-                slave to a master Host Controller running a later release, by letting the slave ignore portions
-                of the configuration its version of the software cannot understand. This strategy can only be
-                successful if the servers managed by the slave Host Controller do not reference any of the
+                secondary Host Controller to a primary Host Controller running a later release, by letting the secondary
+                ignore portions of the configuration its version of the software cannot understand. This strategy can
+                only be successful if the servers managed by the secondary Host Controller do not reference any of the
                 ignored configuration.
 
                 Supports the following attributes:
@@ -3731,7 +3731,7 @@
             <xs:documentation>
                 <![CDATA[
                    Specification of management resources that should be made invisible to Host Controllers
-                   (excluding the master Domain Controller) running a particular software version. This is
+                   (excluding the Domain Controller) running a particular software version. This is
                    used to shield Host Controllers running earlier software versions from resources whose
                    management API the host cannot understand (e.g. profiles including subsystems unavailable on
                    that host.)
@@ -3806,7 +3806,7 @@
                    A shorthand identifier for a well known EAP or WildFly Core based software distribution that the
                    Host Controller is running. Used as a simpler alternative to specifying the kernel management API
                    versions. When a Host Controller running the kernel major + minor management API associated with
-                   this release registers with the master Domain Controller, the settings associated with
+                   this release registers with the Domain Controller, the settings associated with
                    the enclosing host-ignore configuration will be used to determine what resources are visible
                    to the host.
                 ]]>
@@ -3838,7 +3838,7 @@
                 <![CDATA[
                    Specification of the kernel (i.e. non-subsystem) management API version that the
                    Host Controller is running. When a Host Controller running this management API version
-                   registers with the master Domain Controller, the settings associated with
+                   registers with the Domain Controller, the settings associated with
                    the enclosing host-ignore configuration will be used to determine what resources are visible
                    to the host.
                 ]]>
