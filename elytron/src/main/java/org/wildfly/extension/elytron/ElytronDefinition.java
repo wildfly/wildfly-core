@@ -53,7 +53,6 @@ import javax.security.auth.message.config.AuthConfigFactory;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
 import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeParser;
-import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.AttachmentKey;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -70,6 +69,7 @@ import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.constraint.SensitivityClassification;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
+import org.jboss.as.controller.extension.ExpressionResolverExtension;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
@@ -92,7 +92,6 @@ import org.wildfly.extension.elytron.capabilities._private.SecurityEventListener
 import org.wildfly.extension.elytron.expression.DeploymentExpressionResolverProcessor;
 import org.wildfly.security.Version;
 import org.wildfly.security.auth.client.AuthenticationContext;
-import org.wildfly.security.auth.jaspi.DelegatingAuthConfigFactory;
 import org.wildfly.security.auth.jaspi.ElytronAuthConfigFactory;
 import org.wildfly.security.auth.server.EvidenceDecoder;
 import org.wildfly.security.auth.server.ModifiableSecurityRealm;
@@ -508,14 +507,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
 
             if (registerJaspiFactory(context, model)) {
-                final AuthConfigFactory authConfigFactory = doPrivileged((PrivilegedAction<AuthConfigFactory>) ElytronDefinition::getAuthConfigFactory);
-                if (authConfigFactory != null) {
-                    // TODO This wrapping is only temporary to allow us to delegate to the PicketBox impl, at a later point there really should only
-                    // be one AuthConfigFactory at a time.
-                    registerAuthConfigFactory(new DelegatingAuthConfigFactory(new ElytronAuthConfigFactory(), authConfigFactory, ALLOW_DELEGATION));
-                } else {
-                    registerAuthConfigFactory(new ElytronAuthConfigFactory());
-                }
+                registerAuthConfigFactory(new ElytronAuthConfigFactory());
             }
 
             if (context.isNormalServer()) {
