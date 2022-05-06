@@ -110,7 +110,7 @@ public class AdminOnlyPolicyTestCase {
 
     @Test
     public void testFetchFromMasterWithDiscovery() throws URISyntaxException, IOException {
-        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, true, false);
+        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
         validateProfiles("default");
 
         // Now we validate that we can pull down further data if needed
@@ -130,7 +130,7 @@ public class AdminOnlyPolicyTestCase {
 
     @Test
     public void testChangeProfile() throws URISyntaxException, IOException {
-        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, true, false);
+        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
         validateProfiles("default");
 
         // Now we validate that we can pull down further data if needed
@@ -151,7 +151,7 @@ public class AdminOnlyPolicyTestCase {
     @Test
     public void testFetchFromMasterWithoutDiscovery() throws URISyntaxException {
         try {
-            createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, false, false);
+            createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, false);
             Assert.fail("secondSlaveLifecyleUtil should not have started");
         } catch (RuntimeException e) {
             Assert.assertTrue(domainSlaveLifecycleUtil.getProcessExitCode() >= 0);
@@ -160,7 +160,7 @@ public class AdminOnlyPolicyTestCase {
 
     @Test
     public void testFetchFromMasterWithCachedDC() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, false, true);
+        createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, true);
         validateProfiles("cached-remote-test");
     }
 

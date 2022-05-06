@@ -38,11 +38,15 @@ public enum AdminOnlyDomainConfigPolicy {
     /** Start the HC with no domain wide configuration. */
     ALLOW_NO_CONFIG("allow-no-config"),
     /**
-     * Contact the master host controller for the current domain wide configuration.
-     * The host will not actually register with the master. If the master cannot
-     * be reached, start of the host controller will fail.
+     * This is just an alias for FETCH_FROM_DOMAIN_CONTROLLER used only to parse legacy configuration files.
      */
-    FETCH_FROM_MASTER("fetch-from-master"),
+    LEGACY_FETCH_FROM_DOMAIN_CONTROLLER("fetch-from-master"),
+    /**
+     * Contact the primary host controller for the current domain wide configuration.
+     * The host will not actually register with the primary Host Controller. If the primary
+     * Host Controller cannot be reached, start of the host controller will fail.
+     */
+    FETCH_FROM_DOMAIN_CONTROLLER("fetch-from-domain-controller"),
     /**
      * This absence of a local copy domain wide config is not supported, and start
      * of the host controller will fail.

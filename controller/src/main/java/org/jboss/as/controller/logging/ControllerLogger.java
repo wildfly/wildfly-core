@@ -3704,6 +3704,10 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 494, value = "Resolution of extension expression '%s' is not allowed at this point.")
     ExpressionResolver.ExpressionResolutionServerException resolverExtensionExpressionsNotAllowed(String expression);
 
+    @LogMessage(level = INFO)
+    @Message(id = 495, value = "\"fetch-from-master\" is a deprecated value for \"domain-controller.remote.admin-only-policy\", \"fetch-from-domain-controller\" will be used instead.")
+    void adminOnlyPolicyDeprecatedValue();
+
     @Message(id = NONE, value = "While constructing a mapping; %s; expected a mapping for merging, but found %s")
     String errorConstructingYAMLMapping(Mark mark, NodeId node);
 

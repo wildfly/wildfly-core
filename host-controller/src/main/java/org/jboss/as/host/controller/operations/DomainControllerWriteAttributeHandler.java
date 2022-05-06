@@ -36,6 +36,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -87,6 +88,7 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                     .setFlags(AttributeAccess.Flag.RESTART_JVM)
                     .setValidator(EnumValidator.create(AdminOnlyDomainConfigPolicy.class))
                     .setDefaultValue(new ModelNode(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString()))
+                    .setAllowedValues(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString(), AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER.toString(), AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG.toString())
                     .build();
     public static final SimpleAttributeDefinition IGNORE_UNUSED_CONFIG =
             new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.IGNORE_UNUSED_CONFIG, ModelType.BOOLEAN, true)
@@ -158,6 +160,13 @@ public abstract class DomainControllerWriteAttributeHandler extends ReloadRequir
                 dc.remove(LOCAL);
             }
             final ModelNode remoteDC = dc.get(REMOTE);
+            if (remoteDC.hasDefined(ADMIN_ONLY_POLICY.getName())) {
+                ModelNode current = ADMIN_ONLY_POLICY.resolveModelAttribute(context, remoteDC);
+                if (current.asString().equals(AdminOnlyDomainConfigPolicy.LEGACY_FETCH_FROM_DOMAIN_CONTROLLER.toString())) {
+                    ControllerLogger.ROOT_LOGGER.adminOnlyPolicyDeprecatedValue();
+                    remoteDC.get(ADMIN_ONLY_POLICY.getName()).set(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER.toString());
+                }
+            }
             secureRemoteDomain(context, operation, remoteDC);
             if (context.isBooting()) {
                 initializeRemoteDomain(context, remoteDC);
