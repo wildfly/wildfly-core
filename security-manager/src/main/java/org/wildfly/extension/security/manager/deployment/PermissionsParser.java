@@ -90,7 +90,7 @@ public class PermissionsParser {
             switch (attribute) {
                 case VERSION: {
                     String version = reader.getAttributeValue(i);
-                    if (!"7".equals(version) && !"9".equals(version))
+                    if (!"7".equals(version) && !"9".equals(version) && !"10".equals(version))
                         throw SecurityManagerLogger.ROOT_LOGGER.invalidPermissionsXMLVersion(version, "7");
                     break;
                 }
