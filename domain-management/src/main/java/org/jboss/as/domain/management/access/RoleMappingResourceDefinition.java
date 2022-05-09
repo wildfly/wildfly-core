@@ -67,7 +67,7 @@ public class RoleMappingResourceDefinition extends SimpleResourceDefinition {
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         WritableAuthorizerConfiguration authorizerConfiguration = authorizer.getWritableAuthorizerConfiguration();
-        resourceRegistration.registerReadWriteAttribute(INCLUDE_ALL, null, new RoleIncludeAllWriteAttributeHander(authorizerConfiguration));
+        resourceRegistration.registerReadWriteAttribute(INCLUDE_ALL, null, new RoleIncludeAllWriteAttributeHandler(authorizerConfiguration));
     }
 
     @Override

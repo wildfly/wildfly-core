@@ -20,7 +20,7 @@
  */
 package org.jboss.as.domain.management.audit;
 
-import static org.jboss.as.controller.audit.InMemoryAuditLogHander.OPERATION_DATE;
+import static org.jboss.as.controller.audit.InMemoryAuditLogHandler.OPERATION_DATE;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.AS_VERSION;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.REMOTE_ADDRESS;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.USER_ID;
@@ -47,7 +47,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.audit.InMemoryAuditLogHander;
+import org.jboss.as.controller.audit.InMemoryAuditLogHandler;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
@@ -165,16 +165,16 @@ public class InMemoryAuditLogHandlerResourceDefinition extends AuditLogHandlerRe
             MAX_OPERATION_COUNT.validateAndSet(operation, model);
         }
 
-        private InMemoryAuditLogHander createHandler(final OperationContext context, final ModelNode model) throws OperationFailedException {
+        private InMemoryAuditLogHandler createHandler(final OperationContext context, final ModelNode model) throws OperationFailedException {
             final String name = context.getCurrentAddressValue();
             final int maxHistory = MAX_OPERATION_COUNT.resolveModelAttribute(context, model).asInt();
-            return new InMemoryAuditLogHander(name, maxHistory);
+            return new InMemoryAuditLogHandler(name, maxHistory);
         }
 
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
                 throws OperationFailedException {
-            InMemoryAuditLogHander handler = createHandler(context, model);
+            InMemoryAuditLogHandler handler = createHandler(context, model);
             auditLogger.getUpdater().addHandler(handler);
             auditLogger.addFormatter(handler.getFormatter());
         }

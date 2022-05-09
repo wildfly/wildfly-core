@@ -66,7 +66,7 @@ public class AccessAuthorizationDomainSlaveConfigHandler implements OperationSte
                 WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
 
                 ModelNode provider = AccessAuthorizationResourceDefinition.PROVIDER.resolveModelAttribute(context, model);
-                AccessAuthorizationProviderWriteAttributeHander.updateAuthorizer(provider, configurableAuthorizer);
+                AccessAuthorizationProviderWriteAttributeHandler.updateAuthorizer(provider, configurableAuthorizer);
                 ModelNode combinationPolicy = AccessAuthorizationResourceDefinition.PERMISSION_COMBINATION_POLICY.resolveModelAttribute(context, model);
                 AccessAuthorizationCombinationPolicyWriteAttributeHandler.updateAuthorizer(combinationPolicy, authorizerConfiguration);
 

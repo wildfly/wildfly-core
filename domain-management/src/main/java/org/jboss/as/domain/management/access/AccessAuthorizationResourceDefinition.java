@@ -127,8 +127,8 @@ public class AccessAuthorizationResourceDefinition extends SimpleResourceDefinit
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
         super.registerAttributes(resourceRegistration);
         WritableAuthorizerConfiguration authorizerConfiguration = configurableAuthorizer.getWritableAuthorizerConfiguration();
-        resourceRegistration.registerReadWriteAttribute(PROVIDER, null, new AccessAuthorizationProviderWriteAttributeHander(configurableAuthorizer));
-        resourceRegistration.registerReadWriteAttribute(USE_IDENTITY_ROLES, null, new AccessAuthorizationUseIdentityRolesWriteAttributeHander(configurableAuthorizer.getWritableAuthorizerConfiguration()));
+        resourceRegistration.registerReadWriteAttribute(PROVIDER, null, new AccessAuthorizationProviderWriteAttributeHandler(configurableAuthorizer));
+        resourceRegistration.registerReadWriteAttribute(USE_IDENTITY_ROLES, null, new AccessAuthorizationUseIdentityRolesWriteAttributeHandler(configurableAuthorizer.getWritableAuthorizerConfiguration()));
         resourceRegistration.registerReadWriteAttribute(PERMISSION_COMBINATION_POLICY, null,
                 new AccessAuthorizationCombinationPolicyWriteAttributeHandler(authorizerConfiguration));
 
