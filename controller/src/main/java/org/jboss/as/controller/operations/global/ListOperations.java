@@ -44,15 +44,16 @@ import org.jboss.dmr.ModelType;
  */
 public class ListOperations {
 
+    public static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder("index", ModelType.INT).setRequired(false).build();
     public static final OperationDefinition LIST_ADD_DEFINITION = new SimpleOperationDefinitionBuilder("list-add", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, AbstractListHandler.INDEX)
+            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, INDEX)
             .build();
     public static final OperationDefinition LIST_GET_DEFINITION = new SimpleOperationDefinitionBuilder("list-get", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractCollectionHandler.NAME, AbstractListHandler.INDEX)
+            .setParameters(AbstractCollectionHandler.NAME, INDEX)
             .setReadOnly()
             .build();
     public static final OperationDefinition LIST_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("list-remove", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, AbstractListHandler.INDEX)
+            .setParameters(AbstractCollectionHandler.NAME, AbstractCollectionHandler.VALUE, INDEX)
             .build();
     public static final OperationDefinition LIST_CLEAR_DEFINITION = new SimpleOperationDefinitionBuilder("list-clear", ControllerResolver.getResolver("global"))
             .setParameters(AbstractCollectionHandler.NAME)
@@ -72,7 +73,6 @@ public class ListOperations {
      * @author Tomaz Cerar (c) 2014 Red Hat Inc.
      */
     abstract static class AbstractListHandler extends AbstractCollectionHandler {
-        static final SimpleAttributeDefinition INDEX = new SimpleAttributeDefinitionBuilder("index", ModelType.INT).setRequired(false).build();
 
         AbstractListHandler(AttributeDefinition... attributes) {
             super(attributes);
