@@ -71,6 +71,13 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
 
     private static final String CREDENTIAL_STORE_TYPE = "PropertiesCredentialStore";
 
+    private static final ServiceUtil<CredentialStore> SECRET_KEY_CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.SECRET_KEY_CREDENTIAL_STORE, CredentialStore.class);
+
+    @Override
+    protected ServiceUtil<CredentialStore> getCredentialStoreUtil() {
+        return SECRET_KEY_CREDENTIAL_STORE_UTIL;
+    }
+
     static final SimpleAttributeDefinition PATH =
             new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.PATH, FileAttributeDefinitions.PATH)
                     .setAttributeGroup(ElytronDescriptionConstants.FILE)
