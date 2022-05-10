@@ -20,7 +20,6 @@
  */
 package org.jboss.as.controller.audit;
 
-import static org.jboss.as.controller.audit.AuditLogItemFormatter.TYPE_JMX;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.AS_VERSION;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.ERROR;
 import static org.jboss.as.controller.audit.JsonAuditLogItemFormatter.METHOD_NAME;
@@ -48,7 +47,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-public final class InMemoryAuditLogHander extends AuditLogHandler {
+public final class InMemoryAuditLogHandler extends AuditLogHandler {
 
     public static final String OPERATION_DATE = "operation-date";
     private static final ModelNode UNDEFINED = new ModelNode();
@@ -62,7 +61,7 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
     private final AuditLogItemFormatter myFormatter = new InMemoryFormatter();
 
 
-    public InMemoryAuditLogHander(String name, int maxHistory) {
+    public InMemoryAuditLogHandler(String name, int maxHistory) {
         super(name, IN_MEMORY_FORMATTER_NAME, maxHistory);
         this.items = new ArrayList<>(maxHistory);
         this.maxHistory = maxHistory;
@@ -92,7 +91,7 @@ public final class InMemoryAuditLogHander extends AuditLogHandler {
 
     @Override
     boolean isDifferent(AuditLogHandler other) {
-        if (other instanceof InMemoryAuditLogHander == false) {
+        if (other instanceof InMemoryAuditLogHandler == false) {
             return true;
         }
         return getName().equals(other.getName());

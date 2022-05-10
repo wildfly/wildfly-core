@@ -522,7 +522,7 @@ public class ManagedAuditLoggerImpl implements ManagedAuditLogger, ManagedAuditL
     public void updateInMemoryHandlerMaxHistory(String name, int maxHistory) {
         config.lock();
         try {
-            InMemoryAuditLogHander handler = (InMemoryAuditLogHander)config.getConfiguredHandler(name);
+            InMemoryAuditLogHandler handler = (InMemoryAuditLogHandler)config.getConfiguredHandler(name);
             handler.setMaxHistory(maxHistory);
         } finally {
             config.unlock();

@@ -45,11 +45,11 @@ import org.jboss.dmr.ModelNode;
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class AccessAuthorizationProviderWriteAttributeHander extends AbstractWriteAttributeHandler<Void> {
+class AccessAuthorizationProviderWriteAttributeHandler extends AbstractWriteAttributeHandler<Void> {
 
     private final DelegatingConfigurableAuthorizer configurableAuthorizer;
 
-    AccessAuthorizationProviderWriteAttributeHander(DelegatingConfigurableAuthorizer configurableAuthorizer) {
+    AccessAuthorizationProviderWriteAttributeHandler(DelegatingConfigurableAuthorizer configurableAuthorizer) {
         super(AccessAuthorizationResourceDefinition.PROVIDER);
         this.configurableAuthorizer = configurableAuthorizer;
     }
