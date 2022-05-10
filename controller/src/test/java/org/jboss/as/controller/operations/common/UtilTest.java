@@ -33,11 +33,19 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION;
+
+import java.util.List;
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.operations.global.ListOperations;
+import org.jboss.as.controller.operations.global.MapOperations;
 import org.jboss.dmr.ModelNode;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -394,5 +402,202 @@ public class UtilTest {
         assertThat(Util.validateOperation(operation).get(OUTCOME).asString(), is(FAILED));
         operation.get(OP_ADDR).setEmptyList();
         assertThat(Util.validateOperation(operation).hasDefined(OUTCOME), is(false));
+    }
+
+    /**
+     * Test of {@link Util#createCompositeOperation(Iterable)}.
+     */
+    @Test
+    public void testCompositeOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        ModelNode operation1 = Util.createAddOperation(address);
+        ModelNode operation2 = Util.createRemoveOperation(address);
+        ModelNode operation = Util.createCompositeOperation(List.of(operation1, operation2));
+        Assert.assertEquals(new ModelNode(ModelDescriptionConstants.COMPOSITE), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(PathAddress.EMPTY_ADDRESS.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        List<ModelNode> steps = operation.get(ModelDescriptionConstants.STEPS).asList();
+        Assert.assertEquals(2, steps.size());
+        Assert.assertEquals(operation1, steps.get(0));
+        Assert.assertEquals(operation2, steps.get(1));
+    }
+
+    /**
+     * Test of {@link Util#createAddOperation(PathAddress, Map)}.
+     */
+    @Test
+    public void testAddOperationWithParameters() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String parameter1 = "parameter1";
+        String parameter2 = "paraneter2";
+        Map<String, ModelNode> parameters = Map.of(parameter1, new ModelNode("value1"), parameter2, new ModelNode("value2"));
+        ModelNode operation = Util.createAddOperation(address, parameters);
+        Assert.assertEquals(new ModelNode(ModelDescriptionConstants.ADD), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(parameters.get(parameter1), operation.get(parameter1));
+        Assert.assertEquals(parameters.get(parameter2), operation.get(parameter2));
+    }
+
+    /**
+     * Test of {@link Util#createAddOperation(PathAddress, int)}.
+     */
+    @Test
+    public void testIndexedAddOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        int index = 10;
+        ModelNode operation = Util.createAddOperation(address, index);
+        Assert.assertEquals(new ModelNode(ModelDescriptionConstants.ADD), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(index), operation.get(ModelDescriptionConstants.ADD_INDEX));
+    }
+
+    /**
+     * Test of {@link Util#createAddOperation(PathAddress, int, Map)}.
+     */
+    @Test
+    public void testIndexedAddOperationWithParameters() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        int index = 10;
+        String parameter1 = "parameter1";
+        String parameter2 = "paraneter2";
+        Map<String, ModelNode> parameters = Map.of(parameter1, new ModelNode("value1"), parameter2, new ModelNode("value2"));
+        ModelNode operation = Util.createAddOperation(address, index, parameters);
+        Assert.assertEquals(new ModelNode(ModelDescriptionConstants.ADD), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(index), operation.get(ModelDescriptionConstants.ADD_INDEX));
+        Assert.assertEquals(parameters.get(parameter1), operation.get(parameter1));
+        Assert.assertEquals(parameters.get(parameter2), operation.get(parameter2));
+    }
+
+    /**
+     * Test of {@link Util#createListAddOperation(PathAddress, String, String)}.
+     */
+    @Test
+    public void testListAddOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        String value = "value1";
+        ModelNode operation = Util.createListAddOperation(address, attributeName, value);
+        Assert.assertEquals(new ModelNode(ListOperations.LIST_ADD_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(value), operation.get(ModelDescriptionConstants.VALUE));
+    }
+
+    /**
+     * Test of {@link Util#createListRemoveOperation(PathAddress, String, String)}.
+     */
+    @Test
+    public void testListRemoveOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        String value = "value1";
+        ModelNode operation = Util.createListRemoveOperation(address, attributeName, value);
+        Assert.assertEquals(new ModelNode(ListOperations.LIST_REMOVE_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(value), operation.get(ModelDescriptionConstants.VALUE));
+    }
+
+    /**
+     * Test of {@link Util#createListRemoveOperation(PathAddress, String, int)}.
+     */
+    @Test
+    public void testIndexedListRemoveOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        int index = 10;
+        ModelNode operation = Util.createListRemoveOperation(address, attributeName, index);
+        Assert.assertEquals(new ModelNode(ListOperations.LIST_REMOVE_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(index), operation.get(ListOperations.INDEX.getName()));
+    }
+
+    /**
+     * Test of {@link Util#createListClearOperation(PathAddress, String, int)}.
+     */
+    @Test
+    public void testListGetOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        int index = 10;
+        ModelNode operation = Util.createListGetOperation(address, attributeName, index);
+        Assert.assertEquals(new ModelNode(ListOperations.LIST_GET_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(index), operation.get(ListOperations.INDEX.getName()));
+    }
+
+    /**
+     * Test of {@link Util#createListClearOperation(PathAddress, String)}.
+     */
+    @Test
+    public void testListClearOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        ModelNode operation = Util.createListClearOperation(address, attributeName);
+        Assert.assertEquals(new ModelNode(ListOperations.LIST_CLEAR_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+    }
+
+    /**
+     * Test of {@link Util#createMapPutOperation(PathAddress, String, String, String)}.
+     */
+    @Test
+    public void testMapPutOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        String key = "key1";
+        String value = "value1";
+        ModelNode operation = Util.createMapPutOperation(address, attributeName, key, value);
+        Assert.assertEquals(new ModelNode(MapOperations.MAP_PUT_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(key), operation.get(MapOperations.KEY.getName()));
+        Assert.assertEquals(new ModelNode(value), operation.get(ModelDescriptionConstants.VALUE));
+    }
+
+    /**
+     * Test of {@link Util#createMapRemoveOperation(PathAddress, String, String)}.
+     */
+    @Test
+    public void testMapRemoveOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        String key = "key1";
+        ModelNode operation = Util.createMapRemoveOperation(address, attributeName, key);
+        Assert.assertEquals(new ModelNode(MapOperations.MAP_REMOVE_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(key), operation.get(MapOperations.KEY.getName()));
+    }
+
+    /**
+     * Test of {@link Util#createMapClearOperation(PathAddress, String, String)}.
+     */
+    @Test
+    public void testMapGetOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        String key = "key1";
+        ModelNode operation = Util.createMapGetOperation(address, attributeName, key);
+        Assert.assertEquals(new ModelNode(MapOperations.MAP_GET_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
+        Assert.assertEquals(new ModelNode(key), operation.get(MapOperations.KEY.getName()));
+    }
+
+    /**
+     * Test of {@link Util#createMapClearOperation(PathAddress, String)}.
+     */
+    @Test
+    public void testMapClearOperation() {
+        PathAddress address = PathAddress.pathAddress(PathElement.pathElement("foo", "bar"));
+        String attributeName = "attribute";
+        ModelNode operation = Util.createMapClearOperation(address, attributeName);
+        Assert.assertEquals(new ModelNode(MapOperations.MAP_CLEAR_DEFINITION.getName()), operation.get(ModelDescriptionConstants.OP));
+        Assert.assertEquals(address.toModelNode(), operation.get(ModelDescriptionConstants.OP_ADDR));
+        Assert.assertEquals(new ModelNode(attributeName), operation.get(ModelDescriptionConstants.NAME));
     }
 }

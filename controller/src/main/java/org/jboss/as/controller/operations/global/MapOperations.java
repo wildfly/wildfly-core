@@ -38,18 +38,19 @@ import org.jboss.dmr.ModelType;
  * @author Tomaz Cerar (c) 2014 Red Hat Inc.
  */
 public class MapOperations {
+    public static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder("key", ModelType.STRING, false).build();
     public static final OperationDefinition MAP_CLEAR_DEFINITION = new SimpleOperationDefinitionBuilder("map-clear", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractMapHandler.NAME)
+            .setParameters(AbstractCollectionHandler.NAME)
             .build();
     public static final OperationDefinition MAP_REMOVE_DEFINITION = new SimpleOperationDefinitionBuilder("map-remove", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY)
+            .setParameters(AbstractCollectionHandler.NAME, KEY)
             .build();
     public static final OperationDefinition MAP_GET_DEFINITION = new SimpleOperationDefinitionBuilder("map-get", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY)
+            .setParameters(AbstractCollectionHandler.NAME, KEY)
             .setReadOnly()
             .build();
     public static final OperationDefinition MAP_PUT_DEFINITION = new SimpleOperationDefinitionBuilder("map-put", ControllerResolver.getResolver("global"))
-            .setParameters(AbstractMapHandler.NAME, AbstractMapHandler.KEY, AbstractMapHandler.VALUE)
+            .setParameters(AbstractCollectionHandler.NAME, KEY, AbstractCollectionHandler.VALUE)
             .build();
 
     public static final OperationStepHandler MAP_CLEAR_HANDLER = new MapClearHandler();
@@ -66,7 +67,6 @@ public class MapOperations {
      * @author Tomaz Cerar (c) 2014 Red Hat Inc.
      */
     abstract static class AbstractMapHandler extends AbstractCollectionHandler {
-        static final SimpleAttributeDefinition KEY = new SimpleAttributeDefinitionBuilder("key", ModelType.STRING, false).build();
 
         AbstractMapHandler(AttributeDefinition... attributes) {
             super(attributes);
