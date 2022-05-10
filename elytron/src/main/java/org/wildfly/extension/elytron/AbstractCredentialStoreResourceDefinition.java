@@ -75,6 +75,10 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
     static final ServiceUtil<CredentialStore> CREDENTIAL_STORE_UTIL = ServiceUtil.newInstance(CREDENTIAL_STORE_RUNTIME_CAPABILITY, ElytronDescriptionConstants.CREDENTIAL_STORE, CredentialStore.class);
 
+    protected ServiceUtil<CredentialStore> getCredentialStoreUtil() {
+        return CREDENTIAL_STORE_UTIL;
+    }
+
     // Operations
 
     static final StandardResourceDescriptionResolver OPERATION_RESOLVER = ElytronExtension
@@ -126,7 +130,7 @@ abstract class AbstractCredentialStoreResourceDefinition extends SimpleResourceD
 
                 @Override
                 protected void executeRuntimeStep(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    ServiceName credentialStoreClientServiceName = CREDENTIAL_STORE_UTIL.serviceName(operation);
+                    ServiceName credentialStoreClientServiceName = getCredentialStoreUtil().serviceName(operation);
                     ServiceController<?> serviceController = context.getServiceRegistry(false).getRequiredService(credentialStoreClientServiceName);
 
                     populateResponse(context.getResult(), serviceController);
