@@ -824,7 +824,7 @@ final class SubsystemTestDelegate {
                 }
                 throw new Exception(bootError);
             }
-            Assert.assertTrue(reverseServices.isSuccessfulBoot());
+            Assert.assertTrue(reverseServices.getBootErrorDescription(), reverseServices.isSuccessfulBoot() && !reverseServices.hasBootErrorCollectorFailures());
 
             ModelNode reverseSubsystem = reverseServices.readWholeModel().get(SUBSYSTEM, getMainSubsystemName());
             if (reverseCheckModelFixer != null) {
