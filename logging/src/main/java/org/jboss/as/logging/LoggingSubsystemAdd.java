@@ -35,6 +35,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.logging.deployments.LoggingCleanupDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingConfigDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDependencyDeploymentProcessor;
 import org.jboss.as.logging.deployments.LoggingDeploymentResourceProcessor;
@@ -93,6 +94,7 @@ class LoggingSubsystemAdd extends AbstractAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(final DeploymentProcessorTarget processorTarget) {
+                processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_LOGGING_CLEANUP, new LoggingCleanupDeploymentProcessor());
                 if (addDependencies) {
                     processorTarget.addDeploymentProcessor(LoggingExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_LOGGING, new LoggingDependencyDeploymentProcessor());
                 }

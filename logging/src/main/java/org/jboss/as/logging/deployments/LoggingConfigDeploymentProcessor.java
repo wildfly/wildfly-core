@@ -107,6 +107,8 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                 } else {
                     logContext = LogContext.create();
                 }
+                // Add the log context for cleanup
+                LoggingCleanupDeploymentProcessor.addResource(deploymentUnit, logContext);
 
                 boolean processSubdeployments = true;
                 // Configure the deployments logging based on the top-level configuration file
