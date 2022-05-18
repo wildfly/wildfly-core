@@ -46,6 +46,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.operations.validation.IntAllowedValuesValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.services.path.PathManagerService;
@@ -96,7 +97,7 @@ class SecretKeyCredentialStoreDefinition extends AbstractCredentialStoreResource
             .setAttributeGroup(ElytronDescriptionConstants.IMPLEMENTATION)
             .setAllowExpression(true)
             .setDefaultValue(new ModelNode(256))
-            .setAllowedValues(128, 192, 256)
+            .setValidator(new IntAllowedValuesValidator(128, 192, 256))
             .setRestartAllServices()
             .build();
 
