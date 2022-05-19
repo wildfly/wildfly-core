@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!-- This is a false positive because the core itself does not use json-smart or accessors-smart. Those libraries are used by mockserver-netty in test (wildfly-core-testsuite-share) module. -->
+    <suppress>
+        <notes><![CDATA[
+   file name: json-smart-2.3.jar
+   file name: accessors-smart-1.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/net\.minidev/(json-smart|accessors\-smart).*$</packageUrl>
+        <vulnerabilityName>CVE-2021-27568</vulnerabilityName>
+    </suppress>
+
+    <!-- This is a false positive because wildfly-core itself does not use mockserver libraries. Mockserver is used only for test purposes (wildfly-core-testsuite-shared module). -->
+    <suppress>
+        <notes><![CDATA[
+   file name: mockserver-core-5.8.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.mock\-server/mockserver\-.*$</packageUrl>
+        <cve>CVE-2021-32827</cve>
+    </suppress>
+
+    <!-- [wildfly-core] The vulnerability applies to io.undertow package, undertow-server from org.wildfly.security.elytron-web package is a different module -->
+    <suppress>
+        <notes><![CDATA[
+       file name: undertow-server-1.9.1.Final.jar
+       ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server.*@.*$</packageUrl>
+        <cve>CVE-2019-3888</cve>
+        <cve>CVE-2019-10184</cve>
+        <cve>CVE-2019-10212</cve>
+        <cve>CVE-2019-14888</cve>
+        <cve>CVE-2019-19343</cve>
+        <cve>CVE-2020-1745</cve>
+        <cve>CVE-2020-1757</cve>
+        <cve>CVE-2020-10705</cve>
+        <cve>CVE-2020-10719</cve>
+    </suppress>
+
+    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-openssl-macosx-x86_64-2.1.0.SP01.jar
+   file name: wildfly-openssl-linux-s390x-2.1.0.Final.jar
+   file name: wildfly-openssl-linux-i386-2.1.0.SP01.jar
+   file name: wildfly-openssl-java-2.1.4.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.openssl/wildfly\-openssl\-.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-legacy-versions-6.0.1.Final.jar
+   file name: wildfly-legacy-spi-6.0.1.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.legacy\.test/wildfly\-legacy\-.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-galleon-plugins-5.2.2.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/wildfly\-galleon\-plugins@.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-galleon-plugins-5.2.2.Final.jar (shaded: org.wildfly.extras.batavia:transformer-api:1.0.9.Final)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.extras\.batavia/transformer\-api@.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+    <!-- [wildfly-core] Applies to versions prior to wildfly 21.0.0 -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-galleon-plugins-5.2.2.Final.jar (shaded: org.wildfly.galleon-plugins:transformer:5.2.2.Final)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/transformer@.*$</packageUrl>
+        <cve>CVE-2020-10718</cve>
+        <cve>CVE-2020-10740</cve>
+    </suppress>
+
+</suppressions>
