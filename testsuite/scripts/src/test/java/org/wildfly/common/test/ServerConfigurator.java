@@ -19,6 +19,7 @@
 
 package org.wildfly.common.test;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -249,6 +250,54 @@ public class ServerConfigurator {
             throw new UncheckedIOException(e);
         }
         return error.toString();
+    }
+
+    public static void appendJavaOpts(final Path containerHome, final String baseName, final String variable) throws IOException {
+        final Path binDir = containerHome.resolve("bin");
+        if (TestSuiteEnvironment.isWindows()) {
+            Path conf = binDir.resolve(baseName + ".conf.bat");
+            OpenOption[] options;
+            if (Files.notExists(conf)) {
+                options = new OpenOption[]{StandardOpenOption.CREATE_NEW};
+            } else {
+                options = new OpenOption[]{StandardOpenOption.APPEND};
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(conf, options)) {
+                if ("standalone".equals(baseName)) {
+                    writer.newLine();
+                    writer.write("set \"JAVA_OPTS=%JAVA_OPTS% " + variable +"\"");
+                    writer.newLine();
+                }
+            }
+        }
+    }
+
+    public static void removeJavaOpts(final Path containerHome, final String baseName, final String variable) throws IOException {
+        final Path binDir = containerHome.resolve("bin");
+        if (TestSuiteEnvironment.isWindows()) {
+            Path conf = binDir.resolve(baseName + ".conf.bat");
+            Path confTemp = binDir.resolve(baseName + "Temp" + ".conf.bat");
+            OpenOption[] options = new OpenOption[]{StandardOpenOption.CREATE_NEW};
+            BufferedReader reader = Files.newBufferedReader(conf);
+            BufferedWriter writer = Files.newBufferedWriter(confTemp, options);
+
+            String lineToRemove = "set \"JAVA_OPTS=%JAVA_OPTS% " + variable +"\"";
+            String currentLine;
+            while ((currentLine = reader.readLine()) != null) {
+                String trimmedLine = currentLine.trim();
+
+                if (trimmedLine.isEmpty() || trimmedLine.equals(lineToRemove)) continue;
+
+                writer.newLine();
+                writer.write(currentLine);
+                writer.newLine();
+            }
+            writer.close();
+            reader.close();
+            Files.delete(conf);
+            Files.copy(confTemp, conf);
+            Files.delete(confTemp);
+        }
     }
 
     private static void appendConf(final Path containerHome, final String baseName, final String envName) throws IOException {

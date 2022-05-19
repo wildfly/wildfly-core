@@ -41,10 +41,12 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.wildfly.common.test.ServerConfigurator;
 import org.wildfly.common.test.ServerHelper;
 import org.wildfly.common.test.LoggingAgent;
 
@@ -54,6 +56,7 @@ import org.wildfly.common.test.LoggingAgent;
 @RunWith(Parameterized.class)
 public class StandaloneScriptTestCase extends ScriptTestCase {
     private static final boolean MODULAR_JVM;
+    private static final String STANDALONE_BASE_NAME = "standalone";
 
     static {
         final String javaSpecVersion = System.getProperty("java.specification.version");
@@ -74,7 +77,7 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
     private static final Function<ModelControllerClient, Boolean> STANDALONE_CHECK = ServerHelper::isStandaloneRunning;
 
     public StandaloneScriptTestCase() {
-        super("standalone");
+        super(STANDALONE_BASE_NAME);
     }
 
     @Parameters
@@ -84,6 +87,28 @@ public class StandaloneScriptTestCase extends ScriptTestCase {
         result.add(Collections.singletonMap("GC_LOG", "true"));
         result.add(Collections.singletonMap("MODULE_OPTS", "-javaagent:logging-agent-tests.jar=" + LoggingAgent.DEBUG_ARG));
         return result;
+    }
+
+    @Test
+    public void testBatchScriptJavaOptsToEscape() throws Exception {
+        Assume.assumeTrue(TestSuiteEnvironment.isWindows());
+        final String variableToEscape = "-Dhttp.nonProxyHosts=localhost|127.0.0.1|10.10.10.*";
+        ServerConfigurator.appendJavaOpts(ServerHelper.JBOSS_HOME, "standalone", variableToEscape);
+        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT)) {
+            testScript(script);
+        }
+        ServerConfigurator.removeJavaOpts(ServerHelper.JBOSS_HOME, "standalone", variableToEscape);
+    }
+
+    @Test
+    public void testBatchScriptJavaOptsEscaped() throws Exception {
+        Assume.assumeTrue(TestSuiteEnvironment.isWindows());
+        final String escapedVariable = "-Dhttp.nonProxyHosts=localhost^|127.0.0.1^|10.10.10.*";
+        ServerConfigurator.appendJavaOpts(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, escapedVariable);
+        try (ScriptProcess script = new ScriptProcess(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, Shell.BATCH, ServerHelper.TIMEOUT)) {
+            testScript(script);
+        }
+        ServerConfigurator.removeJavaOpts(ServerHelper.JBOSS_HOME, STANDALONE_BASE_NAME, escapedVariable);
     }
 
     @Override

@@ -104,6 +104,22 @@ if exist "%STANDALONE_CONF%" (
    echo Config file not found "%STANDALONE_CONF%"
 )
 
+rem Sanitize JAVA_OPTS
+rem Currently escaping only | characters any other might be added if needed
+setlocal EnableDelayedExpansion
+
+rem If characters are already escaped then IS_SANITIZED is set to true and JAVA__OPTS are left as they are
+for %%C in (^^^|) do (
+  if not "!JAVA_OPTS:%%C=!"=="!JAVA_OPTS!" set IS_SANITIZED=true
+)
+if not "!IS_SANITIZED!" == "true" (
+  for %%C in (^|) do (
+    set "JAVA_OPTS=!JAVA_OPTS:%%C=^%%C!"
+  )
+)
+
+setlocal DisableDelayedExpansion
+
 if NOT "x%DEBUG_PORT%" == "x" (
   set DEBUG_PORT_VAR=%DEBUG_PORT%
 )
@@ -228,7 +244,7 @@ for %%a in (!CONSOLIDATED_OPTS!) do (
 )
 
 rem If the -Djava.security.manager is found, enable the -secmgr and include a bogus security manager for JBoss Modules to replace
-echo(!JAVA_OPTS! | findstr /r /c:"-Djava.security.manager" > nul && (
+echo("!JAVA_OPTS!" | findstr /r /c:"-Djava.security.manager" > nul && (
     echo ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable.
     GOTO :EOF
 )
