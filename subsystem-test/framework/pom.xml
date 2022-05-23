@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>18.1.1.Final</version>
+        <version>18.1.1-1-PSI-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-framework</artifactId>
