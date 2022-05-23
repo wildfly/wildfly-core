@@ -38,7 +38,6 @@ import org.jboss.dmr.ModelNode;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -76,7 +75,7 @@ public class ReloadRedirectTestCase {
         ModelNode op = createOpNode("core-service=management/"
                 + "management-interface=http-interface/", "read-attribute");
         op.get("name").set("http-upgrade");
-        ModelNode result = container.getClient().executeForResult(op);
+        ModelNode result = controller.getClient().executeForResult(op);
         String saslFactory = result.get("sasl-authentication-factory").asStringOrNull();
         assertNotNull("Invalid http-upgrade setting: " + result, saslFactory);
 
@@ -228,7 +227,6 @@ public class ReloadRedirectTestCase {
     }
 
     @Test
-    @Ignore("[WFCORE-5799] Restore tests now that WFCORE-5522 is resolved.")
     public void testRedirectWithSecurityCommands() throws Throwable {
 
         CliProcessWrapper cliProc = new CliProcessWrapper()

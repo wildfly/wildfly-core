@@ -309,7 +309,7 @@ fi
 SECURITY_MANAGER_SET=`echo $JAVA_OPTS | $GREP "java\.security\.manager"`
 if [ "x$SECURITY_MANAGER_SET" != "x" ]; then
     SECURITY_MANAGER_SET_TO_ALLOW=`echo $JAVA_OPTS | $GREP "java\.security\.manager=allow"`
-    if [ "x$SECURITY_MANAGER_SET_TO_ALLOW" == "x" ]; then
+    if [ "x$SECURITY_MANAGER_SET_TO_ALLOW" = "x" ]; then
         echo "ERROR: The use of -Djava.security.manager has been removed. Please use the -secmgr command line argument or SECMGR=true environment variable."
         exit 1
     fi
