@@ -205,6 +205,14 @@ if $darwin || $freebsd || $other ; then
     done
 fi
 
+# clean server opts
+for var in $SERVER_OPTS
+do
+   if [ "${var#"-Djboss.server.base.dir"}" != "$var" ]; then
+      SERVER_OPTS=${SERVER_OPTS#"$var"}
+   fi
+done
+
 # determine the default base dir, if not set
 if [ "x$JBOSS_BASE_DIR" = "x" ]; then
    JBOSS_BASE_DIR="$JBOSS_HOME/standalone"
