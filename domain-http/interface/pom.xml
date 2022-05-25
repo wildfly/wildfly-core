@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-domain-http</artifactId>
-        <version>18.1.1-1-PSI-SNAPSHOT</version>
+        <version>18.1.1-1-PSI-RC-1</version>
     </parent>
 
     <artifactId>wildfly-domain-http-interface</artifactId>
