@@ -379,6 +379,10 @@ public class ConfigurationFile {
             }
         }
 
+        if(interactionPolicy.isReadOnly()){
+            throw ControllerLogger.ROOT_LOGGER.absolutePathMainFileNotFound(name, configurationDir);
+        }
+
         throw ControllerLogger.ROOT_LOGGER.mainFileNotFound(name != null ? name : rawName, configurationDir);
     }
 
