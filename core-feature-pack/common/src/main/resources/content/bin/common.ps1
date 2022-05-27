@@ -113,7 +113,7 @@ Function Get-Java-Opts {
 
 Function SetEnhancedSecurityManager {
     $ENHANCED_SM = $false
-    & $JAVA -Djava.security.manager=allow -version >$null 2>&1
+    & $JAVA "-Djava.security.manager=allow" -version >$null 2>&1
     if ($LastExitCode -eq 0){
         $ENHANCED_SM = $true
     }
