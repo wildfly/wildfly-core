@@ -140,15 +140,15 @@ public class S3Util {
     /**
      * Use this helper method to generate pre-signed S3 urls. You'll need to generate urls for both the put and delete
      * http methods. Example: Your AWS Access Key is "abcd". Your AWS Secret Access Key is "efgh". You want this node to
-     * write its information to "/S3/master/jboss-domain-master-data". So, your bucket is "S3" and your key is
-     * "master/jboss-domain-master-data". You want this to expire one year from now, or (System.currentTimeMillis /
+     * write its information to "/S3/primary/jboss-domain-primary-data". So, your bucket is "S3" and your key is
+     * "primary/jboss-domain-primary-data". You want this to expire one year from now, or (System.currentTimeMillis /
      * 1000) + (60 * 60 * 24 * 365) Let's assume that this equals 1316286684
      *
      * Here's how to generate the value for the pre_signed_put_url property: String putUrl =
-     * S3Util.generatePreSignedUrl("abcd", "efgh", "put", "S3", "master/jboss-domain-master-data", 1316286684);
+     * S3Util.generatePreSignedUrl("abcd", "efgh", "put", "S3", "primary/jboss-domain-primary-data", 1316286684);
      *
      * Here's how to generate the value for the pre_signed_delete_url property: String deleteUrl =
-     * S3Util.generatePreSignedUrl("abcd", "efgh", "delete", "S3", "master/jboss-domain-master-data", 1316286684);
+     * S3Util.generatePreSignedUrl("abcd", "efgh", "delete", "S3", "primary/jboss-domain-primary-data", 1316286684);
      *
      * @param awsAccessKey Your AWS Access Key
      * @param awsSecretAccessKey Your AWS Secret Access Key
