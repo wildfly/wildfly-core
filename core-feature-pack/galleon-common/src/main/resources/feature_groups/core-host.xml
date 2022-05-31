@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature-group-spec name="core-host" xmlns="urn:jboss:galleon:feature-group:1.0">
 
-    <feature-group name="core-host-master"/>
+    <feature-group name="core-host-primary"/>
 
     <feature spec="host">
         <param name="host" value="primary"/>
