@@ -924,7 +924,7 @@ public class CoreResourceManagementTestCase {
 
         operation.get(SELECT).add("name");
         operation.get(SELECT).add("running-mode");
-        operation.get(WHERE).add("master", "false");
+        operation.get(WHERE).add("primary", "false");
 
         ModelNode response = masterClient.execute(operation);
 

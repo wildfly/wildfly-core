@@ -206,7 +206,7 @@ public class HostResourceDefinition extends SimpleResourceDefinition {
             setValidator(EnumValidator.create(DirectoryGrouping.class)).
             setAllowExpression(true).
             build();
-    public static final SimpleAttributeDefinition MASTER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.MASTER, ModelType.BOOLEAN, true)
+    public static final SimpleAttributeDefinition MASTER = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PRIMARY, ModelType.BOOLEAN, true)
             .setDefaultValue(ModelNode.FALSE)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
