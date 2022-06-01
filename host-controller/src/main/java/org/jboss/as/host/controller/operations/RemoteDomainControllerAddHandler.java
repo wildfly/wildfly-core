@@ -36,6 +36,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
@@ -104,6 +105,7 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
             .setAllowExpression(true)
             .setFlags(AttributeAccess.Flag.RESTART_JVM)
             .setValidator(EnumValidator.create(AdminOnlyDomainConfigPolicy.class))
+            .setAllowedValues(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString(), AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER.toString(), AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG.toString())
             .setDefaultValue(new ModelNode(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG.toString()))
             .build();
 
@@ -134,6 +136,14 @@ public class RemoteDomainControllerAddHandler implements OperationStepHandler {
         USERNAME.validateAndSet(operation, remoteDC);
         IGNORE_UNUSED_CONFIG.validateAndSet(operation, remoteDC);
         ADMIN_ONLY_POLICY.validateAndSet(operation, remoteDC);
+
+        if (remoteDC.hasDefined(ADMIN_ONLY_POLICY.getName())) {
+            ModelNode current = ADMIN_ONLY_POLICY.resolveModelAttribute(context, remoteDC);
+            if (current.asString().equals(AdminOnlyDomainConfigPolicy.LEGACY_FETCH_FROM_DOMAIN_CONTROLLER.toString())) {
+                ControllerLogger.ROOT_LOGGER.adminOnlyPolicyDeprecatedValue();
+                remoteDC.get(ADMIN_ONLY_POLICY.getName()).set(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER.toString());
+            }
+        }
 
         if (operation.has(AUTHENTICATION_CONTEXT.getName())) {
             AUTHENTICATION_CONTEXT.validateAndSet(operation, remoteDC);

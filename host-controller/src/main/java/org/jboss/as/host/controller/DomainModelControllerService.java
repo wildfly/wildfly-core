@@ -734,7 +734,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                 // our current setup is good, if we're using --cached-dc, we'll try and load the config below
                                 // if not, we'll start empty.
                                 break;
-                            case FETCH_FROM_MASTER:
+                            case FETCH_FROM_DOMAIN_CONTROLLER:
                                 if (discoveryConfigured) {
                                     // Try and connect.
                                     // If can't connect && !environment.isUseCachedDc(), abort
