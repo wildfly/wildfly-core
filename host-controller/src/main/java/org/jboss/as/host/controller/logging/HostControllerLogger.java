@@ -72,8 +72,8 @@ public interface HostControllerLogger extends BasicLogger {
     /**
      * A logger with a category of {@code org.jboss.as.domain.controller}.
      * <strong>Usage:</strong> Use this in OSH code related to the resources persisted in domain.xml, or
-     * in code specific to the function of the master Host Controller, e.g. the registration/deregistration
-     * of slave Host Contollers.
+     * in code specific to the function of the primary Host Controller, e.g. the registration/deregistration
+     * of secondary Host Contollers.
      */
     HostControllerLogger DOMAIN_LOGGER = Logger.getMessageLogger(HostControllerLogger.class, "org.jboss.as.domain.controller");
 
@@ -88,12 +88,12 @@ public interface HostControllerLogger extends BasicLogger {
     void cannotConnect(URI uri, @Cause Exception cause);
 
     /**
-     * Logs an error message indicating this host is a slave and cannot connect to the master host controller.
+     * Logs an error message indicating this host controller is a secondary and cannot connect to the primary Host Controller.
      *
      * @param e the cause of the error.
      */
     @LogMessage(level = Level.ERROR)
-    @Message(id = 2, value = "Could not connect to master. Error was: %s")
+    @Message(id = 2, value = "Could not connect to the domain controller. Error was: %s")
     void cannotConnectToMaster(Exception e);
 
     /**
@@ -234,10 +234,10 @@ public interface HostControllerLogger extends BasicLogger {
     void optionAlreadySet(String option, String jvm, String element);
 
 //    /**
-//     * Logs an informational message indicating a reconnection to master.
+//     * Logs an informational message indicating a reconnection to the domain controller.
 //     */
 //    @LogMessage(level = Level.INFO)
-//    @Message(id = 17, value = "Reconnected to master")
+//    @Message(id = 17, value = "Reconnected to the domain controller")
 //    void reconnectedToMaster();
 
     /**
@@ -250,13 +250,13 @@ public interface HostControllerLogger extends BasicLogger {
     void reconnectingServer(String serverName);
 
     /**
-     * Logs an informational message indicating the host has been registered as a remote slave.
+     * Logs an informational message indicating the host has been registered as a remote secondary host.
      *
      * @param hostName the host name
      * @param productName the product name
      */
     @LogMessage(level = INFO)
-    @Message(id = 19, value = "Registered remote slave host \"%s\", %s")
+    @Message(id = 19, value = "Registered remote secondary host \"%s\", %s")
     void registeredRemoteSlaveHost(String hostName, String productName);
 
     /**
@@ -281,7 +281,7 @@ public interface HostControllerLogger extends BasicLogger {
     void serverConnected(String name, Channel channel);
 
 //    /**
-//     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
+//     * Logs a warning message indicating graceful shutdown of management request handling of secondary HC to primary HC
 //     * communication did not complete.
 //     *
 //     * @param cause the cause of the error.
@@ -320,12 +320,12 @@ public interface HostControllerLogger extends BasicLogger {
 //    void unexpectedServerState(String serverName, ServerState expected, ServerState current);
 
     /**
-     * Logs an informational message indicating the host has been unregistered as a remote slave.
+     * Logs an informational message indicating the host has been unregistered as a remote secondary host.
      *
      * @param host the host.
      */
     @LogMessage(level = INFO)
-    @Message(id = 26, value = "Unregistered remote slave host \"%s\"")
+    @Message(id = 26, value = "Unregistered remote secondary host \"%s\"")
     void unregisteredRemoteSlaveHost(String host);
 
     /**
@@ -376,7 +376,7 @@ public interface HostControllerLogger extends BasicLogger {
     void reportAdminOnlyDomainXmlFailure();
 
 //    /**
-//     * Logs a warning message indicating graceful shutdown of management request handling of slave HC to master HC
+//     * Logs a warning message indicating graceful shutdown of management request handling of secondary HC to primary HC
 //     * communication did not complete within the given timeout period.
 //     *
 //     * @param timeout the timeout, in ms.
@@ -386,19 +386,19 @@ public interface HostControllerLogger extends BasicLogger {
 //    void gracefulManagementChannelHandlerShutdownTimedOut(int timeout);
 
     @LogMessage(level = INFO)
-    @Message(id = 37, value="The master host controller has been restarted. Re-registering this slave host controller with the new master.")
+    @Message(id = 37, value="The primary Host Controller has been restarted. Re-registering this secondary Host Controller with the new primary.")
     void masterHostControllerChanged();
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 38, value="The master host controller could not be reached in the last [%d] milliseconds. Re-connecting.")
+    @Message(id = 38, value="The domain controller could not be reached in the last [%d] milliseconds. Re-connecting.")
     void masterHostControllerUnreachable(long timeout);
 
     @LogMessage(level = INFO)
-    @Message(id = 39, value="The slave host controller \"%s\" has been restarted or is attempting to reconnect. Unregistering the current connection to this slave.")
+    @Message(id = 39, value="The secondary Host Controller \"%s\" has been restarted or is attempting to reconnect. Unregistering the current connection to this secondary.")
     void slaveHostControllerChanged(String hostName);
 
     @LogMessage(level = Level.WARN)
-    @Message(id = 40, value="The slave host controller \"%s\"  could not be reached in the last [%d] milliseconds. Unregistering.")
+    @Message(id = 40, value="The secondary Host Controller \"%s\" could not be reached in the last [%d] milliseconds. Unregistering.")
     void slaveHostControllerUnreachable(String hostName, long timeout);
 
 
@@ -436,11 +436,11 @@ public interface HostControllerLogger extends BasicLogger {
     IllegalStateException authenticationFailureUnableToConnect(@Cause Throwable cause);
 
     /**
-     * Creates an exception indicating the remote file repository cannot be accessed from the master domain controller.
+     * Creates an exception indicating the remote file repository cannot be accessed from the domain controller.
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 44, value = "Cannot access a remote file repository from the master domain controller")
+    @Message(id = 44, value = "Cannot access a remote file repository from the domain controller")
     IllegalStateException cannotAccessRemoteFileRepository();
 
     /**
@@ -481,7 +481,7 @@ public interface HostControllerLogger extends BasicLogger {
     String cannotRestartServer(String serverName, ServerStatus status);
 
     /**
-     * A message indicating the servers cannot start when the host controller is running in the mode represented by the
+     * A message indicating the servers cannot start when the Host Controller is running in the mode represented by the
      * {@code mode} parameter.
      *
      * @param mode the running mode.
@@ -508,15 +508,15 @@ public interface HostControllerLogger extends BasicLogger {
     IllegalStateException configurationPersisterAlreadyInitialized();
 
     /**
-     * Creates an exception indicating an interruption while trying to connect to master.
+     * Creates an exception indicating an interruption while trying to connect to domain controller.
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 51, value = "Interrupted while trying to connect to master")
+    @Message(id = 51, value = "Interrupted while trying to connect to the domain controller")
     IllegalStateException connectionToMasterInterrupted();
 
     /**
-     * Creates an exception indicating the connection to master could not be completed within the number of retries and
+     * Creates an exception indicating the connection to primary could not be completed within the number of retries and
      * timeout.
      *
      * @param cause   the cause of the error.
@@ -525,7 +525,7 @@ public interface HostControllerLogger extends BasicLogger {
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 52, value = "Could not connect to master in %d attempts within %s ms")
+    @Message(id = 52, value = "Could not connect to the domain controller in %d attempts within %s ms")
     IllegalStateException connectionToMasterTimeout(@Cause Throwable cause, int retries, long timeout);
 
     /**
@@ -681,13 +681,13 @@ public interface HostControllerLogger extends BasicLogger {
 
     /**
      * Creates an exception indicating the need to call the method, represented by the {@code methodName} parameter,
-     * before checking the slave status.
+     * before checking the secondary status.
      *
      * @param methodName the name of the method to invoke.
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 67, value = "Must call %s before checking for slave status")
+    @Message(id = 67, value = "Must call %s before checking for secondary Host Controller status")
     IllegalStateException mustInvokeBeforeCheckingSlaveStatus(String methodName);
 
     /**
@@ -876,7 +876,7 @@ public interface HostControllerLogger extends BasicLogger {
 //    IOException unrecognizedType(byte type);
 
     /**
-     * Creates an exception indication that the host controller was already shutdown.
+     * Creates an exception indication that the Host Controller was already shutdown.
      * @return an {@link Exception} for the error
      */
     @Message(id = 87, value = "Host-Controller is already shutdown.")
@@ -1063,28 +1063,28 @@ public interface HostControllerLogger extends BasicLogger {
     IllegalStateException cannotInstantiateDiscoveryOptionClass(String className, String message);
 
 //    /**
-//     * Logs a warning message indicating that the slave host controller could not
+//     * Logs a warning message indicating that the secondary Host Controller could not
 //     * connect to the remote domain controller and that another discovery option
 //     * will be tried.
 //     *
 //     * @param e the cause of the error.
 //     */
 //    @LogMessage(level = Level.WARN)
-//    @Message(id=135, value = "Could not connect to master. Trying another domain controller discovery option. Error was: %s")
+//    @Message(id=135, value = "Could not connect to primary. Trying another domain controller discovery option. Error was: %s")
 //    void tryingAnotherDiscoveryOption(Exception e);
 
 //    /**
-//     * Logs a warning message indicating that the slave host controller could not
+//     * Logs a warning message indicating that the secondary Host Controller could not
 //     * connect to the remote domain controller and that there are no discovery options left.
 //     *
 //     * @param e the cause of the error.
 //     */
 //    @LogMessage(level = Level.WARN)
-//    @Message(id=136, value = "Could not connect to master. No domain controller discovery options left. Error was: %s")
+//    @Message(id=136, value = "Could not connect to primary. No domain controller discovery options left. Error was: %s")
 //    void noDiscoveryOptionsLeft(Exception e);
 
     /**
-     * Logs an error message indicating that the master host controller could not write its
+     * Logs an error message indicating that the domain controller could not write its
      * data to the S3 file.
      *
      * @param e the cause of the error.
@@ -1094,7 +1094,7 @@ public interface HostControllerLogger extends BasicLogger {
     void cannotWriteDomainControllerData(Exception e);
 
     /**
-     * Logs an error message indicating that the master host controller could not remove
+     * Logs an error message indicating that the domain controller could not remove
      * the S3 file.
      *
      * @param e the cause of the error.
@@ -1107,18 +1107,18 @@ public interface HostControllerLogger extends BasicLogger {
 //    @Message(id=139, value="Invalid value for %s. Must only contain all of the existing discovery options")
 //    OperationFailedException invalidDiscoveryOptionsOrdering(String name);
 
-    @Message(id=140, value="Can't execute transactional operation '%s' from slave controller")
+    @Message(id=140, value="Can't execute transactional operation '%s' from the secondary Host Controller")
     IllegalStateException cannotExecuteTransactionalOperationFromSlave(String operationName);
 
 //    @Message(id=141, value="There is no resource called %s")
 //    OperationFailedException noResourceFor(PathAddress address);
 
     @LogMessage(level = Level.ERROR)
-    @Message(id=142, value = "Failed to apply domain-wide configuration from master host controller")
+    @Message(id=142, value = "Failed to apply domain-wide configuration from the domain controller")
     void failedToApplyDomainConfig(@Cause Exception e);
 
     @LogMessage(level = Level.ERROR)
-    @Message(id=143, value = "Failed to apply domain-wide configuration from master host controller. " +
+    @Message(id=143, value = "Failed to apply domain-wide configuration from the Domain Controller. " +
             "Operation outcome: %s. Failure description %s")
     void failedToApplyDomainConfig(String outcome, ModelNode failureDescription);
 
@@ -1142,13 +1142,13 @@ public interface HostControllerLogger extends BasicLogger {
 
 
     /**
-     * Logs a warning message indicating that the slave host controller could not
+     * Logs a warning message indicating that the secondary Host Controller could not
      * discover the remote domain controller using the given {@link org.jboss.as.host.controller.discovery.DiscoveryOption}.
      *
      * @param e the cause of the error.
      */
     @LogMessage(level = Level.WARN)
-    @Message(id = 146, value = "Could not discover master using discovery option %s. Error was: %s")
+    @Message(id = 146, value = "Could not discover the domain controller using discovery option %s. Error was: %s")
     void failedDiscoveringMaster(DiscoveryOption option, Exception e);
 
     /**
@@ -1160,12 +1160,12 @@ public interface HostControllerLogger extends BasicLogger {
     void noDiscoveryOptionsLeft();
 
     /**
-     * Logs a message indicating that the slave host controller connected with the master HC.
+     * Logs a message indicating that the secondary Host Controller connected with the primary HC.
      *
-     * @param uri the URI at which the master was reached
+     * @param uri the URI at which the primary was reached
      */
     @LogMessage(level = INFO)
-    @Message(id = 148, value = "Connected to master host controller at %s")
+    @Message(id = 148, value = "Connected to the domain controller at %s")
     void connectedToMaster(URI uri);
 
     @LogMessage(level = INFO)
@@ -1173,7 +1173,7 @@ public interface HostControllerLogger extends BasicLogger {
     void usingCachedDC(String configOption, String cachedXmlFile);
 
     @LogMessage(level = INFO)
-    @Message(id = 150, value = "Trying to reconnect to master host controller.")
+    @Message(id = 150, value = "Trying to reconnect to the domain controller.")
     void reconnectingToMaster();
 
     @LogMessage(level = Level.ERROR)
@@ -1411,13 +1411,13 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 209, value = "Host name may not be null.")
     OperationFailedException nullHostName();
 
-    @Message(id = 210, value = "A slave host controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
+    @Message(id = 210, value = "A secondary Host Controller may not be added using add(). Please add a host, omitting this parameter, and configure the remote domain controller using write-attribute.")
     OperationFailedException cannotAddSlaveHostAfterBoot();
 
     @Message(id = 211, value = "Boot configuration validation failed")
     OperationFailedException bootConfigValidationFailed(@Param ModelNode failureDescription);
 
-    @Message(id = 212, value = "Fetch of missing configuration from the master Host Controller failed without explanation. Fetch operation outcome was %s")
+    @Message(id = 212, value = "Fetch of missing configuration from the Domain Controller failed without explanation. Fetch operation outcome was %s")
     OperationFailedException fetchOfMissingConfigurationFailed(String failedOutcome);
 
     /**

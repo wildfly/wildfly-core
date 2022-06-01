@@ -443,11 +443,11 @@ public interface DomainManagementLogger extends BasicLogger {
     String errorHeader();
 
     /**
-     * A message to check if this user is going to be used by a host controller to connect to the master domain controller.
+     * A message to check if this user is going to be used by a host controller to connect to the domain controller.
      *
      * @return a {@link String} for the message.
      */
-    @Message(id = Message.NONE, value = "Is this new user going to be used for one AS process to connect to another AS process? %ne.g. for a slave host controller connecting to the master or for a Remoting connection for server to server Jakarta Enterprise Beans calls.")
+    @Message(id = Message.NONE, value = "Is this new user going to be used for one AS process to connect to another AS process? %ne.g. for a secondary host controller connecting to the primary or for a Remoting connection for server to server Jakarta Enterprise Beans calls.")
     String serverUser();
 
     /**
@@ -1119,7 +1119,7 @@ public interface DomainManagementLogger extends BasicLogger {
 
     @Message(id = 107, value = "Operation '%s' has been holding the operation execution write lock for longer than [%d] seconds, " +
             "but it is part of the rollout of a domain-wide operation with domain-uuid '%s' that has other operations that are also" +
-            "not progressing. Their ids are: %s. Cancellation of the operation on the master host controller is recommended.")
+            "not progressing. Their ids are: %s. Cancellation of the operation on the domain controller is recommended.")
     OperationFailedException domainRolloutNotProgressing(String exclusiveLock, long timeout, String domainUUID, Collection relatedOps);
 
     /**

@@ -60,8 +60,8 @@ public interface DomainControllerLogger extends BasicLogger {
     /**
      * A logger with the category of {@code org.jboss.as.domain.controller}.
      * <strong>Usage:</strong> Use this in OSH code related to the resources persisted in domain.xml, or
-     * in code specific to the function of the master Host Controller, e.g. the registration/deregistration
-     * of slave Host Contollers.
+     * in code specific to the function of the primary Host Controller, e.g. the registration/deregistration
+     * of secondary Host Contollers.
      */
     DomainControllerLogger ROOT_LOGGER = Logger.getMessageLogger(DomainControllerLogger.class, "org.jboss.as.domain.controller");
 
@@ -183,11 +183,11 @@ public interface DomainControllerLogger extends BasicLogger {
     void failedToSetServerInRestartRequireState(String serverName);
 
     /**
-     * Creates an exception message indicating this host is a slave and cannot accept registrations from other slaves.
+     * Creates an exception message indicating this host is a secondary and cannot accept registrations from other secondary host controllers.
      *
      * @return a message for the error.
      */
-    @Message(id = 13, value = "Registration of remote hosts is not supported on slave host controllers")
+    @Message(id = 13, value = "Registration of remote hosts is not supported on secondary host controllers")
     String slaveControllerCannotAcceptOtherSlaves();
 
     /**
@@ -198,19 +198,19 @@ public interface DomainControllerLogger extends BasicLogger {
      *
      * @return a message for the error.
      */
-    @Message(id = 14, value = "The master host controller cannot register slave host controllers as it's current running mode is '%s'")
+    @Message(id = 14, value = "The primary host controller cannot register secondary host controllers as its current running mode is '%s'")
     String adminOnlyModeCannotAcceptSlaves(RunningMode runningMode);
 
     /**
      * Creates an exception message indicating a host cannot register because another host of the same name is already
      * registered.
      *
-     * @param slaveName the name of the slave
+     * @param secondaryName the name of the secondary host controller
      *
      * @return a message for the error.
      */
     @Message(id = 15, value = "There is already a registered host named '%s'")
-    String slaveAlreadyRegistered(String slaveName);
+    String slaveAlreadyRegistered(String secondaryName);
 
     /**
      * Creates an exception message indicating that a parent is missing a required child.
@@ -388,7 +388,7 @@ public interface DomainControllerLogger extends BasicLogger {
 
     /**
      * A message indicating the operation, represented by the {@code operation} parameter, for the {@code address} can
-     * only be handled by the master domain controller and this host is not the master domain controller.
+     * only be handled by the domain controller and this host is not the domain controller.
      *
      * @param operation the operation.
      * @param address   the address the operation was to be executed on.
@@ -396,7 +396,7 @@ public interface DomainControllerLogger extends BasicLogger {
      * @return the message.
      */
     @Message(id = 32, value = "Operation %s for address %s can only be handled by the " +
-            "master Domain Controller; this host is not the master Domain Controller")
+            "Domain Controller; this host is not the Domain Controller")
     String masterDomainControllerOnlyOperation(String operation, PathAddress address);
 
     /**
@@ -475,11 +475,11 @@ public interface DomainControllerLogger extends BasicLogger {
     String noDeploymentContentWithHash(String hash);
 
     /**
-     * A message indicating a slave domain controller cannot accept deployment content uploads.
+     * A message indicating a secondary host controller cannot accept deployment content uploads.
      *
      * @return the message.
      */
-    @Message(id = 41, value = "A slave domain controller cannot accept deployment content uploads")
+    @Message(id = 41, value = "A secondary Host Controller cannot accept deployment content uploads")
     String slaveCannotAcceptUploads();
 
     /**
@@ -735,11 +735,11 @@ public interface DomainControllerLogger extends BasicLogger {
     XMLStreamException duplicateSocketBindingGroupInclude(String s);
 
     @Message(id = 78, value = "The profile clone operation is not available on the host '%s'. To be able to use it in a " +
-            "domain containing older slaves which do not support the profile clone operation, you need to either: " +
-            "a) Make sure that all older slaves with a model version smaller than 4.0.0 " +
+            "domain containing older secondary hosts which do not support the profile clone operation, you need to either: " +
+            "a) Make sure that all older secondary hosts with a model version smaller than 4.0.0 " +
             "ignore the cloned profile and the profile specified in the 'to-profile' parameter. " +
             "b) Reload the domain controller into admin-only mode, perform the clone, then reload the domain controller " +
-            "into normal mode again, and check whether the slaves need reloading.")
+            "into normal mode again, and check whether the secondary hosts need reloading.")
     String cloneOperationNotSupportedOnHost(String hostName);
 
     @LogMessage(level = Level.INFO)
