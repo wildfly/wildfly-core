@@ -43,7 +43,7 @@ public class ReadOnlyModeTestCase {
     @Before
     public void setupDomain() throws Exception {
         DomainTestSupport.Configuration domainConfig = DomainTestSupport.Configuration.create(ReadOnlyModeTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
         domainConfig.getMasterConfiguration().setReadOnlyHost(true);
         domainConfig.getMasterConfiguration().setReadOnlyDomain(true);
         domainConfig.getSlaveConfiguration().setReadOnlyDomain(true);

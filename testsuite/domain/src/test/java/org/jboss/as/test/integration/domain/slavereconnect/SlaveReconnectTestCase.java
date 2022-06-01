@@ -84,7 +84,7 @@ public class SlaveReconnectTestCase {
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.create(
                 DomainTestSupport.Configuration.create(SlaveReconnectTestCase.class.getSimpleName(),
-                        "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml"));
+                        "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
 
         WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();
         CallbackHandler callbackHandler = Authentication.getCallbackHandler("slave", RIGHT_PASSWORD, "ManagementRealm");

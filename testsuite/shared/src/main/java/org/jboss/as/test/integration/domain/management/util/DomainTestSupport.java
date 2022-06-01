@@ -84,13 +84,13 @@ public class DomainTestSupport implements AutoCloseable {
             final Configuration configuration;
             if(Boolean.getBoolean("wildfly.master.debug")) {
                  configuration = DomainTestSupport.Configuration.createDebugMaster(testName,
-                    "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+                    "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             } else if (Boolean.getBoolean("wildfly.slave.debug")) {
                 configuration = DomainTestSupport.Configuration.createDebugSlave(testName,
-                    "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+                    "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             } else {
                 configuration = DomainTestSupport.Configuration.create(testName,
-                    "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+                    "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             }
             final DomainTestSupport testSupport = DomainTestSupport.create(configuration);
             // Start!

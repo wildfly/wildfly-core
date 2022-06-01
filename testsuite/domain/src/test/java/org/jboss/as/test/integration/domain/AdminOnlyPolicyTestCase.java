@@ -76,7 +76,7 @@ public class AdminOnlyPolicyTestCase {
     public static void setupDomain() throws Exception {
 
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(AdminOnlyPolicyTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", null));
     }
 
     @AfterClass

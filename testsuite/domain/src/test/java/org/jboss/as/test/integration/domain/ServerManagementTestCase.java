@@ -135,7 +135,7 @@ public class ServerManagementTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         DomainTestSupport.Configuration config =  DomainTestSupport.Configuration.create(ServerManagementTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml");
+                "domain-configs/domain-minimal.xml", "host-configs/host-primary.xml", "host-configs/host-minimal.xml");
         // Props for WFCORE-2526 testing
         config.getSlaveConfiguration().addHostCommandLineProperty("-Djboss.host.server-excluded-properties="+EXCLUDED_FROM_HOST_PROP+"," +EXCLUDED_FROM_CONFIG_PROP);
         config.getSlaveConfiguration().addHostCommandLineProperty("-D" + EXCLUDED_FROM_HOST_PROP + "=host");

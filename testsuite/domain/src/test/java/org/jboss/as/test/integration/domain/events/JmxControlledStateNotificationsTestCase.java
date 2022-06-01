@@ -76,7 +76,7 @@ public class JmxControlledStateNotificationsTestCase {
     public static void setupClass() throws Exception {
         testSupport = DomainTestSupport.create(DomainTestSupport.Configuration
                 .create(JmxControlledStateNotificationsTestCase.class.getSimpleName(),
-                        "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
+                        "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", null));
         testSupport.start();
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");

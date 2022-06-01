@@ -97,8 +97,8 @@ public class HostControllerBootOperationsTestCase {
 
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(HostControllerBootOperationsTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
-                "host-configs/host-master.xml",
-                "host-configs/host-slave-main-three-without-jvm.xml"
+                "host-configs/host-primary.xml",
+                "host-configs/host-secondary-main-three-without-jvm.xml"
         );
 
         testSupport = DomainTestSupport.create(configuration);

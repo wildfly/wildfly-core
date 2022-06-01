@@ -66,7 +66,7 @@ public class DiscoveryOptionTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(DiscoveryOptionTestCase.class.getName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave-discovery-options.xml"));
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary-discovery-options.xml"));
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();

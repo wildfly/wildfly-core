@@ -99,7 +99,7 @@ public class ServerStartFailureTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         Configuration configuration = DomainTestSupport.Configuration.create(ServerStartFailureTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave-failure.xml");
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary-failure.xml");
         configuration.getMasterConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n");
         configuration.getSlaveConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=9787,server=y,suspend=n");
         testSupport = DomainTestSupport.createAndStartSupport(configuration);

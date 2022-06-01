@@ -79,8 +79,8 @@ public abstract class AbstractConfigurationChangesTestCase {
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
                 AbstractConfigurationChangesTestCase.class.getSimpleName(),
                 "domain-configs/domain-config-changes.xml",
-                "host-configs/host-master-config-changes.xml",
-                "host-configs/host-slave-config-changes.xml",
+                "host-configs/host-primary-config-changes.xml",
+                "host-configs/host-secondary-config-changes.xml",
                 false, false, false, false, false);
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();

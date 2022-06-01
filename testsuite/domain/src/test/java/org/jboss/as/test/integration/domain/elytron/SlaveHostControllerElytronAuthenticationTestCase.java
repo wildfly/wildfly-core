@@ -65,7 +65,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
         testSupport = DomainTestSupport.create(
                 DomainTestSupport.Configuration.create(SlaveHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
-                        "host-configs/host-master-elytron.xml", "host-configs/host-slave-elytron.xml"));
+                        "host-configs/host-primary-elytron.xml", "host-configs/host-secondary-elytron.xml"));
 
         // Tweak the callback handler so the master test driver client can authenticate
         // To keep setup simple it uses the same credentials as the slave host

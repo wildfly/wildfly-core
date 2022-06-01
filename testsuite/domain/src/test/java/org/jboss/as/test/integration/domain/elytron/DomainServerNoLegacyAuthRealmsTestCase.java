@@ -50,7 +50,7 @@ public class DomainServerNoLegacyAuthRealmsTestCase {
         testSupport = DomainTestSupport.create(
                 DomainTestSupport.Configuration.create(SlaveHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
-                        "host-configs/host-master-elytron-no-legacy-realms.xml", "host-configs/host-slave-elytron-no-legacy-realms.xml"));
+                        "host-configs/host-primary-elytron-no-legacy-realms.xml", "host-configs/host-secondary-elytron-no-legacy-realms.xml"));
 
         master = testSupport.getDomainMasterLifecycleUtil();
         slave = testSupport.getDomainSlaveLifecycleUtil();

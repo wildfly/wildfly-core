@@ -46,7 +46,7 @@ public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveT
 
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
                 SSLElytronMasterSlaveOneWayTestCase.class.getSimpleName(), "domain-configs/domain-standard.xml",
-                "host-configs/host-master-ssl-2way-elytron.xml", "host-configs/host-slave-ssl-2way-elytron.xml");
+                "host-configs/host-primary-ssl-2way-elytron.xml", "host-configs/host-secondary-ssl-2way-elytron.xml");
 
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
     }

@@ -59,7 +59,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     @BeforeClass
     public static void setupDomain() {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ReadConfigAsFeaturesDomainTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml"));
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
     }
 

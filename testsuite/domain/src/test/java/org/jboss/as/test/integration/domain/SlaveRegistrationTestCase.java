@@ -60,8 +60,8 @@ public class SlaveRegistrationTestCase {
 
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SlaveRegistrationTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
-                "host-configs/host-master.xml",
-                "host-configs/host-slave.xml"
+                "host-configs/host-primary.xml",
+                "host-configs/host-secondary.xml"
         );
 
         testSupport = DomainTestSupport.create(configuration);

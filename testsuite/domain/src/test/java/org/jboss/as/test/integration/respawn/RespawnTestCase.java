@@ -129,7 +129,7 @@ public class RespawnTestCase {
         URL url = tccl.getResource("domain-configs/domain-respawn.xml");
         Assert.assertNotNull(url);
         File domainXml = new File(url.toURI());
-        url = tccl.getResource("host-configs/respawn-master.xml");
+        url = tccl.getResource("host-configs/respawn-primary.xml");
         hostXml = new File(url.toURI());
 
         Assert.assertTrue(domainXml.exists());

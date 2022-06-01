@@ -73,7 +73,7 @@ public class ProductInfoUnitTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ProductInfoUnitTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml", false, false, false, false, false));
+                "domain-configs/domain-minimal.xml", "host-configs/host-primary.xml", "host-configs/host-minimal.xml", false, false, false, false, false));
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }

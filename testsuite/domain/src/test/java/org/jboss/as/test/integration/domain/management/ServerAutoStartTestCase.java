@@ -118,7 +118,7 @@ public class ServerAutoStartTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerAutoStartTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master-auto-start.xml", "host-configs/host-slave-auto-start.xml"));
+                "domain-configs/domain-minimal.xml", "host-configs/host-primary-auto-start.xml", "host-configs/host-secondary-auto-start.xml"));
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }

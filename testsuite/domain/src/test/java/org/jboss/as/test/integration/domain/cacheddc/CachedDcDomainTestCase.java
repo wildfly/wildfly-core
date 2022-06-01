@@ -83,7 +83,7 @@ public class CachedDcDomainTestCase {
     @Before
     public void specifyDomainConfig() throws Exception {
         domainConfig = DomainTestSupport.Configuration.create(CachedDcDomainTestCase.class.getSimpleName(),
-            "domain-configs/domain-minimal.xml", "host-configs/host-master-cacheddc.xml", "host-configs/host-slave-cacheddc.xml");
+            "domain-configs/domain-minimal.xml", "host-configs/host-primary-cacheddc.xml", "host-configs/host-secondary-cacheddc.xml");
 
         // removing domain.cached-remote.xml if exists
         getDomainCachedRemoteXmlFile(domainConfig.getSlaveConfiguration()).delete();

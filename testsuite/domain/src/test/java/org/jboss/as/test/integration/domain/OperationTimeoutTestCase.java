@@ -121,7 +121,7 @@ public class OperationTimeoutTestCase {
         // We can't use the standard config or make this part of a TestSuite because we need to
         // set TIMEOUT_ADDER_CONFIG on the HC processes. There's no management API to do this post-boot
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(OperationTimeoutTestCase.class.getSimpleName(),
-            "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+            "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
         configuration.getMasterConfiguration().addHostCommandLineProperty(TIMEOUT_CONFIG);
         configuration.getMasterConfiguration().addHostCommandLineProperty(TIMEOUT_ADDER_CONFIG);
         configuration.getSlaveConfiguration().addHostCommandLineProperty(TIMEOUT_CONFIG);
