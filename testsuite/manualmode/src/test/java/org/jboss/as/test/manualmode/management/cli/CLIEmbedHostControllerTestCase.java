@@ -247,12 +247,12 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/extension=org.wildfly.extension.io:add");
         assertState("running", 0);
         // embedded-hc requires admin-only
-        cli.sendLine("/host=master:reload(admin-only=true");
+        cli.sendLine("/host=primary:reload(admin-only=true");
         assertState("running", TimeoutUtil.adjust(30000));
         cli.sendLine("/extension=org.wildfly.extension.io:remove");
         assertState("running", 0);
         // High level
-        cli.sendLine("reload --host=master --admin-only=true");
+        cli.sendLine("reload --host=primary --admin-only=true");
         assertState("running", TimeoutUtil.adjust(30000));
     }
 
@@ -432,7 +432,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine(line);
         cli.sendLine("/core-service=management/access=authorization:write-attribute(name=provider,value=rbac");
         assertState("reload-required", 0);
-        cli.sendLine("reload --host=master --admin-only=true");
+        cli.sendLine("reload --host=primary --admin-only=true");
         assertState("running", TimeoutUtil.adjust(30000));
     }
 
@@ -446,9 +446,9 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             cli.readAllAsOpResult();
             cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
             cli.readAllAsOpResult();
-            cli.sendLine("/host=master/extension=" + OpTypesExtension.EXTENSION_NAME +":add", true);
+            cli.sendLine("/host=primary/extension=" + OpTypesExtension.EXTENSION_NAME +":add", true);
             cli.readAllAsOpResult();
-            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
+            cli.sendLine("/host=primary/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":add", true);
             cli.readAllAsOpResult();
 
             cli.sendLine("/profile=default/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
@@ -458,10 +458,10 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
             result = cli.readAllAsOpResult();
             assertFalse(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
 
-            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
+            cli.sendLine("/host=primary/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":hidden", true);
             result = cli.readAllAsOpResult();
             assertTrue(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
-            cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":private", true);
+            cli.sendLine("/host=primary/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":private", true);
             result = cli.readAllAsOpResult();
             assertFalse(result.getResponseNode().toString(), result.isIsOutcomeSuccess());
         } finally {
@@ -474,10 +474,10 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
                     cli.readAllAsOpResult();
                 } finally {
                     try {
-                        cli.sendLine("/host=master/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":remove", true);
+                        cli.sendLine("/host=primary/subsystem=" + OpTypesExtension.SUBSYSTEM_NAME +":remove", true);
                         cli.readAllAsOpResult();
                     } finally {
-                        cli.sendLine("/host=master/extension=" + OpTypesExtension.EXTENSION_NAME + ":remove", true);
+                        cli.sendLine("/host=primary/extension=" + OpTypesExtension.EXTENSION_NAME + ":remove", true);
                         cli.readAllAsOpResult();
 
                     }
@@ -680,7 +680,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/server-group=test-server-group:add(profile=test-profile, socket-binding-group=test-sbg)");
 
         cli.sendLine("ls /server-group=test-server-group");
-        cli.sendLine("reload --host=master --admin-only=true");
+        cli.sendLine("reload --host=primary --admin-only=true");
         assertTrue(cli.isConnected());
         cli.sendLine("ls /interface=test-interface");
         cli.sendLine("ls /socket-binding-group=test-sbg");
@@ -696,9 +696,9 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
 
         // host-empty-cli.xml
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=master1:add()");
+        cli.sendLine("/host=primary1:add()");
 
-        configureManagementInterface("master1");
+        configureManagementInterface("primary1");
 
         // domain-empty-cli.xml
         cli.sendLine("/interface=test-interface:add(any-address)");
@@ -706,7 +706,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("/profile=test-profile:add()");
         cli.sendLine("/server-group=test-server-group:add(profile=test-profile, socket-binding-group=test-sbg)");
 
-        cli.sendLine("reload --host=master1 --admin-only=true");
+        cli.sendLine("reload --host=primary1 --admin-only=true");
         assertTrue(cli.isConnected());
 
         cli.sendLine("ls /interface=test-interface");
@@ -714,34 +714,34 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
         cli.sendLine("ls /profile=test-profile");
         cli.sendLine("ls /server-group=test-server-group");
 
-        readManagementInterface("master1");
+        readManagementInterface("primary1");
     }
 
     @Test
-    public void testAddNewDomainSlave() throws Exception {
-        // this adds a new slave HC. Note that most of the add ops below are just to get to a minimal config that will allow the reload to be
+    public void testAddNewDomainSecondary() throws Exception {
+        // this adds a new secondary HC. Note that most of the add ops below are just to get to a minimal config that will allow the reload to be
         // successful.
         final String line = "embed-host-controller --std-out=echo --host-config=host-empty-cli.xml --empty-host-config --remove-existing-host-config " + JBOSS_HOME;
         cli.sendLine(line);
         assertTrue(cli.isConnected());
-        cli.sendLine("/host=fooslave:add()");
+        cli.sendLine("/host=foosecondary:add()");
         // host-empty-cli.xml
         assertTrue(cli.isConnected());
 
-        configureManagementInterface("fooslave");
+        configureManagementInterface("foosecondary");
 
         // add the remote DC
-        cli.sendLine("/host=fooslave:write-remote-domain-controller(host=foomaster)");
-        cli.sendLine("reload --host=fooslave --admin-only=true");
+        cli.sendLine("/host=foosecondary:write-remote-domain-controller(host=fooprimary)");
+        cli.sendLine("reload --host=foosecondary --admin-only=true");
         assertTrue(cli.isConnected());
 
-        readManagementInterface("fooslave");
-        cli.sendLine("/host=fooslave:read-attribute(name=domain-controller)");
+        readManagementInterface("foosecondary");
+        cli.sendLine("/host=foosecondary:read-attribute(name=domain-controller)");
         final CLIOpResult resp = cli.readAllAsOpResult();
         final ModelNode result = resp.getResponseNode();
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
-        // verify that the slave is configurted with a remote DC named "foomaster"
-        assertEquals("foomaster", result.get(RESULT).get(REMOTE).get(HOST).asString());
+        // verify that the secondary Host Controller is configured with a remote DC named "fooprimary"
+        assertEquals("fooprimary", result.get(RESULT).get(REMOTE).get(HOST).asString());
     }
 
     private void assertProperty(final String propertyName, final String expected, final boolean notPresent) throws IOException, InterruptedException {
@@ -757,7 +757,7 @@ public class CLIEmbedHostControllerTestCase extends AbstractCliTestBase {
     }
 
     private void assertState(String expected, int timeout) throws IOException, InterruptedException {
-        assertState(expected, timeout, "/host=master:read-attribute(name=host-state)");
+        assertState(expected, timeout, "/host=primary:read-attribute(name=host-state)");
     }
 
     private void checkNoLogging(String line) throws IOException {

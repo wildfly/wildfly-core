@@ -12,7 +12,7 @@
     </management>
 
     <domain-controller>
-       <remote host="${jboss.domain.master.address:127.0.0.1}" port="${jboss.domain.master.port:9990}" authentication-context="SlaveAC" protocol="remote+http" />
+       <remote host="${jboss.domain.primary.address:127.0.0.1}" port="${jboss.domain.primary.port:9990}" authentication-context="SlaveAC" protocol="remote+http" />
     </domain-controller>
 
     <interfaces>
