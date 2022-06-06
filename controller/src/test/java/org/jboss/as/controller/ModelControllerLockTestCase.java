@@ -217,23 +217,25 @@ public class ModelControllerLockTestCase {
 
         final ModelControllerLock lock = new ModelControllerLock();
 
+        final boolean[] thread1aResultlockInterruptiblyOP2 = new boolean[1];
         Runnable a = new Runnable() {
             @Override
             public void run() {
                 try {
                     lock.lock(OP1);
-                    assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
+                    thread1aResultlockInterruptiblyOP2[0] = lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertFalse
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
         };
 
+        final boolean[] thread2bResultlockInterruptiblyOP2 = new boolean[1];
         Runnable b = new Runnable() {
             @Override
             public void run() {
                 try {
-                    assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
+                    thread2bResultlockInterruptiblyOP2[0] = lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertFalse
                     lock.unlock(OP1);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -245,9 +247,11 @@ public class ModelControllerLockTestCase {
         Thread t2 = new Thread(b);
         t1.start();
         t1.join();
+        assertFalse(thread1aResultlockInterruptiblyOP2[0]);
         assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
         t2.start();
         t2.join();
+        assertFalse(thread2bResultlockInterruptiblyOP2[0]);
         assertTrue(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
     }
 
@@ -256,28 +260,33 @@ public class ModelControllerLockTestCase {
 
         final ModelControllerLock lock = new ModelControllerLock();
 
+        final boolean[] thread1aResultlockInterruptiblyOP2 = new boolean[1];
+        final boolean[] thread1aResultlockSharedInterruptibly = new boolean[1];
+        final boolean[] thread1aResultlockInterruptiblyOP1 = new boolean[1];
         Runnable a = new Runnable() {
             @Override
             public void run() {
                 try {
                     lock.lockShared(OP1);
-                    assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
-                    assertTrue(lock.lockSharedInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
-                    assertFalse(lock.lockInterruptibly(OP1, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
+                    thread1aResultlockInterruptiblyOP2[0] = lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertFalse
+                    thread1aResultlockSharedInterruptibly[0] = lock.lockSharedInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertTrue
+                    thread1aResultlockInterruptiblyOP1[0] = lock.lockInterruptibly(OP1, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertFalse
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
         };
 
+        final boolean[] thread2bResultlockInterruptiblyOP2check1 = new boolean[1];
+        final boolean[] thread2bResultlockInterruptiblyOP2check2 = new boolean[1];
         Runnable b = new Runnable() {
             @Override
             public void run() {
                 try {
-                    assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
+                    thread2bResultlockInterruptiblyOP2check1[0] = lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertFalse
                     lock.unlockShared(OP2);
                     lock.unlockShared(OP1);
-                    assertTrue(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
+                    thread2bResultlockInterruptiblyOP2check2[0] = lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT); //assertTrue
                     lock.unlock(OP2);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -289,9 +298,14 @@ public class ModelControllerLockTestCase {
         Thread t2 = new Thread(b);
         t1.start();
         t1.join();
+        assertFalse(thread1aResultlockInterruptiblyOP2[0]);
+        assertTrue(thread1aResultlockSharedInterruptibly[0]);
+        assertFalse(thread1aResultlockInterruptiblyOP1[0]);
         assertFalse(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
         t2.start();
         t2.join();
+        assertFalse(thread2bResultlockInterruptiblyOP2check1[0]);
+        assertTrue(thread2bResultlockInterruptiblyOP2check2[0]);
         assertTrue(lock.lockInterruptibly(OP2, DEFAULT_TIMEOUT, DEFAULT_TIMEUNIT));
     }
 }
