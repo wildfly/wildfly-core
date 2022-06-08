@@ -16,5 +16,5 @@ IF !countDown($0)
 DO
   traceStack("Invoking lock of ContentRepositoryImpl\n", 20);
   System.out.println("I'm byteman and waiting for 3s " + $0);
-  Thread.sleep(3 * 1000);
+  Thread.sleep(3 * 1000L);
 ENDRULE
