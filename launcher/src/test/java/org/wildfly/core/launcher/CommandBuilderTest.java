@@ -270,6 +270,8 @@ public class CommandBuilderTest {
         // Check exports and opens
         assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED", expectedCount);
+        assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED", expectedCount);
+        assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-opens=java.base/java.io=ALL-UNNAMED", expectedCount);
