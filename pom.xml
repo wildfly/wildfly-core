@@ -149,7 +149,7 @@
              e.g. a bootable jar or a jboss-cli-client.jar.
              NB: In case an update is made to these exports and opens, make sure that the common.sh script is in sync.
         -->
-        <embedding.jar.jpms.exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap</embedding.jar.jpms.exports>
+        <embedding.jar.jpms.exports>java.desktop/sun.awt java.naming/com.sun.jndi.ldap java.naming/com.sun.jndi.url.ldap java.naming/com.sun.jndi.url.ldaps</embedding.jar.jpms.exports>
         <embedding.jar.jpms.opens>java.base/java.lang java.base/java.lang.invoke java.base/java.lang.reflect java.base/java.io java.base/java.security java.base/java.util java.base/java.util.concurrent java.management/javax.management java.naming/javax.naming</embedding.jar.jpms.opens>
 
         <!--
