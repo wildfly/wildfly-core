@@ -34,6 +34,7 @@
 
     <dependencies>
         <module name="java.logging"/>
+        <module name="java.desktop" />
         <module name="org.apache.commons.lang3" />
         <module name="org.apache.commons.cli" />
         <module name="org.apache.sshd" />
