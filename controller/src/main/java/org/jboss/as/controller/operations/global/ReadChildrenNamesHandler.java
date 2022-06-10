@@ -81,11 +81,13 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
             throw new OperationFailedException(ControllerLogger.ROOT_LOGGER.unknownChildType(childType));
         }
         final boolean singletons = INCLUDE_SINGLETONS.resolveModelAttribute(context, operation).asBoolean(false);
-        if (singletons && isSingletonResource(registry, childType)) {
+        if (singletons && isSingletonResource(registry, childType) && !registry.isRuntimeOnly()) {
             Set<PathElement> childTypes = registry.getChildAddresses(PathAddress.EMPTY_ADDRESS);
             for (PathElement child : childTypes) {
                 if (childType.equals(child.getKey())) {
-                    childNames.add(child.getValue());
+                    if(!isEmptyRuntimeResource(context, registry, PathAddress.pathAddress(child))) {
+                        childNames.add(child.getValue());
+                    }
                 }
             }
         }
@@ -119,5 +121,16 @@ public class ReadChildrenNamesHandler implements OperationStepHandler {
 
     private boolean isSingletonResource(final ImmutableManagementResourceRegistration registry, final String key) {
         return registry.getSubModel(PathAddress.pathAddress(PathElement.pathElement(key))) == null;
+    }
+
+    private boolean isEmptyRuntimeResource(final OperationContext context, final ImmutableManagementResourceRegistration registry, final PathAddress child) {
+        if(registry.getSubModel(child).isRuntimeOnly()) {
+            try {
+                context.readResource(child);
+            } catch(Resource.NoSuchResourceException ex) {
+                return true;
+            }
+        }
+        return false;
     }
 }
