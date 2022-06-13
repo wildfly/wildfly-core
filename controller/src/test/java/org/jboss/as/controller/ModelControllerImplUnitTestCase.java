@@ -455,11 +455,31 @@ public class ModelControllerImplUnitTestCase {
         notificationHandler.validate(0);
 
         operation = new ModelNode();
+        operation.get(OP).set(READ_CHILDREN_NAMES_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(CHILD_TYPE).set("runtime-child");
+
+        result = controller.execute(operation, null, null, null).get("result");
+        assertTrue(result.asList().isEmpty());
+        notificationHandler.validate(0);
+
+        operation = new ModelNode();
+        operation.get(OP).set(READ_CHILDREN_NAMES_OPERATION);
+        operation.get(OP_ADDR).setEmptyList();
+        operation.get(CHILD_TYPE).set("deployment");
+
+        result = controller.execute(operation, null, null, null).get("result");
+        assertEquals("runtime", result.get(0).asString());
+        notificationHandler.validate(0);
+
+        operation = new ModelNode();
         operation.get(OP).set(READ_CHILDREN_TYPES_OPERATION);
         operation.get(OP_ADDR).setEmptyList();
 
         result = controller.execute(operation, null, null, null).get("result");
         assertEquals("child", result.get(0).asString());
+        assertEquals("deployment", result.get(1).asString());
+        assertEquals("runtime-child", result.get(2).asString());
         notificationHandler.validate(0);
 
         operation = new ModelNode();
@@ -860,6 +880,16 @@ public class ModelControllerImplUnitTestCase {
             ManagementResourceRegistration childRegistration = rootRegistration.registerSubModel(childResource);
             childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute1", ModelType.INT), null);
             childRegistration.registerReadOnlyAttribute(TestUtils.createNillableAttribute("attribute2", ModelType.INT, true), null);
+            SimpleResourceDefinition runtimeChildResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
+                    PathElement.pathElement("runtime-child"),
+                    NonResolvingResourceDescriptionResolver.INSTANCE
+            ).setRuntime(true));
+            rootRegistration.registerSubModel(runtimeChildResource);
+            SimpleResourceDefinition deploymentResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(
+                    PathElement.pathElement("deployment"),
+                    NonResolvingResourceDescriptionResolver.INSTANCE
+            ).setRuntime(true));
+            rootRegistration.registerSubModel(deploymentResource);
         }
 
     }
@@ -883,6 +913,9 @@ public class ModelControllerImplUnitTestCase {
 
             context.createResource(CHILD_ONE).getModel().set(child1);
             context.createResource(CHILD_TWO).getModel().set(child2);
+            final ModelNode deployment = new ModelNode();
+            deployment.get("attribute1").set(5);
+            context.createResource(PathAddress.pathAddress("deployment", "runtime")).getModel().set(deployment);
         }
     }
 
