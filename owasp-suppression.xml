@@ -92,4 +92,17 @@
         <cve>CVE-2020-10740</cve>
     </suppress>
 
+    <!-- The io.undertow system is vulnerable, but not org.wildfly.security.elytron-web:undertow-server which integrates Elytron with Undertow -->
+    <!-- The io.undertow is in version 2.2.17 which is higher then vulnerable prior to 2.2.11.Final -->
+    <suppress>
+        <notes><![CDATA[
+   file name: undertow-server-1.10.1.Final.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
+        <cve>CVE-2021-3629</cve>
+        <cve>CVE-2021-3597</cve>
+        <cve>CVE-2020-10687</cve>
+        <cve>CVE-2021-20220</cve>
+    </suppress>
+
 </suppressions>
