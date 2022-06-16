@@ -76,8 +76,8 @@ import org.junit.Test;
  */
 public class IgnoreUnusedConfigurationTestCase {
 
-    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
-    static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
+    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;

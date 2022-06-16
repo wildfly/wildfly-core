@@ -86,22 +86,22 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     protected static void setMasterManagementNativeInterfaceAndCheck(ModelControllerClient client) throws Exception {
-        checkHostStatusOnMaster("slave");
+        checkHostStatusOnMaster("secondary");
         setMasterManagementNativeInterface(client);
         reloadMaster();
-        checkHostStatusOnMaster("master");
+        checkHostStatusOnMaster("primary");
     }
 
     protected static void setOriginMasterManagementNativeInterfaceAndCheck() throws Exception {
         setOriginMasterManagementNativeInterface();
         reloadMaster();
-        checkHostStatusOnMaster("master");
+        checkHostStatusOnMaster("primary");
     }
 
     protected static void reloadMaster() throws Exception {
         ModelNode op = new ModelNode();
         op.get(OP).set("reload");
-        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP_ADDR).add(HOST, "primary");
         op.get(ADMIN_ONLY).set(false);
         executeOverHttp(getMasterMgmtUri(), op.toJSONString(true));
     }

@@ -441,7 +441,7 @@ public class CachedDcDomainTestCase {
 
     private ModelNode readResourceTestLoggerFromSlaveHost(DomainClient client) throws IOException {
         final ModelNode hostLoggerAddress = new ModelNode()
-                .add(HOST, "slave")
+                .add(HOST, "secondary")
                 .add(SERVER, "other-two")
                 .add(SUBSYSTEM, "logging")
                 .add(LOGGER, TEST_LOGGER_NAME);
@@ -462,7 +462,7 @@ public class CachedDcDomainTestCase {
 
     private ModelNode readLoggingApiDependenciesAtServerOtherTwo(DomainClient client) {
         final ModelNode hostLoggingAddress = new ModelNode()
-                .add(HOST, "slave")
+                .add(HOST, "secondary")
                 .add(SERVER, "other-two")
                 .add(SUBSYSTEM, "logging");
 

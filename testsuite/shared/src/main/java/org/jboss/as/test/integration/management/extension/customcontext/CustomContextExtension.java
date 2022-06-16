@@ -137,7 +137,7 @@ public class CustomContextExtension implements Extension {
                 @Override
                 public String remapPath(String originalPath) {
                     if ("/foo".equals(originalPath)) {
-                        String prefix = forServer ? "" : "/host/master";
+                        String prefix = forServer ? "" : "/host/primary";
                         return prefix + "/extension/" + EXTENSION_NAME;
                     }
                     return null;

@@ -91,7 +91,7 @@ public class AuditLogTestCase {
 
 
     private PathAddress masterAuditAddress = PathAddress.pathAddress(
-            PathElement.pathElement(HOST, "master"),
+            PathElement.pathElement(HOST, "primary"),
             CoreManagementResourceDefinition.PATH_ELEMENT,
             AccessAuditResourceDefinition.PATH_ELEMENT);
 
@@ -100,7 +100,7 @@ public class AuditLogTestCase {
     private PathAddress masterServerLoggerAddress = masterAuditAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
 
     private PathAddress slaveAuditAddress = PathAddress.pathAddress(
-            PathElement.pathElement(HOST, "slave"),
+            PathElement.pathElement(HOST, "secondary"),
             CoreManagementResourceDefinition.PATH_ELEMENT,
             AccessAuditResourceDefinition.PATH_ELEMENT);
 
@@ -262,7 +262,7 @@ public class AuditLogTestCase {
                 mainThree = true;
                 addOpClone.get(OP_ADDR).set(
                         PathAddress.pathAddress(
-                                PathElement.pathElement(HOST, "slave"),
+                                PathElement.pathElement(HOST, "secondary"),
                                 PathElement.pathElement(SERVER, "main-three"),
                                 PathElement.pathElement(SYSTEM_PROPERTY, propertyName)).toModelNode());
             } else if (address.contains("other-two")){
@@ -270,7 +270,7 @@ public class AuditLogTestCase {
                 otherTwo = true;
                 addOpClone.get(OP_ADDR).set(
                         PathAddress.pathAddress(
-                                PathElement.pathElement(HOST, "slave"),
+                                PathElement.pathElement(HOST, "secondary"),
                                 PathElement.pathElement(SERVER, "other-two"),
                                 PathElement.pathElement(SYSTEM_PROPERTY, propertyName)).toModelNode());
             } else {
@@ -341,7 +341,7 @@ public class AuditLogTestCase {
             try {
                 //Master has one server, slave has two
                 final List<String> servers = new ArrayList<String>();
-                if (baseAddress.getElement(0).getValue().equals("master")) {
+                if (baseAddress.getElement(0).getValue().equals("primary")) {
                     servers.add("main-one");
                 } else {
                     servers.add("main-three");

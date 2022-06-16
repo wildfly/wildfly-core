@@ -56,11 +56,11 @@ public class PatchRemoteHostUnitTestCase {
 
     static {
         // (host=slave)
-        SLAVE_ADDR.add("host", "slave");
+        SLAVE_ADDR.add("host", "secondary");
         SLAVE_ADDR.protect();
 
         // (host=slave),(core-services=patching)
-        PATCH_ADDR.add("host", "slave");
+        PATCH_ADDR.add("host", "secondary");
         PATCH_ADDR.add("core-service", "patching");
         PATCH_ADDR.protect();
     }
@@ -170,7 +170,7 @@ public class PatchRemoteHostUnitTestCase {
             }
         }
         domainSlaveLifecycleUtil.start();
-        waitForHost(client, "slave");
+        waitForHost(client, "secondary");
     }
 
     private ModelNode executeForResult(final ModelControllerClient client, final ModelNode operation) throws IOException {

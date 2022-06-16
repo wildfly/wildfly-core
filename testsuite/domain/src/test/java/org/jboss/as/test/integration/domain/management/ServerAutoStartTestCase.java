@@ -74,43 +74,43 @@ public class ServerAutoStartTestCase {
     private static final ModelNode otherThree = new ModelNode();
     private static final ModelNode otherFour = new ModelNode();
     private static final Path autoStartMasterDataDir
-            = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "master").toPath()
+            = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "primary").toPath()
             .resolve("data")
             .resolve("auto-start");
     private static final Path autoStartSlaveDataDir
-            = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "slave").toPath()
+            = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "secondary").toPath()
             .resolve("data")
             .resolve("auto-start");
 
     static {
         // (host=master)
-        hostMaster.add("host", "master");
+        hostMaster.add("host", "primary");
         // (host=master),(server-config=main-one)
-        mainOne.add("host", "master");
+        mainOne.add("host", "primary");
         mainOne.add("server-config", "main-one");
         // (host=master),(server-config=main-two)
-        mainTwo.add("host", "master");
+        mainTwo.add("host", "primary");
         mainTwo.add("server-config", "main-two");
         // (host=master),(server-config=other-one)
-        otherOne.add("host", "master");
+        otherOne.add("host", "primary");
         otherOne.add("server-config", "other-one");
         // (host=master),(server-config=other-two)
-        otherTwo.add("host", "master");
+        otherTwo.add("host", "primary");
         otherTwo.add("server-config", "other-two");
 
         // (host=slave)
-        hostSlave.add("host", "slave");
+        hostSlave.add("host", "secondary");
         // (host=slave),(server-config=main-three)
-        mainThree.add("host", "slave");
+        mainThree.add("host", "secondary");
         mainThree.add("server-config", "main-three");
         // (host=slave),(server-config=main-four)
-        mainFour.add("host", "slave");
+        mainFour.add("host", "secondary");
         mainFour.add("server-config", "main-four");
         // (host=slave),(server-config=other-three)
-        otherThree.add("host", "slave");
+        otherThree.add("host", "secondary");
         otherThree.add("server-config", "other-three");
         // (host=slave),(server-config=other-four)
-        otherFour.add("host", "slave");
+        otherFour.add("host", "secondary");
         otherFour.add("server-config", "other-four");
 
     }
@@ -136,14 +136,14 @@ public class ServerAutoStartTestCase {
 
         DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         executeLifecycleOperation(client, START_SERVERS);
-        waitUntilState(client, "master", "main-one", "STARTED");
-        waitUntilState(client, "master", "main-two", "STARTED");
-        waitUntilState(client, "master", "other-one", "STARTED");
-        waitUntilState(client, "master", "other-two", "STARTED");
-        waitUntilState(client, "slave", "main-three", "STARTED");
-        waitUntilState(client, "slave", "main-four", "STARTED");
-        waitUntilState(client, "slave", "other-three", "STARTED");
-        waitUntilState(client, "slave", "other-four", "STARTED");
+        waitUntilState(client, "primary", "main-one", "STARTED");
+        waitUntilState(client, "primary", "main-two", "STARTED");
+        waitUntilState(client, "primary", "other-one", "STARTED");
+        waitUntilState(client, "primary", "other-two", "STARTED");
+        waitUntilState(client, "secondary", "main-three", "STARTED");
+        waitUntilState(client, "secondary", "main-four", "STARTED");
+        waitUntilState(client, "secondary", "other-three", "STARTED");
+        waitUntilState(client, "secondary", "other-four", "STARTED");
         assertAutoStartStatus(client, mainOne, true);
         assertAutoStartStatus(client, mainTwo, true);
         assertAutoStartStatus(client, otherOne, true);
@@ -163,14 +163,14 @@ public class ServerAutoStartTestCase {
 
         executeLifecycleOperation(client, STOP_SERVERS);
         //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
-        waitUntilState(client, "master", "main-one", "STOPPED");
-        waitUntilState(client, "master", "main-two", "DISABLED");
-        waitUntilState(client, "master", "other-one", "DISABLED");
-        waitUntilState(client, "master", "other-two", "DISABLED");
-        waitUntilState(client, "slave", "main-three", "STOPPED");
-        waitUntilState(client, "slave", "main-four", "DISABLED");
-        waitUntilState(client, "slave", "other-three", "DISABLED");
-        waitUntilState(client, "slave", "other-four", "DISABLED");
+        waitUntilState(client, "primary", "main-one", "STOPPED");
+        waitUntilState(client, "primary", "main-two", "DISABLED");
+        waitUntilState(client, "primary", "other-one", "DISABLED");
+        waitUntilState(client, "primary", "other-two", "DISABLED");
+        waitUntilState(client, "secondary", "main-three", "STOPPED");
+        waitUntilState(client, "secondary", "main-four", "DISABLED");
+        waitUntilState(client, "secondary", "other-three", "DISABLED");
+        waitUntilState(client, "secondary", "other-four", "DISABLED");
         assertAutoStartStatus(client, mainOne, true);
         assertAutoStartStatus(client, mainTwo, false);
         assertAutoStartStatus(client, otherOne, false);
@@ -189,14 +189,14 @@ public class ServerAutoStartTestCase {
         assertAutoStartNotUpdated(autoStartSlaveDataDir, "other-four");
 
         executeLifecycleOperation(client, START_SERVERS);
-        waitUntilState(client, "master", "main-one", "STARTED");
-        waitUntilState(client, "master", "main-two", "STARTED");
-        waitUntilState(client, "master", "other-one", "STARTED");
-        waitUntilState(client, "master", "other-two", "STARTED");
-        waitUntilState(client, "slave", "main-three", "STARTED");
-        waitUntilState(client, "slave", "main-four", "STARTED");
-        waitUntilState(client, "slave", "other-three", "STARTED");
-        waitUntilState(client, "slave", "other-four", "STARTED");
+        waitUntilState(client, "primary", "main-one", "STARTED");
+        waitUntilState(client, "primary", "main-two", "STARTED");
+        waitUntilState(client, "primary", "other-one", "STARTED");
+        waitUntilState(client, "primary", "other-two", "STARTED");
+        waitUntilState(client, "secondary", "main-three", "STARTED");
+        waitUntilState(client, "secondary", "main-four", "STARTED");
+        waitUntilState(client, "secondary", "other-three", "STARTED");
+        waitUntilState(client, "secondary", "other-four", "STARTED");
         assertAutoStartStatus(client, mainOne, true);
         assertAutoStartStatus(client, mainTwo, true);
         assertAutoStartStatus(client, otherOne, true);
@@ -218,9 +218,9 @@ public class ServerAutoStartTestCase {
 
         domainMasterLifecycleUtil.start();
         client = domainMasterLifecycleUtil.getDomainClient();
-        waitUntilState(client, "master", "main-one", "STARTED");
-        waitUntilState(client, "master", "main-two", "STARTED");
-        waitUntilState(client, "master", "other-one", "STARTED");
+        waitUntilState(client, "primary", "main-one", "STARTED");
+        waitUntilState(client, "primary", "main-two", "STARTED");
+        waitUntilState(client, "primary", "other-one", "STARTED");
         //WFCORE-905
         executeFailingBatch(client);
     }

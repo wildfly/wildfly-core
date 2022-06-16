@@ -70,7 +70,7 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SlaveReconnectTestCase {
 
-    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
+    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
@@ -87,7 +87,7 @@ public class SlaveReconnectTestCase {
                         "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
 
         WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();
-        CallbackHandler callbackHandler = Authentication.getCallbackHandler("slave", RIGHT_PASSWORD, "ManagementRealm");
+        CallbackHandler callbackHandler = Authentication.getCallbackHandler("secondary", RIGHT_PASSWORD, "ManagementRealm");
         masterConfig.setCallbackHandler(callbackHandler);
 
         WildFlyManagedConfiguration slaveConfig = testSupport.getDomainSlaveConfiguration();
@@ -153,7 +153,7 @@ public class SlaveReconnectTestCase {
             }
 
             //Restart the DC as admin-only
-            ModelNode restartAdminOnly = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "master"));
+            ModelNode restartAdminOnly = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "primary"));
             restartAdminOnly.get("admin-only").set(true);
             domainMasterLifecycleUtil.executeAwaitConnectionClosed(restartAdminOnly);
             domainMasterLifecycleUtil.connect();
@@ -184,7 +184,7 @@ public class SlaveReconnectTestCase {
             boolean serversUp = false;
             do {
                 Thread.sleep(1 * ADJUSTED_SECOND);
-                serversUp = checkHostServersStarted(masterClient, "master");
+                serversUp = checkHostServersStarted(masterClient, "primary");
             } while (!serversUp && System.currentTimeMillis() < end);
 
             for (ReconnectTestScenario scenario : scenarios) {
@@ -231,7 +231,7 @@ public class SlaveReconnectTestCase {
             List<ModelNode> list = ret.asList();
             if (list.size() == 2) {
                 for (ModelNode entry : list) {
-                    if ("slave".equals(entry.asString())){
+                    if ("secondary".equals(entry.asString())){
                         return true;
                     }
                 }

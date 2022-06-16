@@ -61,6 +61,6 @@ public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveT
 
     @Test
     public void testReadSlaveStatusFromMaster() throws Exception {
-        checkHostStatusOnMasterOverRemote("slave", testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+        checkHostStatusOnMasterOverRemote("secondary", testSupport.getDomainMasterLifecycleUtil().getDomainClient());
     }
 }

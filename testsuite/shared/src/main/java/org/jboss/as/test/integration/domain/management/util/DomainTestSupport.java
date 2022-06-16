@@ -136,7 +136,7 @@ public class DomainTestSupport implements AutoCloseable {
     }
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration("slave", hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
+        return getSlaveConfiguration("secondary", hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
     }
 
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
@@ -147,7 +147,7 @@ public class DomainTestSupport implements AutoCloseable {
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration("slave", hostConfigPath, testName, baseConfig, readOnlyHost);
+        return getSlaveConfiguration("secondary", hostConfigPath, testName, baseConfig, readOnlyHost);
     }
 
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
@@ -604,14 +604,14 @@ public class DomainTestSupport implements AutoCloseable {
                                            boolean readOnlySlaveHost, boolean slaveDebug) {
 
             WildFlyManagedConfiguration masterConfiguration = getMasterConfiguration(domainConfig, masterConfig, testName, null, readOnlyMasterDomain, readOnlyMasterHost, masterDebug);
-            WildFlyManagedConfiguration slaveConfiguration = slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testName, "slave", null, readOnlySlaveHost, slaveDebug);
+            WildFlyManagedConfiguration slaveConfiguration = slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testName, "secondary", null, readOnlySlaveHost, slaveDebug);
             return new Configuration(testName, masterConfiguration, slaveConfiguration);
         }
 
         private static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
                                                                          String testName, WildFlyManagedConfiguration baseConfig,
                                                                          boolean readOnlyDomain, boolean readOnlyHost, boolean debug) {
-            final String hostName = "master";
+            final String hostName = "primary";
             File domains = getBaseDir(testName);
             File extraModules = getAddedModulesDir(testName);
             File overrideModules = getHostOverrideModulesDir(testName, hostName);

@@ -112,7 +112,7 @@ public class DefaultInterfaceOveridingDomainTestCase {
         hostConfig.setHostConfigFile(new File(url.toURI()).getAbsolutePath());
         System.out.println(hostConfig.getHostConfigFile());
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
-        hostConfig.setHostName("slave");
+        hostConfig.setHostName("secondary");
         hostConfig.setHostControllerManagementPort(9999);
         hostConfig.setStartupTimeoutInSeconds(120);
         hostConfig.setBackupDC(true);
@@ -126,13 +126,13 @@ public class DefaultInterfaceOveridingDomainTestCase {
     public void testInterfaceOverriden() throws Exception {
         // check that the failover-h1 is acting as domain controller and all three servers are registered
         Set<String> hosts = getHosts(hostUtils);
-        Assert.assertTrue(hosts.contains("slave"));
+        Assert.assertTrue(hosts.contains("secondary"));
         MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "main-one"), is("public"));
         MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "other-two"), is("public-two"));
     }
 
     private String getServerDefaultInterface(DomainLifecycleUtil hostUtil, String serverName) throws IOException {
-        ModelNode opAdress = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"), PathElement.pathElement(SERVER, serverName)).toModelNode();
+        ModelNode opAdress = PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"), PathElement.pathElement(SERVER, serverName)).toModelNode();
         ModelNode readOp = Operations.createReadResourceOperation(opAdress, true);
         ModelNode domain = hostUtil.executeForResult(readOp);
         MatcherAssert.assertThat(domain.get(SOCKET_BINDING_GROUP).isDefined(), is(true));

@@ -22,7 +22,7 @@
 package org.jboss.as.test.integration.respawn;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRIMARY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -108,7 +108,7 @@ public class RespawnTestCase {
 
         final String testName = RespawnTestCase.class.getSimpleName();
         final File domains = new File("target" + File.separator + "domains" + File.separator + testName);
-        final File masterDir = new File(domains, "master");
+        final File masterDir = new File(domains, "primary");
         final String masterDirPath = masterDir.getAbsolutePath();
         domainConfigDir = new File(masterDir, "configuration");
         // TODO this should not be necessary
@@ -261,7 +261,7 @@ public class RespawnTestCase {
         long minCheckPeriod =  start + 5000;
         while (true) {
             Thread.sleep(500);
-            if (lookupServerInModel(MASTER, SERVER_ONE) || lookupServerInModel(MASTER, SERVER_TWO)) {
+            if (lookupServerInModel(PRIMARY, SERVER_ONE) || lookupServerInModel(PRIMARY, SERVER_TWO)) {
                 if (System.currentTimeMillis() >= timeout) {
                     Assert.fail("Should not have servers in restarted admin-only HC model");
                 }
@@ -309,7 +309,7 @@ public class RespawnTestCase {
         readHostControllerServer(SERVER_TWO);
 
         // we need to wait for the master being in running state before execute this operation
-        awaitHostController(MASTER);
+        awaitHostController(PRIMARY);
 
         manageServer("stop", SERVER_ONE);
         Thread.sleep(5000);
@@ -401,7 +401,7 @@ public class RespawnTestCase {
     private void executeReloadOperation(Boolean restartServers, Boolean adminOnly) throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(OP).set("reload");
-        operation.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(HOST, "master")).toModelNode());
+        operation.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(HOST, "primary")).toModelNode());
         if (restartServers != null) {
             operation.get(ModelDescriptionConstants.RESTART_SERVERS).set(restartServers);
         }
@@ -418,7 +418,7 @@ public class RespawnTestCase {
     private void shutdownHostController(boolean restart) throws Exception {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(SHUTDOWN);
-        operation.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(HOST, "master")).toModelNode());
+        operation.get(OP_ADDR).set(PathAddress.pathAddress(PathElement.pathElement(HOST, "primary")).toModelNode());
         operation.get(RESTART).set(restart);
 
     }
@@ -426,7 +426,7 @@ public class RespawnTestCase {
     private void manageServer(String operationName, String serverName) throws Exception {
         ModelNode operation = new ModelNode();
         operation.get(OP).set(operationName);
-        operation.get(OP_ADDR).set(getHostControllerServerConfigAddress(MASTER, serverName));
+        operation.get(OP_ADDR).set(getHostControllerServerConfigAddress(PRIMARY, serverName));
         operation.get("blocking").set(true);
 
         try {
@@ -441,7 +441,7 @@ public class RespawnTestCase {
 
         do {
             Thread.sleep(250);
-            hasOne = lookupServerInModel(MASTER, serverName);
+            hasOne = lookupServerInModel(PRIMARY, serverName);
             if (hasOne) {
                 break;
             }
@@ -455,8 +455,8 @@ public class RespawnTestCase {
         boolean hasTwo = false;
         do {
             Thread.sleep(250);
-            hasOne = lookupServerInModel(MASTER, SERVER_ONE);
-            hasTwo = lookupServerInModel(MASTER, SERVER_TWO);
+            hasOne = lookupServerInModel(PRIMARY, SERVER_ONE);
+            hasTwo = lookupServerInModel(PRIMARY, SERVER_TWO);
             if (hasOne && hasTwo) {
                 break;
             }

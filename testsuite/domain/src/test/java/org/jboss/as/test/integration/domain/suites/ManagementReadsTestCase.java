@@ -137,7 +137,7 @@ public class ManagementReadsTestCase {
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
         final ModelNode hostOp = new ModelNode();
         hostOp.get(OP).set(READ_RESOURCE_OPERATION);
-        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "master");
+        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "primary");
         hostOp.get(RECURSIVE).set(true);
         hostOp.get(INCLUDE_RUNTIME).set(true);
         hostOp.get(PROXIES).set(false);
@@ -146,7 +146,7 @@ public class ManagementReadsTestCase {
         validateResponse(response);
         // TODO make some more assertions about result content
 
-        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "slave");
+        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         response = domainClient.execute(hostOp);
         validateResponse(response);
         // TODO make some more assertions about result content
@@ -157,7 +157,7 @@ public class ManagementReadsTestCase {
         DomainClient domainClient = domainSlaveLifecycleUtil.getDomainClient();
         final ModelNode hostOp = new ModelNode();
         hostOp.get(OP).set(READ_RESOURCE_OPERATION);
-        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "slave");
+        hostOp.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         hostOp.get(RECURSIVE).set(true);
         hostOp.get(INCLUDE_RUNTIME).set(true);
         hostOp.get(PROXIES).set(false);
@@ -173,7 +173,7 @@ public class ManagementReadsTestCase {
         final ModelNode serverOp = new ModelNode();
         serverOp.get(OP).set(READ_RESOURCE_OPERATION);
         ModelNode address = serverOp.get(OP_ADDR);
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         address.add(SERVER, "main-one");
         serverOp.get(RECURSIVE).set(true);
         serverOp.get(INCLUDE_RUNTIME).set(true);
@@ -187,7 +187,7 @@ public class ManagementReadsTestCase {
         Assert.assertTrue(result.hasDefined(PROFILE_NAME));
 
         address.setEmptyList();
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(SERVER, "main-three");
         response = domainClient.execute(serverOp);
         validateResponse(response);
@@ -203,7 +203,7 @@ public class ManagementReadsTestCase {
         final ModelNode serverOp = new ModelNode();
         serverOp.get(OP).set(READ_RESOURCE_OPERATION);
         ModelNode address = serverOp.get(OP_ADDR);
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(SERVER, "main-three");
         serverOp.get(RECURSIVE).set(true);
         serverOp.get(INCLUDE_RUNTIME).set(true);
@@ -219,7 +219,7 @@ public class ManagementReadsTestCase {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         address.add(SERVER, "main-one");
         address.add(PATH, "domainTestPath");
 
@@ -240,7 +240,7 @@ public class ManagementReadsTestCase {
         final DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(SERVER, "main-three");
         address.add(PATH, "domainTestPath");
 
@@ -311,7 +311,7 @@ public class ManagementReadsTestCase {
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
         request.get(OP).set("read-resource-description");
-        request.get(OP_ADDR).setEmptyList().add(HOST, "master");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
         request.get(RECURSIVE).set(true);
         request.get(OPERATIONS).set(true);
 
@@ -320,7 +320,7 @@ public class ManagementReadsTestCase {
         validateHostLifecycleOps(response, true);
         // TODO make some more assertions about result content
 
-        request.get(OP_ADDR).setEmptyList().add(HOST, "slave");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         response = domainClient.execute(request);
         validateResponse(response);
         validateHostLifecycleOps(response, false);
@@ -332,7 +332,7 @@ public class ManagementReadsTestCase {
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
         request.get(OP).set("read-feature-description");
-        request.get(OP_ADDR).add(HOST, "master");
+        request.get(OP_ADDR).add(HOST, "primary");
         request.get(RECURSIVE).set(true);
 
         ModelNode response = domainClient.execute(request);
@@ -348,7 +348,7 @@ public class ManagementReadsTestCase {
         ModelNode request = new ModelNode();
         request.get(OP).set("read-resource-description");
         ModelNode address = request.get(OP_ADDR);
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         address.add(SERVER, "main-one");
         request.get(RECURSIVE).set(true);
         request.get(OPERATIONS).set(true);
@@ -359,7 +359,7 @@ public class ManagementReadsTestCase {
         // TODO make some more assertions about result content
 
         address.setEmptyList();
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(SERVER, "main-three");
         response = domainClient.execute(request);
         validateResponse(response);
@@ -374,7 +374,7 @@ public class ManagementReadsTestCase {
         ModelNode request = new ModelNode();
         request.get(OP).set("read-resource-description");
         ModelNode address = request.get(OP_ADDR);
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         address.add(RUNNING_SERVER, "reload-one");
         request.get(RECURSIVE).set(true);
         request.get(OPERATIONS).set(true);
@@ -403,13 +403,13 @@ public class ManagementReadsTestCase {
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
         ModelNode request = new ModelNode();
         request.get(OP).set("read-config-as-xml");
-        request.get(OP_ADDR).setEmptyList().add(HOST, "master");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "primary");
 
         ModelNode response = domainClient.execute(request);
         validateResponse(response);
         // TODO make some more assertions about result content
 
-        request.get(OP_ADDR).setEmptyList().add(HOST, "slave");
+        request.get(OP_ADDR).setEmptyList().add(HOST, "secondary");
         response = domainClient.execute(request);
         validateResponse(response);
     }
@@ -421,7 +421,7 @@ public class ManagementReadsTestCase {
         ModelNode request = new ModelNode();
         request.get(OP).set("read-config-as-xml");
         ModelNode address = request.get(OP_ADDR);
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         address.add(SERVER, "main-one");
 
         ModelNode response = domainClient.execute(request);
@@ -429,7 +429,7 @@ public class ManagementReadsTestCase {
         // TODO make some more assertions about result content
 
         address.setEmptyList();
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(SERVER, "main-three");
         response = domainClient.execute(request);
         validateResponse(response);
@@ -450,7 +450,7 @@ public class ManagementReadsTestCase {
 
     @Test
     public void testResolveExpressionOnMasterHost() throws Exception  {
-        ModelNode op = testSupport.createOperationNode("host=master", "resolve-expression-on-domain");
+        ModelNode op = testSupport.createOperationNode("host=primary", "resolve-expression-on-domain");
         op.get("expression").set("${file.separator}");
 
         DomainClient domainClient = domainMasterLifecycleUtil.getDomainClient();
@@ -471,12 +471,12 @@ public class ManagementReadsTestCase {
 
     @Test
     public void testReadMasterHostState() throws Exception {
-        readHostState("master");
+        readHostState("primary");
     }
 
     @Test
     public void testReadSlaveHostState() throws Exception {
-        readHostState("slave");
+        readHostState("secondary");
     }
 
     private void readHostState(String host) throws Exception {
@@ -490,7 +490,7 @@ public class ManagementReadsTestCase {
     }
 
     private void resolveExpressionOnSlaveHostTest(ModelControllerClient domainClient) throws Exception {
-        ModelNode op = testSupport.createOperationNode("host=slave", "resolve-expression-on-domain");
+        ModelNode op = testSupport.createOperationNode("host=secondary", "resolve-expression-on-domain");
         op.get("expression").set("${file.separator}");
         System.out.println(op);
         ModelNode response = domainClient.execute(op);
@@ -500,18 +500,18 @@ public class ManagementReadsTestCase {
 
     private static void validateResolveExpressionOnMaster(final ModelNode result) {
         System.out.println(result);
-        ModelNode serverResult = result.get("server-groups", "main-server-group", "host", "master", "main-one");
+        ModelNode serverResult = result.get("server-groups", "main-server-group", "host", "primary", "main-one");
         Assert.assertTrue(serverResult.isDefined());
         validateResolveExpressionOnServer(serverResult);
     }
 
     private static void validateResolveExpressionOnSlave(final ModelNode result) {
         System.out.println(result);
-        ModelNode serverResult = result.get("server-groups", "main-server-group", "host", "slave", "main-three");
+        ModelNode serverResult = result.get("server-groups", "main-server-group", "host", "secondary", "main-three");
         Assert.assertTrue(serverResult.isDefined());
         validateResolveExpressionOnServer(serverResult);
 
-        serverResult = result.get("server-groups", "other-server-group", "host", "slave", "other-two");
+        serverResult = result.get("server-groups", "other-server-group", "host", "secondary", "other-two");
         Assert.assertTrue(serverResult.isDefined());
         validateResolveExpressionOnServer(serverResult);
     }

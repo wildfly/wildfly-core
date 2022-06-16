@@ -127,7 +127,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         try {
             createProfileConfigurationChange(OTHER_PROFILE, 20);
             createConfigurationChanges(HOST_SLAVE);
-            PathAddress systemPropertyAddress = PathAddress.pathAddress().append(HOST_SLAVE).append(SYSTEM_PROPERTY, "slave");
+            PathAddress systemPropertyAddress = PathAddress.pathAddress().append(HOST_SLAVE).append(SYSTEM_PROPERTY, "secondary");
             ModelNode setSystemProperty = Util.createAddOperation(systemPropertyAddress);
             setSystemProperty.get(VALUE).set("slave-config");
             domainSlaveLifecycleUtil.getDomainClient().execute(setSystemProperty);
@@ -283,7 +283,7 @@ public class ConfigurationChangesTestCase extends AbstractConfigurationChangesTe
         assertThat(currentChange.get(OUTCOME).asString(), is(SUCCESS));
         ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(ADD));
-        assertThat(removePrefix(currentChangeOp).toString(), is(PathAddress.pathAddress(SYSTEM_PROPERTY, "slave").toString()));
+        assertThat(removePrefix(currentChangeOp).toString(), is(PathAddress.pathAddress(SYSTEM_PROPERTY, "secondary").toString()));
         assertThat(currentChangeOp.get(VALUE).asString(), is("slave-config"));
         validateChanges(changes.subList(1, changes.size() - 1));
     }

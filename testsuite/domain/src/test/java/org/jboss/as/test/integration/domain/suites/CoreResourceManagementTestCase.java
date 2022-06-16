@@ -135,7 +135,7 @@ public class CoreResourceManagementTestCase {
     private static final ModelNode SERVER_PROP_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode MAIN_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
-    private static final PathAddress MAIN_RUNNING_SERVER_CONFIG_ADDRESS = PathAddress.pathAddress(HOST, "master").append(SERVER_CONFIG, "main-one");
+    private static final PathAddress MAIN_RUNNING_SERVER_CONFIG_ADDRESS = PathAddress.pathAddress(HOST, "primary").append(SERVER_CONFIG, "main-one");
     private static final ModelNode MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode();
     private static final ModelNode OTHER_RUNNING_SERVER_PROP_ADDRESS = new ModelNode();
@@ -151,40 +151,40 @@ public class CoreResourceManagementTestCase {
         SERVER_GROUP_PROP_ADDRESS.add(SERVER_GROUP, "other-server-group");
         SERVER_GROUP_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         SERVER_GROUP_PROP_ADDRESS.protect();
-        HOST_PROP_ADDRESS.add(HOST, "slave");
+        HOST_PROP_ADDRESS.add(HOST, "secondary");
         HOST_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         HOST_PROP_ADDRESS.protect();
-        HOST_COMPOSITE_PROP_ADDRESS.add(HOST, "slave");
+        HOST_COMPOSITE_PROP_ADDRESS.add(HOST, "secondary");
         HOST_COMPOSITE_PROP_ADDRESS.add(SYSTEM_PROPERTY, COMPOSITE);
         HOST_COMPOSITE_PROP_ADDRESS.protect();
-        HOST_CLASSLOADING_ADDRESS.add(HOST, "slave");
+        HOST_CLASSLOADING_ADDRESS.add(HOST, "secondary");
         HOST_CLASSLOADING_ADDRESS.add(CORE_SERVICE, PLATFORM_MBEAN);
         HOST_CLASSLOADING_ADDRESS.add(TYPE, "class-loading");
         HOST_CLASSLOADING_ADDRESS.protect();
-        SERVER_PROP_ADDRESS.add(HOST, "slave");
+        SERVER_PROP_ADDRESS.add(HOST, "secondary");
         SERVER_PROP_ADDRESS.add(SERVER_CONFIG, "other-two");
         SERVER_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         SERVER_PROP_ADDRESS.protect();
-        MAIN_RUNNING_SERVER_ADDRESS.add(HOST, "master");
+        MAIN_RUNNING_SERVER_ADDRESS.add(HOST, "primary");
         MAIN_RUNNING_SERVER_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_ADDRESS.protect();
-        MAIN_RUNNING_SERVER_PROP_ADDRESS.add(HOST, "master");
+        MAIN_RUNNING_SERVER_PROP_ADDRESS.add(HOST, "primary");
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         MAIN_RUNNING_SERVER_PROP_ADDRESS.protect();
-        MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "master");
+        MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "primary");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(SERVER, "main-one");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(CORE_SERVICE, PLATFORM_MBEAN);
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(TYPE, "class-loading");
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.protect();
-        OTHER_RUNNING_SERVER_ADDRESS.add(HOST, "slave");
+        OTHER_RUNNING_SERVER_ADDRESS.add(HOST, "secondary");
         OTHER_RUNNING_SERVER_ADDRESS.add(SERVER, "other-two");
         OTHER_RUNNING_SERVER_ADDRESS.protect();
-        OTHER_RUNNING_SERVER_PROP_ADDRESS.add(HOST, "slave");
+        OTHER_RUNNING_SERVER_PROP_ADDRESS.add(HOST, "secondary");
         OTHER_RUNNING_SERVER_PROP_ADDRESS.add(SERVER, "other-two");
         OTHER_RUNNING_SERVER_PROP_ADDRESS.add(SYSTEM_PROPERTY, TEST);
         OTHER_RUNNING_SERVER_PROP_ADDRESS.protect();
-        OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "slave");
+        OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(HOST, "secondary");
         OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(SERVER, "other-two");
         OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(CORE_SERVICE, PLATFORM_MBEAN);
         OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS.add(TYPE, "class-loading");
@@ -398,7 +398,7 @@ public class CoreResourceManagementTestCase {
         validateBootProperty(masterClient, propertyAddress);
         propertyAddress = new ModelNode().add(SERVER_GROUP, "main-server-group").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
         validateBootProperty(masterClient, propertyAddress);
-        propertyAddress = new ModelNode().add(HOST, "master").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
+        propertyAddress = new ModelNode().add(HOST, "primary").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
         validateBootProperty(masterClient, propertyAddress);
         propertyAddress = new ModelNode().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
         validateBootProperty(masterClient, propertyAddress);
@@ -667,12 +667,12 @@ public class CoreResourceManagementTestCase {
 
     @Test
     public void testMasterSnapshot() throws Exception {
-        testSnapshot(new ModelNode().add(HOST, "master"));
+        testSnapshot(new ModelNode().add(HOST, "primary"));
     }
 
     @Test
     public void testSlaveSnapshot() throws Exception {
-        testSnapshot(new ModelNode().add(HOST, "slave"));
+        testSnapshot(new ModelNode().add(HOST, "secondary"));
     }
 
     @Test
@@ -680,13 +680,13 @@ public class CoreResourceManagementTestCase {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         ModelNode serverAddTf = getAddWorkerOperation(
-                new ModelNode().add("host", "master").add("server", "main-one").add("subsystem", "io").add("worker", ("cannot-" + workerName++)));
+                new ModelNode().add("host", "primary").add("server", "main-one").add("subsystem", "io").add("worker", ("cannot-" + workerName++)));
 
         ModelNode desc = validateFailedResponse(masterClient.execute(serverAddTf));
         String errorCode = getNotAuthorizedErrorCode();
         Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
 
-        ModelNode slaveThreeAddress = new ModelNode().add("host", "slave").add("server", "main-three").add("subsystem", "io").add("worker", ("cannot-" + workerName++));
+        ModelNode slaveThreeAddress = new ModelNode().add("host", "secondary").add("server", "main-three").add("subsystem", "io").add("worker", ("cannot-" + workerName++));
         serverAddTf = getAddWorkerOperation(slaveThreeAddress);
 
         desc = validateFailedResponse(masterClient.execute(serverAddTf));
@@ -695,22 +695,22 @@ public class CoreResourceManagementTestCase {
 
     @Test
     public void testCannotInvokeManagedMasterServerOperationsInDomainComposite() throws Exception {
-        testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "master").add("server", "main-one").add("subsystem", "io"));
+        testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "primary").add("server", "main-one").add("subsystem", "io"));
     }
 
     @Test
     public void testCannotInvokeManagedSlaveServerOperationsInDomainComposite() throws Exception {
-        testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "slave").add("server", "main-three").add("subsystem", "io"));
+        testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "secondary").add("server", "main-three").add("subsystem", "io"));
     }
 
     @Test
     public void testCannotInvokeManagedMasterServerOperationsInServerComposite() throws Exception {
-        testCannotInvokeManagedServerOperationsComposite("master", "main-one", new ModelNode().add("subsystem", "io"));
+        testCannotInvokeManagedServerOperationsComposite("primary", "main-one", new ModelNode().add("subsystem", "io"));
     }
 
     @Test
     public void testCannotInvokeManagedSlaveServerOperationsInServerComposite() throws Exception {
-        testCannotInvokeManagedServerOperationsComposite("slave", "main-three", new ModelNode().add("subsystem", "io"));
+        testCannotInvokeManagedServerOperationsComposite("secondary", "main-three", new ModelNode().add("subsystem", "io"));
     }
 
     @Test
@@ -724,10 +724,10 @@ public class CoreResourceManagementTestCase {
 
         ModelNode server1 = new ModelNode();
         server1.get(OP).set(READ_RESOURCE_OPERATION);
-        server1.get(OP_ADDR).add("host", "master").add("server", "main-one");
+        server1.get(OP_ADDR).add("host", "primary").add("server", "main-one");
         ModelNode server3 = new ModelNode();
         server3.get(OP).set(READ_RESOURCE_OPERATION);
-        server3.get(OP_ADDR).add("host", "slave").add("server", "main-three");
+        server3.get(OP_ADDR).add("host", "secondary").add("server", "main-three");
         composite.get(STEPS).add(server1);
         composite.get(STEPS).add(server3);
 
@@ -746,10 +746,10 @@ public class CoreResourceManagementTestCase {
 
         ModelNode server1 = new ModelNode();
         server1.get(OP).set(ADD);
-        server1.get(OP_ADDR).add("host", "master").add("server", "main-one").add("system-property", "domain-test-property");
+        server1.get(OP_ADDR).add("host", "primary").add("server", "main-one").add("system-property", "domain-test-property");
         ModelNode server3 = new ModelNode();
         server3.get(OP).set(ADD);
-        server3.get(OP_ADDR).add("host", "slave").add("server", "main-three").add("system-property", "domain-test-property");
+        server3.get(OP_ADDR).add("host", "secondary").add("server", "main-three").add("system-property", "domain-test-property");
         composite.get(STEPS).add(server1);
         composite.get(STEPS).add(server3);
 
@@ -772,19 +772,19 @@ public class CoreResourceManagementTestCase {
 
         ModelNode add = new ModelNode();
         add.get(OP).set(ADD);
-        add.get(OP_ADDR).add(HOST, "master").add(INTERFACE, ifaceName);
+        add.get(OP_ADDR).add(HOST, "primary").add(INTERFACE, ifaceName);
         add.get(ANY_ADDRESS).set(true);
 
         validateResponse(masterClient.execute(add));
 
         ModelNode read = new ModelNode();
         read.get(OP).set(READ_RESOURCE_OPERATION);
-        read.get(OP_ADDR).add(HOST, "master").add(SERVER, "main-one").add(INTERFACE, ifaceName);
+        read.get(OP_ADDR).add(HOST, "primary").add(SERVER, "main-one").add(INTERFACE, ifaceName);
         validateResponse(masterClient.execute(read));
 
         ModelNode remove = new ModelNode();
         remove.get(OP).set(REMOVE);
-        remove.get(OP_ADDR).add(HOST, "master").add(INTERFACE, ifaceName);
+        remove.get(OP_ADDR).add(HOST, "primary").add(INTERFACE, ifaceName);
         validateResponse(masterClient.execute(remove));
 
         validateFailedResponse(masterClient.execute(read));
@@ -840,7 +840,7 @@ public class CoreResourceManagementTestCase {
 
         ModelNode read = new ModelNode();
         read.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        read.get(OP_ADDR).add(HOST, "master").add(SERVER_CONFIG, "main-one");
+        read.get(OP_ADDR).add(HOST, "primary").add(SERVER_CONFIG, "main-one");
         read.get(NAME).set("socket-binding-port-offset");
         ModelNode result = validateResponse(masterClient.execute(read));
         int original = result.isDefined() ? result.asInt() : 0;
@@ -848,15 +848,15 @@ public class CoreResourceManagementTestCase {
         //The bug causing AS7-3643 caused execution of this op to fail
         ModelNode write = new ModelNode();
         write.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        write.get(OP_ADDR).add(HOST, "master").add(SERVER_CONFIG, "main-one");
+        write.get(OP_ADDR).add(HOST, "primary").add(SERVER_CONFIG, "main-one");
         write.get(NAME).set("socket-binding-port-offset");
         write.get(VALUE).set(original + 1);
         ModelNode response = masterClient.execute(write);
         validateResponse(response);
 
         final String mainServerGroup = "main-server-group";
-        Assert.assertEquals(SUCCESS, response.get(SERVER_GROUPS, mainServerGroup, HOST, "master", "main-one", RESPONSE, OUTCOME).asString());
-        ModelNode headers = response.get(SERVER_GROUPS, mainServerGroup, HOST, "master", "main-one", RESPONSE, RESPONSE_HEADERS);
+        Assert.assertEquals(SUCCESS, response.get(SERVER_GROUPS, mainServerGroup, HOST, "primary", "main-one", RESPONSE, OUTCOME).asString());
+        ModelNode headers = response.get(SERVER_GROUPS, mainServerGroup, HOST, "primary", "main-one", RESPONSE, RESPONSE_HEADERS);
         Assert.assertEquals(RELOAD_REQUIRED, headers.get(PROCESS_STATE).asString());
         Assert.assertTrue(RELOAD_REQUIRED, headers.get(OPERATION_REQUIRES_RELOAD).asBoolean());
 
@@ -884,7 +884,7 @@ public class CoreResourceManagementTestCase {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         final ModelNode serverAddress = new ModelNode();
-        serverAddress.add(HOST, "slave");
+        serverAddress.add(HOST, "secondary");
         serverAddress.add(SERVER_CONFIG, "test-server");
 
         final ModelNode composite = new ModelNode();
@@ -941,7 +941,7 @@ public class CoreResourceManagementTestCase {
         Assert.assertEquals(2, result.asPropertyList().size());
         Assert.assertTrue(result.hasDefined("name"));
         Assert.assertTrue(result.hasDefined("running-mode"));
-        Assert.assertEquals(result.get("name").asString(), "slave");
+        Assert.assertEquals(result.get("name").asString(), "secondary");
         Assert.assertEquals(result.get("running-mode").asString(), "NORMAL");
     }
 
@@ -965,7 +965,7 @@ public class CoreResourceManagementTestCase {
     @Test
     public void testHostRelativeToDomainBaseDir() throws IOException {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        PathAddress pa = PathAddress.pathAddress("host", "master").append("path", "wfcore-3730");
+        PathAddress pa = PathAddress.pathAddress("host", "primary").append("path", "wfcore-3730");
         ModelNode operation = Util.createAddOperation(pa);
         operation.get("path").set("wfcore-3730");
         operation.get("relative-to").set("jboss.domain.base.dir");

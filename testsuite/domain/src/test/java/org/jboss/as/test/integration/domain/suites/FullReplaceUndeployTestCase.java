@@ -89,7 +89,7 @@ public class FullReplaceUndeployTestCase {
     private void testDeployment(final Archive<?> archive) throws IOException {
         final ModelControllerClient client = domainMasterLifecycleUtil.getDomainClient();
         final ModelNode readServerSubsystems = Operations.createOperation(ClientConstants.READ_CHILDREN_NAMES_OPERATION,
-                Operations.createAddress("host", "master", "server", "main-one"));
+                Operations.createAddress("host", "primary", "server", "main-one"));
         readServerSubsystems.get(ClientConstants.CHILD_TYPE).set(ClientConstants.SUBSYSTEM);
 
         final String name = archive.getName();

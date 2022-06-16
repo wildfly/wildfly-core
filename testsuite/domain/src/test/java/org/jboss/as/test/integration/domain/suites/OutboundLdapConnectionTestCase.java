@@ -167,7 +167,7 @@ public class OutboundLdapConnectionTestCase {
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
         ModelNode reload = new ModelNode();
-        reload.get(OP_ADDR).add(HOST, "master");
+        reload.get(OP_ADDR).add(HOST, "primary");
         reload.get(OP).set("reload");
         reload.get("admin-only").set(false);
         domainMasterLifecycleUtil.executeAwaitConnectionClosed(reload);

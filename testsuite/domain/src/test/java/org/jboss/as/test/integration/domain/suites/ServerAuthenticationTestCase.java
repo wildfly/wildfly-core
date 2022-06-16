@@ -77,34 +77,34 @@ public class ServerAuthenticationTestCase {
     @After
     public void afterTest() throws Exception {
         // add back local auth to slave
-        addLocalAuth(masterLifecycleUtil.getDomainClient(), "slave");
+        addLocalAuth(masterLifecycleUtil.getDomainClient(), "secondary");
     }
 
     @Test
     public void testDisableLocalAuthAndStartServers() throws Exception {
         // Check local auth is enabled at the outset and that the servers start
-        assertTrue(localAuthEnabled(masterLifecycleUtil.getDomainClient(), "slave"));
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "main-three", "STARTED");
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "other-two", "STARTED");
+        assertTrue(localAuthEnabled(masterLifecycleUtil.getDomainClient(), "secondary"));
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "main-three", "STARTED");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "other-two", "STARTED");
 
         // disable local-auth on the slave
-        removeLocalAuth(masterLifecycleUtil.getDomainClient(), "slave");
+        removeLocalAuth(masterLifecycleUtil.getDomainClient(), "secondary");
 
         // reload slave, and wait for it to register with master
-        reloadHostController(masterLifecycleUtil.getDomainClient(), "slave", true);
-        awaitHostControllerRegistration(masterLifecycleUtil.getDomainClient(), "slave");
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "main-three", "STARTED");
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "other-two", "STARTED");
+        reloadHostController(masterLifecycleUtil.getDomainClient(), "secondary", true);
+        awaitHostControllerRegistration(masterLifecycleUtil.getDomainClient(), "secondary");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "main-three", "STARTED");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "other-two", "STARTED");
 
         // verify local-auth is off on the slave
-        assertFalse(localAuthEnabled(masterLifecycleUtil.getDomainClient(), "slave"));
+        assertFalse(localAuthEnabled(masterLifecycleUtil.getDomainClient(), "secondary"));
 
         // now restart the slave HC, but don't restart the servers and verify they've reconnected afterwards
-        reloadHostController(masterLifecycleUtil.getDomainClient(), "slave", false);
+        reloadHostController(masterLifecycleUtil.getDomainClient(), "secondary", false);
         // wait until the slave has re-registered with the master
-        awaitHostControllerRegistration(masterLifecycleUtil.getDomainClient(), "slave");
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "main-three", "STARTED");
-        waitUntilState(masterLifecycleUtil.getDomainClient(), "slave", "other-two", "STARTED");
+        awaitHostControllerRegistration(masterLifecycleUtil.getDomainClient(), "secondary");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "main-three", "STARTED");
+        waitUntilState(masterLifecycleUtil.getDomainClient(), "secondary", "other-two", "STARTED");
     }
 
     private static PathAddress getAuthenticationFactoryPath(final String host) {

@@ -56,8 +56,8 @@ public abstract class AbstractRbacTestCase {
     protected static final String DEPLOYMENT_2 = "deployment=rbac.txt";
     protected static final byte[] DEPLOYMENT_2_CONTENT = "CONTENT".getBytes(Charset.defaultCharset());
     protected static final String TEST_PATH = "path=rbac.test";
-    protected static final String MASTER = "master";
-    protected static final String SLAVE = "slave";
+    protected static final String MASTER = "primary";
+    protected static final String SLAVE = "secondary";
     protected static final String SERVER_GROUP_A = "server-group-a";
     protected static final String SERVER_GROUP_B = "server-group-b";
     protected static final String MASTER_A = "master-a";
@@ -73,7 +73,7 @@ public abstract class AbstractRbacTestCase {
     private static final String MEMORY_MBEAN = "core-service=platform-mbean/type=memory";
     private static final String PROFILE_A = "profile=profile-a";
     private static final String EXAMPLE_CONSTRAINED = "subsystem=1/rbac-constrained=default";
-    private static final String GENERIC_SERVER_CONFIG_ADDRESS = "host=master/server-config=*";
+    private static final String GENERIC_SERVER_CONFIG_ADDRESS = "host=primary/server-config=*";
 
     private static final Map<String, ModelControllerClient> nonLocalAuthclients = new HashMap<String, ModelControllerClient>();
     private static final Map<String, ModelControllerClient> localAuthClients = new HashMap<String, ModelControllerClient>();

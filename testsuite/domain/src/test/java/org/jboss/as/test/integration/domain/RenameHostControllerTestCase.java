@@ -38,8 +38,8 @@ import org.junit.Test;
  */
 public class RenameHostControllerTestCase {
     private static final String RENAMED_SLAVE = "renamed-slave";
-    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
-    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
+    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
     private static final PathAddress RENAMED_SLAVE_ADDR = PathAddress.pathAddress(HOST, RENAMED_SLAVE);
 
     private static DomainTestSupport testSupport;
@@ -69,7 +69,7 @@ public class RenameHostControllerTestCase {
         ModelNode operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "name", RENAMED_SLAVE);
         DomainTestUtils.executeForResult(operation, masterClient);
 
-        DomainClient slaveClient = reloadHost(domainSlaveLifecycleUtil, "slave");
+        DomainClient slaveClient = reloadHost(domainSlaveLifecycleUtil, "secondary");
 
         String result = DomainTestUtils.executeForResult(
                 Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, "local-host-name"), slaveClient).asString();

@@ -172,7 +172,7 @@ public class WildcardOperationsTestCase {
         address.setEmptyList();
 
         // Mix in a non-widlcard remote slave op
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         steps.add().set(createReadResourceOperation(address));
 
         address.setEmptyList();
@@ -195,7 +195,7 @@ public class WildcardOperationsTestCase {
         address.setEmptyList();
 
         // Mix in a non-wildcard remote server op
-        address.add(HOST, "master").add(RUNNING_SERVER, "main-one");
+        address.add(HOST, "primary").add(RUNNING_SERVER, "main-one");
         steps.add().set(createReadResourceOperation(address));
 
         // Now repeat the whole thing, but nested
@@ -212,7 +212,7 @@ public class WildcardOperationsTestCase {
         address.setEmptyList();
 
         // Mix in a non-wildcard remote slave op
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         nestedSteps.add().set(createReadResourceOperation(address));
 
         address.setEmptyList();
@@ -235,7 +235,7 @@ public class WildcardOperationsTestCase {
         address.setEmptyList();
 
         // Mix in a non-wildcard remote server op
-        address.add(HOST, "master").add(RUNNING_SERVER, "main-one");
+        address.add(HOST, "primary").add(RUNNING_SERVER, "main-one");
         nestedSteps.add().set(createReadResourceOperation(address));
 
         final ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
@@ -275,7 +275,7 @@ public class WildcardOperationsTestCase {
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(RUNNING_SERVER));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(DIRECTORY_GROUPING));
-                    assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(NAME).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "secondary", itemResult.get(NAME).asString());
                     break;
                 case 2:
                 case 3:
@@ -309,7 +309,7 @@ public class WildcardOperationsTestCase {
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
                     assertEquals(property.getName() + " result " + itemResult, "main-one", itemResult.get(NAME).asString());
-                    assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(HOST).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "primary", itemResult.get(HOST).asString());
                     break;
                 case 9:
                     if (allowNested) {

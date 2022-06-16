@@ -84,8 +84,8 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
     private static final PathElement EXTENSION_ELEMENT = PathElement.pathElement(EXTENSION, TestHostCapableExtension.MODULE_NAME);
     private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, TestHostCapableExtension.SUBSYSTEM_NAME);
-    private static final PathElement MASTER_HOST_ELEMENT = PathElement.pathElement(HOST, "master");
-    private static final PathElement SLAVE_HOST_ELEMENT = PathElement.pathElement(HOST, "slave");
+    private static final PathElement MASTER_HOST_ELEMENT = PathElement.pathElement(HOST, "primary");
+    private static final PathElement SLAVE_HOST_ELEMENT = PathElement.pathElement(HOST, "secondary");
     private static final PathElement PROFILE_ELEMENT = PathElement.pathElement(PROFILE, "default");
 
     private static final PathAddress DOMAIN_EXTENSION_ADDRESS = PathAddress.pathAddress(EXTENSION_ELEMENT);
@@ -124,9 +124,9 @@ public class HcExtensionAndSubsystemManagementTestCase {
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeHostTestExtension(testSupport);
-        Set<String> servers = getRunningServers(domainMasterLifecycleUtil, "master");
+        Set<String> servers = getRunningServers(domainMasterLifecycleUtil, "primary");
         serversByHost.put(domainMasterLifecycleUtil, servers);
-        servers = getRunningServers(domainSlaveLifecycleUtil, "slave");
+        servers = getRunningServers(domainSlaveLifecycleUtil, "secondary");
         serversByHost.put(domainSlaveLifecycleUtil, servers);
     }
 

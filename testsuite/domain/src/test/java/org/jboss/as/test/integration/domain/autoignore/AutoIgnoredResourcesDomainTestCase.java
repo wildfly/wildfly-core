@@ -87,8 +87,8 @@ public class AutoIgnoredResourcesDomainTestCase {
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     private static final ModelNode ROOT_ADDRESS = new ModelNode().setEmptyList();
-    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "master");
-    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "slave");
+    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
+    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
 
     static {
         ROOT_ADDRESS.protect();

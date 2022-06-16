@@ -35,7 +35,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDES;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRIMARY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
@@ -104,9 +104,9 @@ public class ServerManagementTestCase {
     private static final ModelNode slave = new ModelNode();
     private static final ModelNode mainOne = new ModelNode();
     // (host=slave),(server-config=new-server)
-    private static final PathAddress newServerConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "new-server");
+    private static final PathAddress newServerConfigAddress = PathAddress.pathAddress("host", "secondary").append("server-config", "new-server");
     // (host=slave),(server=new-server)
-    private static final PathAddress newRunningServerAddress = PathAddress.pathAddress("host", "slave").append("server", "new-server");
+    private static final PathAddress newRunningServerAddress = PathAddress.pathAddress("host", "secondary").append("server", "new-server");
     private static final String EXCLUDED_FROM_HOST_PROP = "WFCORE-2526.from.host";
     private static final String EXCLUDED_FROM_CONFIG_PROP = "WFCORE-2526.from.config";
     private static final String INCLUDED_FROM_HOST_PROP = "WFCORE-2526.ok.from.host";
@@ -118,17 +118,17 @@ public class ServerManagementTestCase {
 
     static {
         // (host=slave)
-        slave.add(HOST, "slave");
+        slave.add(HOST, "secondary");
         // (host=master),(server-config=main-one)
-        mainOne.add(HOST, MASTER);
+        mainOne.add(HOST, PRIMARY);
         mainOne.add(SERVER_CONFIG, MAIN_ONE);
 
         // (host=master),(server=main-one)
-        existentServer.add(HOST, MASTER);
+        existentServer.add(HOST, PRIMARY);
         existentServer.add(SERVER, MAIN_ONE);
 
         // (host=master),(server=non-existent)
-        nonExistentServer.add(HOST, MASTER);
+        nonExistentServer.add(HOST, PRIMARY);
         nonExistentServer.add(SERVER, NON_EXISTENT);
     }
 
@@ -246,7 +246,7 @@ public class ServerManagementTestCase {
         Assert.assertTrue(exists(client, newServerConfigAddress));
         Assert.assertTrue(exists(client, newRunningServerAddress));
 
-        startServer(client, "slave", "new-server");
+        startServer(client, "secondary", "new-server");
         Assert.assertTrue(checkServerState(client, newServerConfigAddress, "STARTED"));
 
         Assert.assertTrue(exists(client, newServerConfigAddress));
@@ -310,7 +310,7 @@ public class ServerManagementTestCase {
     @Test
     public void testReloadServer() throws Exception {
         final DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
-        final PathAddress address = getServerConfigAddress("slave", "main-three");
+        final PathAddress address = getServerConfigAddress("secondary", "main-three");
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("reload");
@@ -329,7 +329,7 @@ public class ServerManagementTestCase {
         ModelNode steps = compositeOp.get(STEPS);
         steps.add(Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(PROFILE, "BZ1015098"))));
         steps.add(Util.createEmptyOperation(RESTART, PathAddress.pathAddress(
-                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER_CONFIG, "other-two")
         )));
 
@@ -359,72 +359,72 @@ public class ServerManagementTestCase {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         try {
             executeLifecycleOperation(client, START_SERVERS);
-            waitUntilState(client, "master", "main-one", "STARTED");
-            waitUntilState(client, "master", "main-two", "STARTED");
-            waitUntilState(client, "master", "other-one", "STARTED");
-            waitUntilState(client, "slave", "main-three", "STARTED");
-            waitUntilState(client, "slave", "main-four", "STARTED");
-            waitUntilState(client, "slave", "other-two", "STARTED");
+            waitUntilState(client, "primary", "main-one", "STARTED");
+            waitUntilState(client, "primary", "main-two", "STARTED");
+            waitUntilState(client, "primary", "other-one", "STARTED");
+            waitUntilState(client, "secondary", "main-three", "STARTED");
+            waitUntilState(client, "secondary", "main-four", "STARTED");
+            waitUntilState(client, "secondary", "other-two", "STARTED");
 
             executeLifecycleOperation(client, STOP_SERVERS);
             //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
-            waitUntilState(client, "master", "main-one", "STOPPED");
-            waitUntilState(client, "master", "main-two", "DISABLED");
-            waitUntilState(client, "master", "other-one", "DISABLED");
-            waitUntilState(client, "slave", "main-three", "STOPPED");
-            waitUntilState(client, "slave", "main-four", "DISABLED");
-            waitUntilState(client, "slave", "other-two", "STOPPED");
+            waitUntilState(client, "primary", "main-one", "STOPPED");
+            waitUntilState(client, "primary", "main-two", "DISABLED");
+            waitUntilState(client, "primary", "other-one", "DISABLED");
+            waitUntilState(client, "secondary", "main-three", "STOPPED");
+            waitUntilState(client, "secondary", "main-four", "DISABLED");
+            waitUntilState(client, "secondary", "other-two", "STOPPED");
 
             executeLifecycleOperation(client, "other-server-group", START_SERVERS);
             //Check the affected servers have been started
-            waitUntilState(client, "master", "other-one", "STARTED");
-            waitUntilState(client, "slave", "other-two", "STARTED");
+            waitUntilState(client, "primary", "other-one", "STARTED");
+            waitUntilState(client, "secondary", "other-two", "STARTED");
             //And that the remaining ones are still stopped
-            waitUntilState(client, "master", "main-one", "STOPPED");
-            waitUntilState(client, "master", "main-two", "DISABLED");
-            waitUntilState(client, "slave", "main-three", "STOPPED");
-            waitUntilState(client, "slave", "main-four", "DISABLED");
+            waitUntilState(client, "primary", "main-one", "STOPPED");
+            waitUntilState(client, "primary", "main-two", "DISABLED");
+            waitUntilState(client, "secondary", "main-three", "STOPPED");
+            waitUntilState(client, "secondary", "main-four", "DISABLED");
 
             executeLifecycleOperation(client, "other-server-group", RESTART_SERVERS);
             //Check the affected servers have been started
-            waitUntilState(client, "master", "other-one", "STARTED");
-            waitUntilState(client, "slave", "other-two", "STARTED");
+            waitUntilState(client, "primary", "other-one", "STARTED");
+            waitUntilState(client, "secondary", "other-two", "STARTED");
             //And that the remaining ones are still stopped
-            waitUntilState(client, "master", "main-one", "STOPPED");
-            waitUntilState(client, "master", "main-two", "DISABLED");
-            waitUntilState(client, "slave", "main-three", "STOPPED");
-            waitUntilState(client, "slave", "main-four", "DISABLED");
+            waitUntilState(client, "primary", "main-one", "STOPPED");
+            waitUntilState(client, "primary", "main-two", "DISABLED");
+            waitUntilState(client, "secondary", "main-three", "STOPPED");
+            waitUntilState(client, "secondary", "main-four", "DISABLED");
 
             executeLifecycleOperation(client, "other-server-group", RESTART_SERVERS);
             //Check the affected servers have been started
-            waitUntilState(client, "master", "other-one", "STARTED");
-            waitUntilState(client, "slave", "other-two", "STARTED");
+            waitUntilState(client, "primary", "other-one", "STARTED");
+            waitUntilState(client, "secondary", "other-two", "STARTED");
             //And that the remaining ones are still stopped
-            waitUntilState(client, "master", "main-one", "STOPPED");
-            waitUntilState(client, "master", "main-two", "DISABLED");
-            waitUntilState(client, "slave", "main-three", "STOPPED");
-            waitUntilState(client, "slave", "main-four", "DISABLED");
+            waitUntilState(client, "primary", "main-one", "STOPPED");
+            waitUntilState(client, "primary", "main-two", "DISABLED");
+            waitUntilState(client, "secondary", "main-three", "STOPPED");
+            waitUntilState(client, "secondary", "main-four", "DISABLED");
 
             executeLifecycleOperation(client, "other-server-group", STOP_SERVERS);
             //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
-            waitUntilState(client, "master", "main-one", "STOPPED");
-            waitUntilState(client, "master", "main-two", "DISABLED");
-            waitUntilState(client, "master", "other-one", "DISABLED");
-            waitUntilState(client, "slave", "main-three", "STOPPED");
-            waitUntilState(client, "slave", "main-four", "DISABLED");
-            waitUntilState(client, "slave", "other-two", "STOPPED");
+            waitUntilState(client, "primary", "main-one", "STOPPED");
+            waitUntilState(client, "primary", "main-two", "DISABLED");
+            waitUntilState(client, "primary", "other-one", "DISABLED");
+            waitUntilState(client, "secondary", "main-three", "STOPPED");
+            waitUntilState(client, "secondary", "main-four", "DISABLED");
+            waitUntilState(client, "secondary", "other-two", "STOPPED");
         } finally {
             //Set everything back to how it was:
             try {
-                resetServerToExpectedState(client, "master", "main-one", "STARTED");
-                resetServerToExpectedState(client, "master", "main-two", "DISABLED");
-                resetServerToExpectedState(client, "master", "other-one", "DISABLED");
-                resetServerToExpectedState(client, "slave", "main-three", "STARTED");
-                resetServerToExpectedState(client, "slave", "main-four", "DISABLED");
-                resetServerToExpectedState(client, "slave", "other-two", "STARTED");
-                waitUntilState(client, "master", "main-one", "STARTED");
-                waitUntilState(client, "slave", "main-three", "STARTED");
-                waitUntilState(client, "slave", "other-two", "STARTED");
+                resetServerToExpectedState(client, "primary", "main-one", "STARTED");
+                resetServerToExpectedState(client, "primary", "main-two", "DISABLED");
+                resetServerToExpectedState(client, "primary", "other-one", "DISABLED");
+                resetServerToExpectedState(client, "secondary", "main-three", "STARTED");
+                resetServerToExpectedState(client, "secondary", "main-four", "DISABLED");
+                resetServerToExpectedState(client, "secondary", "other-two", "STARTED");
+                waitUntilState(client, "primary", "main-one", "STARTED");
+                waitUntilState(client, "secondary", "main-three", "STARTED");
+                waitUntilState(client, "secondary", "other-two", "STARTED");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -502,7 +502,7 @@ public class ServerManagementTestCase {
                 try {
                     //Add a server and make sure it has all the subsystems
                     PathAddress serverConfAddr =
-                            PathAddress.pathAddress(HOST, "slave").append(SERVER_CONFIG, "includes-server");
+                            PathAddress.pathAddress(HOST, "secondary").append(SERVER_CONFIG, "includes-server");
                     ModelNode add = Util.createAddOperation(serverConfAddr);
                     add.get(GROUP).set("test-group");
                     add.get(PORT_OFFSET).set("550");
@@ -515,7 +515,7 @@ public class ServerManagementTestCase {
                         DomainTestUtils.executeForResult(start, masterClient);
                         try {
                             PathAddress serverAddr =
-                                    PathAddress.pathAddress(HOST, "slave").append(SERVER, "includes-server");
+                                    PathAddress.pathAddress(HOST, "secondary").append(SERVER, "includes-server");
                             //Check we have the same subsystems
                             ModelNode model = readResource(masterClient, serverAddr);
                             Set<String> subsystems = model.get(SUBSYSTEM).keys();
@@ -586,7 +586,7 @@ public class ServerManagementTestCase {
                     DomainTestUtils.executeForResult(group, masterClient);
                     try {
                         final PathAddress serverConfAddr =
-                                PathAddress.pathAddress(HOST, "slave").append(SERVER_CONFIG, "includes-server");
+                                PathAddress.pathAddress(HOST, "secondary").append(SERVER_CONFIG, "includes-server");
                         ModelNode add = Util.createAddOperation(serverConfAddr);
                         add.get(GROUP).set("test-group");
                         add.get(PORT_OFFSET).set("550");
@@ -598,7 +598,7 @@ public class ServerManagementTestCase {
                             DomainTestUtils.executeForResult(start, masterClient);
                             try {
                                 final PathAddress serverAddr =
-                                        PathAddress.pathAddress(HOST, "slave").append(SERVER, "includes-server");
+                                        PathAddress.pathAddress(HOST, "secondary").append(SERVER, "includes-server");
 
                                 ModelNode model = readResource(masterClient, serverAddr.append(SOCKET_BINDING_GROUP, "child"));
                                 Assert.assertEquals(2, model.get(SOCKET_BINDING).keys().size());

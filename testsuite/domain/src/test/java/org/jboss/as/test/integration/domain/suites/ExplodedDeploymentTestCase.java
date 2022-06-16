@@ -172,7 +172,7 @@ public class ExplodedDeploymentTestCase {
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
-                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
         //Let's replace the properties
@@ -201,7 +201,7 @@ public class ExplodedDeploymentTestCase {
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
-                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties3);
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         //Let's remove some content
@@ -250,7 +250,7 @@ public class ExplodedDeploymentTestCase {
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
-                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
         //Let's replace the properties
@@ -279,7 +279,7 @@ public class ExplodedDeploymentTestCase {
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
-                PathElement.pathElement(HOST, "slave"),
+                PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties3);
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         //Let's remove some content

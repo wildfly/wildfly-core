@@ -72,12 +72,12 @@ public class BasicOpsTestCase {
         assertTrue(res.getResult() instanceof List);
         List<?> hosts = (List<?>) res.getResult();
 
-        assertTrue(hosts.contains("master"));
-        assertTrue(hosts.contains("slave"));
+        assertTrue(hosts.contains("primary"));
+        assertTrue(hosts.contains("secondary"));
 
         // check servers
-        assertTrue(checkHostServers(cli, "master", new String[] {"main-one", "main-two", "other-one", "reload-one"}));
-        assertTrue(checkHostServers(cli, "slave", new String[] {"main-three", "main-four", "other-two", "reload-two"}));
+        assertTrue(checkHostServers(cli, "primary", new String[] {"main-one", "main-two", "other-one", "reload-one"}));
+        assertTrue(checkHostServers(cli, "secondary", new String[] {"main-three", "main-four", "other-two", "reload-two"}));
         cli.quit();
 
     }
@@ -87,8 +87,8 @@ public class BasicOpsTestCase {
 
         CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.masterAddress);
         try {
-            cli.sendLine("cd /host=master/server=main-one");
-            cli.sendLine("cd /host=master");
+            cli.sendLine("cd /host=primary/server=main-one");
+            cli.sendLine("cd /host=primary");
             cli.sendLine("cd server=main-one");
             cli.sendLine("cd core-service=platform-mbean/type=garbage-collector");
             boolean failed = false;
@@ -108,8 +108,8 @@ public class BasicOpsTestCase {
 
         CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.masterAddress);
         try {
-            cli.sendLine("cd /host=slave/server=main-three");
-            cli.sendLine("cd /host=slave");
+            cli.sendLine("cd /host=secondary/server=main-three");
+            cli.sendLine("cd /host=secondary");
             cli.sendLine("cd server=main-three");
             cli.sendLine("cd core-service=platform-mbean/type=garbage-collector");
             boolean failed = false;

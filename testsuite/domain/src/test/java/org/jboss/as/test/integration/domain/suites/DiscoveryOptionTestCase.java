@@ -92,7 +92,7 @@ public class DiscoveryOptionTestCase {
 
         // (host=master),(core-service=discovery-options),(discovery-option=option-one)
         ModelNode newMasterDiscoveryOptionAddress = new ModelNode();
-        newMasterDiscoveryOptionAddress.add("host", "master");
+        newMasterDiscoveryOptionAddress.add("host", "primary");
         newMasterDiscoveryOptionAddress.add("core-service", "discovery-options");
         newMasterDiscoveryOptionAddress.add("discovery-option", "option-one");
         addAndRemoveDiscoveryOptionTest(masterClient, newMasterDiscoveryOptionAddress, addDiscoveryOption);
@@ -100,7 +100,7 @@ public class DiscoveryOptionTestCase {
         DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
         // (host=slave),(core-service=discovery-options),(discovery-option=option-one)
         ModelNode newSlaveDiscoveryOptionAddress = new ModelNode();
-        newSlaveDiscoveryOptionAddress.add("host", "slave");
+        newSlaveDiscoveryOptionAddress.add("host", "secondary");
         newSlaveDiscoveryOptionAddress.add("core-service", "discovery-options");
         newSlaveDiscoveryOptionAddress.add("discovery-option", "option-one");
         addAndRemoveDiscoveryOptionTest(slaveClient, newSlaveDiscoveryOptionAddress, addDiscoveryOption);
@@ -116,7 +116,7 @@ public class DiscoveryOptionTestCase {
 
         // (host=slave),(core-service=discovery-options),(static-discovery=option-one)
         ModelNode newSlaveDiscoveryOptionAddress = new ModelNode();
-        newSlaveDiscoveryOptionAddress.add("host", "slave");
+        newSlaveDiscoveryOptionAddress.add("host", "secondary");
         newSlaveDiscoveryOptionAddress.add("core-service", "discovery-options");
         newSlaveDiscoveryOptionAddress.add("static-discovery", "option-one");
         addAndRemoveDiscoveryOptionTest(slaveClient, newSlaveDiscoveryOptionAddress, addDiscoveryOption);
@@ -126,7 +126,7 @@ public class DiscoveryOptionTestCase {
     public void testDiscoveryOptionsOrdering() throws Exception {
         DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
         ModelNode discoveryOptionsAddress = new ModelNode();
-        discoveryOptionsAddress.add("host", "slave");
+        discoveryOptionsAddress.add("host", "secondary");
         discoveryOptionsAddress.add("core-service", "discovery-options");
         ModelNode readDiscoveryOptionsOrdering = Util.getReadAttributeOperation(PathAddress.pathAddress(discoveryOptionsAddress), DISCOVERY_OPTIONS);
         ModelNode expectedDiscoveryOptionsOrdering = new ModelNode();
@@ -181,7 +181,7 @@ public class DiscoveryOptionTestCase {
     public void testOptionsAttribute() throws Exception {
         DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
         ModelNode discoveryOptionsAddress = new ModelNode();
-        discoveryOptionsAddress.add("host", "slave");
+        discoveryOptionsAddress.add("host", "secondary");
         discoveryOptionsAddress.add("core-service", "discovery-options");
         ModelNode readOptionsAttr = Util.getReadAttributeOperation(PathAddress.pathAddress(discoveryOptionsAddress), ModelDescriptionConstants.OPTIONS);
 

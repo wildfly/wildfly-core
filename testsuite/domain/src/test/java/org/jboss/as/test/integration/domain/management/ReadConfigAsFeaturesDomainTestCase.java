@@ -129,7 +129,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
     @Test
     public void hostInterfaceTest() {
-        ModelNode redefineInterface = Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST, MASTER).append(INTERFACE, "management"), INET_ADDRESS, "10.10.10.10");
+        ModelNode redefineInterface = Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST, "primary").append(INTERFACE, "management"), INET_ADDRESS, "10.10.10.10");
 
         ModelNode expectedHostConfigAsFeatures = defaultHostConfigAsFeatures.clone();
 
@@ -140,13 +140,13 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         managementInterfaceParams.get(INET_ADDRESS).set("10.10.10.10");
         managementInterface.get(PARAMS).set(managementInterfaceParams);
 
-        doTest(Collections.singletonList(redefineInterface), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, MASTER));
+        doTest(Collections.singletonList(redefineInterface), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, "primary"));
     }
 
     @Test
     public void hostSubsystemTest() {
         ModelNode redefineJmxAttribute = Util.getWriteAttributeOperation(
-                PathAddress.pathAddress(HOST, MASTER).append(SUBSYSTEM, "jmx").append("expose-model", "resolved"),
+                PathAddress.pathAddress(HOST, "primary").append(SUBSYSTEM, "jmx").append("expose-model", "resolved"),
                 "domain-name", "customDomainName");
 
         ModelNode expectedHostConfigAsFeatures = defaultHostConfigAsFeatures.clone();
@@ -157,7 +157,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         exposeModelResolvedParams.get("domain-name").set("customDomainName");
         exposeModelResolved.get(PARAMS).set(exposeModelResolvedParams);
 
-        doTest(Collections.singletonList(redefineJmxAttribute), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, MASTER));
+        doTest(Collections.singletonList(redefineJmxAttribute), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, "primary"));
     }
 
     @Test
@@ -216,8 +216,8 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
     @Test
     public void nonNestedHostTest() {
-        ModelNode removeJvm = Util.createRemoveOperation(PathAddress.pathAddress(HOST, MASTER).append(JVM, DEFAULT));
-        ModelNode addCustomJvm = Util.createAddOperation(PathAddress.pathAddress(HOST, MASTER).append(JVM, "custom"));
+        ModelNode removeJvm = Util.createRemoveOperation(PathAddress.pathAddress(HOST, "primary").append(JVM, DEFAULT));
+        ModelNode addCustomJvm = Util.createAddOperation(PathAddress.pathAddress(HOST, "primary").append(JVM, "custom"));
         ModelNode environmentVariables = new ModelNode();
         environmentVariables.get("DOMAIN_TEST_JVM").set("custom");
         addCustomJvm.get("heap-size").set("64m");
@@ -229,7 +229,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
         // remove the default jvm
         ModelNode defaultJvmId = new ModelNode();
-        defaultJvmId.get(HOST).set(MASTER);
+        defaultJvmId.get(HOST).set("primary");
         defaultJvmId.get(JVM).set(DEFAULT);
         int defaultJvmIndex = getListElementIndex(expectedHostConfigAsFeatures, "host.jvm", defaultJvmId);
         expectedHostConfigAsFeatures.remove(defaultJvmIndex);
@@ -244,14 +244,14 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         customJvmParams.get("jvm-options").add("-ea");
         customJvmParams.get("max-heap-size").set("128m");
         customJvmParams.get("environment-variables").set(customJvmEnvVars);
-        customJvmId.get(HOST).set(MASTER);
+        customJvmId.get(HOST).set("primary");
         customJvmId.get(JVM).set("custom");
         customJvm.get(SPEC).set("host.jvm");
         customJvm.get(ID).set(customJvmId);
         customJvm.get(PARAMS).set(customJvmParams);
         expectedHostConfigAsFeatures.add(customJvm);
 
-        doTest(Arrays.asList(removeJvm, addCustomJvm), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, MASTER), false);
+        doTest(Arrays.asList(removeJvm, addCustomJvm), expectedHostConfigAsFeatures, PathAddress.pathAddress(HOST, "primary"), false);
     }
 
     @Test
@@ -278,11 +278,11 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     protected void saveDefaultConfig() {
         if (defaultDomainConfig == null || defaultHostConfig == null) {
             ModelNode takeSnapshotOnDomain = Util.createEmptyOperation(TAKE_SNAPSHOT_OPERATION, PathAddress.EMPTY_ADDRESS);
-            ModelNode takeSnapshotOnHost = Util.createEmptyOperation(TAKE_SNAPSHOT_OPERATION, PathAddress.pathAddress(HOST, MASTER));
+            ModelNode takeSnapshotOnHost = Util.createEmptyOperation(TAKE_SNAPSHOT_OPERATION, PathAddress.pathAddress(HOST, "primary"));
             domainMasterLifecycleUtil.executeForResult(takeSnapshotOnDomain);
             domainMasterLifecycleUtil.executeForResult(takeSnapshotOnHost);
             ModelNode listDomainSnapshots = Util.createEmptyOperation(LIST_SNAPSHOTS_OPERATION, PathAddress.EMPTY_ADDRESS);
-            ModelNode listHostSnapshots = Util.createEmptyOperation(LIST_SNAPSHOTS_OPERATION, PathAddress.pathAddress(HOST, MASTER));
+            ModelNode listHostSnapshots = Util.createEmptyOperation(LIST_SNAPSHOTS_OPERATION, PathAddress.pathAddress(HOST, "primary"));
             ModelNode domainSnapshots = domainMasterLifecycleUtil.executeForResult(listDomainSnapshots);
             ModelNode hostSnapshots = domainMasterLifecycleUtil.executeForResult(listHostSnapshots);
 
@@ -295,7 +295,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     protected void saveDefaultResult() {
         if (defaultDomainConfigAsFeatures == null || defaultHostConfigAsFeatures == null) {
             defaultDomainConfigAsFeatures = getConfigAsFeatures(PathAddress.EMPTY_ADDRESS);
-            defaultHostConfigAsFeatures = getConfigAsFeatures(PathAddress.pathAddress(HOST, MASTER));
+            defaultHostConfigAsFeatures = getConfigAsFeatures(PathAddress.pathAddress(HOST, "primary"));
         }
     }
 
@@ -303,13 +303,13 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     protected void saveNonNestedResult() {
         if (nonNestedDomainConfigAsFeatures == null || nonNestedHostConfigAsFeatures == null) {
             nonNestedDomainConfigAsFeatures = getConfigAsFeatures(false, PathAddress.EMPTY_ADDRESS);
-            nonNestedHostConfigAsFeatures = getConfigAsFeatures(false, PathAddress.pathAddress(HOST, MASTER));
+            nonNestedHostConfigAsFeatures = getConfigAsFeatures(false, PathAddress.pathAddress(HOST, "primary"));
         }
     }
 
     @Override
     protected void restoreDefaultConfig() throws TimeoutException, InterruptedException {
-        ModelNode reloadWithSnapshots = Util.createEmptyOperation(RELOAD, PathAddress.pathAddress(HOST, MASTER));
+        ModelNode reloadWithSnapshots = Util.createEmptyOperation(RELOAD, PathAddress.pathAddress(HOST, "primary"));
         reloadWithSnapshots.get(DOMAIN_CONFIG).set(defaultDomainConfig);
         reloadWithSnapshots.get(HOST_CONFIG).set(defaultHostConfig);
         domainMasterLifecycleUtil.executeForResult(reloadWithSnapshots);

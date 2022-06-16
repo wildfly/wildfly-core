@@ -55,8 +55,8 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public class RuntimeOnlyOperationsTestCase {
 
-    private static final PathAddress MASTER = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "master");
-    private static final PathAddress SLAVE = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "slave");
+    private static final PathAddress MASTER = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "primary");
+    private static final PathAddress SLAVE = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "secondary");
 
     private static final PathAddress EXT = PathAddress.pathAddress("extension", OpTypesExtension.EXTENSION_NAME);
     private static final PathAddress PROFILE = PathAddress.pathAddress("profile", "default");
@@ -143,10 +143,10 @@ public class RuntimeOnlyOperationsTestCase {
         ModelNode op = Util.createEmptyOperation(opName, PROFILE.append(SUBSYSTEM));
         ModelNode response = executeOp(op, SUCCESS);
         assertFalse(response.toString(), response.hasDefined(RESULT)); // handler doesn't set a result on profile
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result"));
-        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result").asBoolean());
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result"));
-        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "primary", "main-one", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "primary", "main-one", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "secondary", "main-three", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "secondary", "main-three", "response", "result").asBoolean());
 
         // Now check direct invocation on servers
         op = Util.createEmptyOperation(opName, MASTER.append(MAIN_ONE).append(SUBSYSTEM));
@@ -192,12 +192,12 @@ public class RuntimeOnlyOperationsTestCase {
 
     @Test
     public void testRuntimeStepOnMaster() throws IOException {
-        ignoredProfileRuntimeStepTest("master");
+        ignoredProfileRuntimeStepTest("primary");
     }
 
     @Test
     public void testRuntimeStepOnSlave() throws IOException {
-        ignoredProfileRuntimeStepTest("slave");
+        ignoredProfileRuntimeStepTest("secondary");
     }
 
     private void ignoredProfileRuntimeStepTest(String host) throws IOException {
@@ -205,10 +205,10 @@ public class RuntimeOnlyOperationsTestCase {
         op.get(HOST).set(host);
         ModelNode response = executeOp(op, SUCCESS);
         assertFalse(response.toString(), response.hasDefined(RESULT)); // handler's attempt to add a step to set a result is ignored on profile
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result"));
-        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "master", "main-one", "response", "result").asBoolean());
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result"));
-        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "slave", "main-three", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "primary", "main-one", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "primary", "main-one", "response", "result").asBoolean());
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", "host", "secondary", "main-three", "response", "result"));
+        assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "secondary", "main-three", "response", "result").asBoolean());
     }
 
     private static ModelNode executeOp(ModelNode op, String outcome) throws IOException {

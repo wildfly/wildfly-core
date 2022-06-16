@@ -188,14 +188,14 @@ public class ResponseStreamTestCase {
 
     @Test
     public void testMasterServer() throws IOException {
-        PathAddress base = PathAddress.pathAddress(HOST, "master").append(SERVER, "main-one");
+        PathAddress base = PathAddress.pathAddress(HOST, "primary").append(SERVER, "main-one");
         readLogFile(createReadAttributeOp(base), masterClient, true);
         readLogFile(createOperationOp(base), masterClient, true);
     }
 
     @Test
     public void testSlaveServer() throws IOException {
-        PathAddress base = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three");
+        PathAddress base = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three");
         readLogFile(createReadAttributeOp(base), masterClient, true);
         readLogFile(createOperationOp(base), masterClient, true);
         readLogFile(createReadAttributeOp(base), slaveClient, true);
@@ -207,8 +207,8 @@ public class ResponseStreamTestCase {
         ModelNode composite = Util.createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
         ModelNode steps = composite.get(STEPS);
         steps.add(createReadAttributeOp(PathAddress.pathAddress(PROFILE, "default")));
-        steps.add(createReadAttributeOp(PathAddress.pathAddress(HOST, "master").append(SERVER, "main-one")));
-        steps.add(createReadAttributeOp(PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three")));
+        steps.add(createReadAttributeOp(PathAddress.pathAddress(HOST, "primary").append(SERVER, "main-one")));
+        steps.add(createReadAttributeOp(PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three")));
         Operation op = OperationBuilder.create(composite).build();
         OperationResponse response = null;
         try {
@@ -426,7 +426,7 @@ public class ResponseStreamTestCase {
     private URL buildURL(boolean forGet, boolean useHeader, Integer streamIndex) throws MalformedURLException {
         String filePart;
         if (forGet) {
-            filePart = MGMT_CTX + "/host/slave/server/main-three/subsystem/log-stream-test?operation=attribute&name=log-file";
+            filePart = MGMT_CTX + "/host/secondary/server/main-three/subsystem/log-stream-test?operation=attribute&name=log-file";
             if (useHeader) {
                 filePart += "&" + getQueryParameter(streamIndex);
             }
@@ -450,7 +450,7 @@ public class ResponseStreamTestCase {
         // For POST we are using the custom op instead read-attribute that we use for GET
         // but this is just a convenient way to exercise the op (GET can't call custom ops),
         // and isn't some limitation of POST
-        PathAddress base = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three");
+        PathAddress base = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three");
         ModelNode cmd = createReadAttributeOp(base);
         String cmdStr = cmd.toJSONString(true);
         HttpPost post = new HttpPost(url.toURI());

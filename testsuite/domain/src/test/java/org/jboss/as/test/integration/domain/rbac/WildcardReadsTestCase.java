@@ -131,8 +131,8 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
 
-        validateConstrainedResponse(response, "master", "master-a");
-        validateConstrainedResponse(response, "slave", "slave-b");
+        validateConstrainedResponse(response, "primary", "master-a");
+        validateConstrainedResponse(response, "secondary", "slave-b");
 
         op = createOpNode("host=*/server=*/subsystem=1/rbac-sensitive=*", READ_RESOURCE_OPERATION);
         configureRoles(op, new String[]{MAINTAINER_USER});
@@ -152,18 +152,18 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertEquals(result.toString(), ModelType.LIST, result.getType());
         assertEquals(result.toString(), 2, result.asInt());
 
-        validateSensitiveResponse(response, "master", "master-a");
-        validateSensitiveResponse(response, "slave", "slave-b");
+        validateSensitiveResponse(response, "primary", "master-a");
+        validateSensitiveResponse(response, "secondary", "slave-b");
     }
 
     @Test
     public void testMasterHostScopedRoleReadResource() throws IOException {
-        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
+        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "primary", "master-a");
     }
 
     @Test
     public void testSlaveHostScopedRoleReadResource() throws IOException {
-        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
+        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "secondary", "slave-b");
     }
 
     private void testHostScopedRoleReadResource(final String user, final String host, final String server) throws IOException {
@@ -234,12 +234,12 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testMasterHostScopedRoleReadResourceDescription() throws IOException {
-        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "master", "master-a");
+        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "primary", "master-a");
     }
 
     @Test
     public void testSlaveHostScopedRoleReadResourceDescription() throws IOException {
-        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "slave", "slave-b");
+        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "secondary", "slave-b");
     }
 
     private void testHostScopedRoleReadResourceDescription(final String user, final String host, final String server) throws IOException {
@@ -310,9 +310,9 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertEquals(result.toString(), 1, result.asInt());
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
-        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "slave"), RUNNING_SERVER);
+        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "secondary"), RUNNING_SERVER);
 
-        validateConstrainedResponse(response, "master", "master-a");
+        validateConstrainedResponse(response, "primary", "master-a");
 
         op = createOpNode("host=*/server=*/subsystem=1/rbac-sensitive=*", READ_RESOURCE_OPERATION);
         configureRoles(op, new String[]{AbstractServerGroupScopedRolesTestCase.MAINTAINER_USER});
@@ -324,8 +324,8 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertEquals(response.toString(), 0, response.get(RESULT).asInt());
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
-        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "slave"), RUNNING_SERVER);
-        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "master"),
+        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "secondary"), RUNNING_SERVER);
+        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"),
                         PathElement.pathElement(RUNNING_SERVER, "master-a"), PathElement.pathElement(SUBSYSTEM, "1")),
                 "rbac-sensitive");
 
@@ -339,12 +339,12 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertEquals(result.toString(), 1, result.asInt());
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
-        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "slave"), RUNNING_SERVER);
-        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "master"),
+        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "secondary"), RUNNING_SERVER);
+        checkFilteredChildrenType(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"),
                         PathElement.pathElement(RUNNING_SERVER, "master-a"), PathElement.pathElement(SUBSYSTEM, "1")),
                 "rbac-sensitive");
 
-        validateSensitiveResponse(response, "master", "master-a");
+        validateSensitiveResponse(response, "primary", "master-a");
 
         // Now just read the root, to prove that's handled even when some servers aren't allowed
         op = createOpNode("host=*/server=*", READ_RESOURCE_OPERATION);
@@ -356,20 +356,20 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
         assertEquals(result.toString(), 2, result.asInt());
 
         assertTrue(response.toString(), response.hasDefined(RESPONSE_HEADERS, ACCESS_CONTROL));
-        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "slave"), RUNNING_SERVER);
+        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "secondary"), RUNNING_SERVER);
 
-        ModelNode resultItem = getResultItem(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"), PathElement.pathElement(RUNNING_SERVER, "slave-a")));
+        ModelNode resultItem = getResultItem(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"), PathElement.pathElement(RUNNING_SERVER, "slave-a")));
         assertTrue(resultItem.toString(), resultItem.hasDefined(RESULT));
         assertEquals(resultItem.toString(), 0, resultItem.get(RESULT).asInt());
 
-        resultItem = getResultItem(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "master"), PathElement.pathElement(RUNNING_SERVER, "master-a")));
+        resultItem = getResultItem(response, PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"), PathElement.pathElement(RUNNING_SERVER, "master-a")));
         assertTrue(resultItem.toString(), resultItem.hasDefined(RESULT));
         assertTrue(resultItem.toString(), resultItem.get(RESULT).keys().contains(MANAGEMENT_MAJOR_VERSION));
-        assertEquals(resultItem.toString(), "master", resultItem.get(RESULT, HOST).asString());
+        assertEquals(resultItem.toString(), "primary", resultItem.get(RESULT, HOST).asString());
         assertEquals(resultItem.toString(), "master-a", resultItem.get(RESULT, NAME).asString());
 
-        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "slave"), RUNNING_SERVER);
-        ModelNode accItem = getAccessControlItem(response, PathAddress.pathAddress(HOST, "slave"));
+        checkFilteredChildrenType(response, PathAddress.pathAddress(HOST, "secondary"), RUNNING_SERVER);
+        ModelNode accItem = getAccessControlItem(response, PathAddress.pathAddress(HOST, "secondary"));
         assertTrue(accItem.toString(), accItem.hasDefined(UNREADABLE_CHILDREN));
         assertEquals(accItem.toString(), ModelType.LIST, accItem.get(UNREADABLE_CHILDREN).getType());
         assertEquals(accItem.toString(), 1, accItem.get(UNREADABLE_CHILDREN).asInt());

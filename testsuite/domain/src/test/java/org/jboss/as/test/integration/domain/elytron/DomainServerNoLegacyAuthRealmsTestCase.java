@@ -68,31 +68,31 @@ public class DomainServerNoLegacyAuthRealmsTestCase {
     @Test
     public void testDomainServersStartWithNoLegacyAuthRealms() throws Exception {
         // verify servers connected and running
-        waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
-        waitUntilState(master.getDomainClient(), "slave", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "slave", "server-two", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-two", "STARTED");
+        waitUntilState(master.getDomainClient(), "secondary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "secondary", "server-two", "STARTED");
 
         // TODO replace all these with simple calls to lifecycleUtil once WFCORE-3373 is done
         reloadHostController(master, false);
         master.awaitHostController(System.currentTimeMillis());
-        waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-two", "STARTED");
 
         reloadHostController(master, true);
         master.awaitHostController(System.currentTimeMillis());
-        waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-two", "STARTED");
 
-        reloadServer(master.getDomainClient(), "master", "server-one");
-        waitUntilState(master.getDomainClient(), "master", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "master", "server-two", "STARTED");
+        reloadServer(master.getDomainClient(), "primary", "server-one");
+        waitUntilState(master.getDomainClient(), "primary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "primary", "server-two", "STARTED");
 
         // now reload the slave HC, but don't restart the servers and verify they've reconnected afterwards
         reloadHostController(slave, false);
         slave.awaitHostController(System.currentTimeMillis());
-        waitUntilState(master.getDomainClient(), "slave", "server-one", "STARTED");
-        waitUntilState(master.getDomainClient(), "slave", "server-two", "STARTED");
+        waitUntilState(master.getDomainClient(), "secondary", "server-one", "STARTED");
+        waitUntilState(master.getDomainClient(), "secondary", "server-two", "STARTED");
     }
 
     private static void reloadHostController(final DomainLifecycleUtil lifecycleUtil, final boolean restartServers) throws Exception {

@@ -79,7 +79,7 @@ public class WildFlyManagedConfiguration {
 
     private int hostControllerManagementPort = 9999;
 
-    private String hostName = "master";
+    private String hostName = "primary";
 
     private String domainDir;
 

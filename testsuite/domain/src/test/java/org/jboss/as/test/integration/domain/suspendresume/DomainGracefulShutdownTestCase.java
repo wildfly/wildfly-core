@@ -84,7 +84,7 @@ public class DomainGracefulShutdownTestCase {
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
     public static final String MAIN_SERVER_GROUP = "main-server-group";
 
-    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
+    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
     public static final PathAddress SERVER_MAIN_ONE = PathAddress.pathAddress(SERVER, "main-one");
 
     private static DomainTestSupport testSupport;
@@ -183,7 +183,7 @@ public class DomainGracefulShutdownTestCase {
         client.execute(op);
 
         op = new ModelNode();
-        op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=master/server=main-one").toModelNode());
+        op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=primary/server=main-one").toModelNode());
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
         op.get(NAME).set(SUSPEND_STATE);
         Assert.assertEquals("SUSPENDED", client.execute(op).get(RESULT).asString());
@@ -224,7 +224,7 @@ public class DomainGracefulShutdownTestCase {
             conn.disconnect();
         }
         op = new ModelNode();
-        op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=master/server=main-one").toModelNode());
+        op.get(ADDRESS).set(PathAddress.parseCLIStyleAddress("/host=primary/server=main-one").toModelNode());
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
         op.get(NAME).set(SUSPEND_STATE);
         Assert.assertEquals("SUSPENDED", client.execute(op).get(RESULT).asString());

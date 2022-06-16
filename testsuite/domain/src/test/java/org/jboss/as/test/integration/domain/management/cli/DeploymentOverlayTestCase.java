@@ -59,7 +59,7 @@ public class DeploymentOverlayTestCase {
     }
 
     private static final PathAddress SERVER_ADDRESS = PathAddress.pathAddress(
-            PathElement.pathElement(Util.HOST, "master"),
+            PathElement.pathElement(Util.HOST, "primary"),
             PathElement.pathElement(Util.SERVER, "main-one"));
 
     private static final String MAIN_GROUP = "main-server-group";

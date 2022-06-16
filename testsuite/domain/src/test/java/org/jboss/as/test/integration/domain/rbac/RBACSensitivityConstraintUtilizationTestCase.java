@@ -93,7 +93,7 @@ public class RBACSensitivityConstraintUtilizationTestCase extends AbstractRbacTe
             checkRequiresRead(path, true, client);
             readSocketBinding(Outcome.SUCCESS, client);
             readSocketBinding(Outcome.UNAUTHORIZED, monitor);
-            ModelNode op = createOpNode("host=master/server-config=master-a", RESTART);
+            ModelNode op = createOpNode("host=primary/server-config=master-a", RESTART);
             op.get(BLOCKING).set(true);
             RbacUtil.executeOperation(client, op, Outcome.SUCCESS);
             readSocketBinding(Outcome.SUCCESS, client);
@@ -129,7 +129,7 @@ public class RBACSensitivityConstraintUtilizationTestCase extends AbstractRbacTe
     }
 
     private static void readSocketBinding(Outcome expectedOutcome, ModelControllerClient client) throws IOException {
-        ModelNode operation = createOpNode("host=master/server=master-a/socket-binding-group=sockets-a/socket-binding=http", READ_RESOURCE_OPERATION);
+        ModelNode operation = createOpNode("host=primary/server=master-a/socket-binding-group=sockets-a/socket-binding=http", READ_RESOURCE_OPERATION);
         RbacUtil.executeOperation(client, operation, expectedOutcome);
     }
 }
