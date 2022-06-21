@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
+import org.jboss.as.controller.MapAttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.ParsedBootOp;
 import org.jboss.as.controller.PathAddress;
@@ -347,7 +348,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 map.remove(att.getName());
                 switch (att.getType()) {
                     case OBJECT:
-                        op.get(att.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
+                        if (att instanceof MapAttributeDefinition) {
+                            processMapAttribute((MapAttributeDefinition) att, op, (Map<String, Object>) value);
+                        } else {
+                            op.get(att.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
+                        }
                         break;
                     case LIST:
                         ModelNode list = op.get(att.getName()).setEmptyList();
@@ -379,7 +384,11 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                 Object value = map.get(child.getName());
                 switch (child.getType()) {
                     case OBJECT:
-                        objectNode.get(child.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) child, (Map<String, Object>) value));
+                        if(child instanceof MapAttributeDefinition) {
+                            processMapAttribute((MapAttributeDefinition)child, objectNode, (Map<String, Object>)value);
+                        } else {
+                            objectNode.get(child.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) child, (Map<String, Object>) value));
+                        }
                         break;
                     case LIST:
                         ModelNode list = objectNode.get(child.getName()).setEmptyList();
@@ -407,6 +416,13 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             } else {
                 list.add(entry.toString());
             }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void processMapAttribute(MapAttributeDefinition att, ModelNode map, Map<String, Object> value) {
+        for (Map.Entry<String, Object> entry : value.entrySet()) {
+            map.get(att.getName()).get(entry.getKey()).set(entry.getValue().toString());
         }
     }
 
