@@ -84,8 +84,17 @@
 
         <!-- Modularized JDK support (various workarounds) - activated via profile -->
         <modular.jdk.args>
+            --add-exports=java.desktop/sun.awt=ALL-UNNAMED
+            --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
             --add-opens=java.base/java.security=ALL-UNNAMED
-            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.management/javax.management=ALL-UNNAMED
+            --add-opens=java.naming/javax.naming=ALL-UNNAMED
         </modular.jdk.args>
         <modular.jdk.props></modular.jdk.props>
 
