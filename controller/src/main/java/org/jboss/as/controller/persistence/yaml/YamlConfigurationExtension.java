@@ -197,7 +197,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                     }
                 }
             } else {
-                PathAddress address = parentAddress.getParent().append(parentAddress.getLastElement().getKey(), name);
+                PathAddress address = parentAddress.isMultiTarget() ? parentAddress.getParent().append(parentAddress.getLastElement().getKey(), name) : parentAddress;
                 if (isExistingResource(xmlOperations, address)) {
                     //we will have to check attributes
                     MGMT_OP_LOGGER.debugf("Resource for address %s already exists", address.toCLIStyleString());
@@ -210,15 +210,32 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                         Operation yamlOperation = Operation.class.cast(value);
                         yamlOperation.processOperation(rootRegistration, xmlOperations, postExtensionOps, address, name);
                     } else {
-                        //Ignoring
+                        if (value != null && resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)) {
+                            //we are processing an attribute:
+                            MGMT_OP_LOGGER.debugf("We are processing the attribute %s for address %s", name, address.getParent().toCLIStyleString());
+                            processAttribute(parentAddress, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                        }
                     }
                 } else {
                     Object value = yaml.get(name);
                     if (resourceRegistration.getAttributeNames(PathAddress.EMPTY_ADDRESS).contains(name)) {
                         if (value != null) {
-                            //we are processing an attribute: that is wrong
-                            MGMT_OP_LOGGER.debugf("We are processing the attribute %s for address %s", name, address.getParent().toCLIStyleString());
-                            processAttribute(parentAddress, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                            OperationEntry operationEntry = resourceRegistration.getOperationEntry(PathAddress.EMPTY_ADDRESS, ADD);
+                            if (operationEntry == null) {
+                                //we are processing an attribute: that is wrong
+                                MGMT_OP_LOGGER.debugf("We are processing the attribute %s for address %s", name, address.getParent().toCLIStyleString());
+                                processAttribute(parentAddress, rootRegistration, name, value, postExtensionOps, xmlOperations);
+                            } else {
+                                if (!postExtensionOps.isEmpty()) {
+                                    ParsedBootOp op = postExtensionOps.get(postExtensionOps.size() - 1);
+                                    if (! address.equals(op.getAddress())) { // else already processed
+                                        Map<String, Object> map = new HashMap<>(yaml);
+                                        //need to process attributes for adding
+                                        processAttributes(address, rootRegistration, operationEntry, map, postExtensionOps);
+                                        processResource(address, map, rootRegistration, resourceRegistration, xmlOperations, postExtensionOps, false);
+                                    }
+                                }
+                            }
                         }
                     } else {
                         ImmutableManagementResourceRegistration childResourceRegistration = rootRegistration.getSubModel(address);
