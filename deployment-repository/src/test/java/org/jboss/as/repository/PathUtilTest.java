@@ -107,15 +107,15 @@ public class PathUtilTest {
     public void testIsArchive() throws Exception {
         Path archive = root.resolve("test.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
         }
         Path simpleFile = root.resolve("overlay.zip");
-        Files.copy(this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml"), simpleFile);
+        Files.copy(this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml"), simpleFile);
         Assert.assertTrue(PathUtil.isArchive(archive));
         Assert.assertFalse(PathUtil.isArchive(root));
         Assert.assertFalse(PathUtil.isArchive(simpleFile));
@@ -128,22 +128,22 @@ public class PathUtilTest {
     public void testReadFile() throws Exception {
         Path archive = root.resolve("test.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
             entry = new ZipEntry("single/test/test.html");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
         }
-        try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
             String content = readFileContent(in);
-            Assert.assertEquals(readFileContent(PathUtil.readFile(archive.resolve("overlay.xhtml"), root)), content);
+            Assert.assertEquals(readFileContent(PathUtil.readFile(archive.resolve("testfile.xhtml"), root)), content);
             Assert.assertEquals(readFileContent(PathUtil.readFile(archive.resolve("single/test/test.html"), root)), content);
         }
         try {
@@ -176,9 +176,9 @@ public class PathUtilTest {
     public void testListFiles() throws Exception {
         Path archive = root.resolve("test.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
@@ -186,30 +186,30 @@ public class PathUtilTest {
         Files.createDirectory(root.resolve("zip"));
         archive = root.resolve("zip").resolve("test.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
         }
-        Files.copy(this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml"), root.resolve("overlay.xhtml"));
+        Files.copy(this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml"), root.resolve("testfile.xhtml"));
         Files.createDirectories(root.resolve("empty").resolve("directory"));
         Files.createDirectories(root.resolve("htdocs").resolve("www"));
-        Files.copy(this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml"), root.resolve("htdocs").resolve("www").resolve("overlay.xhtml"));
+        Files.copy(this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml"), root.resolve("htdocs").resolve("www").resolve("testfile.xhtml"));
         List<String> result = new ArrayList<>();
         for (ContentRepositoryElement element1 : PathUtil.listFiles(root, root, ALL)) {
             String repositoryElement2Path = element1.getPath();
             result.add(repositoryElement2Path);
         }
         Assert.assertEquals(9, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test.zip"));
         Assert.assertTrue(result.contains("zip/"));
         Assert.assertTrue(result.contains("empty/directory/"));
         Assert.assertTrue(result.contains("empty/"));
-        Assert.assertTrue(result.contains("htdocs/www/overlay.xhtml"));
+        Assert.assertTrue(result.contains("htdocs/www/testfile.xhtml"));
         Assert.assertTrue(result.contains("htdocs/www/"));
         Assert.assertTrue(result.contains("htdocs/"));
         List<String> result2 = new ArrayList<>();
@@ -228,7 +228,7 @@ public class PathUtilTest {
         }
         result = list2;
         Assert.assertEquals(2, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         List<String> result1 = new ArrayList<>();
         for (ContentRepositoryElement element : PathUtil.listFiles(root, root, ContentFilter.Factory.createContentFilter(2, true))) {
@@ -246,7 +246,7 @@ public class PathUtilTest {
         }
         result = list1;
         Assert.assertEquals(8, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/"));
         Assert.assertTrue(result.contains("zip/test.zip"));
@@ -261,7 +261,7 @@ public class PathUtilTest {
         }
         result = list;
         Assert.assertEquals(9, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/"));
         Assert.assertTrue(result.contains("zip/test.zip"));
@@ -269,7 +269,7 @@ public class PathUtilTest {
         Assert.assertTrue(result.contains("empty/directory/"));
         Assert.assertTrue(result.contains("htdocs/"));
         Assert.assertTrue(result.contains("htdocs/www/"));
-        Assert.assertTrue(result.contains("htdocs/www/overlay.xhtml"));
+        Assert.assertTrue(result.contains("htdocs/www/testfile.xhtml"));
     }
 
     /**
@@ -279,18 +279,18 @@ public class PathUtilTest {
     public void testListFileInArchives() throws Exception {
         Path archive = root.resolve("test.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
         }
         Path unexploded = Files.createDirectory(root.resolve("unexploded")).resolve("unexploded.zip");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(unexploded))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
@@ -314,7 +314,7 @@ public class PathUtilTest {
             result.add(contentRepositoryElement2Path);
         }
         Assert.assertEquals(3, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test2.zip"));
         List<String> list2 = new ArrayList<>();
@@ -333,7 +333,7 @@ public class PathUtilTest {
         }
         result = result1;
         Assert.assertEquals(2, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         List<String> list1 = new ArrayList<>();
         for (ContentRepositoryElement repositoryElement : PathUtil.listFiles(unexploded, root, ContentFilter.Factory.createContentFilter(2, true))) {
@@ -351,7 +351,7 @@ public class PathUtilTest {
         }
         result = list;
         Assert.assertEquals(3, result.size());
-        Assert.assertTrue(result.contains("overlay.xhtml"));
+        Assert.assertTrue(result.contains("testfile.xhtml"));
         Assert.assertTrue(result.contains("test.zip"));
         Assert.assertTrue(result.contains("zip/test2.zip"));
     }
@@ -375,16 +375,16 @@ public class PathUtilTest {
         Path archive = root.resolve("test.zip");
         Path target = root.resolve("target");
         try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(archive))) {
-            ZipEntry entry = new ZipEntry("overlay.xhtml");
+            ZipEntry entry = new ZipEntry("testfile.xhtml");
             out.putNextEntry(entry);
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
                 StreamUtils.copyStream(in, out);
             }
             out.closeEntry();
         }
         PathUtil.unzip(archive, target);
         Assert.assertTrue(Files.exists(target));
-        Path explodedFile = target.resolve("overlay.xhtml");
+        Path explodedFile = target.resolve("testfile.xhtml");
         Assert.assertTrue(Files.exists(explodedFile));
         Assert.assertTrue(Files.isRegularFile(explodedFile));
     }

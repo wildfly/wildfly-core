@@ -74,17 +74,17 @@ public class DeletionCollisionTest {
     @BMScript(value="lockDeployment.btm")
     @Test
     public void testFileLockByReadContent() throws Exception {
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
             final byte[] deploymentHash = repository.addContentToExploded(
                     repository.addContent(null),
-                    Collections.singletonList(new ExplodedContent("overlay.xhtml", stream)),
+                    Collections.singletonList(new ExplodedContent("testfile.xhtml", stream)),
                     true);
             Assert.assertTrue(repository.hasContent(deploymentHash));
             ExecutorService executor = Executors.newFixedThreadPool(2);
-            Future<InputStream> result = executor.submit(() -> repository.readContent(deploymentHash, "overlay.xhtml"));
+            Future<InputStream> result = executor.submit(() -> repository.readContent(deploymentHash, "testfile.xhtml"));
             Thread.sleep(100L);
             Future deletion = executor.submit(() -> {
-                repository.removeContent(new ContentReference("overlay.xhtml", deploymentHash));
+                repository.removeContent(new ContentReference("testfile.xhtml", deploymentHash));
             });
             deletion.get(EXECUTION_TIMEOUT, TimeUnit.MILLISECONDS);
             result.get(EXECUTION_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -97,18 +97,18 @@ public class DeletionCollisionTest {
     @BMScript(value="lockDeployment.btm")
     @Test
     public void testFileLockByRemoveContent() throws Exception {
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("overlay.xhtml")) {
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("testfile.xhtml")) {
             final byte[] deploymentHash = repository.addContentToExploded(
                     repository.addContent(null),
-                    Collections.singletonList(new ExplodedContent("overlay.xhtml", stream)),
+                    Collections.singletonList(new ExplodedContent("testfile.xhtml", stream)),
                     true);
             Assert.assertTrue(repository.hasContent(deploymentHash));
             ExecutorService executor = Executors.newFixedThreadPool(2);
             Future deletion = executor.submit(() -> {
-                repository.removeContent(new ContentReference("overlay.xhtml", deploymentHash));
+                repository.removeContent(new ContentReference("testfile.xhtml", deploymentHash));
             });
             Thread.sleep(100L);
-            Future<InputStream> result = executor.submit(() -> repository.readContent(deploymentHash, "overlay.xhtml"));
+            Future<InputStream> result = executor.submit(() -> repository.readContent(deploymentHash, "testfile.xhtml"));
             deletion.get(EXECUTION_TIMEOUT, TimeUnit.MILLISECONDS);
             try {
                 result.get(EXECUTION_TIMEOUT, TimeUnit.MILLISECONDS);
