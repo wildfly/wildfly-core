@@ -2222,7 +2222,7 @@ public class FileSystemDeploymentServiceUnitTestCase {
                 } else {
                     // Report what our scanner would configure
                     result.get(deployment, PERSISTENT).set(false);
-                    result.get(deployment, OWNER).set(resourceAddress.toModelNode());
+                    result.get(deployment, OWNER).set(resourceAddress.toModelNode().asObject());
                 }
             }
             return content;

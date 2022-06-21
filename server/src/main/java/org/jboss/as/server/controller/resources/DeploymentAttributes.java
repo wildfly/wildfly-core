@@ -49,9 +49,9 @@ import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ParameterCorrector;
-import org.jboss.as.controller.PrimitiveListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
@@ -122,8 +122,7 @@ public class DeploymentAttributes {
         .build();
     public static final AttributeDefinition PERSISTENT = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.PERSISTENT, ModelType.BOOLEAN, false)
         .build();
-    public static final AttributeDefinition OWNER = PrimitiveListAttributeDefinition.Builder.of(ModelDescriptionConstants.OWNER, ModelType.PROPERTY)
-            .setRequired(false)
+    public static final AttributeDefinition OWNER = new SimpleMapAttributeDefinition.Builder(ModelDescriptionConstants.OWNER, ModelType.STRING, true)
             .build();
 
     public static final AttributeDefinition STATUS = SimpleAttributeDefinitionBuilder.create(ModelDescriptionConstants.STATUS, ModelType.STRING, true)
