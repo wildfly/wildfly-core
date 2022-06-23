@@ -306,6 +306,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                             op.get(NAME).set(attributeName);
                             ModelNode list = op.get(VALUE).setEmptyList();
                             processListAttribute((ListAttributeDefinition) att, list, value);
+                            MGMT_OP_LOGGER.debugf("Updating attribute %s for resource %s with operation %s", attributeName, address, op);
+                            postExtensionOps.add(new ParsedBootOp(op, operationEntry.getOperationHandler()));
                         }
                     }
                     break;
