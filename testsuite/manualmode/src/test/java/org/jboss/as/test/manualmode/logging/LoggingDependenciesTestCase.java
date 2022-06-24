@@ -76,7 +76,7 @@ public class LoggingDependenciesTestCase extends AbstractLoggingTestCase {
 
     @Test(expected = ServerDeploymentException.class)
     public void disableLoggingDependencies() throws Exception {
-        final JavaArchive archive = createDeployment(Log4jServiceActivator.class, Log4jServiceActivator.DEPENDENCIES);
+        final JavaArchive archive = createDeployment(Log4j2ServiceActivator.class, Log4j2ServiceActivator.DEPENDENCIES);
         // Ensure the log4j deployment can be deployed
         deploy(archive);
         undeploy();

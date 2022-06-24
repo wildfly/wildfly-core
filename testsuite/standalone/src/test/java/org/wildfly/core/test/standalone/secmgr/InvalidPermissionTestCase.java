@@ -65,8 +65,8 @@ import org.wildfly.test.undertow.UndertowServiceActivator;
 public class InvalidPermissionTestCase {
 
     private static final String DEPLOY_NAME = InvalidPermissionTestCase.class.getSimpleName() + ".war";
-    private static final String CUSTOM_HANDLER_NAME = "customFileAppender";
-    private static final String FILE_NAME = "log4j-appender-file.log";
+    private static final String HANDLER_NAME = "customFileAppender";
+    private static final String FILE_NAME = "invalid-permission-file.log";
 
     private static Path logFile;
 
@@ -113,14 +113,12 @@ public class InvalidPermissionTestCase {
         private static void createAndAssignCustomHandler(ManagementClient client) throws IOException {
             ModelNode op = new ModelNode();
             op.get(ModelDescriptionConstants.OP_ADDR).add(ModelDescriptionConstants.SUBSYSTEM, "logging");
-            op.get(ModelDescriptionConstants.OP_ADDR).add("custom-handler", CUSTOM_HANDLER_NAME);
+            op.get(ModelDescriptionConstants.OP_ADDR).add("file-handler", HANDLER_NAME);
             op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.ADD);
-            op.get("class").set("org.apache.log4j.FileAppender");
-            op.get("module").set("org.apache.log4j");
             op.get("level").set("WARN");
-            ModelNode opProperties = op.get("properties").setEmptyObject();
-            opProperties.get("file").set(logFile.normalize().toString());
-            opProperties.get("immediateFlush").set(true);
+            final ModelNode file = op.get("file").setEmptyObject();
+            file.get("path").set(FILE_NAME);
+            file.get("relative-to").set("jboss.server.log.dir");
             ModelNode result = client.getControllerClient().execute(op);
             assertSuccessResult(result);
 
@@ -128,7 +126,7 @@ public class InvalidPermissionTestCase {
             op.get(ModelDescriptionConstants.OP_ADDR).add(ModelDescriptionConstants.SUBSYSTEM, "logging");
             op.get(ModelDescriptionConstants.OP_ADDR).add("root-logger", "ROOT");
             op.get(ModelDescriptionConstants.OP).set("add-handler");
-            op.get(ModelDescriptionConstants.NAME).set(CUSTOM_HANDLER_NAME);
+            op.get(ModelDescriptionConstants.NAME).set(HANDLER_NAME);
             result = client.getControllerClient().execute(op);
             assertSuccessResult(result);
         }
@@ -138,13 +136,13 @@ public class InvalidPermissionTestCase {
             op.get(ModelDescriptionConstants.OP_ADDR).add(ModelDescriptionConstants.SUBSYSTEM, "logging");
             op.get(ModelDescriptionConstants.OP_ADDR).add("root-logger", "ROOT");
             op.get(ModelDescriptionConstants.OP).set("remove-handler");
-            op.get(ModelDescriptionConstants.NAME).set(CUSTOM_HANDLER_NAME);
+            op.get(ModelDescriptionConstants.NAME).set(HANDLER_NAME);
             ModelNode result = client.getControllerClient().execute(op);
             assertSuccessResult(result);
 
             op = new ModelNode();
             op.get(ModelDescriptionConstants.OP_ADDR).add(ModelDescriptionConstants.SUBSYSTEM, "logging");
-            op.get(ModelDescriptionConstants.OP_ADDR).add("custom-handler", CUSTOM_HANDLER_NAME);
+            op.get(ModelDescriptionConstants.OP_ADDR).add("file-handler", HANDLER_NAME);
             op.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.REMOVE);
             result = client.getControllerClient().execute(op);
             assertSuccessResult(result);

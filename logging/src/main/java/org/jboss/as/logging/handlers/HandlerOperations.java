@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
 
-import org.apache.log4j.Appender;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
@@ -61,7 +60,6 @@ import org.jboss.as.logging.LoggingOperations;
 import org.jboss.as.logging.filters.Filters;
 import org.jboss.as.logging.loggers.RootLoggerResourceDefinition;
 import org.jboss.as.logging.logging.LoggingLogger;
-import org.jboss.as.logging.logmanager.Log4jAppenderHandler;
 import org.jboss.as.logging.resolvers.ModelNodeResolver;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -195,13 +193,6 @@ final class HandlerOperations {
                     context.setRollbackOnly();
                     throw e;
                 }
-            } else if (Log4jAppenderHandler.class.getName().equals(configuration.getClassName())) {
-                // Check the POJO names
-                final PojoConfiguration log4jPojo = logContextConfiguration.getPojoConfiguration(name);
-                if (log4jPojo != null) {
-                    LoggingLogger.ROOT_LOGGER.usageOfAppender(log4jPojo.getClassName());
-                    replaceHandler = (!className.equals(log4jPojo.getClassName()) || (moduleName == null ? log4jPojo.getModuleName() != null : !moduleName.equals(log4jPojo.getModuleName())));
-                }
             } else if (!className.equals(configuration.getClassName()) || (moduleName == null ? configuration.getModuleName() != null : !moduleName.equals(configuration.getModuleName()))) {
                 replaceHandler = true;
             }
@@ -249,31 +240,15 @@ final class HandlerOperations {
             final HandlerConfiguration configuration;
 
             if (moduleName != null) {
-                // Check if this is a log4j appender
                 final ModuleLoader moduleLoader = ModuleLoader.forClass(HandlerOperations.class);
                 try {
-                    final Class<?> actualClass = Class.forName(className, false, moduleLoader.loadModule(moduleName).getClassLoader());
-                    if (Appender.class.isAssignableFrom(actualClass)) {
-                        LoggingLogger.ROOT_LOGGER.usageOfAppender(actualClass.getCanonicalName());
-                        final PojoConfiguration pojoConfiguration;
-                        // Check for construction parameters
-                        if (constructionProperties == null) {
-                            pojoConfiguration = logContextConfiguration.addPojoConfiguration(moduleName, className, name);
-                        } else {
-                            pojoConfiguration = logContextConfiguration.addPojoConfiguration(moduleName, className, name, constructionProperties);
-                        }
-                        // Set the name on the appender
-                        pojoConfiguration.setPropertyValueString("name", name);
-                        configuration = logContextConfiguration.addHandlerConfiguration("org.jboss.as.logging", Log4jAppenderHandler.class.getName(), name);
-                        configuration.addPostConfigurationMethod(Log4jAppenderHandler.ACTIVATE_OPTIONS_METHOD_NAME);
-                        configuration.setPropertyValueString("appender", name);
+                    // Attempt to create the class to see if it's valid
+                    Class.forName(className, false, moduleLoader.loadModule(moduleName).getClassLoader());
+                    // Check for construction parameters
+                    if (constructionProperties == null) {
+                        configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name);
                     } else {
-                        // Check for construction parameters
-                        if (constructionProperties == null) {
-                            configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name);
-                        } else {
-                            configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name, constructionProperties);
-                        }
+                        configuration = logContextConfiguration.addHandlerConfiguration(moduleName, className, name, constructionProperties);
                     }
                 } catch (ClassNotFoundException e) {
                     throw createOperationFailure(LoggingLogger.ROOT_LOGGER.classNotFound(e, className));
@@ -332,10 +307,6 @@ final class HandlerOperations {
                         propertyConfigurable = configuration;
                     } else {
                         propertyConfigurable = pojoConfiguration;
-                        // A log4j appender may be an OptionHandler which requires the invocation of activateOptions(). Setting
-                        // a dummy property on the Log4jAppenderHandler is required to invoke this method as all properties are
-                        // set on the POJO which is the actual appender
-                        configuration.setPropertyValueString(Log4jAppenderHandler.ACTIVATOR_PROPERTY_METHOD_NAME, "");
                     }
                     if (value.isDefined()) {
                         for (Property property : value.asPropertyList()) {
@@ -680,10 +651,6 @@ final class HandlerOperations {
                 propertyConfigurable = configuration;
             } else {
                 propertyConfigurable = pojoConfiguration;
-                // A log4j appender may be an OptionHandler which requires the invocation of activateOptions(). Setting
-                // a dummy property on the Log4jAppenderHandler is required to invoke this method as all properties are
-                // set on the POJO which is the actual appender
-                configuration.setPropertyValueString(Log4jAppenderHandler.ACTIVATOR_PROPERTY_METHOD_NAME, "");
             }
             // Should be safe here to only process defined properties. The write-attribute handler handles removing
             // undefined properties

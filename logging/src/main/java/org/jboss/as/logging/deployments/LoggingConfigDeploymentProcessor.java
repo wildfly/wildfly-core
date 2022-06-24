@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.log4j.xml.DOMConfigurator;
 import org.jboss.as.logging.logging.LoggingLogger;
 import org.jboss.as.logging.logmanager.WildFlyLogContextSelector;
 import org.jboss.as.server.deployment.Attachments;
@@ -61,9 +60,6 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
     public static final String PER_DEPLOYMENT_LOGGING = "org.jboss.as.logging.per-deployment";
 
     private static final Charset ENCODING = StandardCharsets.UTF_8;
-    private static final String LOG4J_PROPERTIES = "log4j.properties";
-    private static final String LOG4J_XML = "log4j.xml";
-    private static final String JBOSS_LOG4J_XML = "jboss-log4j.xml";
     private static final String DEFAULT_PROPERTIES = "logging.properties";
     private static final String JBOSS_PROPERTIES = "jboss-logging.properties";
 
@@ -101,12 +97,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
                 // Get the module
                 final Module module = deploymentUnit.getAttachment(Attachments.MODULE);
                 // Create the log context and load into the selector for the module and keep a strong reference
-                final LogContext logContext;
-                if (isLog4jConfiguration(configFile.getName())) {
-                    logContext = LogContext.create(true);
-                } else {
-                    logContext = LogContext.create();
-                }
+                final LogContext logContext = LogContext.create();
                 // Add the log context for cleanup
                 LoggingCleanupDeploymentProcessor.addResource(deploymentUnit, logContext);
 
@@ -187,24 +178,18 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      * @throws DeploymentUnitProcessingException if an error occurs.
      */
     private VirtualFile findConfigFile(final VirtualFile file) throws DeploymentUnitProcessingException {
-        VirtualFile result = null;
         try {
             final List<VirtualFile> configFiles = file.getChildren(ConfigFilter.INSTANCE);
             for (final VirtualFile configFile : configFiles) {
                 final String fileName = configFile.getName();
                 if (DEFAULT_PROPERTIES.equals(fileName) || JBOSS_PROPERTIES.equals(fileName)) {
-                    if (result != null) {
-                        LoggingLogger.ROOT_LOGGER.debugf("The previously found configuration file '%s' is being ignored in favour of '%s'", result, configFile);
-                    }
                     return configFile;
-                } else if (LOG4J_PROPERTIES.equals(fileName) || LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName)) {
-                    result = configFile;
                 }
             }
         } catch (IOException e) {
             throw LoggingLogger.ROOT_LOGGER.errorProcessingLoggingConfiguration(e);
         }
-        return result;
+        return null;
     }
 
     /**
@@ -219,57 +204,30 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
      * @throws DeploymentUnitProcessingException if the configuration fails
      */
     private LoggingConfigurationService configure(final ResourceRoot root, final VirtualFile configFile, final ClassLoader classLoader, final LogContext logContext) throws DeploymentUnitProcessingException {
-        InputStream configStream = null;
-        try {
+        try (InputStream configStream = configFile.openStream()) {
             LoggingLogger.ROOT_LOGGER.debugf("Found logging configuration file: %s", configFile);
-
-            // Get the filname and open the stream
-            final String fileName = configFile.getName();
-            configStream = configFile.openStream();
-
-            // Check the type of the configuration file
-            if (isLog4jConfiguration(fileName)) {
-                LoggingLogger.ROOT_LOGGER.usageOfLog4j1Config(configFile.getPathName(), root.getRootName());
+            // Create a properties file
+            final Properties properties = new Properties();
+            properties.load(new InputStreamReader(configStream, ENCODING));
+            // Attempt to see if this is a J.U.L. configuration file
+            if (isJulConfiguration(properties)) {
+                LoggingLogger.ROOT_LOGGER.julConfigurationFileFound(configFile.getName());
+            } else {
+                // Configure the log context
                 final ClassLoader current = WildFlySecurityManager.getCurrentContextClassLoaderPrivileged();
-                final LogContext old = logContextSelector.setLocalContext(logContext);
                 try {
                     WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(classLoader);
-                    if (LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName)) {
-                        new DOMConfigurator().doConfigure(configStream, org.apache.log4j.JBossLogManagerFacade.getLoggerRepository(logContext));
-                    } else {
-                        final Properties properties = new Properties();
-                        properties.load(new InputStreamReader(configStream, ENCODING));
-                        new org.apache.log4j.PropertyConfigurator().doConfigure(properties, org.apache.log4j.JBossLogManagerFacade.getLoggerRepository(logContext));
-                    }
-                } finally {
-                    logContextSelector.setLocalContext(old);
-                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
-                }
-                return new LoggingConfigurationService(null, resolveRelativePath(root, configFile));
-            } else {
-                // Create a properties file
-                final Properties properties = new Properties();
-                properties.load(new InputStreamReader(configStream, ENCODING));
-                // Attempt to see if this is a J.U.L. configuration file
-                if (isJulConfiguration(properties)) {
-                    LoggingLogger.ROOT_LOGGER.julConfigurationFileFound(configFile.getName());
-                } else {
-                    // Load non-log4j types
                     final PropertyConfigurator propertyConfigurator = new PropertyConfigurator(logContext);
                     propertyConfigurator.configure(properties);
                     return new LoggingConfigurationService(propertyConfigurator.getLogContextConfiguration(), resolveRelativePath(root, configFile));
+                } finally {
+                    WildFlySecurityManager.setCurrentContextClassLoaderPrivileged(current);
                 }
             }
         } catch (Exception e) {
             throw LoggingLogger.ROOT_LOGGER.failedToConfigureLogging(e, configFile.getName());
-        } finally {
-            safeClose(configStream);
         }
         return null;
-    }
-
-    private static boolean isLog4jConfiguration(final String fileName) {
-        return LOG4J_PROPERTIES.equals(fileName) || LOG4J_XML.equals(fileName) || JBOSS_LOG4J_XML.equals(fileName);
     }
 
     private static boolean isJulConfiguration(final Properties properties) {
@@ -307,7 +265,7 @@ public class LoggingConfigDeploymentProcessor extends AbstractLoggingDeploymentP
     private static class ConfigFilter implements VirtualFileFilter {
 
         static final ConfigFilter INSTANCE = new ConfigFilter();
-        private final Set<String> configFiles = new HashSet<String>(Arrays.asList(LOG4J_PROPERTIES, LOG4J_XML, JBOSS_LOG4J_XML, JBOSS_PROPERTIES, DEFAULT_PROPERTIES));
+        private final Set<String> configFiles = new HashSet<>(Arrays.asList(JBOSS_PROPERTIES, DEFAULT_PROPERTIES));
 
         @Override
         public boolean accepts(final VirtualFile file) {

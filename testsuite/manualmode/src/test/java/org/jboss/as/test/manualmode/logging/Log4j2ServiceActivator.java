@@ -20,14 +20,14 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.logging;
+package org.jboss.as.test.manualmode.logging;
 
-import static org.apache.log4j.Level.DEBUG;
-import static org.apache.log4j.Level.ERROR;
-import static org.apache.log4j.Level.FATAL;
-import static org.apache.log4j.Level.INFO;
-import static org.apache.log4j.Level.TRACE;
-import static org.apache.log4j.Level.WARN;
+import static org.apache.logging.log4j.Level.DEBUG;
+import static org.apache.logging.log4j.Level.ERROR;
+import static org.apache.logging.log4j.Level.FATAL;
+import static org.apache.logging.log4j.Level.INFO;
+import static org.apache.logging.log4j.Level.TRACE;
+import static org.apache.logging.log4j.Level.WARN;
 
 import java.util.Deque;
 import java.util.Locale;
@@ -35,17 +35,18 @@ import java.util.Map;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.wildfly.test.undertow.UndertowServiceActivator;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class Log4jServiceActivator extends UndertowServiceActivator {
+public class Log4j2ServiceActivator extends UndertowServiceActivator {
     public static final String DEFAULT_MESSAGE = "Default log message";
     public static final Level[] LOG_LEVELS = {DEBUG, TRACE, INFO, WARN, ERROR, FATAL};
-    private static final Logger LOGGER = Logger.getLogger(Log4jServiceActivator.class);
+    private static final Logger LOGGER = LogManager.getLogger(Log4j2ServiceActivator.class);
 
     @Override
     protected HttpHandler getHttpHandler() {

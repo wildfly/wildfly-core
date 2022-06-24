@@ -47,7 +47,7 @@ class TestEnvironment {
             CLEANUP_MODULES.add(ModuleBuilder.of(TestEnvironment.IMPL_MODULE_NAME, "logging-impl.jar")
                     .addPackage(AppendingFileHandler.class.getPackage())
                     .addDependencies(ModuleDependency.of("org.wildfly.common"), ModuleDependency.of("java.logging"), ModuleDependency.of("org.jboss.logmanager"),
-                            ModuleDependency.of(TestEnvironment.API_MODULE_NAME), ModuleDependency.of("org.apache.log4j", true))
+                            ModuleDependency.of(TestEnvironment.API_MODULE_NAME))
                     .addServiceProvider(PropertyResolver.class, SystemPropertyResolver.class)
                     .build());
         }
