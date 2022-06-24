@@ -346,11 +346,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
     public void prepare() throws Throwable {
         if (services != null) return;
         String subsystemXml;
-        if (JdkUtils.isIbmJdk()) {
-            subsystemXml = "tls-ibm.xml";
-        } else {
-            subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
-        }
+        subsystemXml = JdkUtils.getJavaSpecVersion() <= 12 ? "tls-sun.xml" : "tls-oracle13plus.xml";
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
         if (!services.isSuccessfulBoot()) {
             if (services.getBootError() != null) {
@@ -387,8 +383,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthSSLv2Hello() throws Throwable {
-        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
-                "in the client", JdkUtils.isIbmJdk());
         String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
 
         HashMap<String, String[]> protocolChecker = new HashMap<>();
@@ -403,8 +397,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthSSLv2HelloOneWay() throws Throwable {
-        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
-                "in the client", JdkUtils.isIbmJdk());
         String[] enabledProtocols = new String[]{"SSLv2Hello", "TLSv1"};
 
         HashMap<String, String[]> protocolChecker = new HashMap<>();
@@ -419,8 +411,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthProtocolMismatchSSLv2Hello() throws Throwable {
-        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
-                "in the client", JdkUtils.isIbmJdk());
         try {
             testCommunication("ServerSslContextTLS12Only", "ClientSslContextSSLv2Hello", false, "OU=Elytron,O=Elytron,C=CZ,ST=Elytron,CN=localhost",
                     "OU=Elytron,O=Elytron,C=UK,ST=Elytron,CN=Firefly");
@@ -462,9 +452,6 @@ public class TlsTestCase extends AbstractSubsystemTest {
 
     @Test
     public void testSslServiceAuthSSLv2HelloOpenSsl() throws Throwable {
-        Assume.assumeFalse("Skipping testSslServiceAuthSSLv2Hello as IBM JDK does not support enabling SSLv2Hello " +
-                "in the client", JdkUtils.isIbmJdk());
-
         ServiceName serviceName = Capabilities.SSL_CONTEXT_RUNTIME_CAPABILITY.getCapabilityServiceName(
                 "SeverSslContextSSLv2HelloOpenSsl");
 
