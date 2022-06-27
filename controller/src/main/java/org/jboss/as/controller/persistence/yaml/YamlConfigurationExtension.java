@@ -245,6 +245,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                 } else {
                                     if (value != null) {
                                         MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                    } else {// ADD operation without parameters
+                                        processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps);
                                     }
                                 }
                             }
