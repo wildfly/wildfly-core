@@ -40,7 +40,6 @@
     <name>WildFly: Core BOM of Test Dependencies</name>
 
     <properties>
-        <version.ch.qos.reload4j>1.2.18.5</version.ch.qos.reload4j>
         <version.com.fasterxml.jackson>2.12.6</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.databind>2.12.6.1</version.com.fasterxml.jackson.databind>
         <version.commons-io>2.10.0</version.commons-io>
@@ -53,30 +52,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>ch.qos.reload4j</groupId>
-                <artifactId>reload4j</artifactId>
-                <version>${version.ch.qos.reload4j}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>ant</groupId>
-                        <artifactId>ant-nodeps</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ant-contrib</groupId>
-                        <artifactId>ant-contrib</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>ant</groupId>
-                        <artifactId>ant-junit</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>sun.jdk</groupId>
-                        <artifactId>tools</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>

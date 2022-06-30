@@ -28,7 +28,6 @@ import org.jboss.as.controller.registry.RuntimePackageDependency;
  */
 public enum LoggingModuleDependency {
     APACHE_COMMONS_LOGGING("org.apache.commons.logging"),
-    LOG4J("org.apache.log4j"),
     LOG4J2("org.apache.logging.log4j.api", true),
     JBOSS_LOGGING("org.jboss.logging"),
     JUL_TO_SLF4J("org.jboss.logging.jul-to-slf4j-stub"),

@@ -47,7 +47,6 @@ public interface Configuration {
         // Don't set the system package for the JBoss Log Manager. This causes some loggers to be set on the log context
         // from the logging subsystem as opposed to the log context created by the user.
         JBOSS_LOG_MANAGER("jboss", null),
-        LOG4J("log4j", "org.apache.log4j"),
         LOG4J2("log4j2", "org.apache.logging.log4j"),
         LOGBACK("slf4j", "org.slf4j"),
         JUL("jdk", null);

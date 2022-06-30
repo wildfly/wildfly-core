@@ -37,14 +37,7 @@ import org.jboss.modules.ModuleLoader;
 /**
  * Adds the default logging dependencies to the deployment.
  * <p/>
- * Default Dependencies:
- * <ul>
- * <li>org.jboss.logging</li>
- * <li>org.apache.commons.logging</li>
- * <li>org.apache.log4j</li>
- * <li>org.sfl4j</li>
- * <li>org.jboss.logging-jul-to-slf4j-stub</li>
- * </ul>
+ * See {@link LoggingModuleDependency} for defaults.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */

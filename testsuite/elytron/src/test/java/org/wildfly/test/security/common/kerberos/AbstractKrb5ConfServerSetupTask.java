@@ -41,10 +41,10 @@ import org.apache.directory.server.kerberos.shared.keytab.Keytab;
 import org.apache.directory.shared.kerberos.KerberosTime;
 import org.apache.directory.shared.kerberos.codec.types.EncryptionType;
 import org.apache.directory.shared.kerberos.components.EncryptionKey;
-import org.apache.log4j.Logger;
 import org.jboss.as.network.NetworkUtils;
 import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
+import org.jboss.logging.Logger;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
 

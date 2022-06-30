@@ -66,10 +66,6 @@
             <artifactId>wildfly-model-test</artifactId>
         </dependency>
         <dependency>
-            <groupId>ch.qos.reload4j</groupId>
-            <artifactId>reload4j</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-deployment-scanner</artifactId>
             <scope>provided</scope>
@@ -110,6 +106,11 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit.junit.ssh</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -619,7 +620,6 @@
                                         <exclude>org.jboss.as.test.manualmode.deployment.DeploymentScannerUnitTestCase</exclude>
                                         
                                         <!-- restart the server -->
-                                        <exclude>org.jboss.as.test.manualmode.logging.Log4jAppenderTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.logging.LoggingDependenciesTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.logging.LoggingPreferencesTestCase</exclude>
                                         <exclude>org.jboss.as.test.manualmode.logging.PerDeployLoggingTestCase</exclude>

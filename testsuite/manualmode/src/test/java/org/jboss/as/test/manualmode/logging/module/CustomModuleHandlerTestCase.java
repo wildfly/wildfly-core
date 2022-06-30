@@ -26,7 +26,6 @@ import javax.json.JsonObject;
 
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
-import org.jboss.as.test.manualmode.logging.module.impl.AppendingAppender;
 import org.jboss.as.test.manualmode.logging.module.impl.AppendingFileHandler;
 import org.jboss.as.test.manualmode.logging.module.impl.SystemPropertyResolver;
 import org.jboss.dmr.ModelNode;
@@ -41,16 +40,13 @@ public class CustomModuleHandlerTestCase extends AbstractCustomModuleTestCase {
 
     private static final String PROPERTY_VALUE = " handler";
     private static final String FILE_NAME = "custom-log-file.log";
-    private static final String LOG4J_FILE_NAME = "custom-log4j-file.log";
 
     private static Path logFile;
-    private static Path log4jLogFile;
 
     @BeforeClass
     public static void setup() throws Exception {
 
         logFile = getAbsoluteLogFilePath(FILE_NAME);
-        log4jLogFile = getAbsoluteLogFilePath(LOG4J_FILE_NAME);
 
         // Add the custom-handler and the logger
         final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
@@ -81,24 +77,10 @@ public class CustomModuleHandlerTestCase extends AbstractCustomModuleTestCase {
         builder.addStep(op);
         CLEANUP_OPS.addFirst(Operations.createRemoveOperation(handlerAddress));
 
-
-        final String log4jHandler = "log4j-appender";
-        final ModelNode log4jHandlerAddress = createAddress("custom-handler", log4jHandler);
-        op = Operations.createAddOperation(log4jHandlerAddress);
-        op.get("class").set(AppendingAppender.class.getCanonicalName());
-        op.get("module").set(TestEnvironment.IMPL_MODULE_NAME);
-        op.get("named-formatter").set(formatterName);
-        properties = op.get("properties");
-        properties.get("fileName").set(log4jLogFile.toString());
-        properties.get("propertyResolver").set(SystemPropertyResolver.class.getCanonicalName());
-        builder.addStep(op);
-        CLEANUP_OPS.addFirst(Operations.createRemoveOperation(log4jHandlerAddress));
-
         final ModelNode loggerAddress = createAddress("logger", LoggingDeploymentServiceActivator.LOGGER.getName());
         op = Operations.createAddOperation(loggerAddress);
         final ModelNode handlers = op.get("handlers").setEmptyList();
         handlers.add(handlerName);
-        handlers.add(log4jHandler);
         builder.addStep(op);
         CLEANUP_OPS.addFirst(Operations.createRemoveOperation(loggerAddress));
 
@@ -110,15 +92,6 @@ public class CustomModuleHandlerTestCase extends AbstractCustomModuleTestCase {
     @Test
     public void testHandler() throws IOException {
         final List<JsonObject> lines = readLogFile(logFile);
-        Assert.assertEquals("Expected six log entry", 6, lines.size());
-        for (JsonObject json : lines) {
-            Assert.assertTrue(json.getString("message").endsWith(PROPERTY_VALUE));
-        }
-    }
-
-    @Test
-    public void testLog4jHandler() throws IOException {
-        final List<JsonObject> lines = readLogFile(log4jLogFile);
         Assert.assertEquals("Expected six log entry", 6, lines.size());
         for (JsonObject json : lines) {
             Assert.assertTrue(json.getString("message").endsWith(PROPERTY_VALUE));
