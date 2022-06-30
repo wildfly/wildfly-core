@@ -35,6 +35,11 @@
 
     <properties>
         <transformer-input-dir>${project.basedir}/../../elytron</transformer-input-dir>
+        <!-- TlsTestCase specifies use of sun.security.ssl.SunJSSE in the server config,
+             so make it available. -->
+        <modular.jdk.args>${standard.client.modular.jdk.args}
+            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+        </modular.jdk.args>
     </properties>
 
     <dependencyManagement>

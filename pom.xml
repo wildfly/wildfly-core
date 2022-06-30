@@ -82,11 +82,26 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.source>11</maven.compiler.source>
 
-        <!-- Modularized JDK support (various workarounds) - activated via profile -->
-        <modular.jdk.args>
+        <!-- Standard client-side JPMS settings identified as meeting
+             the needs of WildFly libraries meant for use in clients. -->
+        <standard.client.modular.jdk.args>
+            --add-exports=java.desktop/sun.awt=ALL-UNNAMED
+            --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
             --add-opens=java.base/java.security=ALL-UNNAMED
-            --add-opens=java.base/sun.security.ssl=ALL-UNNAMED
-        </modular.jdk.args>
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.management/javax.management=ALL-UNNAMED
+            --add-opens=java.naming/javax.naming=ALL-UNNAMED
+        </standard.client.modular.jdk.args>
+        <!-- JPMS arguments used when launching processes during builds.
+             Defaults to the standard client-side args to cover client side cases (e.g. test clients).
+             By default server processes uses the union of whatever this property specifies
+             plus the internal args from the launcher library. -->
+        <modular.jdk.args>${standard.client.modular.jdk.args}</modular.jdk.args>
         <modular.jdk.props></modular.jdk.props>
 
         <!--
