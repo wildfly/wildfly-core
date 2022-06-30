@@ -10,6 +10,8 @@ wildfly-configuration:
     system-property:
       ccc:
         value: test
+    basic:
+      test:
 #User defined elements, must be ignored.
 org:
     foo:
