@@ -2436,10 +2436,11 @@ public interface ControllerLogger extends BasicLogger {
      *
      * @return an {@link IllegalStateException} for the error.
      */
-    @Message(id = 214, value = "Could not get main file: %s. Specified files must be relative to the configuration dir: %s")
+    @Message(id = 214, value = "Could not load configuration file: %s. The configuration file argument must specify the path to a file located in the configuration directory. The path must be a relative path, and must be relative to the configuration directory %s.")
     IllegalStateException mainFileNotFound(String name, File configurationDir);
 
-    // 215 free
+    @Message(id = 215, value = "Could not load configuration file: %s. The configuration file argument must specify one of the following: 1) an absolute path to an existing file; 2) a relative path to an existing file, relative to the current working directory; or 3) a relative path to a file located in the configuration directory. In the latter case, it must be a path relative to the configuration directory %s.")
+    IllegalStateException absolutePathMainFileNotFound(String name, File configurationDir);
 
     /**
      * Creates an exception indicating a resource cannot be found.
