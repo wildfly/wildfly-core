@@ -31,7 +31,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-remoting-parent</artifactId>
-        <version>18.1.1-1-PSI-RC-2</version>
+        <version>18.1.1-1-PSI-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
