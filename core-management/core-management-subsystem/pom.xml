@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-management</artifactId>
-        <version>18.1.1-2-PSI-SNAPSHOT</version>
+        <version>18.1.1-1-PSI-RC-2</version>
     </parent>
 
     <artifactId>wildfly-core-management-subsystem</artifactId>
