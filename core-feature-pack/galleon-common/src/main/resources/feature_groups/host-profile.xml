@@ -20,6 +20,10 @@
             <include feature-id="subsystem.elytron.http-authentication-factory:http-authentication-factory=management-http-authentication">
                 <param name="mechanism-configurations" value="[{mechanism-name=BASIC,mechanism-realm-configurations=[{realm-name=Management Realm}]}]"/>
             </include>
+            <include feature-id="subsystem.elytron.configurable-sasl-server-factory:configurable-sasl-server-factory=configured">
+                <param name="sasl-server-factory" value="elytron" />
+                <param name="properties" value="{wildfly.sasl.local-user.default-user=&quot;\$local&quot;,wildfly.sasl.local-user.challenge-path=&quot;${jboss.domain.temp.dir}/auth&quot;}" />
+            </include>
         </feature-group>
     </feature>
     <feature-group name="jmx"/>
