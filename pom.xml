@@ -145,13 +145,16 @@
         <version.com.fasterxml.jackson.core.jackson-databind>2.10.4</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.7</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
-        <version.com.google.guava>25.0-jre</version.com.google.guava>
+        <version.com.google.guava>30.1.1-jre</version.com.google.guava>
         <version.com.io7m.xom>1.2.10</version.com.io7m.xom>
-        <version.com.jcraft.jsch>0.1.54</version.com.jcraft.jsch>
+        <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
+        <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
+        <version.commons-cli>1.4</version.commons-cli>
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
-        <version.io.undertow>2.2.16.Final</version.io.undertow>
-        <version.jakarta.inject.jakarta.inject-api>1.0.1</version.jakarta.inject.jakarta.inject-api>
+        <version.commons-lang3>3.11</version.commons-lang3>
+        <version.io.undertow>2.2.17.Final</version.io.undertow>
+        <version.jakarta.inject.jakarta.inject-api>1.0.5</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
         <version.junit>4.12</version.junit>
@@ -166,16 +169,16 @@
              Cannot bump to AM25 due to https://issues.apache.org/jira/browse/DIRSERVER-2247.
         -->
         <version.org.apache.httpcomponents.httpclient>4.5.13</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.13</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpcore>4.4.15</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
-        <version.org.apache.sshd>2.4.0</version.org.apache.sshd>
+        <version.org.apache.sshd>2.7.0</version.org.apache.sshd>
         <version.org.apache.xerces>2.12.0.SP03</version.org.apache.xerces>
         <version.org.bouncycastle>1.69</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.codehaus.woodstox.stax2-api>4.2.1</version.org.codehaus.woodstox.stax2-api>
         <version.org.codehaus.woodstox.woodstox-core>6.0.3</version.org.codehaus.woodstox.woodstox-core>
-        <version.org.eclipse.jgit>5.9.0.202009080501-r</version.org.eclipse.jgit>
+        <version.org.eclipse.jgit>5.13.0.202109080827-r</version.org.eclipse.jgit>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.8</version.org.jboss.byteman>
@@ -185,15 +188,15 @@
         <version.org.jboss.jboss-dmr>1.5.1.Final</version.org.jboss.jboss-dmr>
         <version.org.jboss.jboss-vfs>3.2.15.Final</version.org.jboss.jboss-vfs>
         <version.org.jboss.logging.commons-logging-jboss-logging>1.0.0.Final</version.org.jboss.logging.commons-logging-jboss-logging>
-        <version.org.jboss.logging.jboss-logging>3.4.1.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.logging.jboss-logging>3.4.3.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.logging.jboss-logging-tools>2.2.1.Final</version.org.jboss.logging.jboss-logging-tools>
         <version.org.jboss.logging.jul-to-slf4j-stub>1.0.1.Final</version.org.jboss.logging.jul-to-slf4j-stub>
         <version.org.jboss.logmanager.jboss-logmanager>2.1.17.Final</version.org.jboss.logmanager.jboss-logmanager>
         <version.org.jboss.logmanager.log4j-jboss-logmanager>1.3.0.Final</version.org.jboss.logmanager.log4j-jboss-logmanager>
-        <version.org.jboss.marshalling.jboss-marshalling>2.0.9.Final</version.org.jboss.marshalling.jboss-marshalling>
+        <version.org.jboss.marshalling.jboss-marshalling>2.0.12.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>1.10.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.jboss.msc.jboss-msc>1.4.12.Final</version.org.jboss.msc.jboss-msc>
-        <version.org.jboss.remoting>5.0.19.Final</version.org.jboss.remoting>
+        <version.org.jboss.remoting>5.0.24.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.4.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
         <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.0.4.GA</version.org.jboss.slf4j.slf4j-jboss-logmanager>
@@ -203,7 +206,7 @@
         <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
         <version.org.jboss.threads>2.4.0.Final</version.org.jboss.threads>
-        <version.org.jboss.xnio>3.8.2.Final</version.org.jboss.xnio>
+        <version.org.jboss.xnio>3.8.7.Final</version.org.jboss.xnio>
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
@@ -211,10 +214,10 @@
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
         <version.org.picketbox>5.0.3.Final-redhat-00006</version.org.picketbox>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.30</version.org.slf4j>
+        <version.org.slf4j>1.7.36</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
-        <version.org.wildfly.common>1.5.4.Final</version.org.wildfly.common>
+        <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
         <version.org.wildfly.discovery>1.2.1.Final</version.org.wildfly.discovery>
         <version.org.wildfly.legacy.test>5.0.0.Final</version.org.wildfly.legacy.test>
         <version.org.wildfly.openssl>2.1.0.Final</version.org.wildfly.openssl>
@@ -226,8 +229,8 @@
         <version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>2.1.0.SP01</version.org.wildfly.openssl.wildfly-openssl-solaris-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-i386>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-i386>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.13.1.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.8.0.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron>1.19.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web>1.10.1.Final</version.org.wildfly.security.elytron-web>
         <version.xalan>2.7.1.jbossorg-2</version.xalan>
 
         <!-- Allow insecure repositories -->
@@ -254,6 +257,7 @@
         <module>domain-http</module>
         <module>domain-management</module>
         <module>elytron</module>
+        <module>elytron-tool-wrapper</module>
         <module>embedded</module>
         <module>event-logger</module>
         <module>host-controller</module>
@@ -710,6 +714,11 @@
                 <version>${version.commons-io}</version>
             </dependency>
             <dependency>
+                <groupId>commons-cli</groupId>
+                <artifactId>commons-cli</artifactId>
+                <version>${version.commons-cli}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${version.commons-lang}</version>
@@ -801,6 +810,11 @@
                 <version>${version.org.aesh-readline}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.commons-lang3}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
@@ -1010,6 +1024,12 @@
                 <groupId>org.jboss.remoting</groupId>
                 <artifactId>jboss-remoting</artifactId>
                 <version>${version.org.jboss.remoting}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.wildfly.security</groupId>
+                        <artifactId>wildfly-elytron</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.remotingjmx</groupId>
@@ -1023,6 +1043,10 @@
                     <exclusion>
                         <groupId>org.jboss.logmanager</groupId>
                         <artifactId>jboss-logmanager</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.wildfly.security</groupId>
+                        <artifactId>wildfly-elytron</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1487,6 +1511,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-elytron-tool-wrapper</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-embedded</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1767,6 +1796,11 @@
             <dependency>
                 <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-digest</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-encryption</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
             <dependency>
@@ -2239,6 +2273,13 @@
                 <groupId>xalan</groupId>
                 <artifactId>xalan</artifactId>
                 <version>${version.xalan}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-tests-common</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+                <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
         </dependencies>

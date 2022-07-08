@@ -34,6 +34,8 @@ public class SimpleServerSslContext extends AbstractConfigurableElement {
     private final String[] protocols;
     private final boolean needClientAuth;
     private final Boolean authenticationOptional;
+    private final String providers;
+    private final String cipherSuiteNames;
 
     private SimpleServerSslContext(Builder builder) {
         super(builder);
@@ -43,6 +45,8 @@ public class SimpleServerSslContext extends AbstractConfigurableElement {
         this.protocols = builder.protocols;
         this.needClientAuth = builder.needClientAuth;
         this.authenticationOptional = builder.authenticationOptional;
+        this.providers = builder.providers;
+        this.cipherSuiteNames = builder.cipherSuiteNames;
     }
 
     @Override
@@ -70,6 +74,12 @@ public class SimpleServerSslContext extends AbstractConfigurableElement {
         }
         if (authenticationOptional != null) {
             sb.append("authentication-optional=").append(authenticationOptional).append(", ");
+        }
+        if (StringUtils.isNotBlank(providers)) {
+            sb.append("providers=\"").append(providers).append("\", ");
+        }
+        if (StringUtils.isNotBlank(cipherSuiteNames)) {
+            sb.append("cipher-suite-names=\"").append(cipherSuiteNames).append("\", ");
         }
         sb.append("need-client-auth=").append(needClientAuth).append(")");
         cli.sendLine(sb.toString());
@@ -99,6 +109,8 @@ public class SimpleServerSslContext extends AbstractConfigurableElement {
         private String[] protocols;
         private boolean needClientAuth;
         private Boolean authenticationOptional;
+        private String providers;
+        private String cipherSuiteNames;
 
         private Builder() {
         }
@@ -130,6 +142,16 @@ public class SimpleServerSslContext extends AbstractConfigurableElement {
 
         public Builder withAuthenticationOptional(boolean authenticationOptional) {
             this.authenticationOptional = authenticationOptional;
+            return this;
+        }
+
+        public Builder withProviders(String providers) {
+            this.providers = providers;
+            return this;
+        }
+
+        public Builder withCipherSuiteNames(String cipherSuiteNames) {
+            this.cipherSuiteNames = cipherSuiteNames;
             return this;
         }
 

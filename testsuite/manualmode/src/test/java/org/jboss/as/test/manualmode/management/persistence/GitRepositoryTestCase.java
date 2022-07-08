@@ -107,7 +107,7 @@ public class GitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         repository = createRepository();
         addSystemProperty();
         int expectedNumberOfCommits = 2;
-        List<String> commits = listCommits(repository);
+        List<String> commits = listCommits(repository, "my_branch");
         Assert.assertEquals(expectedNumberOfCommits, commits.size());
         Assert.assertEquals("Storing configuration", commits.get(0));
         Assert.assertEquals("Repository initialized", commits.get(1));

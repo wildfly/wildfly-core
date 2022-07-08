@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -64,6 +65,9 @@ public class ServerConfigurator {
                 appendConf(ServerHelper.JBOSS_HOME, "domain", "PROCESS_CONTROLLER_JAVA_OPTS");
                 appendConf(ServerHelper.JBOSS_HOME, "domain", "HOST_CONTROLLER_JAVA_OPTS");
                 appendConf(ServerHelper.JBOSS_HOME, "standalone", "JAVA_OPTS");
+                if (TestSuiteEnvironment.isWindows()) {
+                    appendConf(ServerHelper.JBOSS_HOME, "common", "JAVA_OPTS");
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException("Failed to update the script config files.", e);
             }
@@ -255,7 +259,13 @@ public class ServerConfigurator {
             if (TestSuiteEnvironment.isWindows()) {
                 // Batch conf
                 Path conf = binDir.resolve(baseName + ".conf.bat");
-                try (BufferedWriter writer = Files.newBufferedWriter(conf, StandardOpenOption.APPEND)) {
+                OpenOption[] options;
+                if (Files.notExists(conf)) {
+                    options = new OpenOption[] {StandardOpenOption.CREATE_NEW};
+                } else {
+                    options = new OpenOption[] {StandardOpenOption.APPEND};
+                }
+                try (BufferedWriter writer = Files.newBufferedWriter(conf, options)) {
                     writer.newLine();
                     writer.write("set \"");
                     writer.write(envName);
@@ -268,7 +278,12 @@ public class ServerConfigurator {
                 }
                 // Powershell conf
                 conf = binDir.resolve(baseName + ".conf.ps1");
-                try (BufferedWriter writer = Files.newBufferedWriter(conf, StandardOpenOption.APPEND)) {
+                if (Files.notExists(conf)) {
+                    options = new OpenOption[] {StandardOpenOption.CREATE_NEW};
+                } else {
+                    options = new OpenOption[] {StandardOpenOption.APPEND};
+                }
+                try (BufferedWriter writer = Files.newBufferedWriter(conf, options)) {
                     writer.newLine();
                     writer.write('$');
                     writer.write(envName);

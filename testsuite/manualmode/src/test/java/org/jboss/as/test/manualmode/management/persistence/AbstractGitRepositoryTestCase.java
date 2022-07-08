@@ -58,7 +58,7 @@ import org.wildfly.core.testrunner.UnsuccessfulOperationException;
  */
 public class AbstractGitRepositoryTestCase {
 
-    private final Path jbossServerBaseDir = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone");
+    private static final Path JBOSS_SERVER_BASE_DIR = new File(System.getProperty("jboss.home", System.getenv("JBOSS_HOME"))).toPath().resolve("standalone");
     private static final String TEST_DEPLOYMENT_RUNTIME_NAME = "test.jar";
     private static final ModelNode TEST_SYSTEM_PROPERTY_ADDRESS = new ModelNode().add("system-property", "git-history-property");
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmssSSS");
@@ -79,7 +79,7 @@ public class AbstractGitRepositoryTestCase {
         Files.createDirectories(emptyRemoteRoot);
         File gitDir = new File(emptyRemoteRoot.toFile(), Constants.DOT_GIT);
         if (!gitDir.exists()) {
-            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).call()) {
+            try (Git git = Git.init().setDirectory(emptyRemoteRoot.toFile()).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
@@ -115,6 +115,12 @@ public class AbstractGitRepositoryTestCase {
         }
         if(Files.exists(getDotGitIgnore())) {
             FileUtils.delete(getDotGitIgnore().toFile(), FileUtils.RECURSIVE | FileUtils.RETRY);
+        }
+    }
+
+    protected List<String> listCommits(Repository repository, String branchName) throws IOException, GitAPIException {
+        try (Git git = new Git(repository)) {
+            return listCommits(git, branchName);
         }
     }
 
@@ -262,15 +268,15 @@ public class AbstractGitRepositoryTestCase {
     }
 
     protected Path getDotGitDir() {
-        return jbossServerBaseDir.resolve(".git");
+        return JBOSS_SERVER_BASE_DIR.resolve(".git");
     }
 
     protected Path getDotGitIgnore() {
-        return jbossServerBaseDir.resolve(".gitignore");
+        return JBOSS_SERVER_BASE_DIR.resolve(".gitignore");
     }
 
-    protected Path getJbossServerBaseDir() {
-        return jbossServerBaseDir;
+    protected static Path getJbossServerBaseDir() {
+        return JBOSS_SERVER_BASE_DIR;
     }
 
 }

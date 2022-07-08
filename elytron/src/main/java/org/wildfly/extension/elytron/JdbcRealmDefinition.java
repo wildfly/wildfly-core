@@ -53,8 +53,8 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -78,6 +78,7 @@ import org.wildfly.security.password.interfaces.ClearPassword;
 import org.wildfly.security.password.interfaces.SaltedSimpleDigestPassword;
 import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.password.interfaces.SimpleDigestPassword;
+import org.wildfly.security.password.spec.Encoding;
 
 /**
  * A {@link ResourceDefinition} for a {@link SecurityRealm} backed by a database using JDBC.
@@ -113,9 +114,9 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper
                     .builder()
@@ -187,21 +188,21 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
-            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
-            int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
-            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            final int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            final int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                .setHashEncoding( HEX.equals( hashEncoding ) ? Encoding.HEX : Encoding.BASE64 )
+                .setSaltEncoding( HEX.equals( saltEncoding ) ? Encoding.HEX : Encoding.BASE64 )
                     .build();
         }
     }
@@ -273,19 +274,19 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
-            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
-            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            final int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                .setHashEncoding( HEX.equals( hashEncoding ) ? Encoding.HEX : Encoding.BASE64 )
+                .setSaltEncoding( HEX.equals( saltEncoding ) ? Encoding.HEX : Encoding.BASE64 )
                     .build();
         }
     }
@@ -339,15 +340,15 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
-            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                .setHashEncoding( HEX.equals( hashEncoding ) ? Encoding.HEX : Encoding.BASE64 )
                     .build();
         }
     }
@@ -417,21 +418,21 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
-            int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
-            int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
-            String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
-            String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final String algorithm = ALGORITHM.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+            final int salt = SALT.resolveModelAttribute(context, propertyNode).asInt();
+            final int iterationCount = ITERATION_COUNT.resolveModelAttribute(context, propertyNode).asInt();
+            final String hashEncoding = HASH_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
+            final String saltEncoding = SALT_ENCODING.resolveModelAttribute(context, propertyNode).asStringOrNull();
 
             return PasswordKeyMapper.builder()
                     .setDefaultAlgorithm(algorithm)
                     .setHashColumn(password)
                     .setSaltColumn(salt)
                     .setIterationCountColumn(iterationCount)
-                    .setHashEncoding(HEX.equals(hashEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
-                    .setSaltEncoding(HEX.equals(saltEncoding) ? PasswordKeyMapper.Encoding.HEX : PasswordKeyMapper.Encoding.BASE64)
+                .setHashEncoding( HEX.equals( hashEncoding ) ? Encoding.HEX : Encoding.BASE64 )
+                .setSaltEncoding( HEX.equals( saltEncoding ) ? Encoding.HEX : Encoding.BASE64 )
                     .build();
         }
     }
@@ -454,8 +455,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                 .build();
 
         @Override
-        public PasswordKeyMapper toPasswordKeyMapper(OperationContext context, ModelNode propertyNode) throws OperationFailedException {
-            int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
+        public PasswordKeyMapper toPasswordKeyMapper(final OperationContext context, final ModelNode propertyNode) throws OperationFailedException {
+            final int password = PASSWORD.resolveModelAttribute(context, propertyNode).asInt();
 
             return PasswordKeyMapper.builder()
                     .setHashColumn(password)
@@ -510,7 +511,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         static Map<String, PasswordMapperObjectDefinition> SUPPORTED_PASSWORD_MAPPERS;
 
         static {
-            Map<String, PasswordMapperObjectDefinition> supportedMappers = new HashMap<>();
+            final Map<String, PasswordMapperObjectDefinition> supportedMappers = new HashMap<>();
 
             supportedMappers.put(CLEAR_PASSWORD_MAPPER, new ClearPasswordObjectDefinition());
             supportedMappers.put(BCRYPT_MAPPER, new BcryptPasswordObjectDefinition());
@@ -582,8 +583,8 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
     }
 
     @Override
-    public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        for (AttributeDefinition current : ATTRIBUTES) {
+    public void registerAttributes(final ManagementResourceRegistration resourceRegistration) {
+        for (final AttributeDefinition current : ATTRIBUTES) {
             resourceRegistration.registerReadWriteAttribute(current, null, WRITE);
         }
     }
@@ -595,31 +596,31 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         }
 
         @Override
-        protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model)
+        protected void performRuntime(final OperationContext context, final ModelNode operation, final ModelNode model)
                 throws OperationFailedException {
-            ServiceTarget serviceTarget = context.getServiceTarget();
-            RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
-            ServiceName realmName = runtimeCapability.getCapabilityServiceName(SecurityRealm.class);
-            ModelNode principalQueries = PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0.resolveModelAttribute(context, operation);
+            final ServiceTarget serviceTarget = context.getServiceTarget();
+            final RuntimeCapability<Void> runtimeCapability = SECURITY_REALM_RUNTIME_CAPABILITY.fromBaseCapability(context.getCurrentAddressValue());
+            final ServiceName realmName = runtimeCapability.getCapabilityServiceName(SecurityRealm.class);
+            final ModelNode principalQueries = PrincipalQueryAttributes.PRINCIPAL_QUERIES_7_0.resolveModelAttribute(context, operation);
             final JdbcSecurityRealmBuilder builder = JdbcSecurityRealm.builder();
 
-            TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(builder::build);
-            ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, service);
+            final TrivialService<SecurityRealm> service = new TrivialService<SecurityRealm>(builder::build);
+            final ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, service);
 
-            for (ModelNode query : principalQueries.asList()) {
-                String authenticationQuerySql = PrincipalQueryAttributes.SQL.resolveModelAttribute(context, query).asString();
-                QueryBuilder queryBuilder = builder.principalQuery(authenticationQuerySql)
+            for (final ModelNode query : principalQueries.asList()) {
+                final String authenticationQuerySql = PrincipalQueryAttributes.SQL.resolveModelAttribute(context, query).asString();
+                final QueryBuilder queryBuilder = builder.principalQuery(authenticationQuerySql)
                         .withMapper(resolveAttributeMappers(context, query))
                         .withMapper(resolveKeyMappers(context, query));
 
-                String dataSourceName = PrincipalQueryAttributes.DATA_SOURCE.resolveModelAttribute(context, query).asString();
-                String capabilityName = Capabilities.DATA_SOURCE_CAPABILITY_NAME + "." + dataSourceName;
-                ServiceName dataSourceServiceName = context.getCapabilityServiceName(capabilityName, DataSource.class);
+                final String dataSourceName = PrincipalQueryAttributes.DATA_SOURCE.resolveModelAttribute(context, query).asString();
+                final String capabilityName = Capabilities.DATA_SOURCE_CAPABILITY_NAME + "." + dataSourceName;
+                final ServiceName dataSourceServiceName = context.getCapabilityServiceName(capabilityName, DataSource.class);
 
                 serviceBuilder.addDependency(dataSourceServiceName, DataSource.class, new Injector<DataSource>() {
 
                     @Override
-                    public void inject(DataSource value) throws InjectionException {
+                    public void inject(final DataSource value) throws InjectionException {
                         queryBuilder.from(value);
                     }
 
@@ -635,15 +636,15 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
                     .install();
         }
 
-        private AttributeMapper[] resolveAttributeMappers(OperationContext context, ModelNode principalQueryNode) throws OperationFailedException {
-            List<AttributeMapper> attributeMappers = new ArrayList<>();
+        private AttributeMapper[] resolveAttributeMappers(final OperationContext context, final ModelNode principalQueryNode) throws OperationFailedException {
+            final List<AttributeMapper> attributeMappers = new ArrayList<>();
 
-            ModelNode attributeMappingNode = PrincipalQueryAttributes.ATTRIBUTE_MAPPINGS.resolveModelAttribute(context, principalQueryNode);
+            final ModelNode attributeMappingNode = PrincipalQueryAttributes.ATTRIBUTE_MAPPINGS.resolveModelAttribute(context, principalQueryNode);
 
             if (attributeMappingNode.isDefined()) {
-                for (ModelNode attributeNode : attributeMappingNode.asList()) {
-                    ModelNode indexNode = AttributeMappingObjectDefinition.INDEX.resolveModelAttribute(context, attributeNode);
-                    ModelNode nameNode = AttributeMappingObjectDefinition.TO.resolveModelAttribute(context, attributeNode);
+                for (final ModelNode attributeNode : attributeMappingNode.asList()) {
+                    final ModelNode indexNode = AttributeMappingObjectDefinition.INDEX.resolveModelAttribute(context, attributeNode);
+                    final ModelNode nameNode = AttributeMappingObjectDefinition.TO.resolveModelAttribute(context, attributeNode);
 
                     attributeMappers.add(new AttributeMapper(indexNode.asInt(), nameNode.asString()));
                 }
@@ -653,17 +654,17 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static KeyMapper resolveKeyMappers(OperationContext context, ModelNode authenticationQueryNode) throws OperationFailedException {
+    private static KeyMapper resolveKeyMappers(final OperationContext context, final ModelNode authenticationQueryNode) throws OperationFailedException {
         KeyMapper keyMapper = null;
 
-        for (String name : authenticationQueryNode.keys()) {
-            ModelNode propertyNode = authenticationQueryNode.require(name);
+        for (final String name : authenticationQueryNode.keys()) {
+            final ModelNode propertyNode = authenticationQueryNode.require(name);
 
             if (!propertyNode.isDefined()) {
                 continue;
             }
 
-            PasswordMapperObjectDefinition mapperResource = PrincipalQueryAttributes.SUPPORTED_PASSWORD_MAPPERS.get(name);
+            final PasswordMapperObjectDefinition mapperResource = PrincipalQueryAttributes.SUPPORTED_PASSWORD_MAPPERS.get(name);
 
             if (mapperResource == null) {
                 continue;
@@ -675,7 +676,7 @@ class JdbcRealmDefinition extends SimpleResourceDefinition {
 
             try {
                 keyMapper = mapperResource.toPasswordKeyMapper(context, propertyNode);
-            } catch (InvalidKeyException e) {
+            } catch (final InvalidKeyException e) {
                 throw new OperationFailedException("Invalid key type.", e);
             }
         }

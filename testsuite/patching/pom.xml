@@ -59,6 +59,14 @@
             <artifactId>wildfly-core-galleon-pack</artifactId>
             <type>pom</type>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-security-manager</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-base</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
