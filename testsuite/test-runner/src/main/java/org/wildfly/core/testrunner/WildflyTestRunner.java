@@ -1,5 +1,6 @@
 package org.wildfly.core.testrunner;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -11,7 +12,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.dmr.ModelNode;
@@ -34,6 +34,22 @@ import org.wildfly.security.WildFlyElytronProvider;
 public class WildflyTestRunner extends BlockJUnit4ClassRunner {
 
     private static final Provider ELYTRON_PROVIDER = new WildFlyElytronProvider();
+
+    private static final List<Class<? extends Annotation>> INJECT_CLASSES;
+
+    static {
+        List<Class<? extends Annotation>> list = new ArrayList<>();
+        for (String prefix : new String[]{"javax", "jakarta"}) {
+            try {
+                Class<?> clazz = Class.forName(prefix + ".inject.Inject");
+                //noinspection unchecked
+                list.add((Class<? extends Annotation>) clazz);
+            } catch (ClassNotFoundException ignored) {
+                // ignore
+            }
+        }
+        INJECT_CLASSES = Collections.unmodifiableList(list);
+    }
 
     private final ServerController controller = new ServerController();
     private final boolean automaticServerControl;
@@ -61,18 +77,19 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
     private void doInject(TestClass klass, Object instance) {
 
         try {
-
-            for (FrameworkField frameworkField : klass.getAnnotatedFields(Inject.class)) {
-                Field field = frameworkField.getField();
-                if ((instance == null && Modifier.isStatic(field.getModifiers()) ||
-                        instance != null)) {//we want to do injection even on static fields before test run, so we make sure that client is correct for current state of server
-                    field.setAccessible(true);
-                    if (field.getType() == ManagementClient.class && controller.isStarted()) {
-                        field.set(instance, controller.getClient());
-                    } else if (field.getType() == ModelControllerClient.class && controller.isStarted()) {
-                        field.set(instance, controller.getClient().getControllerClient());
-                    } else if (field.getType() == ServerController.class) {
-                        field.set(instance, controller);
+            for (Class<? extends Annotation> clazz : getInjectClasses()) {
+                for (FrameworkField frameworkField : klass.getAnnotatedFields(clazz)) {
+                    Field field = frameworkField.getField();
+                    if ((instance == null && Modifier.isStatic(field.getModifiers()) ||
+                            instance != null)) {//we want to do injection even on static fields before test run, so we make sure that client is correct for current state of server
+                        field.setAccessible(true);
+                        if (field.getType() == ManagementClient.class && controller.isStarted()) {
+                            field.set(instance, controller.getClient());
+                        } else if (field.getType() == ModelControllerClient.class && controller.isStarted()) {
+                            field.set(instance, controller.getClient().getControllerClient());
+                        } else if (field.getType() == ServerController.class) {
+                            field.set(instance, controller);
+                        }
                     }
                 }
             }
@@ -269,6 +286,13 @@ public class WildflyTestRunner extends BlockJUnit4ClassRunner {
         }
         throw new RuntimeException(String.format("Method %s must be public, static and have a return type assignable to Collection<Object>.",
                 method.getName()));
+    }
+
+    private static List<Class<? extends Annotation>> getInjectClasses() {
+        if (INJECT_CLASSES.isEmpty()) {
+            throw new IllegalStateException("No @Inject class is available");
+        }
+        return INJECT_CLASSES;
     }
 
 }
