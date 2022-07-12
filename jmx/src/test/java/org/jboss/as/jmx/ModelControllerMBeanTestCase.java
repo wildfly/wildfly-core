@@ -90,6 +90,7 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.jmx.model.ModelControllerMBeanHelper;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.EndpointService;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.subsystem.test.AbstractSubsystemTest;
@@ -1682,7 +1683,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY,
-                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
+                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"), Protocol.REMOTE.toString());
         }
 
         @Override

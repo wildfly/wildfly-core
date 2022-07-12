@@ -117,6 +117,7 @@ public class RemotingServices {
                                                                           final String connectorName,
                                                                           final ServiceName networkInterfaceBindingName,
                                                                           final int port,
+                                                                          final String protocol,
                                                                           final OptionMap connectorPropertiesOptionMap,
                                                                           final ServiceName saslAuthenticationFactory,
                                                                           final ServiceName sslContext,
@@ -130,7 +131,7 @@ public class RemotingServices {
         final Supplier<SocketBindingManager> sbmSupplier = socketBindingManager != null ? builder.requires(socketBindingManager) : null;
         final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requires(networkInterfaceBindingName);
         builder.setInstance(new InjectedNetworkBindingStreamServerService(streamServerConsumer,
-                eSupplier, safSupplier, scSupplier, sbmSupplier, ibSupplier, connectorPropertiesOptionMap, port));
+                eSupplier, safSupplier, scSupplier, sbmSupplier, ibSupplier, connectorPropertiesOptionMap, port, protocol));
         builder.install();
     }
 
@@ -141,7 +142,8 @@ public class RemotingServices {
                                                                 final OptionMap connectorPropertiesOptionMap,
                                                                 final ServiceName saslAuthenticationFactory,
                                                                 final ServiceName sslContext,
-                                                                final ServiceName socketBindingManager) {
+                                                                final ServiceName socketBindingManager,
+                                                                final String protocol) {
         final ServiceName serviceName = serverServiceName(connectorName);
         final ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
         final Consumer<AcceptingChannel<StreamConnection>> streamServerConsumer = builder.provides(serviceName);
@@ -151,7 +153,7 @@ public class RemotingServices {
         final Supplier<SocketBindingManager> sbmSupplier = builder.requires(socketBindingManager);
         final Supplier<SocketBinding> sbSupplier = builder.requires(socketBindingName);
         builder.setInstance(new InjectedSocketBindingStreamServerService(streamServerConsumer,
-                eSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap));
+                eSupplier, safSupplier, scSupplier, sbmSupplier, sbSupplier, connectorPropertiesOptionMap, protocol));
         builder.install();
     }
 

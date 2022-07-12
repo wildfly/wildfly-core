@@ -53,6 +53,8 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
     private static final ModelVersion VERSION_3_0 = ModelVersion.create(3, 0);
     private static final ModelVersion VERSION_4_0 = ModelVersion.create(4, 0); // eap 7.1
 
+    private static final ModelVersion VERSION_5_0 = ModelVersion.create(5, 0);
+
     private static final AttributeDefinition[] endpointAttrArray = RemotingEndpointResource.ATTRIBUTES.values().toArray(new AttributeDefinition[RemotingEndpointResource.ATTRIBUTES.values().size()]);
 
     @Override
@@ -69,20 +71,27 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
         // First chain: > 3.0
         ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
 
-        // Current to 4.0.0
-        buildTransformers_4_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_4_0));
+        //Current version to 5.0.0
+        buildTransformers_5_0(chainedBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_5_0));
+
+        //5.0.0 to 4.0.0
+        buildTransformers_4_0(chainedBuilder.createBuilder(VERSION_5_0, VERSION_4_0));
 
         // 4.0.0 to 3.0.0
         buildTransformers_3_0(chainedBuilder.createBuilder(VERSION_4_0, VERSION_3_0));
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_4_0, VERSION_3_0});
+        chainedBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_5_0, VERSION_4_0, VERSION_3_0});
 
         // Next, the 1.x chain
         ChainedTransformationDescriptionBuilder chained1xBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getCurrentSubsystemVersion());
+        //Current version to 5.0.0
+        buildTransformers_5_0(chained1xBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_5_0));
+        //5.0.0 to 4.0.0
+        //buildTransformers_4_0(chained1xBuilder.createBuilder(VERSION_5_0, VERSION_4_0));
         // 4.0.0 to 1.4.0
-        buildTransformers_1_4(chained1xBuilder.createBuilder(registration.getCurrentSubsystemVersion(), VERSION_1_4));
+        buildTransformers_1_4(chained1xBuilder.createBuilder(VERSION_5_0, VERSION_1_4));
 
-        chained1xBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_1_4});
+        chained1xBuilder.buildAndRegister(registration, new ModelVersion[]{VERSION_5_0, VERSION_1_4});
     }
 
     private void buildTransformers_1_4(ResourceTransformationDescriptionBuilder builder) {
@@ -181,6 +190,14 @@ public class RemotingTransformers implements ExtensionTransformerRegistration {
                      //.inheritResourceAttributeDefinitions()  // don't inherit as we discard
                     .setCustomOperationTransformer(endPointWriteTransformer)
                     .end();
+    }
+
+    private void buildTransformers_5_0(ResourceTransformationDescriptionBuilder builder) {
+
+        builder.addChildResource(ConnectorResource.PATH).getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, ConnectorResource.PROTOCOL)
+                .addRejectCheck(RejectAttributeChecker.DEFINED, ConnectorResource.PROTOCOL)
+                .end();
     }
 
     /**

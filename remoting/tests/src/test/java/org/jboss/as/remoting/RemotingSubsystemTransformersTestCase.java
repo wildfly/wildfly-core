@@ -138,7 +138,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(targetModelVersion).isSuccessfulBoot());
 
-        List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
+        List<ModelNode> ops = builder.parseXmlResource("remoting-4.0.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, targetModelVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(subsystemAddress,
@@ -172,7 +172,7 @@ public class RemotingSubsystemTransformersTestCase extends AbstractSubsystemTest
         assertTrue(mainServices.isSuccessfulBoot());
         assertTrue(mainServices.getLegacyServices(messagingVersion).isSuccessfulBoot());
 
-        List<ModelNode> ops = builder.parseXmlResource("remoting.xml");
+        List<ModelNode> ops = builder.parseXmlResource("remoting-4.0.xml");
         PathAddress subsystemAddress = PathAddress.pathAddress("subsystem", RemotingExtension.SUBSYSTEM_NAME);
         ModelTestUtils.checkFailedTransformedBootOperations(mainServices, messagingVersion, ops, new FailedOperationTransformationConfig()
                 .addFailedAttribute(subsystemAddress.append(ConnectorResource.PATH),

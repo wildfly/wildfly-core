@@ -89,7 +89,9 @@ public class ConnectorAdd extends AbstractAddStepHandler {
 
         final ServiceName sbmName = context.getCapabilityServiceName(SOCKET_BINDING_MANAGER_CAPABILTIY, SocketBindingManager.class);
 
+        final String protocol = ConnectorResource.PROTOCOL.resolveModelAttribute(context, fullModel).asString();
+
         RemotingServices.installConnectorServicesForSocketBinding(target, RemotingServices.SUBSYSTEM_ENDPOINT, connectorName,
-                socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName);
+                socketBindingName, optionMap, saslAuthenticationFactoryName, sslContextName, sbmName, protocol);
     }
 }

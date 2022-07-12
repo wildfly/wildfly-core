@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:remoting:4.0">
+<subsystem xmlns="urn:jboss:domain:remoting:6.0">
     <endpoint
         worker="default-remoting"
         send-buffer-size="8191"
@@ -19,7 +19,7 @@
         server-name="test"
         sasl-protocol="bar"
     />
-    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer">
+    <connector name="remoting-connector" socket-binding="remoting" sasl-protocol="myProto" server-name="myServer" protocol="remote">
         <authentication-provider name="blah"/>
         <properties>
            <property name="TCP_NODELAY" value="true"/>

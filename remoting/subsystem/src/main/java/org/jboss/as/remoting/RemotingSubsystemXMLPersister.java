@@ -172,6 +172,9 @@ class RemotingSubsystemXMLPersister implements XMLStreamConstants, XMLElementWri
         if (node.hasDefined(SECURITY_REALM)) {
             writer.writeAttribute(Attribute.SECURITY_REALM.getLocalName(), node.require(SECURITY_REALM).asString());
         }
+        if (node.hasDefined(PROTOCOL)) {
+            writer.writeAttribute(Attribute.PROTOCOL.getLocalName(), node.require(PROTOCOL).asString());
+        }
         ConnectorCommon.SERVER_NAME.marshallAsAttribute(node, writer);
         ConnectorCommon.SASL_PROTOCOL.marshallAsAttribute(node, writer);
         ConnectorResource.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(node, writer);

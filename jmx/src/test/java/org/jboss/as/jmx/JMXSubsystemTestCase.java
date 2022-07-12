@@ -55,6 +55,7 @@ import org.jboss.as.domain.management.CoreManagementResourceDefinition;
 import org.jboss.as.domain.management.audit.AccessAuditResourceDefinition;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.EndpointService;
+import org.jboss.as.remoting.Protocol;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
 import org.jboss.as.server.ServerEnvironmentResourceDescription;
@@ -673,7 +674,7 @@ public class JMXSubsystemTestCase extends AbstractSubsystemBaseTest {
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
                     "remote", SocketBinding.JBOSS_BINDING_NAME.append("remote"), OptionMap.EMPTY,
-                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
+                    null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"), Protocol.REMOTE.toString());
         }
     }
 
