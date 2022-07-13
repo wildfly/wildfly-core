@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-jar-parent</artifactId>
-        <version>18.1.1-1-PSI-SNAPSHOT</version>
+        <version>18.1.1-1-PSI</version>
     </parent>
 
     <artifactId>wildfly-jar-runtime</artifactId>
