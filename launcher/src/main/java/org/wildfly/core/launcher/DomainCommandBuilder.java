@@ -734,8 +734,6 @@ public class DomainCommandBuilder extends AbstractCommandBuilder<DomainCommandBu
         cmd.add(getWildFlyHome().toString());
         cmd.add("-jvm");
         cmd.add(hostControllerJvm.getCommand());
-        cmd.add("-mp");
-        cmd.add(getModulePaths());
 
         // Host Controller
         cmd.add("--");
