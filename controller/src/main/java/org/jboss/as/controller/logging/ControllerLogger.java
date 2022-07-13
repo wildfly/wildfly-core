@@ -3707,6 +3707,26 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 495, value = "\"fetch-from-master\" is a deprecated value for \"domain-controller.remote.admin-only-policy\", \"fetch-from-domain-controller\" will be used instead.")
     void adminOnlyPolicyDeprecatedValue();
 
+    @LogMessage(level = WARN)
+    @Message(id = 496, value = "Thread dump:\n"+
+            "*******************************************************************************\n" +
+            "{0}\n===============================================================================\n" +
+            "End Thread dump\n*******************************************************************************\n",
+            format = Message.Format.MESSAGE_FORMAT)
+    void threadDump(String dump);
+
+    @LogMessage(level = WARN)
+    @Message(id = 497, value = "Deadlock detected!\n"+
+            "*******************************************************************************\n" +
+            "{0}\n===============================================================================\n" +
+            "End Deadlock\n*******************************************************************************\n",
+            format = Message.Format.MESSAGE_FORMAT)
+    void deadLock(String dump);
+
+    @LogMessage(level = WARN)
+    @Message(id = 498, value = "Exception thrown during generation of thread dump")
+    void threadDumpException(@Cause Exception cause);
+
     @Message(id = NONE, value = "While constructing a mapping; %s; expected a mapping for merging, but found %s")
     String errorConstructingYAMLMapping(Mark mark, NodeId node);
 
