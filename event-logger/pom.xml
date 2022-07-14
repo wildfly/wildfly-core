@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-parent</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>19.0.0.Beta14-SNAPSHOT</version>
+        <version>19.0.0.Beta14</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
