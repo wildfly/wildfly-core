@@ -42,7 +42,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test validating that subsystems register a "describe" operation in order to be able
@@ -50,7 +50,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Emanuel Muckenhuber
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class DescribeOperationUnitTestCase {
 
     private static final Set<String> ignored = new HashSet<String>();

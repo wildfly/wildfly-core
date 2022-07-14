@@ -43,12 +43,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Emanuel Muckenhuber
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class PatchInfoUnitTestCase extends ContainerResourceMgmtTestBase {
 
     private static final PathAddress ROOT_RESOURCE = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, "patching"));

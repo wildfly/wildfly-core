@@ -32,13 +32,13 @@ import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
  * @author Alexey Loubyansky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class BatchesInIfElseTestCase extends CLISystemPropertyTestBase {
     @Inject
     protected ManagementClient managementClient;

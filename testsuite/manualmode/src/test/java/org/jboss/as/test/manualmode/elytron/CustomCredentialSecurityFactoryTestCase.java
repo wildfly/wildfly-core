@@ -41,7 +41,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test for authentication through http-interface secured by Elytron http-authentication-factory where we test that
@@ -50,7 +50,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author olukas
  * @author Hynek Švábek <hsvabek@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class CustomCredentialSecurityFactoryTestCase {
 

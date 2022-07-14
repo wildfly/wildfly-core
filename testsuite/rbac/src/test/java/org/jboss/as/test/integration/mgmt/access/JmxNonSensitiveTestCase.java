@@ -26,12 +26,12 @@ import org.jboss.as.test.integration.management.rbac.RbacUtil;
 import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({StandardExtensionSetupTask.class, StandardUsersSetupTask.class, JMXServiceDeploymentSetupTask.class})
 public class JmxNonSensitiveTestCase extends AbstractJmxNonCoreMBeansSensitivityTestCase {
     @Override

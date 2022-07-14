@@ -87,14 +87,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests deployment to a wildfly core server, both via the client API and by the filesystem scanner.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({DeploymentScannerSetupTask.class})
 public class DeploymentTestCase {
 

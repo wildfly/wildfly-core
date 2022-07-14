@@ -43,14 +43,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test module add command and loading of modules with resources with absolute/relative paths (MODULES-218)
  *
  * @author Martin Simka
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModuleResourceRootPathsTestCase extends AbstractCliTestBase {
     private static final String MODULE_RESOURCE_MODULE_NAME = "module.resource.test";
     private static final String ABSOLUTE_RESOURCE_MODULE_NAME = "absolute.resource.test";

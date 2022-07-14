@@ -17,7 +17,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 import java.io.BufferedReader;
@@ -45,10 +45,10 @@ import java.util.regex.Pattern;
  * This test covers the minimal use-cases.
  * @author eduda@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class LongOutputTestCase {
 
-    private static final Logger log = Logger.getLogger(WildflyTestRunner.class);
+    private static final Logger log = Logger.getLogger(WildFlyRunner.class);
 
     private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern morePattern = Pattern.compile(".*--More\\(\\d+%\\)--$");

@@ -44,7 +44,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * The test makes sure the outcome of an operation with a non-existing address
@@ -52,7 +52,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Alexey Loubyansky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class InvalidAddressOperationTestCase {
 
     private static Path jbossCliOriginalCopy = Paths.get(TestSuiteEnvironment.getTmpDir(), "tmp-jboss-cli.xml");

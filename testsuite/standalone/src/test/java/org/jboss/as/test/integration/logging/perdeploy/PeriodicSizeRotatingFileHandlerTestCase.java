@@ -29,12 +29,12 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class PeriodicSizeRotatingFileHandlerTestCase extends AbstractRotatingFileHandlerTestCase {
 
     private static final String FILE_NAME = "config-periodic-size-rotating.log";

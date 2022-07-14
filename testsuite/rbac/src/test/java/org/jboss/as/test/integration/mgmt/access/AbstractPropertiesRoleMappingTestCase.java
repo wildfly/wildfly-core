@@ -47,14 +47,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * This class is also used in the LDAP test cases.
  *
  * @author Ladislav Thon <lthon@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 abstract class AbstractPropertiesRoleMappingTestCase extends AbstractRbacTestCase {
     @Inject

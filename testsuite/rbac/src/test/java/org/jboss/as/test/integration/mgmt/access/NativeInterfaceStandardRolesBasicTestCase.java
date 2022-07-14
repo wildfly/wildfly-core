@@ -27,13 +27,13 @@ import org.jboss.as.test.integration.management.interfaces.ManagementInterface;
 import org.jboss.as.test.integration.management.interfaces.NativeManagementInterface;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author jcechace
  * @author Ladislav Thon <lthon@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({StandardUsersSetupTask.class, StandardExtensionSetupTask.class})
 public class NativeInterfaceStandardRolesBasicTestCase extends StandardRolesBasicTestCase {
     @Override

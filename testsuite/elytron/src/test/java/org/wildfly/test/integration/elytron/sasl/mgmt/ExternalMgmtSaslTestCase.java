@@ -60,7 +60,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.SecurityFactory;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
@@ -95,7 +95,7 @@ import org.wildfly.test.security.common.other.SimpleSocketBinding;
  *
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({ ExternalMgmtSaslTestCase.KeyMaterialSetup.class, ExternalMgmtSaslTestCase.ServerSetup.class })
 public class ExternalMgmtSaslTestCase {
 

@@ -29,14 +29,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Emulate jboss-cli.sh process with input coming from a file. This activates
  * aesh-readline ExtTerminal in an intensive multi-thread context.
  *
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class FileInputTestCase {
 
     @Rule

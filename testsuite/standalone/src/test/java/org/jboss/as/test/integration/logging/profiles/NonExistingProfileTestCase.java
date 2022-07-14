@@ -44,13 +44,13 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Petr Křemenský <pkremens@redhat.com>
  */
 @ServerSetup(NonExistingProfileTestCase.NonExistingProfileTestCaseSetup.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class NonExistingProfileTestCase extends AbstractLoggingTestCase {
 
     private static final String LOG_FILE_NAME = "non-existing-profile-test.log";

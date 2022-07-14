@@ -58,7 +58,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test the configuration changes history command.
@@ -66,7 +66,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
 @ServerSetup(ServerReload.SetupTask.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ConfigurationChangesHistoryTestCase extends AbstractConfigurationChangesTestCase {
 
     private static final PathAddress ADDRESS = PathAddress.pathAddress()

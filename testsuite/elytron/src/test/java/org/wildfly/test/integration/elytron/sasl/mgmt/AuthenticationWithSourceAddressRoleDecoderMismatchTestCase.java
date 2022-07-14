@@ -23,7 +23,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
 import org.wildfly.test.security.common.elytron.AggregateRoleDecoder;
 import org.wildfly.test.security.common.elytron.ConfigurableElement;
@@ -47,7 +47,7 @@ import org.wildfly.test.security.common.other.TrustedDomainsConfigurator;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({ AuthenticationWithSourceAddressRoleDecoderMismatchTestCase.ServerSetup.class })
 public class AuthenticationWithSourceAddressRoleDecoderMismatchTestCase extends AbstractMgmtSaslTestBase {
 

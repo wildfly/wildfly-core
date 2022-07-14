@@ -22,7 +22,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
  *
  * @author Martin Schvarcbacher mschvarc@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CliAliasTestCase {
 
     private static final String VALID_ALIAS_NAME = "DEBUG123_ALIAS";

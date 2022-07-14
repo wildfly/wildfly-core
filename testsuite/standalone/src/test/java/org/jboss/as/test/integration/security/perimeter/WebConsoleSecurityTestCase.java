@@ -35,7 +35,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.logging.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test verifies that the web management console is secured
@@ -43,7 +43,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author jlanik@redhat.com
  */
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class WebConsoleSecurityTestCase {
 
 

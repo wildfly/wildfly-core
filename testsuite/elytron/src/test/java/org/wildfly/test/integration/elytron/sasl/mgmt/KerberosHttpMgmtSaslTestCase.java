@@ -32,7 +32,7 @@ import org.jboss.as.test.integration.security.common.CoreUtils;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
 import org.wildfly.test.security.common.elytron.CliPath;
@@ -65,7 +65,7 @@ import org.wildfly.test.security.common.other.SimpleSocketBinding;
  *
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @org.wildfly.core.testrunner.ServerSetup({ AbstractKerberosMgmtSaslTestBase.Krb5ConfServerSetupTask.class, //
         KerberosSystemPropertiesSetupTask.class, //
         AbstractKerberosMgmtSaslTestBase.DirectoryServerSetupTask.class, //

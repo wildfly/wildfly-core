@@ -25,12 +25,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.hamcrest.CoreMatchers.containsString;
 
 @ServerSetup(ServerReload.SetupTask.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ServerSslSniContextTestCase {
     CLIWrapper cli;
 

@@ -32,7 +32,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 
 
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModuleOpsCompletionTestCase {
 
     private static final String MODULE_NAME = "org.jboss.test.cli.climoduletest";

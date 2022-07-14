@@ -63,7 +63,7 @@ import org.productivity.java.syslog4j.server.SyslogServer;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * A SyslogHandlerTestCase for testing that logs are logged to syslog
@@ -73,7 +73,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Ondrej Lukas
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(SyslogHandlerTestCase.SyslogHandlerTestCaseSetup.class)
 public class SyslogHandlerTestCase extends AbstractLoggingTestCase {
 

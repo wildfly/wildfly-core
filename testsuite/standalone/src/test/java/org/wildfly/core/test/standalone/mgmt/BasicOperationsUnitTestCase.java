@@ -103,7 +103,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Basic management operation unit test.
@@ -111,7 +111,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Emanuel Muckenhuber
  */
 @ServerSetup(ServerReload.SetupTask.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class BasicOperationsUnitTestCase {
     private static final DateTimeFormatter DATE_FORMAT = new DateTimeFormatterBuilder().appendInstant().appendZoneId().toFormatter(Locale.ENGLISH);
     private static final ZoneId ZONE_ID = ZoneId.of(Calendar.getInstance().getTimeZone().getID());

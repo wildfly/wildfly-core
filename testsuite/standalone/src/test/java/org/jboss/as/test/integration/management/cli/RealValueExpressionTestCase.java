@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * CLI should show the real value of expression properties in addition to the expression
@@ -40,7 +40,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Marek Kopecky <mkopecky@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class RealValueExpressionTestCase extends AbstractCliTestBase {
 
     private static Logger log = Logger.getLogger(RealValueExpressionTestCase.class);

@@ -38,14 +38,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test {@link org.jboss.as.controller.access.CombinationPolicy#REJECTING}.
  *
  * @author Brian Stansberry (c) 2013 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class RejectingCombinationPolicyTestCase extends AbstractRbacTestCase {
 
     private static final PathAddress AC_ADDRESS =

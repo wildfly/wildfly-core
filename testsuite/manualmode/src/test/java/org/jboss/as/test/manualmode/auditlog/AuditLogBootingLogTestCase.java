@@ -54,7 +54,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
 /**
@@ -63,7 +63,7 @@ import org.xnio.IoUtils;
  *          Test that attribute log-boot of audit-log in Management and
  *          audit-log in JMX works right
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class AuditLogBootingLogTestCase {
 

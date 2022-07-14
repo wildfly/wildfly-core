@@ -69,7 +69,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import com.google.common.base.Joiner;
 
@@ -77,7 +77,7 @@ import com.google.common.base.Joiner;
 /**
  * @author Jan Martiska
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class BasicOneOffPatchingScenariosTestCase extends AbstractPatchingTestCase {
 

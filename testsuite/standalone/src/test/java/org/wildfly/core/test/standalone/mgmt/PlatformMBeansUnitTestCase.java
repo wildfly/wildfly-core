@@ -43,14 +43,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test validating that the platform mbean resources exist and are reachable.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class PlatformMBeansUnitTestCase {
 
     private static final Set<String> ignored = new HashSet<String>();

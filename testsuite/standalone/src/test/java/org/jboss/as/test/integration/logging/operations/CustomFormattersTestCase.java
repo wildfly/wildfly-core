@@ -46,13 +46,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @ServerSetup(ServerReload.SetupTask.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CustomFormattersTestCase extends AbstractLoggingOperationsTestCase {
 
     private static final String CUSTOM_FORMATTER_NAME = "customFormatter";

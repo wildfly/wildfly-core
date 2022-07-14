@@ -79,7 +79,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import org.wildfly.test.undertow.UndertowSSLService;
 import org.wildfly.test.undertow.UndertowSSLServiceActivator;
@@ -102,7 +102,7 @@ import io.undertow.util.Methods;
 import io.undertow.util.Protocols;
 import io.undertow.util.StringReadChannelListener;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(SNICombinedWithALPNTestCase.Setup.class)
 public class SNICombinedWithALPNTestCase {
 

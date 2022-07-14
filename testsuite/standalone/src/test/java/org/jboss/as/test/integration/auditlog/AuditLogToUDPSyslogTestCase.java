@@ -21,14 +21,14 @@ import org.jboss.as.test.categories.CommonCriteria;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests UDP protocol of auditlog-to-syslog handler.
  *
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(AuditLogToUDPSyslogSetup.class)
 @Category(CommonCriteria.class)
 public class AuditLogToUDPSyslogTestCase extends AuditLogToSyslogTestCase {

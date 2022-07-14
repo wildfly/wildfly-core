@@ -50,10 +50,10 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 //@RunAsClient
 @ServerSetup(JmxAuditLogTestCase.JmxAuditLogSetup.class)
 public class JmxAuditLogTestCase {

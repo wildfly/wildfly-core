@@ -43,7 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 
 /**
@@ -52,7 +52,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Dominik Pospisil <dpospisi@redhat.com>
  * @author Jaikiran Pai - Updated to fix intermittent failures as reported in https://issues.jboss.org/browse/WFLY-1554
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({DeploymentScannerSetupTask.class})
 public class DeploymentScannerTestCase extends ContainerResourceMgmtTestBase {
 

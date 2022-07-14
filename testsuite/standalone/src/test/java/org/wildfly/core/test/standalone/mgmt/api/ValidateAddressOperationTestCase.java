@@ -30,7 +30,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROBLEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALID;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="alex@jboss.org">Alexey Loubyansky</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ValidateAddressOperationTestCase extends ContainerResourceMgmtTestBase {
 
     @Test

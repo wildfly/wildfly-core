@@ -20,7 +20,7 @@ package org.jboss.as.test.integration.auditlog;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.junit.runner.RunWith;
 
 /**
@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
  *
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 //@RunAsClient
 @ServerSetup(AuditLogToTLSSyslogSetup.class)
 public class AuditLogToTLSSyslogTestCase extends AuditLogToSyslogTestCase {

@@ -32,14 +32,14 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests the configuration of Server Service Thread Pool CorePoolSize and MaxPoolSize by using system properties.
  *
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class ServerServiceThreadPoolTestCase {
     // There are the current default values, must be in sync with ServerService.ServerExecutorService field values

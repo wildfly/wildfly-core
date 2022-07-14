@@ -19,7 +19,7 @@ package org.jboss.as.test.integration.management.cli;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.CommandLineException;
 import org.jboss.as.test.integration.management.util.CLIWrapper;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author wangc
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class VariablesCompletionTestCase {
 
     private static final String FOO_NAME = "foo";

@@ -39,14 +39,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests both automated and manual configuration model persistence snapshot generation.
  *
  * @author Dominik Pospisil <dpospisi@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModelPersistenceTestCase extends ContainerResourceMgmtTestBase {
 
     private class CfgFileDescription {
