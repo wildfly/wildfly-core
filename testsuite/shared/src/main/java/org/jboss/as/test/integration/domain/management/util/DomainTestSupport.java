@@ -56,8 +56,8 @@ public class DomainTestSupport implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 
-    public static final String masterAddress = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
-    public static final String slaveAddress = System.getProperty("jboss.test.host.slave.address", "127.0.0.1");
+    public static final String masterAddress = System.getProperty("jboss.test.host.primary.address", "127.0.0.1");
+    public static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address", "127.0.0.1");
     /** @deprecated unused */
     @Deprecated()
     public static final long domainBootTimeout = Long.valueOf(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
@@ -65,13 +65,13 @@ public class DomainTestSupport implements AutoCloseable {
     @Deprecated
     public static final long domainShutdownTimeout = Long.valueOf(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
     @SuppressWarnings("WeakerAccess")
-    public static final String masterJvmHome = System.getProperty("jboss.test.host.master.jvmhome");
+    public static final String masterJvmHome = System.getProperty("jboss.test.host.primary.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String slaveJvmHome = System.getProperty("jboss.test.host.slave.jvmhome");
+    public static final String slaveJvmHome = System.getProperty("jboss.test.host.secondary.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String masterControllerJvmHome = System.getProperty("jboss.test.host.master.controller.jvmhome");
+    public static final String masterControllerJvmHome = System.getProperty("jboss.test.host.primary.controller.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String slaveControllerJvmHome = System.getProperty("jboss.test.host.slave.controller.jvmhome");
+    public static final String slaveControllerJvmHome = System.getProperty("jboss.test.host.secondary.controller.jvmhome");
 
     /**
      * Create and start a default configuration for the domain tests.
@@ -82,10 +82,10 @@ public class DomainTestSupport implements AutoCloseable {
     public static DomainTestSupport createAndStartDefaultSupport(final String testName) {
         try {
             final Configuration configuration;
-            if(Boolean.getBoolean("wildfly.master.debug")) {
+            if(Boolean.getBoolean("wildfly.primary.debug")) {
                  configuration = DomainTestSupport.Configuration.createDebugMaster(testName,
                     "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
-            } else if (Boolean.getBoolean("wildfly.slave.debug")) {
+            } else if (Boolean.getBoolean("wildfly.secondary.debug")) {
                 configuration = DomainTestSupport.Configuration.createDebugSlave(testName,
                     "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             } else {
@@ -126,7 +126,7 @@ public class DomainTestSupport implements AutoCloseable {
     public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
                 String testName, WildFlyManagedConfiguration baseConfig,
                 boolean readOnlyDomain, boolean readOnlyHost) {
-        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, Boolean.getBoolean("wildfly.master.debug"));
+        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, Boolean.getBoolean("wildfly.primary.debug"));
     }
 
     public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
@@ -153,7 +153,7 @@ public class DomainTestSupport implements AutoCloseable {
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, Boolean.getBoolean("wildfly.slave.debug"));
+        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, Boolean.getBoolean("wildfly.secondary.debug"));
     }
 
     public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
@@ -619,7 +619,7 @@ public class DomainTestSupport implements AutoCloseable {
             final WildFlyManagedConfiguration masterConfig = baseConfig == null ? new WildFlyManagedConfiguration() : baseConfig;
             configureModulePath(masterConfig, overrideModules, extraModules);
             masterConfig.setHostControllerManagementAddress(masterAddress);
-            masterConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress);
+            masterConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress);
             if(debug) {
                 masterConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y " +
                        masterConfig.getHostCommandLineProperties());
@@ -654,8 +654,8 @@ public class DomainTestSupport implements AutoCloseable {
             slaveConfig.setHostName(hostName);
             slaveConfig.setHostControllerManagementAddress(slaveAddress);
             slaveConfig.setHostControllerManagementPort(19999);
-            slaveConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress +
-                    " -Djboss.test.host.slave.address=" + slaveAddress);
+            slaveConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress +
+                    " -Djboss.test.host.secondary.address=" + slaveAddress);
             if(debug) {
                 slaveConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8788,server=y,suspend=y " +
                        slaveConfig.getHostCommandLineProperties());

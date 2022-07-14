@@ -70,7 +70,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
     </interfaces>
 
@@ -93,7 +93,7 @@
             </paths>
             <interfaces>
                 <interface name="public">
-                    <inet-address value="${jboss.test.host.master.address}"/>
+                    <inet-address value="${jboss.test.host.primary.address}"/>
                 </interface>
             </interfaces>
             <!-- server-one inherits the default socket-group declared in the server-group -->
@@ -106,7 +106,7 @@
         <server name="main-two" group="main-server-group" auto-start="true" update-auto-start-with-server-status="true">
             <interfaces>
                 <interface name="public">
-                    <inet-address value="${jboss.test.host.master.address}"/>
+                    <inet-address value="${jboss.test.host.primary.address}"/>
                 </interface>
             </interfaces>
             <!-- server-two avoids port conflicts by incrementing the ports in
@@ -117,7 +117,7 @@
         <server name="other-one" group="other-server-group" auto-start="false" update-auto-start-with-server-status="true">
             <interfaces>
                 <interface name="public">
-                    <inet-address value="${jboss.test.host.master.address}"/>
+                    <inet-address value="${jboss.test.host.primary.address}"/>
                 </interface>
             </interfaces>
             <socket-bindings port-offset="250"/>
@@ -126,7 +126,7 @@
         <server name="other-two" group="other-server-group" auto-start="false" update-auto-start-with-server-status="false">
             <interfaces>
                 <interface name="public">
-                    <inet-address value="${jboss.test.host.master.address}"/>
+                    <inet-address value="${jboss.test.host.primary.address}"/>
                 </interface>
             </interfaces>
             <jvm name="default" />

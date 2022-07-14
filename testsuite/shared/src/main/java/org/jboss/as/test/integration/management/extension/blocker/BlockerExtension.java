@@ -173,7 +173,7 @@ public class BlockerExtension implements Extension {
                     Set<String> hosts = rootResource.getChildrenNames(HOST);
                     String name;
                     if (hosts.size() > 1) {
-                        name = "master";
+                        name = "primary";
                     } else {
                         name = hosts.iterator().next();
                     }

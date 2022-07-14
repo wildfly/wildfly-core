@@ -37,7 +37,7 @@ import org.junit.Test;
  */
 public class SSLElytronMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
-    private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-1way-workdir-elytron");
+    private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-primary-secondary-1way-workdir-elytron");
     private static DomainTestSupport testSupport;
 
     @BeforeClass

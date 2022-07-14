@@ -64,7 +64,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
     </interfaces>
 
@@ -166,12 +166,12 @@
                 <key-stores>
                     <key-store name="twoWayKS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-2way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                     <key-store name="twoWayTS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/server.truststore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-2way-workdir-elytron/server.truststore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                 </key-stores>

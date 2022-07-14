@@ -70,8 +70,8 @@ public class SimpleDomainControllerMigrationTestCase {
     private static String[] SERVERS = new String[] {"failover-one", "failover-two", "failover-three"};
     private static String[] HOSTS = new String[] {"failover-h1", "failover-h2", "failover-h3"};
     private static int[] MGMT_PORTS = new int[] {9999, 9989, 19999};
-    private static String masterAddress = System.getProperty("jboss.test.host.master.address");
-    private static String slaveAddress = System.getProperty("jboss.test.host.slave.address");
+    private static String masterAddress = System.getProperty("jboss.test.host.primary.address");
+    private static String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
     private static final String DEPLOYMENT_NAME = "service-activator.jar";
 
     private static DomainControllerClientConfig domainControllerClientConfig;
@@ -124,7 +124,7 @@ public class SimpleDomainControllerMigrationTestCase {
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
         hostConfig.setHostControllerManagementAddress(host == 1 ? masterAddress : slaveAddress);
-        hostConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress + " -Djboss.test.host.slave.address=" + slaveAddress);
+        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress + " -Djboss.test.host.secondary.address=" + slaveAddress);
         URL url = tccl.getResource("domain-configs/domain-standard.xml");
         assert url != null;
         hostConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
@@ -219,7 +219,7 @@ public class SimpleDomainControllerMigrationTestCase {
         ModelNode changeMasterOp = new ModelNode();
         changeMasterOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, HOSTS[2]);
         changeMasterOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
-        changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.slave.address}");
+        changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.secondary.address}");
         changeMasterOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
         changeMasterOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
 

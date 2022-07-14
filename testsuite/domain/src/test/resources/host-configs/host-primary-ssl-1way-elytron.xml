@@ -64,7 +64,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
     </interfaces>
 
@@ -166,7 +166,7 @@
                 <key-stores>
                     <key-store name="httpsKS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-1way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-1way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                 </key-stores>

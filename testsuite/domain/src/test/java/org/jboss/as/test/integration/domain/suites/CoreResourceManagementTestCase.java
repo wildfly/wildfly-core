@@ -982,7 +982,7 @@ public class CoreResourceManagementTestCase {
     @Test
     public void testHostRelativeToDomainBaseDirConfiguration() throws Exception {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        final PathAddress hostAddress = PathAddress.pathAddress("host", "master");
+        final PathAddress hostAddress = PathAddress.pathAddress("host", "primary");
         final Path domainDirectory = Paths.get(testSupport.getDomainMasterConfiguration().getDomainDirectory(), "audit.log");
 
         Assert.assertFalse("Found an existing audit.log at " + domainDirectory.toAbsolutePath().getParent() + ". The test cannot continue.", Files.exists(domainDirectory));

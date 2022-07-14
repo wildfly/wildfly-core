@@ -133,7 +133,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static void setMasterManagementNativeInterface(ModelControllerClient client) throws Exception {
-        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
+        ModelNode operation = createOpNode("host=primary/core-service=management/management-interface=native-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         operation.get("name").set("security-realm");
         operation.get("value").set(MASTER_MANAGEMENT_REALM);
@@ -141,7 +141,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static void setOriginMasterManagementNativeInterface() throws Exception {
-        ModelNode operation = createOpNode("host=master/core-service=management/management-interface=native-interface",
+        ModelNode operation = createOpNode("host=primary/core-service=management/management-interface=native-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         operation.get("name").set("security-realm");
         operation.get("value").set("ManagementRealm");

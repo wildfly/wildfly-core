@@ -26,7 +26,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
@@ -54,7 +53,7 @@ public class ServerConfigTestCase extends AbstractCoreModelTest {
 
         KernelServices kernelServices = createKernelServices("host.xml");
 
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, MASTER), PathElement.pathElement(SERVER_CONFIG, "server-four"));
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "master"), PathElement.pathElement(SERVER_CONFIG, "server-four"));
 
         final ModelNode operation = Util.createAddOperation(pa);
         operation.get(GROUP).set("main-server-group");
@@ -70,7 +69,7 @@ public class ServerConfigTestCase extends AbstractCoreModelTest {
 
         KernelServices kernelServices = createKernelServices("host.xml");
 
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, MASTER), PathElement.pathElement(SERVER_CONFIG, "server-one"));
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "master"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         ModelNode op = Util.getWriteAttributeOperation(pa, SOCKET_BINDING_GROUP, "does-not-exist");
         ModelNode response = kernelServices.executeOperation(op);
         Assert.assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());
@@ -82,7 +81,7 @@ public class ServerConfigTestCase extends AbstractCoreModelTest {
 
         KernelServices kernelServices = createKernelServices("host.xml");
 
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, MASTER), PathElement.pathElement(SERVER_CONFIG, "server-four"));
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "master"), PathElement.pathElement(SERVER_CONFIG, "server-four"));
 
         final ModelNode operation = Util.createAddOperation(pa);
         operation.get(GROUP).set("bad-group");
@@ -97,7 +96,7 @@ public class ServerConfigTestCase extends AbstractCoreModelTest {
 
         KernelServices kernelServices = createKernelServices("host.xml");
 
-        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, MASTER), PathElement.pathElement(SERVER_CONFIG, "server-one"));
+        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "master"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         ModelNode op = Util.getWriteAttributeOperation(pa, GROUP, "does-not-exist");
         ModelNode response = kernelServices.executeOperation(op);
         Assert.assertEquals(response.toString(), FAILED, response.get(OUTCOME).asString());

@@ -181,8 +181,8 @@
                         <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                         <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                         <module.path>${jboss.dist}/modules</module.path>
-                        <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>
-                        <jboss.test.host.slave.address>${node0}</jboss.test.host.slave.address>
+                        <jboss.test.host.primary.address>${management.address}</jboss.test.host.primary.address>
+                        <jboss.test.host.secondary.address>${node0}</jboss.test.host.secondary.address>
                         <management.address>${management.address}</management.address>
                         <settings.localRepository>${settings.localRepository}</settings.localRepository>
                         <cli.args>-Dmaven.repo.local=${settings.localRepository}</cli.args>
@@ -249,8 +249,8 @@
                                 <cli.jvm.args>${modular.jdk.args}</cli.jvm.args>
                                 <jboss.home>${project.basedir}/target/wildfly-core</jboss.home>
                                 <module.path>${jboss.dist}/modules</module.path>
-                                <jboss.test.host.master.address>${management.address}</jboss.test.host.master.address>
-                                <jboss.test.host.slave.address>${node0}</jboss.test.host.slave.address>
+                                <jboss.test.host.primary.address>${management.address}</jboss.test.host.primary.address>
+                                <jboss.test.host.secondary.address>${node0}</jboss.test.host.secondary.address>
                                 <management.address>${management.address}</management.address>
                                 <settings.localRepository>${settings.localRepository}</settings.localRepository>
                                 <server.jvm.args>-Dmaven.repo.local=${settings.localRepository} ${surefire.system.args} ${jvm.args.ip.server} ${jvm.args.security} ${jvm.args.other} ${jvm.args.timeouts} -Djbossas.ts.dir=${jbossas.ts.dir}</server.jvm.args>

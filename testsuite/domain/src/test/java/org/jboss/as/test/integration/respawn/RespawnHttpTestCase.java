@@ -140,7 +140,7 @@ public class RespawnHttpTestCase {
 
         String localRepo = System.getProperty("settings.localRepository");
 
-        final String address = System.getProperty("jboss.test.host.master.address", "127.0.0.1");
+        final String address = System.getProperty("jboss.test.host.primary.address", "127.0.0.1");
 
         List<String> args = new ArrayList<String>();
         args.add("-jboss-home");
@@ -153,7 +153,7 @@ public class RespawnHttpTestCase {
         }
         args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
-        args.add("-Djboss.test.host.master.address=" + address);
+        args.add("-Djboss.test.host.primary.address=" + address);
         TestSuiteEnvironment.getIpv6Args(args);
         args.add("-Xms64m");
         args.add("-Xmx512m");
@@ -167,7 +167,7 @@ public class RespawnHttpTestCase {
         args.add(processUtil.getJavaCommand());
         args.add("--host-config=" + hostXml.getName());
         args.add("--domain-config=" + domainXml.getName());
-        args.add("-Djboss.test.host.master.address=" + address);
+        args.add("-Djboss.test.host.primary.address=" + address);
         args.add("-Djboss.domain.base.dir=" + masterDir.getAbsolutePath());
         if(localRepo != null) {
             args.add("-Dmaven.repo.local=" + localRepo);

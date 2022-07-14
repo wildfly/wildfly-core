@@ -309,7 +309,6 @@ public class ModelDescriptionConstants {
     public static final String MANAGEMENT_SUBSYSTEM_ENDPOINT = "management-subsystem-endpoint";
     public static final String MAP_GROUPS_TO_ROLES = "map-groups-to-roles";
     public static final String MASK = "mask";
-    public static final String MASTER = "master";
     public static final String MAX = "max";
     public static final String MAX_BACKUP_INDEX = "max-backup-index";
     public static final String MAX_FAILED_SERVERS = "max-failed-servers";

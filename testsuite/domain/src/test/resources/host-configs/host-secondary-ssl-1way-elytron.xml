@@ -55,7 +55,7 @@
     </management>
 
     <domain-controller>
-        <remote protocol="remote+https" host="${jboss.test.host.master.address}" port="9993" authentication-context="slaveHostSSLContext">
+        <remote protocol="remote+https" host="${jboss.test.host.primary.address}" port="9993" authentication-context="slaveHostSSLContext">
             <discovery-options/>
             <ignored-resources type="extension">
                 <instance name="org.jboss.as.jsr77"/>
@@ -78,7 +78,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.slave.address:127.0.0.1}"/>
+            <inet-address value="${jboss.test.host.secondary.address:127.0.0.1}"/>
         </interface>
         <interface name="public">
             <inet-address value="${jboss.bind.address:127.0.0.1}"/>
@@ -115,7 +115,7 @@
                     <credential-reference clear-text="slave_us3r_password"/>
                 </authentication-configuration>
                 <authentication-context name="slaveHostSSLContext">
-                    <match-rule match-host="${jboss.test.host.master.address:127.0.0.1}" ssl-context="oneWayCSC"/> <!-- authentication-configuration="slaveHostSSLConfiguration" -->
+                    <match-rule match-host="${jboss.test.host.primary.address:127.0.0.1}" ssl-context="oneWayCSC"/> <!-- authentication-configuration="slaveHostSSLConfiguration" -->
                 </authentication-context>
             </authentication-client>
             <providers>
@@ -197,7 +197,7 @@
                 <key-stores>
                     <key-store name="oneWayTS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-1way-workdir-elytron/client.truststore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-1way-workdir-elytron/client.truststore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                 </key-stores>

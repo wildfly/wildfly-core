@@ -189,7 +189,7 @@ public class DiscoveryOptionTestCase {
         ModelNode value = item.get("static-discovery");
         value.get("name").set("start-option");
         value.get("protocol");
-        value.get("host").set(new ValueExpression("${jboss.test.host.master.address}"));
+        value.get("host").set(new ValueExpression("${jboss.test.host.primary.address}"));
         value.get("port").set(9999);
 
         ModelNode expectedOptions = new ModelNode();

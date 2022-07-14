@@ -60,8 +60,8 @@ public abstract class AbstractRbacTestCase {
     protected static final String SLAVE = "secondary";
     protected static final String SERVER_GROUP_A = "server-group-a";
     protected static final String SERVER_GROUP_B = "server-group-b";
-    protected static final String MASTER_A = "master-a";
-    protected static final String SLAVE_B = "slave-b";
+    protected static final String MASTER_A = "primary-a";
+    protected static final String SLAVE_B = "secondary-b";
     protected static final String SMALL_JVM = "jvm=small";
     protected static final String SCOPED_ROLE_SERVER = "server-config=scoped-role-server";
 

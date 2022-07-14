@@ -553,7 +553,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
             List<ModelNode> list = ret.asList();
             if (list.size() == 2) {
                 for (ModelNode entry : list) {
-                    if ("slave".equals(entry.asString())){
+                    if ("secondary".equals(entry.asString())){
                         return true;
                     }
                 }

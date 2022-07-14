@@ -70,7 +70,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
         <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
     </interfaces>

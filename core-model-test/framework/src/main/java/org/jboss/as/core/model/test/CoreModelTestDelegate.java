@@ -40,7 +40,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MICRO_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_MINOR_VERSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_SUBSYSTEM_ENDPOINT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODEL_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAMESPACES;
@@ -200,7 +199,7 @@ public class CoreModelTestDelegate {
             //Big big hack to get around the fact that the tests install the host description twice
             //we're only interested in the host model anyway
             //See KnownIssuesValidator.createHostPlatformMBeanAddress
-            model = model.require(CHILDREN).require(HOST).require(MODEL_DESCRIPTION).require(MASTER);
+            model = model.require(CHILDREN).require(HOST).require(MODEL_DESCRIPTION).require("master");
         }
 
         //System.out.println(model);

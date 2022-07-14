@@ -75,7 +75,7 @@ public class WildFlyManagedConfiguration {
 
     private String hostControllerManagementProtocol = "remote";
 
-    private String hostControllerManagementAddress = System.getProperty("jboss.test.host.master.address", "localhost");
+    private String hostControllerManagementAddress = System.getProperty("jboss.test.host.primary.address", "localhost");
 
     private int hostControllerManagementPort = 9999;
 
