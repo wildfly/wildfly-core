@@ -346,6 +346,9 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 47, value = "LDAP Realm is configured to use direct-verification and user-password-mapper which is invalid configuration.")
     void ldapRealmDirectVerificationAndUserPasswordMapper();
 
+    @Message(id = 48, value = "A string representation of an X.500 distinguished name is required: %s")
+    IllegalArgumentException representationOfX500IsRequired(String causeMessage);
+
     /*
      * Credential Store Section.
      */
