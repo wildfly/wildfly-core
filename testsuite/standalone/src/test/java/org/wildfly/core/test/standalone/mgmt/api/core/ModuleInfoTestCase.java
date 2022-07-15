@@ -36,7 +36,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,7 +55,7 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestSup
  *
  * @author <a href="mailto:msimka@redhat.com">Martin Simka</a> (c) 2015 Red Hat, inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModuleInfoTestCase extends ContainerResourceMgmtTestBase {
     private static final PathAddress RESOURCE = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING));
 

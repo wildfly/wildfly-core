@@ -38,14 +38,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.launcher.CliCommandBuilder;
 import org.wildfly.core.launcher.Launcher;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
  * @author Jean-François Denise <jdenise@redhat.com>
  */
 // Required by Bootable JAR in order to create the installation directory
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class JBossCliXmlConfigTestCase {
 
     @Test

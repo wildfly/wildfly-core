@@ -35,13 +35,13 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
  * @author Alexey Loubyansky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class FileArgumentTestCase {
 
     private static final String PROP_NAME = "cli-arg-test";

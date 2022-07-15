@@ -34,14 +34,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test for functionality added with AS7-2139.
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ResolveExpressionTestCase extends ContainerResourceMgmtTestBase {
 
     @Test

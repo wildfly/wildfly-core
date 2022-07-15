@@ -56,7 +56,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.auth.server.IdentityCredentials;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.credential.SecretKeyCredential;
@@ -65,7 +65,7 @@ import org.wildfly.security.credential.store.impl.KeyStoreCredentialStore;
 import org.wildfly.security.encryption.SecretKeyUtil;
 import org.wildfly.security.password.interfaces.ClearPassword;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(SystemPropertyExpressionTestCase.ServerSetup.class)
 public class SystemPropertyExpressionTestCase {
 

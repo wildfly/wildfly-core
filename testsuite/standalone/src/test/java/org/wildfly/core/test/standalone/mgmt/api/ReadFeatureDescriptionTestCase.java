@@ -42,14 +42,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test of read-feature-description handling.
  *
  * @author Brian Stansberry
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ReadFeatureDescriptionTestCase {
 
     @SuppressWarnings("unused")

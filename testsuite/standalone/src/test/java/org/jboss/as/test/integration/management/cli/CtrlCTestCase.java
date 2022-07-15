@@ -30,9 +30,9 @@ import java.io.IOException;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CtrlCTestCase {
 
     @Test

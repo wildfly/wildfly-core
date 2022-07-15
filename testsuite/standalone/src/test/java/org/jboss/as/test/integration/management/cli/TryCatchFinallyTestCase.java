@@ -32,13 +32,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *
  * @author Alexey Loubyansky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class TryCatchFinallyTestCase extends CLISystemPropertyTestBase {
 
     @Test

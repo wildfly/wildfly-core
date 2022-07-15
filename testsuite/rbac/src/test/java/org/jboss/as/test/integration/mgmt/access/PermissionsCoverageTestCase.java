@@ -29,12 +29,12 @@ import org.jboss.as.controller.client.ModelControllerClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Ladislav Thon <lthon@redhat.com>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class PermissionsCoverageTestCase {
     @Inject
     private ManagementClient managementClient;

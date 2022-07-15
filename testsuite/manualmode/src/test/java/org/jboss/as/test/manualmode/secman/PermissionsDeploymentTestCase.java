@@ -42,7 +42,7 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -52,7 +52,7 @@ import java.io.File;
  *
  * @author Jaikiran Pai
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class PermissionsDeploymentTestCase extends AbstractDeploymentScannerBasedTestCase {
 

@@ -49,7 +49,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.jboss.as.patching.Constants.BASE;
 import static org.jboss.as.patching.IoUtils.mkdir;
@@ -67,7 +67,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Alexey Loubyansky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class RemotePatchInfoUnitTestCase extends AbstractPatchingTestCase {
 

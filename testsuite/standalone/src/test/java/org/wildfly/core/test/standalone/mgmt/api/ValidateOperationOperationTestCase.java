@@ -36,14 +36,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests that the validate-operation operation works as it should
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ValidateOperationOperationTestCase extends ContainerResourceMgmtTestBase {
 
     @Test

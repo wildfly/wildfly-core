@@ -43,14 +43,14 @@ import org.junit.runner.RunWith;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
 /**
  *
  * @author Emmanuel Hugonnet (c) 2017 Red Hat, inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class AuditLogBootingSyslogTest {
     private final ModelNode userAuthAddress = Operations.createAddress("subsystem", "elytron", "configurable-sasl-server-factory", "configured");

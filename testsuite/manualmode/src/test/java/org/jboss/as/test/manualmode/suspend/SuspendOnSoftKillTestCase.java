@@ -57,7 +57,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
@@ -68,7 +68,7 @@ import org.xnio.IoUtils;
  *
  * @author Brian Stansberry
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class SuspendOnSoftKillTestCase {
 

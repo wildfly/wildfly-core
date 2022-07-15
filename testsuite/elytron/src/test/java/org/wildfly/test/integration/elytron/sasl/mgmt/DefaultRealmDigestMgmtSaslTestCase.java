@@ -32,7 +32,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.MatchRule;
@@ -56,7 +56,7 @@ import org.wildfly.test.security.common.other.TrustedDomainsConfigurator;
  * @see <a href="https://issues.jboss.org/browse/ELY-1186">ELY-1186</a>
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({ DefaultRealmDigestMgmtSaslTestCase.ServerSetup.class })
 public class DefaultRealmDigestMgmtSaslTestCase {
 

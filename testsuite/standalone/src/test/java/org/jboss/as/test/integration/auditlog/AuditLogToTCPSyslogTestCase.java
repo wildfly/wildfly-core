@@ -24,7 +24,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.syslogserver.TCPSyslogServerConfig;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.jboss.dmr.ModelNode;
 import org.junit.runner.RunWith;
 import org.productivity.java.syslog4j.SyslogConstants;
@@ -36,7 +36,7 @@ import org.productivity.java.syslog4j.server.SyslogServerConfigIF;
  * @author Ondrej Lukas
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 //@RunAsClient
 @ServerSetup(AuditLogToTCPSyslogTestCase.AuditLogToTCPSyslogTestCaseSetup.class)
 public class AuditLogToTCPSyslogTestCase extends AuditLogToSyslogTestCase {

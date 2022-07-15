@@ -42,14 +42,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Alexey Loubyansky
  *
  */
 // Required by Bootable JAR in order to create the installation directory
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class RcFileTestCase {
 
     private static final String JBOSS_CLI_RC_PROP = "jboss.cli.rc";

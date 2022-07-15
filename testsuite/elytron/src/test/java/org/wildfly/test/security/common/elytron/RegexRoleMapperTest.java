@@ -7,11 +7,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.hamcrest.core.StringContains.containsString;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class RegexRoleMapperTest {
     CLIWrapper cli;
 

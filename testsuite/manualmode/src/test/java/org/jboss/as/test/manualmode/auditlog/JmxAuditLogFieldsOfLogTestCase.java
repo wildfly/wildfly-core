@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
 /**
@@ -37,7 +37,7 @@ import org.xnio.IoUtils;
  *
  *          Test that fields of Audit log from JMX have right content
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class JmxAuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase {
     @Inject

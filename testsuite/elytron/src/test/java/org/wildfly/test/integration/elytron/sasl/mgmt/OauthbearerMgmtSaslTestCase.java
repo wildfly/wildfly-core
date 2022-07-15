@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.auth.client.AuthenticationConfiguration;
 import org.wildfly.security.auth.client.AuthenticationContext;
 import org.wildfly.security.auth.client.MatchRule;
@@ -35,7 +35,7 @@ import org.wildfly.test.security.common.elytron.ConfigurableElement;
  *
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({ OauthbearerMgmtSaslTestCase.ServerSetup.class })
 public class OauthbearerMgmtSaslTestCase extends AbstractMgmtSaslTestBase {
 

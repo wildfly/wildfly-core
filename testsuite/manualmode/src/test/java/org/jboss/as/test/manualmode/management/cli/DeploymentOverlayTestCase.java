@@ -35,14 +35,14 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.jmx.ServiceActivatorDeployment;
 
 /**
  *
  * @author jdenise@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class DeploymentOverlayTestCase {
 
     private interface TestOperations {

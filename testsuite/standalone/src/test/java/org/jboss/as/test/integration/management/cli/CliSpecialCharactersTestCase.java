@@ -29,7 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.junit.Assert.assertTrue;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -40,7 +40,7 @@ import org.wildfly.core.testrunner.ManagementClient;
  *
  * @author Martin Schvarcbacher
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CliSpecialCharactersTestCase {
     private static final String TEST_RESOURCE_NAME = "test_resource_special_chars";
     private CLIWrapper cli;

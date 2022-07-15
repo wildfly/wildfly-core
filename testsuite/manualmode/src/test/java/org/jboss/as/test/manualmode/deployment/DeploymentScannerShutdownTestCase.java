@@ -68,14 +68,14 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests server reload during a deployment or undeployment to a wildfly core server by the filesystem scanner.
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 @Ignore("this test relies too much on hacking internals (see the byteman script) so it's only here to allow " +
         "custom use if there is a need to diagnose a problem in this area")

@@ -48,7 +48,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Integration test of management op timeout handling. This test focuses on the CLI handling
@@ -57,7 +57,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class ManagementOpTimeoutTestCase extends AbstractCliTestBase {
 

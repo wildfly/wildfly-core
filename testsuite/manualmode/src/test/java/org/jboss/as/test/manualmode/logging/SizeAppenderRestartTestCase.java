@@ -44,14 +44,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test to confirm rotate-on-boot works.
  *
  * @author <a href="mailto:pkremens@redhat.com">Petr Kremensky</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class SizeAppenderRestartTestCase extends AbstractLoggingTestCase {
     private static final String FILE_NAME = "sizeAppenderRestartTestCase.log";

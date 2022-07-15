@@ -49,12 +49,12 @@ import org.jboss.dmr.Property;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author jcechace
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({StandardUsersSetupTask.class, BasicExtensionSetupTask.class})
 public class ReadResourceDescriptionVsActualOperationTestCase extends AbstractRbacTestCase {
     private static final String TEST_DS = "subsystem=rbac/rbac-constrained=default";

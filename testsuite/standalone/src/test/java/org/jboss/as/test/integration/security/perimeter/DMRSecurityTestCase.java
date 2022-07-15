@@ -27,14 +27,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * This class contains a check that the management api access is secured.
  *
  * @author <a href="mailto:jlanik@redhat.com">Jan Lanik</a>.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(DisableLocalAuthServerSetupTask.class)
 public class DMRSecurityTestCase {
 

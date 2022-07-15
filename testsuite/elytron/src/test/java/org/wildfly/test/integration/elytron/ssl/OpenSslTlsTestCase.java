@@ -73,7 +73,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.extension.elytron.ElytronExtension;
 import org.wildfly.openssl.OpenSSLProvider;
 import org.wildfly.security.ssl.CipherSuiteSelector;
@@ -97,7 +97,7 @@ import org.xnio.Xnio;
 
 import io.undertow.protocols.ssl.UndertowXnioSsl;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @org.wildfly.core.testrunner.ServerSetup({ OpenSslTlsTestCase.KeyMaterialSetup.class, OpenSslTlsTestCase.ServerSetup.class })
 public class OpenSslTlsTestCase {
 

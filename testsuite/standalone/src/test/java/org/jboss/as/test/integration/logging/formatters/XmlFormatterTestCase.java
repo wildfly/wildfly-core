@@ -57,7 +57,7 @@ import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xml.sax.InputSource;
 
 /**
@@ -65,7 +65,7 @@ import org.xml.sax.InputSource;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class XmlFormatterTestCase extends AbstractLoggingTestCase {
 
     private static final String FILE_NAME = "xml-file-handler.log";

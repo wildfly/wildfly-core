@@ -39,14 +39,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests of the core-service=module-loading resource.
  *
  * @author Brian Stansberry (c) 2012 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModuleLoadingManagementTestCase extends ContainerResourceMgmtTestBase {
     private static final PathAddress RESOURCE = PathAddress.pathAddress(PathElement.pathElement(CORE_SERVICE, MODULE_LOADING));
 

@@ -57,7 +57,7 @@ import org.junit.runner.RunWith;
 import org.jboss.as.test.integration.management.extension.dependent.DependentExtension;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test of WFCORE-1106 behavior.
@@ -65,7 +65,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Brian Stansberry
  */
 @ServerSetup(ServerReload.SetupTask.class)
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CapabilityReloadRequiredUnitTestCase {
 
     private static final String WFCORE1106 = "WFCORE-1106";

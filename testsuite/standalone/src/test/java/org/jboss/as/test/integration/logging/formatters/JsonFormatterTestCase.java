@@ -55,14 +55,14 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests output from the JSON formatter to ensure that integration between the subsystem and the log manager is correct.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class JsonFormatterTestCase extends AbstractLoggingTestCase {
 
     private static final String FILE_NAME = "json-file-handler.log";

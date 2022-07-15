@@ -50,7 +50,7 @@ import org.junit.runner.RunWith;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
 /**
@@ -59,7 +59,7 @@ import org.xnio.IoUtils;
  * @author Ondrej Lukas
  * @author Josef Cacek
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 @Category(CommonCriteria.class)
 public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase {

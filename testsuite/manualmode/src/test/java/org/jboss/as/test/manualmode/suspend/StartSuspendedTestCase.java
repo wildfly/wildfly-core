@@ -51,7 +51,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.Server;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
@@ -60,7 +60,7 @@ import org.xnio.IoUtils;
 /**
  * Tests for suspend/resume functionality
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class StartSuspendedTestCase {
 

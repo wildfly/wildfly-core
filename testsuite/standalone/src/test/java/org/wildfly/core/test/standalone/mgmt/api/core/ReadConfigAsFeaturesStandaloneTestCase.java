@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -48,7 +48,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
  *
  * @author <a href="mailto:rjanik@redhat.com">Richard Janík</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ReadConfigAsFeaturesStandaloneTestCase extends ReadConfigAsFeaturesTestBase {
 
     private File defaultConfig;

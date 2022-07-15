@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -42,7 +42,7 @@ import static org.junit.Assert.fail;
  *
  * @author Martin Schvarcbacher
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CliControllerConfigTestCase {
 
     private static final Protocol TEST_RUNNER_PROTOCOL = HTTP_REMOTING;

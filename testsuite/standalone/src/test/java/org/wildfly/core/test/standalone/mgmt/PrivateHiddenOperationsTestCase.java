@@ -37,14 +37,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Tests invocations of private and hidden operations.
  *
  * @author Brian Stansberry
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class PrivateHiddenOperationsTestCase {
 
     private static final PathAddress EXT = PathAddress.pathAddress("extension", OpTypesExtension.EXTENSION_NAME);

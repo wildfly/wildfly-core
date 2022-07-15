@@ -26,7 +26,7 @@ import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.parsing.UnresolvedVariableException;
 import org.jboss.as.test.integration.management.util.CLITestUtil;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -49,7 +49,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author Martin Schvarcbacher
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class CliVariablesTestCase {
 
     private static final String JBOSS_CLI_RC_PROP = "jboss.cli.rc";

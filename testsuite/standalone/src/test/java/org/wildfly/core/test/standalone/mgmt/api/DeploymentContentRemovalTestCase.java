@@ -64,12 +64,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * @author Tomas Hofman (thofman@redhat.com)
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class DeploymentContentRemovalTestCase {
 
     private static String DEPLOYMENT_ONE_NAME = "deployment-one.jar";

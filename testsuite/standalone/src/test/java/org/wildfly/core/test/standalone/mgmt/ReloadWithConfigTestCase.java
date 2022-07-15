@@ -41,14 +41,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  *  Tests using server-config parameter in the :reload operation
  *
  * @author Kabir Khan
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ReloadWithConfigTestCase {
     private static final String RELOAD_TEST_CASE_ONE = "reload-test-case-one";
     private static final String RELOAD_TEST_CASE_TWO = "reload-test-case-two";

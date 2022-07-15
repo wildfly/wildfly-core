@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 
 /**
@@ -31,7 +31,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author Emanuel Muckenhuber
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(ClientCompatibilityUnitTestCase.ClientCompatibilityUnitTestCaseServerSetup.class)
 public class ClientCompatibilityUnitTestCase extends ClientCompatibilityUnitTestBase {
     static class ClientCompatibilityUnitTestCaseServerSetup extends ClientCompatibilityUnitTestBase.ClientCompatibilityServerSetup implements ServerSetupTask {

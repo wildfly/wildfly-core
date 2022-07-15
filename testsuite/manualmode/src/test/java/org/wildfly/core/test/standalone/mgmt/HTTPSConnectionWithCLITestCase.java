@@ -57,7 +57,7 @@ import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.ServerSetupTask;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Testing https connection to the http management interface with cli console
@@ -68,7 +68,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Filip Bogyai
  */
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class HTTPSConnectionWithCLITestCase {
 

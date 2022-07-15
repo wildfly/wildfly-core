@@ -51,7 +51,7 @@ import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test of deployment ops for deployments that depend on other deployments.
@@ -60,7 +60,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  * @author Brian Stansberry
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class InterdependentDeploymentTestCase {
 

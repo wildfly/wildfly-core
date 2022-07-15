@@ -30,7 +30,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 
@@ -39,7 +39,7 @@ import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNo
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ManagementVersionTestCase extends ContainerResourceMgmtTestBase {
 
 

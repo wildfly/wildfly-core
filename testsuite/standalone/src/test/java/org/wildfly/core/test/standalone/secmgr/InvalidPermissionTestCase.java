@@ -48,7 +48,7 @@ import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.ServerSetupTask;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.undertow.UndertowServiceActivator;
 
 /**
@@ -60,7 +60,7 @@ import org.wildfly.test.undertow.UndertowServiceActivator;
  *
  * @author rmartinc
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup(InvalidPermissionTestCase.Setup.class)
 public class InvalidPermissionTestCase {
 

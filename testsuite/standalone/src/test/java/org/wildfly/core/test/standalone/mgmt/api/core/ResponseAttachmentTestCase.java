@@ -85,14 +85,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.test.standalone.base.ContainerResourceMgmtTestBase;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test of streams attached to a standalone server management op response.
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ResponseAttachmentTestCase extends ContainerResourceMgmtTestBase {
 
     private static final Logger log = Logger.getLogger(ResponseAttachmentTestCase.class);

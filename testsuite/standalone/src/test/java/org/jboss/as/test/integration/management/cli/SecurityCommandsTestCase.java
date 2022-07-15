@@ -58,14 +58,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockserver.integration.ClientAndServer;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
 /**
  *
  * @author jdenise@redhat.com
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class SecurityCommandsTestCase {
 
     private static final String DEFAULT_KEY_STORE = "applicationKS";

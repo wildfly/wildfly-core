@@ -57,7 +57,7 @@ import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.xnio.IoUtils;
 
 /**
@@ -65,7 +65,7 @@ import org.xnio.IoUtils;
  *
  * @author Ivo Studensky
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class ModuleTestCase extends AbstractCliTestBase {
 
     private static final String MODULE_NAME = "org.jboss.test.cli.climoduletest";

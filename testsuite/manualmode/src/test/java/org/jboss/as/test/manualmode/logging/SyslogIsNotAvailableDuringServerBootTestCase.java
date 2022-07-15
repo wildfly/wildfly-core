@@ -37,7 +37,7 @@ import org.productivity.java.syslog4j.SyslogConstants;
 import org.productivity.java.syslog4j.server.SyslogServer;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
 import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 /**
  * Test whether application server can log into UDP and TCP syslog server even if this server is not available during server
@@ -47,7 +47,7 @@ import org.wildfly.core.testrunner.WildflyTestRunner;
  *
  * @author olukas
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class SyslogIsNotAvailableDuringServerBootTestCase extends AbstractSyslogReconnectionTestCase {
 

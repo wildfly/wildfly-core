@@ -52,9 +52,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @org.wildfly.core.testrunner.ServerSetup(JandexIndexCachingTestCase.LogHandlerSetup.class)
 public class JandexIndexCachingTestCase {
 

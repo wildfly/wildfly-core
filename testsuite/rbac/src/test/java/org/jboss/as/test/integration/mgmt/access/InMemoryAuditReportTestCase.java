@@ -48,7 +48,6 @@ import static org.jboss.as.test.integration.management.rbac.RbacUtil.MAINTAINER_
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.MONITOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.OPERATOR_USER;
 import static org.jboss.as.test.integration.management.rbac.RbacUtil.SUPERUSER_USER;
-import static org.jboss.as.test.integration.mgmt.access.AbstractManagementInterfaceRbacTestCase.getManagementClient;
 import static org.jboss.as.test.integration.mgmt.access.InMemoryAuditReportSetupTask.IN_MEMORY_HANDLER_ADDR;
 import static org.productivity.java.syslog4j.impl.message.pci.PCISyslogMessage.USER_ID;
 
@@ -66,7 +65,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
@@ -81,7 +80,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2015 Red Hat, inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({InMemoryAuditReportSetupTask.class, StandardUsersSetupTask.class})
 public class InMemoryAuditReportTestCase extends AbstractManagementInterfaceRbacTestCase {
 

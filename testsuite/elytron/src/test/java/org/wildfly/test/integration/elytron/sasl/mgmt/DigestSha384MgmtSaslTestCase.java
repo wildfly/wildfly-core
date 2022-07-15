@@ -19,7 +19,7 @@ package org.wildfly.test.integration.elytron.sasl.mgmt;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerSetup;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.security.common.TestRunnerConfigSetupTask;
 import org.wildfly.test.security.common.elytron.ConfigurableElement;
 
@@ -31,7 +31,7 @@ import java.util.List;
  * @author Josef Cacek
  * @author Yeray Borges
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerSetup({ DigestSha384MgmtSaslTestCase.ServerSetup.class })
 public class DigestSha384MgmtSaslTestCase extends AbstractMgmtSaslTestBase {
 

@@ -39,7 +39,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import javax.inject.Inject;
 import java.io.InputStream;
@@ -57,7 +57,7 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:mjurc@redhat.com">Michal Jurc</a> (c) 2018 Red Hat, Inc.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class JdkModuleDependencyTestCase {
 
     public static final String DEPLOYMENT_NAME_SUFFIX = "-test-dep.jar";

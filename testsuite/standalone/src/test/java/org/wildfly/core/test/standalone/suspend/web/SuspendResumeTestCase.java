@@ -46,7 +46,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerController;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 import org.wildfly.test.suspendresumeendpoint.SuspendResumeHandler;
 import org.wildfly.test.suspendresumeendpoint.TestSuspendServiceActivator;
 import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
@@ -56,7 +56,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 /**
  * Tests for suspend/resume functionality
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 public class SuspendResumeTestCase {
 
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";

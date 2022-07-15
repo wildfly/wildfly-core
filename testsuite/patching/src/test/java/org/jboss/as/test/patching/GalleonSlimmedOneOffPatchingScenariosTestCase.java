@@ -23,7 +23,7 @@ package org.jboss.as.test.patching;
 import com.google.common.base.Joiner;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.WildflyTestRunner;
+import org.wildfly.core.testrunner.WildFlyRunner;
 
 import static org.jboss.as.test.patching.PatchingTestUtil.AS_DISTRIBUTION;
 import static org.jboss.as.test.patching.PatchingTestUtil.FILE_SEPARATOR;
@@ -32,7 +32,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.FILE_SEPARATOR;
  * Overrides the superclass just so it can be run in a separate execution without polluting the output from
  * the superclass version of the test.
  */
-@RunWith(WildflyTestRunner.class)
+@RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class GalleonSlimmedOneOffPatchingScenariosTestCase extends BasicOneOffPatchingScenariosTestCase {
 
