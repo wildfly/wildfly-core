@@ -92,6 +92,15 @@
         <cve>CVE-2020-10740</cve>
     </suppress>
 
+    <!-- CVE-2022-31569 does not affect WildFly -->
+    <suppress>
+        <notes><![CDATA[
+   file name: wildfly-galleon-plugins-5.2.10.Final.jar (shaded: org.eclipse.transformer:org.eclipse.transformer:0.2.0)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.transformer/org\.eclipse\.transformer@.*$</packageUrl>
+        <cve>CVE-2022-31569</cve>
+    </suppress>
+
     <!-- The io.undertow system is vulnerable, but not org.wildfly.security.elytron-web:undertow-server which integrates Elytron with Undertow -->
     <!-- The io.undertow is in version 2.2.17 which is higher then vulnerable prior to 2.2.11.Final -->
     <suppress>
