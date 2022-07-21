@@ -262,7 +262,13 @@ class AdvancedModifiableKeyStoreDecorator extends ModifiableKeyStoreDecorator {
                     throw ROOT_LOGGER.keyStoreAliasAlreadyExists(alias);
                 }
                 SelfSignedX509CertificateAndSigningKey.Builder certAndKeyBuilder = SelfSignedX509CertificateAndSigningKey.builder();
-                certAndKeyBuilder.setDn(new X500Principal(distinguishedName));
+                X500Principal dn;
+                try {
+                    dn = new X500Principal(distinguishedName);
+                } catch (IllegalArgumentException e) {
+                    throw ROOT_LOGGER.representationOfX500IsRequired(e.getMessage());
+                }
+                certAndKeyBuilder.setDn(dn);
                 if (algorithm != null) {
                     certAndKeyBuilder.setKeyAlgorithmName(algorithm);
                 }
