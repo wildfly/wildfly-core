@@ -80,6 +80,9 @@ import static org.jboss.as.test.integration.domain.management.util.DomainTestUti
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -98,6 +101,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.deployment.trivial.ServiceActivatorDeploymentUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
+import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -974,6 +978,36 @@ public class CoreResourceManagementTestCase {
 
     }
 
+    /** WFCORE-5960 */
+    @Test
+    public void testHostRelativeToDomainBaseDirConfiguration() throws Exception {
+        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final PathAddress hostAddress = PathAddress.pathAddress("host", "master");
+        final Path domainDirectory = Paths.get(testSupport.getDomainMasterConfiguration().getDomainDirectory(), "audit.log");
+
+        Assert.assertFalse("Found an existing audit.log at " + domainDirectory.toAbsolutePath().getParent() + ". The test cannot continue.", Files.exists(domainDirectory));
+
+        PathAddress pa = hostAddress
+                .append("subsystem", "elytron")
+                .append("file-audit-log", "local-audit");
+
+        ModelNode operation = Util.getReadAttributeOperation(pa, "relative-to");
+        ModelNode response = masterClient.execute(operation);
+        ModelNode initialValue = validateResponse(response);
+
+        try {
+            operation = Util.getWriteAttributeOperation(pa, "relative-to", "jboss.domain.base.dir");
+            DomainTestUtils.executeForResult(operation, masterClient);
+            reloadHost(domainMasterLifecycleUtil, hostAddress);
+            Assert.assertTrue("Cannot found " + domainDirectory.toAbsolutePath(), Files.exists(domainDirectory));
+        } finally {
+            operation = Util.getWriteAttributeOperation(pa, "relative-to", initialValue.asString());
+            DomainTestUtils.executeForResult(operation, masterClient);
+            reloadHost(domainMasterLifecycleUtil, hostAddress);
+            Files.deleteIfExists(domainDirectory);
+        }
+    }
+
     private void testCannotInvokeManagedServerOperationsComposite(ModelNode stepAddress) throws Exception {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
@@ -1214,5 +1248,16 @@ public class CoreResourceManagementTestCase {
         ModelNode response = client.execute(operation);
         validateResponse(response, true);
         Assert.assertTrue(checkServerState(client, serverAddress, "STARTED"));
+    }
+
+    private DomainClient reloadHost(DomainLifecycleUtil util, PathAddress host) throws Exception {
+        ModelNode reload = Util.createEmptyOperation("reload", host);
+        reload.get(BLOCKING).set("true");
+        util.executeAwaitConnectionClosed(reload);
+        util.connect();
+        util.awaitHostController(System.currentTimeMillis());
+        util.awaitServers(System.currentTimeMillis());
+
+        return util.createDomainClient();
     }
 }
