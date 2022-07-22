@@ -369,7 +369,8 @@ public class ConfigurationFile {
         if (mainName != null) {
             try {
                 final File mainFile = new File(configurationDir, name != null ? name : mainName);
-                if (mainFile.getCanonicalPath().startsWith(configurationDir.getCanonicalPath())) {
+                if (mainFile.getCanonicalPath().startsWith(configurationDir.getCanonicalPath()) ||
+                            Files.isSymbolicLink(mainFile.toPath())) {
                     return new File(configurationDir, new File(mainName).getName());
                 } else if (interactionPolicy.isReadOnly()) {
                     return mainFile;
