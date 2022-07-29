@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><identity xmlns="urn:elytron:identity:1.2">
+    <principal name="user2"/>
+    <credentials>
+        <password algorithm="digest-md5" format="base64">AgV1c2VyMgpmaWxlc3lzdGVtOi73QqGkmSCHhUlhCQEvRQ==</password>
+    </credentials><Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>JkcICC/dLeLA4kJmuld5Sv89OZYrQH24n8Am3FZSgcI=</DigestValue></Reference></SignedInfo><SignatureValue>STPAuobZcYE+9EA4XSfX2P5bhSBkKbC1+b8aqcPXp8oAnfoWN4354KpLHOR2j4CSsjl8eff5d/jL&#13;
+    CmCISgST3RZ0k3Aj/vEsLb/UH1nV/k7GQC3gFQtuDSscXUJx9LfsWThSnVaeLwpUg60v30H6l2nJ&#13;
+    zgnFYxvkulNUwP9KTgI=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>gtRFtSoBpoP0zSCN5ZCvJG4G9G5zO80aEJAJpcR2H7w7AiWuJ6LpATbwAWWVlbFR2+4UyxwbVzn6&#13;
+    aezoo13l4STSWALyf2jB/XkWV/vV6D+u/q1ig3yM0O0y0Z5ANMgAJ65D2trh+J2xbiOk3ojL/yAS&#13;
+    YDOX+jziihXDPsFq5t8=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue></KeyInfo></Signature></identity>

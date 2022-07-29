@@ -104,6 +104,7 @@ interface ElytronDescriptionConstants {
     String CHAINED_PRINCIPAL_TRANSFORMER = "chained-principal-transformer";
     String CHANGE_ACCOUNT_KEY = "change-account-key";
     String CHANGE_ALIAS = "change-alias";
+    String UPDATE_KEY_PAIR = "update-key-pair";
     String CIPHER_SUITE = "cipher-suite";
     String CIPHER_SUITE_FILTER = "cipher-suite-filter";
     String CIPHER_SUITE_NAMES = "cipher-suite-names";
@@ -288,6 +289,7 @@ interface ElytronDescriptionConstants {
     String KEY_MAP = "key-map";
     String KEY_SIZE = "key-size";
     String KEY_STORE = "key-store";
+    String KEY_STORE_ALIAS = "key-store-alias";
     String KEY_STORE_REALM = "key-store-realm";
     String KEY_STORES = "key-stores";
     String KID = "kid";
@@ -603,6 +605,7 @@ interface ElytronDescriptionConstants {
     String VALUE = "value";
     String VERBOSE = "verbose";
     String VERIFIABLE = "verifiable";
+    String VERIFY_INTEGRITY = "verify-integrity";
     String VERSION = "version";
     String VERSION_COMPARISON = "version-comparison";
 
