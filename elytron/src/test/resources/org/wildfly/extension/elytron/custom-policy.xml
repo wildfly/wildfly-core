@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:15.1">
+<subsystem xmlns="urn:wildfly:elytron:16.0">
     <policy name="custom-b">
         <custom-policy class-name="a.b.c.CustomPolicy" module="a.b.c.custom"/>
     </policy>

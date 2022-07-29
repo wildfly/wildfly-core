@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2021 Red Hat, Inc., and individual contributors
+ * Copyright 2022 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,20 +27,15 @@ import org.jboss.as.subsystem.test.AdditionalInitialization;
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
-public class ElytronSubsystem15_1TestCase extends AbstractElytronSubsystemBaseTest {
+public class ElytronSubsystem16_0TestCase extends AbstractElytronSubsystemBaseTest {
 
-    public ElytronSubsystem15_1TestCase() {
+    public ElytronSubsystem16_0TestCase() {
         super(ElytronExtension.SUBSYSTEM_NAME, new ElytronExtension());
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource("legacy-elytron-subsystem-15.1.xml");
-    }
-
-    @Override
-    protected void compareXml(String configId, String original, String marshalled) throws Exception {
-        //
+        return readResource("elytron-subsystem-16.0.xml");
     }
 
     @Override

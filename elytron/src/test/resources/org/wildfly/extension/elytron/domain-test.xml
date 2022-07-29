@@ -1,5 +1,5 @@
 <!-- for needs of DomainTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:15.1">
+<subsystem xmlns="urn:wildfly:elytron:16.0">
     <security-domains>
         <security-domain name="MyDomain" default-realm="FileRealm" realm-mapper="MyRealmMapper" permission-mapper="MyPermissionMapper"
                          pre-realm-principal-transformer="NameRewriterXY" post-realm-principal-transformer="NameRewriterYU" trusted-security-domains="AnotherDomain">

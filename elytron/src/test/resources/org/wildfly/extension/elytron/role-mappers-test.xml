@@ -1,5 +1,5 @@
 <!-- for needs of RealmsTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:15.1" initial-providers="elytron">
+<subsystem xmlns="urn:wildfly:elytron:16.0" initial-providers="elytron">
     <providers>
         <provider-loader name="elytron" class-names="org.wildfly.security.WildFlyElytronProvider" />
     </providers>
