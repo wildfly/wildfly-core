@@ -3,9 +3,6 @@
     <feature spec="subsystem.io">
         <param name="extension" value="org.wildfly.extension.io"/>
         <param name="subsystem" value="io"/>
-        <feature spec="subsystem.io.buffer-pool">
-	    <param name="buffer-pool" value="default"/>
-        </feature>
         <feature spec="subsystem.io.worker">
 	    <param name="worker" value="default"/>
         </feature>
