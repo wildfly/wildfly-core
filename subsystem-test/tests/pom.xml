@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>19.0.0.Beta15</version>
+        <version>19.0.0.Beta16-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-subsystem-test-tests</artifactId>
