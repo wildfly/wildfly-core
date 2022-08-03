@@ -28,7 +28,7 @@ import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressi
 import static org.jboss.as.test.manualmode.expressions.module.TestSecureExpressionsExtension.RESOLVE;
 
 import java.io.File;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;

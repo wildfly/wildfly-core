@@ -37,7 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.as.controller.PathAddress;

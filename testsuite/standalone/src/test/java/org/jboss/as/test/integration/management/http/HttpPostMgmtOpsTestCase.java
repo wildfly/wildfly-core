@@ -27,7 +27,7 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.test.integration.management.util.HttpMgmtProxy;
 import org.jboss.dmr.ModelNode;

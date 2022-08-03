@@ -16,7 +16,7 @@ limitations under the License.
 
 package org.jboss.as.test.integration.management.http;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.test.integration.management.extension.customcontext.testbase.CustomManagementContextTestBase;

@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.cli.Util;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;

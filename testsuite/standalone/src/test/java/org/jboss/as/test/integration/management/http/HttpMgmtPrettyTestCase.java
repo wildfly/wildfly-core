@@ -22,7 +22,7 @@
 package org.jboss.as.test.integration.management.http;
 
 import java.net.URL;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.test.integration.management.util.HttpMgmtProxy;
 import org.junit.Assert;

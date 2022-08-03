@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.management.cli;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.impl.CommandContextImpl;
 import static org.junit.Assert.assertFalse;

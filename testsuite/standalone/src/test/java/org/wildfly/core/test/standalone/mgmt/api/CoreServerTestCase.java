@@ -40,7 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TIM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.USE_CURRENT_SERVER_CONFIG;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;

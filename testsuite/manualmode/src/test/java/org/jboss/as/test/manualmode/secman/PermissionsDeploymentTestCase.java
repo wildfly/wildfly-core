@@ -44,7 +44,7 @@ import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.File;
 
 /**

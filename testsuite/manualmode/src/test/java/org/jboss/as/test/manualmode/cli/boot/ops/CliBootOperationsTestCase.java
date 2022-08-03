@@ -28,7 +28,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Files;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.impl.AdditionalBootCliScriptInvoker;

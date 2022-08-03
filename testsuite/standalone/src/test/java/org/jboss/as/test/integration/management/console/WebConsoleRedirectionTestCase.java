@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.http.client.methods.HttpGet;
 import org.jboss.as.test.integration.management.util.ServerReload;

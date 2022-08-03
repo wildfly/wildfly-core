@@ -36,7 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.core.model.test.KnownIssuesValidationConfiguration;
 import org.jboss.as.core.model.test.TestModelType;
 import org.jboss.as.model.test.ModelTestModelDescriptionValidator;

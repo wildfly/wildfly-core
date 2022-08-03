@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;

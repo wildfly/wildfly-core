@@ -44,6 +44,7 @@
         <version.com.fasterxml.jackson.databind>2.12.6.1</version.com.fasterxml.jackson.databind>
         <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.77.Final</version.io.netty>
+        <version.jakarta.inject.jakarta.inject-api>2.0.1</version.jakarta.inject.jakarta.inject-api>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>2.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
@@ -74,6 +75,12 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${version.com.fasterxml.jackson.databind}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>${version.jakarta.inject.jakarta.inject-api}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
