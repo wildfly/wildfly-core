@@ -46,7 +46,7 @@ public class HostPathManagerService extends PathManagerService {
 
         // Add resources and capabilities for the always-present paths
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.HOME_DIR, hostEnvironment.getHomeDir().getAbsolutePath());
-        service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_BASE_DIR, hostEnvironment.getDomainConfigurationDir().getAbsolutePath());
+        service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_BASE_DIR, hostEnvironment.getDomainBaseDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_CONFIG_DIR, hostEnvironment.getDomainConfigurationDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_DATA_DIR, hostEnvironment.getDomainDataDir().getAbsolutePath());
         service.addHardcodedAbsolutePath(serviceTarget, HostControllerEnvironment.DOMAIN_LOG_DIR, hostEnvironment.getDomainLogDir().getAbsolutePath());
