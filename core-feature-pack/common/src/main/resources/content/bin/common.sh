@@ -34,7 +34,7 @@ setDefaultModularJvmOptions() {
     DEFAULT_MODULAR_JVM_OPTIONS=`echo $* | $GREP "\-\-add\-modules"`
     if [ "x$DEFAULT_MODULAR_JVM_OPTIONS" = "x" ]; then
       # Set default modular jdk options
-      # NB: In case an update is made to these exports and opens, make sure that bootable-jar/boot/pom.xml script is in sync.
+      # NB: In case an update is made to these exports and opens, make sure that bootable-jar/boot/pom.xml and cli/pom.xml script is in sync.
       # Needed by the iiop-openjdk subsystem
       DEFAULT_MODULAR_JVM_OPTIONS="$DEFAULT_MODULAR_JVM_OPTIONS --add-exports=java.desktop/sun.awt=ALL-UNNAMED"
       # Needed to instantiate the default InitialContextFactory implementation used by the

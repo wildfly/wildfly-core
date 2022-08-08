@@ -104,7 +104,7 @@ public class CustomCLIExecutor {
         }
 
 
-        final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+        final CliCommandBuilder commandBuilder = CliCommandBuilder.asModularLauncher(jbossDist)
                 .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)));
 
         final List<String> ipv6Args = new ArrayList<>();
@@ -205,7 +205,7 @@ public class CustomCLIExecutor {
                 Files.write(cliScript, commands, StandardCharsets.UTF_8);
 
                 // Build the CLI command
-                final CliCommandBuilder commandBuilder = CliCommandBuilder.of(jbossDist)
+                final CliCommandBuilder commandBuilder = CliCommandBuilder.asModularLauncher(jbossDist)
                         .setModuleDirs(modulePath.split(Pattern.quote(File.pathSeparator)))
                         .addCliArgument("--file=" + cliScript.toAbsolutePath());
 

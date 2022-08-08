@@ -218,7 +218,7 @@ public class BootableJarCommandBuilder implements CommandBuilder {
      * @return a new builder
      */
     public static BootableJarCommandBuilder of(final Path bootableJar) {
-        return new BootableJarCommandBuilder(Environment.validateBootableJar(bootableJar));
+        return new BootableJarCommandBuilder(Environment.validateJar(bootableJar));
     }
 
     /**
@@ -229,7 +229,7 @@ public class BootableJarCommandBuilder implements CommandBuilder {
      * @return a new builder
      */
     public static BootableJarCommandBuilder of(final String bootableJar) {
-        return new BootableJarCommandBuilder(Environment.validateBootableJar(bootableJar));
+        return new BootableJarCommandBuilder(Environment.validateJar(bootableJar));
     }
 
     /**
