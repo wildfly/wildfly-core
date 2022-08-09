@@ -24,7 +24,6 @@ package org.jboss.as.server.deployment;
 
 import java.util.List;
 
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -75,11 +74,6 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
     }
 
     @Override
-    public <T> void addDependency(final ServiceName serviceName, final Class<T> type, final Injector<T> injector) {
-        this.dependencies.add(new InjectorDeploymentPhaseDependency<>(serviceName, type, injector));
-    }
-
-    @Override
     public <T> void requires(final ServiceName serviceName, final DelegatingSupplier<T> supplier) {
         this.dependencies.add(new SupplierDeploymentPhaseDependency<>(serviceName, supplier));
     }
@@ -87,23 +81,6 @@ final class DeploymentPhaseContextImpl extends SimpleAttachable implements Deplo
     @Override
     public <T> void addDeploymentDependency(ServiceName serviceName, AttachmentKey<T> attachmentKey) {
         addToAttachmentList(Attachments.NEXT_PHASE_ATTACHABLE_DEPS, new AttachableDependency(attachmentKey, serviceName, true));
-    }
-
-    private static final class InjectorDeploymentPhaseDependency<T> implements DeploymentUnitPhaseDependency {
-        private final ServiceName name;
-        private final Class<T> type;
-        private final Injector<T> injector;
-
-        private InjectorDeploymentPhaseDependency(ServiceName name, Class<T> type, Injector<T> injector) {
-            this.name = name;
-            this.type = type;
-            this.injector = injector;
-        }
-
-        @Override
-        public void register(ServiceBuilder<?> builder) {
-            builder.addDependency(this.name, this.type, this.injector);
-        }
     }
 
     private static final class SupplierDeploymentPhaseDependency<T> implements DeploymentUnitPhaseDependency {
