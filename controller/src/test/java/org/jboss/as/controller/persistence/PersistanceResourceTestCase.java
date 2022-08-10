@@ -1,23 +1,23 @@
 /*
-* JBoss, Home of Professional Open Source.
-* Copyright 2011, Red Hat Middleware LLC, and individual contributors
-* as indicated by the @author tags. See the copyright.txt file in the
-* distribution for a full listing of individual contributors.
-*
-* This is free software; you can redistribute it and/or modify it
-* under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of
-* the License, or (at your option) any later version.
-*
-* This software is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-* Lesser General Public License for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License along with this software; if not, write to the Free
-* Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-* 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2011, Red Hat Middleware LLC, and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 package org.jboss.as.controller.persistence;
 
@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclEntryFlag;
 import java.nio.file.attribute.AclEntryPermission;
@@ -60,7 +61,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class PersistanceResourceTestCase {
@@ -368,6 +368,17 @@ public class PersistanceResourceTestCase {
         } catch (IllegalStateException ise) {
             Assert.fail("Should not have rejected relative path");
         }
+    }
+
+    @Test
+    public void testSymbolicLinkForConfigurationFiles() throws Exception {
+        Path file = Paths.get(createFile(externalDir, "standard.xml", "test").toString());
+        Path symbolicLink = standardDir.toPath().resolve("standard.xml");
+        if (Files.exists(symbolicLink)) {
+            Files.delete(symbolicLink);
+        }
+        Files.createSymbolicLink(symbolicLink.toAbsolutePath(), file.toAbsolutePath());
+            ConfigurationFile configurationFile = new ConfigurationFile(standardDir, "standard.xml", "standard.xml", true);
     }
 
     @Test
@@ -694,8 +705,8 @@ public class PersistanceResourceTestCase {
         List<AclEntry> readWritePermissions = new ArrayList<>(aclEntries.size());
         final UserPrincipal owner = aclStandardFileView.getOwner();
         //Setting execute permissions on the file
-        for(AclEntry entry : aclEntries) {
-            if(entry.principal().equals(owner)) {
+        for (AclEntry entry : aclEntries) {
+            if (entry.principal().equals(owner)) {
                 readWritePermissions.add(createConfigurationAccessACLEntry(entry.principal()));
             } else {
                 readWritePermissions.add(entry);
@@ -958,7 +969,7 @@ public class PersistanceResourceTestCase {
     private void assertFileContents(File file, String expectedContents) throws Exception {
         Assert.assertTrue(file + " does not exist", file.exists());
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader in = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)){
+        try (BufferedReader in = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
             String s = in.readLine();
             while (s != null) {
                 sb.append(s);
