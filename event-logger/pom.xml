@@ -38,9 +38,11 @@
         <!-- Used as this includes the API and the implementation in the same JAR. The JSON API is only used here to
              serialize log messages.
         -->
+        <!-- JSONP API and IMPL -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
+            <version>${legacy.version.org.glassfish.jakarta.json}</version>
         </dependency>
 
         <!-- Test dependencies -->

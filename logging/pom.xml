@@ -203,9 +203,11 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- JSONP API and IMPL -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
+            <version>${legacy.version.org.glassfish.jakarta.json}</version>
             <scope>test</scope>
         </dependency>
 

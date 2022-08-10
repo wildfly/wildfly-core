@@ -139,14 +139,11 @@
             <version>${legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec}</version>
         </dependency>
 
-        <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
-        </dependency>
-
+        <!-- JSONP API and IMPL -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
+            <version>${legacy.version.org.glassfish.jakarta.json}</version>
         </dependency>
         
         <dependency>

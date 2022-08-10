@@ -221,8 +221,8 @@
         <version.org.bouncycastle>1.71</version.org.bouncycastle>
         <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
+        <version.org.eclipse.parsson>1.1.0</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
-        <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.19</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.5.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.7.0.Final</version.org.jboss.invocation>
@@ -1032,12 +1032,7 @@
                 <artifactId>jansi</artifactId>
                 <version>${version.org.fusesource.jansi}</version>
             </dependency>
-            <!-- JSR-353 JSONP RI implementation -->
-            <dependency>
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <version>${version.org.glassfish.jakarta.json}</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.jboss</groupId>
                 <artifactId>jandex</artifactId>
@@ -1296,6 +1291,18 @@
                     <exclusion>
                         <groupId>com.jcraft</groupId>
                         <artifactId>jzlib</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- JSON Processing RI -->
+            <dependency>
+                <groupId>org.eclipse.parsson</groupId>
+                <artifactId>parsson</artifactId>
+                <version>${version.org.eclipse.parsson}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
