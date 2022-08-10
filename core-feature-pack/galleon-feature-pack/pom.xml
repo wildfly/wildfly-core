@@ -41,7 +41,7 @@
     <properties>
         <license.directory>${project.build.directory}/resources/content/docs/licenses</license.directory>
         <common.resources.directory>${basedir}/../common/src/main/resources</common.resources.directory>
-        <ee-8-api.resources.directory>${basedir}/../ee-8-api/src/main/resources</ee-8-api.resources.directory>
+        <ee-10-api.resources.directory>${basedir}/../ee-10-api/src/main/resources</ee-10-api.resources.directory>
         <galleon-common.resources.directory>${basedir}/../galleon-common/src/main/resources</galleon-common.resources.directory>
     </properties>
 
@@ -67,19 +67,12 @@
             <artifactId>wildfly-core-feature-pack-common</artifactId>
             <type>pom</type>
             <scope>provided</scope>
-            <!-- Exclude the ee-8-api dependencies
-            <exclusions>
-                <exclusion>
-                    <groupId>jakarta.json</groupId>
-                    <artifactId>jakarta.json-api</artifactId>
-                </exclusion>
-            </exclusions> -->
         </dependency>
 
-        <!-- Bring in all the EE 8 API deps in one go -->
+        <!-- Bring in all the EE 10 API deps in one go -->
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
+            <artifactId>wildfly-core-feature-pack-ee-10-api</artifactId>
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
@@ -142,7 +135,7 @@
                             <outputDirectory>${basedir}/target/resources</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${ee-8-api.resources.directory}</directory>
+                                    <directory>${ee-10-api.resources.directory}</directory>
                                 </resource>
                             </resources>
                         </configuration>
@@ -194,11 +187,11 @@
                             <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
                             <licensesConfigFiles>
                                 <licensesConfigFile>${basedir}/target/resources/license/core-feature-pack-common-licenses.xml</licensesConfigFile>
-                                <licensesConfigFile>${basedir}/target/resources/license/core-feature-pack-ee-8-api-licenses.xml</licensesConfigFile>
+                                <licensesConfigFile>${basedir}/target/resources/license/core-feature-pack-ee-10-api-licenses.xml</licensesConfigFile>
                             </licensesConfigFiles>
                             <licensesOutputFile>${license.directory}/core-feature-pack-licenses.xml</licensesOutputFile>
                             <excludedGroups>org.wildfly.galleon-plugins</excludedGroups>
-                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-core-feature-pack-common|wildfly-core-feature-pack-ee-8-api|wildfly-elytron\z</excludedArtifacts>
+                            <excludedArtifacts>wildfly-core-model-test-framework|wildfly-jar-boot|wildfly-core-feature-pack-common|wildfly-core-feature-pack-ee-10-api|wildfly-elytron\z</excludedArtifacts>
                             <excludedScopes>system</excludedScopes>
                         </configuration>
                     </execution>
@@ -255,7 +248,7 @@
                                                 <!-- Ignore the shared resource poms as those we want their
                                                      transitives. Those poms ban transitives at their level -->
                                                 <exclude>${project.groupId}:wildfly-core-feature-pack-common</exclude>
-                                                <exclude>${project.groupId}:wildfly-core-feature-pack-ee-8-api</exclude>
+                                                <exclude>${project.groupId}:wildfly-core-feature-pack-ee-10-api</exclude>
                                             </excludes>
                                         </banTransitiveDependencies>
                                     </rules>
