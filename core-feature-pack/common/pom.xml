@@ -128,7 +128,7 @@
 
         <dependency>
             <groupId>org.jboss.invocation</groupId>
-            <artifactId>jboss-invocation</artifactId>
+            <artifactId>jboss-invocation-jakarta</artifactId>
         </dependency>
 
         <dependency>
