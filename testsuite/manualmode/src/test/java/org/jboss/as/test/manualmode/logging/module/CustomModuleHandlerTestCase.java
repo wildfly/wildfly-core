@@ -22,7 +22,7 @@ package org.jboss.as.test.manualmode.logging.module;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.controller.client.helpers.Operations.CompositeOperationBuilder;
