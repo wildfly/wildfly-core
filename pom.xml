@@ -188,6 +188,8 @@
         <legacy.version.org.glassfish.jakarta.json>1.1.6</legacy.version.org.glassfish.jakarta.json>
         <legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>2.0.1.Final</legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>
         <legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>2.0.0.Final</legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
+        <legacy.version.org.wildfly.security.elytron>1.20.1.Final</legacy.version.org.wildfly.security.elytron>
+        <legacy.version.org.wildfly.security.elytron-web>1.10.1.Final</legacy.version.org.wildfly.security.elytron-web>
 
         <version.com.googlecode.javaewah>1.1.13</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
@@ -263,8 +265,9 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>1.20.1.Final</version.org.wildfly.security.elytron>
-        <version.org.wildfly.security.elytron-web>1.10.1.Final</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.elytron>2.0.0.Beta3</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron-web>3.0.0.Beta1</version.org.wildfly.security.elytron-web>
+        <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Beta2</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.yaml.snakeyaml>1.29</version.org.yaml.snakeyaml>
     </properties>
 
@@ -2159,6 +2162,31 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.security.jakarta</groupId>
+                <artifactId>jakarta-authentication</artifactId>
+                <version>${version.org.wildfly.security.jakarta.elytron-ee}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.security.jakarta</groupId>
+                <artifactId>jakarta-authorization</artifactId>
+                <version>${version.org.wildfly.security.jakarta.elytron-ee}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
