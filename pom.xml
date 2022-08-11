@@ -198,7 +198,7 @@
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.io.undertow>2.2.19.Final</version.io.undertow>
+        <version.io.undertow>2.3.0.Alpha2</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.0</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
         <version.jakarta.authentication.jakarta-authentication-api>3.0.0</version.jakarta.authentication.jakarta-authentication-api>
