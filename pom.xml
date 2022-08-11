@@ -163,8 +163,8 @@
              and WildFly Preview will change it to additional text a project uses to
              identify its jakarta.* namespace artifacts.
              -->
-        <module.jakarta.classifier></module.jakarta.classifier>
-        <module.jakarta.suffix></module.jakarta.suffix>
+        <module.jakarta.classifier>::jakarta</module.jakarta.classifier>
+        <module.jakarta.suffix>-jakarta</module.jakarta.suffix>
 
         <!-- JPMS settings for use in MANIFEST.MF files of jars that can 'embed' a Wildfly server,
              e.g. a bootable jar or a jboss-cli-client.jar.
