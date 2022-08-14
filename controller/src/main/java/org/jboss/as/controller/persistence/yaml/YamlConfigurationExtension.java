@@ -263,6 +263,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                 } else {
                                     if (value != null) {
                                         MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                    } else {// ADD operation without parameters
+                                        processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps);
                                     }
                                 }
                             }
@@ -306,6 +308,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                             op.get(NAME).set(attributeName);
                             ModelNode list = op.get(VALUE).setEmptyList();
                             processListAttribute((ListAttributeDefinition) att, list, value);
+                            MGMT_OP_LOGGER.debugf("Updating attribute %s for resource %s with operation %s", attributeName, address, op);
+                            postExtensionOps.add(new ParsedBootOp(op, operationEntry.getOperationHandler()));
                         }
                     }
                     break;
