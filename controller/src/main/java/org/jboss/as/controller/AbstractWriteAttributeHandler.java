@@ -105,7 +105,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                     final HandbackHolder<T> handback = new HandbackHolder<T>();
                     final boolean reloadRequired = applyUpdateToRuntime(context, operation, attributeName, resolvedValue, currentValue, handback);
                     if (reloadRequired) {
-                        if (attributeDefinition != null && attributeDefinition.getImmutableFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
+                        if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)){
                             context.restartRequired();
                         }else{
                             context.reloadRequired();
@@ -127,7 +127,7 @@ public abstract class AbstractWriteAttributeHandler<T> implements OperationStepH
                                         context.getCurrentAddress());
                             }
                             if (reloadRequired) {
-                                if (attributeDefinition != null && attributeDefinition.getImmutableFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
+                                if (attributeDefinition != null && attributeDefinition.getFlags().contains(AttributeAccess.Flag.RESTART_JVM)) {
                                     context.revertRestartRequired();
                                 } else {
                                     context.revertReloadRequired();
