@@ -55,13 +55,11 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Tests of running domain hosts in admin-only move.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
 public class AdminOnlyPolicyTestCase {
 
     private static DomainTestSupport testSupport;
@@ -70,7 +68,7 @@ public class AdminOnlyPolicyTestCase {
     private static final long initTime = System.currentTimeMillis();
     private static int slaveCount;
 
-    private static int exitCodeTimeout = TimeoutUtil.adjust(5);
+    private static int exitCodeTimeout = TimeoutUtil.adjust(30);
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -124,12 +122,6 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
-
-//        ModelNode remove = Util.createRemoveOperation(pa);
-//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
-//
-//        // This should have pulled down the 'other' profile
-//        validateProfiles("default");
     }
 
     @Test
@@ -144,12 +136,6 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
-
-//        ModelNode remove = Util.createRemoveOperation(pa);
-//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
-//
-//        // This should have pulled down the 'other' profile
-//        validateProfiles("default");
     }
 
     @Test
