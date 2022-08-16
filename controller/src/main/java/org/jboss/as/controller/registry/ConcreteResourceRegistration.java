@@ -417,7 +417,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (!isAttributeRegistrationAllowed(definition)) {
             return;
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
         storeAttribute(definition, aa);
     }
@@ -429,7 +429,7 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
         if (!isAttributeRegistrationAllowed(definition)) {
             return;
         }
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? Storage.RUNTIME : Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AccessType.READ_ONLY, storage, readHandler, null, definition);
         storeAttribute(definition, aa);
     }
@@ -503,11 +503,11 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
      * {@link AttributeAccess.Flag#RUNTIME_SERVICE_NOT_REQUIRED}, they are registered regardless of the process type.
      */
     private boolean isAttributeRegistrationAllowed(AttributeDefinition definition) {
-        boolean runtime = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
+        boolean runtime = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME);
         if (!runtime) {
             return true;
         }
-        boolean runtimeServiceNotRequired = definition.getFlags().contains(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
+        boolean runtimeServiceNotRequired = definition.getImmutableFlags().contains(AttributeAccess.Flag.RUNTIME_SERVICE_NOT_REQUIRED);
         if (runtimeServiceNotRequired) {
             return true;
         }

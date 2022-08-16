@@ -412,12 +412,27 @@ public abstract class AttributeDefinition {
     }
 
     /**
-     * Returns an immutable set of any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used
+     * Gets a set of any {@link org.jboss.as.controller.registry.AttributeAccess.Flag flags} used
      * to indicate special characteristics of the attribute
      *
      * @return the flags. Will not be {@code null} but may be empty.
+     *
+     * @deprecated In the next release, the return type of this method will become simply {@code Set} and the returned object will be immutable, so any callers should update their code to reflect that
      */
-    public Set<AttributeAccess.Flag> getFlags() {
+    @Deprecated
+    public EnumSet<AttributeAccess.Flag> getFlags() {
+        if (flags.isEmpty()) {
+            return EnumSet.noneOf(AttributeAccess.Flag.class);
+        }
+        AttributeAccess.Flag[] array = flags.toArray(new AttributeAccess.Flag[flags.size()]);
+        return array.length == 1 ? EnumSet.of(array[0]) : EnumSet.of(array[0], array);
+    }
+
+    /**
+     * Provides an immutable variant of the set returned by {@link #getFlags()}.
+     * @deprecated for internal use only; will be dropped when the semantic of {@link #getFlags()} is changed to return an immutable {@code Set}*/
+    @Deprecated
+    public Set<AttributeAccess.Flag> getImmutableFlags() {
         return flags;
     }
 

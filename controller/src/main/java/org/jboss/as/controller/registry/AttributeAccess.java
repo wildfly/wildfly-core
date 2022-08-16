@@ -206,7 +206,7 @@ public final class AttributeAccess {
         this.writeHandler = writeHandler;
         this.storage = storage;
         this.definition = definition;
-        if (definition.getFlags().contains(Flag.ALIAS)) {
+        if (definition.getImmutableFlags().contains(Flag.ALIAS)) {
             Assert.checkNotNullParam("readHandler", readHandler);
         }
         if (access == AccessType.READ_WRITE) {
@@ -259,7 +259,7 @@ public final class AttributeAccess {
      * @return the flags. Will not return {@code null}
      */
     public Set<Flag> getFlags() {
-        return definition.getFlags();
+        return definition.getImmutableFlags();
     }
 
 }

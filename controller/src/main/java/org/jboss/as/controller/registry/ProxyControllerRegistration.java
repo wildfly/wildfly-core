@@ -185,7 +185,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     @Override
     public void registerReadWriteAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler, final OperationStepHandler writeHandler) {
         final String attributeName = definition.getName();
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_WRITE, storage, readHandler, writeHandler, definition);
         if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
             throw alreadyRegistered("attribute", attributeName);
@@ -195,7 +195,7 @@ final class ProxyControllerRegistration extends AbstractResourceRegistration imp
     @Override
     public void registerReadOnlyAttribute(final AttributeDefinition definition, final OperationStepHandler readHandler) {
         final String attributeName = definition.getName();
-        AttributeAccess.Storage storage = definition.getFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
+        AttributeAccess.Storage storage = definition.getImmutableFlags().contains(AttributeAccess.Flag.STORAGE_RUNTIME) ? AttributeAccess.Storage.RUNTIME : AttributeAccess.Storage.CONFIGURATION;
         AttributeAccess aa = new AttributeAccess(AttributeAccess.AccessType.READ_ONLY, storage, readHandler, null, definition);
         if (attributesUpdater.putIfAbsent(this, attributeName, aa) != null) {
             throw alreadyRegistered("attribute", attributeName);
