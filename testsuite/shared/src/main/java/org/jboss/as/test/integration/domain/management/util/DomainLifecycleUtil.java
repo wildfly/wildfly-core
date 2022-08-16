@@ -323,6 +323,30 @@ public class DomainLifecycleUtil implements AutoCloseable {
     }
 
     /**
+     * Poll until {@link #getProcessExitCode()} returns 0 or a positive value or the
+     * timeout passes as argument is reached.
+     *
+     * @param timeOutInSeconds timeout in seconds to wait for getting exit value.
+     *
+     * @throws TimeoutException if the timeout is up.
+     * @throws InterruptedException if interrupted while sleeping.
+     */
+    public int awaitForProcessExitCode(int timeOutInSeconds) throws TimeoutException, InterruptedException {
+        long deadline = System.currentTimeMillis() +  timeOutInSeconds * 1000;
+        int exitValue = getProcessExitCode();
+        while (exitValue < 0) {
+            long remaining = deadline - System.currentTimeMillis();
+            if(remaining <= 0) {
+               throw new TimeoutException(String.format("Could not get the process exit code within [%d] seconds", timeOutInSeconds));
+            }
+            TimeUnit.MILLISECONDS.sleep(250);
+            exitValue = getProcessExitCode();
+        }
+
+        return exitValue;
+    }
+
+    /**
      * Stop and wait for the process to exit.
      */
     public synchronized void stop() {

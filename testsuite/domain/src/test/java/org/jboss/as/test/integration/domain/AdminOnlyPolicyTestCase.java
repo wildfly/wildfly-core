@@ -37,6 +37,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -47,6 +48,7 @@ import org.jboss.as.host.controller.model.host.AdminOnlyDomainConfigPolicy;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.After;
@@ -67,6 +69,8 @@ public class AdminOnlyPolicyTestCase {
 
     private static final long initTime = System.currentTimeMillis();
     private static int slaveCount;
+
+    private static int exitCodeTimeout = TimeoutUtil.adjust(5);
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -149,12 +153,12 @@ public class AdminOnlyPolicyTestCase {
     }
 
     @Test
-    public void testFetchFromMasterWithoutDiscovery() throws URISyntaxException {
+    public void testFetchFromMasterWithoutDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
             createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_MASTER, false, false);
             Assert.fail("secondSlaveLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.getProcessExitCode() >= 0);
+            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
@@ -165,22 +169,22 @@ public class AdminOnlyPolicyTestCase {
     }
 
     @Test
-    public void testRequireLocalConfigWithDiscovery() throws URISyntaxException {
+    public void testRequireLocalConfigWithDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
             createSecondSlave(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, true, false);
             Assert.fail("secondSlaveLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.getProcessExitCode() >= 0);
+            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
     @Test
-    public void testRequireLocalConfigWithoutDiscovery() throws URISyntaxException {
+    public void testRequireLocalConfigWithoutDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
             createSecondSlave(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, false, false);
             Assert.fail("secondSlaveLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.getProcessExitCode() >= 0);
+            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
