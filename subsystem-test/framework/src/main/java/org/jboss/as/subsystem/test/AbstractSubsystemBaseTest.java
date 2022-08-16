@@ -36,6 +36,7 @@ import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 
 /**
@@ -87,6 +88,7 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * In that case, you will have to make sure that the corresponding expressions have resolved properties
      * returned by #getResolvedProperties.
      */
+    @Deprecated
     protected String[] getSubsystemTemplatePaths() throws IOException {
         return new String[0];
     }
@@ -163,18 +165,9 @@ public abstract class AbstractSubsystemBaseTest extends AbstractSubsystemTest {
      * To enable a test for validation of the subsystem templates, override both {@link #getSubsystemXsdPath()} and {@link #getSubsystemTemplatePaths()}
      * then add a new test just calling this method.
      */
+    @Deprecated
     protected void testSchemaOfSubsystemTemplates() throws Exception {
-        String schemaPath = getSubsystemXsdPath();
-        Assert.assertTrue("getSubsystemXsdPath() needs to be overridden to enable the validation of the subsystem templates",
-                schemaPath != null);
-        String[] templates = getSubsystemTemplatePaths();
-        Assert.assertTrue("Override getSubsystemTemplatePaths() to activate the validation of the subsystem templates",
-                templates != null && templates.length > 0);
-
-        for (String template : templates) {
-            String content = readResource(template);
-            SchemaValidator.validateXML(content, "subsystem", schemaPath, getResolvedProperties());
-        }
+        throw new AssumptionViolatedException("testSchemaOfSubsystemTemplates is deprecated");
     }
 
     /**
