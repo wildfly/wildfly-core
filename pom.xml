@@ -153,7 +153,7 @@
         <version.commons-io>2.5</version.commons-io>
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-lang3>3.11</version.commons-lang3>
-        <version.io.undertow>2.2.17.Final</version.io.undertow>
+        <version.io.undertow>2.2.19.Final</version.io.undertow>
         <version.jakarta.inject.jakarta.inject-api>1.0.5</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
