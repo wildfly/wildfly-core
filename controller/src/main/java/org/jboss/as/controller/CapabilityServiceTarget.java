@@ -19,7 +19,6 @@
 package org.jboss.as.controller;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -32,18 +31,6 @@ import org.jboss.msc.service.ServiceTarget;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public interface CapabilityServiceTarget extends ServiceTarget {
-
-    /**
-     * Gets a builder which can be used to add a capability service into this capability target.
-     *
-     * @param capability the capability to be installed
-     * @param service the service implementing this capability
-     * @return new capability builder instance
-     * @throws IllegalArgumentException if capability does not provide a service
-     * @deprecated use {@link #addCapability(RuntimeCapability)} method instead
-     */
-    @Deprecated
-    <T> CapabilityServiceBuilder<T> addCapability(final RuntimeCapability<?> capability, final Service<T> service) throws IllegalArgumentException;
 
     /**
      * Gets a builder which can be used to add a capability service into this capability target.
