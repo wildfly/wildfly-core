@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.Operations;

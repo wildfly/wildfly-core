@@ -34,7 +34,7 @@ import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;

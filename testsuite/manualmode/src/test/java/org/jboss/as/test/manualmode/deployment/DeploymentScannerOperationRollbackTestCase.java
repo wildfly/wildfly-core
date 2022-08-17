@@ -29,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.File;
 import java.io.IOException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 
 import org.jboss.as.controller.client.ModelControllerClient;

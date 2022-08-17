@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PropertyPermission;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.Operation;

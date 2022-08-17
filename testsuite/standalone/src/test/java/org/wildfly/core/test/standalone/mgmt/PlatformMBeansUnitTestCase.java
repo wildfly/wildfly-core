@@ -36,7 +36,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYP
 
 import java.util.HashSet;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.junit.Assert;

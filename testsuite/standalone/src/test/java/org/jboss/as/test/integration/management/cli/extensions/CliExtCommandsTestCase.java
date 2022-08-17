@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.aesh.command.Command;
 
 import org.hamcrest.MatcherAssert;

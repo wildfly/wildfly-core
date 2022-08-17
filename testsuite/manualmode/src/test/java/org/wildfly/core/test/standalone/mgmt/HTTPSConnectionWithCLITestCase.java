@@ -36,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.File;
 import java.net.InetAddress;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.cli.CommandContext;

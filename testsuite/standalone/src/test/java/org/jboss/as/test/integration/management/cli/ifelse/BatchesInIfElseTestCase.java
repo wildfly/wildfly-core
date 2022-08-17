@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.management.cli.ifelse;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

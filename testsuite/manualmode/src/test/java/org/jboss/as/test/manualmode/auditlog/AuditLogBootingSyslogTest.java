@@ -21,7 +21,7 @@ import static org.jboss.as.test.manualmode.auditlog.AbstractLogFieldsOfLogTestCa
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;

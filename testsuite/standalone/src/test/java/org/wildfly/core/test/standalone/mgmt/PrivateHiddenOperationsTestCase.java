@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.operations.common.Util;

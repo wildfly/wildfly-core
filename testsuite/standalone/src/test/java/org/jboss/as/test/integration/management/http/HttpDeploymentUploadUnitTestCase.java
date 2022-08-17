@@ -35,7 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;

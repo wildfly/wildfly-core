@@ -841,11 +841,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>jakarta.inject</groupId>
-                <artifactId>jakarta.inject-api</artifactId>
-                <version>${version.jakarta.inject.jakarta.inject-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.json</groupId>
                 <artifactId>jakarta.json-api</artifactId>
                 <version>${version.jakarta.json.jakarta-json-api}</version>

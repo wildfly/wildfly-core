@@ -31,7 +31,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.impl.CommandContextImpl;

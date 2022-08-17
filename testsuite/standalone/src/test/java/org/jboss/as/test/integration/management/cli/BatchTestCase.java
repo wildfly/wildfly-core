@@ -23,7 +23,7 @@ package org.jboss.as.test.integration.management.cli;
 
 import java.io.ByteArrayOutputStream;
 import java.util.function.Supplier;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.cli.Util;
 import org.jboss.as.cli.impl.CommandContextImpl;

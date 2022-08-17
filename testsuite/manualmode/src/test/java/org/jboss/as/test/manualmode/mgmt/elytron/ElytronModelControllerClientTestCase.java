@@ -30,7 +30,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.client.helpers.Operations;
 import org.jboss.as.test.integration.management.util.CustomCLIExecutor;

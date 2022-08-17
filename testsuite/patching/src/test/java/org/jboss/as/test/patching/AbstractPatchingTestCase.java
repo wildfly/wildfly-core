@@ -10,7 +10,7 @@ import static org.jboss.as.test.patching.PatchingTestUtil.randomString;
 import java.io.File;
 import java.io.IOException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.patching.IoUtils;
 import org.junit.After;

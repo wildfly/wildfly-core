@@ -22,7 +22,7 @@
 package org.jboss.as.test.manualmode.management.cli;
 
 import java.util.Map;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.cli.CommandContext;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;

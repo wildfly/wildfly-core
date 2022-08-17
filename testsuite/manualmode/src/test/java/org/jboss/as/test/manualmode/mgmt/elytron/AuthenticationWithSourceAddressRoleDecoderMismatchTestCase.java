@@ -25,7 +25,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.as.test.integration.management.util.CLIWrapper;

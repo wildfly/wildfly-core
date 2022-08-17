@@ -26,7 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.cli.scriptsupport.CLI;
 import org.jboss.as.cli.scriptsupport.CLI.Result;
 import org.jboss.as.test.shared.TestSuiteEnvironment;

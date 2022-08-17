@@ -40,7 +40,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 
 import java.io.IOException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;

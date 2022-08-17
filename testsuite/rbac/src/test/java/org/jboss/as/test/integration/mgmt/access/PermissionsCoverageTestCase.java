@@ -24,7 +24,7 @@ package org.jboss.as.test.integration.mgmt.access;
 
 import static org.jboss.as.test.integration.management.rbac.PermissionsCoverageTestUtil.assertTheEntireDomainTreeHasPermissionsDefined;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;

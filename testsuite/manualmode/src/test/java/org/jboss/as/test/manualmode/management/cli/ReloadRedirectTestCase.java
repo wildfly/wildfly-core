@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.net.UnknownHostException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;

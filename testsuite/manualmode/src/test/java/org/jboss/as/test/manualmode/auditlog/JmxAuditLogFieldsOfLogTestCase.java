@@ -6,7 +6,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.nio.file.Files;
 import java.util.List;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;

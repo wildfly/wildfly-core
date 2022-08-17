@@ -31,7 +31,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAN
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ROLE_MAPPING;
 
 import java.io.IOException;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;

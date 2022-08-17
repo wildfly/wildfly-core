@@ -22,7 +22,7 @@ import static org.hamcrest.CoreMatchers.is;
 import java.io.IOException;
 import java.net.ConnectException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;

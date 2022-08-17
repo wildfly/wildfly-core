@@ -24,7 +24,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.URL;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
