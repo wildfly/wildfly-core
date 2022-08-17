@@ -22,7 +22,6 @@
 
 package org.jboss.as.server.deployment;
 
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
@@ -88,19 +87,6 @@ public interface DeploymentPhaseContext extends Attachable {
      * @throws IllegalStateException If this is the last phase
      */
     <T> void addDependency(ServiceName serviceName, AttachmentKey<T> attachmentKey);
-
-    /**
-     * Adds a dependency on the service to the next phase service.
-     *
-     * @param <T> the type of the injected value
-     * @param serviceName the service name to add to {@link Attachments#NEXT_PHASE_DEPS}
-     * @param type the type to inject
-     * @param injector the injector into which the dependency value is injected
-     * @throws IllegalStateException If this is the last phase
-     * @deprecated use {@link #requires(ServiceName, DelegatingSupplier)} method instead
-     */
-    @Deprecated
-    <T> void addDependency(ServiceName serviceName, Class<T> type, Injector<T> injector);
 
     /**
      * Adds a dependency on the service to the next phase service.
