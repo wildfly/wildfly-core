@@ -55,13 +55,13 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Tests of running domain hosts in admin-only move.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
+@Ignore("https://issues.redhat.com/browse/WFCORE-6032")
 public class AdminOnlyPolicyTestCase {
 
     private static DomainTestSupport testSupport;
@@ -124,12 +124,6 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
-
-//        ModelNode remove = Util.createRemoveOperation(pa);
-//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
-//
-//        // This should have pulled down the 'other' profile
-//        validateProfiles("default");
     }
 
     @Test
@@ -144,12 +138,6 @@ public class AdminOnlyPolicyTestCase {
         executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
-
-//        ModelNode remove = Util.createRemoveOperation(pa);
-//        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), remove);
-//
-//        // This should have pulled down the 'other' profile
-//        validateProfiles("default");
     }
 
     @Test
