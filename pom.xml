@@ -185,7 +185,6 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
-        <legacy.version.org.glassfish.jakarta.json>1.1.6</legacy.version.org.glassfish.jakarta.json>
         <legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>2.0.1.Final</legacy.version.org.jboss.spec.javax.security.auth.message.jboss-jaspi-api_1.1_spec>
         <legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>2.0.0.Final</legacy.version.org.jboss.spec.javax.security.jacc.jboss-jacc-api_1.5_spec>
         <legacy.version.org.wildfly.security.elytron>1.20.1.Final</legacy.version.org.wildfly.security.elytron>
@@ -225,6 +224,7 @@
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.0</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
+        <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.byteman>4.0.19</version.org.jboss.byteman>
         <version.org.jboss.classfilewriter>1.2.5.Final</version.org.jboss.classfilewriter>
         <version.org.jboss.invocation>1.7.0.Final</version.org.jboss.invocation>
@@ -1034,6 +1034,12 @@
                 <groupId>org.fusesource.jansi</groupId>
                 <artifactId>jansi</artifactId>
                 <version>${version.org.fusesource.jansi}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.json</artifactId>
+                <version>${version.org.glassfish.jakarta.json}</version>
             </dependency>
 
             <dependency>

@@ -44,14 +44,13 @@
             <artifactId>commons-cli</artifactId>
         </dependency>
 
-        <!-- Legacy dependency for JSonP API and Impl. We still need it for
-             internal.javax.json.api.ee8 used by org.wildfly.event.logger and
-             org.jboss.logmanager JBoss Modules
+        <!-- Dependency for JSonP API and Impl for Jakarta EE 8. We still need this artifact for
+             internal.javax.json.api.ee8 Jboss module used by org.wildfly.event.logger and
+             org.jboss.logmanager JBoss modules
         -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
-            <version>${legacy.version.org.glassfish.jakarta.json}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

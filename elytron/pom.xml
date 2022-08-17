@@ -589,7 +589,6 @@
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
-            <version>${legacy.version.org.glassfish.jakarta.json}</version>
         </dependency>
         
         <dependency>
