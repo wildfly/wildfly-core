@@ -245,6 +245,8 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
                                 } else {
                                     if (value != null) {
                                         MGMT_OP_LOGGER.unexpectedValueForResource(value, address.toCLIStyleString(), name);
+                                    } else {// ADD operation without parameters
+                                        processAttributes(address, rootRegistration, operationEntry, null, postExtensionOps);
                                     }
                                 }
                             }
@@ -326,21 +328,23 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         }
         attributes.addAll(Arrays.asList(operationEntry.getOperationDefinition().getParameters()));
         ModelNode op = createOperation(address, operationEntry);
-        for (AttributeDefinition att : attributes) {
-            if (map.containsKey(att.getName())) {
-                Object value = map.get(att.getName());
-                map.remove(att.getName());
-                switch (att.getType()) {
-                    case OBJECT:
-                        op.get(att.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
-                        break;
-                    case LIST:
-                        ModelNode list = op.get(att.getName()).setEmptyList();
-                        processListAttribute((ListAttributeDefinition) att, list, value);
-                        break;
-                    default:
-                        op.get(att.getName()).set(value.toString());
-                        break;
+        if (map != null) {
+            for (AttributeDefinition att : attributes) {
+                if (map.containsKey(att.getName())) {
+                    Object value = map.get(att.getName());
+                    map.remove(att.getName());
+                    switch (att.getType()) {
+                        case OBJECT:
+                            op.get(att.getName()).set(processObjectAttribute((ObjectTypeAttributeDefinition) att, (Map<String, Object>) value));
+                            break;
+                        case LIST:
+                            ModelNode list = op.get(att.getName()).setEmptyList();
+                            processListAttribute((ListAttributeDefinition) att, list, value);
+                            break;
+                        default:
+                            op.get(att.getName()).set(value.toString());
+                            break;
+                    }
                 }
             }
         }
