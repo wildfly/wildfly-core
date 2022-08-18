@@ -36,64 +36,12 @@
     <packaging>pom</packaging>
 
     <properties>
-        <version.jakarta.authentication.jakarta-authentication-api>3.0.0</version.jakarta.authentication.jakarta-authentication-api>
-        <version.jakarta.authorization.jakarta-authorization-api>2.1.0</version.jakarta.authorization.jakarta-authorization-api>
         <version.org.wildfly.extras.batavia>1.0.12.Final</version.org.wildfly.extras.batavia>
-        <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Beta2</version.org.wildfly.security.jakarta.elytron-ee>
     </properties>
 
     <modules>
         <module>elytron-jakarta</module>
     </modules>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>jakarta.authentication</groupId>
-                <artifactId>jakarta.authentication-api</artifactId>
-                <version>${version.jakarta.authentication.jakarta-authentication-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.authorization</groupId>
-                <artifactId>jakarta.authorization-api</artifactId>
-                <version>${version.jakarta.authorization.jakarta-authorization-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security.jakarta</groupId>
-                <artifactId>jakarta-authentication</artifactId>
-                <version>${version.org.wildfly.security.jakarta.elytron-ee}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security.jakarta</groupId>
-                <artifactId>jakarta-authorization</artifactId>
-                <version>${version.org.wildfly.security.jakarta.elytron-ee}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <plugins>

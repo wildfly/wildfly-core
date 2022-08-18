@@ -27,7 +27,7 @@
     </properties>
 
     <resources>
-        <artifact name="${org.wildfly.security:wildfly-elytron-jacc}"/>
+        <artifact name="${org.wildfly.security.jakarta:jakarta-authorization}"/>
     </resources>
 
     <dependencies>

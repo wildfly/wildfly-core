@@ -44,6 +44,10 @@
             <artifactId>commons-cli</artifactId>
         </dependency>
 
+        <!-- Dependency for JSonP API and Impl for Jakarta EE 8. We still need this artifact for
+             internal.javax.json.api.ee8 Jboss module used by org.wildfly.event.logger and
+             org.jboss.logmanager JBoss modules
+        -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>jakarta.json</artifactId>
@@ -53,6 +57,16 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Jakarta EE 10+ JSonP API and Impl -->
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
         </dependency>
 
         <dependency>
@@ -113,7 +127,7 @@
 
         <dependency>
             <groupId>org.jboss.invocation</groupId>
-            <artifactId>jboss-invocation</artifactId>
+            <artifactId>jboss-invocation-jakarta</artifactId>
         </dependency>
 
         <dependency>
@@ -248,7 +262,7 @@
 
         <dependency>
             <groupId>org.wildfly.core</groupId>
-            <artifactId>wildfly-elytron-integration</artifactId>
+            <artifactId>wildfly-elytron-integration-jakarta</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -363,14 +377,6 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-http-util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-jacc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-jaspi</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
@@ -769,6 +775,16 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-tool</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security.jakarta</groupId>
+            <artifactId>jakarta-authentication</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.security.jakarta</groupId>
+            <artifactId>jakarta-authorization</artifactId>
         </dependency>
 
         <dependency>
