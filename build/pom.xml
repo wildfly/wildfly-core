@@ -30,7 +30,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>18.1.2.Final</version>
+        <version>18.1.3.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-core-build</artifactId>
