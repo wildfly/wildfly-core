@@ -31,7 +31,7 @@
     <parent>
        <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-security-parent</artifactId>
-        <version>18.1.2.Final-SNAPSHOT</version>
+        <version>18.1.2.Final</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
