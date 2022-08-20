@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>13.0.3-11-PSI-SNAPSHOT</version>
+        <version>13.0.3-11-PSI</version>
     </parent>
 
     <artifactId>wildfly-cli</artifactId>
