@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-subsystem-test-parent</artifactId>
-        <version>13.0.3-11-PSI</version>
+        <version>13.0.3-12-PSI-SNAPSHOT</version>
     </parent>
     <!--
       Just here for the tests module to include as an optional dependency to avoid picking up
