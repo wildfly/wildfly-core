@@ -40,6 +40,8 @@
     <name>WildFly: Core BOM of Test Dependencies</name>
 
     <properties>
+        <version.com.google.guava>31.1-jre</version.com.google.guava>
+        <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}.1</version.com.fasterxml.jackson.databind>
         <version.commons-io>2.10.0</version.commons-io>
@@ -53,6 +55,47 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <!-- This is a transitive dep of the model-test and subsystem-test frameworks
+                     where we want to fix the version to something more recent -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.com.google.guava}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>failureaccess</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>listenablefuture</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.j2objc</groupId>
+                        <artifactId>j2objc-annotations</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- This is a transitive dep of com.google.guava -->
+                <groupId>com.google.guava</groupId>
+                <artifactId>failureaccess</artifactId>
+                <version>${version.com.google.guava.failureaccess}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
