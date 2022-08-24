@@ -149,6 +149,10 @@
 
         <!-- used to enable trace logging for test suite runs -->
         <trace>none</trace>
+		
+        <!-- Version for a plugin dependency, which testbom dependencyManagement can't control.
+             See https://issues.apache.org/jira/browse/MNG-2496 -->
+        <version.org.apache.xalan>2.7.1.jbossorg-6</version.org.apache.xalan>
 
     </properties>
 
@@ -289,7 +293,7 @@
                         <dependency>
                             <groupId>xalan</groupId>
                             <artifactId>xalan</artifactId>
-                            <version>2.7.1</version>
+                            <version>${version.org.apache.xalan}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
