@@ -665,7 +665,7 @@ public class RespawnHttpTestCase {
 
         abstract String getJavaCommand();
 
-        abstract String getKillCommand(RunningProcess process);
+        abstract String[] getKillCommand(RunningProcess process);
 
         private boolean containsProcesses(List<RunningProcess> runningProcesses, String...names){
             for (String name : names){
@@ -725,8 +725,8 @@ public class RespawnHttpTestCase {
         }
 
         @Override
-        String getKillCommand(RunningProcess process) {
-            return "kill -9 " + process.getProcessId();
+        String[] getKillCommand(RunningProcess process) {
+            return new String[] {"bash", "-l", "-c", "kill -9 " + process.getProcessId()};
         }
     }
 
@@ -750,8 +750,8 @@ public class RespawnHttpTestCase {
         }
 
         @Override
-        String getKillCommand(RunningProcess process) {
-            return "taskkill /f /pid " + process.getProcessId();
+        String[] getKillCommand(RunningProcess process) {
+            return new String[] {"taskkill", "/f", "/pid", process.getProcessId()};
         }
     }
 
