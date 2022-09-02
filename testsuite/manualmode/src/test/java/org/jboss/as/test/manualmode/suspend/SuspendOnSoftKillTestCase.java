@@ -341,7 +341,7 @@ public class SuspendOnSoftKillTestCase {
 
         abstract String[] getJpsCommand();
 
-        abstract String getSoftKillCommand(RunningProcess process);
+        abstract String[] getSoftKillCommand(RunningProcess process);
     }
 
     private static class UnixProcessUtil extends ProcessUtil {
@@ -362,8 +362,8 @@ public class SuspendOnSoftKillTestCase {
         }
 
         @Override
-        String getSoftKillCommand(RunningProcess process) {
-            return "kill -15 " + process.getProcessId();
+        String[] getSoftKillCommand(RunningProcess process) {
+            return new String[] {"bash", "-l", "-c", "kill -15 " + process.getProcessId()};
         }
     }
 
@@ -382,8 +382,8 @@ public class SuspendOnSoftKillTestCase {
         }
 
         @Override
-        String getSoftKillCommand(RunningProcess process) {
-            return "taskkill /pid " + process.getProcessId();
+        String[] getSoftKillCommand(RunningProcess process) {
+            return new String[] {"taskkill", "/pid", process.getProcessId()};
         }
     }
 
