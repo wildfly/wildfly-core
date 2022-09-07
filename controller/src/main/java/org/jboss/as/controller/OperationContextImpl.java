@@ -2635,12 +2635,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
-        public <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target){
-            super.addDependency(dependency, type, target);
-            return this;
-        }
-
-        @Override
         public CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode) {
             super.setInitialMode(mode);
             return this;

@@ -84,14 +84,6 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     /**
      * {@inheritDoc}
      * @return this builder
-     * @deprecated Use {@link ServiceBuilder#requires(ServiceName)} instead. This method will be removed in a future release.
-     */
-    @Deprecated
-    <I> CapabilityServiceBuilder<T> addDependency(ServiceName dependency, Class<I> type, Injector<I> target);
-
-    /**
-     * {@inheritDoc}
-     * @return this builder
      */
     @Override
     CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode);
