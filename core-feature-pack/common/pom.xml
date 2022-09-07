@@ -80,11 +80,16 @@
         </dependency>
 
         <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.undertow</groupId>
             <artifactId>undertow-core</artifactId>
         </dependency>
 
-        <!-- TODO: why do we need jandex in minimal? -->
+        <!-- TODO: Remove once wildfly updates to io.smallrye:jandex -->
         <dependency>
             <groupId>org.jboss</groupId>
             <artifactId>jandex</artifactId>
