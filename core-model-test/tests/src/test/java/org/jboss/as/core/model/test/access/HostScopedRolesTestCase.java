@@ -101,8 +101,8 @@ public class HostScopedRolesTestCase extends AbstractCoreModelTest {
 
         assertEquals("Deployer", result.get(BASE_ROLE).asString());
         assertEquals(2, result.get(HOSTS).asList().size());
-        assertEquals("master", result.get(HOSTS).get(0).asString());
-        assertEquals("slave", result.get(HOSTS).get(1).asString());
+        assertEquals("primary", result.get(HOSTS).get(0).asString());
+        assertEquals("secondary", result.get(HOSTS).get(1).asString());
 
         operation = Util.createOperation(READ_RESOURCE_OPERATION, pathAddress(
                 pathElement(CORE_SERVICE, MANAGEMENT),

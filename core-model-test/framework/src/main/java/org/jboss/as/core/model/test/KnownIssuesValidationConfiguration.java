@@ -94,7 +94,7 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
         MEMORY_POOL_CHILDREN_ADDR.add(NAME, "*");
         config.allowNullValueTypeForOperationReplyProperties(MEMORY_POOL_CHILDREN_ADDR, READ_RESOURCE_OPERATION);
 
-        config.allowNullValueTypeForOperationParameter(new ModelNode().add(HOST, "master"), ValidateAddressOperationHandler.OPERATION_NAME, VALUE);
+        config.allowNullValueTypeForOperationParameter(new ModelNode().add(HOST, "primary"), ValidateAddressOperationHandler.OPERATION_NAME, VALUE);
 
         return config;
     }
@@ -138,7 +138,7 @@ public class KnownIssuesValidationConfiguration extends ValidationConfiguration 
     private static ModelNode createHostPlatformMBeanAddress(String type) {
         ModelNode addr = new ModelNode();
         //TODO see TODO (1) in CoreModelTestDelegate, which trims the model to be validated
-        //addr.add(HOST, "master");
+        //addr.add(HOST, "primary");
         addr.add(CORE_SERVICE, PLATFORM_MBEAN);
         addr.add(TYPE, type);
         return addr;

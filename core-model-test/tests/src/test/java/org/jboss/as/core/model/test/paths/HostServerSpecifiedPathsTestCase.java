@@ -38,7 +38,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class HostServerSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
 
-    private static final PathAddress PARENT = PathAddress.pathAddress(HOST, "master");
+    private static final PathAddress PARENT = PathAddress.pathAddress(HOST, "primary");
 
     public HostServerSpecifiedPathsTestCase() {
         super(TestModelType.HOST);

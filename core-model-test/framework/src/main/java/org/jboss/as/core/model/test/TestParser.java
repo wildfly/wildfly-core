@@ -73,7 +73,7 @@ public class TestParser implements ModelTestParser {
             testParser = new TestParser(type, domainXml, domainXml);
             root = "domain";
         } else if (type == TestModelType.HOST) {
-            HostXml hostXml = new HostXml("master", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
+            HostXml hostXml = new HostXml("primary", RunningMode.NORMAL, false, null, Executors.newCachedThreadPool(), registry);
             testParser = new TestParser(type, hostXml, hostXml);
             root = "host";
         } else {
@@ -128,7 +128,7 @@ public class TestParser implements ModelTestParser {
 
                 @Override
                 public ModelNode getModelNode() {
-                    return context.getModelNode().get(ModelDescriptionConstants.HOST, "master");
+                    return context.getModelNode().get(ModelDescriptionConstants.HOST, "primary");
                 }
             };
         }

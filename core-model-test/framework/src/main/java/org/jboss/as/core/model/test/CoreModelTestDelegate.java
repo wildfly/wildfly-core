@@ -199,7 +199,7 @@ public class CoreModelTestDelegate {
             //Big big hack to get around the fact that the tests install the host description twice
             //we're only interested in the host model anyway
             //See KnownIssuesValidator.createHostPlatformMBeanAddress
-            model = model.require(CHILDREN).require(HOST).require(MODEL_DESCRIPTION).require("master");
+            model = model.require(CHILDREN).require(HOST).require(MODEL_DESCRIPTION).require("primary");
         }
 
         //System.out.println(model);
@@ -614,7 +614,7 @@ public class CoreModelTestDelegate {
             //formatted strings. Simply remove it.
             //Also do the same for the following system property in the runtime platform mbean system properties:
             //"org.jboss.model.test.maven.repository.urls" => "${org.jboss.model.test.maven.repository.urls}"
-            ModelNode runtime = findModelNode(model, HOST, "master", CORE_SERVICE, PLATFORM_MBEAN, TYPE, "runtime");
+            ModelNode runtime = findModelNode(model, HOST, "primary", CORE_SERVICE, PLATFORM_MBEAN, TYPE, "runtime");
             if (runtime.isDefined()){
                 runtime.remove("input-arguments");
                 if (runtime.hasDefined(SYSTEM_PROPERTIES)) {

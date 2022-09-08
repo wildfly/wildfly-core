@@ -13,8 +13,8 @@
             </server-group-scoped-roles>
             <host-scoped-roles>
                 <role name="c" base-role="Deployer">
-                    <host name="master"/>
-                    <host name="slave"/>
+                    <host name="primary"/>
+                    <host name="secondary"/>
                 </role>
                 <role name="d" base-role="Administrator"/>
             </host-scoped-roles>

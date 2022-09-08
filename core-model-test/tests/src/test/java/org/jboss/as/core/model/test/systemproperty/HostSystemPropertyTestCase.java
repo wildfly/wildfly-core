@@ -41,7 +41,7 @@ import org.junit.Assert;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class HostSystemPropertyTestCase extends AbstractSystemPropertyTest {
-    static final PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(HOST, "master"));
+    static final PathAddress PARENT = PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"));
 
     public HostSystemPropertyTestCase() {
         super(false, false);
