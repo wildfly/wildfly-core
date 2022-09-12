@@ -104,7 +104,7 @@ public class ProcessStateListenerTestCase {
 
         // create domain test support
         testSupport = DomainTestSupport.create(DomainTestSupport.Configuration.create(ProcessStateListenerTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", null));
         // add module
         initializeModule(testSupport);
     }

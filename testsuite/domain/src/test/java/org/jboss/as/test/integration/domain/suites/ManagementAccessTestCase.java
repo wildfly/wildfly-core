@@ -76,16 +76,16 @@ public class ManagementAccessTestCase {
 
     private static final String TEST = "mgmt-access-test";
     private static final ModelNode ROOT_ADDRESS = new ModelNode().setEmptyList();
-    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "master");
-    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "slave");
+    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
+    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
     private static final ModelNode ROOT_PROP_ADDRESS = new ModelNode().add(SYSTEM_PROPERTY, TEST);
     private static final ModelNode OTHER_SERVER_GROUP_ADDRESS = new ModelNode().add(SERVER_GROUP, "other-server-group");
     private static final ModelNode TEST_SERVER_GROUP_ADDRESS = new ModelNode().add(SERVER_GROUP, "test-server-group");
     private static final ModelNode MASTER_INTERFACE_ADDRESS = new ModelNode().set(MASTER_ROOT_ADDRESS).add(INTERFACE, "management");
     private static final ModelNode SLAVE_INTERFACE_ADDRESS = new ModelNode().set(SLAVE_ROOT_ADDRESS).add(INTERFACE, "management");
-    private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "master").add(SERVER, "main-one");
+    private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "primary").add(SERVER, "main-one");
     private static final ModelNode MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode().set(MAIN_RUNNING_SERVER_ADDRESS).add(CORE_SERVICE, PLATFORM_MBEAN).add(TYPE, "class-loading");
-    private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "slave").add(SERVER, "other-two");
+    private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "secondary").add(SERVER, "other-two");
     private static final ModelNode OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode().set(OTHER_RUNNING_SERVER_ADDRESS).add(CORE_SERVICE, PLATFORM_MBEAN).add(TYPE, "class-loading");
 
     static {
@@ -185,11 +185,11 @@ public class ManagementAccessTestCase {
         // Start with reads of the root resource
         ModelNode response = masterClient.execute(getReadAttributeOperation(MASTER_ROOT_ADDRESS, NAME));
         ModelNode returnVal = validateResponse(response);
-        Assert.assertEquals("master", returnVal.asString());
+        Assert.assertEquals("primary", returnVal.asString());
 
         response = slaveClient.execute(getReadAttributeOperation(SLAVE_ROOT_ADDRESS, NAME));
         ModelNode slaveReturnVal = validateResponse(response);
-        Assert.assertEquals("slave", slaveReturnVal.asString());
+        Assert.assertEquals("secondary", slaveReturnVal.asString());
 
         // Now try a resource below root
         response = masterClient.execute(getReadAttributeOperation(MASTER_INTERFACE_ADDRESS, INET_ADDRESS));
@@ -226,7 +226,7 @@ public class ManagementAccessTestCase {
         System.out.println(response);
         ModelNode returnVal = validateResponse(response);
         ModelNode name = validateResponse(returnVal.get("step-1"));
-        Assert.assertEquals("master", name.asString());
+        Assert.assertEquals("primary", name.asString());
         ModelNode inetAddress = validateResponse(returnVal.get("step-2"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
 
@@ -240,7 +240,7 @@ public class ManagementAccessTestCase {
         System.out.println(response);
         ModelNode slaveReturnVal = validateResponse(response);
         name = validateResponse(slaveReturnVal.get("step-1"));
-        Assert.assertEquals("slave", name.asString());
+        Assert.assertEquals("secondary", name.asString());
         inetAddress = validateResponse(slaveReturnVal.get("step-2"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
 
@@ -272,11 +272,11 @@ public class ManagementAccessTestCase {
         System.out.println(response);
         ModelNode returnVal = validateResponse(response);
         ModelNode name = validateResponse(returnVal.get("step-1"));
-        Assert.assertEquals("master", name.asString());
+        Assert.assertEquals("primary", name.asString());
         ModelNode inetAddress = validateResponse(returnVal.get("step-2"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
         name = validateResponse(returnVal.get("step-3"));
-        Assert.assertEquals("slave", name.asString());
+        Assert.assertEquals("secondary", name.asString());
         inetAddress = validateResponse(returnVal.get("step-4"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
         name = validateResponse(returnVal.get("step-5"));

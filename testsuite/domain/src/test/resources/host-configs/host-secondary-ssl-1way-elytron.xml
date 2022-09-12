@@ -1,6 +1,6 @@
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2010, Red Hat, Inc., and individual contributors
+  ~ Copyright 2017, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -20,36 +20,28 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host xmlns="urn:jboss:domain:20.0"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
-      name="master" organization="core-master">
+<host xmlns="urn:jboss:domain:20.0" name="secondary">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.wildfly.extension.core-management"/>
         <extension module="org.wildfly.extension.elytron"/>
     </extensions>
-
-    <paths>
-        <path name="domainTestPath" path="/tmp" />
-    </paths>
-
     <management>
         <audit-log>
             <formatters>
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
-                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
+                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
+                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
             </handlers>
-            <logger log-boot="true" log-read-only="true" enabled="false">
+            <logger log-boot="true" log-read-only="false" enabled="false">
                 <handlers>
                     <handler name="host-file"/>
                 </handlers>
             </logger>
-            <server-logger log-boot="true" log-read-only="true" enabled="false">
+            <server-logger log-boot="true" log-read-only="false" enabled="false">
                 <handlers>
                     <handler name="server-file"/>
                 </handlers>
@@ -57,49 +49,75 @@
         </audit-log>
         <management-interfaces>
             <native-interface sasl-authentication-factory="management-sasl-authentication">
-                <socket interface="management" port="9999"/>
+                <socket interface="management" port="${jboss.management.native.port:19999}"/>
             </native-interface>
-            <http-interface http-authentication-factory="management-http-authentication">
-                <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
-                <socket interface="management" port="${jboss.management.http.port:9990}"/>
-            </http-interface>
         </management-interfaces>
     </management>
 
     <domain-controller>
-       <local/>
+        <remote protocol="remote+https" host="${jboss.test.host.primary.address}" port="9993" authentication-context="slaveHostSSLContext">
+            <discovery-options/>
+            <ignored-resources type="extension">
+                <instance name="org.jboss.as.jsr77"/>
+            </ignored-resources>
+            <ignored-resources type="profile">
+                <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="socket-binding-group">
+                <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="server-group">
+                <instance name="ignored-profile"/>
+                <instance name="ignored-sockets"/>
+            </ignored-resources>
+            <ignored-resources type="foo" wildcard="true">
+                <instance name="ignored"/>
+            </ignored-resources>
+        </remote>
     </domain-controller>
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address:127.0.0.1}"/>
         </interface>
-        <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+        </interface>
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-           <heap size="64m" max-size="128m"/>
-           <jvm-options>
-               <option value="-ea"/>
-           </jvm-options>
-           <environment-variables>
-               <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-           </environment-variables>
-            <!--
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="256m"/>
             <jvm-options>
-                <option value="-Xdebug"/>
-                <option value="-Xnoagent"/>
-                <option value="-Djava.compiler=NONE"/>
-                <option value="-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=y"/>
-
+                <option value="-server"/>
+                <option value="-XX:MetaspaceSize=96m"/>
+                <option value="-XX:MaxMetaspaceSize=256m"/>
             </jvm-options>
-            -->
-       </jvm>
- 	</jvms>
+        </jvm>
+    </jvms>
 
+    <servers>
+        <server name="server-one" group="main-server-group" auto-start="false"/>
+        <server name="server-two" group="other-server-group" auto-start="false">
+            <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
     <profile>
-        <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+            <expose-resolved-model/>
+            <expose-expression-model/>
+            <remoting-connector/>
+        </subsystem>
+        <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
+            <authentication-client>
+                <authentication-configuration name="slaveHostSSLConfiguration" authentication-name="slave" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
+                    <credential-reference clear-text="slave_us3r_password"/>
+                </authentication-configuration>
+                <authentication-context name="slaveHostSSLContext">
+                    <match-rule match-host="${jboss.test.host.primary.address:127.0.0.1}" ssl-context="oneWayCSC"/> <!-- authentication-configuration="slaveHostSSLConfiguration" -->
+                </authentication-context>
+            </authentication-client>
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>
@@ -112,7 +130,7 @@
                 <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.domain.log.dir" format="JSON"/>
             </audit-logging>
             <security-domains>
-                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
+                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
                     <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
                     <realm name="local" role-mapper="super-user-mapper"/>
                 </security-domain>
@@ -121,33 +139,27 @@
                 <identity-realm name="local" identity="$local"/>
                 <properties-realm name="ManagementRealm">
                     <users-properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir" digest-realm-name="ManagementRealm"/>
+                    <groups-properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
                 </properties-realm>
             </security-realms>
             <mappers>
-                <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
-                    <permission-mapping>
-                        <principal name="anonymous"/>
-                        <permission-set name="default-permissions"/>
-                    </permission-mapping>
-                    <permission-mapping match-all="true">
-                        <permission-set name="login-permission"/>
-                        <permission-set name="default-permissions"/>
+                <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
+                <simple-permission-mapper name="anonymous-permission-mapper">
+                    <permission-mapping principals="anonymous">
+                        <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
                     </permission-mapping>
                 </simple-permission-mapper>
+                <constant-permission-mapper name="constant-permission-mapper">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                </constant-permission-mapper>
                 <constant-realm-mapper name="local" realm-name="local"/>
                 <simple-role-decoder name="groups-to-roles" attribute="groups"/>
                 <constant-role-mapper name="super-user-mapper">
                     <role name="SuperUser"/>
                 </constant-role-mapper>
             </mappers>
-            <permission-sets>
-                <permission-set name="login-permission">
-                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
-                </permission-set>
-                <permission-set name="default-permissions"/>
-            </permission-sets>
             <http>
-                <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
+                <http-authentication-factory name="management-http-authentication" http-server-mechanism-factory="global" security-domain="ManagementDomain">
                     <mechanism-configuration>
                         <mechanism mechanism-name="DIGEST">
                             <mechanism-realm realm-name="ManagementRealm"/>
@@ -169,6 +181,10 @@
                     <properties>
                         <property name="wildfly.sasl.local-user.default-user" value="$local"/>
                     </properties>
+                    <filters>
+                        <filter pattern="JBOSS-LOCAL-USER"/>
+                        <filter pattern="DIGEST-MD5"/>
+                    </filters>
                 </configurable-sasl-server-factory>
                 <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
                     <filters>
@@ -177,13 +193,21 @@
                 </mechanism-provider-filtering-sasl-server-factory>
                 <provider-sasl-server-factory name="global"/>
             </sasl>
-        </subsystem>
-        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
-            <expose-resolved-model/>
-            <expose-expression-model/>
-            <remoting-connector/>
-        </subsystem>
-        <subsystem xmlns="urn:jboss:domain:core-management:1.0">
+            <tls>
+                <key-stores>
+                    <key-store name="oneWayTS" >
+                        <implementation type="JKS" />
+                        <file path="../ssl-primary-secondary-1way-workdir-elytron/client.truststore" relative-to="jboss.home.dir"/>
+                        <credential-reference clear-text="123456"/>
+                    </key-store>
+                </key-stores>
+                <trust-managers>
+                    <trust-manager name="oneWayTM" key-store="oneWayTS"/>
+                </trust-managers>
+                <client-ssl-contexts>
+                    <client-ssl-context name="oneWayCSC" protocols="TLSv1.2" trust-manager="oneWayTM"/>
+                </client-ssl-contexts>
+            </tls>
         </subsystem>
     </profile>
 </host>

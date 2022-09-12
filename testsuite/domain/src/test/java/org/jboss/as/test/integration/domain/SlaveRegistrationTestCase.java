@@ -42,8 +42,8 @@ import org.junit.Test;
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
 public class SlaveRegistrationTestCase {
-    protected static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
-    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
+    protected static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
     protected static final PathAddress SERVER_CONFIG_MAIN_ONE = PathAddress.pathAddress(SERVER_CONFIG, "main-one");
     protected static final PathAddress SERVER_CONFIG_MAIN_TWO = PathAddress.pathAddress(SERVER_CONFIG, "main-two");
     protected static final PathAddress SERVER_MAIN_TWO = PathAddress.pathAddress(SERVER, "main-two");
@@ -60,8 +60,8 @@ public class SlaveRegistrationTestCase {
 
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SlaveRegistrationTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
-                "host-configs/host-master.xml",
-                "host-configs/host-slave.xml"
+                "host-configs/host-primary.xml",
+                "host-configs/host-secondary.xml"
         );
 
         testSupport = DomainTestSupport.create(configuration);

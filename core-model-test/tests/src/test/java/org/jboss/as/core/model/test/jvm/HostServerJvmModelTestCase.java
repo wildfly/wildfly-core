@@ -44,7 +44,7 @@ import org.junit.Test;
  */
 public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
 
-    static final PathElement HOST_ELEMENT = PathElement.pathElement(HOST, "master");
+    static final PathElement HOST_ELEMENT = PathElement.pathElement(HOST, "primary");
     static final PathElement SERVER_ONE_ELEMENT = PathElement.pathElement(SERVER_CONFIG, "server-one");
     static final PathElement SERVER_TWO_ELEMENT = PathElement.pathElement(SERVER_CONFIG, "server-two");
     public HostServerJvmModelTestCase() {
@@ -77,7 +77,7 @@ public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
         ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "host-server-full.xml"), xml);
 
         //Inspect the actual model
-        ModelNode full = kernelServices.readWholeModel().get(HOST, "master", SERVER_CONFIG, "server-one", JVM, "full");
+        ModelNode full = kernelServices.readWholeModel().get(HOST, "primary", SERVER_CONFIG, "server-one", JVM, "full");
         checkFullJvm(full);
     }
 
@@ -93,7 +93,7 @@ public class HostServerJvmModelTestCase extends AbstractJvmModelTest {
         ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "host-server-empty.xml"), xml);
 
         //Inspect the actual model
-        ModelNode empty = kernelServices.readWholeModel().get(HOST, "master", SERVER_CONFIG, "server-one", JVM, "empty");
+        ModelNode empty = kernelServices.readWholeModel().get(HOST, "primary", SERVER_CONFIG, "server-one", JVM, "empty");
         checkEmptyJvm(empty);
     }
 

@@ -79,7 +79,7 @@ public class JMXListenerDeploymentSetupTask implements ServerSetupTask {
         if(TestSuiteEnvironment.isJ9Jvm()) {
             //fix of WFCORE-3417
             additionalPermissions.add(new FilePermission(file.getAbsolutePath()
-                    .replace("archives", "domains/JmxControlledStateNotificationsTestCase/master")
+                    .replace("archives", "domains/JmxControlledStateNotificationsTestCase/primary")
                     .replace(file.getName(), ""), "read"));
         }
 

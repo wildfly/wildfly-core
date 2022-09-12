@@ -121,7 +121,7 @@ public class OperationTimeoutTestCase {
         // We can't use the standard config or make this part of a TestSuite because we need to
         // set TIMEOUT_ADDER_CONFIG on the HC processes. There's no management API to do this post-boot
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(OperationTimeoutTestCase.class.getSimpleName(),
-            "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+            "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
         configuration.getMasterConfiguration().addHostCommandLineProperty(TIMEOUT_CONFIG);
         configuration.getMasterConfiguration().addHostCommandLineProperty(TIMEOUT_ADDER_CONFIG);
         configuration.getSlaveConfiguration().addHostCommandLineProperty(TIMEOUT_CONFIG);
@@ -144,14 +144,14 @@ public class OperationTimeoutTestCase {
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
         executeForResult(safeTimeout(addSubsystem), masterClient);
 
-        restoreServerTimeouts("master", "main-one");
-        restoreServerTimeouts("slave", "main-three");
+        restoreServerTimeouts("primary", "main-one");
+        restoreServerTimeouts("secondary", "main-three");
 
         // Confirm that the timeout properties are what we expect on each process
-        validateTimeoutProperties("master", null, "1", "1000");
-        validateTimeoutProperties("slave", null, "1", "1000");
-        validateTimeoutProperties("master", "main-one", "300", "5000");
-        validateTimeoutProperties("slave", "main-three", "300", "5000");
+        validateTimeoutProperties("primary", null, "1", "1000");
+        validateTimeoutProperties("secondary", null, "1", "1000");
+        validateTimeoutProperties("primary", "main-one", "300", "5000");
+        validateTimeoutProperties("secondary", "main-three", "300", "5000");
     }
 
     private static void restoreServerTimeouts(String host, String server) throws IOException, MgmtOperationException {
@@ -210,82 +210,82 @@ public class OperationTimeoutTestCase {
         // Start from the leaves of the domain process tree and work inward validating
         // that all block ops are cleared locally. This ensures that a later test doesn't
         // mistakenly cancel a completing op from an earlier test
-        validateNoActiveOperation(masterClient, "master", "main-one");
-        validateNoActiveOperation(masterClient, "slave", "main-three");
-        validateNoActiveOperation(masterClient, "slave", null);
-        validateNoActiveOperation(masterClient, "master", null);
+        validateNoActiveOperation(masterClient, "primary", "main-one");
+        validateNoActiveOperation(masterClient, "secondary", "main-three");
+        validateNoActiveOperation(masterClient, "secondary", null);
+        validateNoActiveOperation(masterClient, "primary", null);
     }
 
     @Test
     public void testPrePrepareHangOnSlaveHC() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", null, BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "slave", null, "block", null, start);
+        Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
+        String id = findActiveOperation(masterClient, "secondary", null, "block", null, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         System.out.println(response);
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYDC0080"));
-        validateNoActiveOperation(masterClient, "slave", null, id, true);
+        validateNoActiveOperation(masterClient, "secondary", null, id, true);
     }
 
     @Test
     public void testPrePrepareHangOnSlaveServer() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "slave", "main-three", "block", null, start);
+        Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
+        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("main-three"));
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0409"));
-        validateNoActiveOperation(masterClient, "slave", "main-three", id, true);
+        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
     }
 
     @Test
     public void testPrePrepareHangOnMasterServer() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("master", "main-one", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "master", "main-one", "block", null, start);
+        Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
+        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("main-one"));
         assertTrue(response.asString(), response.get(FAILURE_DESCRIPTION).asString().contains("WFLYCTL0409"));
-        validateNoActiveOperation(masterClient, "master", "main-one", id, true);
+        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
     }
 
     @Test
     public void testPostCommitHangOnSlaveHC() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", null, BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "slave", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
+        String id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         // cancelling on the slave during Stage.DONE should not result in a prepare-phase failure sent to master,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "slave", null, id, true);
+        validateNoActiveOperation(masterClient, "secondary", null, id, true);
     }
 
     @Test
     public void testPostCommitHangOnSlaveServer() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("slave", "main-three", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "slave", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
+        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to master,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "slave", "main-three", id, true);
+        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
     }
 
     @Test
     public void testPostCommitHangOnMasterServer() throws Exception {
         long start = System.currentTimeMillis();
-        Future<ModelNode> blockFuture = block("master", "main-one", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "master", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
+        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to master,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "master", "main-one", id, true);
+        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
     }
 
     private Future<ModelNode> block(String host, String server, BlockerExtension.BlockPoint blockPoint) {

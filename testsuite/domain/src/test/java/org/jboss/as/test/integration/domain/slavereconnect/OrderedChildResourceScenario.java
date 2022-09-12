@@ -58,10 +58,10 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
             PathAddress.pathAddress(PROFILE, "default").append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
 
     private static final PathAddress MASTER_SERVER_SUBSYSTEM_ADDRESS =
-            PathAddress.pathAddress(HOST, "master").append(SERVER, "main-one").append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
+            PathAddress.pathAddress(HOST, "primary").append(SERVER, "main-one").append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
 
     private static final PathAddress SLAVE_SERVER_ADDRESS =
-            PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three");
+            PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three");
 
     private static final PathAddress SLAVE_SERVER_SUBSYSTEM_ADDRESS =
             SLAVE_SERVER_ADDRESS.append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
@@ -129,7 +129,7 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
         compareSubsystemModels(masterClient, slaveClient, true);
 
         ModelNode reloadServer =
-                Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave").append(SERVER_CONFIG, "main-three"));
+                Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary").append(SERVER_CONFIG, "main-three"));
         reloadServer.get("blocking").set(true);
         DomainTestUtils.executeForResult(reloadServer, slaveClient);
         compareSubsystemModels(masterClient, slaveClient);

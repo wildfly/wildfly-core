@@ -89,7 +89,7 @@ public class FullReplaceUndeployTestCase {
     private void testDeployment(final Archive<?> archive) throws IOException {
         final ModelControllerClient client = domainMasterLifecycleUtil.getDomainClient();
         final ModelNode readServerSubsystems = Operations.createOperation(ClientConstants.READ_CHILDREN_NAMES_OPERATION,
-                Operations.createAddress("host", "master", "server", "main-one"));
+                Operations.createAddress("host", "primary", "server", "main-one"));
         readServerSubsystems.get(ClientConstants.CHILD_TYPE).set(ClientConstants.SUBSYSTEM);
 
         final String name = archive.getName();
@@ -100,7 +100,7 @@ public class FullReplaceUndeployTestCase {
 
         // Validate the subsystem child names on a server
         ModelNode result = execute(client, readServerSubsystems);
-        validateSubsystemModel("/host=master/server=main-one", result);
+        validateSubsystemModel("/host=primary/server=main-one", result);
 
         // Fully replace the deployment, but with the 'enabled' flag set to false, triggering undeploy
         final Operation fullReplaceOp = createReplaceAndDisableOperation(archive.as(ZipExporter.class).exportAsInputStream(), name, null);
@@ -110,7 +110,7 @@ public class FullReplaceUndeployTestCase {
 
         // Validate the subsystem child names
         result = execute(client, readServerSubsystems);
-        validateSubsystemModel("/host=master/server=main-one", result);
+        validateSubsystemModel("/host=primary/server=main-one", result);
     }
 
     private void validateSubsystemModel(final String address, final ModelNode subsystemModel) {

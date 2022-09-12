@@ -52,7 +52,7 @@ import org.junit.Test;
  */
 public class ModuleLoadingManagementTestCase {
 
-    private static final PathElement HOST_PE = PathElement.pathElement(HOST, "master");
+    private static final PathElement HOST_PE = PathElement.pathElement(HOST, "primary");
     private static final PathElement SERVER_PE = PathElement.pathElement(SERVER, "main-one");
     private static final PathElement RESOURCE = PathElement.pathElement(CORE_SERVICE, MODULE_LOADING);
     private static final PathAddress HOST_PA = PathAddress.pathAddress(HOST_PE, RESOURCE);

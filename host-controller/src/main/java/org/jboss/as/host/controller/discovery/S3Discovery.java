@@ -22,7 +22,6 @@
 
 package org.jboss.as.host.controller.discovery;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
 import static org.jboss.as.host.controller.discovery.Constants.ACCESS_KEY;
 import static org.jboss.as.host.controller.discovery.Constants.LOCATION;
 import static org.jboss.as.host.controller.discovery.Constants.PREFIX;
@@ -130,7 +129,7 @@ public class S3Discovery implements DiscoveryOption {
                     }
                     return -1;
                 }});
-            writeToFile(data, MASTER);
+            writeToFile(data, "master");
         } catch (Exception e) {
             ROOT_LOGGER.cannotWriteDomainControllerData(e);
         }
@@ -139,7 +138,7 @@ public class S3Discovery implements DiscoveryOption {
     @Override
     public List<RemoteDomainControllerConnectionConfiguration> discover() {
         // Read the domain controller data from an S3 file
-        List<DomainControllerData> dataDc = readFromFile(MASTER);
+        List<DomainControllerData> dataDc = readFromFile("master");
         List<RemoteDomainControllerConnectionConfiguration> options = new ArrayList<>(dataDc.size());
         for (DomainControllerData data : dataDc) {
             if (data != null) {
@@ -172,7 +171,7 @@ public class S3Discovery implements DiscoveryOption {
     @Override
     public void cleanUp() {
         // Remove the S3 file
-        remove(MASTER);
+        remove("master");
     }
 
     @Override

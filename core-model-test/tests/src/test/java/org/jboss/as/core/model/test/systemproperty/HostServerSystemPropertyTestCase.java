@@ -45,7 +45,7 @@ import org.junit.Assert;
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
 public class HostServerSystemPropertyTestCase extends AbstractSystemPropertyTest {
-    static final PathElement HOST_ELEMENT = PathElement.pathElement(HOST, "master");
+    static final PathElement HOST_ELEMENT = PathElement.pathElement(HOST, "primary");
     static final PathElement SERVER_ONE_ELEMENT = PathElement.pathElement(SERVER_CONFIG, "server-one");
     static final PathElement SERVER_TWO_ELEMENT = PathElement.pathElement(SERVER_CONFIG, "server-two");
     static final PathAddress SERVER_ONE_ADDRESS = PathAddress.pathAddress(HOST_ELEMENT, SERVER_ONE_ELEMENT);

@@ -102,13 +102,13 @@ public class ExtensionSetup {
         InputStream moduleXml = getModuleXml("transformers-module.xml");
         final StreamExporter version1 = createResourceRoot(VersionedExtension1.class, ExtensionSetup.class.getPackage(), EmptySubsystemParser.class.getPackage());
         Map<String, StreamExporter> v1 = Collections.singletonMap("transformers-extension.jar", version1);
-        support.addOverrideModule("slave", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v1);
+        support.addOverrideModule("secondary", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v1);
 
         // master - version2
         moduleXml = getModuleXml("transformers-module.xml");
         final StreamExporter version2 = createResourceRoot(VersionedExtension2.class, ExtensionSetup.class.getPackage());
         Map<String, StreamExporter> v2 = Collections.singletonMap("transformers-extension.jar", version2);
-        support.addOverrideModule("master", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v2);
+        support.addOverrideModule("primary", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v2);
 
     }
 

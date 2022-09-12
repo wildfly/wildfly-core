@@ -76,7 +76,7 @@ public class IgnoredResourcesProfileCloneTestCase {
 
     private static final String CLONED_PROFILE = "cloned-profile";
 
-    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
+    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil masterLifecycleUtil;
     private static DomainLifecycleUtil slaveLifecycleUtil;
@@ -288,7 +288,7 @@ public class IgnoredResourcesProfileCloneTestCase {
     }
 
     private static void reloadSlave(DomainLifecycleUtil slaveLifecycleUtil) throws Exception {
-        ModelNode reload = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave"));
+        ModelNode reload = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
         reload.get(RESTART_SERVERS).set(false);
         reload.get(ADMIN_ONLY).set(false);
         slaveLifecycleUtil.executeAwaitConnectionClosed(reload);

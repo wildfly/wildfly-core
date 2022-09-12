@@ -84,18 +84,18 @@ public class IgnoredResourcesTestCase {
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
 
-        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "slave"), DOMAIN_CONTROLLER),
+        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
                 domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
 
         slaveModel.get(IGNORE_UNUSED_CONFIG).set(false);
-        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "slave")), domainSlaveLifecycleUtil.getDomainClient());
-        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "slave"));
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary"));
         for (String key : slaveModel.keys()) {
             writeRemoteDc.get(key).set(slaveModel.get(key));
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
 
-        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave"));
+        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
         restartSlave.get(RESTART_SERVERS).set(false);
         domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
         domainSlaveLifecycleUtil.connect();
@@ -104,7 +104,7 @@ public class IgnoredResourcesTestCase {
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
 
-        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "slave"));
+        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
         ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
         // make sure that ignore-unused-configuration is false
         Assert.assertFalse(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
@@ -113,18 +113,18 @@ public class IgnoredResourcesTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         // reset ignore-unused-configuration back to true, and reload
-        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "slave"), DOMAIN_CONTROLLER),
+        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
                 domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
 
         slaveModel.get(IGNORE_UNUSED_CONFIG).set(true);
-        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "slave")), domainSlaveLifecycleUtil.getDomainClient());
-        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "slave"));
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary"));
         for (String key : slaveModel.keys()) {
             writeRemoteDc.get(key).set(slaveModel.get(key));
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
 
-        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "slave"));
+        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
         restartSlave.get(RESTART_SERVERS).set(false);
         domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
         domainSlaveLifecycleUtil.connect();
@@ -133,7 +133,7 @@ public class IgnoredResourcesTestCase {
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
 
-        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "slave"));
+        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
         ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
         // make sure that ignore-unused-configuration is true
         Assert.assertTrue(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());

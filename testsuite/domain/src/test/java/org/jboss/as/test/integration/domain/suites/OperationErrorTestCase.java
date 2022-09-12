@@ -28,7 +28,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.IN_SERIES;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRIMARY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MAX_FAILED_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -97,8 +97,8 @@ public class OperationErrorTestCase {
             PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
             PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)
     );
-    private static final PathAddress MASTER_ADDRESS = PathAddress.pathAddress(HOST, MASTER);
-    private static final PathAddress SLAVE_ADDRESS = PathAddress.pathAddress(HOST, "slave");
+    private static final PathAddress MASTER_ADDRESS = PathAddress.pathAddress(HOST, PRIMARY);
+    private static final PathAddress SLAVE_ADDRESS = PathAddress.pathAddress(HOST, "secondary");
 
 
     private static final EnumSet<ErrorExtension.ErrorPoint> RUNTIME_POINTS =
@@ -183,10 +183,10 @@ public class OperationErrorTestCase {
         // Start from the leaves of the domain process tree and work inward validating
         // that all error ops are cleared locally. This ensures that a later test doesn't
         // mistakenly cancel a completing op from an earlier test
-        validateNoActiveOperation(masterClient, "master", "main-one");
-        validateNoActiveOperation(masterClient, "slave", "main-three");
-        validateNoActiveOperation(masterClient, "slave", null);
-        MgmtOperationException moe = validateNoActiveOperation(masterClient, "master", null);
+        validateNoActiveOperation(masterClient, "primary", "main-one");
+        validateNoActiveOperation(masterClient, "secondary", "main-three");
+        validateNoActiveOperation(masterClient, "secondary", null);
+        MgmtOperationException moe = validateNoActiveOperation(masterClient, "primary", null);
         if (moe != null) {
             throw moe;
         }
@@ -195,204 +195,204 @@ public class OperationErrorTestCase {
     @Test
     public void testMasterServerStageModel() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.MODEL, false, true);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.MODEL, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.MODEL, false, true);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.MODEL, true, false);
     }
 
     @Test
     public void testSlaveServerStageModel() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.MODEL, false, true);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.MODEL, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.MODEL, false, true);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.MODEL, true, false);
     }
 
     @Test
     public void testMasterHCStageModel() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("master", null, ErrorExtension.ErrorPoint.MODEL, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.MODEL, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.MODEL, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.MODEL, true, true);
     }
 
     @Test
     public void testSlaveHCStageModel() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.MODEL, false, true);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.MODEL, true, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.MODEL, false, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.MODEL, true, true);
     }
 
     @Test
     public void testMasterServerStageRuntime() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.RUNTIME, false, true);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.RUNTIME, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.RUNTIME, false, true);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.RUNTIME, true, false);
     }
 
     @Test
     public void testSlaveServerStageRuntime() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.RUNTIME, false, true);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.RUNTIME, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.RUNTIME, false, true);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.RUNTIME, true, false);
     }
 
     @Test
     public void testMasterHCStageRuntime() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("master", null, ErrorExtension.ErrorPoint.RUNTIME, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.RUNTIME, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.RUNTIME, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.RUNTIME, true, true);
     }
 
     @Test
     public void testSlaveHCStageRuntime() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.RUNTIME, false, true);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.RUNTIME, true, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.RUNTIME, false, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.RUNTIME, true, true);
     }
 
     @Test
     public void testMasterServerServiceStart() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.SERVICE_START, false, true);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.SERVICE_START, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.SERVICE_START, false, true);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.SERVICE_START, true, false);
     }
 
     @Test
     public void testSlaveServerServiceStart() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.SERVICE_START, false, true);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.SERVICE_START, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.SERVICE_START, false, true);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.SERVICE_START, true, false);
     }
 
     @Test
     public void testMasterHCServiceStart() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("master", null, ErrorExtension.ErrorPoint.SERVICE_START, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.SERVICE_START, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.SERVICE_START, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.SERVICE_START, true, true);
     }
 
     @Test
     public void testSlaveHCServiceStart() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.SERVICE_START, false, true);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.SERVICE_START, true, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.SERVICE_START, false, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.SERVICE_START, true, true);
     }
 
     @Test
     public void testMasterServerServiceStop() throws Exception {
         // MSC only logs a WARN for service.stop() errors and stops the service regardless.
         // So the op should succeed.
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
     }
 
     @Test
     public void testSlaveServerServiceStop() throws Exception {
         // MSC only logs a WARN for service.stop() errors and stops the service regardless.
         // So the op should succeed.
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
     }
 
     @Test
     public void testMasterHCServiceStop() throws Exception {
         // MSC only logs a WARN for service.stop() errors and stops the service regardless.
         // So the op should succeed.
-        errorTest("master", null, ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
-        errorTest("master", null, ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
     }
 
     @Test
     public void testSlaveHCServiceStop() throws Exception {
         // MSC only logs a WARN for service.stop() errors and stops the service regardless.
         // So the op should succeed.
-        errorTest("slave", null, ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.SERVICE_STOP, false, false);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.SERVICE_STOP, true, false);
     }
 
     @Test
     public void testMasterServerStageVerify() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.VERIFY, false, true);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.VERIFY, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.VERIFY, false, true);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.VERIFY, true, false);
     }
 
     @Test
     public void testSlaveServerStageVerify() throws Exception {
         // The server fails in pre-prepare so whether overall outcome=failed depends on the rollout plan
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.VERIFY, false, true);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.VERIFY, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.VERIFY, false, true);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.VERIFY, true, false);
     }
 
     @Test
     public void testMasterHCStageVerify() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("master", null, ErrorExtension.ErrorPoint.VERIFY, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.VERIFY, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.VERIFY, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.VERIFY, true, true);
     }
 
     @Test
     public void testSlaveHCStageVerify() throws Exception {
         // A pre-prepare failure on an HC always means outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.VERIFY, false, true);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.VERIFY, true, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.VERIFY, false, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.VERIFY, true, true);
     }
 
     @Test
     public void testMasterServerStageCommit() throws Exception {
         // Post commit failure does not result in outcome=failed
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.COMMIT, false, false);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.COMMIT, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.COMMIT, false, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.COMMIT, true, false);
     }
 
     @Test
     public void testSlaveServerStageCommit() throws Exception {
         // Post commit failure does not result in outcome=failed
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.COMMIT, false, false);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.COMMIT, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.COMMIT, false, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.COMMIT, true, false);
     }
 
     @Test
     public void testMasterHCStageCommit() throws Exception {
         // Here the failure blows away the normal domain response and results in reporting a failure
         // TODO this isn't ideal as the DC's model, MSC and the rest of the domain are changed
-        errorTest("master", null, ErrorExtension.ErrorPoint.COMMIT, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.COMMIT, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.COMMIT, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.COMMIT, true, true);
     }
 
     @Test
     public void testSlaveHCStageCommit() throws Exception {
         // Post commit failure does not result in outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.COMMIT, false, false);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.COMMIT, true, false);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.COMMIT, false, false);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.COMMIT, true, false);
     }
 
     @Test
     public void testMasterServerStageRollback() throws Exception {
         // The server fails in pre-prepare (to trigger the rollback that throws Error),
         // so whether overall outcome=failed depends on the rollout plan
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.ROLLBACK, false, true);
-        errorTest("master", "main-one", ErrorExtension.ErrorPoint.ROLLBACK, true, false);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.ROLLBACK, false, true);
+        errorTest("primary", "main-one", ErrorExtension.ErrorPoint.ROLLBACK, true, false);
     }
 
     @Test
     public void testSlaveServerStageRollback() throws Exception {
         // The server fails in pre-prepare (to trigger the rollback that throws Error),
         // so whether overall outcome=failed depends on the rollout plan
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.ROLLBACK, false, true);
-        errorTest("slave", "main-three", ErrorExtension.ErrorPoint.ROLLBACK, true, false);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.ROLLBACK, false, true);
+        errorTest("secondary", "main-three", ErrorExtension.ErrorPoint.ROLLBACK, true, false);
     }
 
     @Test
     public void testMasterHCStageRollback() throws Exception {
         // A pre-prepare failure (used to trigger the rollback that throws Error) on an HC always means outcome=failed
-        errorTest("master", null, ErrorExtension.ErrorPoint.ROLLBACK, false, true);
-        errorTest("master", null, ErrorExtension.ErrorPoint.ROLLBACK, true, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.ROLLBACK, false, true);
+        errorTest("primary", null, ErrorExtension.ErrorPoint.ROLLBACK, true, true);
     }
 
     @Test
     public void testSlaveHCStageRollback() throws Exception {
         // A pre-prepare failure (used to trigger the rollback that throws Error) on an HC always means outcome=failed
-        errorTest("slave", null, ErrorExtension.ErrorPoint.ROLLBACK, false, true);
-        errorTest("slave", null, ErrorExtension.ErrorPoint.ROLLBACK, true, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.ROLLBACK, false, true);
+        errorTest("secondary", null, ErrorExtension.ErrorPoint.ROLLBACK, true, true);
     }
 
     private void errorTest(String host, String server, ErrorExtension.ErrorPoint errorPoint, boolean addRolloutPlan, boolean expectFailure) throws Exception {
@@ -409,7 +409,7 @@ public class OperationErrorTestCase {
         }
         if (server == null && RUNTIME_POINTS.contains(errorPoint)) {
             // retarget the op to the HC subsystem
-            PathAddress addr = host.equals("master") ? MASTER_ADDRESS : SLAVE_ADDRESS;
+            PathAddress addr = host.equals("primary") ? MASTER_ADDRESS : SLAVE_ADDRESS;
             op.get(OP_ADDR).set(addr.append(SUBSYSTEM_ELEMENT).toModelNode());
             multiphase = false;
         }
@@ -433,7 +433,7 @@ public class OperationErrorTestCase {
             ModelNode serverResp = response.get(SERVER_GROUPS, "main-server-group", HOST, host, server, RESPONSE);
             assertEquals(unmodified.toString(), FAILED, serverResp.get(OUTCOME).asString());
             fd = serverResp.get(FAILURE_DESCRIPTION);
-        } else if ("master".equals(host)) {
+        } else if ("primary".equals(host)) {
             if (errorPoint == ErrorExtension.ErrorPoint.COMMIT || errorPoint == ErrorExtension.ErrorPoint.ROLLBACK) {
                 // In this case the late error destroys the normal response structure and we
                 // get a simple failure. This isn't ideal. I'm writing the test to specifically assert

@@ -65,33 +65,33 @@ public class ServerStartFailureTestCase {
 
     static {
         // (host=master)
-        hostMaster.add("host", "master");
+        hostMaster.add("host", "primary");
         // (host=master),(server-config=main-one)
-        mainOne.add("host", "master");
+        mainOne.add("host", "primary");
         mainOne.add("server-config", "main-one");
         // (host=master),(server-config=main-two)
-        mainTwo.add("host", "master");
+        mainTwo.add("host", "primary");
         mainTwo.add("server-config", "main-two");
         // (host=master),(server-config=other-one)
-        otherOne.add("host", "master");
+        otherOne.add("host", "primary");
         otherOne.add("server-config", "other-one");
         // (host=master),(server-config=other-two)
-        otherTwo.add("host", "master");
+        otherTwo.add("host", "primary");
         otherTwo.add("server-config", "other-two");
 
         // (host=slave)
-        hostSlave.add("host", "slave");
+        hostSlave.add("host", "secondary");
         // (host=slave),(server-config=main-three)
-        mainThree.add("host", "slave");
+        mainThree.add("host", "secondary");
         mainThree.add("server-config", "main-three");
         // (host=slave),(server-config=main-four)
-        mainFour.add("host", "slave");
+        mainFour.add("host", "secondary");
         mainFour.add("server-config", "main-four");
         // (host=slave),(server-config=other-three)
-        otherThree.add("host", "slave");
+        otherThree.add("host", "secondary");
         otherThree.add("server-config", "other-three");
         // (host=slave),(server-config=other-four)
-        otherFour.add("host", "slave");
+        otherFour.add("host", "secondary");
         otherFour.add("server-config", "other-four");
 
     }
@@ -99,7 +99,7 @@ public class ServerStartFailureTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         Configuration configuration = DomainTestSupport.Configuration.create(ServerStartFailureTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave-failure.xml");
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary-failure.xml");
         configuration.getMasterConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n");
         configuration.getSlaveConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=9787,server=y,suspend=n");
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
@@ -118,27 +118,27 @@ public class ServerStartFailureTestCase {
 
         DomainClient client = domainMasterLifecycleUtil.getDomainClient();
         executeLifecycleOperation(client, null, START_SERVERS);
-        waitUntilState(client, "master", "main-one", "STARTED");
-        waitUntilState(client, "master", "main-two", "STARTED");
-        waitUntilState(client, "master", "other-one", "STARTED");
-        waitUntilState(client, "slave", "main-three", "STARTED");
-        waitUntilState(client, "slave", "failure-one", "STARTED");
-        waitUntilState(client, "slave", "failure-two", "FAILED");
-        waitUntilState(client, "slave", "failure-three", "FAILED");
+        waitUntilState(client, "primary", "main-one", "STARTED");
+        waitUntilState(client, "primary", "main-two", "STARTED");
+        waitUntilState(client, "primary", "other-one", "STARTED");
+        waitUntilState(client, "secondary", "main-three", "STARTED");
+        waitUntilState(client, "secondary", "failure-one", "STARTED");
+        waitUntilState(client, "secondary", "failure-two", "FAILED");
+        waitUntilState(client, "secondary", "failure-three", "FAILED");
 
         executeLifecycleOperation(client, null, STOP_SERVERS);
         //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
-        waitUntilState(client, "master", "main-one", "STOPPED");
-        waitUntilState(client, "master", "main-two", "DISABLED");
-        waitUntilState(client, "master", "other-one", "DISABLED");
-        waitUntilState(client, "slave", "main-three", "STOPPED");
-        waitUntilState(client, "slave", "failure-two", "DISABLED");
-        waitUntilState(client, "slave", "failure-three", "DISABLED");
+        waitUntilState(client, "primary", "main-one", "STOPPED");
+        waitUntilState(client, "primary", "main-two", "DISABLED");
+        waitUntilState(client, "primary", "other-one", "DISABLED");
+        waitUntilState(client, "secondary", "main-three", "STOPPED");
+        waitUntilState(client, "secondary", "failure-two", "DISABLED");
+        waitUntilState(client, "secondary", "failure-three", "DISABLED");
 
-        validateResponse(startServer(client, "master", "main-one"));
-        ModelNode result = validateResponse(startServer(client, "slave", "failure-two"));
+        validateResponse(startServer(client, "primary", "main-one"));
+        ModelNode result = validateResponse(startServer(client, "secondary", "failure-two"));
         MatcherAssert.assertThat(result.asString(), is("FAILED"));
-        result = validateResponse(startServer(client, "slave", "failure-three"));
+        result = validateResponse(startServer(client, "secondary", "failure-three"));
         MatcherAssert.assertThat(result.asString(), is("FAILED"));
     }
 

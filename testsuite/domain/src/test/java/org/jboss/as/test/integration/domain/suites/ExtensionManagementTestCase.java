@@ -27,7 +27,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEF
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILED;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MASTER;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PRIMARY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MODULE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
@@ -73,10 +73,10 @@ public class ExtensionManagementTestCase {
     private static final PathAddress EXTENSION_ADDRESS = PathAddress.pathAddress(EXTENSION_ELEMENT);
     private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, "1");
     private static final PathAddress PROFILE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(PROFILE, DEFAULT).append(SUBSYSTEM_ELEMENT);
-    private static final PathAddress SERVER_ONE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, MASTER).append(SERVER, "main-one").append(SUBSYSTEM_ELEMENT);
-    private static final PathAddress SERVER_THREE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three").append(SUBSYSTEM_ELEMENT);
-    private static final PathAddress SERVER_ONE_EXT_ADDRESS = PathAddress.pathAddress(HOST, MASTER).append(SERVER, "main-one").append(EXTENSION_ELEMENT);
-    private static final PathAddress SERVER_THREE_EXT_ADDRESS = PathAddress.pathAddress(HOST, "slave").append(SERVER, "main-three").append(EXTENSION_ELEMENT);
+    private static final PathAddress SERVER_ONE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, PRIMARY).append(SERVER, "main-one").append(SUBSYSTEM_ELEMENT);
+    private static final PathAddress SERVER_THREE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three").append(SUBSYSTEM_ELEMENT);
+    private static final PathAddress SERVER_ONE_EXT_ADDRESS = PathAddress.pathAddress(HOST, PRIMARY).append(SERVER, "main-one").append(EXTENSION_ELEMENT);
+    private static final PathAddress SERVER_THREE_EXT_ADDRESS = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three").append(EXTENSION_ELEMENT);
 
     private static DomainTestSupport testSupport;
     private static DomainLifecycleUtil domainMasterLifecycleUtil;
@@ -105,16 +105,16 @@ public class ExtensionManagementTestCase {
         DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
         executeForResult(op, masterClient);
         extensionVersionTest(masterClient, null);
-        extensionVersionTest(masterClient, "host=master/server=main-one");
-        extensionVersionTest(masterClient, "host=slave/server=main-three");
+        extensionVersionTest(masterClient, "host=primary/server=main-one");
+        extensionVersionTest(masterClient, "host=secondary/server=main-three");
         DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
         extensionVersionTest(slaveClient, null);
 
         op = createOpNode(ADDRESS, "remove");
         executeForResult(op, masterClient);
         extensionRemovalTest(masterClient, null);
-        extensionRemovalTest(masterClient, "host=master/server=main-one");
-        extensionRemovalTest(masterClient, "host=slave/server=main-three");
+        extensionRemovalTest(masterClient, "host=primary/server=main-one");
+        extensionRemovalTest(masterClient, "host=secondary/server=main-three");
         extensionRemovalTest(slaveClient, null);
     }
 

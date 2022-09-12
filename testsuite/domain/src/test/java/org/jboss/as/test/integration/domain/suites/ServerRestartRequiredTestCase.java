@@ -83,13 +83,13 @@ public class ServerRestartRequiredTestCase {
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     // (host=slave),(server=reload-one)
-    private static final PathAddress reloadOneAddress = PathAddress.pathAddress("host", "master").append("server", "reload-one");
+    private static final PathAddress reloadOneAddress = PathAddress.pathAddress("host", "primary").append("server", "reload-one");
     // (host=slave),(server=reload-two)
-    private static final PathAddress reloadTwoAddress = PathAddress.pathAddress("host", "slave").append("server", "reload-two");
+    private static final PathAddress reloadTwoAddress = PathAddress.pathAddress("host", "secondary").append("server", "reload-two");
     // (host=slave),(server-config=reload-one)
-    private static final PathAddress reloadOneConfigAddress = PathAddress.pathAddress("host", "master").append("server-config", "reload-one");
+    private static final PathAddress reloadOneConfigAddress = PathAddress.pathAddress("host", "primary").append("server-config", "reload-one");
     // (host=slave),(server-config=reload-two)
-    private static final PathAddress reloadTwoConfigAddress = PathAddress.pathAddress("host", "slave").append("server-config", "reload-two");
+    private static final PathAddress reloadTwoConfigAddress = PathAddress.pathAddress("host", "secondary").append("server-config", "reload-two");
 
     @BeforeClass
     public static void setupDomain() throws Exception {
@@ -112,9 +112,9 @@ public class ServerRestartRequiredTestCase {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
 
         // Start reload-one
-        startServer(client, "master", "reload-one");
+        startServer(client, "primary", "reload-one");
         // Start reload-two
-        startServer(client, "slave", "reload-two");
+        startServer(client, "secondary", "reload-two");
         // Check the states
         waitUntilState(client, reloadOneConfigAddress, "STARTED");
         waitUntilState(client, reloadTwoConfigAddress, "STARTED");
@@ -264,7 +264,7 @@ public class ServerRestartRequiredTestCase {
         final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         address.add(JVM, "default");
 
         final ModelNode operation = new ModelNode();

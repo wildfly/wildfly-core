@@ -1,6 +1,6 @@
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2013, Red Hat, Inc., and individual contributors
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -23,9 +23,10 @@
 <host xmlns="urn:jboss:domain:20.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
-      name="slave">
+      name="secondary">
 
     <extensions>
+        <extension module="org.jboss.as.jmx"/>
         <extension module="org.wildfly.extension.elytron"/>
     </extensions>
 
@@ -66,9 +67,9 @@
 
     <domain-controller>
         <!-- Remote domain controller configuration with a host and port -->
-        <remote host="${jboss.test.host.master.address}" port="9999" authentication-context="slaveHostAContext">
+        <remote host="${jboss.test.host.primary.address}" port="9999" authentication-context="slaveHostAContext">
             <ignored-resources type="extension">
-                <instance name="org.jboss.as.jsr77"/>
+                <instance name="org.jboss.as.threads"/>
             </ignored-resources>
             <ignored-resources type="profile">
                 <instance name="ignored"/>
@@ -76,49 +77,58 @@
             <ignored-resources type="socket-binding-group">
                 <instance name="ignored"/>
             </ignored-resources>
+            <ignored-resources type="foo" wildcard="true">
+                <instance name="ignored"/>
+            </ignored-resources>
             <ignored-resources type="server-group">
                 <instance name="ignored-sockets"/>
                 <instance name="ignored-profile"/>
-            </ignored-resources>
-            <ignored-resources type="foo" wildcard="true">
-                <instance name="ignored"/>
+                <instance name="minimal" />
             </ignored-resources>
         </remote>
     </domain-controller>
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.slave.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address}"/>
         </interface>
         <interface name="public">
-            <inet-address value="${jboss.test.host.slave.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address}"/>
         </interface>
     </interfaces>
 
-    <jvms>
-        <jvm name="default">
-            <heap size="64m" max-size="128m"/>
-            <jvm-options>
-                <option value="-ea"/>
-            </jvm-options>
-        </jvm>
-    </jvms>
+ 	<jvms>
+ 	   <jvm name="default">
+          <heap size="64m" max-size="128m"/>
+           <jvm-options>
+               <option value="-ea"/>
+           </jvm-options>
+       </jvm>
+ 	</jvms>
 
     <servers directory-grouping="by-type">
-        <server name="slave-a" group="server-group-a" auto-start="false">
-            <socket-bindings socket-binding-group="sockets-a" port-offset="400"/>
-            <jvm name="default" />
+        <server name="main-three" group="main-server-group">
+            <socket-bindings socket-binding-group="standard-sockets" port-offset="350"/>
+            <jvm name="default"/>
         </server>
-        <server name="slave-b" group="server-group-b">
-            <socket-bindings socket-binding-group="sockets-b" port-offset="500"/>
-            <jvm name="default" />
+        <server name="main-four" group="main-server-group" auto-start="false">
+            <socket-bindings port-offset="450"/>
+            <jvm name="default">
+                <heap size="64m" max-size="256m"/>
+            </jvm>
         </server>
-        <server name="slave-c" group="server-group-c" auto-start="false">
-            <socket-bindings socket-binding-group="sockets-shared" port-offset="600"/>
-            <jvm name="default" />
+        <server name="other-two" group="other-server-group">
+            <!--AS7-4177 override the host level config to smoke test that handling
+                Note we use the same values; this is just to check for obvious fatal errors -->
+            <interfaces>
+                <interface name="public">
+                    <inet-address value="${jboss.test.host.secondary.address}"/>
+                </interface>
+            </interfaces>
+            <socket-bindings socket-binding-group="other-sockets" port-offset="550"/>
+            <jvm name="default"/>
         </server>
-        <server name="slave-d" group="server-group-d" auto-start="false">
-            <socket-bindings socket-binding-group="sockets-shared" port-offset="700"/>
+        <server name="reload-two" group="reload-test-group"  auto-start="false">
             <jvm name="default" />
         </server>
     </servers>
@@ -132,7 +142,7 @@
                     <credential-reference clear-text="slave_us3r_password"/>
                 </authentication-configuration>
                 <authentication-context name="slaveHostAContext">
-                    <match-rule match-host="${jboss.test.host.master.address}" authentication-configuration="slaveHostAConfiguration"/>
+                    <match-rule match-host="${jboss.test.host.primary.address}" authentication-configuration="slaveHostAConfiguration"/>
                 </authentication-context>
             </authentication-client>
             <providers>
@@ -156,7 +166,6 @@
                 <identity-realm name="local" identity="$local"/>
                 <properties-realm name="ManagementRealm">
                     <users-properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir" digest-realm-name="ManagementRealm"/>
-                    <groups-properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
                 </properties-realm>
             </security-realms>
             <mappers>
@@ -213,6 +222,11 @@
                 </mechanism-provider-filtering-sasl-server-factory>
                 <provider-sasl-server-factory name="global"/>
             </sasl>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+            <expose-resolved-model/>
+            <expose-expression-model/>
+            <remoting-connector/>
         </subsystem>
     </profile>
 </host>

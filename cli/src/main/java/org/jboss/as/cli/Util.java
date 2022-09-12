@@ -213,6 +213,7 @@ public class Util {
     public static final String PERMISSION_MAPPER = "permission-mapper";
     public static final String PERSISTENT = "persistent";
     public static final String PLAIN_TEXT = "plain-text";
+    public static final String PRIMARY = "primary";
     public static final String PROBLEM = "problem";
     public static final String PRODUCT_NAME = "product-name";
     public static final String PRODUCT_VERSION = "product-version";
@@ -266,6 +267,7 @@ public class Util {
     public static final String RUNNING_MODE = "running-mode";
     public static final String SASL_AUTHENTICATION_FACTORY = "sasl-authentication-factory";
     public static final String SASL_SERVER_FACTORY = "sasl-server-factory";
+    public static final String SECONDARY = "secondary";
     public static final String SECURE_SOCKET_BINDING = "secure-socket-binding";
     public static final String SECURITY_DOMAIN = "security-domain";
     public static final String SECURITY_REALM = "security-realm";

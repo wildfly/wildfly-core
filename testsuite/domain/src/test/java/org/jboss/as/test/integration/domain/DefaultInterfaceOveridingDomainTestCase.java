@@ -65,8 +65,8 @@ public class DefaultInterfaceOveridingDomainTestCase {
     private static final Logger log = Logger.getLogger(DefaultInterfaceOveridingDomainTestCase.class.getName());
 
     private static final String[] SERVERS = new String[] {"main-one", "other-two"};
-    private static final String masterAddress = System.getProperty("jboss.test.host.master.address");
-    private static final String slaveAddress = System.getProperty("jboss.test.host.slave.address");
+    private static final String masterAddress = System.getProperty("jboss.test.host.primary.address");
+    private static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
 
     private static DomainControllerClientConfig domainControllerClientConfig;
     private static DomainLifecycleUtil hostUtils;
@@ -102,7 +102,7 @@ public class DefaultInterfaceOveridingDomainTestCase {
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
         hostConfig.setHostControllerManagementAddress(masterAddress);
-        hostConfig.setHostCommandLineProperties("-Djboss.test.host.master.address=" + masterAddress + " -Djboss.test.host.slave.address=" + slaveAddress);
+        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress + " -Djboss.test.host.secondary.address=" + slaveAddress);
         URL url = tccl.getResource("domain-configs/domain-default-interface.xml");
         assert url != null;
         hostConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
@@ -112,7 +112,7 @@ public class DefaultInterfaceOveridingDomainTestCase {
         hostConfig.setHostConfigFile(new File(url.toURI()).getAbsolutePath());
         System.out.println(hostConfig.getHostConfigFile());
         hostConfig.setDomainDirectory(hostDir.getAbsolutePath());
-        hostConfig.setHostName("slave");
+        hostConfig.setHostName("secondary");
         hostConfig.setHostControllerManagementPort(9999);
         hostConfig.setStartupTimeoutInSeconds(120);
         hostConfig.setBackupDC(true);
@@ -126,13 +126,13 @@ public class DefaultInterfaceOveridingDomainTestCase {
     public void testInterfaceOverriden() throws Exception {
         // check that the failover-h1 is acting as domain controller and all three servers are registered
         Set<String> hosts = getHosts(hostUtils);
-        Assert.assertTrue(hosts.contains("slave"));
+        Assert.assertTrue(hosts.contains("secondary"));
         MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "main-one"), is("public"));
         MatcherAssert.assertThat(getServerDefaultInterface(hostUtils, "other-two"), is("public-two"));
     }
 
     private String getServerDefaultInterface(DomainLifecycleUtil hostUtil, String serverName) throws IOException {
-        ModelNode opAdress = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"), PathElement.pathElement(SERVER, serverName)).toModelNode();
+        ModelNode opAdress = PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"), PathElement.pathElement(SERVER, serverName)).toModelNode();
         ModelNode readOp = Operations.createReadResourceOperation(opAdress, true);
         ModelNode domain = hostUtil.executeForResult(readOp);
         MatcherAssert.assertThat(domain.get(SOCKET_BINDING_GROUP).isDefined(), is(true));

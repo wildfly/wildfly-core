@@ -20,7 +20,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host xmlns="urn:jboss:domain:20.0" name="slave">
+<host name="primary" xmlns="urn:jboss:domain:20.0">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -33,15 +33,15 @@
                 <json-formatter name="json-formatter"/>
             </formatters>
             <handlers>
-                <file-handler name="host-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.domain.data.dir"/>
-                <file-handler name="server-file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+                <file-handler name="host-file" formatter="json-formatter" relative-to="jboss.domain.data.dir" path="audit-log.log"/>
+                <file-handler name="server-file" formatter="json-formatter" relative-to="jboss.server.data.dir" path="audit-log.log"/>
             </handlers>
-            <logger log-boot="true" log-read-only="false" enabled="false">
+            <logger log-boot="true" log-read-only="true" enabled="false">
                 <handlers>
                     <handler name="host-file"/>
                 </handlers>
             </logger>
-            <server-logger log-boot="true" log-read-only="false" enabled="false">
+            <server-logger log-boot="true" log-read-only="true" enabled="false">
                 <handlers>
                     <handler name="server-file"/>
                 </handlers>
@@ -49,39 +49,22 @@
         </audit-log>
         <management-interfaces>
             <native-interface sasl-authentication-factory="management-sasl-authentication">
-                <socket interface="management" port="${jboss.management.native.port:19999}"/>
+                <socket interface="management" port="${jboss.management.native.port:9999}"/>
             </native-interface>
+            <http-interface http-authentication-factory="management-http-authentication" ssl-context="twoWaySSC">
+                <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
+                <socket interface="management" port="${jboss.management.http.port:9990}" secure-port="${jboss.management.https.port:9993}"/>
+            </http-interface>
         </management-interfaces>
     </management>
 
     <domain-controller>
-        <remote protocol="remote+https" host="${jboss.test.host.master.address}" port="9993" authentication-context="slaveHostSSLContext">
-            <discovery-options/>
-            <ignored-resources type="extension">
-                <instance name="org.jboss.as.jsr77"/>
-            </ignored-resources>
-            <ignored-resources type="profile">
-                <instance name="ignored"/>
-            </ignored-resources>
-            <ignored-resources type="socket-binding-group">
-                <instance name="ignored"/>
-            </ignored-resources>
-            <ignored-resources type="server-group">
-                <instance name="ignored-profile"/>
-                <instance name="ignored-sockets"/>
-            </ignored-resources>
-            <ignored-resources type="foo" wildcard="true">
-                <instance name="ignored"/>
-            </ignored-resources>
-        </remote>
+        <local/>
     </domain-controller>
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.slave.address:127.0.0.1}"/>
-        </interface>
-        <interface name="public">
-            <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
     </interfaces>
 
@@ -96,12 +79,6 @@
         </jvm>
     </jvms>
 
-    <servers>
-        <server name="server-one" group="main-server-group" auto-start="false"/>
-        <server name="server-two" group="other-server-group" auto-start="false">
-            <socket-bindings port-offset="150"/>
-        </server>
-    </servers>
     <profile>
         <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
         <subsystem xmlns="urn:jboss:domain:jmx:1.3">
@@ -110,14 +87,6 @@
             <remoting-connector/>
         </subsystem>
         <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
-            <authentication-client>
-                <authentication-configuration name="slaveHostSSLConfiguration" authentication-name="slave" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
-                    <credential-reference clear-text="slave_us3r_password"/>
-                </authentication-configuration>
-                <authentication-context name="slaveHostSSLContext">
-                    <match-rule match-host="${jboss.test.host.master.address:127.0.0.1}" ssl-context="twoWayCSC"/> <!-- authentication-configuration="slaveHostSSLConfiguration" -->
-                </authentication-context>
-            </authentication-client>
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>
@@ -197,12 +166,12 @@
                 <key-stores>
                     <key-store name="twoWayKS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/client.keystore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-2way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                     <key-store name="twoWayTS" >
                         <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/client.truststore" relative-to="jboss.home.dir"/>
+                        <file path="../ssl-primary-secondary-2way-workdir-elytron/server.truststore" relative-to="jboss.home.dir"/>
                         <credential-reference clear-text="123456"/>
                     </key-store>
                 </key-stores>
@@ -214,9 +183,9 @@
                 <trust-managers>
                     <trust-manager name="twoWayTM" key-store="twoWayTS"/>
                 </trust-managers>
-                <client-ssl-contexts>
-                    <client-ssl-context name="twoWayCSC" protocols="TLSv1.2" key-manager="twoWayKM" trust-manager="twoWayTM"/>
-                </client-ssl-contexts>
+                <server-ssl-contexts>
+                    <server-ssl-context name="twoWaySSC" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" key-manager="twoWayKM" trust-manager="twoWayTM"/>
+                </server-ssl-contexts>
             </tls>
         </subsystem>
     </profile>

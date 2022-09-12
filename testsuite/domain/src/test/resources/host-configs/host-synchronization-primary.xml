@@ -23,7 +23,7 @@
 <host xmlns="urn:jboss:domain:20.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
-      name="master">
+      name="primary">
 
     <extensions>
         <extension module="org.jboss.as.jmx"/>
@@ -64,7 +64,7 @@
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
         <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
     </interfaces>

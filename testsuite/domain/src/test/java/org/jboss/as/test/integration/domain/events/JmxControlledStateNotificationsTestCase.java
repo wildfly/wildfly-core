@@ -76,7 +76,7 @@ public class JmxControlledStateNotificationsTestCase {
     public static void setupClass() throws Exception {
         testSupport = DomainTestSupport.create(DomainTestSupport.Configuration
                 .create(JmxControlledStateNotificationsTestCase.class.getSimpleName(),
-                        "domain-configs/domain-standard.xml", "host-configs/host-master.xml", null));
+                        "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", null));
         testSupport.start();
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
@@ -125,8 +125,8 @@ public class JmxControlledStateNotificationsTestCase {
 
     @Test
     public void checkNotificationsAfterForcingRestartRequired() throws Exception {
-        forceRestartRequired(domainMasterLifecycleUtil.getDomainClient(), "master", "main-one");
-        restart(testSupport, "master", "main-one");
+        forceRestartRequired(domainMasterLifecycleUtil.getDomainClient(), "primary", "main-one");
+        restart(testSupport, "primary", "main-one");
 
         checkFacadeJmxNotifications(
                 createListOf("ok", "restart-required",

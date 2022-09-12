@@ -82,7 +82,7 @@ public class HttpManagementConstantHeadersTestCase {
    private static final String SECURITY_TEST_VALUE_4 = "max-age=31536000; includeSubDomains;";
    private static final String SECURITY_TEST_VALUE_5 = "nosniff";
 
-   private static final PathAddress INTERFACE_ADDRESS = PathAddress.pathAddress(PathElement.pathElement(HOST, MASTER), PathElement.pathElement(CORE_SERVICE, MANAGEMENT), PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE));
+   private static final PathAddress INTERFACE_ADDRESS = PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"), PathElement.pathElement(CORE_SERVICE, MANAGEMENT), PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE));
 
    private static DomainTestSupport testSupport;
    private static DomainLifecycleUtil domainMasterLifecycleUtil;
@@ -279,7 +279,7 @@ public class HttpManagementConstantHeadersTestCase {
 
    private void reload() throws IOException, TimeoutException, InterruptedException {
       ModelNode reload = new ModelNode();
-      reload.get(OP_ADDR).add(HOST, MASTER);
+      reload.get(OP_ADDR).add(HOST, "primary");
       reload.get(OP).set(RELOAD);
       reload.get(ADMIN_ONLY).set(false);
       domainMasterLifecycleUtil.executeAwaitConnectionClosed(reload);

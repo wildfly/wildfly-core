@@ -87,8 +87,8 @@ public class AutoIgnoredResourcesDomainTestCase {
     private static DomainLifecycleUtil domainSlaveLifecycleUtil;
 
     private static final ModelNode ROOT_ADDRESS = new ModelNode().setEmptyList();
-    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "master");
-    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "slave");
+    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
+    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
 
     static {
         ROOT_ADDRESS.protect();
@@ -128,7 +128,7 @@ public class AutoIgnoredResourcesDomainTestCase {
     public static void setupDomain(boolean slaveIsBackupDC, boolean slaveIsCachedDc) throws Exception {
         //Make all the configs read-only so we can stop and start when we like to reset
         DomainTestSupport.Configuration config = DomainTestSupport.Configuration.create(AutoIgnoredResourcesDomainTestCase.class.getSimpleName(),
-                "domain-configs/domain-auto-ignore.xml", "host-configs/host-auto-ignore-master.xml", "host-configs/host-auto-ignore-slave.xml",
+                "domain-configs/domain-auto-ignore.xml", "host-configs/host-auto-ignore-primary.xml", "host-configs/host-auto-ignore-secondary.xml",
                 true, true, true);
         if (slaveIsBackupDC)
             config.getSlaveConfiguration().setBackupDC(true);

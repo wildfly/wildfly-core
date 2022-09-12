@@ -59,8 +59,8 @@ public abstract class AbstractConfigurationChangesTestCase {
 
     protected static final int MAX_HISTORY_SIZE = 100;
 
-    protected static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "master");
-    protected static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "slave");
+    protected static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "primary");
+    protected static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "secondary");
     protected static final PathAddress ALLOWED_ORIGINS_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
@@ -79,8 +79,8 @@ public abstract class AbstractConfigurationChangesTestCase {
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
                 AbstractConfigurationChangesTestCase.class.getSimpleName(),
                 "domain-configs/domain-config-changes.xml",
-                "host-configs/host-master-config-changes.xml",
-                "host-configs/host-slave-config-changes.xml",
+                "host-configs/host-primary-config-changes.xml",
+                "host-configs/host-secondary-config-changes.xml",
                 false, false, false, false, false);
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();

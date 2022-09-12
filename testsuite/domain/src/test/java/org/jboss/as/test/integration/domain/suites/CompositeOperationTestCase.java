@@ -105,8 +105,8 @@ public class CompositeOperationTestCase {
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
 
-    private static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "master");
-    private static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "slave");
+    private static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "primary");
+    private static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "secondary");
     private static final PathElement SERVER_ONE = PathElement.pathElement(RUNNING_SERVER, "main-one");
     private static final PathElement SERVER_TWO = PathElement.pathElement(RUNNING_SERVER, "main-two");
     private static final PathElement SERVER_THREE = PathElement.pathElement(RUNNING_SERVER, "main-three");
@@ -184,7 +184,7 @@ public class CompositeOperationTestCase {
         address.setEmptyList();
 
         // host=slave
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         steps.add().set(createReadResourceOperation(address));
 
         // host=slave,server=main-three
@@ -199,7 +199,7 @@ public class CompositeOperationTestCase {
         address.setEmptyList();
 
         // host=master
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         steps.add().set(createReadResourceOperation(address));
 
         // host=master,server=main-one
@@ -219,7 +219,7 @@ public class CompositeOperationTestCase {
         address.setEmptyList();
 
         // host=slave
-        address.add(HOST, "slave");
+        address.add(HOST, "secondary");
         nestedSteps.add().set(createReadResourceOperation(address));
 
         // host=slave,server=main-three
@@ -234,7 +234,7 @@ public class CompositeOperationTestCase {
         address.setEmptyList();
 
         // host=master
-        address.add(HOST, "master");
+        address.add(HOST, "primary");
         nestedSteps.add().set(createReadResourceOperation(address));
 
         // host=master,server=main-one
@@ -270,13 +270,13 @@ public class CompositeOperationTestCase {
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(RUNNING_SERVER));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(DIRECTORY_GROUPING));
-                    assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(NAME).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "secondary", itemResult.get(NAME).asString());
                     break;
                 case 2:
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
                     assertEquals(property.getName() + " result " + itemResult, "main-three", itemResult.get(NAME).asString());
-                    assertEquals(property.getName() + " result " + itemResult, "slave", itemResult.get(HOST).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "secondary", itemResult.get(HOST).asString());
                     break;
                 case 3:
                 case 6:
@@ -286,13 +286,13 @@ public class CompositeOperationTestCase {
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(RUNNING_SERVER));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(DIRECTORY_GROUPING));
-                    assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(NAME).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "primary", itemResult.get(NAME).asString());
                     break;
                 case 5:
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(MANAGEMENT_MAJOR_VERSION));
                     assertTrue(property.getName() + " result " + itemResult, itemResult.hasDefined(SUBSYSTEM));
                     assertEquals(property.getName() + " result " + itemResult, "main-one", itemResult.get(NAME).asString());
-                    assertEquals(property.getName() + " result " + itemResult, "master", itemResult.get(HOST).asString());
+                    assertEquals(property.getName() + " result " + itemResult, "primary", itemResult.get(HOST).asString());
                     break;
                 case 7:
                     if (allowNested) {
@@ -376,14 +376,14 @@ public class CompositeOperationTestCase {
 
         validateCompositeReadWriteResponse(response, true);
 
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", HOST, "master", "main-one", "response"));
-        ModelNode serverResp = response.get(SERVER_GROUPS, "main-server-group", HOST, "master", "main-one", "response");
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", HOST, "primary", "main-one", "response"));
+        ModelNode serverResp = response.get(SERVER_GROUPS, "main-server-group", HOST, "primary", "main-one", "response");
         validateBasicServerResponse(serverResp, null, 1, null, 2, 2, -1, null, 4, null, 5, 5);
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", HOST, "slave", "main-three", "response"));
-        serverResp = response.get(SERVER_GROUPS, "main-server-group", HOST, "slave", "main-three", "response");
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "main-server-group", HOST, "secondary", "main-three", "response"));
+        serverResp = response.get(SERVER_GROUPS, "main-server-group", HOST, "secondary", "main-three", "response");
         validateBasicServerResponse(serverResp, null, 1, 0, null, 3, -1, null, 4, 3, null, 6);
-        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "other-server-group", HOST, "slave", "other-two", "response"));
-        serverResp = response.get(SERVER_GROUPS, "other-server-group", HOST, "slave", "other-two", "response");
+        assertTrue(response.toString(), response.hasDefined(SERVER_GROUPS, "other-server-group", HOST, "secondary", "other-two", "response"));
+        serverResp = response.get(SERVER_GROUPS, "other-server-group", HOST, "secondary", "other-two", "response");
         validateBasicServerResponse(serverResp, null, null, -1, null, null);
 
     }

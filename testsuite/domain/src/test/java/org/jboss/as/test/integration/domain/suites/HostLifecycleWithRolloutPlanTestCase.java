@@ -140,7 +140,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
 
         final ModelNode slave = new ModelNode();
         slave.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        slave.get(OP_ADDR).add(HOST, "slave");
+        slave.get(OP_ADDR).add(HOST, "secondary");
         slave.get(NAME).set(HOST_STATE);
 
         // Wait until slave is reconnected and running
@@ -208,7 +208,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).add(HOST, "slave");
+        operation.get(OP_ADDR).add(HOST, "secondary");
         operation.get(NAME).set(HOST_STATE);
 
         final long time = System.currentTimeMillis() + TIMEOUT;
@@ -237,7 +237,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
     private void reloadMaster() throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set("reload");
-        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP_ADDR).add(HOST, "primary");
         op.get(ADMIN_ONLY).set(false);
         domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
         // Try to reconnect to the hc
@@ -262,7 +262,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
                 final ModelNode result = validateResponse(masterClient.execute(operation));
                 boolean hasSlave = false;
                 for (ModelNode host : result.asList()) {
-                    if ("slave".equals(host.asString())) {
+                    if ("secondary".equals(host.asString())) {
                         hasSlave = true;
                         break;
                     }

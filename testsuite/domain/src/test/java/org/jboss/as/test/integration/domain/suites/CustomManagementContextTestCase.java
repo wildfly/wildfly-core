@@ -33,7 +33,7 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public class CustomManagementContextTestCase extends CustomManagementContextTestBase {
 
-    private static final PathElement HOST = PathElement.pathElement(ModelDescriptionConstants.HOST, "master");
+    private static final PathElement HOST = PathElement.pathElement(ModelDescriptionConstants.HOST, "primary");
     private static DomainTestSupport testSupport;
     private static ManagementClient managementClient;
 

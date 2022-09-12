@@ -77,8 +77,8 @@ public class HostSuspendResumeTestCase {
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
     public static final String MAIN_SERVER_GROUP = "main-server-group";
 
-    public static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
-    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
+    public static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
 
     public static final PathAddress SERVER_MAIN_ONE = PathAddress.pathAddress(SERVER, "main-one");
     public static final PathAddress SERVER_MAIN_THREE = PathAddress.pathAddress(SERVER, "main-three");

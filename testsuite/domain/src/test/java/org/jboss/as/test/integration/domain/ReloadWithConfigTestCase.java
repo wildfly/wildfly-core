@@ -59,8 +59,8 @@ import org.junit.Test;
  * @author Kabir Khan
  */
 public class ReloadWithConfigTestCase {
-    private static final String MASTER = "master";
-    private static final String SLAVE = "slave";
+    private static final String MASTER = "primary";
+    private static final String SLAVE = "secondary";
     private static final String RELOAD_TEST_CASE_ONE = "reload-test-case-one";
     private static final String RELOAD_TEST_CASE_TWO = "reload-test-case-two";
 

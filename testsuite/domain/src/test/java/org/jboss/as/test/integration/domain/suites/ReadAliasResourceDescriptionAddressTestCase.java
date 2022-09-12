@@ -74,12 +74,12 @@ public class ReadAliasResourceDescriptionAddressTestCase {
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
             .append("wildcard-alias", "*");
-    private static final PathAddress SERVER_SINGLETON_ALIAS = PathAddress.pathAddress(HOST, "master")
+    private static final PathAddress SERVER_SINGLETON_ALIAS = PathAddress.pathAddress(HOST, "primary")
             .append(SERVER, "main-one")
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
             .append("singleton-alias", "uno");
-    private static final PathAddress SERVER_WILDCARD_ALIAS = PathAddress.pathAddress(HOST, "master")
+    private static final PathAddress SERVER_WILDCARD_ALIAS = PathAddress.pathAddress(HOST, "primary")
             .append(SERVER, "main-one")
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
@@ -92,12 +92,12 @@ public class ReadAliasResourceDescriptionAddressTestCase {
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
             .append("wildcard", "*");
-    private static final PathAddress SERVER_SINGLETON_REAL = PathAddress.pathAddress(HOST, "master")
+    private static final PathAddress SERVER_SINGLETON_REAL = PathAddress.pathAddress(HOST, "primary")
             .append(SERVER, "main-one")
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
             .append("singleton", "one");
-    private static final PathAddress SERVER_WILDCARD_REAL = PathAddress.pathAddress(HOST, "master")
+    private static final PathAddress SERVER_WILDCARD_REAL = PathAddress.pathAddress(HOST, "primary")
             .append(SERVER, "main-one")
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")

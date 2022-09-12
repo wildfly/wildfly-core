@@ -50,8 +50,8 @@ import org.junit.Test;
 public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
 
 
-    private static final String MASTER = "master";
-    private static final String SLAVE = "slave";
+    private static final String MASTER = "primary";
+    private static final String SLAVE = "secondary";
     private static final String MASTER_SERVER = "main-one";
     private static final String SLAVE_SERVER = "main-three";
 

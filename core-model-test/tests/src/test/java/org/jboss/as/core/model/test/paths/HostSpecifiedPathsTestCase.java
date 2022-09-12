@@ -46,7 +46,7 @@ public class HostSpecifiedPathsTestCase extends AbstractSpecifiedPathsTestCase {
 
     @Override
     protected PathAddress getPathsParent() {
-        return PathAddress.pathAddress(HOST, "master");
+        return PathAddress.pathAddress(HOST, "primary");
     }
 
     @Override

@@ -102,7 +102,7 @@ public class FullRbacProviderPropertiesRoleMappingTestSuite {
     public static DomainTestSupport createAndStartDefaultSupport(final String testName) {
         try {
             final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(testName,
-                    "domain-configs/domain-rbac.rbac", "host-configs/host-master-rbac-properties.xml", "host-configs/host-slave-rbac-properties.xml");
+                    "domain-configs/domain-rbac.rbac", "host-configs/host-primary-rbac-properties.xml", "host-configs/host-secondary-rbac-properties.xml");
             String mgmtUserProperties = WildFlyManagedConfiguration.loadConfigFileFromContextClassLoader("mgmt-users/mgmt-users.properties");
             String mgmtGroupsProperties = WildFlyManagedConfiguration.loadConfigFileFromContextClassLoader("mgmt-users/mgmt-groups.properties");
             configuration.getMasterConfiguration().setMgmtUsersFile(mgmtUserProperties);

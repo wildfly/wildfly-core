@@ -111,7 +111,7 @@ public class OperationTransformationTestCase {
         final PathAddress ignored = PathAddress.pathAddress(PathElement.pathElement(PROFILE, "ignored"),
                 PathElement.pathElement(SUBSYSTEM, VersionedExtensionCommon.SUBSYSTEM_NAME));
 
-        final ModelNode serverAddress = getRunningServerAddress("slave", "main-three");
+        final ModelNode serverAddress = getRunningServerAddress("secondary", "main-three");
         serverAddress.add(SUBSYSTEM, VersionedExtensionCommon.SUBSYSTEM_NAME);
 
         final DomainClient client = master.getDomainClient();
@@ -155,9 +155,9 @@ public class OperationTransformationTestCase {
         final ModelNode otherFailure = executeForFailure(addOtherNew, client);
 
         Assert.assertTrue(otherFailure.hasDefined(HOST_FAILURE_DESCRIPTIONS));
-        Assert.assertTrue(otherFailure.get(HOST_FAILURE_DESCRIPTIONS).hasDefined("slave"));
+        Assert.assertTrue(otherFailure.get(HOST_FAILURE_DESCRIPTIONS).hasDefined("secondary"));
         // Check that the host-failure contains WFLYCTL0304 rejected
-        Assert.assertTrue(otherFailure.get(HOST_FAILURE_DESCRIPTIONS, "slave").asString().contains("WFLYCTL0304"));
+        Assert.assertTrue(otherFailure.get(HOST_FAILURE_DESCRIPTIONS, "secondary").asString().contains("WFLYCTL0304"));
 
         // This should work
         final ModelNode addOtherNewIgnored = createAdd(ignored.append(otherNewElementPath));
@@ -170,9 +170,9 @@ public class OperationTransformationTestCase {
                 createAdd(address.append(PathElement.pathElement("other-new-element", "new2")))); // fail
         final ModelNode compositeFailure = executeForFailure(cpa, client);
         Assert.assertTrue(compositeFailure.hasDefined(HOST_FAILURE_DESCRIPTIONS));
-        Assert.assertTrue(compositeFailure.get(HOST_FAILURE_DESCRIPTIONS).hasDefined("slave"));
+        Assert.assertTrue(compositeFailure.get(HOST_FAILURE_DESCRIPTIONS).hasDefined("secondary"));
         // Check that the host-failure contains WFLYCTL0304 rejected
-        Assert.assertTrue(compositeFailure.get(HOST_FAILURE_DESCRIPTIONS, "slave").asString().contains("WFLYCTL0304"));
+        Assert.assertTrue(compositeFailure.get(HOST_FAILURE_DESCRIPTIONS, "secondary").asString().contains("WFLYCTL0304"));
 
         // Successful composite
         executeForResult(createCompositeOperation(
@@ -209,7 +209,7 @@ public class OperationTransformationTestCase {
         // "result" => {"test-attribute" => "test"},
         Assert.assertEquals("test", updateResult.get(RESULT, "test-attribute").asString());
         // server-result
-        //Assert.assertEquals("test", updateResult.get(SERVER_GROUPS, "main-server-group", HOST, "slave", "main-three", "response", RESULT, "test-attribute").asString());
+        //Assert.assertEquals("test", updateResult.get(SERVER_GROUPS, "main-server-group", HOST, "secondary", "main-three", "response", RESULT, "test-attribute").asString());
 
         //
         final ModelNode write = new ModelNode();
@@ -234,7 +234,7 @@ public class OperationTransformationTestCase {
 
         final ModelNode compositeResult = client.execute(composite);
         // server-result
-        Assert.assertEquals(false, compositeResult.get(SERVER_GROUPS, "main-server-group", HOST, "slave", "main-three", "response", RESULT, "step-2", RESULT).asBoolean());
+        Assert.assertEquals(false, compositeResult.get(SERVER_GROUPS, "main-server-group", HOST, "secondary", "main-three", "response", RESULT, "step-2", RESULT).asBoolean());
 
         // Test expression replacement
         testPropertiesModel();

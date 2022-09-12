@@ -43,7 +43,7 @@ public class ReadOnlyModeTestCase {
     @Before
     public void setupDomain() throws Exception {
         DomainTestSupport.Configuration domainConfig = DomainTestSupport.Configuration.create(ReadOnlyModeTestCase.class.getSimpleName(),
-                "domain-configs/domain-standard.xml", "host-configs/host-master.xml", "host-configs/host-slave.xml");
+                "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
         domainConfig.getMasterConfiguration().setReadOnlyHost(true);
         domainConfig.getMasterConfiguration().setReadOnlyDomain(true);
         domainConfig.getSlaveConfiguration().setReadOnlyDomain(true);
@@ -65,8 +65,8 @@ public class ReadOnlyModeTestCase {
     @Test
     public void testConfigurationNotUpdated() throws Exception {
         ModelNode domainAddress = PathAddress.pathAddress("system-property", "domain-read-only").toModelNode();
-        ModelNode masterAddress = PathAddress.pathAddress("host", "master").append("system-property", "master-read-only").toModelNode();
-        ModelNode slaveAddress = PathAddress.pathAddress("host", "slave").append("system-property", "slave-read-only").toModelNode();
+        ModelNode masterAddress = PathAddress.pathAddress("host", "primary").append("system-property", "master-read-only").toModelNode();
+        ModelNode slaveAddress = PathAddress.pathAddress("host", "secondary").append("system-property", "slave-read-only").toModelNode();
         DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         ModelNode op = Operations.createAddOperation(domainAddress);
@@ -84,7 +84,7 @@ public class ReadOnlyModeTestCase {
 
         // reload master HC
         op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "master");
+        op.get(OP_ADDR).add(HOST, "primary");
         op.get(OP).set("reload");
         domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
         // Try to reconnect to the hc
@@ -97,7 +97,7 @@ public class ReadOnlyModeTestCase {
 
         // reload slave HC
         op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "slave");
+        op.get(OP_ADDR).add(HOST, "secondary");
         op.get(OP).set("reload");
         domainSlaveLifecycleUtil.executeAwaitConnectionClosed(op);
         // Try to reconnect to the hc

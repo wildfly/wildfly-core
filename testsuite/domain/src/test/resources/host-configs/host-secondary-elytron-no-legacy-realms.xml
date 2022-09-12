@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 
-<host xmlns="urn:jboss:domain:20.0" name="master">
+<host xmlns="urn:jboss:domain:20.0" name="secondary">
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.wildfly.extension.core-management"/>
@@ -11,6 +11,7 @@
         <path name="domainTestPath" path="/tmp" />
     </paths>
 
+    <!-- <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" /> -->
     <management>
         <audit-log>
             <formatters>
@@ -33,33 +34,35 @@
         </audit-log>
         <management-interfaces>
 	  <native-interface sasl-authentication-factory="management-sasl-authentication">
-            <socket interface="management" port="${jboss.management.native.port:9999}"/>
+            <socket interface="management" port="${jboss.management.native.port:19999}"/>
 	  </native-interface>
 	  <http-interface http-authentication-factory="management-http-authentication">
             <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
-            <socket interface="management" port="${jboss.management.http.port:9990}"/>
+            <socket interface="management" port="${jboss.management.http.port:19990}"/>
 	  </http-interface>
         </management-interfaces>
     </management>
-    <domain-controller>
-        <local/>
-    </domain-controller>
+     <domain-controller>
+        <!-- Remote domain controller configuration with a host and port -->
+        <remote host="${jboss.test.host.primary.address}" port="9999" authentication-context="slaveHostAContext"/>
+     </domain-controller>
     <interfaces>
       <interface name="management">
-	<inet-address value="${jboss.test.host.master.address}"/>
+	<inet-address value="${jboss.test.host.secondary.address}"/>
       </interface>
         <interface name="public">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address}"/>
         </interface>
         <interface name="unsecure">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address}"/>
          </interface>
     </interfaces>
     <jvms>
         <jvm name="default">
-            <heap size="64m" max-size="200m"/>
+            <heap size="64m" max-size="128m"/>
             <jvm-options>
                 <option value="-server"/>
+                <option value="-XX:MetaspaceSize=96m"/>
                 <option value="-XX:MetaspaceSize=96m"/>
                 <option value="-XX:MaxMetaspaceSize=256m"/>
             </jvm-options>
@@ -84,6 +87,15 @@
             <remoting-connector/>
         </subsystem>
 	<subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <authentication-client>
+		<!-- corresponding secret: <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" /> -->
+                <authentication-configuration sasl-mechanism-selector="DIGEST-MD5" name="slaveHostAConfiguration" authentication-name="slave" realm="ManagementRealm">
+                    <credential-reference clear-text="slave_us3r_password"/>
+                </authentication-configuration>
+                <authentication-context name="slaveHostAContext">
+                    <match-rule match-host="${jboss.test.host.primary.address}" authentication-configuration="slaveHostAConfiguration"/>
+                </authentication-context>
+            </authentication-client>
             <providers>
                 <provider-loader name="elytron" module="org.wildfly.security.elytron"/>
                 <provider-loader name="openssl" module="org.wildfly.openssl"/>

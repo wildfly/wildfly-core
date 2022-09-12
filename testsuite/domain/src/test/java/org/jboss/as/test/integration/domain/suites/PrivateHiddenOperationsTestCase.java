@@ -49,8 +49,8 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public class PrivateHiddenOperationsTestCase {
 
-    private static final PathAddress MASTER = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "master");
-    private static final PathAddress SLAVE = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "slave");
+    private static final PathAddress MASTER = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "primary");
+    private static final PathAddress SLAVE = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "secondary");
 
     private static final PathAddress EXT = PathAddress.pathAddress("extension", OpTypesExtension.EXTENSION_NAME);
     private static final PathAddress PROFILE = PathAddress.pathAddress("profile", "default");

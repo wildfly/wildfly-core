@@ -73,7 +73,7 @@ public class ProductInfoUnitTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ProductInfoUnitTestCase.class.getSimpleName(),
-                "domain-configs/domain-minimal.xml", "host-configs/host-master.xml", "host-configs/host-minimal.xml", false, false, false, false, false));
+                "domain-configs/domain-minimal.xml", "host-configs/host-primary.xml", "host-configs/host-minimal.xml", false, false, false, false, false));
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
     }
@@ -106,16 +106,16 @@ public class ProductInfoUnitTestCase {
             assertThat(report.isDefined(), is(true));
             assertThat(report.hasDefined(NODE_NAME), is(true));
             String nodeName = report.get(NODE_NAME).asString();
-            assertThat(nodeName, anyOf(is("master:main-one"), is("master:main-two"), is("master"), is("master:reload-one"), is("master:other-one")));
-            boolean isRunning = "master".equals(nodeName) || "master:main-one".equals(nodeName);
+            assertThat(nodeName, anyOf(is("primary:main-one"), is("primary:main-two"), is("primary"), is("primary:reload-one"), is("primary:other-one")));
+            boolean isRunning = "primary".equals(nodeName) || "primary:main-one".equals(nodeName);
             if (isRunning) {
-                assertThat(report.get(ORGANIZATION).asString(), is("core-master"));
+                assertThat(report.get(ORGANIZATION).asString(), is("core-primary"));
                 assertThat(report.hasDefined(HOSTNAME), is(true));
                 assertThat(report.hasDefined(INSTANCE_ID), is(true));
                 assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));
                 assertThat(report.get(PRODUCT_COMMUNITY_IDENTIFIER).asString(), is(PROJECT_TYPE));
                 assertThat(report.hasDefined(STANDALONE_DOMAIN_IDENTIFIER), is(true));
-                if ("master".equals(nodeName)) {
+                if ("primary".equals(nodeName)) {
                     assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.HOST_CONTROLLER.name()));
                 } else {
                     assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.DOMAIN_SERVER.name()));
@@ -144,15 +144,15 @@ public class ProductInfoUnitTestCase {
             String nodeName = report.get(NODE_NAME).asString();
             assertThat(report.hasDefined(ORGANIZATION), is(true));
             assertThat(report.get(ORGANIZATION).asString(), is("wildfly-core"));
-            assertThat(nodeName, anyOf(is("slave:main-three"), is("slave:main-four"), is("slave"), is("slave:reload-two"), is("slave:other-two")));
-            boolean isRunning = "slave".equals(nodeName) || "slave:main-three".equals(nodeName) || "slave:other-two".equals(nodeName);
+            assertThat(nodeName, anyOf(is("secondary:main-three"), is("secondary:main-four"), is("secondary"), is("secondary:reload-two"), is("secondary:other-two")));
+            boolean isRunning = "secondary".equals(nodeName) || "secondary:main-three".equals(nodeName) || "secondary:other-two".equals(nodeName);
             if (isRunning) {
                 assertThat(report.hasDefined(HOSTNAME), is(true));
                 assertThat(report.hasDefined(INSTANCE_ID), is(true));
                 assertThat(report.hasDefined(PRODUCT_COMMUNITY_IDENTIFIER), is(true));
                 assertThat(report.get(PRODUCT_COMMUNITY_IDENTIFIER).asString(), is(PROJECT_TYPE));
                 assertThat(report.hasDefined(STANDALONE_DOMAIN_IDENTIFIER), is(true));
-                if ("slave".equals(nodeName)) {
+                if ("secondary".equals(nodeName)) {
                     assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.HOST_CONTROLLER.name()));
                 } else {
                     assertThat(report.get(STANDALONE_DOMAIN_IDENTIFIER).asString(), is(ProcessType.DOMAIN_SERVER.name()));

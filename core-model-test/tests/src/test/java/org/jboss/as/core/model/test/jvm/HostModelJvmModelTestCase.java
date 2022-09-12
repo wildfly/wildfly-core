@@ -41,7 +41,7 @@ import org.junit.Test;
  */
 public class HostModelJvmModelTestCase extends GlobalJvmModelTestCase {
 
-    static final PathElement PARENT = PathElement.pathElement(HOST, "master");
+    static final PathElement PARENT = PathElement.pathElement(HOST, "primary");
 
     public HostModelJvmModelTestCase() {
         super(TestModelType.HOST);
@@ -58,7 +58,7 @@ public class HostModelJvmModelTestCase extends GlobalJvmModelTestCase {
         ModelTestUtils.compareXml(ModelTestUtils.readResource(this.getClass(), "host-global.xml"), xml);
 
         ModelNode model = kernelServices.readWholeModel();
-        ModelNode jvmParent = model.get(HOST, "master", JVM);
+        ModelNode jvmParent = model.get(HOST, "primary", JVM);
         Assert.assertEquals(2, jvmParent.keys().size());
 
         checkEmptyJvm(jvmParent.get("empty"));

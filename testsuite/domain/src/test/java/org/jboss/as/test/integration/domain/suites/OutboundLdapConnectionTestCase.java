@@ -118,7 +118,7 @@ public class OutboundLdapConnectionTestCase {
 
     private void addLdapOutboundConnection() throws IOException, MgmtOperationException {
         final ModelNode addLdapOutboundConnection = ModelUtil.createOpNode(
-                "host=master/core-service=management/ldap-connection=ldapConnection", ADD);
+                "host=primary/core-service=management/ldap-connection=ldapConnection", ADD);
         addLdapOutboundConnection.get("url").set("ldap://localhost:10389");
         addLdapOutboundConnection.get("search-dn").set("uid=admin,ou=system");
         addLdapOutboundConnection.get("search-credential").set("secret");
@@ -127,13 +127,13 @@ public class OutboundLdapConnectionTestCase {
 
     private void addTestRealm() throws IOException, MgmtOperationException {
         final ModelNode addTestRealm = ModelUtil.createOpNode(
-                "host=master/core-service=management/security-realm=TestRealm", ADD);
+                "host=primary/core-service=management/security-realm=TestRealm", ADD);
         executeOperation(addTestRealm);
     }
 
     private void addTestRealmLdapAuthentication() throws IOException, MgmtOperationException {
         final ModelNode addTestRealmLdapAuthentication = ModelUtil.createOpNode(
-                "host=master/core-service=management/security-realm=TestRealm/authentication=ldap", ADD);
+                "host=primary/core-service=management/security-realm=TestRealm/authentication=ldap", ADD);
         addTestRealmLdapAuthentication.get("connection").set("ldapConnection");
         addTestRealmLdapAuthentication.get("base-dn").set("ou=People,dc=wildfly,dc=org");
         addTestRealmLdapAuthentication.get("username-attribute").set("uid");
@@ -142,7 +142,7 @@ public class OutboundLdapConnectionTestCase {
 
     private void changeHttpInterfaceSecurityRealm() throws IOException, MgmtOperationException {
         final ModelNode changeHttpInterface = ModelUtil.createOpNode(
-                "host=master/core-service=management/management-interface=http-interface", WRITE_ATTRIBUTE_OPERATION);
+                "host=primary/core-service=management/management-interface=http-interface", WRITE_ATTRIBUTE_OPERATION);
         changeHttpInterface.get("name").set("security-realm");
         changeHttpInterface.get("value").set("TestRealm");
         executeOperation(changeHttpInterface);
@@ -150,7 +150,7 @@ public class OutboundLdapConnectionTestCase {
 
     private void changeLdapConnectionSearchDnAttribute(String value) throws IOException, MgmtOperationException {
         final ModelNode changeLdapSearchDn = ModelUtil.createOpNode(
-                "host=master/core-service=management/ldap-connection=ldapConnection", WRITE_ATTRIBUTE_OPERATION);
+                "host=primary/core-service=management/ldap-connection=ldapConnection", WRITE_ATTRIBUTE_OPERATION);
         changeLdapSearchDn.get("name").set("search-dn");
         changeLdapSearchDn.get("value").set(value);
         executeOperation(changeLdapSearchDn);
@@ -167,7 +167,7 @@ public class OutboundLdapConnectionTestCase {
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
         ModelNode reload = new ModelNode();
-        reload.get(OP_ADDR).add(HOST, "master");
+        reload.get(OP_ADDR).add(HOST, "primary");
         reload.get(OP).set("reload");
         reload.get("admin-only").set(false);
         domainMasterLifecycleUtil.executeAwaitConnectionClosed(reload);

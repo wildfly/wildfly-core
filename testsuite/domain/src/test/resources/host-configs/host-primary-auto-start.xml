@@ -1,6 +1,6 @@
 <!--
   ~ JBoss, Home of Professional Open Source.
-  ~ Copyright 2017, Red Hat, Inc., and individual contributors
+  ~ Copyright 2010, Red Hat, Inc., and individual contributors
   ~ as indicated by the @author tags. See the copyright.txt file in the
   ~ distribution for a full listing of individual contributors.
   ~
@@ -20,13 +20,19 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host name="master" xmlns="urn:jboss:domain:20.0">
+<host xmlns="urn:jboss:domain:20.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
+      name="primary">
 
     <extensions>
-        <extension module="org.jboss.as.jmx"/>
-        <extension module="org.wildfly.extension.core-management"/>
         <extension module="org.wildfly.extension.elytron"/>
     </extensions>
+
+    <paths>
+        <path name="domainTestPath" path="/tmp" />
+    </paths>
+
     <management>
         <audit-log>
             <formatters>
@@ -49,44 +55,87 @@
         </audit-log>
         <management-interfaces>
             <native-interface sasl-authentication-factory="management-sasl-authentication">
-                <socket interface="management" port="${jboss.management.native.port:9999}"/>
+                <socket interface="management" port="9999"/>
             </native-interface>
-            <http-interface http-authentication-factory="management-http-authentication" ssl-context="twoWaySSC">
+            <http-interface http-authentication-factory="management-http-authentication">
                 <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
-                <socket interface="management" port="${jboss.management.http.port:9990}" secure-port="${jboss.management.https.port:9993}"/>
+                <socket interface="management" port="${jboss.management.http.port:9990}"/>
             </http-interface>
         </management-interfaces>
     </management>
 
     <domain-controller>
-        <local/>
+       <local/>
     </domain-controller>
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.primary.address}"/>
         </interface>
     </interfaces>
 
     <jvms>
-        <jvm name="default">
-            <heap size="64m" max-size="256m"/>
+        <jvm name="default" >
+            <heap size="64m" max-size="128m"/>
             <jvm-options>
-                <option value="-server"/>
-                <option value="-XX:MetaspaceSize=96m"/>
-                <option value="-XX:MaxMetaspaceSize=256m"/>
+                <option value="-ea"/>
             </jvm-options>
+            <environment-variables>
+                <variable name="DOMAIN_TEST_JVM" value="jvm"/>
+            </environment-variables>
         </jvm>
     </jvms>
 
+    <servers>
+        <server name="main-one" group="main-server-group">
+            <paths>
+                <path name="domainTestPath" path="main-one" relative-to="jboss.server.temp.dir" />
+            </paths>
+            <interfaces>
+                <interface name="public">
+                    <inet-address value="${jboss.test.host.primary.address}"/>
+                </interface>
+            </interfaces>
+            <!-- server-one inherits the default socket-group declared in the server-group -->
+            <jvm name="default">
+                <environment-variables>
+                    <variable name="DOMAIN_TEST_SERVER" value="server"/>
+                </environment-variables>
+            </jvm>
+        </server>
+        <server name="main-two" group="main-server-group" auto-start="true" update-auto-start-with-server-status="true">
+            <interfaces>
+                <interface name="public">
+                    <inet-address value="${jboss.test.host.primary.address}"/>
+                </interface>
+            </interfaces>
+            <!-- server-two avoids port conflicts by incrementing the ports in
+            the default socket-group declared in the server-group -->
+            <socket-bindings socket-binding-group="standard-sockets" port-offset="150"/>
+            <jvm name="default" />
+        </server>
+        <server name="other-one" group="other-server-group" auto-start="false" update-auto-start-with-server-status="true">
+            <interfaces>
+                <interface name="public">
+                    <inet-address value="${jboss.test.host.primary.address}"/>
+                </interface>
+            </interfaces>
+            <socket-bindings port-offset="250"/>
+            <jvm name="default" />
+        </server>
+        <server name="other-two" group="other-server-group" auto-start="false" update-auto-start-with-server-status="false">
+            <interfaces>
+                <interface name="public">
+                    <inet-address value="${jboss.test.host.primary.address}"/>
+                </interface>
+            </interfaces>
+            <jvm name="default" />
+            <socket-bindings port-offset="350"/>
+        </server>
+    </servers>
+
     <profile>
-        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
-        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
-            <expose-resolved-model/>
-            <expose-expression-model/>
-            <remoting-connector/>
-        </subsystem>
-        <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
+        <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>
@@ -99,7 +148,7 @@
                 <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.domain.log.dir" format="JSON"/>
             </audit-logging>
             <security-domains>
-                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper" security-event-listener="local-audit">
+                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
                     <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
                     <realm name="local" role-mapper="super-user-mapper"/>
                 </security-domain>
@@ -108,27 +157,33 @@
                 <identity-realm name="local" identity="$local"/>
                 <properties-realm name="ManagementRealm">
                     <users-properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir" digest-realm-name="ManagementRealm"/>
-                    <groups-properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
                 </properties-realm>
             </security-realms>
             <mappers>
-                <logical-permission-mapper name="default-permission-mapper" logical-operation="unless" left="constant-permission-mapper" right="anonymous-permission-mapper"/>
-                <simple-permission-mapper name="anonymous-permission-mapper">
-                    <permission-mapping principals="anonymous">
-                        <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+                    <permission-mapping>
+                        <principal name="anonymous"/>
+                        <permission-set name="default-permissions"/>
+                    </permission-mapping>
+                    <permission-mapping match-all="true">
+                        <permission-set name="login-permission"/>
+                        <permission-set name="default-permissions"/>
                     </permission-mapping>
                 </simple-permission-mapper>
-                <constant-permission-mapper name="constant-permission-mapper">
-                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
-                </constant-permission-mapper>
                 <constant-realm-mapper name="local" realm-name="local"/>
                 <simple-role-decoder name="groups-to-roles" attribute="groups"/>
                 <constant-role-mapper name="super-user-mapper">
                     <role name="SuperUser"/>
                 </constant-role-mapper>
             </mappers>
+            <permission-sets>
+                <permission-set name="login-permission">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                </permission-set>
+                <permission-set name="default-permissions"/>
+            </permission-sets>
             <http>
-                <http-authentication-factory name="management-http-authentication" http-server-mechanism-factory="global" security-domain="ManagementDomain">
+                <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
                     <mechanism-configuration>
                         <mechanism mechanism-name="DIGEST">
                             <mechanism-realm realm-name="ManagementRealm"/>
@@ -150,10 +205,6 @@
                     <properties>
                         <property name="wildfly.sasl.local-user.default-user" value="$local"/>
                     </properties>
-                    <filters>
-                        <filter pattern="JBOSS-LOCAL-USER" />
-                        <filter pattern="DIGEST-MD5" />
-                    </filters>
                 </configurable-sasl-server-factory>
                 <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
                     <filters>
@@ -162,31 +213,6 @@
                 </mechanism-provider-filtering-sasl-server-factory>
                 <provider-sasl-server-factory name="global"/>
             </sasl>
-            <tls>
-                <key-stores>
-                    <key-store name="twoWayKS" >
-                        <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/server.keystore" relative-to="jboss.home.dir"/>
-                        <credential-reference clear-text="123456"/>
-                    </key-store>
-                    <key-store name="twoWayTS" >
-                        <implementation type="JKS" />
-                        <file path="../ssl-master-slave-2way-workdir-elytron/server.truststore" relative-to="jboss.home.dir"/>
-                        <credential-reference clear-text="123456"/>
-                    </key-store>
-                </key-stores>
-                <key-managers>
-                    <key-manager name="twoWayKM" key-store="twoWayKS">
-                        <credential-reference clear-text="123456"/>
-                    </key-manager>
-                </key-managers>
-                <trust-managers>
-                    <trust-manager name="twoWayTM" key-store="twoWayTS"/>
-                </trust-managers>
-                <server-ssl-contexts>
-                    <server-ssl-context name="twoWaySSC" protocols="TLSv1.2" want-client-auth="true" need-client-auth="true" key-manager="twoWayKM" trust-manager="twoWayTM"/>
-                </server-ssl-contexts>
-            </tls>
         </subsystem>
     </profile>
 </host>

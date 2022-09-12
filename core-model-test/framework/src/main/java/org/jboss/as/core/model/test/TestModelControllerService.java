@@ -441,7 +441,7 @@ class TestModelControllerService extends ModelTestModelControllerService {
     }
 
     private class HostInitializer implements Initializer {
-        final String hostName = "master";
+        final String hostName = "primary";
         final HostControllerEnvironment env = createHostControllerEnvironment();
         final LocalHostControllerInfoImpl info = createLocalHostControllerInfo(env);
         final IgnoredDomainResourceRegistry ignoredRegistry = new IgnoredDomainResourceRegistry(info);

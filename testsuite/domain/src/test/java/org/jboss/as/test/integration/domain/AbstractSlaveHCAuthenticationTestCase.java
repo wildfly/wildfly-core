@@ -56,7 +56,7 @@ public abstract class AbstractSlaveHCAuthenticationTestCase {
     protected void reloadSlave() throws Exception {
         ModelNode op = new ModelNode();
         op.get(OP).set("reload");
-        op.get(OP_ADDR).add(HOST, "slave");
+        op.get(OP_ADDR).add(HOST, "secondary");
         op.get(ADMIN_ONLY).set(false);
         try {
             getDomainSlaveClient().execute(new OperationBuilder(op).build());
@@ -78,7 +78,7 @@ public abstract class AbstractSlaveHCAuthenticationTestCase {
     protected boolean lookupHostInModel(ModelControllerClient client) throws Exception {
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        operation.get(OP_ADDR).add(HOST, "slave");
+        operation.get(OP_ADDR).add(HOST, "secondary");
         operation.get(NAME).set(HOST_STATE);
 
         try {
@@ -99,7 +99,7 @@ public abstract class AbstractSlaveHCAuthenticationTestCase {
     protected void setSlaveSecret(String value) throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
-        op.get(OP_ADDR).add(HOST, "slave").add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm").add(SERVER_IDENTITY, SECRET);
+        op.get(OP_ADDR).add(HOST, "secondary").add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm").add(SERVER_IDENTITY, SECRET);
         op.get(NAME).set(VALUE);
         op.get(VALUE).set(value);
         getDomainSlaveClient().execute(new OperationBuilder(op).build());

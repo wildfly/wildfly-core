@@ -70,10 +70,10 @@ public class SlaveSynchronizationTestCase {
 
     private static DomainClient masterClient;
 
-    private static String[] HOSTS = new String[] {"master", "hc1", "hc2"};
+    private static String[] HOSTS = new String[] {"primary", "hc1", "hc2"};
     private static int[] MGMT_PORTS = new int[] {9999, 9989, 19999};
-    private static final String masterAddress = System.getProperty("jboss.test.host.master.address");
-    private static final String slaveAddress = System.getProperty("jboss.test.host.slave.address");
+    private static final String masterAddress = System.getProperty("jboss.test.host.primary.address");
+    private static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
 
     private static final PathAddress hc1RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-one");
     private static final PathAddress hc2RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-two");
@@ -88,7 +88,7 @@ public class SlaveSynchronizationTestCase {
         DomainTestSupport testSupport = DomainTestSupport.create(
                         DomainTestSupport.Configuration.create(SlaveSynchronizationTestCase.class.getSimpleName(),
                                 "domain-configs/domain-synchronization.xml",
-                                "host-configs/host-synchronization-master.xml",
+                                "host-configs/host-synchronization-primary.xml",
                                 "host-configs/host-synchronization-hc2.xml"));
         ExtensionSetup.initializeErrorExtension(testSupport);
         testSupport = null;
@@ -132,8 +132,8 @@ public class SlaveSynchronizationTestCase {
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
         hostConfig.setHostControllerManagementAddress(host == 0 ? masterAddress : slaveAddress);
-        hostConfig.addHostCommandLineProperty("-Djboss.test.host.master.address=" + masterAddress);
-        hostConfig.addHostCommandLineProperty("-Djboss.test.host.slave.address=" + slaveAddress);
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.primary.address=" + masterAddress);
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.secondary.address=" + slaveAddress);
         hostConfig.addHostCommandLineProperty("-D" + ErrorExtension.FAIL_REMOVAL + "=true");
 
         if (Boolean.getBoolean("wildfly."+ HOSTS[host] + ".debug")) {

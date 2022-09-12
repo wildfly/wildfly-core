@@ -279,7 +279,7 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
     }
 
     private void testWCORE1067(ModelControllerClient client, String... roles) throws IOException {
-        ModelNode op = Util.createEmptyOperation(SHUTDOWN, PathAddress.pathAddress(HOST, "master"));
+        ModelNode op = Util.createEmptyOperation(SHUTDOWN, PathAddress.pathAddress(HOST, "primary"));
         configureRoles(op, roles);
         RbacUtil.executeOperation(client, op, Outcome.UNAUTHORIZED);
     }

@@ -65,7 +65,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
         testSupport = DomainTestSupport.create(
                 DomainTestSupport.Configuration.create(SlaveHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
-                        "host-configs/host-master-elytron.xml", "host-configs/host-slave-elytron.xml"));
+                        "host-configs/host-primary-elytron.xml", "host-configs/host-secondary-elytron.xml"));
 
         // Tweak the callback handler so the master test driver client can authenticate
         // To keep setup simple it uses the same credentials as the slave host
@@ -113,16 +113,16 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
 
     private void slaveWithPlainMechanism() throws Exception {
         // Set the allowed mechanism to PLAIN
-        getDomainMasterClient().execute(changePresentedMechanisms("master", new HashSet<>(Arrays.asList("PLAIN"))));
-        getDomainSlaveClient().execute(changeSaslMechanism("slave", "PLAIN"));
+        getDomainMasterClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("PLAIN"))));
+        getDomainSlaveClient().execute(changeSaslMechanism("secondary", "PLAIN"));
 
         // Reload the slave and check that it produces a registered slave
         reloadSlave();
         readHostControllerStatus(getDomainMasterClient());
 
         // Set the allowed mechanism back to Digest-MD5
-        getDomainMasterClient().execute(changePresentedMechanisms("master", new HashSet<>(Arrays.asList("DIGEST-MD5"))));
-        getDomainSlaveClient().execute(changeSaslMechanism("slave", "DIGEST-MD5"));
+        getDomainMasterClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("DIGEST-MD5"))));
+        getDomainSlaveClient().execute(changeSaslMechanism("secondary", "DIGEST-MD5"));
         reloadSlave();
         testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
         readHostControllerStatus(domainMasterClient);
@@ -190,7 +190,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
         ModelNode setPassword = new ModelNode();
         setPassword.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
         setPassword.get(OP_ADDR).set(
-                new ModelNode().add(HOST, "slave").add(SUBSYSTEM, "elytron")
+                new ModelNode().add(HOST, "secondary").add(SUBSYSTEM, "elytron")
                         .add("authentication-configuration", "slaveHostAConfiguration"));
         setPassword.get(NAME).set("credential-reference.clear-text");
         setPassword.get(VALUE).set(password);
@@ -201,7 +201,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
     private void reloadWithoutChecks() throws IOException {
         ModelNode reloadSlave = new ModelNode();
         reloadSlave.get(OP).set("reload");
-        reloadSlave.get(OP_ADDR).add(HOST, "slave");
+        reloadSlave.get(OP_ADDR).add(HOST, "secondary");
         reloadSlave.get(ADMIN_ONLY).set(false);
         try {
             getDomainSlaveClient().execute(reloadSlave);

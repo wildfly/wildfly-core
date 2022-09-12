@@ -23,7 +23,7 @@
 <host xmlns="urn:jboss:domain:20.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="urn:jboss:domain:20.0 wildfly-config_20_0.xsd"
-      name="master">
+      name="secondary">
 
     <extensions>
         <extension module="org.wildfly.extension.elytron"/>
@@ -55,49 +55,86 @@
         </audit-log>
         <management-interfaces>
             <native-interface sasl-authentication-factory="management-sasl-authentication">
-                <socket interface="management" port="9999"/>
+                <socket interface="management" port="19999"/>
             </native-interface>
             <http-interface http-authentication-factory="management-http-authentication">
                 <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
-                <socket interface="management" port="${jboss.management.http.port:9990}"/>
+                <socket interface="management" port="${jboss.management.http.port:19990}"/>
             </http-interface>
         </management-interfaces>
     </management>
 
     <domain-controller>
-       <local/>
+        <!-- Remote domain controller configuration with a host and port -->
+        <remote host="${jboss.test.host.primary.address}" port="9999" authentication-context="slaveHostAContext">
+            <ignored-resources type="extension">
+                <instance name="org.jboss.as.jsr77"/>
+            </ignored-resources>
+            <ignored-resources type="profile">
+                <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="socket-binding-group">
+                <instance name="ignored"/>
+            </ignored-resources>
+            <ignored-resources type="server-group">
+                <instance name="ignored-sockets"/>
+                <instance name="ignored-profile"/>
+            </ignored-resources>
+            <ignored-resources type="foo" wildcard="true">
+                <instance name="ignored"/>
+            </ignored-resources>
+        </remote>
     </domain-controller>
 
     <interfaces>
         <interface name="management">
-            <inet-address value="${jboss.test.host.master.address}"/>
+            <inet-address value="${jboss.test.host.secondary.address}"/>
         </interface>
-        <!-- AS7-4177 specify the "public" interface in each server to test that handling -->
+        <interface name="public">
+            <inet-address value="${jboss.test.host.secondary.address}"/>
+        </interface>
     </interfaces>
 
- 	<jvms>
- 	   <jvm name="default">
-          <heap size="64m" max-size="128m"/>
-          <environment-variables>
-              <variable name="DOMAIN_TEST_JVM" value="jvm"/>
-          </environment-variables>
-            <!--
+    <jvms>
+        <jvm name="default">
+            <heap size="64m" max-size="128m"/>
             <jvm-options>
-                <option value="-Xdebug"/>
-                <option value="-Xnoagent"/>
-                <option value="-Djava.compiler=NONE"/>
-                <option value="-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=y"/>
-
+                <option value="-ea"/>
             </jvm-options>
-            -->
-       </jvm>
- 	</jvms>
+        </jvm>
+    </jvms>
 
-    <servers>
+    <servers directory-grouping="by-type">
+        <server name="secondary-a" group="server-group-a" auto-start="false">
+            <socket-bindings socket-binding-group="sockets-a" port-offset="400"/>
+            <jvm name="default" />
+        </server>
+        <server name="secondary-b" group="server-group-b">
+            <socket-bindings socket-binding-group="sockets-b" port-offset="500"/>
+            <jvm name="default" />
+        </server>
+        <server name="secondary-c" group="server-group-c" auto-start="false">
+            <socket-bindings socket-binding-group="sockets-shared" port-offset="600"/>
+            <jvm name="default" />
+        </server>
+        <server name="secondary-d" group="server-group-d" auto-start="false">
+            <socket-bindings socket-binding-group="sockets-shared" port-offset="700"/>
+            <jvm name="default" />
+        </server>
     </servers>
+
 
     <profile>
         <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <authentication-client>
+                <!-- corresponding secret: <secret value="c2xhdmVfdXMzcl9wYXNzd29yZA==" /> -->
+                <authentication-configuration sasl-mechanism-selector="DIGEST-MD5" name="slaveHostAConfiguration" authentication-name="slave" realm="ManagementRealm">
+                    <credential-reference clear-text="slave_us3r_password"/>
+                </authentication-configuration>
+                <authentication-context name="slaveHostAContext">
+                    <match-rule match-host="${jboss.test.host.primary.address}" authentication-configuration="slaveHostAConfiguration"/>
+                </authentication-context>
+            </authentication-client>
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>

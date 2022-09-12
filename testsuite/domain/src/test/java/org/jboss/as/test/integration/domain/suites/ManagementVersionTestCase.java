@@ -71,12 +71,12 @@ public class ManagementVersionTestCase {
 
     @Test
     public void testMasterHostRootResource() throws Exception  {
-        rootResourceTest("host=master", domainMasterLifecycleUtil.getDomainClient());
+        rootResourceTest("host=primary", domainMasterLifecycleUtil.getDomainClient());
     }
 
     @Test
     public void testSlaveHostRootResource() throws Exception  {
-        rootResourceTest("host=slave", domainSlaveLifecycleUtil.getDomainClient());
+        rootResourceTest("host=secondary", domainSlaveLifecycleUtil.getDomainClient());
     }
 
     @Test
@@ -86,12 +86,12 @@ public class ManagementVersionTestCase {
 
     @Test
     public void testMasterServerExtensions() throws Exception {
-        extensionsTest("host=master/server=main-one", domainMasterLifecycleUtil.getDomainClient());
+        extensionsTest("host=primary/server=main-one", domainMasterLifecycleUtil.getDomainClient());
     }
 
     @Test
     public void testSlaveServerExtensions() throws Exception {
-        extensionsTest("host=slave/server=other-two", domainSlaveLifecycleUtil.getDomainClient());
+        extensionsTest("host=secondary/server=other-two", domainSlaveLifecycleUtil.getDomainClient());
     }
 
     private void rootResourceTest(String address, ModelControllerClient client) throws Exception {

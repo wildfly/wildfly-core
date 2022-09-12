@@ -172,7 +172,7 @@ public class ErrorExtension implements Extension {
                     Set<String> hosts = rootResource.getChildrenNames(HOST);
                     String name;
                     if (hosts.size() > 1) {
-                        name = "master";
+                        name = "primary";
                     } else {
                         name = hosts.iterator().next();
                     }
@@ -201,7 +201,7 @@ public class ErrorExtension implements Extension {
 
                                 // We always add the service, regardless of whether we want it to fail in start or stop
                                 // Otherwise it's not there to fail in stop!
-                                boolean induceOOME = false; // = context.getProcessType().isServer() && !"master".equals(targetHost.asString());
+                                boolean induceOOME = false; // = context.getProcessType().isServer() && !"primary".equals(targetHost.asString());
                                 final ErroringService service = new ErroringService(errorPoint == ErrorPoint.SERVICE_START, induceOOME);
 
                                 final ServiceController<?> serviceController =

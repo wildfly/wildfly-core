@@ -85,7 +85,7 @@ public class DeploymentRollbackFailureTestCase {
     private static final String MSG = "main-server-group";
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, BROKEN_DEPLOYMENT);
     private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, MSG);
-    private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "slave"),
+    private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"),
             PathElement.pathElement(SERVER_CONFIG, "main-three"), PathElement.pathElement(SYSTEM_PROPERTY, ServiceActivatorDeployment.FAIL_SYS_PROP));
     private static DomainTestSupport testSupport;
     private static DomainClient masterClient;
@@ -165,7 +165,7 @@ public class DeploymentRollbackFailureTestCase {
             throw new MgmtOperationException("Management operation failed.", op, ret);
         }
         // Validate the server results are included
-        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "slave", "main-three", RESPONSE);
+        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "secondary", "main-three", RESPONSE);
         Assert.assertTrue(ret.toString(), m3Resp.isDefined());
         Assert.assertEquals(m3Resp.toString(), SUCCESS, m3Resp.get(OUTCOME).asString());
     }
@@ -181,7 +181,7 @@ public class DeploymentRollbackFailureTestCase {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
         // Validate the server results are included
-        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "slave", "main-three", RESPONSE);
+        ModelNode m3Resp = ret.get(SERVER_GROUPS, MSG, HOST, "secondary", "main-three", RESPONSE);
         Assert.assertTrue(ret.toString(), m3Resp.isDefined());
         Assert.assertEquals(m3Resp.toString(), FAILED, m3Resp.get(OUTCOME).asString());
         Assert.assertTrue(m3Resp.toString(), m3Resp.get(FAILURE_DESCRIPTION).asString().contains(ServiceActivatorDeployment.FAILURE_MESSAGE));
@@ -190,7 +190,7 @@ public class DeploymentRollbackFailureTestCase {
         Assert.assertTrue(failDesc.toString(), failDesc.isDefined());
         ModelNode servers = failDesc.asProperty().getValue();
         Assert.assertTrue(failDesc.toString(), servers.isDefined());
-        ModelNode serverFail = servers.get(SERVER_GROUP, MSG, HOST, "slave", "main-three");
+        ModelNode serverFail = servers.get(SERVER_GROUP, MSG, HOST, "secondary", "main-three");
         Assert.assertTrue(failDesc.toString(), serverFail.isDefined());
         Assert.assertTrue(failDesc.toString(), serverFail.toString().contains(ServiceActivatorDeployment.FAILURE_MESSAGE));
         String logs = readLogs();

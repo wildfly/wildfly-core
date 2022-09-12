@@ -37,7 +37,7 @@ import org.junit.Test;
  */
 public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveTestCase {
 
-    private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-master-slave-2way-workdir-elytron");
+    private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-primary-secondary-2way-workdir-elytron");
     private static DomainTestSupport testSupport;
 
     @BeforeClass
@@ -46,7 +46,7 @@ public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveT
 
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
                 SSLElytronMasterSlaveOneWayTestCase.class.getSimpleName(), "domain-configs/domain-standard.xml",
-                "host-configs/host-master-ssl-2way-elytron.xml", "host-configs/host-slave-ssl-2way-elytron.xml");
+                "host-configs/host-primary-ssl-2way-elytron.xml", "host-configs/host-secondary-ssl-2way-elytron.xml");
 
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
     }
@@ -61,6 +61,6 @@ public class SSLElytronMasterSlaveTwoWayTestCase extends AbstractSSLMasterSlaveT
 
     @Test
     public void testReadSlaveStatusFromMaster() throws Exception {
-        checkHostStatusOnMasterOverRemote("slave", testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+        checkHostStatusOnMasterOverRemote("secondary", testSupport.getDomainMasterLifecycleUtil().getDomainClient());
     }
 }

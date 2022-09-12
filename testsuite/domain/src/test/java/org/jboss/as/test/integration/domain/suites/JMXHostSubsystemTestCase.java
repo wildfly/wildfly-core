@@ -217,8 +217,8 @@ public class JMXHostSubsystemTestCase {
 
     private void testNoMBeansVisible(MBeanServerConnection connection, boolean master) throws Exception {
         String pattern = "jboss.as:host=%s,extension=org.jboss.as.jmx";
-        ObjectName mine = createObjectName(String.format(pattern, master ? "master" : "slave"));
-        ObjectName other = createObjectName(String.format(pattern, master ? "slave" : "master"));
+        ObjectName mine = createObjectName(String.format(pattern, master ? "primary" : "secondary"));
+        ObjectName other = createObjectName(String.format(pattern, master ? "secondary" : "primary"));
         assertNoMBean(other, connection);
         Assert.assertNotNull(connection.getMBeanInfo(mine));
     }

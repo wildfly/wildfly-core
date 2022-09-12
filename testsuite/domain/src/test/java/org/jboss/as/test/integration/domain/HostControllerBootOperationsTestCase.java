@@ -73,7 +73,7 @@ import org.junit.Test;
  * @author Yeray Borges
  */
 public class HostControllerBootOperationsTestCase {
-    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
+    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
     protected static final PathAddress SERVER_CONFIG_MAIN_THREE = PathAddress.pathAddress(SERVER_CONFIG, "main-three");
     protected static final PathAddress SERVER_MAIN_THREE = PathAddress.pathAddress(SERVER, "main-three");
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
@@ -97,8 +97,8 @@ public class HostControllerBootOperationsTestCase {
 
         final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(HostControllerBootOperationsTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
-                "host-configs/host-master.xml",
-                "host-configs/host-slave-main-three-without-jvm.xml"
+                "host-configs/host-primary.xml",
+                "host-configs/host-secondary-main-three-without-jvm.xml"
         );
 
         testSupport = DomainTestSupport.create(configuration);
@@ -181,7 +181,7 @@ public class HostControllerBootOperationsTestCase {
 
         op = Util.getWriteAttributeOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(JVM_DEFAULT), "heap-size", "64m");
         ModelNode failureDescription = DomainTestUtils.executeForFailure(op, masterClient);
-        Assert.assertTrue("The slave host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("slave").asString().startsWith("WFLYCTL0379"));
+        Assert.assertTrue("The slave host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("secondary").asString().startsWith("WFLYCTL0379"));
 
         checkReadOperations(true);
 

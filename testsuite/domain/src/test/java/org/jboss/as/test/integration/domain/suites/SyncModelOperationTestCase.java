@@ -60,8 +60,8 @@ import org.junit.Test;
  */
 public class SyncModelOperationTestCase {
 
-    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "master");
-    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "slave");
+    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
     private static final PathAddress SERVER_CONFIG_MAIN_THREE = PathAddress.pathAddress(SERVER_CONFIG, "main-three");
     private static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
     private static final PathAddress SYSTEM_PROPERTY_TEST = PathAddress.pathAddress("system-property", "test");
@@ -98,8 +98,8 @@ public class SyncModelOperationTestCase {
 
     @After
     public void applySnapshots() throws Exception {
-        masterClient = reloadHost(masterLifecycleUtil, "master", masterSnapshots.get(0).getName(), domainSnapshots.get(0).getName());
-        reloadHost(slaveLifecycleUtil, "slave", slaveSnapshots.get(0).getName(), null);
+        masterClient = reloadHost(masterLifecycleUtil, "primary", masterSnapshots.get(0).getName(), domainSnapshots.get(0).getName());
+        reloadHost(slaveLifecycleUtil, "secondary", slaveSnapshots.get(0).getName(), null);
     }
 
     @Before
@@ -108,16 +108,16 @@ public class SyncModelOperationTestCase {
         slaveClient = slaveLifecycleUtil.getDomainClient();
 
         cleanSnapshotDirectory(masterClient, null);
-        cleanSnapshotDirectory(masterClient, "master");
-        cleanSnapshotDirectory(slaveClient, "slave");
+        cleanSnapshotDirectory(masterClient, "primary");
+        cleanSnapshotDirectory(slaveClient, "secondary");
 
         takeSnapshot(masterClient, null);
-        takeSnapshot(masterClient, "master");
-        takeSnapshot(slaveClient, "slave");
+        takeSnapshot(masterClient, "primary");
+        takeSnapshot(slaveClient, "secondary");
 
         domainSnapshots = listSnapshots(masterClient, null);
-        masterSnapshots = listSnapshots(masterClient, "master");
-        slaveSnapshots = listSnapshots(slaveClient, "slave");
+        masterSnapshots = listSnapshots(masterClient, "primary");
+        slaveSnapshots = listSnapshots(slaveClient, "secondary");
 
         Assert.assertEquals(1, domainSnapshots.size());
         Assert.assertEquals(1, masterSnapshots.size());
