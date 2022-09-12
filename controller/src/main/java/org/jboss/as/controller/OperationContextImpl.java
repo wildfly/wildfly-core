@@ -501,6 +501,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // Deliberate log and throw; we want to log this but the caller method passes a slightly different
                 // message to the user as part of the operation response
                 MGMT_OP_LOGGER.timeoutExecutingOperation(timeout / 1000, containerMonitorStep.operationId.name, containerMonitorStep.address);
+                // Produce and log thread dump for diagnostics
+                ThreadDumpUtil.threadDump();
                 throw te;
             } finally {
                 executionStatus = originalExecutionStatus;
@@ -868,6 +870,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // in AbstractOperationContext.executeStep is not what I wanted
                     ControllerLogger.MGMT_OP_LOGGER.timeoutAwaitingInitialStability(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
                     setRollbackOnly();
+                    // Produce and log thread dump for diagnostics
+                    ThreadDumpUtil.threadDump();
                     throw new OperationFailedRuntimeException(ControllerLogger.ROOT_LOGGER.timeoutAwaitingInitialStability());
                 } finally {
                     executionStatus = origStatus;
@@ -1233,6 +1237,8 @@ final class OperationContextImpl extends AbstractOperationContext {
                     // it's almost certain we never stabilized during execution or we are rolling back and destabilized there.
                     // Either one means there is already a failure message associated with this op.
                     MGMT_OP_LOGGER.timeoutCompletingOperation(timeout / 1000, activeStep.operationId.name, activeStep.operationId.address);
+                    // Produce and log thread dump for diagnostics
+                    ThreadDumpUtil.threadDump();
                 }
             }
 
