@@ -53,6 +53,8 @@ public final class BootstrapListener {
     private final String prettyVersion;
     private final FutureServiceContainer futureContainer;
     private final File tempDir;
+    private  String startedCleanMessage;
+    private  String startedWitErrorsMessage;
 
     public BootstrapListener(final ServiceContainer serviceContainer, final long startTime, final ServiceTarget serviceTarget, final FutureServiceContainer futureContainer, final String prettyVersion, final File tempDir) {
         this.serviceContainer = serviceContainer;
@@ -68,7 +70,7 @@ public final class BootstrapListener {
         return monitor;
     }
 
-    public void printBootStatistics(String message) {
+    public void generateBootStatistics(String message) {
         final StabilityStatistics statistics = new StabilityStatistics();
         try {
             monitor.awaitStability(statistics);
@@ -81,6 +83,16 @@ public final class BootstrapListener {
             done(bootstrapTime, statistics, message);
             monitor.clear();
         }
+    }
+
+    public void printBootStatisticsMessage() {
+        if (startedCleanMessage != null) {
+            ServerLogger.AS_ROOT_LOGGER.startedClean(startedCleanMessage);
+        } else if (startedWitErrorsMessage != null) {
+            ServerLogger.AS_ROOT_LOGGER.startedWitErrors(startedWitErrorsMessage);
+        }
+        startedCleanMessage = null;
+        startedWitErrorsMessage = null;
     }
 
     public void bootFailure(String message) {
@@ -104,10 +116,10 @@ public final class BootstrapListener {
         final int problem = statistics.getProblemsCount();
         final int started = statistics.getStartedCount();
         if (failed == 0 && problem == 0) {
-            ServerLogger.AS_ROOT_LOGGER.startedClean(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, message);
+            startedCleanMessage = ServerLogger.AS_ROOT_LOGGER.startedCleanMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, onDemand + passive + lazy, message);
             createStartupMarker("success", startTime);
         } else {
-            ServerLogger.AS_ROOT_LOGGER.startedWitErrors(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, message);
+            startedWitErrorsMessage = ServerLogger.AS_ROOT_LOGGER.startedWitErrorsMessage(prettyVersion, bootstrapTime, started, active + passive + onDemand + never + lazy, failed + problem, onDemand + passive + lazy, message);
             createStartupMarker("error", startTime);
         }
     }

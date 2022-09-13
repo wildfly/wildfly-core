@@ -429,7 +429,7 @@ public final class ServerService extends AbstractControllerService {
                 String serverConfig = configuration.getServerEnvironment().getServerConfigurationFile().getMainFile().getName();
                 message = ServerLogger.AS_ROOT_LOGGER.serverConfigFileInUse(serverConfig);
             }
-            bootstrapListener.printBootStatistics(message);
+            bootstrapListener.generateBootStatistics(message);
         } else {
             // Die!
             String messageToAppend = "";
@@ -456,6 +456,7 @@ public final class ServerService extends AbstractControllerService {
 
     @Override
     protected void postBoot() {
+        bootstrapListener.printBootStatisticsMessage();
         executeAdditionalCliBootScript();
     }
 

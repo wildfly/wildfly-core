@@ -908,7 +908,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                     } else {
                         message = ROOT_LOGGER.configFileInUse(hostConfig);
                     }
-                    bootstrapListener.printBootStatistics(message);
+                    bootstrapListener.generateBootStatistics(message);
                 }
             } else {
                 // Die!
@@ -928,6 +928,12 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
             }
         }
+    }
+
+    @Override
+    protected void postBoot() {
+        bootstrapListener.printBootStatisticsMessage();
+        super.postBoot();
     }
 
     private boolean bootEmptyConfig(final BootContext context) throws OperationFailedException, ConfigurationPersistenceException {
