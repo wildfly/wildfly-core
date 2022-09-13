@@ -413,13 +413,13 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 if (pinger != null) {
                     pinger.cancel();
                 }
+                final String address = hostRegistration.getAddress();
+                final Event event = cleanShutdown ? create(HostConnectionInfo.EventType.UNREGISTERED, address) : create(HostConnectionInfo.EventType.UNCLEAN_UNREGISTRATION, address);
+                slaveHostRegistrations.unregisterHost(id, event);
                 boolean registered = hostProxies.remove(id) != null;
-                modelNodeRegistration.unregisterProxyController(PathElement.pathElement(HOST, id));
 
                 if (registered) {
-                    final String address = hostRegistration.getAddress();
-                    final Event event = cleanShutdown ? create(HostConnectionInfo.EventType.UNREGISTERED, address) : create(HostConnectionInfo.EventType.UNCLEAN_UNREGISTRATION, address);
-                    slaveHostRegistrations.unregisterHost(id, event);
+                    modelNodeRegistration.unregisterProxyController(PathElement.pathElement(HOST, id));
                     if (!cleanShutdown) {
                         DOMAIN_LOGGER.lostConnectionToRemoteHost(id);
                     } else {
