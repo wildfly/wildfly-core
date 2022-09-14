@@ -69,7 +69,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
 
         // Tweak the callback handler so the master test driver client can authenticate
         // To keep setup simple it uses the same credentials as the slave host
-        CallbackHandler callbackHandler = Authentication.getCallbackHandler("slave", RIGHT_PASSWORD, "ManagementRealm");
+        CallbackHandler callbackHandler = Authentication.getCallbackHandler("secondary", RIGHT_PASSWORD, "ManagementRealm");
         testSupport.getDomainMasterConfiguration().setCallbackHandler(callbackHandler);
         testSupport.getDomainSlaveConfiguration().setCallbackHandler(callbackHandler);
 
@@ -191,7 +191,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
         setPassword.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
         setPassword.get(OP_ADDR).set(
                 new ModelNode().add(HOST, "secondary").add(SUBSYSTEM, "elytron")
-                        .add("authentication-configuration", "slaveHostAConfiguration"));
+                        .add("authentication-configuration", "secondaryHostAConfiguration"));
         setPassword.get(NAME).set("credential-reference.clear-text");
         setPassword.get(VALUE).set(password);
 

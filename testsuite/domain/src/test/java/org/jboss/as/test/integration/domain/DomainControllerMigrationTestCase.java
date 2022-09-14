@@ -140,7 +140,7 @@ public class DomainControllerMigrationTestCase {
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
-                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
+                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("secondary", "ManagementRealm", "secondary_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
         return hostConfig;
     }
 
@@ -214,7 +214,7 @@ public class DomainControllerMigrationTestCase {
         changeMasterOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
         changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.secondary.address}");
         changeMasterOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
-        changeMasterOp.get(ModelDescriptionConstants.AUTHENTICATION_CONTEXT).set("slaveHostAContext");
+        changeMasterOp.get(ModelDescriptionConstants.AUTHENTICATION_CONTEXT).set("secondaryHostAContext");
 
         hostUtils[2].executeForResult(changeMasterOp);
 

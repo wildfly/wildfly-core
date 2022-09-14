@@ -80,8 +80,8 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  */
 public class DomainLifecycleUtil implements AutoCloseable {
 
-    public static final String SLAVE_HOST_USERNAME = "slave";
-    public static final String SLAVE_HOST_PASSWORD = "slave_us3r_password";
+    public static final String SLAVE_HOST_USERNAME = "secondary";
+    public static final String SLAVE_HOST_PASSWORD = "secondary_us3r_password";
 
     private static final ThreadFactory threadFactory = new AsyncThreadFactory();
 
@@ -201,7 +201,7 @@ public class DomainLifecycleUtil implements AutoCloseable {
                 // No point backing up the file in a test scenario, just write what we need.
                 final String text =
                         "testSuite=29a64f8524f32269aa9b681efc347f96\n" +
-                        "slave=" + new UsernamePasswordHashUtil().generateHashedHexURP(SLAVE_HOST_USERNAME, "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
+                        "secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP(SLAVE_HOST_USERNAME, "ManagementRealm", SLAVE_HOST_PASSWORD.toCharArray());
                 createFile(configDir.resolve("mgmt-users.properties"), text);
             }
             if (configuration.getMgmtGroupsFile() != null) {

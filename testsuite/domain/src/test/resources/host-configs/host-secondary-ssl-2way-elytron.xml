@@ -55,7 +55,7 @@
     </management>
 
     <domain-controller>
-        <remote protocol="remote+https" host="${jboss.test.host.primary.address}" port="9993" authentication-context="slaveHostSSLContext">
+        <remote protocol="remote+https" host="${jboss.test.host.primary.address}" port="9993" authentication-context="secondaryHostSSLContext">
             <discovery-options/>
             <ignored-resources type="extension">
                 <instance name="org.jboss.as.jsr77"/>
@@ -111,11 +111,11 @@
         </subsystem>
         <subsystem xmlns="urn:wildfly:elytron:1.0" final-providers="combined-providers">
             <authentication-client>
-                <authentication-configuration name="slaveHostSSLConfiguration" authentication-name="slave" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
-                    <credential-reference clear-text="slave_us3r_password"/>
+                <authentication-configuration name="secondaryHostSSLConfiguration" authentication-name="secondary" realm="ManagementRealm" sasl-mechanism-selector="DIGEST-MD5">
+                    <credential-reference clear-text="secondary_us3r_password"/>
                 </authentication-configuration>
-                <authentication-context name="slaveHostSSLContext">
-                    <match-rule match-host="${jboss.test.host.primary.address:127.0.0.1}" ssl-context="twoWayCSC"/> <!-- authentication-configuration="slaveHostSSLConfiguration" -->
+                <authentication-context name="secondaryHostSSLContext">
+                    <match-rule match-host="${jboss.test.host.primary.address:127.0.0.1}" ssl-context="twoWayCSC"/> <!-- authentication-configuration="secondaryHostSSLConfiguration" -->
                 </authentication-context>
             </authentication-client>
             <providers>
