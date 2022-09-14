@@ -42,9 +42,6 @@ import org.apache.directory.server.ldap.LdapServer;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -166,14 +163,7 @@ public class OutboundLdapConnectionTestCase {
     }
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
-        ModelNode reload = new ModelNode();
-        reload.get(OP_ADDR).add(HOST, "primary");
-        reload.get(OP).set("reload");
-        reload.get("admin-only").set(false);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(reload);
-
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainMasterLifecycleUtil.reload("primary", null, false);
     }
 
 

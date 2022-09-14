@@ -21,7 +21,6 @@
  */
 package org.jboss.as.test.integration.domain.suites;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CLONE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
@@ -34,7 +33,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAM
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TO_PROFILE;
 import static org.junit.Assert.assertEquals;
@@ -288,12 +286,7 @@ public class IgnoredResourcesProfileCloneTestCase {
     }
 
     private static void reloadSlave(DomainLifecycleUtil slaveLifecycleUtil) throws Exception {
-        ModelNode reload = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
-        reload.get(RESTART_SERVERS).set(false);
-        reload.get(ADMIN_ONLY).set(false);
-        slaveLifecycleUtil.executeAwaitConnectionClosed(reload);
-        slaveLifecycleUtil.connect();
-        slaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        slaveLifecycleUtil.reload("secondary", false, false);
     }
 
     private List<String> getSubsystems(String profile, DomainClient client) throws Exception {

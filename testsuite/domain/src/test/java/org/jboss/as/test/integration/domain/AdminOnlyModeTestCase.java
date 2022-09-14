@@ -100,21 +100,12 @@ public class AdminOnlyModeTestCase {
 
     @Test
     public void testAdminOnlyMode() throws Exception {
-
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         // restart master HC in admin only mode
+        domainMasterLifecycleUtil.reloadAdminOnly("primary");
+
         ModelNode op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(true);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
-        op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
         op.get(OP_ADDR).add(HOST, "primary");
         op.get(NAME).set("running-mode");
@@ -124,18 +115,7 @@ public class AdminOnlyModeTestCase {
         Assert.assertEquals("ADMIN_ONLY", result.asString());
 
         // restart back to normal mode
-        op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(false);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
-        // check that the servers are up
-        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+        domainMasterLifecycleUtil.reload("primary", null, true);
 
         // Wait for the slave to reconnect
         waitForHost(masterClient, "secondary");
@@ -147,18 +127,9 @@ public class AdminOnlyModeTestCase {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         // restart master HC in admin only mode
+        domainMasterLifecycleUtil.reloadAdminOnly("primary");
+
         ModelNode op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(true);
-        op.get("restart-servers").set(false);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
-        op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
         op.get(OP_ADDR).add(HOST, "primary");
         op.get(NAME).set("running-mode");
@@ -168,19 +139,7 @@ public class AdminOnlyModeTestCase {
         Assert.assertEquals("ADMIN_ONLY", result.asString());
 
         // restart back to normal mode
-        op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(false);
-        op.get("restart-servers").set(true);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
-        // check that the servers are up
-        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+        domainMasterLifecycleUtil.reload("primary", true, true);
 
         // Wait for the slave to reconnect
         waitForHost(masterClient, "secondary");
@@ -192,17 +151,9 @@ public class AdminOnlyModeTestCase {
         final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
 
         // restart master HC in admin only mode
+        domainMasterLifecycleUtil.reloadAdminOnly("primary");
+
         ModelNode op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(true);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-
-        op = new ModelNode();
         op.get(OP).set(READ_ATTRIBUTE_OPERATION);
         op.get(OP_ADDR).add(HOST, "primary");
         op.get(NAME).set("running-mode");
@@ -221,14 +172,7 @@ public class AdminOnlyModeTestCase {
         Assert.assertTrue(result.asString(), result.get(FAILURE_DESCRIPTION).asString().contains("WFLYHC0048"));
 
         // restart back to normal mode
-        op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        op.get("admin-only").set(false);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-
-        // check that the servers are up
-        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+        domainMasterLifecycleUtil.reload("primary", null, true, 300L);
     }
 
 

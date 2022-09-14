@@ -191,15 +191,7 @@ public class SimpleDomainControllerMigrationTestCase {
 
         hostUtils[1].executeForResult(becomeMasterOp);
 
-        ModelNode restartOp = new ModelNode();
-        restartOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, "failover-h2");
-        restartOp.get(ModelDescriptionConstants.OP).set("reload");
-        restartOp.get(ModelDescriptionConstants.RESTART_SERVERS).set(false);
-
-        log.info("Reloading failover-h2 to act as the domain controller.");
-        hostUtils[1].executeAwaitConnectionClosed(restartOp);
-        log.info("Waiting for Host Controller to be ready");
-        waitUntilHostControllerReady(hostUtils[1]);
+        hostUtils[1].reload("failover-h2", false, false);
 
         // Read the first system property. This proves we are using the config provided via failover-h1
         ModelNode readSysPropOp = new ModelNode();
@@ -225,15 +217,7 @@ public class SimpleDomainControllerMigrationTestCase {
 
         hostUtils[2].executeForResult(changeMasterOp);
 
-        restartOp = new ModelNode();
-        restartOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, HOSTS[2]);
-        restartOp.get(ModelDescriptionConstants.OP).set("reload");
-        restartOp.get(ModelDescriptionConstants.RESTART_SERVERS).set(false);
-
-        log.info("Reloading failover-h3 to register to new domain controller.");
-        hostUtils[2].executeAwaitConnectionClosed(restartOp);
-
-        waitUntilHostControllerReady(hostUtils[2]);
+        hostUtils[2].reload(HOSTS[2], false, false);
 
         // Read the second system property. This proves we correctly got the config from failover-h2.
         readSysPropOp = new ModelNode();
