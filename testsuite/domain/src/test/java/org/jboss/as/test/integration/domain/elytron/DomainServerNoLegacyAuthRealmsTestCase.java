@@ -48,7 +48,7 @@ public class DomainServerNoLegacyAuthRealmsTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.create(
-                DomainTestSupport.Configuration.create(SlaveHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
+                DomainTestSupport.Configuration.create(SecondaryHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
                         "host-configs/host-primary-elytron-no-legacy-realms.xml", "host-configs/host-secondary-elytron-no-legacy-realms.xml"));
 

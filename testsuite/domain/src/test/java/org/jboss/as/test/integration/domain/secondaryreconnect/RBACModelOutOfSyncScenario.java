@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHENTICATION;
@@ -56,7 +56,7 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 
 /**
- * Test scenario for {@link SlaveReconnectTestCase} where the HC is reconnected to the DC when local authentication is
+ * Test scenario for {@link SecondaryReconnectTestCase} where the HC is reconnected to the DC when local authentication is
  * not used, the models are out of sync and we are using an RBAC user stored in the user properties files.
  *
  * @author Yeray Borges

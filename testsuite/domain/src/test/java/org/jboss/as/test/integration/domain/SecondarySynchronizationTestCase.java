@@ -65,8 +65,8 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
  *
  * @author Emmanuel Hugonnet (c) 2017 Red Hat, inc.
  */
-public class SlaveSynchronizationTestCase {
-    private static final Logger log = Logger.getLogger(SlaveSynchronizationTestCase.class.getName());
+public class SecondarySynchronizationTestCase {
+    private static final Logger log = Logger.getLogger(SecondarySynchronizationTestCase.class.getName());
 
     private static DomainClient masterClient;
 
@@ -86,7 +86,7 @@ public class SlaveSynchronizationTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         DomainTestSupport testSupport = DomainTestSupport.create(
-                        DomainTestSupport.Configuration.create(SlaveSynchronizationTestCase.class.getSimpleName(),
+                        DomainTestSupport.Configuration.create(SecondarySynchronizationTestCase.class.getSimpleName(),
                                 "domain-configs/domain-synchronization.xml",
                                 "host-configs/host-synchronization-primary.xml",
                                 "host-configs/host-synchronization-hc2.xml"));
@@ -123,7 +123,7 @@ public class SlaveSynchronizationTestCase {
     }
 
     private static WildFlyManagedConfiguration getHostConfiguration(int host) throws Exception {
-        final String testName = SlaveSynchronizationTestCase.class.getSimpleName();
+        final String testName = SecondarySynchronizationTestCase.class.getSimpleName();
         File domains = new File("target" + File.separator + "domains" + File.separator + testName);
         final File hostDir = new File(domains, HOSTS[host]);
         final File hostConfigDir = new File(hostDir, "configuration");

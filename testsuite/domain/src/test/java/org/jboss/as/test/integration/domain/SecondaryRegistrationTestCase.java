@@ -41,7 +41,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
-public class SlaveRegistrationTestCase {
+public class SecondaryRegistrationTestCase {
     protected static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
     protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
     protected static final PathAddress SERVER_CONFIG_MAIN_ONE = PathAddress.pathAddress(SERVER_CONFIG, "main-one");
@@ -58,7 +58,7 @@ public class SlaveRegistrationTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
 
-        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SlaveRegistrationTestCase.class.getSimpleName(),
+        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SecondaryRegistrationTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
                 "host-configs/host-primary.xml",
                 "host-configs/host-secondary.xml"

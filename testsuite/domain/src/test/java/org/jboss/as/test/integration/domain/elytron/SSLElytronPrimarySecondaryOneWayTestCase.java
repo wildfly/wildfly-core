@@ -24,7 +24,7 @@ package org.jboss.as.test.integration.domain.elytron;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
-import org.jboss.as.test.integration.domain.AbstractSSLMasterSlaveTestCase;
+import org.jboss.as.test.integration.domain.AbstractSSLPrimarySecondaryTestCase;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -35,7 +35,7 @@ import org.junit.Test;
  *
  * @author Richard Janík <rjanik@redhat.com>
  */
-public class SSLElytronMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveTestCase {
+public class SSLElytronPrimarySecondaryOneWayTestCase extends AbstractSSLPrimarySecondaryTestCase {
 
     private static final File WORK_DIR = new File("target" + File.separatorChar +  "ssl-primary-secondary-1way-workdir-elytron");
     private static DomainTestSupport testSupport;
@@ -45,7 +45,7 @@ public class SSLElytronMasterSlaveOneWayTestCase extends AbstractSSLMasterSlaveT
         keyMaterialSetup(WORK_DIR);
 
         DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(
-                SSLElytronMasterSlaveOneWayTestCase.class.getSimpleName(), "domain-configs/domain-standard.xml",
+                SSLElytronPrimarySecondaryOneWayTestCase.class.getSimpleName(), "domain-configs/domain-standard.xml",
                 "host-configs/host-primary-ssl-1way-elytron.xml", "host-configs/host-secondary-ssl-1way-elytron.xml");
 
         testSupport = DomainTestSupport.createAndStartSupport(configuration);

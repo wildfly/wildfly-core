@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -45,13 +45,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.operations.common.Util.createAddOperation;
 import static org.jboss.as.controller.operations.common.Util.createEmptyOperation;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.SLAVE_ADDR;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.cloneProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServerGroup;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.removeProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.startServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.stopServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SLAVE_ADDR;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.cloneProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServerGroup;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.removeProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.startServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.stopServer;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -66,11 +66,11 @@ import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorBaseDeployment;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentFour;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentOne;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentThree;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentTwo;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorBaseDeployment;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorDeploymentFour;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorDeploymentOne;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorDeploymentThree;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorDeploymentTwo;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;

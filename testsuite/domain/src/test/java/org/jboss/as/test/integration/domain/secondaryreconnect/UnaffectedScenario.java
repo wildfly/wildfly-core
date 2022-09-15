@@ -20,17 +20,17 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.SLAVE_ADDR;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.cloneProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServerGroup;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.removeProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.startServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.stopServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SLAVE_ADDR;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.cloneProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServerGroup;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.removeProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.startServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.stopServer;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;

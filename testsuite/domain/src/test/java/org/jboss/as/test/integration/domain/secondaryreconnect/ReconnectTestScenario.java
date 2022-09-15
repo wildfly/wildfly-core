@@ -20,13 +20,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 
 /**
- * To hook into the {@link SlaveReconnectTestCase}, create an implementation of this class
+ * To hook into the {@link SecondaryReconnectTestCase}, create an implementation of this class
  * to perform the required tests.
  *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>

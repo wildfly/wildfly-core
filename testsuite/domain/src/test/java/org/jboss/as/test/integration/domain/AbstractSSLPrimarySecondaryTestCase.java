@@ -69,7 +69,7 @@ import org.junit.Assert;
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
-public abstract class AbstractSSLMasterSlaveTestCase {
+public abstract class AbstractSSLPrimarySecondaryTestCase {
 
     protected static final String MASTER_MANAGEMENT_REALM = "MasterManagementRealm";
     private static final String MGMT_CTX = "/management";

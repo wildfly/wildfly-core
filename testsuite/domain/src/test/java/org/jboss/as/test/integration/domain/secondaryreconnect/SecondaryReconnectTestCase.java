@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
@@ -68,7 +68,7 @@ import org.junit.runners.MethodSorters;
  * @author Kabir Khan
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SlaveReconnectTestCase {
+public class SecondaryReconnectTestCase {
 
     static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
 
@@ -83,7 +83,7 @@ public class SlaveReconnectTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.create(
-                DomainTestSupport.Configuration.create(SlaveReconnectTestCase.class.getSimpleName(),
+                DomainTestSupport.Configuration.create(SecondaryReconnectTestCase.class.getSimpleName(),
                         "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
 
         WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();

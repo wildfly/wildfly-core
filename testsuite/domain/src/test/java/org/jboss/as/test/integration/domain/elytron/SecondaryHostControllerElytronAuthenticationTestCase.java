@@ -35,7 +35,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 
 import org.jboss.as.controller.client.ModelControllerClient;
-import org.jboss.as.test.integration.domain.AbstractSlaveHCAuthenticationTestCase;
+import org.jboss.as.test.integration.domain.AbstractSecondaryHCAuthenticationTestCase;
 import org.jboss.as.test.integration.domain.management.util.Authentication;
 import org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
@@ -48,7 +48,7 @@ import org.junit.Test;
 /**
  * Test a slave HC connecting to the domain Elytron authentication context.
  */
-public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSlaveHCAuthenticationTestCase {
+public class SecondaryHostControllerElytronAuthenticationTestCase extends AbstractSecondaryHCAuthenticationTestCase {
 
     protected static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
 
@@ -63,7 +63,7 @@ public class SlaveHostControllerElytronAuthenticationTestCase extends AbstractSl
     public static void setupDomain() throws Exception {
         // Set up a domain with a master that doesn't support local auth so slaves have to use configured credentials
         testSupport = DomainTestSupport.create(
-                DomainTestSupport.Configuration.create(SlaveHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
+                DomainTestSupport.Configuration.create(SecondaryHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
                         "host-configs/host-primary-elytron.xml", "host-configs/host-secondary-elytron.xml"));
 

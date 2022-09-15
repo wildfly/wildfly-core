@@ -46,7 +46,7 @@ import org.junit.Assert;
 /**
  * Encapsulates some of the logic for tests where a slave host controller attempts to authenticate to master controller.
  */
-public abstract class AbstractSlaveHCAuthenticationTestCase {
+public abstract class AbstractSecondaryHCAuthenticationTestCase {
 
     private static final int TIMEOUT = 60000;
 
