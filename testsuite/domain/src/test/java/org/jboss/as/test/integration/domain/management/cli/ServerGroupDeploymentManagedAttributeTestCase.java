@@ -51,7 +51,7 @@ public class ServerGroupDeploymentManagedAttributeTestCase extends AbstractCliTe
     @BeforeClass
     public static void before() throws Exception {
         testSupport = CLITestSuite.createSupport(ServerGroupDeploymentManagedAttributeTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
 
         // deployment
         testAppWar = createCliArchive("testAppWar-deploy-all.war", "Version0");

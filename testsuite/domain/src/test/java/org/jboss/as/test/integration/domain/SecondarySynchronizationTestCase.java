@@ -68,12 +68,12 @@ import org.wildfly.security.sasl.util.UsernamePasswordHashUtil;
 public class SecondarySynchronizationTestCase {
     private static final Logger log = Logger.getLogger(SecondarySynchronizationTestCase.class.getName());
 
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
 
     private static String[] HOSTS = new String[] {"primary", "hc1", "hc2"};
     private static int[] MGMT_PORTS = new int[] {9999, 9989, 19999};
-    private static final String masterAddress = System.getProperty("jboss.test.host.primary.address");
-    private static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
+    private static final String primaryAddress = System.getProperty("jboss.test.host.primary.address");
+    private static final String secondaryAddress = System.getProperty("jboss.test.host.secondary.address");
 
     private static final PathAddress hc1RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-one");
     private static final PathAddress hc2RemovedServer = PathAddress.pathAddress("host", "hc1").append("server", "server-two");
@@ -97,11 +97,11 @@ public class SecondarySynchronizationTestCase {
             hostUtils[k] = new DomainLifecycleUtil(getHostConfiguration(k), domainControllerClientConfig);
             hostUtils[k].start();
         }
-        masterClient = hostUtils[0].createDomainClient();
+        primaryClient = hostUtils[0].createDomainClient();
                 ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "failure"),
                 PathElement.pathElement(SUBSYSTEM, ErrorExtension.SUBSYSTEM_NAME)));
-        DomainTestUtils.executeForResult(addSubsystem, masterClient);
+        DomainTestUtils.executeForResult(addSubsystem, primaryClient);
     }
 
     @AfterClass
@@ -131,9 +131,9 @@ public class SecondarySynchronizationTestCase {
 
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
-        hostConfig.setHostControllerManagementAddress(host == 0 ? masterAddress : slaveAddress);
-        hostConfig.addHostCommandLineProperty("-Djboss.test.host.primary.address=" + masterAddress);
-        hostConfig.addHostCommandLineProperty("-Djboss.test.host.secondary.address=" + slaveAddress);
+        hostConfig.setHostControllerManagementAddress(host == 0 ? primaryAddress : secondaryAddress);
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.primary.address=" + primaryAddress);
+        hostConfig.addHostCommandLineProperty("-Djboss.test.host.secondary.address=" + secondaryAddress);
         hostConfig.addHostCommandLineProperty("-D" + ErrorExtension.FAIL_REMOVAL + "=true");
 
         if (Boolean.getBoolean("wildfly."+ HOSTS[host] + ".debug")) {
@@ -153,7 +153,7 @@ public class SecondarySynchronizationTestCase {
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
-                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
+                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("secondary", "ManagementRealm", "secondary_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
         StringBuilder modulePath = new StringBuilder();
         hostConfig.setModulePath(modulePath.append(DomainTestSupport.getAddedModulesDir(testName).getAbsolutePath()).append(File.pathSeparatorChar).append(hostConfig.getModulePath()).toString());
         return hostConfig;
@@ -161,32 +161,32 @@ public class SecondarySynchronizationTestCase {
 
     @Test
     public void testRemoveServer() throws Exception {
-        Assert.assertTrue(exists(masterClient, hc1RemovedServerConfig));
-        Assert.assertTrue(exists(masterClient, hc1RemovedServer));
-        Assert.assertTrue(exists(masterClient, hc2RemovedServerConfig));
-        Assert.assertTrue(exists(masterClient, hc2RemovedServer));
+        Assert.assertTrue(exists(primaryClient, hc1RemovedServerConfig));
+        Assert.assertTrue(exists(primaryClient, hc1RemovedServer));
+        Assert.assertTrue(exists(primaryClient, hc2RemovedServerConfig));
+        Assert.assertTrue(exists(primaryClient, hc2RemovedServer));
 
-        stopServer(masterClient, hc1RemovedServerConfig);
-        ModelNode result = removeServer(masterClient, hc1RemovedServerConfig);
+        stopServer(primaryClient, hc1RemovedServerConfig);
+        ModelNode result = removeServer(primaryClient, hc1RemovedServerConfig);
         DomainTestSupport.validateResponse(result);
-        Assert.assertFalse(exists(masterClient, hc1RemovedServerConfig));
-        Assert.assertFalse(exists(masterClient, hc1RemovedServer));
+        Assert.assertFalse(exists(primaryClient, hc1RemovedServerConfig));
+        Assert.assertFalse(exists(primaryClient, hc1RemovedServer));
 
-        stopServer(masterClient, hc2RemovedServerConfig);
-        result = removeServer(masterClient, hc2RemovedServerConfig);
+        stopServer(primaryClient, hc2RemovedServerConfig);
+        result = removeServer(primaryClient, hc2RemovedServerConfig);
         //Synchronization error
         String msg = HostControllerLogger.ROOT_LOGGER.hostDomainSynchronizationError("");
         msg = msg.substring(0, msg.length() -1);
         MatcherAssert.assertThat(DomainTestSupport.validateFailedResponse(result).asString(), containsString(msg));
-        Assert.assertTrue(exists(masterClient, hc2RemovedServer));
-        Assert.assertTrue(exists(masterClient, hc2RemovedServerConfig));
+        Assert.assertTrue(exists(primaryClient, hc2RemovedServer));
+        Assert.assertTrue(exists(primaryClient, hc2RemovedServerConfig));
     }
 
     @Test
     public void testRemoveRunningServer() throws Exception {
        PathAddress mainOneAddress = PathAddress.pathAddress("host", "hc2").append("server-config", "server-one");
-       Assert.assertTrue(DomainTestUtils.checkServerState(masterClient, mainOneAddress, "STARTED"));
-       ModelNode result = masterClient.execute(Util.createRemoveOperation(mainOneAddress));
+       Assert.assertTrue(DomainTestUtils.checkServerState(primaryClient, mainOneAddress, "STARTED"));
+       ModelNode result = primaryClient.execute(Util.createRemoveOperation(mainOneAddress));
        ModelNode failure = DomainTestSupport.validateFailedResponse(result);
        Assert.assertTrue("Failure " + failure.toString(), failure.get(HOST_FAILURE_DESCRIPTIONS).get("hc2").asString().matches("WFLYHC0078.+server-one.*"));
     }
@@ -202,7 +202,7 @@ public class SecondarySynchronizationTestCase {
         stopServer.get(BLOCKING).set(true);
         ModelNode result = client.execute(stopServer);
         DomainTestSupport.validateResponse(result);
-        Assert.assertEquals("STOPPED", DomainTestUtils.getServerState(masterClient, address));
+        Assert.assertEquals("STOPPED", DomainTestUtils.getServerState(primaryClient, address));
     }
 
     private boolean exists(final ModelControllerClient client, final PathAddress pathAddress) throws IOException, MgmtOperationException {

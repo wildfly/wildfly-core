@@ -79,37 +79,37 @@ import org.junit.Test;
 public class ServerRestartRequiredTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
-    // (host=slave),(server=reload-one)
+    // (host=secondary),(server=reload-one)
     private static final PathAddress reloadOneAddress = PathAddress.pathAddress("host", "primary").append("server", "reload-one");
-    // (host=slave),(server=reload-two)
+    // (host=secondary),(server=reload-two)
     private static final PathAddress reloadTwoAddress = PathAddress.pathAddress("host", "secondary").append("server", "reload-two");
-    // (host=slave),(server-config=reload-one)
+    // (host=secondary),(server-config=reload-one)
     private static final PathAddress reloadOneConfigAddress = PathAddress.pathAddress("host", "primary").append("server-config", "reload-one");
-    // (host=slave),(server-config=reload-two)
+    // (host=secondary),(server-config=reload-two)
     private static final PathAddress reloadTwoConfigAddress = PathAddress.pathAddress("host", "secondary").append("server-config", "reload-two");
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ServerRestartRequiredTestCase.class.getSimpleName());
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         DomainTestSuite.stopSupport();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Before
     public void startServers() throws Exception {
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         // Start reload-one
         startServer(client, "primary", "reload-one");
@@ -122,7 +122,7 @@ public class ServerRestartRequiredTestCase {
 
     @After
     public void stopServers() throws Exception {
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode stopServer = new ModelNode();
         stopServer.get(OP).set("stop");
@@ -136,7 +136,7 @@ public class ServerRestartRequiredTestCase {
 
     @Test
     public void testSocketBinding() throws Exception {
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         // add a custom socket binding, referencing a non-existent system property
         final ModelNode socketBinding = new ModelNode();
@@ -162,7 +162,7 @@ public class ServerRestartRequiredTestCase {
 
         final PathAddress address = reloadTwoConfigAddress;
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         final ModelNode stopOP = new ModelNode();
         stopOP.get(OP).set("stop");
         stopOP.get(OP_ADDR).set(address.toModelNode());
@@ -214,7 +214,7 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testServerGroupJVMs() throws Exception {
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
         address.add(SERVER_GROUP, "reload-test-group");
@@ -235,7 +235,7 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testCompositeNavigation() throws Exception {
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         checkProcessStateOneAndTwo(client, "running");
 
@@ -253,7 +253,7 @@ public class ServerRestartRequiredTestCase {
         rs.get(OP).set(READ_RESOURCE_OPERATION);
         rs.get(OP_ADDR).set(reloadTwoConfigAddress.toModelNode()).add(JVM, "default");
 
-        domainMasterLifecycleUtil.executeForResult(composite);
+        domainPrimaryLifecycleUtil.executeForResult(composite);
 
         checkProcessStateOneAndTwo(client, "running");
     }
@@ -261,7 +261,7 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testHostVM() throws Exception {
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
         address.add(HOST, "secondary");
@@ -290,7 +290,7 @@ public class ServerRestartRequiredTestCase {
 
     @Test
     public void testServerConfigVM() throws Exception {
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final PathAddress address = PathAddress.pathAddress(reloadTwoConfigAddress, PathElement.pathElement(JVM, "default"));
 
@@ -318,7 +318,7 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testRestartGroup() throws Exception {
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("restart-servers");
@@ -336,7 +336,7 @@ public class ServerRestartRequiredTestCase {
     @Test
     public void testReloadGroup() throws Exception {
 
-        final DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("reload-servers");

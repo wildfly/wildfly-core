@@ -56,12 +56,12 @@ public abstract class AbstractRbacTestCase {
     protected static final String DEPLOYMENT_2 = "deployment=rbac.txt";
     protected static final byte[] DEPLOYMENT_2_CONTENT = "CONTENT".getBytes(Charset.defaultCharset());
     protected static final String TEST_PATH = "path=rbac.test";
-    protected static final String MASTER = "primary";
-    protected static final String SLAVE = "secondary";
+    protected static final String PRIMARY = "primary";
+    protected static final String SECONDARY = "secondary";
     protected static final String SERVER_GROUP_A = "server-group-a";
     protected static final String SERVER_GROUP_B = "server-group-b";
-    protected static final String MASTER_A = "primary-a";
-    protected static final String SLAVE_B = "secondary-b";
+    protected static final String PRIMARY_A = "primary-a";
+    protected static final String SECONDARY_B = "secondary-b";
     protected static final String SMALL_JVM = "jvm=small";
     protected static final String SCOPED_ROLE_SERVER = "server-config=scoped-role-server";
 
@@ -78,7 +78,7 @@ public abstract class AbstractRbacTestCase {
     private static final Map<String, ModelControllerClient> nonLocalAuthclients = new HashMap<String, ModelControllerClient>();
     private static final Map<String, ModelControllerClient> localAuthClients = new HashMap<String, ModelControllerClient>();
     protected static DomainTestSupport testSupport;
-    protected static WildFlyManagedConfiguration masterClientConfig;
+    protected static WildFlyManagedConfiguration primaryClientConfig;
 
     @AfterClass
     public static void cleanUpClients() {
@@ -171,7 +171,7 @@ public abstract class AbstractRbacTestCase {
 
         // the code below calls the non-published operation 'describe'; see WFLY-2379 for more info
 
-        ModelControllerClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         op = createOpNode(null, READ_CHILDREN_NAMES_OPERATION);
         op.get(CHILD_TYPE).set(PROFILE);
@@ -349,7 +349,7 @@ public abstract class AbstractRbacTestCase {
 
     protected void removeResource(String address) throws IOException {
         ModelNode op = createOpNode(address, READ_RESOURCE_OPERATION);
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         ModelNode result = domainClient.execute(op);
         if (SUCCESS.equals(result.get(OUTCOME).asString())) {
             op = createOpNode(address, REMOVE);

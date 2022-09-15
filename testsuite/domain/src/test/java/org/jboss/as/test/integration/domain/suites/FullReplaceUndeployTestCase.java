@@ -59,12 +59,12 @@ import org.junit.Test;
 public class FullReplaceUndeployTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(FullReplaceUndeployTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeTestExtension(testSupport);
     }
@@ -72,7 +72,7 @@ public class FullReplaceUndeployTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -87,7 +87,7 @@ public class FullReplaceUndeployTestCase {
     }
 
     private void testDeployment(final Archive<?> archive) throws IOException {
-        final ModelControllerClient client = domainMasterLifecycleUtil.getDomainClient();
+        final ModelControllerClient client = domainPrimaryLifecycleUtil.getDomainClient();
         final ModelNode readServerSubsystems = Operations.createOperation(ClientConstants.READ_CHILDREN_NAMES_OPERATION,
                 Operations.createAddress("host", "primary", "server", "main-one"));
         readServerSubsystems.get(ClientConstants.CHILD_TYPE).set(ClientConstants.SUBSYSTEM);
@@ -106,7 +106,7 @@ public class FullReplaceUndeployTestCase {
         final Operation fullReplaceOp = createReplaceAndDisableOperation(archive.as(ZipExporter.class).exportAsInputStream(), name, null);
         execute(client, fullReplaceOp);
 
-        // Below validates that WFCORE-1577 is fixed, the model should not be missing on the /host=master/server=main-one or main-two
+        // Below validates that WFCORE-1577 is fixed, the model should not be missing on the /host=primary/server=main-one or main-two
 
         // Validate the subsystem child names
         result = execute(client, readServerSubsystems);

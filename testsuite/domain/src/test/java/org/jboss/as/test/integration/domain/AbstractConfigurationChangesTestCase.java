@@ -53,14 +53,14 @@ import org.wildfly.core.testrunner.UnsuccessfulOperationException;
  */
 public abstract class AbstractConfigurationChangesTestCase {
     protected static DomainTestSupport testSupport;
-    protected static DomainLifecycleUtil domainMasterLifecycleUtil;
-    protected static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    protected static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    protected static DomainLifecycleUtil domainSecondaryLifecycleUtil;
     private static final Logger logger = Logger.getLogger(AbstractConfigurationChangesTestCase.class);
 
     protected static final int MAX_HISTORY_SIZE = 100;
 
-    protected static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "primary");
-    protected static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "secondary");
+    protected static final PathElement HOST_PRIMARY = PathElement.pathElement(HOST, "primary");
+    protected static final PathElement HOST_SECONDARY = PathElement.pathElement(HOST, "secondary");
     protected static final PathAddress ALLOWED_ORIGINS_ADDRESS = PathAddress.pathAddress()
             .append(CORE_SERVICE, MANAGEMENT)
             .append(MANAGEMENT_INTERFACE, HTTP_INTERFACE);
@@ -83,22 +83,22 @@ public abstract class AbstractConfigurationChangesTestCase {
                 "host-configs/host-secondary-config-changes.xml",
                 false, false, false, false, false);
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         testSupport = null;
     }
 
     protected abstract PathAddress getAddress();
 
     public void createConfigurationChanges(PathElement host) throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(host).append(getAddress()));
         add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         executeForResult(client, add); // 0 -- write to host subsystem
@@ -169,7 +169,7 @@ public abstract class AbstractConfigurationChangesTestCase {
     }
 
     protected void clearConfigurationChanges(PathElement host) throws UnsuccessfulOperationException {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         final ModelNode remove = Util.createRemoveOperation(PathAddress.pathAddress().append(host).append(getAddress()));
         executeForResult(client, remove);
     }

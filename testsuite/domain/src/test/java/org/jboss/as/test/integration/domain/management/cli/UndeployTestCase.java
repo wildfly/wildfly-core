@@ -66,7 +66,7 @@ public class UndeployTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void before() throws Exception {
         testSupport = CLITestSuite.createSupport(UndeployTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
 
         // deployment1
         cliTestApp1War = createWarArchive("cli-undeploy-test-app1.war", "Version0");

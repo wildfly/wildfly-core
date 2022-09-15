@@ -65,10 +65,10 @@ import org.junit.Test;
 public class AdminOnlyPolicyTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final long initTime = System.currentTimeMillis();
-    private static int slaveCount;
+    private static int secondaryCount;
 
     private static int exitCodeTimeout = TimeoutUtil.adjust(30);
 
@@ -87,122 +87,122 @@ public class AdminOnlyPolicyTestCase {
     }
 
     @After
-    public void stopSecondSlave() throws Exception {
-        if (domainSlaveLifecycleUtil != null) {
-            domainSlaveLifecycleUtil.stop();
-            domainSlaveLifecycleUtil = null;
+    public void stopSecondSecondary() throws Exception {
+        if (domainSecondaryLifecycleUtil != null) {
+            domainSecondaryLifecycleUtil.stop();
+            domainSecondaryLifecycleUtil = null;
         }
     }
 
     @Test
     public void testAllowNoConfigWithDiscovery() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, true, false);
+        createSecondSecondary(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, true, false);
         validateProfiles();
     }
 
     @Test
     public void testAllowNoConfigWithoutDiscovery() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, false, false);
+        createSecondSecondary(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, false, false);
         validateProfiles();
     }
 
     @Test
     public void testAllowNoConfigWithCachedDC() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, false, true);
+        createSecondSecondary(AdminOnlyDomainConfigPolicy.ALLOW_NO_CONFIG, false, true);
         validateProfiles("cached-remote-test");
     }
 
     @Test
-    public void testFetchFromMasterWithDiscovery() throws URISyntaxException, IOException {
-        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
+    public void testFetchFromPrimaryWithDiscovery() throws URISyntaxException, IOException {
+        String hostName = createSecondSecondary(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
         validateProfiles("default");
 
         // Now we validate that we can pull down further data if needed
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, hostName), PathElement.pathElement(SERVER_CONFIG, "other1"));
         ModelNode op = Util.createAddOperation(pa);
         op.get(GROUP).set("other-server-group");
-        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
+        executeForResult(domainSecondaryLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
     }
 
     @Test
     public void testChangeProfile() throws URISyntaxException, IOException {
-        String hostName = createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
+        String hostName = createSecondSecondary(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, true, false);
         validateProfiles("default");
 
         // Now we validate that we can pull down further data if needed
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, hostName), PathElement.pathElement(SERVER_CONFIG, "other1"));
         ModelNode op = Util.createAddOperation(pa);
         op.get(GROUP).set("other-server-group");
-        executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
+        executeForResult(domainSecondaryLifecycleUtil.getDomainClient(), op);
         // This should have pulled down the 'other' profile
         validateProfiles("default", "other");
     }
 
     @Test
-    public void testFetchFromMasterWithoutDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
+    public void testFetchFromPrimaryWithoutDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
-            createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, false);
-            Assert.fail("secondSlaveLifecyleUtil should not have started");
+            createSecondSecondary(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, false);
+            Assert.fail("secondSecondaryLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
+            Assert.assertTrue(domainSecondaryLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
     @Test
-    public void testFetchFromMasterWithCachedDC() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, true);
+    public void testFetchFromPrimaryWithCachedDC() throws URISyntaxException, IOException {
+        createSecondSecondary(AdminOnlyDomainConfigPolicy.FETCH_FROM_DOMAIN_CONTROLLER, false, true);
         validateProfiles("cached-remote-test");
     }
 
     @Test
     public void testRequireLocalConfigWithDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
-            createSecondSlave(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, true, false);
-            Assert.fail("secondSlaveLifecyleUtil should not have started");
+            createSecondSecondary(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, true, false);
+            Assert.fail("secondSecondaryLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
+            Assert.assertTrue(domainSecondaryLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
     @Test
     public void testRequireLocalConfigWithoutDiscovery() throws URISyntaxException, InterruptedException, TimeoutException {
         try {
-            createSecondSlave(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, false, false);
-            Assert.fail("secondSlaveLifecyleUtil should not have started");
+            createSecondSecondary(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, false, false);
+            Assert.fail("secondSecondaryLifecyleUtil should not have started");
         } catch (RuntimeException e) {
-            Assert.assertTrue(domainSlaveLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
+            Assert.assertTrue(domainSecondaryLifecycleUtil.awaitForProcessExitCode(exitCodeTimeout) >= 0);
         }
     }
 
     @Test
     public void testRequireLocalConfigWithCachedDC() throws URISyntaxException, IOException {
-        createSecondSlave(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, false, true);
+        createSecondSecondary(AdminOnlyDomainConfigPolicy.REQUIRE_LOCAL_CONFIG, false, true);
         validateProfiles("cached-remote-test");
     }
 
-    private String createSecondSlave(AdminOnlyDomainConfigPolicy policy, boolean discovery, boolean cachedDC) throws URISyntaxException {
+    private String createSecondSecondary(AdminOnlyDomainConfigPolicy policy, boolean discovery, boolean cachedDC) throws URISyntaxException {
 
-        String hostName = "slave-" + initTime + "-" + (slaveCount++);
+        String hostName = "secondary-" + initTime + "-" + (secondaryCount++);
 
         String hostConfigPath = "host-configs/" + (discovery ? "admin-only-discovery.xml" : "admin-only-no-discovery.xml");
 
-        WildFlyManagedConfiguration slaveConfig = DomainTestSupport.getSlaveConfiguration(hostName, hostConfigPath,
+        WildFlyManagedConfiguration secondaryConfig = DomainTestSupport.getSecondaryConfiguration(hostName, hostConfigPath,
                 getClass().getSimpleName(), false);
-        slaveConfig.setHostControllerManagementPort(29999);
-        slaveConfig.setAdminOnly(true);
-        slaveConfig.addHostCommandLineProperty("-Djboss.test.admin-only-policy=" + policy.toString());
-        slaveConfig.addHostCommandLineProperty("-Djboss.host.name=" + hostName);
+        secondaryConfig.setHostControllerManagementPort(29999);
+        secondaryConfig.setAdminOnly(true);
+        secondaryConfig.addHostCommandLineProperty("-Djboss.test.admin-only-policy=" + policy.toString());
+        secondaryConfig.addHostCommandLineProperty("-Djboss.host.name=" + hostName);
         if (cachedDC) {
-            slaveConfig.setCachedDC(true);
+            secondaryConfig.setCachedDC(true);
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             URL url = tccl.getResource("domain-configs/domain.cached-remote.xml");
             assert url != null;
-            slaveConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
+            secondaryConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
         }
-        domainSlaveLifecycleUtil = new DomainLifecycleUtil(slaveConfig, testSupport.getSharedClientConfiguration());
-        domainSlaveLifecycleUtil.start();
+        domainSecondaryLifecycleUtil = new DomainLifecycleUtil(secondaryConfig, testSupport.getSharedClientConfiguration());
+        domainSecondaryLifecycleUtil.start();
 
         return hostName;
     }
@@ -211,7 +211,7 @@ public class AdminOnlyPolicyTestCase {
         Set<String> set = new HashSet<String>(Arrays.asList(expectedNames));
         ModelNode op = Util.createEmptyOperation(ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
         op.get(ModelDescriptionConstants.CHILD_TYPE).set(ModelDescriptionConstants.PROFILE);
-        ModelNode result = executeForResult(domainSlaveLifecycleUtil.getDomainClient(), op);
+        ModelNode result = executeForResult(domainSecondaryLifecycleUtil.getDomainClient(), op);
         Assert.assertEquals(result.toString(), ModelType.LIST, result.getType());
         Assert.assertEquals(result.toString(), set.size(), result.asInt());
         for (ModelNode profile : result.asList()) {

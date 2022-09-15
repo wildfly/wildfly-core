@@ -85,7 +85,7 @@ public class HierarchicalCompositionTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void before() throws Exception {
         CLITestSuite.createSupport(HierarchicalCompositionTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
     }
 
     @AfterClass

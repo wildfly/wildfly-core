@@ -83,50 +83,50 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
     private static final PathElement EXTENSION_ELEMENT = PathElement.pathElement(EXTENSION, TestHostCapableExtension.MODULE_NAME);
     private static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, TestHostCapableExtension.SUBSYSTEM_NAME);
-    private static final PathElement MASTER_HOST_ELEMENT = PathElement.pathElement(HOST, "primary");
-    private static final PathElement SLAVE_HOST_ELEMENT = PathElement.pathElement(HOST, "secondary");
+    private static final PathElement PRIMARY_HOST_ELEMENT = PathElement.pathElement(HOST, "primary");
+    private static final PathElement SECONDARY_HOST_ELEMENT = PathElement.pathElement(HOST, "secondary");
     private static final PathElement PROFILE_ELEMENT = PathElement.pathElement(PROFILE, "default");
 
     private static final PathAddress DOMAIN_EXTENSION_ADDRESS = PathAddress.pathAddress(EXTENSION_ELEMENT);
-    private static final PathAddress MASTER_EXTENSION_ADDRESS = PathAddress.pathAddress(MASTER_HOST_ELEMENT, EXTENSION_ELEMENT);
-    private static final PathAddress SLAVE_EXTENSION_ADDRESS = PathAddress.pathAddress(SLAVE_HOST_ELEMENT, EXTENSION_ELEMENT);
+    private static final PathAddress PRIMARY_EXTENSION_ADDRESS = PathAddress.pathAddress(PRIMARY_HOST_ELEMENT, EXTENSION_ELEMENT);
+    private static final PathAddress SECONDARY_EXTENSION_ADDRESS = PathAddress.pathAddress(SECONDARY_HOST_ELEMENT, EXTENSION_ELEMENT);
 
     private static final PathAddress DOMAIN_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(PROFILE_ELEMENT, SUBSYSTEM_ELEMENT);
-    private static final PathAddress MASTER_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(MASTER_HOST_ELEMENT, SUBSYSTEM_ELEMENT);
-    private static final PathAddress SLAVE_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SLAVE_HOST_ELEMENT, SUBSYSTEM_ELEMENT);
+    private static final PathAddress PRIMARY_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(PRIMARY_HOST_ELEMENT, SUBSYSTEM_ELEMENT);
+    private static final PathAddress SECONDARY_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SECONDARY_HOST_ELEMENT, SUBSYSTEM_ELEMENT);
 
-    private static final PathAddress MASTER_SERVER_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(MASTER_HOST_ELEMENT, PathElement.pathElement("server", "main-one"), SUBSYSTEM_ELEMENT);
-    private static final PathAddress SLAVE_SERVER_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SLAVE_HOST_ELEMENT, PathElement.pathElement("server", "main-three"), SUBSYSTEM_ELEMENT);
+    private static final PathAddress PRIMARY_SERVER_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(PRIMARY_HOST_ELEMENT, PathElement.pathElement("server", "main-one"), SUBSYSTEM_ELEMENT);
+    private static final PathAddress SECONDARY_SERVER_SUBSYSTEM_ADDRESS = PathAddress.pathAddress(SECONDARY_HOST_ELEMENT, PathElement.pathElement("server", "main-three"), SUBSYSTEM_ELEMENT);
 
     private static final String SOCKET_BINDING_NAME = "test-binding";
-    private static final PathAddress MASTER_SOCKET_BINDING_GROUP_ADDRESS =
-            PathAddress.pathAddress(MASTER_HOST_ELEMENT).append(SOCKET_BINDING_GROUP, "test-group");
-    private static final PathAddress MASTER_SOCKET_BINDING_ADDRESS =
-            PathAddress.pathAddress(MASTER_SOCKET_BINDING_GROUP_ADDRESS).append(SOCKET_BINDING, SOCKET_BINDING_NAME);
-    private static final PathAddress SLAVE_SOCKET_BINDING_GROUP_ADDRESS =
-            PathAddress.pathAddress(SLAVE_HOST_ELEMENT).append(SOCKET_BINDING_GROUP, "test-group");
-    private static final PathAddress SLAVE_SOCKET_BINDING_ADDRESS =
-            PathAddress.pathAddress(SLAVE_SOCKET_BINDING_GROUP_ADDRESS).append(SOCKET_BINDING, SOCKET_BINDING_NAME);
+    private static final PathAddress PRIMARY_SOCKET_BINDING_GROUP_ADDRESS =
+            PathAddress.pathAddress(PRIMARY_HOST_ELEMENT).append(SOCKET_BINDING_GROUP, "test-group");
+    private static final PathAddress PRIMARY_SOCKET_BINDING_ADDRESS =
+            PathAddress.pathAddress(PRIMARY_SOCKET_BINDING_GROUP_ADDRESS).append(SOCKET_BINDING, SOCKET_BINDING_NAME);
+    private static final PathAddress SECONDARY_SOCKET_BINDING_GROUP_ADDRESS =
+            PathAddress.pathAddress(SECONDARY_HOST_ELEMENT).append(SOCKET_BINDING_GROUP, "test-group");
+    private static final PathAddress SECONDARY_SOCKET_BINDING_ADDRESS =
+            PathAddress.pathAddress(SECONDARY_SOCKET_BINDING_GROUP_ADDRESS).append(SOCKET_BINDING, SOCKET_BINDING_NAME);
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final Map<DomainLifecycleUtil, Set<String>> serversByHost = new HashMap<>();
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(HcExtensionAndSubsystemManagementTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeHostTestExtension(testSupport);
-        Set<String> servers = getRunningServers(domainMasterLifecycleUtil, "primary");
-        serversByHost.put(domainMasterLifecycleUtil, servers);
-        servers = getRunningServers(domainSlaveLifecycleUtil, "secondary");
-        serversByHost.put(domainSlaveLifecycleUtil, servers);
+        Set<String> servers = getRunningServers(domainPrimaryLifecycleUtil, "primary");
+        serversByHost.put(domainPrimaryLifecycleUtil, servers);
+        servers = getRunningServers(domainSecondaryLifecycleUtil, "secondary");
+        serversByHost.put(domainSecondaryLifecycleUtil, servers);
     }
 
     private static Set<String> getRunningServers(DomainLifecycleUtil lifecycleUtil, String hcName) throws IOException {
@@ -144,37 +144,37 @@ public class HcExtensionAndSubsystemManagementTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         serversByHost.clear();
         DomainTestSuite.stopSupport();
     }
 
     @Test
     public void testAddRemoveExtension() throws Exception  {
-        final ModelControllerClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        final ModelControllerClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        final ModelControllerClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        final ModelControllerClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
         /*
          *It should not be possible to add the subsystem anywhere yet, since the extension has not been initialised
          */
-        addSubsystem(masterClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
-        addSubsystem(masterClient, MASTER_SUBSYSTEM_ADDRESS, false);
-        addSubsystem(slaveClient, SLAVE_SUBSYSTEM_ADDRESS, false);
+        addSubsystem(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
+        addSubsystem(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS, false);
+        addSubsystem(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS, false);
 
-        checkSubsystemNeedsExtensionInLocalModel(masterClient, slaveClient, DOMAIN_EXTENSION_ADDRESS);
-        checkSubsystemNeedsExtensionInLocalModel(masterClient, slaveClient, MASTER_EXTENSION_ADDRESS);
-        checkSubsystemNeedsExtensionInLocalModel(masterClient, slaveClient, SLAVE_EXTENSION_ADDRESS);
+        checkSubsystemNeedsExtensionInLocalModel(primaryClient, secondaryClient, DOMAIN_EXTENSION_ADDRESS);
+        checkSubsystemNeedsExtensionInLocalModel(primaryClient, secondaryClient, PRIMARY_EXTENSION_ADDRESS);
+        checkSubsystemNeedsExtensionInLocalModel(primaryClient, secondaryClient, SECONDARY_EXTENSION_ADDRESS);
     }
 
     @Test
     public void testServices() throws Exception {
-        final ModelControllerClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        final ModelControllerClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        final ModelControllerClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        final ModelControllerClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
-        checkServices(masterClient, slaveClient, DOMAIN_EXTENSION_ADDRESS);
-        checkServices(masterClient, slaveClient, MASTER_EXTENSION_ADDRESS);
-        checkServices(masterClient, slaveClient, SLAVE_EXTENSION_ADDRESS);
+        checkServices(primaryClient, secondaryClient, DOMAIN_EXTENSION_ADDRESS);
+        checkServices(primaryClient, secondaryClient, PRIMARY_EXTENSION_ADDRESS);
+        checkServices(primaryClient, secondaryClient, SECONDARY_EXTENSION_ADDRESS);
     }
 
     @Test
@@ -182,26 +182,26 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
         //I think for the DC this is, or at least will/should be tested properly elsewhere.
         //The main aim of this test is to make sure that the host capability context provides isolation
-        checkSocketBindingCapabilities(MASTER_EXTENSION_ADDRESS);
-        checkSocketBindingCapabilities(SLAVE_EXTENSION_ADDRESS);
+        checkSocketBindingCapabilities(PRIMARY_EXTENSION_ADDRESS);
+        checkSocketBindingCapabilities(SECONDARY_EXTENSION_ADDRESS);
     }
 
     @Test
     public void testExtensionSubsystemComposite() throws Exception {
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
         Exception err = null;
         try {
             // 1) Sanity check -- subsystem not there
-            ModelNode read = Util.getReadAttributeOperation(SLAVE_SUBSYSTEM_ADDRESS, NAME);
+            ModelNode read = Util.getReadAttributeOperation(SECONDARY_SUBSYSTEM_ADDRESS, NAME);
             testBadOp(read);
 
             // 2) sanity check -- subsystem add w/o extension -- fail
-            ModelNode subAdd = Util.createAddOperation(SLAVE_SUBSYSTEM_ADDRESS);
+            ModelNode subAdd = Util.createAddOperation(SECONDARY_SUBSYSTEM_ADDRESS);
             subAdd.get(NAME).set(TestHostCapableExtension.MODULE_NAME);
             testBadOp(subAdd);
 
             // 3) ext add + sub add + sub other in composite
-            ModelNode extAdd = Util.createAddOperation(SLAVE_EXTENSION_ADDRESS);
+            ModelNode extAdd = Util.createAddOperation(SECONDARY_EXTENSION_ADDRESS);
             ModelNode goodAdd = buildComposite(extAdd, subAdd, read);
             testGoodComposite(goodAdd);
 
@@ -211,8 +211,8 @@ public class HcExtensionAndSubsystemManagementTestCase {
             assertEquals(response.toString(), TestHostCapableExtension.MODULE_NAME, response.get("result").asString());
 
             // 5) sub remove + ext remove + sub add in composite -- fail
-            ModelNode subRemove = Util.createRemoveOperation(SLAVE_SUBSYSTEM_ADDRESS);
-            ModelNode extRemove = Util.createRemoveOperation(SLAVE_EXTENSION_ADDRESS);
+            ModelNode subRemove = Util.createRemoveOperation(SECONDARY_SUBSYSTEM_ADDRESS);
+            ModelNode extRemove = Util.createRemoveOperation(SECONDARY_EXTENSION_ADDRESS);
             ModelNode badRemove = buildComposite(read, subRemove, extRemove, subAdd);
             response = testBadOp(badRemove);
             // But the 'public' op should have worked
@@ -234,8 +234,8 @@ public class HcExtensionAndSubsystemManagementTestCase {
             err = e;
         } finally {
             //Cleanup
-            removeIgnoreFailure(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
-            removeIgnoreFailure(slaveClient, SLAVE_EXTENSION_ADDRESS);
+            removeIgnoreFailure(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(secondaryClient, SECONDARY_EXTENSION_ADDRESS);
         }
 
         if (err != null) {
@@ -243,18 +243,18 @@ public class HcExtensionAndSubsystemManagementTestCase {
         }
     }
 
-    private void checkSubsystemNeedsExtensionInLocalModel(ModelControllerClient masterClient, ModelControllerClient slaveClient, PathAddress extensionAddress) throws Exception {
+    private void checkSubsystemNeedsExtensionInLocalModel(ModelControllerClient primaryClient, ModelControllerClient secondaryClient, PathAddress extensionAddress) throws Exception {
         Target target = Target.determineFromExtensionAddress(extensionAddress);
         Exception err = null;
         try {
 
-            ModelControllerClient extensionClient = target == Target.SLAVE ? slaveClient : masterClient;
+            ModelControllerClient extensionClient = target == Target.SECONDARY ? secondaryClient : primaryClient;
 
             //A) Check the subsystem can only be added to the model which has the extension was added to
             addExtension(extensionClient, extensionAddress);
-            addSubsystem(masterClient, DOMAIN_SUBSYSTEM_ADDRESS, target == Target.DOMAIN);
-            addSubsystem(masterClient, MASTER_SUBSYSTEM_ADDRESS, target == Target.MASTER);
-            addSubsystem(slaveClient, SLAVE_SUBSYSTEM_ADDRESS, target == Target.SLAVE);
+            addSubsystem(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS, target == Target.DOMAIN);
+            addSubsystem(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS, target == Target.PRIMARY);
+            addSubsystem(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS, target == Target.SECONDARY);
 
 
             //B) Should not be possible to remove the extension before removing the subsystem
@@ -266,30 +266,30 @@ public class HcExtensionAndSubsystemManagementTestCase {
             case DOMAIN:
                 removeSubsystem(extensionClient, DOMAIN_SUBSYSTEM_ADDRESS);
                 break;
-            case MASTER:
-                removeSubsystem(extensionClient, MASTER_SUBSYSTEM_ADDRESS);
+            case PRIMARY:
+                removeSubsystem(extensionClient, PRIMARY_SUBSYSTEM_ADDRESS);
                 break;
-            case SLAVE:
-                removeSubsystem(extensionClient, SLAVE_SUBSYSTEM_ADDRESS);
+            case SECONDARY:
+                removeSubsystem(extensionClient, SECONDARY_SUBSYSTEM_ADDRESS);
                 break;
             }
             removeExtension(extensionClient, extensionAddress, true);
 
             //D check that we cannot add the subsystem anywhere since there is no extension
-            addSubsystem(masterClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
-            addSubsystem(masterClient, MASTER_SUBSYSTEM_ADDRESS, false);
-            addSubsystem(slaveClient, SLAVE_SUBSYSTEM_ADDRESS, false);
+            addSubsystem(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
+            addSubsystem(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS, false);
+            addSubsystem(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS, false);
 
         } catch (Exception e) {
             err = e;
         } finally {
             //Cleanup
-            removeIgnoreFailure(masterClient, DOMAIN_SUBSYSTEM_ADDRESS);
-            removeIgnoreFailure(masterClient, MASTER_SUBSYSTEM_ADDRESS);
-            removeIgnoreFailure(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
-            removeIgnoreFailure(masterClient, DOMAIN_EXTENSION_ADDRESS);
-            removeIgnoreFailure(masterClient, MASTER_EXTENSION_ADDRESS);
-            removeIgnoreFailure(masterClient, SLAVE_EXTENSION_ADDRESS);
+            removeIgnoreFailure(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(primaryClient, DOMAIN_EXTENSION_ADDRESS);
+            removeIgnoreFailure(primaryClient, PRIMARY_EXTENSION_ADDRESS);
+            removeIgnoreFailure(primaryClient, SECONDARY_EXTENSION_ADDRESS);
         }
 
         if (err != null) {
@@ -297,23 +297,23 @@ public class HcExtensionAndSubsystemManagementTestCase {
         }
     }
 
-    private void checkServices(ModelControllerClient masterClient, ModelControllerClient slaveClient, PathAddress extensionAddress) throws Exception {
+    private void checkServices(ModelControllerClient primaryClient, ModelControllerClient secondaryClient, PathAddress extensionAddress) throws Exception {
         Target target = Target.determineFromExtensionAddress(extensionAddress);
         final PathAddress subsystemAddress;
         switch (target) {
         case DOMAIN:
             subsystemAddress = DOMAIN_SUBSYSTEM_ADDRESS;
             break;
-        case MASTER:
-            subsystemAddress = MASTER_SUBSYSTEM_ADDRESS;
+        case PRIMARY:
+            subsystemAddress = PRIMARY_SUBSYSTEM_ADDRESS;
             break;
-        case SLAVE:
-            subsystemAddress = SLAVE_SUBSYSTEM_ADDRESS;
+        case SECONDARY:
+            subsystemAddress = SECONDARY_SUBSYSTEM_ADDRESS;
             break;
         default:
             throw new IllegalStateException("Unknown address");
         }
-        ModelControllerClient extensionClient = target == Target.SLAVE ? slaveClient : masterClient;
+        ModelControllerClient extensionClient = target == Target.SECONDARY ? secondaryClient : primaryClient;
         Exception err = null;
         try {
             addExtension(extensionClient, extensionAddress);
@@ -321,25 +321,25 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
             switch (target) {
             case DOMAIN:
-                checkService(masterClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
-                checkNoSubsystem(masterClient, MASTER_SUBSYSTEM_ADDRESS);
-                checkService(masterClient, MASTER_SERVER_SUBSYSTEM_ADDRESS, true);
-                checkNoSubsystem(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
-                checkService(slaveClient, SLAVE_SERVER_SUBSYSTEM_ADDRESS, true);
+                checkService(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS, false);
+                checkNoSubsystem(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS);
+                checkService(primaryClient, PRIMARY_SERVER_SUBSYSTEM_ADDRESS, true);
+                checkNoSubsystem(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS);
+                checkService(secondaryClient, SECONDARY_SERVER_SUBSYSTEM_ADDRESS, true);
                 break;
-            case MASTER:
-                checkNoSubsystem(masterClient, DOMAIN_SUBSYSTEM_ADDRESS);
-                checkService(masterClient, MASTER_SUBSYSTEM_ADDRESS, true);
-                checkNoSubsystem(masterClient, MASTER_SERVER_SUBSYSTEM_ADDRESS);
-                checkNoSubsystem(slaveClient, SLAVE_SUBSYSTEM_ADDRESS);
-                checkNoSubsystem(slaveClient, SLAVE_SERVER_SUBSYSTEM_ADDRESS);
+            case PRIMARY:
+                checkNoSubsystem(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS);
+                checkService(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS, true);
+                checkNoSubsystem(primaryClient, PRIMARY_SERVER_SUBSYSTEM_ADDRESS);
+                checkNoSubsystem(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS);
+                checkNoSubsystem(secondaryClient, SECONDARY_SERVER_SUBSYSTEM_ADDRESS);
                 break;
-            case SLAVE:
-                checkNoSubsystem(masterClient, DOMAIN_SUBSYSTEM_ADDRESS);
-                checkNoSubsystem(masterClient, MASTER_SUBSYSTEM_ADDRESS);
-                checkNoSubsystem(masterClient, MASTER_SERVER_SUBSYSTEM_ADDRESS);
-                checkService(slaveClient, SLAVE_SUBSYSTEM_ADDRESS, true);
-                checkNoSubsystem(slaveClient, SLAVE_SERVER_SUBSYSTEM_ADDRESS);
+            case SECONDARY:
+                checkNoSubsystem(primaryClient, DOMAIN_SUBSYSTEM_ADDRESS);
+                checkNoSubsystem(primaryClient, PRIMARY_SUBSYSTEM_ADDRESS);
+                checkNoSubsystem(primaryClient, PRIMARY_SERVER_SUBSYSTEM_ADDRESS);
+                checkService(secondaryClient, SECONDARY_SUBSYSTEM_ADDRESS, true);
+                checkNoSubsystem(secondaryClient, SECONDARY_SERVER_SUBSYSTEM_ADDRESS);
                 break;
             }
         } catch (Exception e) {
@@ -356,30 +356,30 @@ public class HcExtensionAndSubsystemManagementTestCase {
     }
 
     private void checkSocketBindingCapabilities(PathAddress extensionAddress) throws Exception {
-        ModelControllerClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        ModelControllerClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        ModelControllerClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        ModelControllerClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
         Target target = Target.determineFromExtensionAddress(extensionAddress);
         final PathAddress subsystemAddress;
         final PathAddress socketBindingGroupAddress;
         final PathAddress socketBindingAddress;
         final int portOffset;
         switch (target) {
-            case MASTER:
-                subsystemAddress = MASTER_SUBSYSTEM_ADDRESS;
-                socketBindingGroupAddress = MASTER_SOCKET_BINDING_GROUP_ADDRESS;
-                socketBindingAddress = MASTER_SOCKET_BINDING_ADDRESS;
+            case PRIMARY:
+                subsystemAddress = PRIMARY_SUBSYSTEM_ADDRESS;
+                socketBindingGroupAddress = PRIMARY_SOCKET_BINDING_GROUP_ADDRESS;
+                socketBindingAddress = PRIMARY_SOCKET_BINDING_ADDRESS;
                 portOffset = 0;
                 break;
-            case SLAVE:
-                subsystemAddress = SLAVE_SUBSYSTEM_ADDRESS;
-                socketBindingGroupAddress = SLAVE_SOCKET_BINDING_GROUP_ADDRESS;
-                socketBindingAddress = SLAVE_SOCKET_BINDING_ADDRESS;
+            case SECONDARY:
+                subsystemAddress = SECONDARY_SUBSYSTEM_ADDRESS;
+                socketBindingGroupAddress = SECONDARY_SOCKET_BINDING_GROUP_ADDRESS;
+                socketBindingAddress = SECONDARY_SOCKET_BINDING_ADDRESS;
                 portOffset = 100;
                 break;
             default:
                 throw new IllegalStateException("Unknown address");
         }
-        ModelControllerClient client = target == Target.SLAVE ? slaveClient : masterClient;
+        ModelControllerClient client = target == Target.SECONDARY ? secondaryClient : primaryClient;
         Exception err = null;
         try {
             addExtension(client, extensionAddress);
@@ -392,7 +392,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
             try(Socket socket = new Socket()) {
                 InetAddress addr = InetAddress.getByName(NetworkUtils.formatPossibleIpv6Address(
-                        testSupport.getDomainMasterConfiguration().getHostControllerManagementAddress()));
+                        testSupport.getDomainPrimaryConfiguration().getHostControllerManagementAddress()));
                 socket.connect(new InetSocketAddress(
                         addr,
                         port
@@ -494,16 +494,16 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
     private void reloadHostsIfReloadRequired() throws Exception {
         //Later tests fail if we leave the host in reload-required
-        boolean reloaded = reloadHostsIfReloadRequired(domainMasterLifecycleUtil, PathAddress.pathAddress(MASTER_HOST_ELEMENT));
-        reloaded = reloaded || reloadHostsIfReloadRequired(domainSlaveLifecycleUtil, PathAddress.pathAddress(SLAVE_HOST_ELEMENT));
+        boolean reloaded = reloadHostsIfReloadRequired(domainPrimaryLifecycleUtil, PathAddress.pathAddress(PRIMARY_HOST_ELEMENT));
+        reloaded = reloaded || reloadHostsIfReloadRequired(domainSecondaryLifecycleUtil, PathAddress.pathAddress(SECONDARY_HOST_ELEMENT));
         if (reloaded) {
-            //Wait for the slave to reconnect, look for the slave in the list of hosts
+            //Wait for the secondary to reconnect, look for the secondary in the list of hosts
             long end = System.currentTimeMillis() + 20 * ADJUSTED_SECOND;
-            boolean slaveReconnected;
+            boolean secondaryReconnected;
             do {
                 Thread.sleep(ADJUSTED_SECOND);
-                slaveReconnected = checkSlaveReconnected(domainMasterLifecycleUtil.getDomainClient());
-            } while (!slaveReconnected && System.currentTimeMillis() < end);
+                secondaryReconnected = checkSecondaryReconnected(domainPrimaryLifecycleUtil.getDomainClient());
+            } while (!secondaryReconnected && System.currentTimeMillis() < end);
 
         }
     }
@@ -539,11 +539,11 @@ public class HcExtensionAndSubsystemManagementTestCase {
         }
     }
 
-    private boolean checkSlaveReconnected(ModelControllerClient masterClient) throws Exception {
+    private boolean checkSecondaryReconnected(ModelControllerClient primaryClient) throws Exception {
         ModelNode op = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
         op.get(CHILD_TYPE).set(HOST);
         try {
-            ModelNode ret = DomainTestUtils.executeForResult(op, masterClient);
+            ModelNode ret = DomainTestUtils.executeForResult(op, primaryClient);
             List<ModelNode> list = ret.asList();
             if (list.size() == 2) {
                 for (ModelNode entry : list) {
@@ -559,7 +559,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
     }
 
     private ModelNode executeOp(ModelNode op, String outcome) throws IOException {
-        ModelNode response = domainSlaveLifecycleUtil.getDomainClient().execute(op);
+        ModelNode response = domainSecondaryLifecycleUtil.getDomainClient().execute(op);
         assertTrue(response.toString(), response.hasDefined(OUTCOME));
         assertEquals(response.toString(), outcome, response.get(OUTCOME).asString());
         return response;
@@ -607,16 +607,16 @@ public class HcExtensionAndSubsystemManagementTestCase {
 
     private enum Target {
         DOMAIN,
-        MASTER,
-        SLAVE;
+        PRIMARY,
+        SECONDARY;
 
         static Target determineFromExtensionAddress(PathAddress extensionAddress) {
             if (extensionAddress == DOMAIN_EXTENSION_ADDRESS) {
                 return DOMAIN;
-            } else if (extensionAddress == MASTER_EXTENSION_ADDRESS) {
-                return MASTER;
-            } else if (extensionAddress == SLAVE_EXTENSION_ADDRESS) {
-                return SLAVE;
+            } else if (extensionAddress == PRIMARY_EXTENSION_ADDRESS) {
+                return PRIMARY;
+            } else if (extensionAddress == SECONDARY_EXTENSION_ADDRESS) {
+                return SECONDARY;
             }
             throw new AssertionError("Unknown extension address");
         }

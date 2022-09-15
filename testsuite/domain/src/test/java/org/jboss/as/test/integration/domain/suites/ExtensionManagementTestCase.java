@@ -79,14 +79,14 @@ public class ExtensionManagementTestCase {
     private static final PathAddress SERVER_THREE_EXT_ADDRESS = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three").append(EXTENSION_ELEMENT);
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ExtensionManagementTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
         // Initialize the test extension
         ExtensionSetup.initializeTestExtension(testSupport);
     }
@@ -94,41 +94,41 @@ public class ExtensionManagementTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Test
     public void testAddRemoveExtension() throws Exception  {
         ModelNode op = createOpNode(ADDRESS, "add");
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        executeForResult(op, masterClient);
-        extensionVersionTest(masterClient, null);
-        extensionVersionTest(masterClient, "host=primary/server=main-one");
-        extensionVersionTest(masterClient, "host=secondary/server=main-three");
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
-        extensionVersionTest(slaveClient, null);
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        executeForResult(op, primaryClient);
+        extensionVersionTest(primaryClient, null);
+        extensionVersionTest(primaryClient, "host=primary/server=main-one");
+        extensionVersionTest(primaryClient, "host=secondary/server=main-three");
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
+        extensionVersionTest(secondaryClient, null);
 
         op = createOpNode(ADDRESS, "remove");
-        executeForResult(op, masterClient);
-        extensionRemovalTest(masterClient, null);
-        extensionRemovalTest(masterClient, "host=primary/server=main-one");
-        extensionRemovalTest(masterClient, "host=secondary/server=main-three");
-        extensionRemovalTest(slaveClient, null);
+        executeForResult(op, primaryClient);
+        extensionRemovalTest(primaryClient, null);
+        extensionRemovalTest(primaryClient, "host=primary/server=main-one");
+        extensionRemovalTest(primaryClient, "host=secondary/server=main-three");
+        extensionRemovalTest(secondaryClient, null);
     }
 
     @Test
     public void testExtensionSubsystemComposite() throws Exception {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         Exception err = null;
         try {
             // 1) Sanity check -- subsystem not there
             ModelNode read = Util.getReadAttributeOperation(PROFILE_SUBSYSTEM_ADDRESS, NAME);
             testBadOp(read);
 
-            // 2) Sanity check -- Confirm slave has resources
-            verifyNotOnSlave();
+            // 2) Sanity check -- Confirm secondary has resources
+            verifyNotOnSecondary();
 
             // 3) Sanity check -- Confirm servers no longer have resource
             verifyNotOnServers();
@@ -148,8 +148,8 @@ public class ExtensionManagementTestCase {
             assertTrue(response.toString(), response.has("result"));
             assertEquals(response.toString(), TestExtension.MODULE_NAME, response.get("result").asString());
 
-            // 7) Confirm slave has resources
-            verifyOnSlave();
+            // 7) Confirm secondary has resources
+            verifyOnSecondary();
 
             // 8) Confirm servers have the resources
             verifyOnServers();
@@ -168,8 +168,8 @@ public class ExtensionManagementTestCase {
             response = executeOp(goodRemove, "success");
             validateInvokePublicStep(response, 1, false);
 
-            // 12) Confirm slave no longer has resources
-            verifyNotOnSlave();
+            // 12) Confirm secondary no longer has resources
+            verifyNotOnSecondary();
 
             // 13) Confirm servers no longer have resource
             verifyNotOnServers();
@@ -182,8 +182,8 @@ public class ExtensionManagementTestCase {
             assertTrue(response.toString(), response.has("result"));
             assertEquals(response.toString(), TestExtension.MODULE_NAME, response.get("result").asString());
 
-            // 16) Confirm slave again has resources
-            verifyOnSlave();
+            // 16) Confirm secondary again has resources
+            verifyOnSecondary();
 
             // 17) Confirm servers again have resources
             verifyOnServers();
@@ -192,8 +192,8 @@ public class ExtensionManagementTestCase {
             err = e;
         } finally {
             //Cleanup
-            removeIgnoreFailure(masterClient, PROFILE_SUBSYSTEM_ADDRESS);
-            removeIgnoreFailure(masterClient, EXTENSION_ADDRESS);
+            removeIgnoreFailure(primaryClient, PROFILE_SUBSYSTEM_ADDRESS);
+            removeIgnoreFailure(primaryClient, EXTENSION_ADDRESS);
         }
 
         if (err != null) {
@@ -264,7 +264,7 @@ public class ExtensionManagementTestCase {
     }
 
     private ModelNode executeOp(ModelNode op, String outcome) throws IOException {
-        ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        ModelNode response = domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         assertTrue(response.toString(), response.hasDefined(OUTCOME));
         assertEquals(response.toString(), outcome, response.get(OUTCOME).asString());
         return response;
@@ -283,8 +283,8 @@ public class ExtensionManagementTestCase {
         assertTrue(msg, failure.asString().contains("WFLYCTL0030"));
     }
 
-    private void verifyOnSlave() throws IOException, MgmtOperationException {
-        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+    private void verifyOnSecondary() throws IOException, MgmtOperationException {
+        DomainClient client = domainSecondaryLifecycleUtil.getDomainClient();
         ModelNode readExt = Util.createEmptyOperation(READ_RESOURCE_OPERATION, EXTENSION_ADDRESS);
         ModelNode result = executeForResult(readExt, client);
         assertEquals(result.toString(), TestExtension.MODULE_NAME, result.get(MODULE).asString());
@@ -294,7 +294,7 @@ public class ExtensionManagementTestCase {
     }
 
     private void verifyOnServers() throws IOException, MgmtOperationException {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode readExtOne = Util.getReadAttributeOperation(SERVER_ONE_EXT_ADDRESS, MODULE);
         ModelNode result = executeForResult(readExtOne, client);
@@ -313,7 +313,7 @@ public class ExtensionManagementTestCase {
         assertEquals(result.toString(), TestExtension.MODULE_NAME, result.asString());
     }
 
-    private void verifyNotOnSlave() throws IOException {
+    private void verifyNotOnSecondary() throws IOException {
         ModelNode readExt = Util.createEmptyOperation(READ_RESOURCE_OPERATION, EXTENSION_ADDRESS);
         executeOp(readExt, FAILED);
         ModelNode read = Util.getReadAttributeOperation(PROFILE_SUBSYSTEM_ADDRESS, NAME);

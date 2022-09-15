@@ -71,7 +71,7 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
 
         ALL_ROLES_SET_BASIC.addAll(STANDARD_ROLES_SET);
         ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractHostScopedRolesTestCase.USERS));
-        ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractHostScopedRolesTestCase.SLAVE_USERS));
+        ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractHostScopedRolesTestCase.SECONDARY_USERS));
         ALL_ROLES_SET_BASIC.addAll(Arrays.asList(AbstractServerGroupScopedRolesTestCase.USERS));
 
         ALL_ROLES_SET_WITH_ADDITIONAL_ROLES.addAll(ALL_ROLES_SET_BASIC);
@@ -82,8 +82,8 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(IncludeAllRoleTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
         AbstractServerGroupScopedRolesTestCase.setupRoles(domainClient);
         RBACProviderServerGroupScopedRolesTestCase.ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -93,7 +93,7 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.INSTANCE.tearDown(domainClient);
@@ -126,19 +126,19 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testAdministrator() throws Exception {
-        ModelControllerClient client = getClientForUser(RbacUtil.ADMINISTRATOR_USER, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(RbacUtil.ADMINISTRATOR_USER, false, primaryClientConfig);
         test(client);
     }
 
     @Test
     public void testAuditor() throws Exception {
-        ModelControllerClient client = getClientForUser(RbacUtil.AUDITOR_USER, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(RbacUtil.AUDITOR_USER, false, primaryClientConfig);
         test(client);
     }
 
     @Test
     public void testSuperUser() throws Exception {
-        ModelControllerClient client = getClientForUser(RbacUtil.SUPERUSER_USER, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(RbacUtil.SUPERUSER_USER, false, primaryClientConfig);
         test(client);
     }
 
@@ -160,13 +160,13 @@ public class ListRoleNamesTestCase extends AbstractRbacTestCase {
     // test utils
 
     private void addNewRoles() throws IOException {
-        DomainClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        RbacUtil.addHostScopedRole(client, NEW_HOST_SCOPED_ROLE, RbacUtil.MONITOR_ROLE, AbstractHostScopedRolesTestCase.MASTER);
+        DomainClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        RbacUtil.addHostScopedRole(client, NEW_HOST_SCOPED_ROLE, RbacUtil.MONITOR_ROLE, AbstractHostScopedRolesTestCase.PRIMARY);
         RbacUtil.addServerGroupScopedRole(client, NEW_SERVER_GROUP_SCOPED_ROLE, RbacUtil.MONITOR_ROLE, AbstractServerGroupScopedRolesTestCase.SERVER_GROUP_A);
     }
 
     private void removeNewRoles() throws IOException {
-        DomainClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         RbacUtil.removeHostScopedRole(client, NEW_HOST_SCOPED_ROLE);
         RbacUtil.removeServerGroupScopedRole(client, NEW_SERVER_GROUP_SCOPED_ROLE);
     }

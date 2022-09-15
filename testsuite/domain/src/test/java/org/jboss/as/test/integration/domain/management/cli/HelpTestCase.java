@@ -36,7 +36,7 @@ public class HelpTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void beforeClass() throws Exception {
         CLITestSuite.createSupport(HelpTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
     }
 
     @AfterClass

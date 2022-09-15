@@ -82,20 +82,20 @@ public class CapabilityReloadRequiredUnitTestCase {
     private static final PathAddress SUB = PathAddress.pathAddress(PROFILE, "other").append(SUBSYSTEM, DependentExtension.SUBSYSTEM_NAME);
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         ExtensionUtils.createExtensionModule(WFCORE1106, DependentExtension.class);
         testSupport = DomainTestSuite.createSupport(CapabilityReloadRequiredUnitTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         try {
             testSupport = null;
-            domainMasterLifecycleUtil = null;
+            domainPrimaryLifecycleUtil = null;
             DomainTestSuite.stopSupport();
         } finally {
             ExtensionUtils.deleteExtensionModule(WFCORE1106);
@@ -289,7 +289,7 @@ public class CapabilityReloadRequiredUnitTestCase {
     }
 
     private ModelNode executeOp(ModelNode op) throws IOException {
-        ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        ModelNode response = domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         assertTrue(response.toString(), response.hasDefined(OUTCOME));
         assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         return response;

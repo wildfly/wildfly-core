@@ -45,7 +45,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.operations.common.Util.createAddOperation;
 import static org.jboss.as.controller.operations.common.Util.createEmptyOperation;
-import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SLAVE_ADDR;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SECONDARY_ADDR;
 import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.cloneProfile;
 import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServer;
 import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServerGroup;
@@ -89,7 +89,7 @@ import org.junit.Assert;
 public class DeploymentScenario extends ReconnectTestScenario {
 
     private final List<File> tmpDirs = new ArrayList<>();
-    private final String DEPLOYMENT_NAME_PATTERN = "reconnect-slave-dep%s.jar";
+    private final String DEPLOYMENT_NAME_PATTERN = "reconnect-secondary-dep%s.jar";
 
     //Just to know how much was initialised in the setup method, so we know what to tear down
     private int initialized = 0;
@@ -102,78 +102,78 @@ public class DeploymentScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Add minimal server
-        cloneProfile(masterClient, "minimal", "deployment-affected");
+        cloneProfile(primaryClient, "minimal", "deployment-affected");
         initialized = 1;
-        createServerGroup(masterClient, "deployment-group-affected", "deployment-affected");
+        createServerGroup(primaryClient, "deployment-group-affected", "deployment-affected");
         initialized = 2;
-        createServer(slaveClient, "server-affected", "deployment-group-affected", portOffset);
+        createServer(secondaryClient, "server-affected", "deployment-group-affected", portOffset);
         initialized = 3;
-        startServer(slaveClient, "server-affected");
+        startServer(secondaryClient, "server-affected");
         initialized = 4;
     }
 
     @Override
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         if (rolloutPlan) {
             DomainTestUtils.executeForResult(
                     Util.createRemoveOperation(
                             PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS).append(ROLLOUT_PLAN, "test")),
-                    masterClient);
+                    primaryClient);
         }
         for (String qualifier : new HashSet<>(deployed)) {
-            undeploy(masterClient, qualifier);
+            undeploy(primaryClient, qualifier);
         }
         if (initialized >= 4) {
-            stopServer(slaveClient, "server-affected");
+            stopServer(secondaryClient, "server-affected");
         }
         if (initialized >= 3) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(SLAVE_ADDR.append(SERVER_CONFIG, "server-affected")), masterClient);
+                    Util.createRemoveOperation(SECONDARY_ADDR.append(SERVER_CONFIG, "server-affected")), primaryClient);
         }
         if (initialized >= 2) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "deployment-group-affected")), masterClient);
+                    Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "deployment-group-affected")), primaryClient);
         }
         if (initialized >= 1) {
-            removeProfile(masterClient, "deployment-affected");
+            removeProfile(primaryClient, "deployment-affected");
         }
     }
 
     @Override
-    void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testOnInitialStartup(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Deployments
-        Assert.assertNull(getDeploymentProperty(slaveClient, "one"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "two"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "three"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "four"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "one"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "two"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "three"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "four"));
 
-        deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentOne.class, "one");
-        deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentTwo.class, "two");
+        deployToAffectedServerGroup(primaryClient, ServiceActivatorDeploymentOne.class, "one");
+        deployToAffectedServerGroup(primaryClient, ServiceActivatorDeploymentTwo.class, "two");
 
-        Assert.assertEquals("one", getDeploymentProperty(slaveClient, "one"));
-        Assert.assertEquals("two", getDeploymentProperty(slaveClient, "two"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "three"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "four"));
+        Assert.assertEquals("one", getDeploymentProperty(secondaryClient, "one"));
+        Assert.assertEquals("two", getDeploymentProperty(secondaryClient, "two"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "three"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "four"));
 
         //Rollout plans
-        ModelNode masterPlans = getRolloutPlans(masterClient);
-        ModelNode slavePlans = getRolloutPlans(slaveClient);
-        Assert.assertEquals(masterPlans, slavePlans);
-        Assert.assertFalse(masterPlans.get(HASH).isDefined());
-        Assert.assertFalse(masterPlans.get(CONTENT).isDefined());
+        ModelNode primaryPlans = getRolloutPlans(primaryClient);
+        ModelNode secondaryPlans = getRolloutPlans(secondaryClient);
+        Assert.assertEquals(primaryPlans, secondaryPlans);
+        Assert.assertFalse(primaryPlans.get(HASH).isDefined());
+        Assert.assertFalse(primaryPlans.get(CONTENT).isDefined());
     }
 
     @Override
-    void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testWhilePrimaryInAdminOnly(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Deployments
         //Undeploy deployment1, and deploy 3 with same name
-        undeploy(masterClient, "one");
-        deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentThree.class, "one");
+        undeploy(primaryClient, "one");
+        deployToAffectedServerGroup(primaryClient, ServiceActivatorDeploymentThree.class, "one");
         //Remove deployment2 and add 4
-        undeploy(masterClient, "two");
-        deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentFour.class, "four");
+        undeploy(primaryClient, "two");
+        deployToAffectedServerGroup(primaryClient, ServiceActivatorDeploymentFour.class, "four");
 
         //Rollout plans
         ModelNode op = Util.createAddOperation(
@@ -181,47 +181,47 @@ public class DeploymentScenario extends ReconnectTestScenario {
         ModelNode serverGroup = new ModelNode();
         serverGroup.get(UnaffectedScenario.GROUP.getKey(), UnaffectedScenario.GROUP.getValue());
         op.get(CONTENT).get(ROLLOUT_PLAN).get(IN_SERIES).add(serverGroup);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
         rolloutPlan = true;
     }
 
     @Override
-    void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testAfterReconnect(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Deployments
-        //The deployment values should still be the same until we restart the slave server
-        Assert.assertEquals("one", getDeploymentProperty(slaveClient, "one"));
-        Assert.assertEquals("two", getDeploymentProperty(slaveClient, "two"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "three"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "four"));
+        //The deployment values should still be the same until we restart the secondary server
+        Assert.assertEquals("one", getDeploymentProperty(secondaryClient, "one"));
+        Assert.assertEquals("two", getDeploymentProperty(secondaryClient, "two"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "three"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "four"));
 
         Assert.assertEquals("running",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "server-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(UnaffectedScenario.SERVER), "server-state"), secondaryClient).asString());
         Assert.assertEquals("ok",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), secondaryClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "server-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "server-affected"), "server-state"), secondaryClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), secondaryClient).asString());
 
-        ModelNode reload = Util.createEmptyOperation("reload", SLAVE_ADDR.append(SERVER_CONFIG, "server-affected"));
+        ModelNode reload = Util.createEmptyOperation("reload", SECONDARY_ADDR.append(SERVER_CONFIG, "server-affected"));
         reload.get(BLOCKING).set(true);
-        DomainTestUtils.executeForResult(reload, slaveClient);
+        DomainTestUtils.executeForResult(reload, secondaryClient);
 
-        Assert.assertEquals("three", getDeploymentProperty(slaveClient, "three"));
-        Assert.assertEquals("four", getDeploymentProperty(slaveClient, "four"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "two"));
-        Assert.assertNull(getDeploymentProperty(slaveClient, "one"));
+        Assert.assertEquals("three", getDeploymentProperty(secondaryClient, "three"));
+        Assert.assertEquals("four", getDeploymentProperty(secondaryClient, "four"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "two"));
+        Assert.assertNull(getDeploymentProperty(secondaryClient, "one"));
 
         //RolloutPlans
-        ModelNode masterPlans = getRolloutPlans(masterClient);
-        ModelNode slavePlans = getRolloutPlans(slaveClient);
-        Assert.assertEquals(masterPlans, slavePlans);
-        Assert.assertTrue(masterPlans.get(HASH).isDefined());
-        Assert.assertTrue(masterPlans.get(ROLLOUT_PLAN, "test", CONTENT).isDefined());
+        ModelNode primaryPlans = getRolloutPlans(primaryClient);
+        ModelNode secondaryPlans = getRolloutPlans(secondaryClient);
+        Assert.assertEquals(primaryPlans, secondaryPlans);
+        Assert.assertTrue(primaryPlans.get(HASH).isDefined());
+        Assert.assertTrue(primaryPlans.get(ROLLOUT_PLAN, "test", CONTENT).isDefined());
     }
 
     private File createDeployment(Class<? extends ServiceActivator> clazz, String qualifier) throws Exception{
@@ -246,7 +246,7 @@ public class DeploymentScenario extends ReconnectTestScenario {
         return deployment;
     }
 
-    private void deployToAffectedServerGroup(DomainClient masterClient, Class<? extends ServiceActivator> clazz,
+    private void deployToAffectedServerGroup(DomainClient primaryClient, Class<? extends ServiceActivator> clazz,
                                              String qualifier) throws Exception {
         File deployment = createDeployment(clazz, qualifier);
 
@@ -262,27 +262,27 @@ public class DeploymentScenario extends ReconnectTestScenario {
         sg.set(createAddOperation(
                 PathAddress.pathAddress(SERVER_GROUP, "deployment-group-affected").append(DEPLOYMENT, deployment.getName())));
         sg.get(ENABLED).set(true);
-        DomainTestUtils.executeForResult(composite, masterClient);
+        DomainTestUtils.executeForResult(composite, primaryClient);
         deployed.add(qualifier);
     }
 
 
-    private void undeploy(DomainClient masterClient, String qualifier) throws Exception {
+    private void undeploy(DomainClient primaryClient, String qualifier) throws Exception {
         ModelNode composite = createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
         ModelNode steps = composite.get(STEPS);
         String deploymentName = getDeploymentName(qualifier);
         steps.add(Util.createRemoveOperation(
                 PathAddress.pathAddress(SERVER_GROUP, "deployment-group-affected").append(DEPLOYMENT, deploymentName)));
         steps.add(Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT, deploymentName)));
-        DomainTestUtils.executeForResult(composite, masterClient);
+        DomainTestUtils.executeForResult(composite, primaryClient);
         deployed.remove(qualifier);
     }
 
-    private String getDeploymentProperty(DomainClient slaveClient, String qualifier) throws Exception {
-        PathAddress addr = SLAVE_ADDR.append(SERVER, "server-affected")
+    private String getDeploymentProperty(DomainClient secondaryClient, String qualifier) throws Exception {
+        PathAddress addr = SECONDARY_ADDR.append(SERVER, "server-affected")
                 .append(CORE_SERVICE, PLATFORM_MBEAN).append(TYPE, "runtime");
         ModelNode op = Util.getReadAttributeOperation(addr, SYSTEM_PROPERTIES);
-        ModelNode props = DomainTestUtils.executeForResult(op, slaveClient);
+        ModelNode props = DomainTestUtils.executeForResult(op, secondaryClient);
         String propName = "test.deployment.prop." + qualifier;
         for (ModelNode prop : props.asList()) {
             Property property = prop.asProperty();

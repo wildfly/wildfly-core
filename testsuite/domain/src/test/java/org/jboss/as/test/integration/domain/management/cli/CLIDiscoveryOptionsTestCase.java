@@ -38,7 +38,7 @@ public class CLIDiscoveryOptionsTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void beforeClass() throws Exception {
         CLITestSuite.createSupport(CLIDiscoveryOptionsTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
     }
 
     @AfterClass
@@ -52,26 +52,26 @@ public class CLIDiscoveryOptionsTestCase extends AbstractCliTestBase {
      */
     @Test
     public void discoveryOptionsTest() {
-        String cmd = "/host=slave/core-service=discovery-options/static-discovery=test:add(host=host,port=3333)";
+        String cmd = "/host=secondary/core-service=discovery-options/static-discovery=test:add(host=host,port=3333)";
         cli.sendLine(cmd);
         String cliOutput = cli.readOutput();
 
         assertTrue("Add discovery options CLI command failed " + cliOutput, cliOutput.contains("success"));
 
-        cmd = "/host=slave/core-service=discovery-options/static-discovery=test:write-attribute(name=port,value=2222)";
+        cmd = "/host=secondary/core-service=discovery-options/static-discovery=test:write-attribute(name=port,value=2222)";
         cli.sendLine(cmd);
         cliOutput = cli.readOutput();
 
         assertTrue("Modify discovery options CLI command failed " + cliOutput, cliOutput.contains("success"));
 
-        cmd = "/host=slave/core-service=discovery-options/static-discovery=test:read-resource";
+        cmd = "/host=secondary/core-service=discovery-options/static-discovery=test:read-resource";
         cli.sendLine(cmd);
 
         cliOutput = cli.readOutput();
 
         assertTrue("Value not updated to 2222 " + cliOutput, cliOutput.contains("2222"));
 
-        cmd = "/host=slave/core-service=discovery-options/static-discovery=test:remove";
+        cmd = "/host=secondary/core-service=discovery-options/static-discovery=test:remove";
         cli.sendLine(cmd);
 
         cliOutput = cli.readOutput();
@@ -85,7 +85,7 @@ public class CLIDiscoveryOptionsTestCase extends AbstractCliTestBase {
     @Test
     public void discoveryOptionsNoOptionTest() {
 
-        String cmd = "/host=slave/core-service=discovery-options/static-discovery=test:write-attribute(name=port,value=2222)";
+        String cmd = "/host=secondary/core-service=discovery-options/static-discovery=test:write-attribute(name=port,value=2222)";
         String message = "";
 
         try {

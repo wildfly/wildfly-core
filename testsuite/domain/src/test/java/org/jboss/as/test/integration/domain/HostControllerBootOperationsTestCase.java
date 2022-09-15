@@ -73,7 +73,7 @@ import org.junit.Test;
  * @author Yeray Borges
  */
 public class HostControllerBootOperationsTestCase {
-    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    protected static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
     protected static final PathAddress SERVER_CONFIG_MAIN_THREE = PathAddress.pathAddress(SERVER_CONFIG, "main-three");
     protected static final PathAddress SERVER_MAIN_THREE = PathAddress.pathAddress(SERVER, "main-three");
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
@@ -83,11 +83,11 @@ public class HostControllerBootOperationsTestCase {
     protected static final PathAddress SERVICE_MANAGEMENT_OPERATIONS = PathAddress.pathAddress(SERVICE, MANAGEMENT_OPERATIONS);
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
-    private static DomainLifecycleUtil masterLifecycleUtil;
-    private static DomainLifecycleUtil slaveLifecycleUtil;
+    private static DomainClient primaryClient;
+    private static DomainLifecycleUtil primaryLifecycleUtil;
+    private static DomainLifecycleUtil secondaryLifecycleUtil;
 
-    private static List<String> slaveChildrenTypes;
+    private static List<String> secondaryChildrenTypes;
     private static List<String> emptyAddressChildrenTypes;
 
     private static final int SLEEP_TIME_MILLIS = 100;
@@ -103,36 +103,36 @@ public class HostControllerBootOperationsTestCase {
 
         testSupport = DomainTestSupport.create(configuration);
 
-        masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        primaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        secondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
         testSupport.start();
 
-        masterClient = masterLifecycleUtil.getDomainClient();
+        primaryClient = primaryLifecycleUtil.getDomainClient();
 
         ModelNode op;
-        op = Util.createAddOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.createAddOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createEmptyOperation("add-jvm-option", SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
+        op = Util.createEmptyOperation("add-jvm-option", SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
         op.get("jvm-option").set("-Dorg.jboss.byteman.verbose=true");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createEmptyOperation("add-jvm-option", SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
+        op = Util.createEmptyOperation("add-jvm-option", SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN));
         op.get("jvm-option").set("-Djboss.modules.system.pkgs=org.jboss.byteman");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         String bytemanJavaAgent = System.getProperty("jboss.test.host.server.byteman.javaagent")+"DelayServerRegistrationAndRunningState.btm";
-        op = Util.getWriteAttributeOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN), "java-agent", bytemanJavaAgent);
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.getWriteAttributeOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_BYTEMAN), "java-agent", bytemanJavaAgent);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         ModelNode result;
-        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, SLAVE_ADDR);
-        result = DomainTestUtils.executeForResult(op, masterClient);
-        slaveChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
+        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, SECONDARY_ADDR);
+        result = DomainTestUtils.executeForResult(op, primaryClient);
+        secondaryChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
 
         op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.EMPTY_ADDRESS);
-        result = DomainTestUtils.executeForResult(op, masterClient);
+        result = DomainTestUtils.executeForResult(op, primaryClient);
         emptyAddressChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
     }
 
@@ -140,28 +140,28 @@ public class HostControllerBootOperationsTestCase {
     public static void shutdownDomain() {
         testSupport.close();
         testSupport = null;
-        masterClient = null;
-        slaveLifecycleUtil = null;
-        masterLifecycleUtil = null;
+        primaryClient = null;
+        secondaryLifecycleUtil = null;
+        primaryLifecycleUtil = null;
     }
 
     @Test
-    public void testManagementOperationsWhenSlaveHCisBooting() throws Exception {
-        ModelNode op = Util.createEmptyOperation("reload", SLAVE_ADDR);
+    public void testManagementOperationsWhenSecondaryHCisBooting() throws Exception {
+        ModelNode op = Util.createEmptyOperation("reload", SECONDARY_ADDR);
         op.get(RESTART_SERVERS).set(true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        slaveLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.STARTING);
+        secondaryLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.STARTING);
         // At this point server-three should be waiting before being registered in the domain and HC is still booting up, this gives us a window
         // where we can test the operations that were failing and reporting errors in HAL on WFCORE-4283
-        // The slave write lock is acquired at this time because the servers are starting, although they have not been registered in the domain yet
+        // The secondary write lock is acquired at this time because the servers are starting, although they have not been registered in the domain yet
         // Read operations should pass, even those that use proxies because at this point, the servers are not registered, proxies does not exist yet
 
         checkReadOperations(false);
 
         String message = "server-three should be stopped at this point to validate this test conditions. Check if a previous read operation acquired the write lock or if the \"Delay Server Registration Request\" byteman rule needs more time sleeping the server registration request";
         try {
-            ModelNode result = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), "server-state"), masterClient);
+            ModelNode result = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_MAIN_THREE), "server-state"), primaryClient);
             //assert the server at this point reports STOPPED, which means it has not been registered yet in the domain
             Assert.assertTrue(message, result.asString().equals("STOPPED"));
         } catch (MgmtOperationException e) {
@@ -174,29 +174,29 @@ public class HostControllerBootOperationsTestCase {
 
         // Wait until the delayed server is registered in the domain. As soon it is registered, it will be paused on the booting phase due to byteman, if we read the server state
         // directly, we will get a message telling us the server is starting
-        waitUntilServerRegisteredButStarting(masterClient, SLAVE_ADDR.append(SERVER_MAIN_THREE));
+        waitUntilServerRegisteredButStarting(primaryClient, SECONDARY_ADDR.append(SERVER_MAIN_THREE));
 
         // At this point server-three should be waiting before transitioning to STARTED, this gives us a window to test operations that are
         // likely to fail since the server is still starting, write operations should fail, read operations should pass except those executed with proxies enabled
 
         op = Util.getWriteAttributeOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(JVM_DEFAULT), "heap-size", "64m");
-        ModelNode failureDescription = DomainTestUtils.executeForFailure(op, masterClient);
-        Assert.assertTrue("The slave host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("secondary").asString().startsWith("WFLYCTL0379"));
+        ModelNode failureDescription = DomainTestUtils.executeForFailure(op, primaryClient);
+        Assert.assertTrue("The secondary host does not return the expected error. Failure Description was:"+failureDescription, failureDescription.get("host-failure-descriptions").get("secondary").asString().startsWith("WFLYCTL0379"));
 
         checkReadOperations(true);
 
         // assert server is still starting at this moment
         Assert.assertTrue("server-three should be starting at this point to validate this test conditions. Check if the \"Delay Server Started Request\" byteman rule needs more time sleeping the server started request",
-                DomainTestUtils.executeForFailure(Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), "server-state"), masterClient).asString().startsWith("WFLYCTL0379")
+                DomainTestUtils.executeForFailure(Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_MAIN_THREE), "server-state"), primaryClient).asString().startsWith("WFLYCTL0379")
         );
 
         // Wait for all the servers until the servers are started and HC is running
-        slaveLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
-        DomainTestUtils.waitUntilState(masterClient, SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), ServerStatus.STARTED.toString());
+        secondaryLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
+        DomainTestUtils.waitUntilState(primaryClient, SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE), ServerStatus.STARTED.toString());
 
         // write operation should success at this moment
         op = Util.getWriteAttributeOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(JVM_DEFAULT), "heap-size", "64m");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void checkReadOperations(boolean skipServerDirectReads) throws IOException, MgmtOperationException {
@@ -207,17 +207,17 @@ public class HostControllerBootOperationsTestCase {
         // this also test WFCORE-4596
         op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.EMPTY_ADDRESS);
         addCommonReadOperationAttributes(op, skipServerDirectReads);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        // assert we are also able to read the HC slave model recursively
-        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SLAVE_ADDR);
+        // assert we are also able to read the HC secondary model recursively
+        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SECONDARY_ADDR);
         op.get("recursive").set(true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         // assert we are also able to read the server config of the server under test
-        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE));
+        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE));
         addCommonReadOperationAttributes(op, skipServerDirectReads);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         // The following read operations could be redundant since the read information should have been already returned
         // by the above operations that were executed to read recursively. However, just in case to be more confident
@@ -226,15 +226,15 @@ public class HostControllerBootOperationsTestCase {
             op.get("child-type").set(childType);
             addCommonReadOperationAttributes(op, skipServerDirectReads);
 
-            DomainTestUtils.executeForResult(op, masterClient);
+            DomainTestUtils.executeForResult(op, primaryClient);
         }
 
-        for(String childType : slaveChildrenTypes) {
-            op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, SLAVE_ADDR);
+        for(String childType : secondaryChildrenTypes) {
+            op = Util.createEmptyOperation(READ_CHILDREN_RESOURCES_OPERATION, SECONDARY_ADDR);
             op.get("child-type").set(childType);
             addCommonReadOperationAttributes(op, skipServerDirectReads);
 
-            DomainTestUtils.executeForResult(op, masterClient);
+            DomainTestUtils.executeForResult(op, primaryClient);
         }
 
         // Check also read in composite operations
@@ -242,34 +242,34 @@ public class HostControllerBootOperationsTestCase {
 
         steps = prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes, skipServerDirectReads);
         op = createComposite(steps);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         steps.clear();
-        steps = prepareReadCompositeOperations(SLAVE_ADDR, slaveChildrenTypes, skipServerDirectReads);
+        steps = prepareReadCompositeOperations(SECONDARY_ADDR, secondaryChildrenTypes, skipServerDirectReads);
 
         op = createComposite(steps);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         steps = prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes, skipServerDirectReads);
-        steps.addAll(prepareReadCompositeOperations(SLAVE_ADDR, slaveChildrenTypes, skipServerDirectReads));
+        steps.addAll(prepareReadCompositeOperations(SECONDARY_ADDR, secondaryChildrenTypes, skipServerDirectReads));
 
         op = createComposite(steps);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         // check if we can read the server status
-        op = Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE), "status");
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE), "status");
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         // WFCORE-4830
         // Besides of standard read operations, the following ones are allowed when a HC is starting
-        op = Util.createEmptyOperation("read-boot-errors", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT));
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.createEmptyOperation("read-boot-errors", SECONDARY_ADDR.append(CORE_SERVICE_MANAGEMENT));
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createEmptyOperation("whoami", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT));
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.createEmptyOperation("whoami", SECONDARY_ADDR.append(CORE_SERVICE_MANAGEMENT));
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createEmptyOperation("find-non-progressing-operation", SLAVE_ADDR.append(CORE_SERVICE_MANAGEMENT).append(SERVICE_MANAGEMENT_OPERATIONS));
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.createEmptyOperation("find-non-progressing-operation", SECONDARY_ADDR.append(CORE_SERVICE_MANAGEMENT).append(SERVICE_MANAGEMENT_OPERATIONS));
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         long end = System.currentTimeMillis();
         long duration = end - start;

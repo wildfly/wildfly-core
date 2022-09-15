@@ -100,25 +100,25 @@ public class ResponseStreamTestCase {
     private static final String APPLICATION_JSON = "application/json";
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
-    private static DomainClient slaveClient;
+    private static DomainClient primaryClient;
+    private static DomainClient secondaryClient;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ResponseStreamTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        slaveClient = testSupport.getDomainSlaveLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        secondaryClient = testSupport.getDomainSecondaryLifecycleUtil().getDomainClient();
         // Initialize the test extension
         ExtensionSetup.initializeLogStreamExtension(testSupport);
 
         ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress(EXTENSION, LogStreamExtension.MODULE_NAME));
 
-        executeForResult(addExtension, masterClient);
+        executeForResult(addExtension, primaryClient);
 
         ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, LogStreamExtension.SUBSYSTEM_NAME)));
-        executeForResult(addSubsystem, masterClient);
+        executeForResult(addSubsystem, primaryClient);
     }
 
     @AfterClass
@@ -126,14 +126,14 @@ public class ResponseStreamTestCase {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, LogStreamExtension.SUBSYSTEM_NAME)));
-        executeForResult(removeSubsystem, masterClient);
+        executeForResult(removeSubsystem, primaryClient);
 
         ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(EXTENSION, LogStreamExtension.MODULE_NAME));
-        executeForResult(removeExtension, masterClient);
+        executeForResult(removeExtension, primaryClient);
 
         testSupport = null;
-        masterClient = null;
-        slaveClient = null;
+        primaryClient = null;
+        secondaryClient = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -147,14 +147,14 @@ public class ResponseStreamTestCase {
         ModelNode opNode = Util.createAddOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, LogStreamExtension.LOG_MESSAGE_PROP));
         opNode.get(VALUE).set(logMessageContent);
         Operation op = OperationBuilder.create(opNode).build();
-        masterClient.executeOperation(op, OperationMessageHandler.DISCARD);
+        primaryClient.executeOperation(op, OperationMessageHandler.DISCARD);
     }
 
     @After
     public void after() throws IOException {
         ModelNode opNode = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(SYSTEM_PROPERTY, LogStreamExtension.LOG_MESSAGE_PROP));
         Operation op = OperationBuilder.create(opNode).build();
-        masterClient.executeOperation(op, OperationMessageHandler.DISCARD);
+        primaryClient.executeOperation(op, OperationMessageHandler.DISCARD);
 
         shutdownHttpClient();
 
@@ -175,31 +175,31 @@ public class ResponseStreamTestCase {
     }
 
     @Test
-    public void testMasterHost() throws IOException {
+    public void testPrimaryHost() throws IOException {
         PathAddress base = PathAddress.pathAddress(PROFILE, "default");
-        readLogFile(createReadAttributeOp(base), masterClient, false);
+        readLogFile(createReadAttributeOp(base), primaryClient, false);
     }
 
     @Test
-    public void testSlaveHost() throws IOException {
+    public void testSecondaryHost() throws IOException {
         PathAddress base = PathAddress.pathAddress(PROFILE, "default");
-        readLogFile(createReadAttributeOp(base), slaveClient, false);
+        readLogFile(createReadAttributeOp(base), secondaryClient, false);
     }
 
     @Test
-    public void testMasterServer() throws IOException {
+    public void testPrimaryServer() throws IOException {
         PathAddress base = PathAddress.pathAddress(HOST, "primary").append(SERVER, "main-one");
-        readLogFile(createReadAttributeOp(base), masterClient, true);
-        readLogFile(createOperationOp(base), masterClient, true);
+        readLogFile(createReadAttributeOp(base), primaryClient, true);
+        readLogFile(createOperationOp(base), primaryClient, true);
     }
 
     @Test
-    public void testSlaveServer() throws IOException {
+    public void testSecondaryServer() throws IOException {
         PathAddress base = PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three");
-        readLogFile(createReadAttributeOp(base), masterClient, true);
-        readLogFile(createOperationOp(base), masterClient, true);
-        readLogFile(createReadAttributeOp(base), slaveClient, true);
-        readLogFile(createOperationOp(base), slaveClient, true);
+        readLogFile(createReadAttributeOp(base), primaryClient, true);
+        readLogFile(createOperationOp(base), primaryClient, true);
+        readLogFile(createReadAttributeOp(base), secondaryClient, true);
+        readLogFile(createOperationOp(base), secondaryClient, true);
     }
 
     @Test
@@ -212,7 +212,7 @@ public class ResponseStreamTestCase {
         Operation op = OperationBuilder.create(composite).build();
         OperationResponse response = null;
         try {
-            response = masterClient.executeOperation(op, OperationMessageHandler.DISCARD);
+            response = primaryClient.executeOperation(op, OperationMessageHandler.DISCARD);
 
             ModelNode respNode = response.getResponseNode();
             System.out.println(respNode.toString());
@@ -414,7 +414,7 @@ public class ResponseStreamTestCase {
            shutdownHttpClient();
            CredentialsProvider credsProvider = new BasicCredentialsProvider();
            credsProvider.setCredentials(new AuthScope(url.getHost(), url.getPort(), "ManagementRealm", AuthSchemes.DIGEST),
-                   new UsernamePasswordCredentials(DomainLifecycleUtil.SLAVE_HOST_USERNAME, DomainLifecycleUtil.SLAVE_HOST_PASSWORD));
+                   new UsernamePasswordCredentials(DomainLifecycleUtil.SECONDARY_HOST_USERNAME, DomainLifecycleUtil.SECONDARY_HOST_PASSWORD));
 
            httpClient = HttpClientBuilder.create()
                    .setDefaultCredentialsProvider(credsProvider)
@@ -435,7 +435,7 @@ public class ResponseStreamTestCase {
         } else {
             filePart = MGMT_CTX;
         }
-        return new URL("http", DomainTestSupport.masterAddress, MGMT_PORT, filePart);
+        return new URL("http", DomainTestSupport.primaryAddress, MGMT_PORT, filePart);
     }
 
     private static String getQueryParameter(Integer streamIndex) {
@@ -497,7 +497,7 @@ public class ResponseStreamTestCase {
             Assert.assertEquals(respNode.toString(), ModelType.STRING, result.getType());
             List<? extends OperationResponse.StreamEntry> streams = response.getInputStreams();
             Assert.assertEquals(1, streams.size());
-            processResponseStream(response, result.asString(), forServer, client == masterClient);
+            processResponseStream(response, result.asString(), forServer, client == primaryClient);
 
         } finally {
             StreamUtils.safeClose(response);
@@ -505,34 +505,34 @@ public class ResponseStreamTestCase {
 
     }
 
-    private void processResponseStream(OperationResponse response, String streamUUID, boolean forServer, boolean forMaster) throws IOException {
+    private void processResponseStream(OperationResponse response, String streamUUID, boolean forServer, boolean forPrimary) throws IOException {
         OperationResponse.StreamEntry se = response.getInputStream(streamUUID);
 
-        readLogStream(se.getStream(), forServer, forMaster);
+        readLogStream(se.getStream(), forServer, forPrimary);
     }
 
 
-    private void readLogStream(InputStream stream, boolean forServer, boolean forMaster) throws IOException {
+    private void readLogStream(InputStream stream, boolean forServer, boolean forPrimary) throws IOException {
 
         LineNumberReader reader = new LineNumberReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
 
         String expected = LogStreamExtension.getLogMessage(logMessageContent);
         boolean readRegisteredServer = false;
-        boolean readRegisteredSlave = false;
+        boolean readRegisteredSecondary = false;
         boolean readExpected = false;
         String read;
         while ((read = reader.readLine()) != null) {
             readRegisteredServer = readRegisteredServer || read.contains("WFLYHC0020");
-            readRegisteredSlave = readRegisteredSlave || read.contains("WFLYHC0019");
+            readRegisteredSecondary = readRegisteredSecondary || read.contains("WFLYHC0019");
             readExpected = readExpected || read.contains(expected);
         }
 
         if (forServer) {
             Assert.assertFalse(readRegisteredServer);
-        } else if (forMaster) {
-            Assert.assertTrue(readRegisteredSlave);
+        } else if (forPrimary) {
+            Assert.assertTrue(readRegisteredSecondary);
         } else {
-            Assert.assertFalse(readRegisteredSlave);
+            Assert.assertFalse(readRegisteredSecondary);
             Assert.assertTrue(readRegisteredServer);
         }
         Assert.assertTrue(readExpected);

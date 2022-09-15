@@ -62,8 +62,8 @@ import org.junit.Assert;
  * @author Yeray Borges
  */
 public class RBACModelOutOfSyncScenario extends ReconnectTestScenario {
-    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
-    protected static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    protected static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    protected static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
 
     protected static final PathAddress CORE_SRV_MNGMT = PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT);
     protected static final PathAddress SEC_REALM_MNGMT_REALM = PathAddress.pathAddress(SECURITY_REALM, "ManagementRealm");
@@ -74,49 +74,49 @@ public class RBACModelOutOfSyncScenario extends ReconnectTestScenario {
     static final PathAddress GROUP_DEFAULT_JVM_ADDR = GROUP_ADDR.append(JVM, "default");
     private final Map<String, File> snapshotDirectories = new HashMap<>();
     private List<File> domainSnapshots;
-    private List<File> masterSnapshots;
-    private List<File> slaveSnapshots;
+    private List<File> primarySnapshots;
+    private List<File> secondarySnapshots;
 
     @Override
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        cleanSnapshotDirectory(masterClient, null);
-        cleanSnapshotDirectory(masterClient, "primary");
-        cleanSnapshotDirectory(slaveClient, "secondary");
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
+        cleanSnapshotDirectory(primaryClient, null);
+        cleanSnapshotDirectory(primaryClient, "primary");
+        cleanSnapshotDirectory(secondaryClient, "secondary");
 
-        takeSnapshot(masterClient, null);
-        takeSnapshot(masterClient, "primary");
-        takeSnapshot(slaveClient, "secondary");
+        takeSnapshot(primaryClient, null);
+        takeSnapshot(primaryClient, "primary");
+        takeSnapshot(secondaryClient, "secondary");
 
-        domainSnapshots = listSnapshots(masterClient, null);
-        masterSnapshots = listSnapshots(masterClient, "primary");
-        slaveSnapshots = listSnapshots(slaveClient, "secondary");
+        domainSnapshots = listSnapshots(primaryClient, null);
+        primarySnapshots = listSnapshots(primaryClient, "primary");
+        secondarySnapshots = listSnapshots(secondaryClient, "secondary");
 
         Assert.assertEquals(1, domainSnapshots.size());
-        Assert.assertEquals(1, masterSnapshots.size());
-        Assert.assertEquals(1, slaveSnapshots.size());
+        Assert.assertEquals(1, primarySnapshots.size());
+        Assert.assertEquals(1, secondarySnapshots.size());
 
-        ModelNode operation = redefineMechanismConfiguration(MASTER_ADDR, false);
-        DomainTestUtils.executeForResult(operation, masterClient);
+        ModelNode operation = redefineMechanismConfiguration(PRIMARY_ADDR, false);
+        DomainTestUtils.executeForResult(operation, primaryClient);
 
-        operation = redefineMechanismConfiguration(SLAVE_ADDR, false);
-        DomainTestUtils.executeForResult(operation, masterClient);
+        operation = redefineMechanismConfiguration(SECONDARY_ADDR, false);
+        DomainTestUtils.executeForResult(operation, primaryClient);
 
-//        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.username", "secondary");
-//        DomainTestUtils.executeForResult(operation, masterClient);
+//        operation = Util.getWriteAttributeOperation(SECONDARY_ADDR, "domain-controller.remote.username", "secondary");
+//        DomainTestUtils.executeForResult(operation, primaryClient);
 
-//        operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "domain-controller.remote.security-realm", "ManagementRealm");
-//        DomainTestUtils.executeForResult(operation, masterClient);
+//        operation = Util.getWriteAttributeOperation(SECONDARY_ADDR, "domain-controller.remote.security-realm", "ManagementRealm");
+//        DomainTestUtils.executeForResult(operation, primaryClient);
 
         operation = Util.getWriteAttributeOperation(CORE_SRV_MNGMT.append(ACCESS_AUTHORIZATION), PROVIDER, "rbac");
-        DomainTestUtils.executeForResult(operation, masterClient);
+        DomainTestUtils.executeForResult(operation, primaryClient);
 
         operation = Util.createAddOperation(CORE_SRV_MNGMT.append(ACCESS_AUTHORIZATION).append(ROLE_MAPPING, "SuperUser").append(INCLUDE, "ManagementRealm"));
         operation.get(NAME).set("secondary");
         operation.get(TYPE).set("USER");
-        DomainTestUtils.executeForResult(operation, masterClient);
+        DomainTestUtils.executeForResult(operation, primaryClient);
 
-        reloadHost(testSupport.getDomainMasterLifecycleUtil(), "primary", null, null);
-        reloadHost(testSupport.getDomainSlaveLifecycleUtil(), "secondary", null, null);
+        reloadHost(testSupport.getDomainPrimaryLifecycleUtil(), "primary", null, null);
+        reloadHost(testSupport.getDomainSecondaryLifecycleUtil(), "secondary", null, null);
     }
 
     private static ModelNode redefineMechanismConfiguration(final PathAddress baseAddress, final boolean includeLocalAuth) throws Exception {
@@ -151,75 +151,75 @@ public class RBACModelOutOfSyncScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testOnInitialStartup(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //verify all is running
         String state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(SECONDARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
 
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR.append(SERVER, "main-one"), "server-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER, "main-one"), "server-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "main-three"), "server-state"), masterClient).asString();
+                Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "main-three"), "server-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
     }
 
     @Override
-    void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testWhilePrimaryInAdminOnly(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Modify the default VM for main-server-group
         ModelNode operation = Util.getWriteAttributeOperation(GROUP_DEFAULT_JVM_ADDR, "heap-size", "32m");
-        DomainTestUtils.executeForResult(operation, masterClient);
+        DomainTestUtils.executeForResult(operation, primaryClient);
     }
 
     @Override
-    void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testAfterReconnect(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         String state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(SECONDARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
 
-        //Master was reloaded and by default its severs were restarted
+        //Primary was reloaded and by default its severs were restarted
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR.append(SERVER, "main-one"), "server-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER, "main-one"), "server-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
         //Affected servers are in restart-required
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "main-three"), "server-state"), masterClient).asString();
+                Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "main-three"), "server-state"), primaryClient).asString();
 
         Assert.assertEquals("restart-required", state);
     }
 
     @Override
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        masterClient = reloadHost(testSupport.getDomainMasterLifecycleUtil(), "primary", masterSnapshots.get(0).getName(), domainSnapshots.get(0).getName());
-        reloadHost(testSupport.getDomainSlaveLifecycleUtil(), "secondary", slaveSnapshots.get(0).getName(), null);
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
+        primaryClient = reloadHost(testSupport.getDomainPrimaryLifecycleUtil(), "primary", primarySnapshots.get(0).getName(), domainSnapshots.get(0).getName());
+        reloadHost(testSupport.getDomainSecondaryLifecycleUtil(), "secondary", secondarySnapshots.get(0).getName(), null);
 
         String state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(SLAVE_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(SECONDARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
 
         state = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", state);
     }

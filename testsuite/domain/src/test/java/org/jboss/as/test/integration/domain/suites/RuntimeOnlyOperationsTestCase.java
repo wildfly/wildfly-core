@@ -55,8 +55,8 @@ import org.wildfly.core.testrunner.ManagementClient;
  */
 public class RuntimeOnlyOperationsTestCase {
 
-    private static final PathAddress MASTER = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "primary");
-    private static final PathAddress SLAVE = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "secondary");
+    private static final PathAddress PRIMARY = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "primary");
+    private static final PathAddress SECONDARY = PathAddress.pathAddress(ModelDescriptionConstants.HOST, "secondary");
 
     private static final PathAddress EXT = PathAddress.pathAddress("extension", OpTypesExtension.EXTENSION_NAME);
     private static final PathAddress PROFILE = PathAddress.pathAddress("profile", "default");
@@ -70,8 +70,8 @@ public class RuntimeOnlyOperationsTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(RuntimeOnlyOperationsTestCase.class.getSimpleName());
-        DomainClient masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        managementClient = new ManagementClient(masterClient, TestSuiteEnvironment.getServerAddress(), 9090, "remoting+http");
+        DomainClient primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        managementClient = new ManagementClient(primaryClient, TestSuiteEnvironment.getServerAddress(), 9090, "remoting+http");
 
 
         ExtensionUtils.createExtensionModule(OpTypesExtension.EXTENSION_NAME, OpTypesExtension.class,
@@ -80,21 +80,21 @@ public class RuntimeOnlyOperationsTestCase {
         executeOp(Util.createAddOperation(EXT), SUCCESS);
         executeOp(Util.createAddOperation(PROFILE.append(SUBSYSTEM)), SUCCESS);
 
-        executeOp(Util.createAddOperation(MASTER.append(EXT)), SUCCESS);
-        executeOp(Util.createAddOperation(MASTER.append(SUBSYSTEM)), SUCCESS);
+        executeOp(Util.createAddOperation(PRIMARY.append(EXT)), SUCCESS);
+        executeOp(Util.createAddOperation(PRIMARY.append(SUBSYSTEM)), SUCCESS);
 
-        executeOp(Util.createAddOperation(SLAVE.append(EXT)), SUCCESS);
-        executeOp(Util.createAddOperation(SLAVE.append(SUBSYSTEM)), SUCCESS);
+        executeOp(Util.createAddOperation(SECONDARY.append(EXT)), SUCCESS);
+        executeOp(Util.createAddOperation(SECONDARY.append(SUBSYSTEM)), SUCCESS);
     }
 
     @AfterClass
     public static void tearDownDomain() throws IOException {
         Throwable t = null;
         List<ModelNode> ops = new ArrayList<>();
-        ops.add(Util.createRemoveOperation(MASTER.append(SUBSYSTEM)));
-        ops.add(Util.createRemoveOperation(MASTER.append(EXT)));
-        ops.add(Util.createRemoveOperation(SLAVE.append(SUBSYSTEM)));
-        ops.add(Util.createRemoveOperation(SLAVE.append(EXT)));
+        ops.add(Util.createRemoveOperation(PRIMARY.append(SUBSYSTEM)));
+        ops.add(Util.createRemoveOperation(PRIMARY.append(EXT)));
+        ops.add(Util.createRemoveOperation(SECONDARY.append(SUBSYSTEM)));
+        ops.add(Util.createRemoveOperation(SECONDARY.append(EXT)));
         ops.add(Util.createRemoveOperation(PROFILE.append(SUBSYSTEM)));
         ops.add(Util.createRemoveOperation(EXT));
         for (ModelNode op : ops) {
@@ -149,12 +149,12 @@ public class RuntimeOnlyOperationsTestCase {
         assertTrue(response.toString(), response.get(SERVER_GROUPS, "main-server-group", "host", "secondary", "main-three", "response", "result").asBoolean());
 
         // Now check direct invocation on servers
-        op = Util.createEmptyOperation(opName, MASTER.append(MAIN_ONE).append(SUBSYSTEM));
+        op = Util.createEmptyOperation(opName, PRIMARY.append(MAIN_ONE).append(SUBSYSTEM));
         response = executeOp(op, directServerSuccess ? SUCCESS : FAILED);
         if (directServerSuccess) {
             assertTrue(response.toString(), response.get(RESULT).asBoolean());
         }
-        op = Util.createEmptyOperation(opName, SLAVE.append(MAIN_THREE).append(SUBSYSTEM));
+        op = Util.createEmptyOperation(opName, SECONDARY.append(MAIN_THREE).append(SUBSYSTEM));
         response = executeOp(op, directServerSuccess ? SUCCESS : FAILED);
         if (directServerSuccess) {
             assertTrue(response.toString(), response.get(RESULT).asBoolean());
@@ -181,22 +181,22 @@ public class RuntimeOnlyOperationsTestCase {
         op = Util.getReadAttributeOperation(PROFILE.append(SUBSYSTEM), attribute);
         executeOp(op, FAILED);
 
-        op = Util.getReadResourceDescriptionOperation(SLAVE.append(MAIN_THREE).append(SUBSYSTEM));
+        op = Util.getReadResourceDescriptionOperation(SECONDARY.append(MAIN_THREE).append(SUBSYSTEM));
         resp = executeOp(op, SUCCESS);
         assertEquals(resp.toString(), accessType, resp.get(RESULT, ATTRIBUTES, attribute, ACCESS_TYPE).asString());
 
-        op = Util.getReadAttributeOperation(SLAVE.append(MAIN_THREE).append(SUBSYSTEM), attribute);
+        op = Util.getReadAttributeOperation(SECONDARY.append(MAIN_THREE).append(SUBSYSTEM), attribute);
         resp = executeOp(op, SUCCESS);
         assertTrue(resp.toString(), resp.get(RESULT).asBoolean());
     }
 
     @Test
-    public void testRuntimeStepOnMaster() throws IOException {
+    public void testRuntimeStepOnPrimary() throws IOException {
         ignoredProfileRuntimeStepTest("primary");
     }
 
     @Test
-    public void testRuntimeStepOnSlave() throws IOException {
+    public void testRuntimeStepOnSecondary() throws IOException {
         ignoredProfileRuntimeStepTest("secondary");
     }
 

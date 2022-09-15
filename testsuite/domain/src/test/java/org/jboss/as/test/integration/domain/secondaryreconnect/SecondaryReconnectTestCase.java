@@ -61,7 +61,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 /**
- * Wrapper for several tests which require a slave to master reconnect, so that we need as few reconnects as possible.
+ * Wrapper for several tests which require a secondary to primary reconnect, so that we need as few reconnects as possible.
  * It makes some assumptions about the HC/server process states,
  * so don't run this within a suite.
  *
@@ -70,14 +70,14 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class SecondaryReconnectTestCase {
 
-    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
-    private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
+    private static final String RIGHT_PASSWORD = DomainLifecycleUtil.SECONDARY_HOST_PASSWORD;
 
 
     @BeforeClass
@@ -86,25 +86,25 @@ public class SecondaryReconnectTestCase {
                 DomainTestSupport.Configuration.create(SecondaryReconnectTestCase.class.getSimpleName(),
                         "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
 
-        WildFlyManagedConfiguration masterConfig = testSupport.getDomainMasterConfiguration();
+        WildFlyManagedConfiguration primaryConfig = testSupport.getDomainPrimaryConfiguration();
         CallbackHandler callbackHandler = Authentication.getCallbackHandler("secondary", RIGHT_PASSWORD, "ManagementRealm");
-        masterConfig.setCallbackHandler(callbackHandler);
+        primaryConfig.setCallbackHandler(callbackHandler);
 
-        WildFlyManagedConfiguration slaveConfig = testSupport.getDomainSlaveConfiguration();
-        slaveConfig.setCallbackHandler(callbackHandler);
+        WildFlyManagedConfiguration secondaryConfig = testSupport.getDomainSecondaryConfiguration();
+        secondaryConfig.setCallbackHandler(callbackHandler);
 
         testSupport.start();
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Test
@@ -138,50 +138,50 @@ public class SecondaryReconnectTestCase {
         Throwable t = null;
         int initialisedScenarios = -1;
         try {
-            DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-            DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+            DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+            DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
             for (int i = 0; i < scenarios.length; i++) {
                 initialisedScenarios = i;
-                scenarios[i].setUpDomain(testSupport, masterClient, slaveClient);
+                scenarios[i].setUpDomain(testSupport, primaryClient, secondaryClient);
             }
             //server could have been reloaded in the setUpDomain, get the new clients
-            masterClient = domainMasterLifecycleUtil.getDomainClient();
-            slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+            primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+            secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
             for (ReconnectTestScenario scenario : scenarios) {
-                scenario.testOnInitialStartup(masterClient, slaveClient);
+                scenario.testOnInitialStartup(primaryClient, secondaryClient);
             }
 
             //Restart the DC as admin-only
-            domainMasterLifecycleUtil.reloadAdminOnly("primary");
-            masterClient = domainMasterLifecycleUtil.createDomainClient();
+            domainPrimaryLifecycleUtil.reloadAdminOnly("primary");
+            primaryClient = domainPrimaryLifecycleUtil.createDomainClient();
 
             for (ReconnectTestScenario scenario : scenarios) {
-                scenario.testWhileMasterInAdminOnly(masterClient, slaveClient);
+                scenario.testWhilePrimaryInAdminOnly(primaryClient, secondaryClient);
             }
 
             //Restart the DC as normal
-            domainMasterLifecycleUtil.reload("primary", null, false);
-            masterClient = domainMasterLifecycleUtil.createDomainClient();
+            domainPrimaryLifecycleUtil.reload("primary", null, false);
+            primaryClient = domainPrimaryLifecycleUtil.createDomainClient();
 
-            //Wait for the slave to reconnect, look for the slave in the list of hosts
+            //Wait for the secondary to reconnect, look for the secondary in the list of hosts
             long end = System.currentTimeMillis() + 20 * ADJUSTED_SECOND;
-            boolean slaveReconnected = false;
+            boolean secondaryReconnected = false;
             do {
                 Thread.sleep(1 * ADJUSTED_SECOND);
-                slaveReconnected = checkSlaveReconnected(masterClient);
-            } while (!slaveReconnected && System.currentTimeMillis() < end);
+                secondaryReconnected = checkSecondaryReconnected(primaryClient);
+            } while (!secondaryReconnected && System.currentTimeMillis() < end);
 
-            //Wait for master servers to come up
+            //Wait for primary servers to come up
             end = System.currentTimeMillis() + 60 * ADJUSTED_SECOND;
             boolean serversUp = false;
             do {
                 Thread.sleep(1 * ADJUSTED_SECOND);
-                serversUp = checkHostServersStarted(masterClient, "primary");
+                serversUp = checkHostServersStarted(primaryClient, "primary");
             } while (!serversUp && System.currentTimeMillis() < end);
 
             for (ReconnectTestScenario scenario : scenarios) {
-                scenario.testAfterReconnect(masterClient, slaveClient);
+                scenario.testAfterReconnect(primaryClient, secondaryClient);
             }
         } catch (Throwable thrown) {
             t = thrown;
@@ -193,7 +193,7 @@ public class SecondaryReconnectTestCase {
             for (int i = initialisedScenarios; i >=0 ; i--) {
                 try {
                     scenarios[i].tearDownDomain(
-                            testSupport, domainMasterLifecycleUtil.getDomainClient(), domainSlaveLifecycleUtil.getDomainClient());
+                            testSupport, domainPrimaryLifecycleUtil.getDomainClient(), domainSecondaryLifecycleUtil.getDomainClient());
                 } catch (Throwable thrown) {
                     if (t == null) {
                         t = thrown;
@@ -216,11 +216,11 @@ public class SecondaryReconnectTestCase {
         }
     }
 
-    private boolean checkSlaveReconnected(DomainClient masterClient) throws Exception {
+    private boolean checkSecondaryReconnected(DomainClient primaryClient) throws Exception {
         ModelNode op = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
         op.get(CHILD_TYPE).set(HOST);
         try {
-            ModelNode ret = DomainTestUtils.executeForResult(op, masterClient);
+            ModelNode ret = DomainTestUtils.executeForResult(op, primaryClient);
             List<ModelNode> list = ret.asList();
             if (list.size() == 2) {
                 for (ModelNode entry : list) {
@@ -234,17 +234,17 @@ public class SecondaryReconnectTestCase {
         return false;
     }
 
-    private boolean checkHostServersStarted(DomainClient masterClient, String host) {
+    private boolean checkHostServersStarted(DomainClient primaryClient, String host) {
         try {
             ModelNode op = Util.createEmptyOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.pathAddress(HOST, host));
             op.get(CHILD_TYPE).set(SERVER);
-            ModelNode ret = DomainTestUtils.executeForResult(op, masterClient);
+            ModelNode ret = DomainTestUtils.executeForResult(op, primaryClient);
             List<ModelNode> list = ret.asList();
             for (ModelNode entry : list) {
                 String server = entry.asString();
                 op = Util.createEmptyOperation(READ_ATTRIBUTE_OPERATION, PathAddress.pathAddress(HOST, host).append(SERVER, server));
                 op.get(NAME).set("server-state");
-                ModelNode state = DomainTestUtils.executeForResult(op, masterClient);
+                ModelNode state = DomainTestUtils.executeForResult(op, primaryClient);
                 return "running".equals(state.asString());
             }
             return false;
@@ -253,44 +253,44 @@ public class SecondaryReconnectTestCase {
         }
     }
 
-    static void cloneProfile(DomainClient masterClient, String source, String target) throws Exception {
+    static void cloneProfile(DomainClient primaryClient, String source, String target) throws Exception {
         ModelNode clone = Util.createEmptyOperation("clone", PathAddress.pathAddress(PROFILE, source));
         clone.get("to-profile").set(target);
-        DomainTestUtils.executeForResult(clone, masterClient);
+        DomainTestUtils.executeForResult(clone, primaryClient);
     }
 
-    static void createServerGroup(DomainClient masterClient, String name, String profile) throws Exception {
+    static void createServerGroup(DomainClient primaryClient, String name, String profile) throws Exception {
         ModelNode add = Util.createAddOperation(PathAddress.pathAddress(SERVER_GROUP, name));
         add.get(PROFILE).set(profile);
         add.get(SOCKET_BINDING_GROUP).set("standard-sockets");
-        DomainTestUtils.executeForResult(add, masterClient);
+        DomainTestUtils.executeForResult(add, primaryClient);
     }
 
-    static void createServer(DomainClient slaveClient, String name, String serverGroup, int portOffset) throws Exception {
-        ModelNode add = Util.createAddOperation(SLAVE_ADDR.append(SERVER_CONFIG, name));
+    static void createServer(DomainClient secondaryClient, String name, String serverGroup, int portOffset) throws Exception {
+        ModelNode add = Util.createAddOperation(SECONDARY_ADDR.append(SERVER_CONFIG, name));
         add.get(GROUP).set(serverGroup);
         add.get(PORT_OFFSET).set(portOffset);
-        DomainTestUtils.executeForResult(add, slaveClient);
-        DomainTestUtils.executeForResult(Util.createAddOperation(SLAVE_ADDR.append(SERVER_CONFIG, name).append("jvm", "default")), slaveClient);
+        DomainTestUtils.executeForResult(add, secondaryClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(SECONDARY_ADDR.append(SERVER_CONFIG, name).append("jvm", "default")), secondaryClient);
     }
 
-    static void startServer(DomainClient slaveClient, String name) throws Exception {
-        ModelNode start = Util.createEmptyOperation(START, SLAVE_ADDR.append(SERVER_CONFIG, name));
+    static void startServer(DomainClient secondaryClient, String name) throws Exception {
+        ModelNode start = Util.createEmptyOperation(START, SECONDARY_ADDR.append(SERVER_CONFIG, name));
         start.get(BLOCKING).set(true);
-        DomainTestUtils.executeForResult(start, slaveClient);
+        DomainTestUtils.executeForResult(start, secondaryClient);
     }
 
-    static void stopServer(DomainClient slaveClient, String name) throws Exception {
-        PathAddress serverAddr = SLAVE_ADDR.append(SERVER_CONFIG, name);
+    static void stopServer(DomainClient secondaryClient, String name) throws Exception {
+        PathAddress serverAddr = SECONDARY_ADDR.append(SERVER_CONFIG, name);
         ModelNode stop = Util.createEmptyOperation(STOP, serverAddr);
         stop.get(BLOCKING).set(true);
-        DomainTestUtils.executeForResult(stop, slaveClient);
+        DomainTestUtils.executeForResult(stop, secondaryClient);
     }
 
-    static void removeProfile(DomainClient masterClient, String name) throws Exception {
+    static void removeProfile(DomainClient primaryClient, String name) throws Exception {
         PathAddress profileAddr = PathAddress.pathAddress(PROFILE, name);
-        DomainTestUtils.executeForResult(Util.createRemoveOperation(profileAddr.append(SUBSYSTEM, "logging")), masterClient);
+        DomainTestUtils.executeForResult(Util.createRemoveOperation(profileAddr.append(SUBSYSTEM, "logging")), primaryClient);
         DomainTestUtils.executeForResult(
-                Util.createRemoveOperation(profileAddr), masterClient);
+                Util.createRemoveOperation(profileAddr), primaryClient);
     }
 }

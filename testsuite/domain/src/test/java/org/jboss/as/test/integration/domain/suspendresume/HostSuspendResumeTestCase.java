@@ -60,9 +60,9 @@ import org.wildfly.test.suspendresumeendpoint.TestUndertowService;
 /**
  * Tests suspend-servers and resume-servers operations at host level.
  * <p>
- * The test starts domain controller and a slave. It triggers the suspend-servers operation in the DC and verifies that
+ * The test starts domain controller and a secondary. It triggers the suspend-servers operation in the DC and verifies that
  * the suspend-status changes until getting the suspend value. Finally, it triggers a resume-servers in the DC and
- * verifies that the server in the DC gets the running state again. The servers managed by the slave host controller
+ * verifies that the server in the DC gets the running state again. The servers managed by the secondary host controller
  * should be all the time in running state.
  *
  * @author Yeray Borges
@@ -77,34 +77,34 @@ public class HostSuspendResumeTestCase {
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
     public static final String MAIN_SERVER_GROUP = "main-server-group";
 
-    public static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
-    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    public static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    public static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
 
     public static final PathAddress SERVER_MAIN_ONE = PathAddress.pathAddress(SERVER, "main-one");
     public static final PathAddress SERVER_MAIN_THREE = PathAddress.pathAddress(SERVER, "main-three");
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() {
         testSupport = DomainTestSuite.createSupport(HostSuspendResumeTestCase.class.getSimpleName());
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Before
     public void deployTestApplication() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         DomainDeploymentManager deploymentManager = client.getDeploymentManager();
         DeploymentPlan plan = deploymentManager.newDeploymentPlan()
@@ -117,7 +117,7 @@ public class HostSuspendResumeTestCase {
 
     @After
     public void undeployTestApplication() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         DomainDeploymentManager deploymentManager = client.getDeploymentManager();
         DeploymentPlan plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
@@ -144,37 +144,37 @@ public class HostSuspendResumeTestCase {
 
             TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1)); //nasty, but we need to make sure the HTTP request has started
 
-            final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-            final DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+            final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+            final DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
             executorService.submit(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
-                    ModelNode op = Util.createOperation(SUSPEND_SERVERS, MASTER_ADDR);
+                    ModelNode op = Util.createOperation(SUSPEND_SERVERS, PRIMARY_ADDR);
                     op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set(TimeoutUtil.adjust(30));
-                    return DomainTestUtils.executeForResult(op, domainMasterLifecycleUtil.createDomainClient()).asString();
+                    return DomainTestUtils.executeForResult(op, domainPrimaryLifecycleUtil.createDomainClient()).asString();
                 }
             });
 
-            DomainTestUtils.waitUntilSuspendState(masterClient, MASTER_ADDR.append(SERVER_MAIN_ONE), SUSPENDING);
+            DomainTestUtils.waitUntilSuspendState(primaryClient, PRIMARY_ADDR.append(SERVER_MAIN_ONE), SUSPENDING);
 
-            ModelNode op = Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), SUSPEND_STATE);
-            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, slaveClient).asString());
+            ModelNode op = Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_MAIN_THREE), SUSPEND_STATE);
+            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, secondaryClient).asString());
 
             HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL + "=true", TimeoutUtil.adjust(30), TimeUnit.SECONDS);
             Assert.assertEquals(SuspendResumeHandler.TEXT, result.get());
 
-            op = Util.getReadAttributeOperation(MASTER_ADDR.append(SERVER_MAIN_ONE), SUSPEND_STATE);
-            Assert.assertEquals(SUSPENDED, DomainTestUtils.executeForResult(op, masterClient).asString());
+            op = Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER_MAIN_ONE), SUSPEND_STATE);
+            Assert.assertEquals(SUSPENDED, DomainTestUtils.executeForResult(op, primaryClient).asString());
 
-            op = Util.createOperation(RESUME_SERVERS, MASTER_ADDR);
-            DomainTestUtils.executeForResult(op, masterClient);
+            op = Util.createOperation(RESUME_SERVERS, PRIMARY_ADDR);
+            DomainTestUtils.executeForResult(op, primaryClient);
 
-            op = Util.getReadAttributeOperation(MASTER_ADDR.append(SERVER_MAIN_ONE), SUSPEND_STATE);
-            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, masterClient).asString());
+            op = Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER_MAIN_ONE), SUSPEND_STATE);
+            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, primaryClient).asString());
 
-            op = Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER_MAIN_THREE), SUSPEND_STATE);
-            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, slaveClient).asString());
+            op = Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER_MAIN_THREE), SUSPEND_STATE);
+            Assert.assertEquals(RUNNING, DomainTestUtils.executeForResult(op, secondaryClient).asString());
 
         } finally {
             HttpRequest.get(appUrl + "?" + TestUndertowService.SKIP_GRACEFUL, TimeoutUtil.adjust(30), TimeUnit.SECONDS);

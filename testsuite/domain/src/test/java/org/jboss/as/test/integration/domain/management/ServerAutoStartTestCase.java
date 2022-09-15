@@ -61,10 +61,10 @@ public class ServerAutoStartTestCase {
     private static final String STARTED_EXT = ".started";
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
-    private static final ModelNode hostMaster = new ModelNode();
-    private static final ModelNode hostSlave = new ModelNode();
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
+    private static final ModelNode hostPrimary = new ModelNode();
+    private static final ModelNode hostSecondary = new ModelNode();
     private static final ModelNode mainOne = new ModelNode();
     private static final ModelNode mainTwo = new ModelNode();
     private static final ModelNode mainThree = new ModelNode();
@@ -73,43 +73,43 @@ public class ServerAutoStartTestCase {
     private static final ModelNode otherTwo = new ModelNode();
     private static final ModelNode otherThree = new ModelNode();
     private static final ModelNode otherFour = new ModelNode();
-    private static final Path autoStartMasterDataDir
+    private static final Path autoStartPrimaryDataDir
             = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "primary").toPath()
             .resolve("data")
             .resolve("auto-start");
-    private static final Path autoStartSlaveDataDir
+    private static final Path autoStartSecondaryDataDir
             = DomainTestSupport.getHostDir(ServerAutoStartTestCase.class.getSimpleName(), "secondary").toPath()
             .resolve("data")
             .resolve("auto-start");
 
     static {
-        // (host=master)
-        hostMaster.add("host", "primary");
-        // (host=master),(server-config=main-one)
+        // (host=primary)
+        hostPrimary.add("host", "primary");
+        // (host=primary),(server-config=main-one)
         mainOne.add("host", "primary");
         mainOne.add("server-config", "main-one");
-        // (host=master),(server-config=main-two)
+        // (host=primary),(server-config=main-two)
         mainTwo.add("host", "primary");
         mainTwo.add("server-config", "main-two");
-        // (host=master),(server-config=other-one)
+        // (host=primary),(server-config=other-one)
         otherOne.add("host", "primary");
         otherOne.add("server-config", "other-one");
-        // (host=master),(server-config=other-two)
+        // (host=primary),(server-config=other-two)
         otherTwo.add("host", "primary");
         otherTwo.add("server-config", "other-two");
 
-        // (host=slave)
-        hostSlave.add("host", "secondary");
-        // (host=slave),(server-config=main-three)
+        // (host=secondary)
+        hostSecondary.add("host", "secondary");
+        // (host=secondary),(server-config=main-three)
         mainThree.add("host", "secondary");
         mainThree.add("server-config", "main-three");
-        // (host=slave),(server-config=main-four)
+        // (host=secondary),(server-config=main-four)
         mainFour.add("host", "secondary");
         mainFour.add("server-config", "main-four");
-        // (host=slave),(server-config=other-three)
+        // (host=secondary),(server-config=other-three)
         otherThree.add("host", "secondary");
         otherThree.add("server-config", "other-three");
-        // (host=slave),(server-config=other-four)
+        // (host=secondary),(server-config=other-four)
         otherFour.add("host", "secondary");
         otherFour.add("server-config", "other-four");
 
@@ -119,22 +119,22 @@ public class ServerAutoStartTestCase {
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ServerAutoStartTestCase.class.getSimpleName(),
                 "domain-configs/domain-minimal.xml", "host-configs/host-primary-auto-start.xml", "host-configs/host-secondary-auto-start.xml"));
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Test
     public void testDomainLifecycleMethods() throws Throwable {
 
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         executeLifecycleOperation(client, START_SERVERS);
         waitUntilState(client, "primary", "main-one", "STARTED");
         waitUntilState(client, "primary", "main-two", "STARTED");
@@ -152,14 +152,14 @@ public class ServerAutoStartTestCase {
         assertAutoStartStatus(client, mainFour, true);
         assertAutoStartStatus(client, otherThree, true);
         assertAutoStartStatus(client, otherFour, false);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "main-one");
-        assertAutoStartUpdated(autoStartMasterDataDir, "main-two", true);
-        assertAutoStartUpdated(autoStartMasterDataDir, "other-one", true);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "other-two");
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "main-three");
-        assertAutoStartUpdated(autoStartSlaveDataDir, "main-four", true);
-        assertAutoStartUpdated(autoStartSlaveDataDir, "other-three", true);
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "other-four");
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "main-one");
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "main-two", true);
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "other-one", true);
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "other-two");
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "main-three");
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "main-four", true);
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "other-three", true);
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "other-four");
 
         executeLifecycleOperation(client, STOP_SERVERS);
         //When stopped auto-start=true -> STOPPED, auto-start=false -> DISABLED
@@ -179,14 +179,14 @@ public class ServerAutoStartTestCase {
         assertAutoStartStatus(client, mainFour, false);
         assertAutoStartStatus(client, otherThree, false);
         assertAutoStartStatus(client, otherFour, false);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "main-one");
-        assertAutoStartUpdated(autoStartMasterDataDir, "main-two", false);
-        assertAutoStartUpdated(autoStartMasterDataDir, "other-one", false);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "other-two");
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "main-three");
-        assertAutoStartUpdated(autoStartSlaveDataDir, "main-four", false);
-        assertAutoStartUpdated(autoStartSlaveDataDir, "other-three", false);
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "other-four");
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "main-one");
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "main-two", false);
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "other-one", false);
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "other-two");
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "main-three");
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "main-four", false);
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "other-three", false);
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "other-four");
 
         executeLifecycleOperation(client, START_SERVERS);
         waitUntilState(client, "primary", "main-one", "STARTED");
@@ -201,23 +201,23 @@ public class ServerAutoStartTestCase {
         assertAutoStartStatus(client, mainTwo, true);
         assertAutoStartStatus(client, otherOne, true);
         assertAutoStartStatus(client, otherTwo, false);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "main-one");
-        assertAutoStartUpdated(autoStartMasterDataDir, "main-two", true);
-        assertAutoStartUpdated(autoStartMasterDataDir, "other-one", true);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "other-two");
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "main-three");
-        assertAutoStartUpdated(autoStartSlaveDataDir, "main-four", true);
-        assertAutoStartUpdated(autoStartSlaveDataDir, "other-three", true);
-        assertAutoStartNotUpdated(autoStartSlaveDataDir, "other-four");
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "main-one");
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "main-two", true);
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "other-one", true);
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "other-two");
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "main-three");
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "main-four", true);
+        assertAutoStartUpdated(autoStartSecondaryDataDir, "other-three", true);
+        assertAutoStartNotUpdated(autoStartSecondaryDataDir, "other-four");
 
-        domainMasterLifecycleUtil.stop();
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "main-one");
-        assertAutoStartUpdated(autoStartMasterDataDir, "main-two", true);
-        assertAutoStartUpdated(autoStartMasterDataDir, "other-one", true);
-        assertAutoStartNotUpdated(autoStartMasterDataDir, "other-two");
+        domainPrimaryLifecycleUtil.stop();
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "main-one");
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "main-two", true);
+        assertAutoStartUpdated(autoStartPrimaryDataDir, "other-one", true);
+        assertAutoStartNotUpdated(autoStartPrimaryDataDir, "other-two");
 
-        domainMasterLifecycleUtil.start();
-        client = domainMasterLifecycleUtil.getDomainClient();
+        domainPrimaryLifecycleUtil.start();
+        client = domainPrimaryLifecycleUtil.getDomainClient();
         waitUntilState(client, "primary", "main-one", "STARTED");
         waitUntilState(client, "primary", "main-two", "STARTED");
         waitUntilState(client, "primary", "other-one", "STARTED");

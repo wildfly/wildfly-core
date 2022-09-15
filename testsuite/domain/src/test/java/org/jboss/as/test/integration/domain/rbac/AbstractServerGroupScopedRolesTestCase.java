@@ -125,8 +125,8 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
         AssertionError assertionError = null;
         String[] toRemove = {DEPLOYMENT_2, TEST_PATH, getPrefixedAddress(SERVER_GROUP, SERVER_GROUP_A, SMALL_JVM),
                 getPrefixedAddress(SERVER_GROUP, SERVER_GROUP_B, SMALL_JVM),
-                getPrefixedAddress(HOST, MASTER, SMALL_JVM),
-                getPrefixedAddress(HOST, MASTER, SCOPED_ROLE_SERVER)};
+                getPrefixedAddress(HOST, PRIMARY, SMALL_JVM),
+                getPrefixedAddress(HOST, PRIMARY, SCOPED_ROLE_SERVER)};
         for (String address : toRemove) {
             try {
                 removeResource(address);
@@ -148,35 +148,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testMonitor() throws Exception {
-        ModelControllerClient client = getClientForUser(MONITOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(MONITOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         checkStandardReads(client, null, null, MONITOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, MONITOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, MONITOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MONITOR_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, MONITOR_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, MONITOR_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, MONITOR_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.HIDDEN, MONITOR_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, MONITOR_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MONITOR_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, MONITOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, MONITOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, MONITOR_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, MONITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MONITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, MONITOR_USER);
         checkSensitiveAttribute(client, null, null, false, MONITOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, MONITOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, MONITOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, MONITOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, MONITOR_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, MONITOR_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, MONITOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, MONITOR_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, MONITOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.UNAUTHORIZED, MONITOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, MONITOR_USER);
-        addJvm(client, HOST, MASTER, Outcome.UNAUTHORIZED, MONITOR_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, MONITOR_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.UNAUTHORIZED, MONITOR_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, MONITOR_USER);
 
         testWFLY2089(client, MONITOR_USER);
 
@@ -189,35 +189,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testOperator() throws Exception {
-        ModelControllerClient client = getClientForUser(OPERATOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(OPERATOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         checkStandardReads(client, null, null, OPERATOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, OPERATOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, OPERATOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, OPERATOR_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, OPERATOR_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, OPERATOR_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, OPERATOR_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.HIDDEN, OPERATOR_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, OPERATOR_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.HIDDEN, OPERATOR_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, OPERATOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, OPERATOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, OPERATOR_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, OPERATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, OPERATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, OPERATOR_USER);
         checkSensitiveAttribute(client, null, null, false, OPERATOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, OPERATOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, OPERATOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, OPERATOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, OPERATOR_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, OPERATOR_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, OPERATOR_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, OPERATOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, OPERATOR_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, OPERATOR_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, OPERATOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.UNAUTHORIZED, OPERATOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, OPERATOR_USER);
-        addJvm(client, HOST, MASTER, Outcome.UNAUTHORIZED, OPERATOR_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, OPERATOR_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.UNAUTHORIZED, OPERATOR_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, OPERATOR_USER);
 
         testWFLY2089(client, OPERATOR_USER);
 
@@ -230,35 +230,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testMaintainer() throws Exception {
-        ModelControllerClient client = getClientForUser(MAINTAINER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(MAINTAINER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, MAINTAINER_USER);
         checkStandardReads(client, null, null, MAINTAINER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, MAINTAINER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, MAINTAINER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MAINTAINER_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, MAINTAINER_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, MAINTAINER_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, MAINTAINER_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.HIDDEN, MAINTAINER_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, MAINTAINER_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MAINTAINER_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, MAINTAINER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, MAINTAINER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, MAINTAINER_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, MAINTAINER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MAINTAINER_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, MAINTAINER_USER);
         checkSensitiveAttribute(client, null, null, false, MAINTAINER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, MAINTAINER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, MAINTAINER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, MAINTAINER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, MAINTAINER_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, MAINTAINER_USER);
-        runGC(client, MASTER, SLAVE_B, Outcome.HIDDEN, MAINTAINER_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, MAINTAINER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MAINTAINER_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, MAINTAINER_USER);
+        runGC(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, MAINTAINER_USER);
         addDeployment2(client, Outcome.SUCCESS, MAINTAINER_USER);
         addPath(client, Outcome.UNAUTHORIZED, MAINTAINER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.SUCCESS, MAINTAINER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, MAINTAINER_USER);
-        addJvm(client, HOST, MASTER, Outcome.SUCCESS, MAINTAINER_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, MAINTAINER_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.SUCCESS, MAINTAINER_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, MAINTAINER_USER);
 
         testWFLY2089(client, MAINTAINER_USER);
 
@@ -271,35 +271,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testDeployer() throws Exception {
-        ModelControllerClient client = getClientForUser(DEPLOYER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(DEPLOYER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         checkStandardReads(client, null, null, DEPLOYER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, DEPLOYER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, DEPLOYER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, DEPLOYER_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, DEPLOYER_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, DEPLOYER_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, DEPLOYER_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.HIDDEN, DEPLOYER_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, DEPLOYER_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.HIDDEN, DEPLOYER_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, DEPLOYER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, DEPLOYER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, DEPLOYER_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, DEPLOYER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, DEPLOYER_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, DEPLOYER_USER);
         checkSensitiveAttribute(client, null, null, false, DEPLOYER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, DEPLOYER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, DEPLOYER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, DEPLOYER_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, DEPLOYER_USER);
         addDeployment2(client, Outcome.SUCCESS, DEPLOYER_USER);
         addPath(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, DEPLOYER_USER);
-        addJvm(client, HOST, MASTER, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, DEPLOYER_USER);
 
         testWFLY2089(client, DEPLOYER_USER);
 
@@ -312,35 +312,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testAdministrator() throws Exception {
-        ModelControllerClient client = getClientForUser(ADMINISTRATOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(ADMINISTRATOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, ADMINISTRATOR_USER);
         checkStandardReads(client, null, null, ADMINISTRATOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, ADMINISTRATOR_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
         checkSensitiveAttribute(client, null, null, true, ADMINISTRATOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, ADMINISTRATOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, ADMINISTRATOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, ADMINISTRATOR_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, ADMINISTRATOR_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
         addDeployment2(client, Outcome.SUCCESS, ADMINISTRATOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, ADMINISTRATOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, ADMINISTRATOR_USER);
-        addJvm(client, HOST, MASTER, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, ADMINISTRATOR_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, ADMINISTRATOR_USER);
 
         testWFLY2089(client, ADMINISTRATOR_USER);
 
@@ -353,35 +353,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testAuditor() throws Exception {
-        ModelControllerClient client = getClientForUser(AUDITOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(AUDITOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, AUDITOR_USER);
         checkStandardReads(client, null, null, AUDITOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, AUDITOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, AUDITOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, AUDITOR_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, AUDITOR_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, AUDITOR_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, AUDITOR_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.SUCCESS, AUDITOR_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, AUDITOR_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.SUCCESS, AUDITOR_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, AUDITOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, AUDITOR_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, AUDITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, AUDITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, AUDITOR_USER);
         checkSensitiveAttribute(client, null, null, true, AUDITOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, AUDITOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, AUDITOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, AUDITOR_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, AUDITOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, AUDITOR_USER);
-        addJvm(client, HOST, MASTER, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, AUDITOR_USER);
 
         testWFLY2089(client, AUDITOR_USER);
 
@@ -394,35 +394,35 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     @Test
     public void testSuperUser() throws Exception {
-        ModelControllerClient client = getClientForUser(SUPERUSER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(SUPERUSER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, SUPERUSER_USER);
         checkStandardReads(client, null, null, SUPERUSER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, SLAVE, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, SLAVE, SLAVE_B, Outcome.HIDDEN, SUPERUSER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, SUPERUSER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
+        checkRootRead(client, SECONDARY, null, Outcome.SUCCESS, SUPERUSER_USER);
+        checkRootRead(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, SUPERUSER_USER);
         readResource(client, AUTHORIZATION, null, null, Outcome.HIDDEN, SUPERUSER_USER);
-        readResource(client, AUTHORIZATION, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
-        readResource(client, AUTHORIZATION, SLAVE, SLAVE_B, Outcome.HIDDEN, SUPERUSER_USER);
+        readResource(client, AUTHORIZATION, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
+        readResource(client, AUTHORIZATION, SECONDARY, SECONDARY_B, Outcome.HIDDEN, SUPERUSER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
-        checkSecurityDomainRead(client, MASTER, SLAVE_B, Outcome.HIDDEN, SUPERUSER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
+        checkSecurityDomainRead(client, PRIMARY, SECONDARY_B, Outcome.HIDDEN, SUPERUSER_USER);
         checkSensitiveAttribute(client, null, null, true, SUPERUSER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, SUPERUSER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, SUPERUSER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, SUPERUSER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
-        runGC(client, SLAVE, null, Outcome.UNAUTHORIZED, SUPERUSER_USER);
-        runGC(client, SLAVE, SLAVE_B, Outcome.HIDDEN, SUPERUSER_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, SUPERUSER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
+        runGC(client, SECONDARY, null, Outcome.UNAUTHORIZED, SUPERUSER_USER);
+        runGC(client, SECONDARY, SECONDARY_B, Outcome.HIDDEN, SUPERUSER_USER);
         addDeployment2(client, Outcome.SUCCESS, SUPERUSER_USER);
         addPath(client, Outcome.UNAUTHORIZED, SUPERUSER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_A, Outcome.SUCCESS, SUPERUSER_USER);
         addJvm(client, SERVER_GROUP, SERVER_GROUP_B, Outcome.HIDDEN, SUPERUSER_USER);
-        addJvm(client, HOST, MASTER, Outcome.SUCCESS, SUPERUSER_USER);
-        addJvm(client, HOST, SLAVE, Outcome.UNAUTHORIZED, SUPERUSER_USER);
+        addJvm(client, HOST, PRIMARY, Outcome.SUCCESS, SUPERUSER_USER);
+        addJvm(client, HOST, SECONDARY, Outcome.UNAUTHORIZED, SUPERUSER_USER);
 
         testWFLY2089(client, SUPERUSER_USER);
 
@@ -449,8 +449,8 @@ public abstract class AbstractServerGroupScopedRolesTestCase extends AbstractRba
 
     private void testWLFY2299(ModelControllerClient client, Outcome expected, String... roles) throws IOException {
 
-        addServerConfig(client, MASTER, SERVER_GROUP_B, Outcome.HIDDEN, roles);
-        addServerConfig(client, MASTER, SERVER_GROUP_A, expected, roles);
+        addServerConfig(client, PRIMARY, SERVER_GROUP_B, Outcome.HIDDEN, roles);
+        addServerConfig(client, PRIMARY, SERVER_GROUP_A, expected, roles);
 
         ModelNode metadata = getServerConfigAccessControl(client, roles);
 

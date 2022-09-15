@@ -67,8 +67,8 @@ import org.junit.Test;
 public class ManagementClientContentTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static long key = System.currentTimeMillis();
 
@@ -95,25 +95,25 @@ public class ManagementClientContentTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ManagementClientContentTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
-    private DomainClient masterClient;
-    private DomainClient slaveClient;
+    private DomainClient primaryClient;
+    private DomainClient secondaryClient;
 
     @Before
     public void setup() throws Exception {
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
-        slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
     }
 
     @Test
@@ -124,44 +124,44 @@ public class ManagementClientContentTestCase {
         final String planB = getContentName();
         final ModelNode addressB = getContentAddress(ROLLOUT_PLANS_ADDRESS, ROLLOUT_PLAN, planB);
 
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         ModelNode overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, null, false);
 
         // Add content
 
         ModelNode op = Util.getEmptyOperation(ADD, addressA);
         op.get(CONTENT).set(ROLLOUT_PLAN_A);
-        ModelNode response = masterClient.execute(op);
+        ModelNode response = primaryClient.execute(op);
         validateResponse(response);
-        response = masterClient.execute(getReadAttributeOperation(addressA, CONTENT));
+        response = primaryClient.execute(getReadAttributeOperation(addressA, CONTENT));
         ModelNode returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_A, returnVal);
 
-        // Confirm plan hashes match on master and slave
+        // Confirm plan hashes match on primary and secondary
         validateHashes(addressA, new ModelNode(), true);
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, true);
 
         // Add another
 
         op = Util.getEmptyOperation(ADD, addressB);
         op.get(CONTENT).set(ROLLOUT_PLAN_B);
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         validateResponse(response);
-        response = masterClient.execute(getReadAttributeOperation(addressB, CONTENT));
+        response = primaryClient.execute(getReadAttributeOperation(addressB, CONTENT));
         returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_B, returnVal);
 
-        // Confirm plan hashes match on master and slave
+        // Confirm plan hashes match on primary and secondary
         validateHashes(addressB, new ModelNode(), true);
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, true);
 
         // Validate read-children names
 
         op = Util.getEmptyOperation(READ_CHILDREN_NAMES_OPERATION, ROLLOUT_PLANS_ADDRESS);
         op.get(CHILD_TYPE).set(ROLLOUT_PLAN);
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         returnVal = validateResponse(response);
         List<ModelNode> plans = returnVal.asList();
         assertEquals(2, plans.size());
@@ -177,15 +177,15 @@ public class ManagementClientContentTestCase {
         op.get(NAME).set(CONTENT);
         op.get(VALUE).set(ROLLOUT_PLAN_C);
 
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         validateResponse(response);
-        response = masterClient.execute(getReadAttributeOperation(addressB, CONTENT));
+        response = primaryClient.execute(getReadAttributeOperation(addressB, CONTENT));
         returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_C, returnVal);
 
-        // Confirm plan hashes match on master and slave
+        // Confirm plan hashes match on primary and secondary
         ModelNode planBHash = validateHashes(addressB, new ModelNode(), true);
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, true);
 
         // Store op
@@ -194,15 +194,15 @@ public class ManagementClientContentTestCase {
         op.get(HASH).set(planBHash);
         op.get(CONTENT).set(ROLLOUT_PLAN_B);
 
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         validateResponse(response);
-        response = masterClient.execute(getReadAttributeOperation(addressB, CONTENT));
+        response = primaryClient.execute(getReadAttributeOperation(addressB, CONTENT));
         returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_B, returnVal);
 
-        // Confirm plan hashes match on master and slave
+        // Confirm plan hashes match on primary and secondary
         planBHash = validateHashes(addressB, planBHash, true);
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, true);
 
         // Failed store op (wrong value in hash param)
@@ -211,37 +211,37 @@ public class ManagementClientContentTestCase {
         op.get(HASH).set(new byte[20]); // incorrect value
         op.get(CONTENT).set(ROLLOUT_PLAN_B);
 
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         validateFailedResponse(response);
-        response = masterClient.execute(getReadAttributeOperation(addressB, CONTENT));
+        response = primaryClient.execute(getReadAttributeOperation(addressB, CONTENT));
         returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_B, returnVal);
 
-        // Confirm plan hashes match on master and slave
+        // Confirm plan hashes match on primary and secondary
         validateHashes(addressB, planBHash, false);
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, false);
 
         // Remove plan
 
         op = Util.getEmptyOperation(REMOVE, addressB);
-        response = masterClient.execute(op);
+        response = primaryClient.execute(op);
         validateResponse(response);
 
-        // Check overall hashes match on master and slave
+        // Check overall hashes match on primary and secondary
         overallHash = validateHashes(ROLLOUT_PLANS_ADDRESS, overallHash, true);
     }
 
     private ModelNode validateHashes(ModelNode address, ModelNode currentHash, boolean expectChange) throws IOException {
 
         // Start with reads of the root resource
-        ModelNode response = masterClient.execute(getReadAttributeOperation(address, HASH));
+        ModelNode response = primaryClient.execute(getReadAttributeOperation(address, HASH));
         ModelNode overallHash = validateResponse(response);
 
-        response = slaveClient.execute(getReadAttributeOperation(address, HASH));
-        ModelNode slaveOverallHash = validateResponse(response);
+        response = secondaryClient.execute(getReadAttributeOperation(address, HASH));
+        ModelNode secondaryOverallHash = validateResponse(response);
 
-        Assert.assertEquals(overallHash, slaveOverallHash);
+        Assert.assertEquals(overallHash, secondaryOverallHash);
 
         if (currentHash != null) {
             if (expectChange) {

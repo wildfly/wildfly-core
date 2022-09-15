@@ -46,14 +46,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test a slave HC connecting to the domain Elytron authentication context.
+ * Test a secondary HC connecting to the domain Elytron authentication context.
  */
 public class SecondaryHostControllerElytronAuthenticationTestCase extends AbstractSecondaryHCAuthenticationTestCase {
 
-    protected static final String RIGHT_PASSWORD = DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
+    protected static final String RIGHT_PASSWORD = DomainLifecycleUtil.SECONDARY_HOST_PASSWORD;
 
-    private static ModelControllerClient domainMasterClient;
-    private static ModelControllerClient domainSlaveClient;
+    private static ModelControllerClient domainPrimaryClient;
+    private static ModelControllerClient domainSecondaryClient;
     private static DomainTestSupport testSupport;
 
     private final String BAD_PASSWORD = "bad_password";
@@ -61,71 +61,71 @@ public class SecondaryHostControllerElytronAuthenticationTestCase extends Abstra
 
     @BeforeClass
     public static void setupDomain() throws Exception {
-        // Set up a domain with a master that doesn't support local auth so slaves have to use configured credentials
+        // Set up a domain with a primary that doesn't support local auth so secondarys have to use configured credentials
         testSupport = DomainTestSupport.create(
                 DomainTestSupport.Configuration.create(SecondaryHostControllerElytronAuthenticationTestCase.class.getSimpleName(),
                         "domain-configs/domain-minimal.xml",
                         "host-configs/host-primary-elytron.xml", "host-configs/host-secondary-elytron.xml"));
 
-        // Tweak the callback handler so the master test driver client can authenticate
-        // To keep setup simple it uses the same credentials as the slave host
+        // Tweak the callback handler so the primary test driver client can authenticate
+        // To keep setup simple it uses the same credentials as the secondary host
         CallbackHandler callbackHandler = Authentication.getCallbackHandler("secondary", RIGHT_PASSWORD, "ManagementRealm");
-        testSupport.getDomainMasterConfiguration().setCallbackHandler(callbackHandler);
-        testSupport.getDomainSlaveConfiguration().setCallbackHandler(callbackHandler);
+        testSupport.getDomainPrimaryConfiguration().setCallbackHandler(callbackHandler);
+        testSupport.getDomainSecondaryConfiguration().setCallbackHandler(callbackHandler);
 
 
         testSupport.start();
 
-        domainMasterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        domainSlaveClient = testSupport.getDomainSlaveLifecycleUtil().getDomainClient();
+        domainPrimaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        domainSecondaryClient = testSupport.getDomainSecondaryLifecycleUtil().getDomainClient();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
         testSupport = null;
-        domainMasterClient = null;
-        domainSlaveClient = null;
+        domainPrimaryClient = null;
+        domainSecondaryClient = null;
     }
 
     @Override
-    protected ModelControllerClient getDomainMasterClient() {
-        return domainMasterClient;
+    protected ModelControllerClient getDomainPrimaryClient() {
+        return domainPrimaryClient;
     }
 
     @Override
-    protected ModelControllerClient getDomainSlaveClient() {
-        return domainSlaveClient;
+    protected ModelControllerClient getDomainSecondaryClient() {
+        return domainSecondaryClient;
     }
 
     @Test
-    public void testSlaveRegistration() throws Exception {
-        slaveWithDigestM5Mechanism();
+    public void testSecondaryRegistration() throws Exception {
+        secondaryWithDigestM5Mechanism();
         // TODO WFLY-8630 restore this
-        //slaveWithPlainMechanism();
-        slaveWithInvalidPassword();
+        //secondaryWithPlainMechanism();
+        secondaryWithInvalidPassword();
     }
 
-    private void slaveWithDigestM5Mechanism() throws Exception {
-        // Simply check that the initial startup produced a registered slave
-        readHostControllerStatus(getDomainMasterClient());
+    private void secondaryWithDigestM5Mechanism() throws Exception {
+        // Simply check that the initial startup produced a registered secondary
+        readHostControllerStatus(getDomainPrimaryClient());
     }
 
-    private void slaveWithPlainMechanism() throws Exception {
+    private void secondaryWithPlainMechanism() throws Exception {
         // Set the allowed mechanism to PLAIN
-        getDomainMasterClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("PLAIN"))));
-        getDomainSlaveClient().execute(changeSaslMechanism("secondary", "PLAIN"));
+        getDomainPrimaryClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("PLAIN"))));
+        getDomainSecondaryClient().execute(changeSaslMechanism("secondary", "PLAIN"));
 
-        // Reload the slave and check that it produces a registered slave
-        reloadSlave();
-        readHostControllerStatus(getDomainMasterClient());
+        // Reload the secondary and check that it produces a registered secondary
+        reloadSecondary();
+        readHostControllerStatus(getDomainPrimaryClient());
 
         // Set the allowed mechanism back to Digest-MD5
-        getDomainMasterClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("DIGEST-MD5"))));
-        getDomainSlaveClient().execute(changeSaslMechanism("secondary", "DIGEST-MD5"));
-        reloadSlave();
-        testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
-        readHostControllerStatus(domainMasterClient);
+        getDomainPrimaryClient().execute(changePresentedMechanisms("primary", new HashSet<>(Arrays.asList("DIGEST-MD5"))));
+        getDomainSecondaryClient().execute(changeSaslMechanism("secondary", "DIGEST-MD5"));
+        reloadSecondary();
+        testSupport.getDomainSecondaryLifecycleUtil().awaitHostController(System.currentTimeMillis());
+        readHostControllerStatus(domainPrimaryClient);
     }
 
     /**
@@ -133,37 +133,37 @@ public class SecondaryHostControllerElytronAuthenticationTestCase extends Abstra
      *
      * @throws Exception
      */
-    private void slaveWithInvalidPassword() throws Exception {
+    private void secondaryWithInvalidPassword() throws Exception {
         // Set up a bad password
-        getDomainSlaveClient().execute(changePassword(BAD_PASSWORD));
+        getDomainSecondaryClient().execute(changePassword(BAD_PASSWORD));
 
-        // Reload the slave, after being reloaded, the slave should fail because it won't be able to connect to master
+        // Reload the secondary, after being reloaded, the secondary should fail because it won't be able to connect to primary
         reloadWithoutChecks();
 
-        // Verify that the slave host is not running
-        Assert.assertFalse("Host \"slave\" has connected to master even though it has bad password",
+        // Verify that the secondary host is not running
+        Assert.assertFalse("Host \"secondary\" has connected to primary even though it has bad password",
                 hostRunning(FAILED_RELOAD_TIMEOUT_MILLIS));
 
-        // Note that the slave is now lost to us - we can't configure it via master
+        // Note that the secondary is now lost to us - we can't configure it via primary
     }
 
-    private ModelNode changeSaslMechanism(String slaveName, String mechanism) {
+    private ModelNode changeSaslMechanism(String secondaryName, String mechanism) {
         ModelNode setAllowedMechanism = new ModelNode();
         setAllowedMechanism.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
         setAllowedMechanism.get(OP_ADDR).set(
-                new ModelNode().add(HOST, slaveName).add(SUBSYSTEM, "elytron")
-                        .add("authentication-configuration", "slaveHostAConfiguration"));
+                new ModelNode().add(HOST, secondaryName).add(SUBSYSTEM, "elytron")
+                        .add("authentication-configuration", "secondaryHostAConfiguration"));
         setAllowedMechanism.get(NAME).set("allow-sasl-mechanisms");
         setAllowedMechanism.get(VALUE).set(new ModelNode().add(mechanism));
 
         return setAllowedMechanism;
     }
 
-    private ModelNode changePresentedMechanisms(String slaveName, Set<String> mechanisms) {
+    private ModelNode changePresentedMechanisms(String secondaryName, Set<String> mechanisms) {
         ModelNode setPresentedMechanisms = new ModelNode();
         setPresentedMechanisms.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
         setPresentedMechanisms.get(OP_ADDR).set(
-                new ModelNode().add(HOST, slaveName).add(SUBSYSTEM, "elytron")
+                new ModelNode().add(HOST, secondaryName).add(SUBSYSTEM, "elytron")
                         .add(SASL_AUTHENTICATION_FACTORY, "management-sasl-authentication"));
         setPresentedMechanisms.get(NAME).set("mechanism-configurations");
 
@@ -199,12 +199,12 @@ public class SecondaryHostControllerElytronAuthenticationTestCase extends Abstra
     }
 
     private void reloadWithoutChecks() throws IOException {
-        ModelNode reloadSlave = new ModelNode();
-        reloadSlave.get(OP).set("reload");
-        reloadSlave.get(OP_ADDR).add(HOST, "secondary");
-        reloadSlave.get(ADMIN_ONLY).set(false);
+        ModelNode reloadSecondary = new ModelNode();
+        reloadSecondary.get(OP).set("reload");
+        reloadSecondary.get(OP_ADDR).add(HOST, "secondary");
+        reloadSecondary.get(ADMIN_ONLY).set(false);
         try {
-            getDomainSlaveClient().execute(reloadSlave);
+            getDomainSecondaryClient().execute(reloadSecondary);
         } catch(IOException e) {
             final Throwable cause = e.getCause();
             if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException)) {
@@ -217,7 +217,7 @@ public class SecondaryHostControllerElytronAuthenticationTestCase extends Abstra
         final long time = System.currentTimeMillis() + timeout;
         do {
             Thread.sleep(250);
-            if (lookupHostInModel(getDomainMasterClient())) {
+            if (lookupHostInModel(getDomainPrimaryClient())) {
                 return true;
             }
         } while (System.currentTimeMillis() < time);

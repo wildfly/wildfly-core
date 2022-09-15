@@ -94,8 +94,8 @@ public class DeploymentOverlayTestCase {
     private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, "main-server-group");
     private static final PathElement OTHER_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, "other-server-group");
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
-    private static DomainClient slaveClient;
+    private static DomainClient primaryClient;
+    private static DomainClient secondaryClient;
 
     private static final Properties properties = new Properties();
     private static final Properties properties2 = new Properties();
@@ -103,8 +103,8 @@ public class DeploymentOverlayTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = CLITestSuite.createSupport(DeploymentOverlayTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        slaveClient = testSupport.getDomainSlaveLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        secondaryClient = testSupport.getDomainSecondaryLifecycleUtil().getDomainClient();
         properties.clear();
         properties.put("service", "is new");
 
@@ -115,10 +115,10 @@ public class DeploymentOverlayTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        masterClient.close();
-        masterClient = null;
-        slaveClient.close();
-        slaveClient = null;
+        primaryClient.close();
+        primaryClient = null;
+        secondaryClient.close();
+        secondaryClient = null;
         CLITestSuite.stopSupport();
     }
 
@@ -136,137 +136,137 @@ public class DeploymentOverlayTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()){
-            AsyncFuture<ModelNode> future = masterClient.executeAsync(addDeployment(is), null);
+            AsyncFuture<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
         assertTrue(Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
         assertTrue(contentNode.get(ARCHIVE).asBoolean(true));
         //Let's deploy it on main-server-group
-        executeAsyncForResult(masterClient, deployOnServerGroup(MAIN_SERVER_GROUP, MAIN_RUNTIME_NAME));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, deployOnServerGroup(MAIN_SERVER_GROUP, MAIN_RUNTIME_NAME));
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
-        executeAsyncForResult(masterClient, deployOnServerGroup(OTHER_SERVER_GROUP, OTHER_RUNTIME_NAME));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, deployOnServerGroup(OTHER_SERVER_GROUP, OTHER_RUNTIME_NAME));
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode()));
         //Add some content
-        executeAsyncForResult(masterClient, addOverlayContent(properties2, "Overlay content"));
+        executeAsyncForResult(primaryClient, addOverlayContent(properties2, "Overlay content"));
         //Add overlay on server-groups
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "primary"),
                 PathElement.pathElement(SERVER, "main-one")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
         ModelNode redeployNothingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         redeployNothingOperation.get("deployments").setEmptyList();
         redeployNothingOperation.get("deployments").add(OTHER_RUNTIME_NAME);//Doesn't exist
         redeployNothingOperation.get("deployments").add("inexisting.jar");
-        executeAsyncForResult(masterClient, redeployNothingOperation);
+        executeAsyncForResult(primaryClient, redeployNothingOperation);
         //Check that nothing happened
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "primary"),
                 PathElement.pathElement(SERVER, "main-one")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        executeAsyncForResult(masterClient, Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode()));
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "primary"),
                 PathElement.pathElement(SERVER, "main-one")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(slaveClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(secondaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        executeAsyncForResult(masterClient, Operations.createOperation(REMOVE, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(REMOVE, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation("redeploy-links", PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode()));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, Operations.createOperation(REMOVE, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(REMOVE, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation("redeploy-links", PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode()));
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties2);
         redeployNothingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(DEPLOYMENT_OVERLAY_PATH).toModelNode());
         redeployNothingOperation.get("deployments").setEmptyList();
         redeployNothingOperation.get("deployments").add(OTHER_RUNTIME_NAME);
         redeployNothingOperation.get("deployments").add("inexisting.jar");
-        executeAsyncForResult(masterClient, redeployNothingOperation);
+        executeAsyncForResult(primaryClient, redeployNothingOperation);
         //Check that nothing happened
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties2);
         ModelNode failingOperation = Operations.createOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         failingOperation.get("deployments").setEmptyList();
         failingOperation.get("deployments").add(OTHER_RUNTIME_NAME);
         final String expectedFailureMessage = DomainControllerLogger.ROOT_LOGGER.masterDomainControllerOnlyOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH));
-        executeAsyncForFailure(slaveClient, failingOperation, expectedFailureMessage);
+        executeAsyncForFailure(secondaryClient, failingOperation, expectedFailureMessage);
         ModelNode removeLinkOp = Operations.createOperation(REMOVE, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode());
         removeLinkOp.get("redeploy-affected").set(true);
-        executeAsyncForResult(masterClient, removeLinkOp);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, removeLinkOp);
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(slaveClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(secondaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
+        executeAsyncForResult(primaryClient, Operations.createOperation(ADD, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
         ModelNode redeployOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         redeployOp.get("deployments").setEmptyList();
         redeployOp.get("deployments").add(MAIN_RUNTIME_NAME);
         redeployOp.get("deployments").add("inexisting.jar");
-        executeAsyncForResult(masterClient, redeployOp);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, redeployOp);
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(slaveClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(secondaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
         redeployOp = Operations.createOperation("redeploy-links", PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         redeployOp.get("deployments").setEmptyList();
         redeployOp.get("deployments").add(OTHER_RUNTIME_NAME);
-        executeAsyncForResult(masterClient, redeployOp);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        executeAsyncForResult(primaryClient, redeployOp);
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties2);
-        ServiceActivatorDeploymentUtil.validateProperties(slaveClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(secondaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties2);
-        executeAsyncForResult(masterClient,
+        executeAsyncForResult(primaryClient,
                 Operations.createReadResourceOperation(PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()));
-        executeAsyncForResult(masterClient,
+        executeAsyncForResult(primaryClient,
                 Operations.createReadResourceOperation(PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()));
         Operations.CompositeOperationBuilder builder = Operations.CompositeOperationBuilder.create();
         removeLinkOp = Operations.createOperation(REMOVE, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode());
@@ -279,23 +279,23 @@ public class DeploymentOverlayTestCase {
         builder.addStep(removeLinkOp);
         removeOverlayOp = Operations.createRemoveOperation(PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH).toModelNode());
         builder.addStep(removeOverlayOp);
-        executeAsyncForResult(masterClient, builder.build().getOperation());
-        executeAsyncForFailure(masterClient,
+        executeAsyncForResult(primaryClient, builder.build().getOperation());
+        executeAsyncForFailure(primaryClient,
                 Operations.createReadResourceOperation(PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, MAIN_RUNTIME_NAME)).toModelNode()),
                 ControllerLogger.ROOT_LOGGER.managementResourceNotFound(PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH)).getMessage());
-        executeAsyncForFailure(masterClient,
+        executeAsyncForFailure(primaryClient,
                 Operations.createReadResourceOperation(PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH, PathElement.pathElement(DEPLOYMENT, OTHER_RUNTIME_NAME)).toModelNode()),
                 ControllerLogger.ROOT_LOGGER.managementResourceNotFound(PathAddress.pathAddress(OTHER_SERVER_GROUP, DEPLOYMENT_OVERLAY_PATH)).getMessage());
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "primary"),
                 PathElement.pathElement(SERVER, "main-one")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
-        ServiceActivatorDeploymentUtil.validateProperties(slaveClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(secondaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "other-two")), properties);
     }
@@ -335,7 +335,7 @@ public class DeploymentOverlayTestCase {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
         operation.get(INCLUDE_RUNTIME).set(true);
         operation.get(INCLUDE_DEFAULTS).set(true);
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         return Operations.readResult(result);
@@ -391,6 +391,6 @@ public class DeploymentOverlayTestCase {
     }
 
     private void cleanDeployment() throws IOException, MgmtOperationException {
-        DomainTestUtils.executeForResult(undeployAndRemoveOp(), masterClient);
+        DomainTestUtils.executeForResult(undeployAndRemoveOp(), primaryClient);
     }
 }

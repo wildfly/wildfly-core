@@ -104,8 +104,8 @@ public class SimpleRbacProviderTestSuite {
             final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(testName,
                     "domain-configs/domain-rbac.xml", "host-configs/host-primary-rbac.xml", "host-configs/host-secondary-rbac.xml");
             String mgmtUserProperties = WildFlyManagedConfiguration.loadConfigFileFromContextClassLoader("mgmt-users/mgmt-users.properties");
-            configuration.getMasterConfiguration().setMgmtUsersFile(mgmtUserProperties);
-            configuration.getSlaveConfiguration().setMgmtUsersFile(mgmtUserProperties);
+            configuration.getPrimaryConfiguration().setMgmtUsersFile(mgmtUserProperties);
+            configuration.getSecondaryConfiguration().setMgmtUsersFile(mgmtUserProperties);
             final DomainTestSupport testSupport = DomainTestSupport.create(configuration);
             // Start!
             testSupport.start();

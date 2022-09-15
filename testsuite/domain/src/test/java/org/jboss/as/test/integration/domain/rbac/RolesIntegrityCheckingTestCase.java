@@ -64,8 +64,8 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(IncludeAllRoleTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
         AbstractServerGroupScopedRolesTestCase.setupRoles(domainClient);
         RBACProviderServerGroupScopedRolesTestCase.ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -75,7 +75,7 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.INSTANCE.tearDown(domainClient);
@@ -110,7 +110,7 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testAddScopedRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, NEW_ROLE, RbacUtil.MAINTAINER_ROLE, Outcome.SUCCESS);
         removeServerGroupScopedRole(client, NEW_ROLE, Outcome.SUCCESS);
         addHostScopedRole(client, NEW_ROLE, RbacUtil.MAINTAINER_ROLE, Outcome.SUCCESS);
@@ -119,28 +119,28 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testAddScopedRoleUsingStandardRoleName() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, "Monitor", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
         addHostScopedRole(client, "Monitor", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
     }
 
     @Test
     public void testAddScopedRoleUsingStandardRoleNameDifferentCase() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, "MoNiToR", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
         addHostScopedRole(client, "MoNiToR", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
     }
 
     @Test
     public void testAddScopedRoleUsingExistingScopedRoleName() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, "MainGroupMonitor", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
         addHostScopedRole(client, "HostMasterMonitor", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
     }
 
     @Test
     public void testAddScopedRoleUsingExistingScopedRoleNameDifferentCase() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, "MaInGrOuPmOnItOr", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
         addHostScopedRole(client, "HoStMaStErMoNiToR", RbacUtil.MAINTAINER_ROLE, Outcome.FAILED);
     }
@@ -149,21 +149,21 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testAddScopedRoleUsingNonexistingBaseRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, NEW_ROLE, "NonexistingBaseRole", Outcome.FAILED);
         addHostScopedRole(client, NEW_ROLE, "NonexistingBaseRole", Outcome.FAILED);
     }
 
     @Test
     public void testAddScopedRoleUsingExistingScopedBaseRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, NEW_ROLE, "MainGroupMaintainer", Outcome.FAILED);
         addHostScopedRole(client, NEW_ROLE, "HostMasterMaintainer", Outcome.FAILED);
     }
 
     @Test
     public void testAddScopedRoleUsingBaseRoleWithDifferentCase() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addServerGroupScopedRole(client, NEW_ROLE, "MaInTaInEr", Outcome.SUCCESS);
         removeServerGroupScopedRole(client, NEW_ROLE, Outcome.SUCCESS);
         addHostScopedRole(client, NEW_ROLE, "MaInTaInEr", Outcome.SUCCESS);
@@ -174,14 +174,14 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testRemoveScopedRoleWithExistingRoleMapping() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         removeServerGroupScopedRole(client, "MainGroupOperator", Outcome.FAILED);
         removeHostScopedRole(client, "HostMasterOperator", Outcome.FAILED);
     }
 
     @Test
     public void testAddRoleMappingWithoutExistingRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         addRoleMapping(client, "NonexistingScopedRole", Outcome.FAILED);
     }
 
@@ -214,7 +214,7 @@ public class RolesIntegrityCheckingTestCase extends AbstractRbacTestCase {
                 pathElement(HOST_SCOPED_ROLE, roleName)
         ));
         operation.get(BASE_ROLE).set(baseRole);
-        operation.get(HOSTS).add(AbstractHostScopedRolesTestCase.MASTER);
+        operation.get(HOSTS).add(AbstractHostScopedRolesTestCase.PRIMARY);
         RbacUtil.executeOperation(client, operation, expectedOutcome);
     }
 

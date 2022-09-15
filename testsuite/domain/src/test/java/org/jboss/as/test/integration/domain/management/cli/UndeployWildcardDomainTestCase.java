@@ -71,7 +71,7 @@ public class UndeployWildcardDomainTestCase extends AbstractCliTestBase {
     @BeforeClass
     public static void before() throws Exception {
         testSupport = CLITestSuite.createSupport(UndeployWildcardDomainTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
 
         // deployment1
         cliTestApp1War = createWarArchive("cli-test-app1.war", "Version0");

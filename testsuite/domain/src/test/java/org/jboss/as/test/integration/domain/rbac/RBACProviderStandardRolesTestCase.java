@@ -41,8 +41,8 @@ public class RBACProviderStandardRolesTestCase extends AbstractStandardRolesTest
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(RBACProviderStandardRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
         deployDeployment1(domainClient);
     }
@@ -51,10 +51,10 @@ public class RBACProviderStandardRolesTestCase extends AbstractStandardRolesTest
     public static void tearDownDomain() throws Exception {
 
         try {
-            UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.tearDown(testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+            UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.tearDown(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
         } finally {
             try {
-                removeDeployment1(testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+                removeDeployment1(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
             } finally {
                 FullRbacProviderTestSuite.stopSupport();
                 testSupport = null;

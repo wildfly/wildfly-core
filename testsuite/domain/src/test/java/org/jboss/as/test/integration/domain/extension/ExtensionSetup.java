@@ -66,18 +66,18 @@ public class ExtensionSetup {
     }
 
     public static void addExtensionAndSubsystem(final DomainTestSupport support) throws IOException, MgmtOperationException {
-        DomainClient masterClient = support.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient primaryClient = support.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         ModelNode addExtension = Util.createAddOperation(PathAddress.pathAddress("extension", TestExtension.MODULE_NAME));
-        DomainTestUtils.executeForResult(addExtension, masterClient);
+        DomainTestUtils.executeForResult(addExtension, primaryClient);
 
         for (String profileName : new String[]{"profile-a", "profile-b", "profile-shared"}) {
-            addExtensionAndSubsystem(masterClient, profileName);
+            addExtensionAndSubsystem(primaryClient, profileName);
         }
     }
 
 
-    private static void addExtensionAndSubsystem(final DomainClient masterClient, String profileName) throws IOException, MgmtOperationException {
+    private static void addExtensionAndSubsystem(final DomainClient primaryClient, String profileName) throws IOException, MgmtOperationException {
 
         PathAddress profileAddress = PathAddress.pathAddress("profile", profileName);
 
@@ -85,26 +85,26 @@ public class ExtensionSetup {
 
         ModelNode addSubsystem = Util.createAddOperation(subsystemAddress);
         addSubsystem.get("name").set("dummy name");
-        DomainTestUtils.executeForResult(addSubsystem, masterClient);
+        DomainTestUtils.executeForResult(addSubsystem, primaryClient);
 
         ModelNode addResource = Util.createAddOperation(subsystemAddress.append("rbac-sensitive","other"));
-        DomainTestUtils.executeForResult(addResource, masterClient);
+        DomainTestUtils.executeForResult(addResource, primaryClient);
 
         addResource = Util.createAddOperation(subsystemAddress.append("rbac-constrained","default"));
         addResource.get("password").set("sa");
         addResource.get("security-domain").set("other");
-        DomainTestUtils.executeForResult(addResource, masterClient);
+        DomainTestUtils.executeForResult(addResource, primaryClient);
     }
 
     public static void initializeTransformersExtension(final DomainTestSupport support) throws IOException {
 
-        // slave - version1
+        // secondary - version1
         InputStream moduleXml = getModuleXml("transformers-module.xml");
         final StreamExporter version1 = createResourceRoot(VersionedExtension1.class, ExtensionSetup.class.getPackage(), EmptySubsystemParser.class.getPackage());
         Map<String, StreamExporter> v1 = Collections.singletonMap("transformers-extension.jar", version1);
         support.addOverrideModule("secondary", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v1);
 
-        // master - version2
+        // primary - version2
         moduleXml = getModuleXml("transformers-module.xml");
         final StreamExporter version2 = createResourceRoot(VersionedExtension2.class, ExtensionSetup.class.getPackage());
         Map<String, StreamExporter> v2 = Collections.singletonMap("transformers-extension.jar", version2);

@@ -116,7 +116,7 @@ public class ValidateAddressOperationTestCase  {
     }
 
     private ModelNode executeOperation(final ModelNode op) throws IOException, MgmtOperationException {
-        return DomainTestUtils.executeForResult(op, testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+        return DomainTestUtils.executeForResult(op, testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
     }
 
 }

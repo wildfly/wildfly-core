@@ -37,53 +37,53 @@ import org.junit.Test;
  * @author Yeray Borges
  */
 public class RenameHostControllerTestCase {
-    private static final String RENAMED_SLAVE = "renamed-slave";
-    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
-    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
-    private static final PathAddress RENAMED_SLAVE_ADDR = PathAddress.pathAddress(HOST, RENAMED_SLAVE);
+    private static final String RENAMED_SECONDARY = "renamed-secondary";
+    private static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    private static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
+    private static final PathAddress RENAMED_SECONDARY_ADDR = PathAddress.pathAddress(HOST, RENAMED_SECONDARY);
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() {
         testSupport = DomainTestSuite.createSupport(RenameHostControllerTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
     }
 
     @AfterClass
     public static void tearDownDomain() {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Test
-    public void renameSlave() throws Exception {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+    public void renameSecondary() throws Exception {
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
-        ModelNode operation = Util.getWriteAttributeOperation(SLAVE_ADDR, "name", RENAMED_SLAVE);
-        DomainTestUtils.executeForResult(operation, masterClient);
+        ModelNode operation = Util.getWriteAttributeOperation(SECONDARY_ADDR, "name", RENAMED_SECONDARY);
+        DomainTestUtils.executeForResult(operation, primaryClient);
 
-        DomainClient slaveClient = reloadHost(domainSlaveLifecycleUtil, "secondary");
+        DomainClient secondaryClient = reloadHost(domainSecondaryLifecycleUtil, "secondary");
 
         String result = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, "local-host-name"), slaveClient).asString();
+                Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, "local-host-name"), secondaryClient).asString();
 
-        Assert.assertEquals(RENAMED_SLAVE, result);
+        Assert.assertEquals(RENAMED_SECONDARY, result);
 
-        // verify all is running, it also verifies the slave is registered in the domain with the new name
+        // verify all is running, it also verifies the secondary is registered in the domain with the new name
         result = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(RENAMED_SLAVE_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(RENAMED_SECONDARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", result);
 
         result = DomainTestUtils.executeForResult(
-                Util.getReadAttributeOperation(MASTER_ADDR, "host-state"), masterClient).asString();
+                Util.getReadAttributeOperation(PRIMARY_ADDR, "host-state"), primaryClient).asString();
 
         Assert.assertEquals("running", result);
     }
@@ -92,7 +92,7 @@ public class RenameHostControllerTestCase {
         ModelNode reload = Util.createEmptyOperation("reload", getRootAddress(host));
         util.executeAwaitConnectionClosed(reload);
         util.connect();
-        util.getConfiguration().setHostName(RENAMED_SLAVE);
+        util.getConfiguration().setHostName(RENAMED_SECONDARY);
         util.awaitHostController(System.currentTimeMillis());
         return util.createDomainClient();
     }

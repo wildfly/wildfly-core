@@ -57,96 +57,96 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
     private static final PathAddress SUBSYSTEM_ADDRESS =
             PathAddress.pathAddress(PROFILE, "default").append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
 
-    private static final PathAddress MASTER_SERVER_SUBSYSTEM_ADDRESS =
+    private static final PathAddress PRIMARY_SERVER_SUBSYSTEM_ADDRESS =
             PathAddress.pathAddress(HOST, "primary").append(SERVER, "main-one").append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
 
-    private static final PathAddress SLAVE_SERVER_ADDRESS =
+    private static final PathAddress SECONDARY_SERVER_ADDRESS =
             PathAddress.pathAddress(HOST, "secondary").append(SERVER, "main-three");
 
-    private static final PathAddress SLAVE_SERVER_SUBSYSTEM_ADDRESS =
-            SLAVE_SERVER_ADDRESS.append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
+    private static final PathAddress SECONDARY_SERVER_SUBSYSTEM_ADDRESS =
+            SECONDARY_SERVER_ADDRESS.append(OrderedChildResourceExtension.SUBSYSTEM_PATH);
 
     //Just to know how much was initialised in the setup method, so we know what to tear down
     private int initialised = 0;
 
 
     @Override
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         // Initialize the test extension
         ExtensionSetup.initializeOrderedChildResourceExtension(testSupport);
-        DomainTestUtils.executeForResult(Util.createAddOperation(PathAddress.pathAddress(EXTENSION_ADDRESS)), masterClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(PathAddress.pathAddress(EXTENSION_ADDRESS)), primaryClient);
         initialised = 1;
         //Add the subsystem
-        DomainTestUtils.executeForResult(Util.createAddOperation(SUBSYSTEM_ADDRESS), masterClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(SUBSYSTEM_ADDRESS), primaryClient);
         initialised = 2;
 
     }
 
     @Override
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         if (initialised >=2) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(SUBSYSTEM_ADDRESS), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(SUBSYSTEM_ADDRESS), primaryClient);
         }
         if (initialised >= 1) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(EXTENSION_ADDRESS)), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(EXTENSION_ADDRESS)), primaryClient);
         }
     }
 
 
     @Override
-    void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        checkDomainChildOrder(masterClient);
-        compareSubsystemModels(masterClient, slaveClient);
+    void testOnInitialStartup(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
+        checkDomainChildOrder(primaryClient);
+        compareSubsystemModels(primaryClient, secondaryClient);
 
         //Now add some child resources
-        addChild(masterClient, "Z", -1);
-        checkDomainChildOrder(masterClient, "Z");
-        compareSubsystemModels(masterClient, slaveClient);
+        addChild(primaryClient, "Z", -1);
+        checkDomainChildOrder(primaryClient, "Z");
+        compareSubsystemModels(primaryClient, secondaryClient);
 
         //Try an indexed add
-        addChild(masterClient, "N", 0);
-        checkDomainChildOrder(masterClient, "N", "Z");
-        compareSubsystemModels(masterClient, slaveClient);
+        addChild(primaryClient, "N", 0);
+        checkDomainChildOrder(primaryClient, "N", "Z");
+        compareSubsystemModels(primaryClient, secondaryClient);
 
     }
 
     @Override
-    void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testWhilePrimaryInAdminOnly(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Execute an indexed add op on the DC. The DC should change,
-        //but the slave should stay the same since the DC is now in admin-only mode
-        addChild(masterClient, "S", 1);
-        //Check the domain model rather than the slave model since the DC is admin-only
-        checkDomainChildOrder(masterClient, SUBSYSTEM_ADDRESS, "N", "S", "Z");
-        checkDomainChildOrder(slaveClient, SUBSYSTEM_ADDRESS, "N", "Z");
+        //but the secondary should stay the same since the DC is now in admin-only mode
+        addChild(primaryClient, "S", 1);
+        //Check the domain model rather than the secondary model since the DC is admin-only
+        checkDomainChildOrder(primaryClient, SUBSYSTEM_ADDRESS, "N", "S", "Z");
+        checkDomainChildOrder(secondaryClient, SUBSYSTEM_ADDRESS, "N", "Z");
     }
 
     @Override
-    void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        //Check the slave again after reboot
-        checkDomainChildOrder(masterClient, "N", "S", "Z");
+    void testAfterReconnect(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
+        //Check the secondary again after reboot
+        checkDomainChildOrder(primaryClient, "N", "S", "Z");
 
         // Might need to loop a bit here to make sure that the fresh domain model gets pulled down
-        compareSubsystemModels(masterClient, slaveClient, true);
+        compareSubsystemModels(primaryClient, secondaryClient, true);
 
         ModelNode reloadServer =
                 Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary").append(SERVER_CONFIG, "main-three"));
         reloadServer.get("blocking").set(true);
-        DomainTestUtils.executeForResult(reloadServer, slaveClient);
-        compareSubsystemModels(masterClient, slaveClient);
+        DomainTestUtils.executeForResult(reloadServer, secondaryClient);
+        compareSubsystemModels(primaryClient, secondaryClient);
     }
 
-    private void addChild(DomainClient masterClient, String childName, int index) throws Exception {
+    private void addChild(DomainClient primaryClient, String childName, int index) throws Exception {
         final ModelNode op =  Util.createAddOperation(SUBSYSTEM_ADDRESS.append(PathElement.pathElement(OrderedChildResourceExtension.CHILD.getKey(), childName)));
         op.get("attr").set(childName.toLowerCase());
         if (index >= 0) {
             op.get(ADD_INDEX).set(index);
         }
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
 
     private void checkDomainChildOrder(DomainClient client, String...childNames ) throws Exception {
-        checkDomainChildOrder(client, MASTER_SERVER_SUBSYSTEM_ADDRESS, childNames);
+        checkDomainChildOrder(client, PRIMARY_SERVER_SUBSYSTEM_ADDRESS, childNames);
     }
 
     private void checkDomainChildOrder(DomainClient client, PathAddress address, String...childNames ) throws Exception {
@@ -161,23 +161,23 @@ public class OrderedChildResourceScenario extends ReconnectTestScenario {
         }
     }
 
-    private ModelNode compareSubsystemModels(DomainClient masterClient, DomainClient slaveClient) throws Exception {
-        return compareSubsystemModels(masterClient, slaveClient, false);
+    private ModelNode compareSubsystemModels(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
+        return compareSubsystemModels(primaryClient, secondaryClient, false);
     }
 
-    private ModelNode compareSubsystemModels(DomainClient masterClient, DomainClient slaveClient, boolean serverReload) throws Exception {
-        final ModelNode domain = DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SUBSYSTEM_ADDRESS), masterClient);
+    private ModelNode compareSubsystemModels(DomainClient primaryClient, DomainClient secondaryClient, boolean serverReload) throws Exception {
+        final ModelNode domain = DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SUBSYSTEM_ADDRESS), primaryClient);
 
-        Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SUBSYSTEM_ADDRESS), slaveClient));
-        Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(MASTER_SERVER_SUBSYSTEM_ADDRESS), masterClient));
+        Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SUBSYSTEM_ADDRESS), secondaryClient));
+        Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(PRIMARY_SERVER_SUBSYSTEM_ADDRESS), primaryClient));
 
         if (!serverReload) {
             //A reconnect with a changed model does not propagate the model changes to the servers, but puts them in reload-required
-            Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SLAVE_SERVER_SUBSYSTEM_ADDRESS), masterClient));
+            Assert.assertEquals(domain, DomainTestUtils.executeForResult(getRecursiveReadResourceOperation(SECONDARY_SERVER_SUBSYSTEM_ADDRESS), primaryClient));
         }
-        String runtimeConfigurationState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_SERVER_ADDRESS, "runtime-configuration-state"), masterClient).asString();
+        String runtimeConfigurationState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SECONDARY_SERVER_ADDRESS, "runtime-configuration-state"), primaryClient).asString();
         Assert.assertEquals(serverReload ? RELOAD_REQUIRED : "ok", runtimeConfigurationState);
-        String serverState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SLAVE_SERVER_ADDRESS, "server-state"), masterClient).asString();
+        String serverState = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(SECONDARY_SERVER_ADDRESS, "server-state"), primaryClient).asString();
         Assert.assertEquals(serverReload ? RELOAD_REQUIRED : "running", serverState);
         return domain;
     }

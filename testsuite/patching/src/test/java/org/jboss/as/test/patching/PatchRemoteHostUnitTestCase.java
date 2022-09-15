@@ -70,8 +70,8 @@ public class PatchRemoteHostUnitTestCase {
         tempDir = mkdir(new File(System.getProperty("java.io.tmpdir")), randomString());
         testSupport = DomainTestSupport.createAndStartDefaultSupport(PatchRemoteHostUnitTestCase.class.getSimpleName());
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainMasterLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSlaveLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass

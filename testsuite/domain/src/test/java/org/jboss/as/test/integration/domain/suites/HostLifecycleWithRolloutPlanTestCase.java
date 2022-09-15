@@ -70,7 +70,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
     private static final int TIMEOUT = 30000;
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
     private static final PathAddress ROLLOUT_PLANS_ADDRESS = PathAddress.pathAddress(MANAGEMENT_CLIENT_CONTENT, ROLLOUT_PLANS);
     private static final ModelNode ROLLOUT_PLAN_A = new ModelNode();
@@ -85,21 +85,21 @@ public class HostLifecycleWithRolloutPlanTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(HostLifecycleWithRolloutPlanTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
-    private DomainClient masterClient;
+    private DomainClient primaryClient;
 
     @Before
     public void setup() throws Exception {
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         cleanRolloutPlans();
     }
 
@@ -112,70 +112,70 @@ public class HostLifecycleWithRolloutPlanTestCase {
         ModelNode params = new ModelNode();
         params.get("child-type").set("rollout-plan");
         ModelNode rcn = Util.getOperation("read-children-names", ROLLOUT_PLANS_ADDRESS, params);
-        ModelNode returnVal = validateResponse(masterClient.execute(rcn));
+        ModelNode returnVal = validateResponse(primaryClient.execute(rcn));
         if (returnVal.isDefined()) {
             for (ModelNode plan : returnVal.asList()) {
                 final PathAddress addr = ROLLOUT_PLANS_ADDRESS.append(ROLLOUT_PLAN, plan.asString());
-                validateResponse(masterClient.execute(Util.createRemoveOperation(addr)));
+                validateResponse(primaryClient.execute(Util.createRemoveOperation(addr)));
             }
         }
     }
 
     /**
-     * Downstream error: if rollout plan is created and master is reloaded, slave is not able to connect to master.
+     * Downstream error: if rollout plan is created and primary is reloaded, secondary is not able to connect to primary.
      * (https://issues.jboss.org/browse/WFCORE-3965)
      * Test, which validates this fix, has to be also in upstream, to prevent possible regression.
      */
     @Test
-    public void testReloadMasterWithRolloutPlan() throws IOException, TimeoutException, InterruptedException {
+    public void testReloadPrimaryWithRolloutPlan() throws IOException, TimeoutException, InterruptedException {
 
         // Add content
         addRolloutPlan();
 
-        ModelNode hash = readHash(masterClient);
+        ModelNode hash = readHash(primaryClient);
         assertTrue(hash.isDefined());
 
-        reloadMaster();
+        reloadPrimary();
 
-        final ModelNode slave = new ModelNode();
-        slave.get(OP).set(READ_ATTRIBUTE_OPERATION);
-        slave.get(OP_ADDR).add(HOST, "secondary");
-        slave.get(NAME).set(HOST_STATE);
+        final ModelNode secondary = new ModelNode();
+        secondary.get(OP).set(READ_ATTRIBUTE_OPERATION);
+        secondary.get(OP_ADDR).add(HOST, "secondary");
+        secondary.get(NAME).set(HOST_STATE);
 
-        // Wait until slave is reconnected and running
-        validateSlaveRunning();
+        // Wait until secondary is reconnected and running
+        validateSecondaryRunning();
 
         // Confirm correct hash
-        ModelNode slaveHash = readHash(testSupport.getDomainSlaveLifecycleUtil().getDomainClient());
-        assertEquals(hash, slaveHash);
+        ModelNode secondaryHash = readHash(testSupport.getDomainSecondaryLifecycleUtil().getDomainClient());
+        assertEquals(hash, secondaryHash);
 
     }
 
-    /** Confirm a slave can start when it does not have the current rollout plans in its content repository. */
+    /** Confirm a secondary can start when it does not have the current rollout plans in its content repository. */
     @Test
-    public void testSlaveBootWithMissingRolloutPlan() throws IOException {
+    public void testSecondaryBootWithMissingRolloutPlan() throws IOException {
 
         // Validate there is no rollout plan
-        ModelNode origHash = readHash(masterClient);
+        ModelNode origHash = readHash(primaryClient);
         assertFalse(origHash.isDefined()); // this assert isn't really required; it would be ok if there was a hash
-                                          // so long as the slave misses a change
+                                          // so long as the secondary misses a change
 
-        // No slave when we add the plan
-        testSupport.getDomainSlaveLifecycleUtil().stop();
-        validateSlaveDisconnected();
+        // No secondary when we add the plan
+        testSupport.getDomainSecondaryLifecycleUtil().stop();
+        validateSecondaryDisconnected();
 
         addRolloutPlan();
 
-        ModelNode hash = readHash(masterClient);
+        ModelNode hash = readHash(primaryClient);
         assertTrue(hash.isDefined());
         assertNotEquals(origHash, hash);
 
-        // Confirm the slave can start. This is the primary thing being tested here.
-        testSupport.getDomainSlaveLifecycleUtil().start();
+        // Confirm the secondary can start. This is the primary thing being tested here.
+        testSupport.getDomainSecondaryLifecycleUtil().start();
 
-        // Also confirm correct hash on the slave
-        ModelNode slaveHash = readHash(testSupport.getDomainSlaveLifecycleUtil().getDomainClient());
-        assertEquals(hash, slaveHash);
+        // Also confirm correct hash on the secondary
+        ModelNode secondaryHash = readHash(testSupport.getDomainSecondaryLifecycleUtil().getDomainClient());
+        assertEquals(hash, secondaryHash);
 
     }
 
@@ -186,9 +186,9 @@ public class HostLifecycleWithRolloutPlanTestCase {
         // Add content
         ModelNode op = Util.createEmptyOperation(ADD, addressA);
         op.get(CONTENT).set(ROLLOUT_PLAN_A);
-        ModelNode response = masterClient.execute(op);
+        ModelNode response = primaryClient.execute(op);
         validateResponse(response);
-        response = masterClient.execute(Util.getReadAttributeOperation(addressA, CONTENT));
+        response = primaryClient.execute(Util.getReadAttributeOperation(addressA, CONTENT));
         ModelNode returnVal = validateResponse(response);
         assertEquals(ROLLOUT_PLAN_A, returnVal);
 
@@ -199,11 +199,11 @@ public class HostLifecycleWithRolloutPlanTestCase {
     }
 
     /**
-     * Invokes an op on the master to read the slave's host-state and confirm it is 'running',
+     * Invokes an op on the primary to read the secondary's host-state and confirm it is 'running',
      * polling until successful or TIMEOUT.
-     * This confirms both the slave's state and that it is properly connected to the master.
+     * This confirms both the secondary's state and that it is properly connected to the primary.
      */
-    private void validateSlaveRunning() {
+    private void validateSecondaryRunning() {
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(READ_ATTRIBUTE_OPERATION);
@@ -218,7 +218,7 @@ public class HostLifecycleWithRolloutPlanTestCase {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                final ModelNode result = masterClient.execute(operation);
+                final ModelNode result = primaryClient.execute(operation);
                 if (result.get(OUTCOME).asString().equals(SUCCESS)) {
                     final ModelNode model = result.require(RESULT);
                     if (model.asString().equalsIgnoreCase("running")) {
@@ -230,18 +230,18 @@ public class HostLifecycleWithRolloutPlanTestCase {
             }
         } while (System.currentTimeMillis() < time);
 
-        fail("Cannot validate that host 'slave' is running");
+        fail("Cannot validate that host 'secondary' is running");
     }
 
-    private void reloadMaster() throws IOException {
+    private void reloadPrimary() throws IOException {
         try {
-            domainMasterLifecycleUtil.reload("primary", null, true);
+            domainPrimaryLifecycleUtil.reload("primary", null, true);
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException("Failed waiting for host controller and servers to start.", e);
         }
     }
 
-    private void validateSlaveDisconnected() {
+    private void validateSecondaryDisconnected() {
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set("read-children-names");
@@ -250,15 +250,15 @@ public class HostLifecycleWithRolloutPlanTestCase {
         final long time = System.currentTimeMillis() + TIMEOUT;
         do {
             try {
-                final ModelNode result = validateResponse(masterClient.execute(operation));
-                boolean hasSlave = false;
+                final ModelNode result = validateResponse(primaryClient.execute(operation));
+                boolean hasSecondary = false;
                 for (ModelNode host : result.asList()) {
                     if ("secondary".equals(host.asString())) {
-                        hasSlave = true;
+                        hasSecondary = true;
                         break;
                     }
                 }
-                if (!hasSlave) {
+                if (!hasSecondary) {
                     return;
                 }
 
@@ -272,6 +272,6 @@ public class HostLifecycleWithRolloutPlanTestCase {
             }
         } while (System.currentTimeMillis() < time);
 
-        fail("Cannot validate that host 'slave' is disconnected");
+        fail("Cannot validate that host 'secondary' is disconnected");
     }
 }

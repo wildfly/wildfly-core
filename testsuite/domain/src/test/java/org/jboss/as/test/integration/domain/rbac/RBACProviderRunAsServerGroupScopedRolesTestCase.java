@@ -49,8 +49,8 @@ public class RBACProviderRunAsServerGroupScopedRolesTestCase extends AbstractSer
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderRunAsTestSuite.createSupport(RBACProviderRunAsServerGroupScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
         deployDeployment1(domainClient);
@@ -58,7 +58,7 @@ public class RBACProviderRunAsServerGroupScopedRolesTestCase extends AbstractSer
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             ServerGroupRolesMappingSetup.INSTANCE.tearDown(domainClient);

@@ -31,7 +31,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Tests two way SSL secured communication between master and slave, using Elytron.
+ * Tests two way SSL secured communication between primary and secondary, using Elytron.
  *
  * @author Richard Janík <rjanik@redhat.com>
  */
@@ -60,7 +60,7 @@ public class SSLElytronPrimarySecondaryTwoWayTestCase extends AbstractSSLPrimary
     }
 
     @Test
-    public void testReadSlaveStatusFromMaster() throws Exception {
-        checkHostStatusOnMasterOverRemote("secondary", testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+    public void testReadSecondaryStatusFromPrimary() throws Exception {
+        checkHostStatusOnPrimaryOverRemote("secondary", testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
     }
 }
