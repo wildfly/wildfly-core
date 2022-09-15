@@ -268,7 +268,7 @@
         <version.org.wildfly.security.elytron>2.0.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>3.0.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Final</version.org.wildfly.security.jakarta.elytron-ee>
-        <version.org.yaml.snakeyaml>1.29</version.org.yaml.snakeyaml>
+        <version.org.yaml.snakeyaml>1.31</version.org.yaml.snakeyaml>
     </properties>
 
     <modules>
