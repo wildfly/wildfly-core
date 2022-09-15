@@ -267,7 +267,12 @@ class ModifiableRealmDecorator extends DelegatingResourceDefinition {
                 Attributes attributes = new MapAttributes(authorizationIdentity.getAttributes());
                 String name = NAME.resolveModelAttribute(context, operation).asString();
                 for (ModelNode modelNode : VALUES.resolveModelAttribute(context, operation).asList()) {
-                    attributes.addLast(name, modelNode.asString());
+                    String value = modelNode.asString();
+                    if (attributes.containsValue(name, value)) {
+                        ROOT_LOGGER.identityAttributeAlreadyExists(value, name);
+                    } else {
+                        attributes.addLast(name, modelNode.asString());
+                    }
                 }
 
                 realmIdentity.setAttributes(attributes);

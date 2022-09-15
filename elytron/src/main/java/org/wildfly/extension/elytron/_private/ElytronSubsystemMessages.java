@@ -661,6 +661,10 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1088, value = "Missing certificate authority challenge")
     AcmeException missingCertificateAuthorityChallenge();
 
+    @LogMessage(level = WARN)
+    @Message(id = 1089, value = "The value [%s] for attribute [%s] already exists.")
+    void identityAttributeAlreadyExists(final String attributeValue, final String attributeName);
+
     /*
      * Expression Resolver Section
      */
