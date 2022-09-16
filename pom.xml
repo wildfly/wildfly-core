@@ -138,7 +138,7 @@
         <version.org.jboss.galleon>5.0.5.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.13.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>6.0.0.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.1.0.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
         <version.org.wildfly.jar.plugin>8.0.0.Final</version.org.wildfly.jar.plugin>
