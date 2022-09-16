@@ -46,20 +46,20 @@ import org.junit.Test;
  */
 public class PatchRemoteHostUnitTestCase {
 
-    private static final ModelNode SLAVE_ADDR = new ModelNode();
+    private static final ModelNode SECONDARY_ADDR = new ModelNode();
     private static final ModelNode PATCH_ADDR = new ModelNode();
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
     private static File tempDir;
 
     static {
-        // (host=slave)
-        SLAVE_ADDR.add("host", "secondary");
-        SLAVE_ADDR.protect();
+        // (host=secondary)
+        SECONDARY_ADDR.add("host", "secondary");
+        SECONDARY_ADDR.protect();
 
-        // (host=slave),(core-services=patching)
+        // (host=secondary),(core-services=patching)
         PATCH_ADDR.add("host", "secondary");
         PATCH_ADDR.add("core-service", "patching");
         PATCH_ADDR.protect();
@@ -70,8 +70,8 @@ public class PatchRemoteHostUnitTestCase {
         tempDir = mkdir(new File(System.getProperty("java.io.tmpdir")), randomString());
         testSupport = DomainTestSupport.createAndStartDefaultSupport(PatchRemoteHostUnitTestCase.class.getSimpleName());
 
-        domainMasterLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
@@ -83,15 +83,15 @@ public class PatchRemoteHostUnitTestCase {
         }
 
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
 
     @Test
     public void test() throws Exception {
 
-        final ModelControllerClient client = domainMasterLifecycleUtil.getDomainClient();
+        final ModelControllerClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode patchOp = new ModelNode();
         patchOp.get(OP).set("patch");
@@ -108,8 +108,8 @@ public class PatchRemoteHostUnitTestCase {
             StreamUtils.safeClose(op);
         }
 
-        // Restart the slave
-        restartSlave(client);
+        // Restart the secondary
+        restartSecondary(client);
 
         final ModelNode patchesOp = new ModelNode();
         patchesOp.get(OP).set(READ_ATTRIBUTE_OPERATION);
@@ -128,7 +128,7 @@ public class PatchRemoteHostUnitTestCase {
         rollback.get("reset-configuration").set(false);
         executeForResult(client, rollback);
         // Restart
-        restartSlave(client);
+        restartSecondary(client);
         // Check there is no patch applied
         Assert.assertTrue(executeForResult(client, patchesOp).asList().isEmpty());
 
@@ -151,10 +151,10 @@ public class PatchRemoteHostUnitTestCase {
         return createZippedPatchFile(oneOffPatchDir, patchID);
     }
 
-    void restartSlave(final ModelControllerClient client) throws Exception {
+    void restartSecondary(final ModelControllerClient client) throws Exception {
         final ModelNode restart = new ModelNode();
         restart.get(OP).set(SHUTDOWN);
-        restart.get(OP_ADDR).set(SLAVE_ADDR);
+        restart.get(OP_ADDR).set(SECONDARY_ADDR);
         restart.get(RESTART).set(true);
 
         // Shutdown
@@ -163,13 +163,13 @@ public class PatchRemoteHostUnitTestCase {
         // Wait for the process to finish
         for (; ; ) {
             try {
-                domainSlaveLifecycleUtil.getProcessExitCode();
+                domainSecondaryLifecycleUtil.getProcessExitCode();
                 break;
             } catch (Exception e) {
                 Thread.sleep(1000);
             }
         }
-        domainSlaveLifecycleUtil.start();
+        domainSecondaryLifecycleUtil.start();
         waitForHost(client, "secondary");
     }
 
