@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-jakartaee</artifactId>
-        <version>19.0.0.Beta18</version>
+        <version>19.0.0.Final-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-elytron-integration-jakarta</artifactId>
