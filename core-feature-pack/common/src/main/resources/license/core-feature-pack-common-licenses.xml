@@ -253,7 +253,7 @@
       </licenses>
     </dependency>
     <dependency>
-      <groupId>org.jboss</groupId>
+      <groupId>io.smallrye</groupId>
       <artifactId>jandex</artifactId>
       <licenses>
         <license>

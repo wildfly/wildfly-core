@@ -22,4 +22,17 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<module-alias xmlns="urn:jboss:module:1.9" name="org.jboss.jandex" target-name="io.smallrye.jandex"/>
+<module xmlns="urn:jboss:module:1.9" name="io.smallrye.jandex">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <main-class name="org.jboss.jandex.Main"/>
+
+    <resources>
+        <artifact name="${io.smallrye:jandex}"/>
+    </resources>
+
+    <dependencies>
+    </dependencies>
+</module>
