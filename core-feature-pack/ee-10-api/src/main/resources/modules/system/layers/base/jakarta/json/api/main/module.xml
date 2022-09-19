@@ -39,5 +39,6 @@
             implementation.
         -->
         <module name="org.eclipse.parsson" export="true"/>
+        <module name="java.logging"/>
     </dependencies>
 </module>
