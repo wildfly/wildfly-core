@@ -81,8 +81,8 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
         Assert.assertEquals("alpha@jboss.org", transformer.apply(new NamePrincipal("alpha@jboss.com")).getName()); // com to org
         Assert.assertEquals("beta", transformer.apply(new NamePrincipal("beta@wildfly.org")).getName()); // remove server part
         Assert.assertEquals("gamma@example.com", transformer.apply(new NamePrincipal("gamma@example.com")).getName()); // keep
-        Assert.assertEquals(null, transformer.apply(new NamePrincipal("invalid"))); // not an e-mail address
-        Assert.assertEquals(null, transformer.apply(null));
+        Assert.assertNull(transformer.apply(new NamePrincipal("invalid"))); // not an e-mail address
+        Assert.assertNull(transformer.apply(null));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
         Assert.assertNotNull(transformer);
 
         Assert.assertEquals("ALPHA", transformer.apply(new NamePrincipal("alpha")).getName());
-        Assert.assertEquals(null, transformer.apply(null));
+        Assert.assertNull(transformer.apply(null));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
         Assert.assertNotNull(transformer);
 
         Assert.assertEquals("alpha", transformer.apply(new NamePrincipal("ALPHA")).getName());
-        Assert.assertEquals(null, transformer.apply(null));
+        Assert.assertNull(transformer.apply(null));
     }
 
     @Test
