@@ -4,10 +4,6 @@
         <param name="host" value="secondary"/>
         <param name="persist-name" value="false"/>
 
-        <feature spec="host.domain-controller">
-            <param name="remote" value="{}"/> <!-- TODO This needs an alternative. -->
-        </feature>
-
         <feature-group name="host-audit"/>
         <feature-group name="host-profile"/>
 
@@ -35,5 +31,18 @@
         </feature>
 
         <feature-group name="host-jvm"/>
+
+        <feature spec="subsystem.elytron.authentication-configuration">
+            <param name="authentication-configuration" value="primary"/>
+            <param name="authentication-name" value="$local"/>
+            <param name="credential-reference" value="{clear-text=password}"/>
+        </feature>
+        <feature spec="subsystem.elytron.authentication-context">
+            <param name="authentication-context" value="primary"/>
+            <param name="match-rules" value="[{authentication-configuration=primary}]"/>
+        </feature>
+        <feature spec="host.domain-controller">
+            <param name="remote" value="{authentication-context=primary}"/>
+        </feature>
     </feature>
 </feature-group-spec>
