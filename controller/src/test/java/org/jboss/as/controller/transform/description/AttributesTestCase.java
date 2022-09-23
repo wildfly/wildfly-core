@@ -146,7 +146,7 @@ public class AttributesTestCase {
         Assert.assertNotNull(toto);
         final ModelNode model = toto.getModel();
         //The rejection does not trigger for resource transformation
-        //TODO this could be done if 'slave' is >= 7.2.0
+        //TODO this could be done if 'secondary' is >= 7.2.0
         Assert.assertTrue(model.hasDefined("reject"));
         Assert.assertTrue(dontRejectChecker.called);
         Set<String> rejections = rejectAttributeChecker.getRejections();
@@ -195,7 +195,7 @@ public class AttributesTestCase {
         Assert.assertNotNull(toto);
         final ModelNode model = toto.getModel();
         //The rejection does not trigger for resource transformation
-        //TODO this could be done if 'slave' is >= 7.2.0
+        //TODO this could be done if 'secondary' is >= 7.2.0
         Assert.assertTrue(model.hasDefined("reject"));
         Assert.assertEquals(2, checker.count);
         Assert.assertTrue(checker.rejected);
@@ -244,7 +244,7 @@ public class AttributesTestCase {
         Assert.assertNotNull(toto);
         final ModelNode model = toto.getModel();
         //The rejection does not trigger for resource transformation
-        //TODO this could be done if 'slave' is >= 7.2.0
+        //TODO this could be done if 'secondary' is >= 7.2.0
         Assert.assertTrue(model.hasDefined("reject"));
         //The order is unpredicatble since a plain hashmap is used
         //Assert.assertEquals(2, checker.count);
