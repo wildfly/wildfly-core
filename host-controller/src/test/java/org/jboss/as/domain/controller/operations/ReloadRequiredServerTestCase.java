@@ -69,16 +69,16 @@ import org.junit.Test;
 public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
     @Test
-    public void testChangeServerGroupProfileMaster() throws Exception {
+    public void testChangeServerGroupProfilePrimary() throws Exception {
         testChangeServerGroupProfile(true);
     }
 
     @Test
-    public void testChangeServerGroupProfileSlave() throws Exception {
+    public void testChangeServerGroupProfileSecondary() throws Exception {
         testChangeServerGroupProfile(false);
     }
 
-    private void testChangeServerGroupProfile(boolean master) throws Exception {
+    private void testChangeServerGroupProfile(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -103,16 +103,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     }
 
     @Test
-    public void testChangeServerGroupProfileNoChangeMaster() throws Exception {
+    public void testChangeServerGroupProfileNoChangePrimary() throws Exception {
         testChangeServerGroupProfileNoChange(true);
     }
 
     @Test
-    public void testChangeServerGroupProfileNoChangeSlave() throws Exception {
+    public void testChangeServerGroupProfileNoChangeSecondary() throws Exception {
         testChangeServerGroupProfileNoChange(false);
     }
 
-    private void testChangeServerGroupProfileNoChange(boolean master) throws Exception {
+    private void testChangeServerGroupProfileNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -138,13 +138,13 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerGroupInvalidProfileMaster() throws Exception {
+//    public void testChangeServerGroupInvalidProfilePrimary() throws Exception {
 //        testChangeServerGroupInvalidProfile(true);
 //    }
 //
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerGroupInvalidProfileSlave() throws Exception {
+//    public void testChangeServerGroupInvalidProfileSecondary() throws Exception {
 //        testChangeServerGroupInvalidProfile(false);
 //    }
 
@@ -154,7 +154,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
     }
 
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidProfile
-//    private void testChangeServerGroupInvalidProfile(boolean master) throws Exception {
+//    private void testChangeServerGroupInvalidProfile(boolean primary) throws Exception {
 //        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
 //        final MockOperationContext operationContext = getOperationContext(false, pa);
 //
@@ -176,10 +176,10 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //
 //        // WFCORE-833 the rest of this would never have executed because the above would have always thrown the OFE
 //        // when the validation handler ran. So really the above test was just a test of the validation and can
-//        // be replaced with stuff in core-model-test. It also means the 'master' param was meaningless
+//        // be replaced with stuff in core-model-test. It also means the 'primary' param was meaningless
 //        operationContext.verify();
 //
-//        if (!master) {
+//        if (!primary) {
 //            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
 //        } else {
 //            Assert.fail();
@@ -187,17 +187,17 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //    }
 
     @Test
-    public void testChangeServerConfigGroupMaster() throws Exception {
+    public void testChangeServerConfigGroupPrimary() throws Exception {
         testChangeServerConfigGroup(true);
     }
 
     @Test
-    public void testChangeServerConfigGroupSlave() throws Exception {
+    public void testChangeServerConfigGroupSecondary() throws Exception {
         testChangeServerConfigGroup(false);
     }
 
 
-    public void testChangeServerConfigGroup(boolean master) throws Exception {
+    public void testChangeServerConfigGroup(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -214,16 +214,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
 
     @Test
-    public void testChangeServerConfigGroupNoChangeMaster() throws Exception {
+    public void testChangeServerConfigGroupNoChangePrimary() throws Exception {
         testChangeServerConfigGroupNoChange(true);
     }
 
     @Test
-    public void testChangeServerConfigGroupNoChangeSlave() throws Exception {
+    public void testChangeServerConfigGroupNoChangeSecondary() throws Exception {
         testChangeServerConfigGroupNoChange(true);
     }
 
-    public void testChangeServerConfigGroupNoChange(boolean master) throws Exception {
+    public void testChangeServerConfigGroupNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -240,18 +240,18 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerConfigGroupBadGroupMaster() throws Exception {
+//    public void testChangeServerConfigGroupBadGroupPrimary() throws Exception {
 //        testChangeServerConfigGroupBadGroup(true);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerConfigGroupBadGroupSlave() throws Exception {
+//    public void testChangeServerConfigGroupBadGroupSecondary() throws Exception {
 //        testChangeServerConfigGroupBadGroup(false);
 //    }
 
 //  // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
-//    private void testChangeServerConfigGroupBadGroup(boolean master) throws Exception {
+//    private void testChangeServerConfigGroupBadGroup(boolean primary) throws Exception {
 //        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
 //        final MockOperationContext operationContext = getOperationContext(false, pa);
 //
@@ -273,7 +273,7 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //
 //        operationContext.verify();
 //
-//        if (!master) {
+//        if (!primary) {
 //            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
 //        } else {
 //            Assert.fail();
@@ -281,16 +281,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //    }
 
     @Test
-    public void testChangeServerConfigSocketBindingGroupMaster() throws Exception {
+    public void testChangeServerConfigSocketBindingGroupPrimary() throws Exception {
         testChangeServerConfigSocketBindingGroup(true);
     }
 
     @Test
-    public void testChangeServerConfigSocketBindingGroupSlave() throws Exception {
+    public void testChangeServerConfigSocketBindingGroupSecondary() throws Exception {
         testChangeServerConfigSocketBindingGroup(false);
     }
 
-    private void testChangeServerConfigSocketBindingGroup(boolean master) throws Exception {
+    private void testChangeServerConfigSocketBindingGroup(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -307,16 +307,16 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
 
     @Test
-    public void testChangeServerConfigSocketBindingGroupNoChangeMaster() throws Exception {
+    public void testChangeServerConfigSocketBindingGroupNoChangePrimary() throws Exception {
         testChangeServerConfigSocketBindingGroupNoChange(true);
     }
 
     @Test
-    public void testChangeServerConfigSocketBindingGroupNoChangeSlave() throws Exception {
+    public void testChangeServerConfigSocketBindingGroupNoChangeSecondary() throws Exception {
         testChangeServerConfigSocketBindingGroupNoChange(false);
     }
 
-    private void testChangeServerConfigSocketBindingGroupNoChange(boolean master) throws Exception {
+    private void testChangeServerConfigSocketBindingGroupNoChange(boolean primary) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(false, pa);
 
@@ -334,18 +334,18 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerConfigSocketBindingGroupBadGroupMaster() throws Exception {
+//    public void testChangeServerConfigSocketBindingGroupBadGroupPrimary() throws Exception {
 //        testChangeServerConfigSocketBindingGroupBadGroup(true);
 //    }
 
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
 //    @Test(expected=OperationFailedException.class)
-//    public void testChangeServerConfigSocketBindingGroupBadGroupSlave() throws Exception {
+//    public void testChangeServerConfigSocketBindingGroupBadGroupSecondary() throws Exception {
 //        testChangeServerConfigSocketBindingGroupBadGroup(false);
 //    }
 
 //    // WFCORE-833 moved to DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup
-//    private void testChangeServerConfigSocketBindingGroupBadGroup(boolean master) throws Exception {
+//    private void testChangeServerConfigSocketBindingGroupBadGroup(boolean primary) throws Exception {
 //        PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
 //        final MockOperationContext operationContext = getOperationContext(false, pa);
 //
@@ -367,10 +367,10 @@ public class ReloadRequiredServerTestCase extends AbstractOperationTestCase {
 //
 //        // WFCORE-833 the rest of this would never have executed because the above would have always thrown the OFE
 //        // when the validation handler ran. So really the above test was just a test of the validation and can
-//        // be replaced with stuff in core-model-test. It also means the 'master' param was meaningless
+//        // be replaced with stuff in core-model-test. It also means the 'primary' param was meaningless
 //        operationContext.verify();
 //
-//        if (!master) {
+//        if (!primary) {
 //            Assert.assertNull(operationContext.getAttachment(ServerOperationResolver.DONT_PROPAGATE_TO_SERVERS_ATTACHMENT));
 //        } else {
 //            Assert.fail();

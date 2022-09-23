@@ -53,80 +53,80 @@ import org.junit.Test;
 public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends AbstractOperationTestCase {
 
     @Test
-    public void testAddServerGroupMaster() throws Exception {
+    public void testAddServerGroupPrimary() throws Exception {
         testAddServerGroup(true, false);
     }
 
     @Test
-    public void testAddServerGroupSlave() throws Exception {
+    public void testAddServerGroupSecondary() throws Exception {
         testAddServerGroup(false, false);
     }
 
     @Test
-    public void testAddServerGroupMasterRollback() throws Exception {
+    public void testAddServerGroupPrimaryRollback() throws Exception {
         testAddServerGroup(true, true);
     }
 
     @Test
-    public void testAddServerGroupSlaveRollback() throws Exception {
+    public void testAddServerGroupSecondaryRollback() throws Exception {
         testAddServerGroup(false, true);
     }
 
-    private void testAddServerGroup(boolean master, boolean rollback) throws Exception {
-        testAddServerGroupBadInfo(master, rollback, false, false);
+    private void testAddServerGroup(boolean primary, boolean rollback) throws Exception {
+        testAddServerGroupBadInfo(primary, rollback, false, false);
     }
 
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadProfileMaster() throws Exception {
+//    public void testAddServerGroupBadProfilePrimary() throws Exception {
 //        testAddServerGroupBadInfo(true, false, true, false);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadProfileSlave() throws Exception {
+//    public void testAddServerGroupBadProfileSecondary() throws Exception {
 //        testAddServerGroupBadInfo(false, false, true, false);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadProfileMasterRollback() throws Exception {
+//    public void testAddServerGroupBadProfilePrimaryRollback() throws Exception {
 //        //This won't actually get to the rollback part
 //        testAddServerGroupBadInfo(true, true, true, false);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadProfileSlaveRollback() throws Exception {
+//    public void testAddServerGroupBadProfileSecondaryRollback() throws Exception {
 //        testAddServerGroupBadInfo(false, true, true, false);
 //    }
 
       // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadSocketBindingGroupMaster() throws Exception {
+//    public void testAddServerGroupBadSocketBindingGroupPrimary() throws Exception {
 //        testAddServerGroupBadInfo(true, false, false, true);
 //    }
 
     // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadSocketBindingGroupSlave() throws Exception {
+//    public void testAddServerGroupBadSocketBindingGroupSecondary() throws Exception {
 //        testAddServerGroupBadInfo(false, false, false, true);
 //    }
 
     // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadSocketBindingGroupMasterRollback() throws Exception {
+//    public void testAddServerGroupBadSocketBindingGroupPrimaryRollback() throws Exception {
 //        //This won't actually get to the rollback part
 //        testAddServerGroupBadInfo(true, true, false, true);
 //    }
 
     // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testAddServerGroupBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerGroupBadSocketBindingGroupSlaveRollback() throws Exception {
+//    public void testAddServerGroupBadSocketBindingGroupSecondaryRollback() throws Exception {
 //        testAddServerGroupBadInfo(false, true, false, true);
 //    }
 
-    private void testAddServerGroupBadInfo(boolean master, boolean rollback, boolean badProfile, boolean badSocketBindingGroup) throws Exception {
+    private void testAddServerGroupBadInfo(boolean primary, boolean rollback, boolean badProfile, boolean badSocketBindingGroup) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-three"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -151,7 +151,7 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
             throw e;
         }
 
-        if (master && (badProfile || badSocketBindingGroup)) {
+        if (primary && (badProfile || badSocketBindingGroup)) {
             // Assert.fail();
         }
 
@@ -161,26 +161,26 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
     }
 
     @Test
-    public void testRemoveServerGroupMaster() throws Exception {
+    public void testRemoveServerGroupPrimary() throws Exception {
         testRemoveServerGroup(true, false);
     }
 
     @Test
-    public void testRemoveServerGroupSlave() throws Exception {
+    public void testRemoveServerGroupSecondary() throws Exception {
         testRemoveServerGroup(false, false);
     }
 
     @Test
-    public void testRemoveServerGroupMasterRollback() throws Exception {
+    public void testRemoveServerGroupPrimaryRollback() throws Exception {
         testRemoveServerGroup(true, true);
     }
 
     @Test
-    public void testRemoveServerGroupSlaveRollback() throws Exception {
+    public void testRemoveServerGroupSecondaryRollback() throws Exception {
         testRemoveServerGroup(false, true);
     }
 
-    private void testRemoveServerGroup(boolean master, boolean rollback) throws Exception {
+    private void testRemoveServerGroup(boolean primary, boolean rollback) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -194,51 +194,51 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
     }
 
     @Test
-    public void testUpdateServerGroupProfileMaster() throws Exception {
+    public void testUpdateServerGroupProfilePrimary() throws Exception {
         testUpdateServerGroupProfile(true, false, false);
     }
 
     @Test
-    public void testUpdateServerGroupProfileSlave() throws Exception {
+    public void testUpdateServerGroupProfileSecondary() throws Exception {
         testUpdateServerGroupProfile(false, false, false);
 
     }
 
     @Test
-    public void testUpdateServerGroupProfileMasterRollback() throws Exception {
+    public void testUpdateServerGroupProfilePrimaryRollback() throws Exception {
         testUpdateServerGroupProfile(true, true, false);
     }
 
     @Test
-    public void testUpdateServerGroupProfileSlaveRollback() throws Exception {
+    public void testUpdateServerGroupProfileSecondaryRollback() throws Exception {
         testUpdateServerGroupProfile(false, true, false);
     }
 
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadProfileMaster() throws Exception {
+//    public void testUpdateServerGroupBadProfilePrimary() throws Exception {
 //        testUpdateServerGroupProfile(true, false, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadProfileSlave() throws Exception {
+//    public void testUpdateServerGroupBadProfileSecondary() throws Exception {
 //        testUpdateServerGroupProfile(false, false, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadProfileMasterRollback() throws Exception {
+//    public void testUpdateServerGroupBadProfilePrimaryRollback() throws Exception {
 //        testUpdateServerGroupProfile(true, true, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidProfile()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadProfileSlaveRollback() throws Exception {
+//    public void testUpdateServerGroupBadProfileSecondaryRollback() throws Exception {
 //        testUpdateServerGroupProfile(false, true, true);
 //    }
 
-    private void testUpdateServerGroupProfile(boolean master, boolean rollback, boolean badProfile) throws Exception {
+    private void testUpdateServerGroupProfile(boolean primary, boolean rollback, boolean badProfile) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -260,8 +260,8 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
             throw e;
         }
 
-        if (master && badProfile) {
-            //master will throw an exception
+        if (primary && badProfile) {
+            //primary will throw an exception
             Assert.fail();
         }
 
@@ -271,52 +271,52 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
     }
 
     @Test
-    public void testUpdateServerGroupSocketBindingGroupMaster() throws Exception {
+    public void testUpdateServerGroupSocketBindingGroupPrimary() throws Exception {
         testUpdateServerGroupSocketBindingGroup(true, false, false);
     }
 
     @Test
-    public void testUpdateServerGroupSocketBindingGroupSlave() throws Exception {
+    public void testUpdateServerGroupSocketBindingGroupSecondary() throws Exception {
         testUpdateServerGroupSocketBindingGroup(false, false, false);
 
     }
 
     @Test
-    public void testUpdateServerGroupSocketBindingGroupMasterRollback() throws Exception {
+    public void testUpdateServerGroupSocketBindingGroupPrimaryRollback() throws Exception {
         testUpdateServerGroupSocketBindingGroup(true, true, false);
 
     }
 
     @Test
-    public void testUpdateServerGroupSocketBindingGroupSlaveRollback() throws Exception {
+    public void testUpdateServerGroupSocketBindingGroupSecondaryRollback() throws Exception {
         testUpdateServerGroupSocketBindingGroup(false, true, false);
     }
 
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadSocketBindingGroupMaster() throws Exception {
+//    public void testUpdateServerGroupBadSocketBindingGroupPrimary() throws Exception {
 //        testUpdateServerGroupSocketBindingGroup(true, false, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadSocketBindingGroupSlave() throws Exception {
+//    public void testUpdateServerGroupBadSocketBindingGroupSecondary() throws Exception {
 //        testUpdateServerGroupSocketBindingGroup(false, false, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadSocketBindingGroupMasterRollback() throws Exception {
+//    public void testUpdateServerGroupBadSocketBindingGroupPrimaryRollback() throws Exception {
 //        testUpdateServerGroupSocketBindingGroup(true, true, true);
 //    }
 //
 //    // WFCORE-833 replaced by core-model-test DomainServerGroupTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerGroupBadSocketBindingGroupSlaveRollback() throws Exception {
+//    public void testUpdateServerGroupBadSocketBindingGroupSecondaryRollback() throws Exception {
 //        testUpdateServerGroupSocketBindingGroup(false, true, true);
 //    }
 
-    private void testUpdateServerGroupSocketBindingGroup(boolean master, boolean rollback, boolean badSocketBindingGroup) throws Exception {
+    private void testUpdateServerGroupSocketBindingGroup(boolean primary, boolean rollback, boolean badSocketBindingGroup) throws Exception {
 
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "group-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
@@ -339,8 +339,8 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
             throw e;
         }
 
-        if (master && badSocketBindingGroup) {
-            //master will throw an exception
+        if (primary && badSocketBindingGroup) {
+            //primary will throw an exception
             Assert.fail();
         }
 

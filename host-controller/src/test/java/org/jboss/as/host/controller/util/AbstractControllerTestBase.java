@@ -121,7 +121,7 @@ public abstract class AbstractControllerTestBase {
     }
 
     protected AbstractControllerTestBase(ProcessType processType) {
-        this("slave", processType, false);
+        this("secondary", processType, false);
     }
 
     protected AbstractControllerTestBase(String hostName, ProcessType processType, boolean useDelegateRootResourceDefinition) {
@@ -355,7 +355,7 @@ public abstract class AbstractControllerTestBase {
 //            return hostName;
 //        }
 //
-//        public boolean isMasterDomainController() {
+//        public boolean isPrimaryDomainController() {
 //            return false;
 //        }
 //

@@ -28,7 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Tests a single level of ordered children in the scenario where the slave model supports indexed adds.
+ * Tests a single level of ordered children in the scenario where the secondary model supports indexed adds.
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
@@ -45,7 +45,7 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
     @Test
     public void testSameModelSync() throws Exception {
         ModelNode originalModel = readResourceRecursive();
-        executeTriggerSyncOperation(createMasterDcResources());
+        executeTriggerSyncOperation(createPrimaryDcResources());
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertEquals(originalModel, currentModel);
@@ -55,48 +55,48 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
     public void testRemovedNonOrderedChildrenModelSync() throws Exception {
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(NON_ORDERED_CHILD.getKey(), "apple"));
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(NON_ORDERED_CHILD.getKey()).keys(), "orange");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
     @Test
     public void testAddedNonOrderedChildrenModelSync() throws Exception {
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         createAndRegisterSubsystemChildFromRoot(rootResource, NON_ORDERED_CHILD.getKey(), "pear");
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(NON_ORDERED_CHILD.getKey()).keys(), "apple", "orange", "pear");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
     @Test
     public void testRemovedOrderedChildrenModelSync() throws Exception {
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(), "apple"));
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "orange");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
     @Test
@@ -104,16 +104,16 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
         //Adds a child to the end
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "pear");
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "apple", "orange", "pear");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
     @Test
@@ -121,35 +121,35 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
         //Inserts a child to the beginning
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "pear", 0);
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "pear", "apple", "orange");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
     @Test
     public void testChangeOrder() throws Exception {
         //Keeps the same elements but re-orders them
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         //[apple, orange] -> [orange, apple]
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(),  "orange"));
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(),  "apple"));
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "orange");
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "apple");
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "orange", "apple");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
 
@@ -158,19 +158,19 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
         //Inserts a child to the beginning
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(),  "orange"));
         findSubsystemResource(rootResource).removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(),  "apple"));
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "pear");
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "lemon");
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "pear", "lemon");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 
 
@@ -179,19 +179,19 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
         //Complex test
         ModelNode originalModel = readResourceRecursive();
 
-        Resource rootResource = createMasterDcResources();
+        Resource rootResource = createPrimaryDcResources();
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "grape", 1);
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "lemon", 1);
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "pear", 0);
         createAndRegisterSubsystemChildFromRoot(rootResource, ORDERED_CHILD.getKey(), "cherry");
-        ModelNode master = Resource.Tools.readModel(rootResource);
+        ModelNode primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         ModelNode currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "pear", "apple", "lemon", "grape", "orange", "cherry");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
 
         Resource subsystemResource = findSubsystemResource(rootResource);
         subsystemResource.removeChild(PathElement.pathElement(ORDERED_CHILD.getKey(), "pear"));
@@ -202,13 +202,13 @@ public class OrderedChildResourceSyncModelTestCase extends AbstractOrderedChildR
         for (Resource.ResourceEntry child : subsystemResource.getChildren(ORDERED_CHILD.getKey())) {
             child.getModel().get(ATTR.getName()).set(child.getModel().get(ATTR.getName()).asString() + "$" + child.getName());
         }
-        master = Resource.Tools.readModel(rootResource);
+        primary = Resource.Tools.readModel(rootResource);
 
         executeTriggerSyncOperation(rootResource);
         currentModel = readResourceRecursive();
 
         Assert.assertNotEquals(originalModel, currentModel);
         compare(findSubsystemResource(currentModel).get(ORDERED_CHILD.getKey()).keys(), "grape", "kiwi", "orange", "cherry", "melon");
-        compareSubsystemModels(master, currentModel);
+        compareSubsystemModels(primary, currentModel);
     }
 }
