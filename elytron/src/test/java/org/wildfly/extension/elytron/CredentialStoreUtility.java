@@ -55,7 +55,7 @@ public class CredentialStoreUtility {
      * Create Credential Store.
      *
      * @param credentialStoreFileName name of file to hold credentials
-     * @param storePassword master password (clear text) to open the credential store
+     * @param storePassword primary password (clear text) to open the credential store
      * @param adminKeyPassword a password (clear text) for protecting admin key
      * @param createStorageFirst flag whether to create storage first and then initialize Credential Store
      */
@@ -103,7 +103,7 @@ public class CredentialStoreUtility {
      * Automatically crate underlying KeyStore.
      *
      * @param credentialStoreFileName name of file to hold credentials
-     * @param storePassword master password (clear text) to open the credential store
+     * @param storePassword primary password (clear text) to open the credential store
      */
     public CredentialStoreUtility(String credentialStoreFileName, String storePassword) {
         this(credentialStoreFileName, storePassword, storePassword, true, false);

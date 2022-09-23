@@ -325,7 +325,7 @@ public class TlsTestCase extends AbstractSubsystemTest {
         AccessController.doPrivileged((PrivilegedAction<Integer>) () -> Security.insertProviderAt(wildFlyElytronProvider, 1));
         csUtil = new CredentialStoreUtility("target/tlstest.keystore");
         csUtil.addEntry("the-key-alias", "Elytron");
-        csUtil.addEntry("master-password-alias", "Elytron");
+        csUtil.addEntry("primary-password-alias", "Elytron");
     }
 
     @AfterClass

@@ -105,7 +105,7 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         });
         csUtil = new CredentialStoreUtility("target/tlstest.keystore", CS_PASSWORD);
         csUtil.addEntry("the-key-alias", "Elytron");
-        csUtil.addEntry("master-password-alias", "Elytron");
+        csUtil.addEntry("primary-password-alias", "Elytron");
     }
 
     @AfterClass
