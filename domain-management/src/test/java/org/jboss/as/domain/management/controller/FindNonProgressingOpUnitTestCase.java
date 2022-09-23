@@ -53,7 +53,7 @@ public class FindNonProgressingOpUnitTestCase {
 
     @Test
     public void testBasic() throws OperationFailedException {
-        Resource res = assemble(getSlaveResource());
+        Resource res = assemble(getSecondaryResource());
         assertEquals("0", findNonProgressingOp(res, false, 50));
         assertEquals("0", findNonProgressingOp(res, true, 50));
     }
@@ -62,7 +62,7 @@ public class FindNonProgressingOpUnitTestCase {
     @Test
     public void testServer() throws OperationFailedException {
         // The domain getDelayedServerResource stuff is irrelevant to a server
-        Resource res = assemble(getSlaveResource(), getDelayedServerResource());
+        Resource res = assemble(getSecondaryResource(), getDelayedServerResource());
         assertEquals("0", findNonProgressingOp(res, true, 50));
     }
 
@@ -76,14 +76,14 @@ public class FindNonProgressingOpUnitTestCase {
     @Test
     public void testSingleDelayedServer() throws OperationFailedException {
         // WFCORE-263 case
-        Resource res = assemble(getSlaveResource(), getDelayedServerResource());
+        Resource res = assemble(getSecondaryResource(), getDelayedServerResource());
         assertEquals("1", findNonProgressingOp(res, false, 50));
     }
 
     @Test
     public void testMultipleDelayedServers() {
         // WFCORE-263 case
-        Resource res = assemble(getSlaveResource(), getDelayedServerResource(), getDelayedServerResource());
+        Resource res = assemble(getSecondaryResource(), getDelayedServerResource(), getDelayedServerResource());
         try {
             findNonProgressingOp(res, false, 50);
             fail("multiple servers should fail");
@@ -95,8 +95,8 @@ public class FindNonProgressingOpUnitTestCase {
 
     @Test
     public void testHealthyServer() throws OperationFailedException {
-        // Healthy server op does not overrule the slave op
-        Resource res = assemble(getSlaveResource(), getHealthyServerResource());
+        // Healthy server op does not overrule the secondary op
+        Resource res = assemble(getSecondaryResource(), getHealthyServerResource());
         assertEquals("0", findNonProgressingOp(res, false, 50));
     }
 
@@ -113,7 +113,7 @@ public class FindNonProgressingOpUnitTestCase {
         return getHCResource(false);
     }
 
-    private static Resource getSlaveResource() {
+    private static Resource getSecondaryResource() {
         return getHCResource(true);
     }
 
