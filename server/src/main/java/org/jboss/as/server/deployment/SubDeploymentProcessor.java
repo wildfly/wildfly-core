@@ -70,7 +70,6 @@ public class SubDeploymentProcessor implements DeploymentUnitProcessor {
             final ServiceName serviceName = Services.deploymentUnitName(deploymentUnit.getName(), childRoot.getRootName());
 
             serviceTarget.addService(serviceName, service)
-                    .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                     .setInitialMode(ServiceController.Mode.ACTIVE)
                     .install();
             phaseContext.addDeploymentDependency(serviceName, Attachments.SUB_DEPLOYMENTS);
