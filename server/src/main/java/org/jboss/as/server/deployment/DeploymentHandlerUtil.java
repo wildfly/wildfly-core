@@ -34,6 +34,8 @@ import static org.jboss.msc.service.ServiceController.Mode.REMOVE;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -57,6 +59,7 @@ import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
@@ -211,15 +214,17 @@ public class DeploymentHandlerUtil {
         // associated with the current OperationContext
         AnnotationIndexSupport annotationIndexSupport = getAnnotationIndexCache(context);
 
-        final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitName, managementName, null,
+        final ServiceBuilder<?> sb = serviceTarget.addService(deploymentUnitServiceName);
+        final Consumer<DeploymentUnit> deploymentUnitConsumer = sb.provides(deploymentUnitServiceName);
+        final Supplier<DeploymentMountProvider> serverDeploymentRepositorySupplier = sb.requires(DeploymentMountProvider.SERVICE_NAME);
+        final Supplier<PathManager> pathManagerSupplier = sb.requires(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class));
+        final Supplier<VirtualFile> contentsSupplier = sb.requires(contentsServiceName);
+        final RootDeploymentUnitService service = new RootDeploymentUnitService(deploymentUnitConsumer,
+                serverDeploymentRepositorySupplier, pathManagerSupplier, contentsSupplier,
+                deploymentUnitName, managementName, null,
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), overlays,
                 annotationIndexSupport, isExplodedContent);
-        final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
-                .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
-                .addDependency(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class), PathManager.class, service.getPathManagerInjector())
-                .addDependency(contentsServiceName, VirtualFile.class, service.getContentsInjector())
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
+        final ServiceController<?> deploymentUnitController = sb.setInstance(service).install();
 
         contentService.addListener(new LifecycleListener() {
             @Override

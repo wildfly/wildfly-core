@@ -32,18 +32,21 @@ import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.ServiceRegistry;
 
+import java.util.function.Consumer;
+
 /**
  * Service responsible for installing the correct services to install a {@link DeploymentUnit}.
  *
  * @author John Bailey
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 final class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ResourceRoot deploymentRoot;
     private final DeploymentUnit parent;
     private final PathManager pathManager;
 
-    public SubDeploymentUnitService(ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, PathManager pathManager) {
-        super(registration, mutableRegistration, resource, capabilityServiceSupport);
+    public SubDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, ResourceRoot deploymentRoot, DeploymentUnit parent, ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, Resource resource, CapabilityServiceSupport capabilityServiceSupport, PathManager pathManager) {
+        super(deploymentUnitConsumer, registration, mutableRegistration, resource, capabilityServiceSupport);
         this.pathManager = pathManager;
         if (deploymentRoot == null) throw ServerLogger.ROOT_LOGGER.deploymentRootRequired();
         this.deploymentRoot = deploymentRoot;
