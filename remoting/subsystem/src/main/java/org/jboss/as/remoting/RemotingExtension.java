@@ -76,7 +76,7 @@ public class RemotingExtension implements Extension {
 
     static final SensitiveTargetAccessConstraintDefinition REMOTING_SECURITY_DEF = new SensitiveTargetAccessConstraintDefinition(REMOTING_SECURITY);
 
-    private static final int MANAGEMENT_API_MAJOR_VERSION = 5;
+    private static final int MANAGEMENT_API_MAJOR_VERSION = 6;
     private static final int MANAGEMENT_API_MINOR_VERSION = 0;
     private static final int MANAGEMENT_API_MICRO_VERSION = 0;
 
@@ -130,9 +130,10 @@ public class RemotingExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_1_2.getUriString(), RemotingSubsystem12Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_2_0.getUriString(), RemotingSubsystem20Parser::new);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_3_0.getUriString(), RemotingSubsystem30Parser::new);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), RemotingSubsystem40Parser::new);
         // For the current version we don't use a Supplier as we want its description initialized
         // TODO if any new xsd versions are added, use a Supplier for the old version
-        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_4_0.getUriString(), new RemotingSubsystem40Parser());
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, Namespace.REMOTING_5_0.getUriString(), new RemotingSubsystem50Parser());
 
         // For servers only as a migration aid we'll install io if it is missing.
         // It is invalid to do this on an HC as the HC needs to support profiles running legacy
