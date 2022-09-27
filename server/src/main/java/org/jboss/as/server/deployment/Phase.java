@@ -461,6 +461,7 @@ public enum Phase {
     public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_MESSAGING = 0x18B0;
     public static final int DEPENDENCIES_MICROPROFILE_REACTIVE_STREAMS_OPERATORS = 0x18C0;
     public static final int DEPENDENCIES_MICROPROFILE_FAULT_TOLERANCE   = 0x1900;
+    public static final int DEPENDENCIES_MICROMETER                     = 0x1910;
 
 
     /**
