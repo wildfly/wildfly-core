@@ -31,7 +31,6 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.server.logging.ServerLogger;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -41,7 +40,6 @@ import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.value.InjectedValue;
 import org.wildfly.common.function.ExceptionConsumer;
 
 /**
@@ -57,8 +55,6 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final ManagementResourceRegistration mutableRegistration;
     final Resource resource;
     final CapabilityServiceSupport capabilityServiceSupport;
-    private final InjectedValue<DeployerChains> deployerChainsInjector = new InjectedValue<DeployerChains>();
-
     private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
@@ -165,10 +161,6 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
             // ignore
         }
         return problems.isEmpty() ? DeploymentStatus.OK : DeploymentStatus.FAILED;
-    }
-
-    Injector<DeployerChains> getDeployerChainsInjector() {
-        return deployerChainsInjector;
     }
 
     public enum DeploymentStatus {

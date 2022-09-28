@@ -215,7 +215,6 @@ public class DeploymentHandlerUtil {
                 registration, mutableRegistration, deploymentResource, context.getCapabilityServiceSupport(), overlays,
                 annotationIndexSupport, isExplodedContent);
         final ServiceController<DeploymentUnit> deploymentUnitController = serviceTarget.addService(deploymentUnitServiceName, service)
-                .addDependency(Services.JBOSS_DEPLOYMENT_CHAINS, DeployerChains.class, service.getDeployerChainsInjector())
                 .addDependency(DeploymentMountProvider.SERVICE_NAME, DeploymentMountProvider.class, service.getServerDeploymentRepositoryInjector())
                 .addDependency(context.getCapabilityServiceName("org.wildfly.management.path-manager", PathManager.class), PathManager.class, service.getPathManagerInjector())
                 .addDependency(contentsServiceName, VirtualFile.class, service.getContentsInjector())
