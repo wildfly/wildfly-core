@@ -132,6 +132,28 @@ public class CliCommandBuilder implements CommandBuilder {
     }
 
     /**
+     * Creates a command builder for a modular CLI instance.
+     *
+     * @param wildflyHome the path to the WildFly home directory
+     *
+     * @return a new builder
+     */
+    public static CliCommandBuilder of(final Path wildflyHome) {
+        return asModularLauncher(wildflyHome);
+    }
+
+    /**
+     * Creates a command builder for a modular CLI instance.
+     *
+     * @param wildflyHome the path to the WildFly home directory
+     *
+     * @return a new builder
+     */
+    public static CliCommandBuilder of(final String wildflyHome) {
+        return asModularLauncher(wildflyHome);
+    }
+
+    /**
      * Creates a command builder for a non-modular CLI instance launched from wildflyHome/bin/client/jboss-client.jar.
      *
      * @param wildflyHome the path to the WildFly home directory
