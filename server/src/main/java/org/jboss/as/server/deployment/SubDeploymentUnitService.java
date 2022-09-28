@@ -37,7 +37,7 @@ import org.jboss.msc.service.ServiceRegistry;
  *
  * @author John Bailey
  */
-public class SubDeploymentUnitService extends AbstractDeploymentUnitService {
+final class SubDeploymentUnitService extends AbstractDeploymentUnitService {
     private final ResourceRoot deploymentRoot;
     private final DeploymentUnit parent;
     private final PathManager pathManager;
