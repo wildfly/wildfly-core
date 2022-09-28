@@ -107,11 +107,21 @@ public class YamlConfigurationExtensionTest {
                 resourceRegistration.registerReadWriteAttribute(listAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
             }
         };
+        SimpleResourceDefinition basicResource = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(PathElement.pathElement("basic"), descriptionResolver)
+                .setAddHandler(new AbstractBoottimeAddStepHandler(valueAtt) {
+                })) {
+            @Override
+            public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
+                super.registerAttributes(resourceRegistration);
+                resourceRegistration.registerReadWriteAttribute(valueAtt, null, new ModelOnlyWriteAttributeHandler(valueAtt));
+            }
+        };
         ManagementResourceRegistration root = ManagementResourceRegistration.Factory.forProcessType(ProcessType.EMBEDDED_SERVER).createRegistration(rootResource);
         GlobalOperationHandlers.registerGlobalOperations(root, ProcessType.EMBEDDED_SERVER);
         root.registerSubModel(systemPropertyResource);
         root.registerSubModel(extensionResource);
         root.registerSubModel(listResource);
+        root.registerSubModel(basicResource);
         AttributeDefinition connectorType = SimpleAttributeDefinitionBuilder.create("type", STRING, true)
                 .setAllowExpression(true)
                 .setValidator(new StringLengthValidator(0, true, true))
@@ -147,19 +157,22 @@ public class YamlConfigurationExtensionTest {
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(3, postExtensionOps.size());
+        assertEquals(4, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
-        assertTrue(postExtensionOps.get(0).operation.hasDefined("value"));
-        assertEquals("foo", postExtensionOps.get(0).operation.get("value").asString());
+        assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(0).address);
+        assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
         assertEquals(ADD, postExtensionOps.get(1).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(1).address);
         assertTrue(postExtensionOps.get(1).operation.hasDefined("value"));
-        assertEquals("bar", postExtensionOps.get(1).operation.get("value").asString());
+        assertEquals("foo", postExtensionOps.get(1).operation.get("value").asString());
         assertEquals(ADD, postExtensionOps.get(2).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(2).address);
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(2).address);
         assertTrue(postExtensionOps.get(2).operation.hasDefined("value"));
-        assertEquals("test", postExtensionOps.get(2).operation.get("value").asString());
+        assertEquals("bar", postExtensionOps.get(2).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(3).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(3).address);
+        assertTrue(postExtensionOps.get(3).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(3).operation.get("value").asString());
     }
 
     /**
@@ -217,23 +230,28 @@ public class YamlConfigurationExtensionTest {
         ConfigurationExtension instance = ConfigurationExtensionFactory.createConfigurationExtension(Paths.get(this.getClass().getResource("simple.yml").toURI()));
         instance.processOperations(rootRegistration, postExtensionOps);
         assertFalse(postExtensionOps.isEmpty());
-        assertEquals(5, postExtensionOps.size());
+        assertEquals(6, postExtensionOps.size());
         assertEquals(ADD, postExtensionOps.get(0).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(0).address);
         assertFalse(postExtensionOps.get(0).operation.hasDefined("value"));
         assertEquals(ADD, postExtensionOps.get(1).operationName);
         assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(1).address);
         assertFalse(postExtensionOps.get(1).operation.hasDefined("value"));
-        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(2).address);
-        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(2).operationName);
-        assertEquals("foo", postExtensionOps.get(2).operation.get("value").asString());
-        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(3).address);
+        assertEquals(ADD, postExtensionOps.get(2).operationName);
+        assertEquals(PathAddress.pathAddress("basic", "test"), postExtensionOps.get(2).address);
+        assertFalse(postExtensionOps.get(2).operation.hasDefined("value"));
+        assertEquals(PathAddress.pathAddress("system-property", "aaa"), postExtensionOps.get(3).address);
         assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(3).operationName);
-        assertEquals("bar", postExtensionOps.get(3).operation.get("value").asString());
-        assertEquals(ADD, postExtensionOps.get(4).operationName);
-        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(4).address);
+        assertTrue(postExtensionOps.get(3).operation.hasDefined("value"));
+        assertEquals("foo", postExtensionOps.get(3).operation.get("value").asString());
+        assertEquals(PathAddress.pathAddress("system-property", "bbb"), postExtensionOps.get(4).address);
+        assertEquals(WRITE_ATTRIBUTE_OPERATION, postExtensionOps.get(4).operationName);
         assertTrue(postExtensionOps.get(4).operation.hasDefined("value"));
-        assertEquals("test", postExtensionOps.get(4).operation.get("value").asString());
+        assertEquals("bar", postExtensionOps.get(4).operation.get("value").asString());
+        assertEquals(ADD, postExtensionOps.get(5).operationName);
+        assertEquals(PathAddress.pathAddress("system-property", "ccc"), postExtensionOps.get(5).address);
+        assertTrue(postExtensionOps.get(5).operation.hasDefined("value"));
+        assertEquals("test", postExtensionOps.get(5).operation.get("value").asString());
     }
 
     /**

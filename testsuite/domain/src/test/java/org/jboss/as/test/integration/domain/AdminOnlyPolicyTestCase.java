@@ -53,13 +53,13 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
-//import org.junit.Ignore;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Tests of running domain hosts in admin-only move.
  */
-//@Ignore("[WFCORE-1958] Clean up testsuite Elytron registration.")
+@Ignore("https://issues.redhat.com/browse/WFCORE-6032")
 public class AdminOnlyPolicyTestCase {
 
     private static DomainTestSupport testSupport;

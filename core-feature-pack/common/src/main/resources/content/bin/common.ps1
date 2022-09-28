@@ -170,6 +170,8 @@ Param(
         # Needed to instantiate the default InitialContextFactory implementation used by the
         # Elytron subsystem dir-context and core management ldap-connection resources
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED"
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
         # Needed if Hibernate applications use Javassist
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-opens=java.base/java.lang=ALL-UNNAMED"
         # Needed by the MicroProfile REST Client subsystem
