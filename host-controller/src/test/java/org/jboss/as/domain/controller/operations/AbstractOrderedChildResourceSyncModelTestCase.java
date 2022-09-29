@@ -88,7 +88,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
     private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
     private volatile IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
 
-    static final PathElement HOST_ELEMEMT = PathElement.pathElement(HOST, "slave");
+    static final PathElement HOST_ELEMEMT = PathElement.pathElement(HOST, "secondary");
     static final PathElement PROFILE_ELEMENT = PathElement.pathElement(PROFILE, "test");
     static final PathElement SUBSYSTEM_ELEMENT = PathElement.pathElement(SUBSYSTEM, "test");
     static final PathElement ORDERED_CHILD = PathElement.pathElement("ordered-child");
@@ -165,7 +165,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
         executeForResult(op);
     }
 
-    Resource createMasterDcResources() {
+    Resource createPrimaryDcResources() {
         Resource rootResource = Resource.Factory.create();
         registerCommonChildren(rootResource, true);
         rootResource.removeChild(HOST_ELEMEMT);
@@ -363,7 +363,7 @@ public class AbstractOrderedChildResourceSyncModelTestCase extends AbstractContr
                             hostControllerEnvironment, extensionRegistry, internalExecutor, true,
                             Collections.<String, ProxyController>emptyMap(), repo, repo);
             final SyncServerGroupOperationHandler handler =
-                    new SyncServerGroupOperationHandler("slave", original, parameters);
+                    new SyncServerGroupOperationHandler("secondary", original, parameters);
             context.addStep(syncOperation, handler, OperationContext.Stage.MODEL, true);
         }
     }

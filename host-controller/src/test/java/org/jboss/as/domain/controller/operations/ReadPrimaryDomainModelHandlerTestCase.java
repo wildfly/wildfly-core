@@ -64,7 +64,7 @@ import org.junit.Test;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-public class ReadMasterDomainModelHandlerTestCase {
+public class ReadPrimaryDomainModelHandlerTestCase {
 
 
     @Test

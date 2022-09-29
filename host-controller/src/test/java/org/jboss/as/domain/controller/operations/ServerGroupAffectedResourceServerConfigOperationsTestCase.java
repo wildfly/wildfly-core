@@ -80,104 +80,104 @@ import org.junit.Test;
 public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends AbstractOperationTestCase {
 
     @Test
-    public void testAddServerConfigMaster() throws Exception {
+    public void testAddServerConfigPrimary() throws Exception {
         testAddServerConfig(true, false);
     }
 
     @Test
-    public void testAddServerConfigSlave() throws Exception {
+    public void testAddServerConfigSecondary() throws Exception {
         testAddServerConfig(false, false);
     }
 
     @Test
-    public void testAddServerConfigMasterRollback() throws Exception {
+    public void testAddServerConfigPrimaryRollback() throws Exception {
         testAddServerConfig(true, true);
     }
 
     @Test
-    public void testAddServerConfigSlaveRollback() throws Exception {
+    public void testAddServerConfigSecondaryRollback() throws Exception {
         testAddServerConfig(false, true);
     }
 
-    private void testAddServerConfig(boolean master, boolean rollback) throws Exception {
-        testAddServerConfigBadInfo(master, rollback, false, SocketBindingGroupOverrideType.GOOD);
+    private void testAddServerConfig(boolean primary, boolean rollback) throws Exception {
+        testAddServerConfigBadInfo(primary, rollback, false, SocketBindingGroupOverrideType.GOOD);
     }
 
     @Test
-    public void testAddServerConfigNoSocketBindingGroupOverrideMaster() throws Exception {
+    public void testAddServerConfigNoSocketBindingGroupOverridePrimary() throws Exception {
         testAddServerConfigNoSocketBindingGroupOverride(true, false);
     }
 
     @Test
-    public void testAddServerConfigNoSocketBindingGroupOverrideSlave() throws Exception {
+    public void testAddServerConfigNoSocketBindingGroupOverrideSecondary() throws Exception {
         testAddServerConfigNoSocketBindingGroupOverride(false, false);
     }
 
     @Test
-    public void testAddServerConfigNoSocketBindingGroupOverrideMasterRollback() throws Exception {
+    public void testAddServerConfigNoSocketBindingGroupOverridePrimaryRollback() throws Exception {
         testAddServerConfigNoSocketBindingGroupOverride(true, true);
     }
 
     @Test
-    public void testAddServerConfigNoSocketBindingGroupOverrideSlaveRollback() throws Exception {
+    public void testAddServerConfigNoSocketBindingGroupOverrideSecondaryRollback() throws Exception {
         testAddServerConfigNoSocketBindingGroupOverride(false, true);
     }
 
-    private void testAddServerConfigNoSocketBindingGroupOverride(boolean master, boolean rollback) throws Exception {
-        testAddServerConfigBadInfo(master, rollback, false, SocketBindingGroupOverrideType.NONE);
+    private void testAddServerConfigNoSocketBindingGroupOverride(boolean primary, boolean rollback) throws Exception {
+        testAddServerConfigBadInfo(primary, rollback, false, SocketBindingGroupOverrideType.NONE);
     }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadServerGroupeMaster() throws Exception {
+//    public void testAddServerConfigBadServerGroupePrimary() throws Exception {
 //        testAddServerConfigBadInfo(true, false, true, SocketBindingGroupOverrideType.GOOD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadServerGroupSlave() throws Exception {
+//    public void testAddServerConfigBadServerGroupSecondary() throws Exception {
 //        testAddServerConfigBadInfo(false, false, true, SocketBindingGroupOverrideType.GOOD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadServerGroupMasterRollback() throws Exception {
+//    public void testAddServerConfigBadServerGroupPrimaryRollback() throws Exception {
 //        //This won't actually get to the rollback part
 //        testAddServerConfigBadInfo(true, true, true, SocketBindingGroupOverrideType.GOOD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadServerGroupSlaveRollback() throws Exception {
+//    public void testAddServerConfigBadServerGroupSecondaryRollback() throws Exception {
 //        testAddServerConfigBadInfo(false, true, true, SocketBindingGroupOverrideType.GOOD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadSocketBindingGroupOverrideMaster() throws Exception {
+//    public void testAddServerConfigBadSocketBindingGroupOverridePrimary() throws Exception {
 //        testAddServerConfigBadInfo(true, false, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadSocketBindingGroupOverrideSlave() throws Exception {
+//    public void testAddServerConfigBadSocketBindingGroupOverrideSecondary() throws Exception {
 //        testAddServerConfigBadInfo(false, false, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadSocketBindingGroupOverrideMasterRollback() throws Exception {
+//    public void testAddServerConfigBadSocketBindingGroupOverridePrimaryRollback() throws Exception {
 //        //This won't actually get to the rollback part
 //        testAddServerConfigBadInfo(true, true, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testAddServerConfigBadSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testAddServerConfigBadSocketBindingGroupOverrideSlaveRollback() throws Exception {
+//    public void testAddServerConfigBadSocketBindingGroupOverrideSecondaryRollback() throws Exception {
 //        testAddServerConfigBadInfo(false, true, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
-    private void testAddServerConfigBadInfo(boolean master, boolean rollback, boolean badServerGroup, SocketBindingGroupOverrideType socketBindingGroupOverride) throws Exception {
+    private void testAddServerConfigBadInfo(boolean primary, boolean rollback, boolean badServerGroup, SocketBindingGroupOverrideType socketBindingGroupOverride) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-four"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -200,7 +200,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         }
 
         try {
-            operationContext.executeStep(ServerAddHandler.create(new MockHostControllerInfo(master), new ServerInventoryMock(), new ControlledProcessState(false), new File(System.getProperty("java.io.tmpdir"))), operation);
+            operationContext.executeStep(ServerAddHandler.create(new MockHostControllerInfo(primary), new ServerInventoryMock(), new ControlledProcessState(false), new File(System.getProperty("java.io.tmpdir"))), operation);
         } catch (RuntimeException e) {
             final Throwable t = e.getCause();
             if (t instanceof OperationFailedException) {
@@ -209,7 +209,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             throw e;
         }
 
-        if (master && (socketBindingGroupOverride == SocketBindingGroupOverrideType.BAD || badServerGroup)) {
+        if (primary && (socketBindingGroupOverride == SocketBindingGroupOverrideType.BAD || badServerGroup)) {
             Assert.fail();
         }
 
@@ -218,26 +218,26 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
 
     @Test
-    public void testRemoveServerConfigMaster() throws Exception {
+    public void testRemoveServerConfigPrimary() throws Exception {
         testRemoveServerConfig(true, false);
     }
 
     @Test
-    public void testRemoveServerConfigSlave() throws Exception {
+    public void testRemoveServerConfigSecondary() throws Exception {
         testRemoveServerConfig(false, false);
     }
 
     @Test
-    public void testRemoveServerConfigMasterRollback() throws Exception {
+    public void testRemoveServerConfigPrimaryRollback() throws Exception {
         testRemoveServerConfig(true, true);
     }
 
     @Test
-    public void testRemoveServerConfigSlaveRollback() throws Exception {
+    public void testRemoveServerConfigSecondaryRollback() throws Exception {
         testRemoveServerConfig(false, true);
     }
 
-    private void testRemoveServerConfig(boolean master, boolean rollback) throws Exception {
+    private void testRemoveServerConfig(boolean primary, boolean rollback) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -251,53 +251,53 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
     }
 
     @Test
-    public void testUpdateServerConfigServerGroupMaster() throws Exception {
+    public void testUpdateServerConfigServerGroupPrimary() throws Exception {
         testUpdateServerConfigServerGroup(true, false, false);
     }
 
     @Test
-    public void testUpdateServerConfigServerGroupSlave() throws Exception {
+    public void testUpdateServerConfigServerGroupSecondary() throws Exception {
         testUpdateServerConfigServerGroup(false, false, false);
 
     }
 
     @Test
-    public void testUpdateServerConfigServerGroupMasterRollback() throws Exception {
+    public void testUpdateServerConfigServerGroupPrimaryRollback() throws Exception {
         testUpdateServerConfigServerGroup(true, true, false);
 
     }
 
     @Test
-    public void testUpdateServerConfigServerGroupSlaveRollback() throws Exception {
+    public void testUpdateServerConfigServerGroupSecondaryRollback() throws Exception {
         testUpdateServerConfigServerGroup(false, true, false);
     }
 
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadServerGroupMaster() throws Exception {
+//    public void testUpdateServerConfigBadServerGroupPrimary() throws Exception {
 //        testUpdateServerConfigServerGroup(true, false, true);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadServerGroupSlave() throws Exception {
+//    public void testUpdateServerConfigBadServerGroupSecondary() throws Exception {
 //        testUpdateServerConfigServerGroup(false, false, true);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadServerGroupMasterRollback() throws Exception {
+//    public void testUpdateServerConfigBadServerGroupPrimaryRollback() throws Exception {
 //        testUpdateServerConfigServerGroup(true, true, true);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidServerGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadServerGroupSlaveRollback() throws Exception {
+//    public void testUpdateServerConfigBadServerGroupSecondaryRollback() throws Exception {
 //        testUpdateServerConfigServerGroup(false, true, true);
 //    }
 
-    private void testUpdateServerConfigServerGroup(boolean master, boolean rollback, boolean badGroup) throws Exception {
+    private void testUpdateServerConfigServerGroup(boolean primary, boolean rollback, boolean badGroup) throws Exception {
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
 
@@ -319,8 +319,8 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             throw e;
         }
 
-        if (master && badGroup) {
-            //master will throw an exception
+        if (primary && badGroup) {
+            //primary will throw an exception
             Assert.fail();
         }
 
@@ -328,73 +328,73 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
     }
 
     @Test
-    public void testUpdateServerConfigSocketBindingGroupMaster() throws Exception {
+    public void testUpdateServerConfigSocketBindingGroupPrimary() throws Exception {
         testUpdateServerConfigSocketBindingGroup(true, false, SocketBindingGroupOverrideType.GOOD);
     }
 
     @Test
-    public void testUpdateServerConfigSocketBindingGroupSlave() throws Exception {
+    public void testUpdateServerConfigSocketBindingGroupSecondary() throws Exception {
         testUpdateServerConfigSocketBindingGroup(false, false, SocketBindingGroupOverrideType.GOOD);
 
     }
 
     @Test
-    public void testUpdateServerConfigSocketBindingGroupMasterRollback() throws Exception {
+    public void testUpdateServerConfigSocketBindingGroupPrimaryRollback() throws Exception {
         testUpdateServerConfigSocketBindingGroup(true, true, SocketBindingGroupOverrideType.GOOD);
 
     }
 
     @Test
-    public void testUpdateServerConfigSocketBindingGroupSlaveRollback() throws Exception {
+    public void testUpdateServerConfigSocketBindingGroupSecondaryRollback() throws Exception {
         testUpdateServerConfigSocketBindingGroup(false, true, SocketBindingGroupOverrideType.GOOD);
     }
 
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadSocketBindingGroupMaster() throws Exception {
+//    public void testUpdateServerConfigBadSocketBindingGroupPrimary() throws Exception {
 //        testUpdateServerConfigSocketBindingGroup(true, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadSocketBindingGroupSlave() throws Exception {
+//    public void testUpdateServerConfigBadSocketBindingGroupSecondary() throws Exception {
 //        testUpdateServerConfigSocketBindingGroup(false, false, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadSocketBindingGroupMasterRollback() throws Exception {
+//    public void testUpdateServerConfigBadSocketBindingGroupPrimaryRollback() throws Exception {
 //        testUpdateServerConfigSocketBindingGroup(true, true, SocketBindingGroupOverrideType.BAD);
 //    }
 
 //    // WFCORE-833 moved to ServerConfigTestCase.testChangeServerGroupInvalidSocketBindingGroup()
 //    @Test(expected=OperationFailedException.class)
-//    public void testUpdateServerConfigBadSocketBindingGroupSlaveRollback() throws Exception {
+//    public void testUpdateServerConfigBadSocketBindingGroupSecondaryRollback() throws Exception {
 //        testUpdateServerConfigSocketBindingGroup(false, true, SocketBindingGroupOverrideType.BAD);
 //    }
 
     @Test
-    public void testUpdateServerConfigNoSocketBindingGroupMaster() throws Exception {
+    public void testUpdateServerConfigNoSocketBindingGroupPrimary() throws Exception {
         testUpdateServerConfigSocketBindingGroup(true, false, SocketBindingGroupOverrideType.NONE);
     }
 
     @Test
-    public void testUpdateServerConfigNoSocketBindingGroupSlave() throws Exception {
+    public void testUpdateServerConfigNoSocketBindingGroupSecondary() throws Exception {
         testUpdateServerConfigSocketBindingGroup(false, false, SocketBindingGroupOverrideType.NONE);
     }
 
     @Test
-    public void testUpdateServerConfigNoSocketBindingGroupMasterRollback() throws Exception {
+    public void testUpdateServerConfigNoSocketBindingGroupPrimaryRollback() throws Exception {
         testUpdateServerConfigSocketBindingGroup(true, true, SocketBindingGroupOverrideType.NONE);
     }
 
     @Test
-    public void testUpdateServerConfigNoSocketBindingGroupSlaveRollback() throws Exception {
+    public void testUpdateServerConfigNoSocketBindingGroupSecondaryRollback() throws Exception {
         testUpdateServerConfigSocketBindingGroup(false, true, SocketBindingGroupOverrideType.NONE);
     }
 
-    private void testUpdateServerConfigSocketBindingGroup(boolean master, boolean rollback, SocketBindingGroupOverrideType socketBindingGroupOverride) throws Exception {
+    private void testUpdateServerConfigSocketBindingGroup(boolean primary, boolean rollback, SocketBindingGroupOverrideType socketBindingGroupOverride) throws Exception {
 
         PathAddress pa = PathAddress.pathAddress(PathElement.pathElement(HOST, "localhost"), PathElement.pathElement(SERVER_CONFIG, "server-one"));
         final MockOperationContext operationContext = getOperationContext(rollback, pa);
@@ -424,8 +424,8 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
             throw e;
         }
 
-        if (master && socketBindingGroupOverride == SocketBindingGroupOverrideType.BAD) {
-            //master will throw an exception
+        if (primary && socketBindingGroupOverride == SocketBindingGroupOverrideType.BAD) {
+            //primary will throw an exception
             Assert.fail();
         }
 
@@ -438,9 +438,9 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
     }
 
     private static class MockHostControllerInfo implements LocalHostControllerInfo {
-        private final boolean master;
-        public MockHostControllerInfo(boolean master) {
-            this.master = master;
+        private final boolean primary;
+        public MockHostControllerInfo(boolean primary) {
+            this.primary = primary;
         }
 
         @Override
@@ -450,7 +450,7 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
 
         @Override
         public boolean isMasterDomainController() {
-            return master;
+            return primary;
         }
 
         @Override

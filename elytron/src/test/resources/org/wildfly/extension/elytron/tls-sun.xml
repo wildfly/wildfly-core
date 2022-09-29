@@ -25,12 +25,12 @@
     <tls>
         <key-stores>
             <key-store name="FireflyKeystore" >
-                <credential-reference store="test" alias="master-password-alias"/>
+                <credential-reference store="test" alias="primary-password-alias"/>
                 <implementation type="JKS" />
                 <file path="firefly.keystore" relative-to="jboss.server.config.dir"/>
             </key-store>
             <key-store name="LocalhostKeystore" >
-                <credential-reference store="test" alias="master-password-alias"/>
+                <credential-reference store="test" alias="primary-password-alias"/>
                 <implementation type="JKS" />
                 <file path="localhost.keystore" relative-to="jboss.server.config.dir" required="true"/>
             </key-store>

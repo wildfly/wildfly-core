@@ -61,7 +61,7 @@ public class SuggestCapabilitiesTestCase {
 
     private static final String HOST = "host";
 
-    private static final PathElement MASTER_HOST = PathElement.pathElement(HOST, "master");
+    private static final PathElement PRIMARY_HOST = PathElement.pathElement(HOST, "primary");
 
     // global
     private static final String GLOBAL = "global";
@@ -74,12 +74,12 @@ public class SuggestCapabilitiesTestCase {
 
     // server config
     private static final String SC_CAPABILITY_STATIC_NAME = "org.wildfly.sc";
-    private static final PathAddress SC_ALL = PathAddress.pathAddress(MASTER_HOST,
+    private static final PathAddress SC_ALL = PathAddress.pathAddress(PRIMARY_HOST,
             PathElement.pathElement(SERVER_CONFIG, "*"));
 
     // host
     private static final String HOST_CAPABILITY_STATIC_NAME = "org.wildfly.host";
-    private static final PathAddress HOST_ALL = PathAddress.pathAddress(MASTER_HOST,
+    private static final PathAddress HOST_ALL = PathAddress.pathAddress(PRIMARY_HOST,
             PathElement.pathElement(SUBSYSTEM, "*"));
 
     // socket-binding-group
@@ -145,10 +145,10 @@ public class SuggestCapabilitiesTestCase {
         sgs = registerMultipleCapabilities(reg, SG_CAPABILITY_STATIC_NAME,
                 (i) -> PathAddress.pathAddress(SERVER_GROUP, "ser:ver" + i));
         scs = registerMultipleCapabilities(reg, SC_CAPABILITY_STATIC_NAME,
-                (i) -> PathAddress.pathAddress(MASTER_HOST,
+                (i) -> PathAddress.pathAddress(PRIMARY_HOST,
                         PathElement.pathElement(SERVER_CONFIG, "conf" + i)));
         hosts = registerMultipleCapabilities(reg, HOST_CAPABILITY_STATIC_NAME,
-                (i) -> PathAddress.pathAddress(MASTER_HOST,
+                (i) -> PathAddress.pathAddress(PRIMARY_HOST,
                         PathElement.pathElement(SUBSYSTEM, "susbsystem" + i)));
         sbgs = registerMultipleCapabilities(reg, SBG_CAPABILITY_STATIC_NAME,
                 (i) -> PathAddress.pathAddress(SOCKET_BINDING_GROUP, "socket" + i));
@@ -191,14 +191,14 @@ public class SuggestCapabilitiesTestCase {
     private Set<String> suggestFromServerConfig(String cap) {
         return reg.getDynamicCapabilityNames(cap,
                 CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER,
-                        PathAddress.pathAddress(MASTER_HOST,
+                        PathAddress.pathAddress(PRIMARY_HOST,
                                 PathElement.pathElement(ModelDescriptionConstants.SERVER_CONFIG, "toto"))));
     }
 
     private Set<String> suggestFromHost(String cap) {
         return reg.getDynamicCapabilityNames(cap,
                 CapabilityScope.Factory.create(ProcessType.HOST_CONTROLLER,
-                        PathAddress.pathAddress(MASTER_HOST,
+                        PathAddress.pathAddress(PRIMARY_HOST,
                                 PathElement.pathElement(SUBSYSTEM, "toto"))));
     }
 

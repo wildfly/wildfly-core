@@ -78,7 +78,7 @@ public class ProxyOperationAddressTranslatorTestCase {
 
     @Test
     public void testServerRestore3() {
-        PathAddress pa = PathAddress.parseCLIStyleAddress("/host=slave/server=*/subsystem=logging");
+        PathAddress pa = PathAddress.parseCLIStyleAddress("/host=secondary/server=*/subsystem=logging");
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/subsystem=logging", translated.toCLIStyleString());
@@ -88,7 +88,7 @@ public class ProxyOperationAddressTranslatorTestCase {
 
     @Test
     public void testServerRestore4() {
-        PathAddress pa = PathAddress.parseCLIStyleAddress("/host=slave/server=server-one/subsystem=*");
+        PathAddress pa = PathAddress.parseCLIStyleAddress("/host=secondary/server=server-one/subsystem=*");
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/subsystem=*", translated.toCLIStyleString());
@@ -112,47 +112,47 @@ public class ProxyOperationAddressTranslatorTestCase {
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/subsystem=logging", translated.toCLIStyleString());
-        PathAddress resultAddress = PathAddress.parseCLIStyleAddress("/host=master/server=server-one/subsystem=logging");
+        PathAddress resultAddress = PathAddress.parseCLIStyleAddress("/host=primary/server=server-one/subsystem=logging");
         PathAddress restoredPath = ProxyOperationAddressTranslator.SERVER.restoreAddress(resultAddress, translated);
         Assert.assertEquals(resultAddress, restoredPath);
     }
 
     @Test
     public void testServerRestore7() {
-        ModelNode node = createOpNode("host=slave/server=*/subsystem=1", READ_RESOURCE_OPERATION);
+        ModelNode node = createOpNode("host=secondary/server=*/subsystem=1", READ_RESOURCE_OPERATION);
         PathAddress pa = PathAddress.pathAddress(node.get(OP_ADDR));
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/subsystem=1", translated.toCLIStyleString());
         PathAddress resultAddress = PathAddress.parseCLIStyleAddress("/server=server-one/subsystem=1");
         PathAddress restoredPath = ProxyOperationAddressTranslator.SERVER.restoreAddress(pa, resultAddress);
-        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=slave/server=server-one/subsystem=1");
+        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=secondary/server=server-one/subsystem=1");
         Assert.assertEquals(resolvedResultAddress, restoredPath);
     }
 
     @Test
     public void testServerRestore8() {
-        ModelNode node = createOpNode("host=slave/server=*/subsystem=*", READ_RESOURCE_OPERATION);
+        ModelNode node = createOpNode("host=secondary/server=*/subsystem=*", READ_RESOURCE_OPERATION);
         PathAddress pa = PathAddress.pathAddress(node.get(OP_ADDR));
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/subsystem=*", translated.toCLIStyleString());
         PathAddress resultAddress = PathAddress.parseCLIStyleAddress("/server=server-one/subsystem=1");
         PathAddress restoredPath = ProxyOperationAddressTranslator.SERVER.restoreAddress(pa, resultAddress);
-        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=slave/server=server-one/subsystem=1");
+        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=secondary/server=server-one/subsystem=1");
         Assert.assertEquals(resolvedResultAddress, restoredPath);
     }
 
     @Test
     public void testServerRestore9() {
-        ModelNode node = createOpNode("host=master/server=server-one/socket-binding-group=*/socket-binding=*", READ_RESOURCE_OPERATION);
+        ModelNode node = createOpNode("host=primary/server=server-one/socket-binding-group=*/socket-binding=*", READ_RESOURCE_OPERATION);
         PathAddress pa = PathAddress.pathAddress(node.get(OP_ADDR));
         Assert.assertTrue(pa.isMultiTarget());
         PathAddress translated = ProxyOperationAddressTranslator.SERVER.translateAddress(pa);
         Assert.assertEquals("/socket-binding-group=*/socket-binding=*", translated.toCLIStyleString());
         PathAddress resultAddress = PathAddress.parseCLIStyleAddress("/socket-binding-group=full-sockets/socket-binding=https");
         PathAddress restoredPath = ProxyOperationAddressTranslator.SERVER.restoreAddress(pa, resultAddress);
-        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=master/server=server-one/socket-binding-group=full-sockets/socket-binding=https");
+        PathAddress resolvedResultAddress = PathAddress.parseCLIStyleAddress("/host=primary/server=server-one/socket-binding-group=full-sockets/socket-binding=https");
         Assert.assertEquals(resolvedResultAddress, restoredPath);
     }
 

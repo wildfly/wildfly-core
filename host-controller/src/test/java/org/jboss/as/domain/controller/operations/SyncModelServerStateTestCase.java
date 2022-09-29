@@ -106,9 +106,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Port of ApplyRemoteMasterDomainModelHandler to work with syncing using the operations.
- * SlaveReconnectTestCase contains other tests relevant to this. If maintaining all the mocks
- * for this test becomes too cumbersome, they should be ported to SlaveReconnectTestCase in the
+ * Port of ApplyRemotePrimaryDomainModelHandler to work with syncing using the operations.
+ * SecondaryReconnectTestCase contains other tests relevant to this. If maintaining all the mocks
+ * for this test becomes too cumbersome, they should be ported to SecondaryReconnectTestCase in the
  * domain testsuite.
  *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
@@ -128,7 +128,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
     private volatile TestSyncRepository repository = new TestSyncRepository();
 
     public SyncModelServerStateTestCase() {
-        super("slave", ProcessType.HOST_CONTROLLER, true);
+        super("secondary", ProcessType.HOST_CONTROLLER, true);
         ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
         serverProxies = new HashMap<>();
         serverProxies.put("server-one", new MockServerProxy("server-one"));
@@ -164,12 +164,12 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
 
     @Test
     public void testLegacyModelSync() throws Exception {
-        Resource masterRootResource = rootResource.clone();
-        masterRootResource.getModel().get(PRODUCT_NAME).set("WildFly Core Test");
-        masterRootResource.getModel().get(PRODUCT_VERSION).set("test 2.0");
+        Resource primaryRootResource = rootResource.clone();
+        primaryRootResource.getModel().get(PRODUCT_NAME).set("WildFly Core Test");
+        primaryRootResource.getModel().get(PRODUCT_VERSION).set("test 2.0");
         Assert.assertFalse(rootResource.getModel().hasDefined(PRODUCT_NAME));
         Assert.assertFalse(rootResource.getModel().hasDefined(PRODUCT_VERSION));
-        executeTriggerSyncOperation(masterRootResource);
+        executeTriggerSyncOperation(primaryRootResource);
         Assert.assertTrue(rootResource.getModel().hasDefined(PRODUCT_NAME));
         Assert.assertEquals("WildFly Core Test", rootResource.getModel().get(PRODUCT_NAME).asString());
         Assert.assertTrue(rootResource.getModel().hasDefined(PRODUCT_VERSION));
@@ -704,7 +704,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
         @Override
         public void setDelegate() {
             final ExtensibleConfigurationPersister configurationPersister = new EmptyConfigurationPersister();
-            final boolean isMaster = false;
+            final boolean isPrimary = false;
             final IgnoredDomainResourceRegistry ignoredDomainResourceRegistry = new IgnoredDomainResourceRegistry(hostControllerInfo);
             final PathManagerService pathManager = new HostPathManagerService(capabilityRegistry);
             final DelegatingConfigurableAuthorizer authorizer = new DelegatingConfigurableAuthorizer();
@@ -718,7 +718,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
                 }
             };
             DomainRootDefinition domain = new DomainRootDefinition(domainController, hostControllerEnvironment, configurationPersister,
-                    repository, repository, isMaster, hostControllerInfo, extensionRegistry, ignoredDomainResourceRegistry,
+                    repository, repository, isPrimary, hostControllerInfo, extensionRegistry, ignoredDomainResourceRegistry,
                     pathManager, authorizer, securityIdentitySupplier, hostRegistrations, domainHostExcludeRegistry, rootResourceRegistrationProvider);
             getDelegatingResourceDefiniton().setDelegate(domain);
 

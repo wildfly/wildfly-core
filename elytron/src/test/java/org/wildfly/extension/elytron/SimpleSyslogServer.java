@@ -40,7 +40,7 @@ import org.xnio.IoUtils;
  * Simple Syslog server implementation for testing Syslog audit logging
  *
  * @author <a href="mailto:jucook@redhat.com">Justin Cook</a>
- * Based on the <a href="https://github.com/wildfly/wildfly-core/blob/master/domain-management/src/test/java/org/jboss/as/domain/management/security/auditlog/SimpleSyslogServer.java">wildfly-core domain-management implementation</a> by <a href="mailto:kkhan@redhat.com">Kabir Khan</a>
+ * Based on the <a href="https://github.com/wildfly/wildfly-core/blob/primary/domain-management/src/test/java/org/jboss/as/domain/management/security/auditlog/SimpleSyslogServer.java">wildfly-core domain-management implementation</a> by <a href="mailto:kkhan@redhat.com">Kabir Khan</a>
  */
 public abstract class SimpleSyslogServer implements Runnable {
 
