@@ -15,9 +15,6 @@
  */
 package org.jboss.as.test.integration.domain;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import java.util.concurrent.Future;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -83,26 +80,14 @@ public class ReadOnlyModeTestCase {
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
 
         // reload master HC
-        op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(OP).set("reload");
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainMasterLifecycleUtil.reload("primary");
 
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
 
         // reload slave HC
-        op = new ModelNode();
-        op.get(OP_ADDR).add(HOST, "secondary");
-        op.get(OP).set("reload");
-        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(op);
-        // Try to reconnect to the hc
-        domainSlaveLifecycleUtil.connect();
-        domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainSlaveLifecycleUtil.reload("secondary");
 
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
         Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());

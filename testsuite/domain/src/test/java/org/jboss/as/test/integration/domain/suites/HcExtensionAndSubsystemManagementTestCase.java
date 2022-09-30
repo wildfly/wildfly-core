@@ -34,7 +34,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.POR
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PROFILE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
@@ -513,12 +512,7 @@ public class HcExtensionAndSubsystemManagementTestCase {
         DomainClient client = util.getDomainClient();
         String state = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(address, HOST_STATE), client).asString();
         if (!state.equals("running")) {
-            ModelNode reload = Util.createEmptyOperation("reload", address);
-            reload.get(RESTART_SERVERS).set(false);
-            util.executeAwaitConnectionClosed(reload);
-            util.connect();
-            util.awaitHostController(System.currentTimeMillis());
-            awaitServers(util, address.getLastElement().getValue());
+            util.reload(address.toString(), false, true);
             return true;
         }
         return false;

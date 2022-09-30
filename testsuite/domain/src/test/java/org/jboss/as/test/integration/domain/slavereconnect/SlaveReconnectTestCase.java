@@ -153,11 +153,7 @@ public class SlaveReconnectTestCase {
             }
 
             //Restart the DC as admin-only
-            ModelNode restartAdminOnly = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "primary"));
-            restartAdminOnly.get("admin-only").set(true);
-            domainMasterLifecycleUtil.executeAwaitConnectionClosed(restartAdminOnly);
-            domainMasterLifecycleUtil.connect();
-            domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+            domainMasterLifecycleUtil.reloadAdminOnly("primary");
             masterClient = domainMasterLifecycleUtil.createDomainClient();
 
             for (ReconnectTestScenario scenario : scenarios) {
@@ -165,10 +161,7 @@ public class SlaveReconnectTestCase {
             }
 
             //Restart the DC as normal
-            restartAdminOnly.get("admin-only").set(false);
-            domainMasterLifecycleUtil.executeAwaitConnectionClosed(restartAdminOnly);
-            domainMasterLifecycleUtil.connect();
-            domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
+            domainMasterLifecycleUtil.reload("primary", null, false);
             masterClient = domainMasterLifecycleUtil.createDomainClient();
 
             //Wait for the slave to reconnect, look for the slave in the list of hosts

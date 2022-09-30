@@ -278,15 +278,8 @@ public class HttpManagementConstantHeadersTestCase {
    }
 
    private void reload() throws IOException, TimeoutException, InterruptedException {
-      ModelNode reload = new ModelNode();
-      reload.get(OP_ADDR).add(HOST, "primary");
-      reload.get(OP).set(RELOAD);
-      reload.get(ADMIN_ONLY).set(false);
-      domainMasterLifecycleUtil.executeAwaitConnectionClosed(reload);
+      domainMasterLifecycleUtil.reload("primary", null, true);
 
-      domainMasterLifecycleUtil.connect();
-      domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
-      domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
       domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
       domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
    }

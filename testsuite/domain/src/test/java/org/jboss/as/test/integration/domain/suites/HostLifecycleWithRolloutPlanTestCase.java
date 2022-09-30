@@ -23,7 +23,6 @@
 package org.jboss.as.test.integration.domain.suites;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADMIN_ONLY;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HASH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -235,16 +234,8 @@ public class HostLifecycleWithRolloutPlanTestCase {
     }
 
     private void reloadMaster() throws IOException {
-        ModelNode op = new ModelNode();
-        op.get(OP).set("reload");
-        op.get(OP_ADDR).add(HOST, "primary");
-        op.get(ADMIN_ONLY).set(false);
-        domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
-        // Try to reconnect to the hc
-        domainMasterLifecycleUtil.connect();
         try {
-            domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-            domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+            domainMasterLifecycleUtil.reload("primary", null, true);
         } catch (InterruptedException | TimeoutException e) {
             throw new RuntimeException("Failed waiting for host controller and servers to start.", e);
         }

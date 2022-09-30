@@ -38,7 +38,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOTE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESTART_SERVERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
@@ -95,11 +94,7 @@ public class IgnoredResourcesTestCase {
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
 
-        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
-        restartSlave.get(RESTART_SERVERS).set(false);
-        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
-        domainSlaveLifecycleUtil.connect();
-        domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainSlaveLifecycleUtil.reload("secondary", false, false);
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
@@ -124,11 +119,7 @@ public class IgnoredResourcesTestCase {
         }
         DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
 
-        ModelNode restartSlave = Util.createEmptyOperation("reload", PathAddress.pathAddress(HOST, "secondary"));
-        restartSlave.get(RESTART_SERVERS).set(false);
-        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(restartSlave);
-        domainSlaveLifecycleUtil.connect();
-        domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainSlaveLifecycleUtil.reload("secondary", false, false);
 
         domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
         domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
