@@ -55,11 +55,13 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     final ManagementResourceRegistration mutableRegistration;
     final Resource resource;
     final CapabilityServiceSupport capabilityServiceSupport;
+    private final Consumer<DeploymentUnit> deploymentUnitConsumer;
     private volatile DeploymentUnitPhaseBuilder phaseBuilder = null;
     private volatile DeploymentUnit deploymentUnit;
     private volatile StabilityMonitor monitor;
 
-    AbstractDeploymentUnitService(final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport) {
+    AbstractDeploymentUnitService(final Consumer<DeploymentUnit> deploymentUnitConsumer, final ImmutableManagementResourceRegistration registration, final ManagementResourceRegistration mutableRegistration, final Resource resource, final CapabilityServiceSupport capabilityServiceSupport) {
+        this.deploymentUnitConsumer = deploymentUnitConsumer;
         this.mutableRegistration = mutableRegistration;
         this.capabilityServiceSupport = capabilityServiceSupport;
         this.registration = registration;
@@ -106,6 +108,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
         } else {
             installer.accept(context);
         }
+        deploymentUnitConsumer.accept(deploymentUnit);
     }
 
     /**
@@ -119,6 +122,7 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
 
     @Override
     public synchronized void stop(final StopContext context) {
+        deploymentUnitConsumer.accept(null);
         final String deploymentName = context.getController().getName().getSimpleName();
         final String managementName = deploymentUnit.getAttachment(Attachments.MANAGEMENT_NAME);
         if (deploymentUnit.getParent()==null) {
@@ -144,7 +148,6 @@ public abstract class AbstractDeploymentUnitService implements Service<Deploymen
     private Set<AttachmentKey<?>> getDeploymentUnitAttachmentKeys() {
         return ((SimpleAttachable) this.deploymentUnit).attachmentKeys();
     }
-
     public synchronized DeploymentUnit getValue() throws IllegalStateException, IllegalArgumentException {
         return deploymentUnit;
     }
