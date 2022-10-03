@@ -119,7 +119,7 @@ public class ZipUtils {
             final String name = entry.getName();
             final File current = new File(patchDir, name);
             final String canonicalDestinationPath = current.getCanonicalPath();
-            if (! canonicalDestinationPath.startsWith(patchDir.getCanonicalPath())) {
+            if (! current.getCanonicalFile().toPath().startsWith(patchDir.getCanonicalFile().toPath())) {
                 throw PatchLogger.ROOT_LOGGER.entryOutsideOfPatchDirectory(canonicalDestinationPath);
             }
             if (entry.isDirectory()) {
