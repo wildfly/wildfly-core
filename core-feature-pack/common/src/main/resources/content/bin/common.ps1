@@ -165,6 +165,8 @@ Param(
               }
         }
         # Set default modular jdk options
+        # Needed by the clustering subsystem (uses Virtual threads)
+        $DEFAULT_MODULAR_JVM_OPTIONS += "--enable-preview"
         # Needed by the iiop-openjdk subsystem
         $DEFAULT_MODULAR_JVM_OPTIONS += "--add-exports=java.desktop/sun.awt=ALL-UNNAMED"
         # Needed to instantiate the default InitialContextFactory implementation used by the

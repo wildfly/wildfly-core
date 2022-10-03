@@ -150,6 +150,7 @@ public class JvmOptionsBuilderUnitTestCase {
     public void testJDK9Params() {
         JvmElement element = JvmElementTestUtils.create(JvmType.ORACLE);
 
+        element.getJvmOptions().addOption("--enable-preview");
         element.getJvmOptions().addOption("--add-exports=java.base/sun.nio.ch=ALL-UNNAMED");
         element.getJvmOptions().addOption("--add-opens=java.base/sun.nio.ch=ALL-UNNAMED");
         element.getJvmOptions().addOption("--add-reads=java.base/sun.nio.ch=ALL-UNNAMED");
@@ -159,7 +160,7 @@ public class JvmOptionsBuilderUnitTestCase {
         if (JvmElement.getJVMMajorVersion() < 9) {
             Assert.assertEquals(0, command.size());
         } else {
-            Assert.assertEquals(4, command.size());
+            Assert.assertEquals(5, command.size());
         }
     }
 

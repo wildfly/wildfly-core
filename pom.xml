@@ -85,6 +85,7 @@
         <!-- Standard client-side JPMS settings identified as meeting
              the needs of WildFly libraries meant for use in clients. -->
         <standard.client.modular.jdk.args>
+            --enable-preview
             --add-exports=java.desktop/sun.awt=ALL-UNNAMED
             --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED
             --add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED

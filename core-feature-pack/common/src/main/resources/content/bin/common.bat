@@ -37,6 +37,8 @@ goto :eof
     echo "%~1" | findstr /I "\-\-add\-modules" > nul
     if errorlevel == 1 (
       rem Set default modular jdk options
+      rem Needed by the clustering subsystem (uses Virtual threads)
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --enable-preview"
       rem Needed by the iiop-openjdk subsystem
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.desktop/sun.awt=ALL-UNNAMED"
       rem Needed to instantiate the default InitialContextFactory implementation used by the

@@ -37,7 +37,7 @@ import org.wildfly.common.Assert;
  */
 public final class JvmOptionsBuilderFactory {
 
-    private static final List<String> MODULAR_JVM_PARAMS = Arrays.asList("--add-exports", "--add-opens", "--add-modules", "--add-reads", "--illegal-access");
+    private static final List<String> MODULAR_JVM_PARAMS = Arrays.asList("--add-exports", "--add-opens", "--add-modules", "--add-reads", "--enable-preview", "--illegal-access");
     private final JvmType jvmType;
 
     private JvmOptionsBuilderFactory(final JvmType jvmType) {

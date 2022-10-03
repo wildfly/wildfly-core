@@ -58,6 +58,7 @@ public final class JvmType {
         final ArrayList<String> modularJavaOpts = new ArrayList<>();
         // Additions to these should include good explanations why in the relevant JIRA
         // Keep them alphabetical to avoid the code history getting confused by reordering commits
+        modularJavaOpts.add("--enable-preview");
         modularJavaOpts.add("--add-exports=java.desktop/sun.awt=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
         modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED");

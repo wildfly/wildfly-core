@@ -268,6 +268,7 @@ public class CommandBuilderTest {
 
     private void testJPMSArguments(final Collection<String> command, final int expectedCount) {
         // Check exports and opens
+        assertArgumentExists(command, "--enable-preview", expectedCount);
         assertArgumentExists(command, "--add-exports=java.desktop/sun.awt=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED", expectedCount);
         assertArgumentExists(command, "--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED", expectedCount);
