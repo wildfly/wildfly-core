@@ -25,6 +25,7 @@ package org.jboss.as.controller.audit;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import org.jboss.as.controller.services.path.PathManagerService;
 import org.junit.After;
@@ -73,10 +74,7 @@ public class FileAuditLogHandlerUnitTestCase {
 
     private static File createTempDir() {
         try {
-            File tempFile = File.createTempFile("test-config", "");
-            if (!tempFile.delete() || !tempFile.mkdir()) {
-                throw new IOException("Couldn't create temp directory.");
-            }
+            File tempFile = Files.createTempDirectory("test-config").toFile();
             return tempFile;
         } catch (Exception e) {
             throw new RuntimeException("Couldn't create temp directory.", e);
