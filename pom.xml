@@ -172,6 +172,7 @@
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-lang3>3.11</version.commons-lang3>
         <version.io.undertow>2.2.19.Final</version.io.undertow>
+        <version.io.undertow.SP2>2.2.19.SP2-redhat-00001</version.io.undertow.SP2>
         <version.jakarta.inject.jakarta.inject-api>1.0.5</version.jakarta.inject.jakarta.inject-api>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
         <version.javax.xml.bind.jaxb-api>2.4.0-b180830.0359</version.javax.xml.bind.jaxb-api>
@@ -745,7 +746,7 @@
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-core</artifactId>
-                <version>${version.io.undertow}</version>
+                <version>${version.io.undertow.SP2}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.threads</groupId>
@@ -764,7 +765,7 @@
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-servlet</artifactId>
-                <version>${version.io.undertow}</version>
+                <version>${version.io.undertow.SP2}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.threads</groupId>
@@ -798,7 +799,7 @@
             <dependency>
                 <groupId>io.undertow</groupId>
                 <artifactId>undertow-websockets-jsr</artifactId>
-                <version>${version.io.undertow}</version>
+                <version>${version.io.undertow.SP2}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.jboss.threads</groupId>
