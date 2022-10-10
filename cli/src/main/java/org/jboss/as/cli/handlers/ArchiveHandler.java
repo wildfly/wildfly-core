@@ -163,6 +163,9 @@ public class ArchiveHandler extends BatchModeCommandHandler {
             for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
                 JarEntry entry = entries.nextElement();
                 File file = new File(tempDir, entry.getName());
+                if (!file.toPath().normalize().startsWith(tempDir.toPath().normalize())) {
+                    throw new IOException("Bad zip entry");
+                }
                 if (entry.isDirectory()) {
                     file.mkdir();
                     continue;
