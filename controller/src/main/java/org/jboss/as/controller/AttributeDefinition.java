@@ -84,9 +84,7 @@ public abstract class AttributeDefinition {
     private final ParameterCorrector valueCorrector;
     private final ParameterValidator validator;
     private final Set<AttributeAccess.Flag> flags;
-    /** @deprecated use {@link #getMarshaller()} as this will be made private in a future release*/
-    @Deprecated
-    protected final AttributeMarshaller attributeMarshaller;
+    private final AttributeMarshaller attributeMarshaller;
     private final boolean resourceOnly;
     private final DeprecationData deprecationData;
     private final List<AccessConstraintDefinition> accessConstraints;
@@ -94,9 +92,7 @@ public abstract class AttributeDefinition {
     private final AttributeParser parser;
     private final String attributeGroup;
     private final ModelNode undefinedMetricValue;
-    /** @deprecated use {@link #getReferenceRecorder()} ()} as this will be made private in a future release*/
-    @Deprecated
-    protected final CapabilityReferenceRecorder referenceRecorder;
+    private final CapabilityReferenceRecorder referenceRecorder;
     private final Map<String, ModelNode> arbitraryDescriptors;
 
     // NOTE: Standards for creating a constructor variant are:
@@ -110,7 +106,7 @@ public abstract class AttributeDefinition {
                 toCopy.isAllowNull(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
                 wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
                         toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
-                true, toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
+                toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
                 wrapConstraints(toCopy.getAccessConstraints()), toCopy.getNullSignificant(), toCopy.getParser(),
                 toCopy.getAttributeGroup(), toCopy.getCapabilityReferenceRecorder(), toCopy.getAllowedValues(), toCopy.getArbitraryDescriptors(),
@@ -119,7 +115,7 @@ public abstract class AttributeDefinition {
 
     private AttributeDefinition(String name, String xmlName, final ModelNode defaultValue, final ModelType type,
                                 final boolean allowNull, final boolean allowExpression, final MeasurementUnit measurementUnit,
-                                final ParameterCorrector valueCorrector, final ParameterValidator validator, final boolean validateNull,
+                                final ParameterCorrector valueCorrector, final ParameterValidator validator,
                                 final String[] alternatives, final String[] requires, AttributeMarshaller marshaller,
                                 boolean resourceOnly, DeprecationData deprecationData, final List<AccessConstraintDefinition> accessConstraints,
                                 Boolean nilSignificant, AttributeParser parser, final String attributeGroup, CapabilityReferenceRecorder referenceRecorder,
@@ -143,7 +139,6 @@ public abstract class AttributeDefinition {
         this.valueCorrector = valueCorrector;
         this.validator = validator;
         this.flags = flags;
-        //noinspection deprecation
         this.attributeMarshaller = marshaller != null ? marshaller : AttributeMarshaller.SIMPLE;
         this.resourceOnly = resourceOnly;
         this.accessConstraints = accessConstraints;
@@ -157,7 +152,6 @@ public abstract class AttributeDefinition {
         } else {
             this.undefinedMetricValue = null;
         }
-        //noinspection deprecation
         this.referenceRecorder = referenceRecorder;
         if (arbitraryDescriptors != null && !arbitraryDescriptors.isEmpty()) {
             if (arbitraryDescriptors.size() == 1) {
@@ -210,7 +204,7 @@ public abstract class AttributeDefinition {
 
     private static List<AccessConstraintDefinition> wrapConstraints(AccessConstraintDefinition[] accessConstraints) {
         if (accessConstraints == null || accessConstraints.length == 0) {
-            return Collections.<AccessConstraintDefinition>emptyList();
+            return Collections.emptyList();
         } else {
             return Collections.unmodifiableList(Arrays.asList(accessConstraints));
         }
@@ -1047,11 +1041,10 @@ public abstract class AttributeDefinition {
      * This is a no-op in this base class. Subclasses that support attribute types that can represent
      * capability references should override this method.
      *  @param context the operation context
-     * @param resource
+     * @param resource  the resource on which requirements are gathered
      * @param attributeValue the value of the attribute described by this object
      */
     public void addCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
-        @SuppressWarnings("deprecation")
         CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
         if (refRecorder != null) {
             // We can't process expressions
@@ -1092,7 +1085,6 @@ public abstract class AttributeDefinition {
      * @param attributeValue the value of the attribute described by this object
      */
     public void removeCapabilityRequirements(OperationContext context, Resource resource, ModelNode attributeValue) {
-        @SuppressWarnings("deprecation")
         CapabilityReferenceRecorder refRecorder = getReferenceRecorder();
         if (refRecorder != null) {
             // We can't process expressions
@@ -1110,14 +1102,13 @@ public abstract class AttributeDefinition {
      * <p>
      * This is a no-op in this base class. Subclasses that support attribute types that can represent
      * capability references should override this method.
-     * @return
+     * @return {@code true} if this definition is for an attribute whose value is or contains a reference to the name of some capability
      */
     public boolean hasCapabilityRequirements(){
         return getReferenceRecorder() != null;
     }
 
     protected CapabilityReferenceRecorder getReferenceRecorder(){
-        //noinspection deprecation
         return referenceRecorder;
     }
 
@@ -1240,7 +1231,6 @@ public abstract class AttributeDefinition {
      * @return attribute marshaller that can be used to persist attribute to XML
      */
     public AttributeMarshaller getMarshaller() {
-        //noinspection deprecation
         return attributeMarshaller;
     }
 
