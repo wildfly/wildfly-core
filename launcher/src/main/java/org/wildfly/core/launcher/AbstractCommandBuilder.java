@@ -67,6 +67,7 @@ abstract class AbstractCommandBuilder<T extends AbstractCommandBuilder<T>> imple
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED");
             modularJavaOpts.add("--add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED");
+            modularJavaOpts.add("--add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang.invoke=ALL-UNNAMED");
             modularJavaOpts.add("--add-opens=java.base/java.lang.reflect=ALL-UNNAMED");
