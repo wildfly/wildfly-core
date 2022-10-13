@@ -18,6 +18,7 @@ package org.wildfly.core.jar.boot;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
@@ -210,6 +211,9 @@ public final class Main {
             while (ze != null) {
                 String fileName = ze.getName();
                 Path newFile = dir.resolve(fileName);
+                if (!newFile.normalize().startsWith(dir.normalize())) {
+                    throw new IOException("Bad zip entry");
+                }
                 if (ze.isDirectory()) {
                     Files.createDirectories(newFile);
                 } else {
