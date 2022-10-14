@@ -41,7 +41,7 @@
 
     <properties>
         <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
-        <version.com.fasterxml.jackson.databind>2.13.4</version.com.fasterxml.jackson.databind>
+        <version.com.fasterxml.jackson.databind>${version.com.fasterxml.jackson}.1</version.com.fasterxml.jackson.databind>
         <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.77.Final</version.io.netty>
         <version.jakarta.inject.jakarta.inject-api>2.0.1</version.jakarta.inject.jakarta.inject-api>
