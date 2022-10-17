@@ -167,6 +167,15 @@
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.security\.elytron\-web/undertow\-server@.*$</packageUrl>
         <cve>CVE-2022-2053</cve>
     </suppress>
+	
+	<!-- False positive, this vulnerability affects module used in wildfly tests only -->
+	<suppress>
+		<notes><![CDATA[
+		file name: commons-text-1.8.jar
+		]]></notes>
+		<packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-text@.*$</packageUrl>
+		<vulnerabilityName>CVE-2022-42889</vulnerabilityName>
+	</suppress>
 
     <!-- Suppression after commit https://github.com/PSI-Polska/wildfly/commit/f73161c76990618cf723c7f30118f12fa21af99a -->
     <suppress>
