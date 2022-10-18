@@ -29,9 +29,9 @@
         <version>19.0.0.Final-SNAPSHOT</version>
     </parent>
 
-    <artifactId>wildfly-elytron-integration-jakarta</artifactId>
+    <artifactId>wildfly-elytron-integration</artifactId>
 
-    <name>WildFly: WildFly Elytron Subsystem (Jakarta Namespace)</name>
+    <name>WildFly: WildFly Elytron Subsystem</name>
 
     <properties>
         <transformer-input-dir>${project.basedir}/../../elytron</transformer-input-dir>
