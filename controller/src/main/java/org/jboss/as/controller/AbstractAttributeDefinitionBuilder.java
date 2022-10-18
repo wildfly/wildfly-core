@@ -93,7 +93,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
      * Creates a builder for an attribute with the give name and type and nullability setting.
      * @param attributeName the {@link AttributeDefinition#getName() name} of the attribute. Cannot be {@code null}
      * @param type the {@link AttributeDefinition#getType() type} of the attribute. Cannot be {@code null}
-     * @param optional {@code true} if the attribute {@link AttributeDefinition#isAllowNull() allows undefined values} in the absence of {@link #setAlternatives(String...) alternatives}
+     * @param optional {@code true} if the attribute {@link AttributeDefinition#isNillable() allows undefined values} in the absence of {@link #setAlternatives(String...) alternatives}
      */
     public AbstractAttributeDefinitionBuilder(final String attributeName, final ModelType type, final boolean optional) {
         this.name = attributeName;
@@ -124,7 +124,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         this.xmlName = basis.getXmlName();
         this.defaultValue = basis.getDefaultValue();
         this.type = basis.getType();
-        this.allowNull = basis.isAllowNull();
+        this.allowNull = basis.isNillable();
         this.allowExpression = basis.isAllowExpression();
         this.measurementUnit = basis.getMeasurementUnit();
         this.corrector = basis.getCorrector();
@@ -187,7 +187,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
 
     /**
      * Inverse of the preferred {@link #setRequired(boolean)}; sets whether the attribute should
-     * {@link AttributeDefinition#isAllowNull() allow undefined values}
+     * {@link AttributeDefinition#isNillable() allow undefined values}
      * in the absence of {@link #setAlternatives(String...) alternatives}.
      * If not set the default value is the value provided to the builder constructor, or {@code false}
      * if no value is provided.
@@ -252,7 +252,7 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     /**
      * Sets the validator that should be used to validate attribute values. The resulting attribute definition
      * will wrap this validator in one that enforces the attribute's
-     * {@link AttributeDefinition#isAllowNull() allow null} and
+     * {@link AttributeDefinition#isNillable() allow null} and
      * {@link AttributeDefinition#isAllowExpression() allow expression} settings, so the given {@code validator}
      * need not be properly configured for those validations.
      * @param validator the validator. {@code null} is allowed
@@ -878,6 +878,11 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return xmlName;
     }
 
+    public boolean isNillable() {
+        return allowNull;
+    }
+
+    @Deprecated
     public boolean isAllowNull() {
         return allowNull;
     }

@@ -103,8 +103,8 @@ public abstract class AttributeDefinition {
 
     protected AttributeDefinition(AbstractAttributeDefinitionBuilder<?, ?> toCopy) {
         this(toCopy.getName(), toCopy.getXmlName(), toCopy.getDefaultValue(), toCopy.getType(),
-                toCopy.isAllowNull(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
-                wrapValidator(toCopy.getValidator(), toCopy.isAllowNull(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
+                toCopy.isNillable(), toCopy.isAllowExpression(), toCopy.getMeasurementUnit(), toCopy.getCorrector(),
+                wrapValidator(toCopy.getValidator(), toCopy.isNillable(), toCopy.getAlternatives(), toCopy.isAllowExpression(),
                         toCopy.getType(), toCopy.getConfiguredMinSize(), toCopy.getConfiguredMaxSize()),
                 toCopy.getAlternatives(), toCopy.getRequires(), toCopy.getAttributeMarshaller(),
                 toCopy.isResourceOnly(), toCopy.getDeprecated(),
