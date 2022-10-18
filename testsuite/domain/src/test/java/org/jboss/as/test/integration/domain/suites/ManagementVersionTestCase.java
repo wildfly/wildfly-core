@@ -46,52 +46,52 @@ import org.junit.Test;
 public class ManagementVersionTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ManagementVersionTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Test
     public void testDomainRootResource() throws Exception  {
-        rootResourceTest(null, domainMasterLifecycleUtil.getDomainClient());
+        rootResourceTest(null, domainPrimaryLifecycleUtil.getDomainClient());
     }
 
     @Test
-    public void testMasterHostRootResource() throws Exception  {
-        rootResourceTest("host=primary", domainMasterLifecycleUtil.getDomainClient());
+    public void testPrimaryHostRootResource() throws Exception  {
+        rootResourceTest("host=primary", domainPrimaryLifecycleUtil.getDomainClient());
     }
 
     @Test
-    public void testSlaveHostRootResource() throws Exception  {
-        rootResourceTest("host=secondary", domainSlaveLifecycleUtil.getDomainClient());
+    public void testSecondaryHostRootResource() throws Exception  {
+        rootResourceTest("host=secondary", domainSecondaryLifecycleUtil.getDomainClient());
     }
 
     @Test
     public void testDomainExtensions() throws Exception {
-        extensionsTest(null, domainMasterLifecycleUtil.getDomainClient());
+        extensionsTest(null, domainPrimaryLifecycleUtil.getDomainClient());
     }
 
     @Test
-    public void testMasterServerExtensions() throws Exception {
-        extensionsTest("host=primary/server=main-one", domainMasterLifecycleUtil.getDomainClient());
+    public void testPrimaryServerExtensions() throws Exception {
+        extensionsTest("host=primary/server=main-one", domainPrimaryLifecycleUtil.getDomainClient());
     }
 
     @Test
-    public void testSlaveServerExtensions() throws Exception {
-        extensionsTest("host=secondary/server=other-two", domainSlaveLifecycleUtil.getDomainClient());
+    public void testSecondaryServerExtensions() throws Exception {
+        extensionsTest("host=secondary/server=other-two", domainSecondaryLifecycleUtil.getDomainClient());
     }
 
     private void rootResourceTest(String address, ModelControllerClient client) throws Exception {

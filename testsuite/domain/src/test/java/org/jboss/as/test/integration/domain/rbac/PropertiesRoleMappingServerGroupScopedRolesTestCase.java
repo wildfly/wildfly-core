@@ -45,8 +45,8 @@ public class PropertiesRoleMappingServerGroupScopedRolesTestCase extends Abstrac
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderPropertiesRoleMappingTestSuite.createSupport(PropertiesRoleMappingServerGroupScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         ServerGroupScopedRolesMappingSetup.INSTANCE.setup(domainClient);
         deployDeployment1(domainClient);
@@ -54,7 +54,7 @@ public class PropertiesRoleMappingServerGroupScopedRolesTestCase extends Abstrac
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             ServerGroupScopedRolesMappingSetup.INSTANCE.tearDown(domainClient);

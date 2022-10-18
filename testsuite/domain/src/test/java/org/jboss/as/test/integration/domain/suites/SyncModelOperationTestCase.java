@@ -54,74 +54,74 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Verifies that the model between the DC and an slave HC is correctly synchronized.
+ * Verifies that the model between the DC and an secondary HC is correctly synchronized.
  *
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
 public class SyncModelOperationTestCase {
 
-    private static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
-    private static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    private static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
+    private static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
     private static final PathAddress SERVER_CONFIG_MAIN_THREE = PathAddress.pathAddress(SERVER_CONFIG, "main-three");
     private static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
     private static final PathAddress SYSTEM_PROPERTY_TEST = PathAddress.pathAddress("system-property", "test");
     private static final PathAddress JVM_DEFAULT = PathAddress.pathAddress(JVM, "default");
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
-    private static DomainClient slaveClient;
-    private static DomainLifecycleUtil masterLifecycleUtil;
-    private static DomainLifecycleUtil slaveLifecycleUtil;
+    private static DomainClient primaryClient;
+    private static DomainClient secondaryClient;
+    private static DomainLifecycleUtil primaryLifecycleUtil;
+    private static DomainLifecycleUtil secondaryLifecycleUtil;
 
     private final Map<String, File> snapshotDirectories = new HashMap<>();
     private List<File> domainSnapshots;
-    private List<File> masterSnapshots;
-    private List<File> slaveSnapshots;
+    private List<File> primarySnapshots;
+    private List<File> secondarySnapshots;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(SyncModelOperationTestCase.class.getSimpleName());
 
-        masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        primaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        secondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void shutdownDomain() {
         DomainTestSuite.stopSupport();
         testSupport = null;
-        masterClient = null;
-        slaveClient = null;
-        slaveLifecycleUtil = null;
-        masterLifecycleUtil = null;
+        primaryClient = null;
+        secondaryClient = null;
+        secondaryLifecycleUtil = null;
+        primaryLifecycleUtil = null;
     }
 
     @After
     public void applySnapshots() throws Exception {
-        masterClient = reloadHost(masterLifecycleUtil, "primary", masterSnapshots.get(0).getName(), domainSnapshots.get(0).getName());
-        reloadHost(slaveLifecycleUtil, "secondary", slaveSnapshots.get(0).getName(), null);
+        primaryClient = reloadHost(primaryLifecycleUtil, "primary", primarySnapshots.get(0).getName(), domainSnapshots.get(0).getName());
+        reloadHost(secondaryLifecycleUtil, "secondary", secondarySnapshots.get(0).getName(), null);
     }
 
     @Before
     public void takeSnapshots() throws Exception {
-        masterClient = masterLifecycleUtil.getDomainClient();
-        slaveClient = slaveLifecycleUtil.getDomainClient();
+        primaryClient = primaryLifecycleUtil.getDomainClient();
+        secondaryClient = secondaryLifecycleUtil.getDomainClient();
 
-        cleanSnapshotDirectory(masterClient, null);
-        cleanSnapshotDirectory(masterClient, "primary");
-        cleanSnapshotDirectory(slaveClient, "secondary");
+        cleanSnapshotDirectory(primaryClient, null);
+        cleanSnapshotDirectory(primaryClient, "primary");
+        cleanSnapshotDirectory(secondaryClient, "secondary");
 
-        takeSnapshot(masterClient, null);
-        takeSnapshot(masterClient, "primary");
-        takeSnapshot(slaveClient, "secondary");
+        takeSnapshot(primaryClient, null);
+        takeSnapshot(primaryClient, "primary");
+        takeSnapshot(secondaryClient, "secondary");
 
-        domainSnapshots = listSnapshots(masterClient, null);
-        masterSnapshots = listSnapshots(masterClient, "primary");
-        slaveSnapshots = listSnapshots(slaveClient, "secondary");
+        domainSnapshots = listSnapshots(primaryClient, null);
+        primarySnapshots = listSnapshots(primaryClient, "primary");
+        secondarySnapshots = listSnapshots(secondaryClient, "secondary");
 
         Assert.assertEquals(1, domainSnapshots.size());
-        Assert.assertEquals(1, masterSnapshots.size());
-        Assert.assertEquals(1, slaveSnapshots.size());
+        Assert.assertEquals(1, primarySnapshots.size());
+        Assert.assertEquals(1, secondarySnapshots.size());
     }
 
     /**
@@ -133,52 +133,52 @@ public class SyncModelOperationTestCase {
     @Test
     public void verifyModelSyncAfterRemovingServerGroup() throws IOException, MgmtOperationException {
         // ensure server-three has a children resource
-        ModelNode op = Util.getReadResourceOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_DEFAULT));
-        DomainTestUtils.executeForResult(op, masterClient);
+        ModelNode op = Util.getReadResourceOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE).append(JVM_DEFAULT));
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY_TEST));
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         op = Util.createEmptyOperation(STOP_SERVERS, SERVER_GROUP_MAIN_SERVER_GROUP);
         op.get(BLOCKING).set(true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         String[] servers = {"main-three", "main-four"};
         for (String server : servers) {
-            op = Util.createRemoveOperation(SLAVE_ADDR.append(PathAddress.pathAddress(SERVER_CONFIG, server)));
-            DomainTestUtils.executeForResult(op, masterClient);
+            op = Util.createRemoveOperation(SECONDARY_ADDR.append(PathAddress.pathAddress(SERVER_CONFIG, server)));
+            DomainTestUtils.executeForResult(op, primaryClient);
         }
 
-        //We have removed all the servers on the slave, after a correct model sync the server group should have been removed on the slave
+        //We have removed all the servers on the secondary, after a correct model sync the server group should have been removed on the secondary
         op = Util.getReadResourceOperation(SERVER_GROUP_MAIN_SERVER_GROUP);
-        DomainTestUtils.executeForFailure(op, slaveClient);
+        DomainTestUtils.executeForFailure(op, secondaryClient);
 
         servers = new String[]{"main-one", "main-two"};
         for (String server : servers) {
-            op = Util.createRemoveOperation(MASTER_ADDR.append(PathAddress.pathAddress(SERVER_CONFIG, server)));
-            DomainTestUtils.executeForResult(op, masterClient);
+            op = Util.createRemoveOperation(PRIMARY_ADDR.append(PathAddress.pathAddress(SERVER_CONFIG, server)));
+            DomainTestUtils.executeForResult(op, primaryClient);
         }
 
         op = Util.createRemoveOperation(SERVER_GROUP_MAIN_SERVER_GROUP);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP);
         op.get(PROFILE).set("default");
         op.get(SOCKET_BINDING_GROUP).set("standard-sockets");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createAddOperation(SLAVE_ADDR.append(SERVER_CONFIG_MAIN_THREE));
+        op = Util.createAddOperation(SECONDARY_ADDR.append(SERVER_CONFIG_MAIN_THREE));
         op.get(GROUP).set("main-server-group");
         op.get(SOCKET_BINDING_GROUP).set("standard-sockets");
         op.get(PORT_OFFSET).set(350);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        //We have added a new server on the slave, after a correct model sync the server group should have been created on the slave
+        //We have added a new server on the secondary, after a correct model sync the server group should have been created on the secondary
         op = Util.getReadResourceOperation(SERVER_GROUP_MAIN_SERVER_GROUP);
-        DomainTestUtils.executeForResult(op, slaveClient);
+        DomainTestUtils.executeForResult(op, secondaryClient);
 
         op = Util.createAddOperation(SERVER_GROUP_MAIN_SERVER_GROUP.append(SYSTEM_PROPERTY_TEST));
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private PathAddress getRootAddress(String host) {

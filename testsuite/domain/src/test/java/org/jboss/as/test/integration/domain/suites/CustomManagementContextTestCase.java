@@ -40,8 +40,8 @@ public class CustomManagementContextTestCase extends CustomManagementContextTest
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(CustomManagementContextTestCase.class.getSimpleName());
-        DomainClient masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
-        managementClient = new ManagementClient(masterClient, TestSuiteEnvironment.getServerAddress(), 9090, "remoting+http");
+        DomainClient primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
+        managementClient = new ManagementClient(primaryClient, TestSuiteEnvironment.getServerAddress(), 9090, "remoting+http");
     }
 
     @AfterClass

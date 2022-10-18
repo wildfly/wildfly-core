@@ -37,28 +37,28 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Tests an slave is able to be registered in a domain meanwhile the Domain Controller is starting its servers.
+ * Tests an secondary is able to be registered in a domain meanwhile the Domain Controller is starting its servers.
  *
  * @author <a href="mailto:yborgess@redhat.com">Yeray Borges</a>
  */
-public class SlaveRegistrationTestCase {
-    protected static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
-    protected static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
+public class SecondaryRegistrationTestCase {
+    protected static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
+    protected static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
     protected static final PathAddress SERVER_CONFIG_MAIN_ONE = PathAddress.pathAddress(SERVER_CONFIG, "main-one");
     protected static final PathAddress SERVER_CONFIG_MAIN_TWO = PathAddress.pathAddress(SERVER_CONFIG, "main-two");
     protected static final PathAddress SERVER_MAIN_TWO = PathAddress.pathAddress(SERVER, "main-two");
     protected static final PathAddress JVM_DEFAULT = PathAddress.pathAddress(JVM, "default");
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
-    private static DomainClient slaveClient;
-    private static DomainLifecycleUtil masterLifecycleUtil;
-    private static DomainLifecycleUtil slaveLifecycleUtil;
+    private static DomainClient primaryClient;
+    private static DomainClient secondaryClient;
+    private static DomainLifecycleUtil primaryLifecycleUtil;
+    private static DomainLifecycleUtil secondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
 
-        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SlaveRegistrationTestCase.class.getSimpleName(),
+        final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(SecondaryRegistrationTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml",
                 "host-configs/host-primary.xml",
                 "host-configs/host-secondary.xml"
@@ -66,30 +66,30 @@ public class SlaveRegistrationTestCase {
 
         testSupport = DomainTestSupport.create(configuration);
 
-        masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        primaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        secondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
         testSupport.start();
 
-        masterClient = masterLifecycleUtil.getDomainClient();
-        slaveClient = slaveLifecycleUtil.getDomainClient();
+        primaryClient = primaryLifecycleUtil.getDomainClient();
+        secondaryClient = secondaryLifecycleUtil.getDomainClient();
 
         ModelNode op;
 
-        op = Util.createEmptyOperation("add-jvm-option", MASTER_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
+        op = Util.createEmptyOperation("add-jvm-option", PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
         op.get("jvm-option").set("-Dorg.jboss.byteman.verbose=true");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.createEmptyOperation("add-jvm-option", MASTER_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
+        op = Util.createEmptyOperation("add-jvm-option", PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT));
         op.get("jvm-option").set("-Djboss.modules.system.pkgs=org.jboss.byteman");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         String bytemanJavaAgent = System.getProperty("jboss.test.host.server.byteman.javaagent")+"DelayServerRegistration.btm";
-        op = Util.getWriteAttributeOperation(MASTER_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT), "java-agent", bytemanJavaAgent);
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.getWriteAttributeOperation(PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO).append(JVM_DEFAULT), "java-agent", bytemanJavaAgent);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        op = Util.getWriteAttributeOperation(MASTER_ADDR.append(SERVER_CONFIG_MAIN_TWO), "auto-start", true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.getWriteAttributeOperation(PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_TWO), "auto-start", true);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
     }
 
@@ -97,38 +97,38 @@ public class SlaveRegistrationTestCase {
     public static void shutdownDomain() {
         testSupport.close();
         testSupport = null;
-        masterClient = null;
-        slaveLifecycleUtil = null;
-        masterLifecycleUtil = null;
+        primaryClient = null;
+        secondaryLifecycleUtil = null;
+        primaryLifecycleUtil = null;
     }
 
     @Test
-    public void testSlaveRegistrationWhenDcIsStarting() throws Exception {
-        ModelNode op = Util.createEmptyOperation("reload", MASTER_ADDR);
+    public void testSecondaryRegistrationWhenDcIsStarting() throws Exception {
+        ModelNode op = Util.createEmptyOperation("reload", PRIMARY_ADDR);
         op.get(RESTART_SERVERS).set(true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
-        masterLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.STARTING);
+        primaryLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.STARTING);
 
         // wait until main-one is starting, main-two is going to started but it will be blocked by the byteman rule.
         // This scenario will put the DC boot phase in the middle of server starting
-        DomainTestUtils.waitUntilState(masterClient, MASTER_ADDR.append(SERVER_CONFIG_MAIN_ONE), "STARTED");
+        DomainTestUtils.waitUntilState(primaryClient, PRIMARY_ADDR.append(SERVER_CONFIG_MAIN_ONE), "STARTED");
 
-        op = Util.createEmptyOperation("reload", SLAVE_ADDR);
+        op = Util.createEmptyOperation("reload", SECONDARY_ADDR);
         op.get(RESTART_SERVERS).set(false);
-        DomainTestUtils.executeForResult(op, slaveClient);
+        DomainTestUtils.executeForResult(op, secondaryClient);
 
-        slaveLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
+        secondaryLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
 
-        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SLAVE_ADDR);
-        DomainTestUtils.executeForResult(op, masterClient);
+        op = Util.createEmptyOperation(READ_RESOURCE_OPERATION, SECONDARY_ADDR);
+        DomainTestUtils.executeForResult(op, primaryClient);
 
         //assert the main-one server at this point reports STOPPED, which means it has not been registered yet in the domain
         Assert.assertTrue("main-two should be stopped at this point to validate this test conditions.",
-                DomainTestUtils.executeForResult(Util.getReadAttributeOperation(MASTER_ADDR.append(SERVER_MAIN_TWO), "server-state"), masterClient).asString().equals("STOPPED")
+                DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PRIMARY_ADDR.append(SERVER_MAIN_TWO), "server-state"), primaryClient).asString().equals("STOPPED")
         );
 
         // wait until DC full start
-        masterLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
+        primaryLifecycleUtil.awaitHostController(System.currentTimeMillis(), ControlledProcessState.State.RUNNING);
     }
 }

@@ -110,7 +110,7 @@ public class RemoteGitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         commits = listCommits(remoteRepository);
         Assert.assertEquals(3, commits.size());
 
-        // create branch in remote repo and change master for next test
+        // create branch in remote repo and change Primary for next test
         try(Git git = new Git(remoteRepository)) {
             git.checkout().setName("my_branch").setCreateBranch(true).call();
         }

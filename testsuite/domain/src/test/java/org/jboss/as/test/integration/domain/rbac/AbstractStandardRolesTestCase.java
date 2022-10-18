@@ -76,76 +76,76 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
     @Test
     public void testMonitor() throws Exception {
-        ModelControllerClient client = getClientForUser(MONITOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(MONITOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         checkStandardReads(client, null, null, MONITOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, MONITOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, MONITOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, MONITOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MONITOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, MONITOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, MONITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MONITOR_USER);
         checkSensitiveAttribute(client, null, null, false, MONITOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, MONITOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, MONITOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, MONITOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, MONITOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, MONITOR_USER);
-        restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        restartServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
 
         // Monitor can't shutdown
         testWCORE1067(client, MONITOR_USER);
 
-        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
-        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
-        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        stopServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        killServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
+        destroyServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, MONITOR_USER);
         killServersInGroup(client, Outcome.UNAUTHORIZED, MONITOR_USER);
         destroyServersInGroup(client, Outcome.UNAUTHORIZED, MONITOR_USER);
     }
 
     @Test
     public void testOperator() throws Exception {
-        ModelControllerClient client = getClientForUser(OPERATOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(OPERATOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         checkStandardReads(client, null, null, OPERATOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, OPERATOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, OPERATOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, OPERATOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, OPERATOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, OPERATOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, OPERATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, OPERATOR_USER);
         checkSensitiveAttribute(client, null, null, false, OPERATOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, OPERATOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, OPERATOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, OPERATOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, OPERATOR_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, OPERATOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, OPERATOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, OPERATOR_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, OPERATOR_USER);
-        restartServer(client, MASTER, MASTER_A, Outcome.SUCCESS, OPERATOR_USER);
+        restartServer(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, OPERATOR_USER);
     }
 
     @Test
     public void testMaintainer() throws Exception {
-        ModelControllerClient client = getClientForUser(MAINTAINER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(MAINTAINER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, MAINTAINER_USER);
         checkStandardReads(client, null, null, MAINTAINER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, MAINTAINER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, MAINTAINER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, MAINTAINER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MAINTAINER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, MAINTAINER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, MAINTAINER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, MAINTAINER_USER);
         checkSensitiveAttribute(client, null, null, false, MAINTAINER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, MAINTAINER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, MAINTAINER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, MAINTAINER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, MAINTAINER_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, MAINTAINER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, MAINTAINER_USER);
         addDeployment2(client, Outcome.SUCCESS, MAINTAINER_USER);
         addPath(client, Outcome.SUCCESS, MAINTAINER_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, MAINTAINER_USER);
@@ -153,53 +153,53 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
     @Test
     public void testDeployer() throws Exception {
-        ModelControllerClient client = getClientForUser(DEPLOYER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(DEPLOYER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         checkStandardReads(client, null, null, DEPLOYER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, DEPLOYER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, DEPLOYER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, DEPLOYER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, DEPLOYER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.HIDDEN, DEPLOYER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.HIDDEN, DEPLOYER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.HIDDEN, DEPLOYER_USER);
         checkSensitiveAttribute(client, null, null, false, DEPLOYER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, false, DEPLOYER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, false, DEPLOYER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         addDeployment2(client, Outcome.SUCCESS, DEPLOYER_USER);
         addPath(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         removeSecurityDomain(client, Outcome.HIDDEN, DEPLOYER_USER);
-        restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        restartServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
 
         // Deployer can't shutdown
         testWCORE1067(client, DEPLOYER_USER);
 
-        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
-        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        stopServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        killServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
+        destroyServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         killServersInGroup(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
         destroyServersInGroup(client, Outcome.UNAUTHORIZED, DEPLOYER_USER);
     }
 
     @Test
     public void testAdministrator() throws Exception {
-        ModelControllerClient client = getClientForUser(ADMINISTRATOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(ADMINISTRATOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, ADMINISTRATOR_USER);
         checkStandardReads(client, null, null, ADMINISTRATOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
         checkSensitiveAttribute(client, null, null, true, ADMINISTRATOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, ADMINISTRATOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, ADMINISTRATOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, ADMINISTRATOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, ADMINISTRATOR_USER);
         addDeployment2(client, Outcome.SUCCESS, ADMINISTRATOR_USER);
         addPath(client, Outcome.SUCCESS, ADMINISTRATOR_USER);
         addSecurityDomain(client, "test1", Outcome.SUCCESS, ADMINISTRATOR_USER);
@@ -208,53 +208,53 @@ public abstract class AbstractStandardRolesTestCase extends AbstractRbacTestCase
 
     @Test
     public void testAuditor() throws Exception {
-        ModelControllerClient client = getClientForUser(AUDITOR_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(AUDITOR_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, AUDITOR_USER);
         checkStandardReads(client, null, null, AUDITOR_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, AUDITOR_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, AUDITOR_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, AUDITOR_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, AUDITOR_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, AUDITOR_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, AUDITOR_USER);
         checkSensitiveAttribute(client, null, null, true, AUDITOR_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, AUDITOR_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, AUDITOR_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        runGC(client, PRIMARY, null, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
         addDeployment2(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         addPath(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         removeSecurityDomain(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        restartServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        restartServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
 
         // Auditor can't shutdown
         testWCORE1067(client, AUDITOR_USER);
 
-        stopServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        killServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
-        destroyServer(client, MASTER, MASTER_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        stopServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        killServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
+        destroyServer(client, PRIMARY, PRIMARY_A, Outcome.UNAUTHORIZED, AUDITOR_USER);
         killServersInGroup(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
         destroyServersInGroup(client, Outcome.UNAUTHORIZED, AUDITOR_USER);
     }
 
     @Test
     public void testSuperUser() throws Exception {
-        ModelControllerClient client = getClientForUser(SUPERUSER_USER, isAllowLocalAuth(), masterClientConfig);
+        ModelControllerClient client = getClientForUser(SUPERUSER_USER, isAllowLocalAuth(), primaryClientConfig);
         readWholeConfig(client, Outcome.SUCCESS, SUPERUSER_USER);
         checkStandardReads(client, null, null, SUPERUSER_USER);
         checkRootRead(client, null, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, MASTER, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkRootRead(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
+        checkRootRead(client, PRIMARY, null, Outcome.SUCCESS, SUPERUSER_USER);
+        checkRootRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
         checkSecurityDomainRead(client, null, null, Outcome.SUCCESS, SUPERUSER_USER);
-        checkSecurityDomainRead(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
+        checkSecurityDomainRead(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
         checkSensitiveAttribute(client, null, null, true, SUPERUSER_USER);
-        checkSensitiveAttribute(client, MASTER, MASTER_A, true, SUPERUSER_USER);
+        checkSensitiveAttribute(client, PRIMARY, PRIMARY_A, true, SUPERUSER_USER);
 
         if (readOnly) return;
 
-        runGC(client, MASTER, null, Outcome.SUCCESS, SUPERUSER_USER);
-        runGC(client, MASTER, MASTER_A, Outcome.SUCCESS, SUPERUSER_USER);
+        runGC(client, PRIMARY, null, Outcome.SUCCESS, SUPERUSER_USER);
+        runGC(client, PRIMARY, PRIMARY_A, Outcome.SUCCESS, SUPERUSER_USER);
         addDeployment2(client, Outcome.SUCCESS, SUPERUSER_USER);
         addPath(client, Outcome.SUCCESS, SUPERUSER_USER);
         addSecurityDomain(client, "test2", Outcome.SUCCESS, SUPERUSER_USER);

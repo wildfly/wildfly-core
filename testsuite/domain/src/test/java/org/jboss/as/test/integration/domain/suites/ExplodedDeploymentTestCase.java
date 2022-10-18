@@ -111,7 +111,7 @@ public class ExplodedDeploymentTestCase {
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
     private static final PathElement MAIN_SERVER_GROUP = PathElement.pathElement(SERVER_GROUP, MSG);
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
 
     private static final Properties properties = new Properties();
     private static final Properties properties2 = new Properties();
@@ -120,7 +120,7 @@ public class ExplodedDeploymentTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ExplodedDeploymentTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         properties.clear();
         properties.put("service", "is new");
 
@@ -134,7 +134,7 @@ public class ExplodedDeploymentTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        masterClient = null;
+        primaryClient = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -152,7 +152,7 @@ public class ExplodedDeploymentTestCase {
         final JavaArchive archive = ServiceActivatorDeploymentUtil.createServiceActivatorDeploymentArchive("test-deployment.jar", properties);
         ModelNode result;
         try (InputStream is = archive.as(ZipExporter.class).exportAsInputStream()) {
-            AsyncFuture<ModelNode> future = masterClient.executeAsync(addDeployment(is), null);
+            AsyncFuture<ModelNode> future = primaryClient.executeAsync(addDeployment(is), null);
             result = awaitSimpleOperationExecution(future);
         }
         assertTrue(Operations.isSuccessfulOutcome(result));
@@ -160,7 +160,7 @@ public class ExplodedDeploymentTestCase {
         String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
         assertTrue(contentNode.get(ARCHIVE).asBoolean(true));
         //Let's explode it
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(Operations.createOperation(EXPLODE, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -168,10 +168,10 @@ public class ExplodedDeploymentTestCase {
         assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
         assertFalse(initialHash.equals(explodedHash));
         //Let's deploy now
-        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        future = primaryClient.executeAsync(deployOnServerGroup(), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
@@ -179,7 +179,7 @@ public class ExplodedDeploymentTestCase {
         Map<String, InputStream> contents = new HashMap<>();
         contents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE, toStream(properties3, "Replacing content"));
         contents.put("org/wildfly/test/deployment/trivial/simple.properties", toStream(properties2, "Adding content"));
-        future = masterClient.executeAsync(addContentToDeployment(contents), null);
+        future = primaryClient.executeAsync(addContentToDeployment(contents), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
@@ -194,35 +194,35 @@ public class ExplodedDeploymentTestCase {
                 "org/wildfly/test/deployment/trivial/simple.properties")));
         browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
         //Redeploy
-        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties3);
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         //Let's remove some content
-        future = masterClient.executeAsync(removeContentFromDeployment(
+        future = primaryClient.executeAsync(removeContentFromDeployment(
                 Arrays.asList("org/wildfly/test/deployment/trivial/simple.properties", ServiceActivatorDeployment.PROPERTIES_RESOURCE)), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         checkNoContent("org/wildfly/test/deployment/trivial/simple.properties");
         checkNoContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         //Redeploy
-        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
     }
 
     @Test
     public void testInstallAndExplodeDeploymentOnDCFromScratch() throws IOException, MgmtOperationException {
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(addEmptyDeployment(), null); //Add empty deployment
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -242,14 +242,14 @@ public class ExplodedDeploymentTestCase {
                 new PropertyPermission("service", "write"))));
         initialContents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE,
                 toStream(properties, "Creating content"));
-        future = masterClient.executeAsync(addContentToDeployment(initialContents), null); //Add content to deployment
+        future = primaryClient.executeAsync(addContentToDeployment(initialContents), null); //Add content to deployment
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         //Let's deploy now
-        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        future = primaryClient.executeAsync(deployOnServerGroup(), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties);
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is new");
@@ -257,7 +257,7 @@ public class ExplodedDeploymentTestCase {
         Map<String, InputStream> contents = new HashMap<>();
         contents.put(ServiceActivatorDeployment.PROPERTIES_RESOURCE, toStream(properties3, "Replacing content"));
         contents.put("org/wildfly/test/deployment/trivial/simple.properties", toStream(properties2, "Adding content"));
-        future = masterClient.executeAsync(addContentToDeployment(contents), null);
+        future = primaryClient.executeAsync(addContentToDeployment(contents), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         readContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE, "is replaced");
@@ -272,28 +272,28 @@ public class ExplodedDeploymentTestCase {
                 "org/wildfly/test/deployment/trivial/simple.properties")));
         browseContent("META-INF", new ArrayList<>(Arrays.asList("MANIFEST.MF", "services/", "services/org.jboss.msc.service.ServiceActivator", "permissions.xml")));
         //Redeploy
-        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        ServiceActivatorDeploymentUtil.validateProperties(masterClient, PathAddress.pathAddress(
+        ServiceActivatorDeploymentUtil.validateProperties(primaryClient, PathAddress.pathAddress(
                 PathElement.pathElement(HOST, "secondary"),
                 PathElement.pathElement(SERVER, "main-three")), properties3);
         readContent("org/wildfly/test/deployment/trivial/simple.properties", "is added");
         //Let's remove some content
-        future = masterClient.executeAsync(removeContentFromDeployment(
+        future = primaryClient.executeAsync(removeContentFromDeployment(
                 Arrays.asList("org/wildfly/test/deployment/trivial/simple.properties", ServiceActivatorDeployment.PROPERTIES_RESOURCE)), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         checkNoContent("org/wildfly/test/deployment/trivial/simple.properties");
         checkNoContent(ServiceActivatorDeployment.PROPERTIES_RESOURCE);
         //Redeploy
-        future = masterClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(UNDEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
-        future = masterClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
+        future = primaryClient.executeAsync(Operations.createOperation(DEPLOY, PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH).toModelNode()), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
     }
@@ -322,14 +322,14 @@ public class ExplodedDeploymentTestCase {
         steps.add(addContent);
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
         String initialHash = HashUtil.bytesToHexString(contentNode.get(HASH).asBytes());
         Assert.assertNotNull(initialHash);
         assertFalse(contentNode.get(ARCHIVE).asBoolean(true));
-        future = masterClient.executeAsync(deployOnServerGroup(), null);
+        future = primaryClient.executeAsync(deployOnServerGroup(), null);
         result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
     }
@@ -359,7 +359,7 @@ public class ExplodedDeploymentTestCase {
         steps.add(deployOnServerGroup());
         Operation operation = Operation.Factory.create(composite, contentAttachments);
 
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
         ModelNode contentNode = readDeploymentResource(PathAddress.pathAddress(DEPLOYMENT_PATH)).require(CONTENT).require(0);
@@ -373,7 +373,7 @@ public class ExplodedDeploymentTestCase {
         ModelNode operation = Operations.createReadResourceOperation(address.toModelNode());
         operation.get(INCLUDE_RUNTIME).set(true);
         operation.get(INCLUDE_DEFAULTS).set(true);
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(result));
         return Operations.readResult(result);
@@ -382,7 +382,7 @@ public class ExplodedDeploymentTestCase {
     private void readContent(String path, String expectedValue) throws IOException {
         ModelNode op = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         op.get(PATH).set(path);
-        Future<OperationResponse> future = masterClient.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
+        Future<OperationResponse> future = primaryClient.executeOperationAsync(OperationBuilder.create(op, false).build(), null);
         OperationResponse response = awaitReadContentExecution(future);
         Assert.assertTrue(response.getResponseNode().toString(), Operations.isSuccessfulOutcome(response.getResponseNode()));
         List<OperationResponse.StreamEntry> streams = response.getInputStreams();
@@ -400,7 +400,7 @@ public class ExplodedDeploymentTestCase {
         if (path != null && !path.isEmpty()) {
             operation.get(PATH).set(path);
         }
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode response = awaitSimpleOperationExecution(future);
         assertTrue(Operations.isSuccessfulOutcome(response));
         List<ModelNode> contents = Operations.readResult(response).asList();
@@ -420,7 +420,7 @@ public class ExplodedDeploymentTestCase {
     public void checkNoContent(String path) throws IOException {
         ModelNode operation = Operations.createOperation(READ_CONTENT, PathAddress.pathAddress(DEPLOYMENT_PATH).toModelNode());
         operation.get(PATH).set(path);
-        AsyncFuture<ModelNode> future = masterClient.executeAsync(operation, null);
+        AsyncFuture<ModelNode> future = primaryClient.executeAsync(operation, null);
         ModelNode result = awaitSimpleOperationExecution(future);
         assertFalse(Operations.isSuccessfulOutcome(result));
     }
@@ -528,6 +528,6 @@ public class ExplodedDeploymentTestCase {
     }
 
     private void cleanDeployment() throws IOException, MgmtOperationException {
-        DomainTestUtils.executeForResult(undeployAndRemoveOp(), masterClient);
+        DomainTestUtils.executeForResult(undeployAndRemoveOp(), primaryClient);
     }
 }

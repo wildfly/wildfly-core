@@ -47,7 +47,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTestBase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
     private String defaultDomainConfig;
     private String defaultHostConfig;
@@ -60,14 +60,14 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     public static void setupDomain() {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ReadConfigAsFeaturesDomainTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml"));
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() {
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
     }
 
     @Test
@@ -266,7 +266,7 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
     private void doTest(List<ModelNode> operations, ModelNode expectedConfigAsFeatures, PathAddress domainOrHostPath, boolean nested) {
         for (ModelNode operation : operations) {
-            domainMasterLifecycleUtil.executeForResult(operation);
+            domainPrimaryLifecycleUtil.executeForResult(operation);
         }
         if (!equalsWithoutListOrder(expectedConfigAsFeatures, getConfigAsFeatures(nested, domainOrHostPath))) {
             System.out.println("Actual:\n" + getConfigAsFeatures(domainOrHostPath).toJSONString(false) + "\nExpected:\n" + expectedConfigAsFeatures.toJSONString(false));
@@ -279,12 +279,12 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         if (defaultDomainConfig == null || defaultHostConfig == null) {
             ModelNode takeSnapshotOnDomain = Util.createEmptyOperation(TAKE_SNAPSHOT_OPERATION, PathAddress.EMPTY_ADDRESS);
             ModelNode takeSnapshotOnHost = Util.createEmptyOperation(TAKE_SNAPSHOT_OPERATION, PathAddress.pathAddress(HOST, "primary"));
-            domainMasterLifecycleUtil.executeForResult(takeSnapshotOnDomain);
-            domainMasterLifecycleUtil.executeForResult(takeSnapshotOnHost);
+            domainPrimaryLifecycleUtil.executeForResult(takeSnapshotOnDomain);
+            domainPrimaryLifecycleUtil.executeForResult(takeSnapshotOnHost);
             ModelNode listDomainSnapshots = Util.createEmptyOperation(LIST_SNAPSHOTS_OPERATION, PathAddress.EMPTY_ADDRESS);
             ModelNode listHostSnapshots = Util.createEmptyOperation(LIST_SNAPSHOTS_OPERATION, PathAddress.pathAddress(HOST, "primary"));
-            ModelNode domainSnapshots = domainMasterLifecycleUtil.executeForResult(listDomainSnapshots);
-            ModelNode hostSnapshots = domainMasterLifecycleUtil.executeForResult(listHostSnapshots);
+            ModelNode domainSnapshots = domainPrimaryLifecycleUtil.executeForResult(listDomainSnapshots);
+            ModelNode hostSnapshots = domainPrimaryLifecycleUtil.executeForResult(listHostSnapshots);
 
             defaultDomainConfig = domainSnapshots.get("names").get(0).asString();
             defaultHostConfig = hostSnapshots.get("names").get(0).asString();
@@ -312,9 +312,9 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
         ModelNode reloadWithSnapshots = Util.createEmptyOperation(RELOAD, PathAddress.pathAddress(HOST, "primary"));
         reloadWithSnapshots.get(DOMAIN_CONFIG).set(defaultDomainConfig);
         reloadWithSnapshots.get(HOST_CONFIG).set(defaultHostConfig);
-        domainMasterLifecycleUtil.executeForResult(reloadWithSnapshots);
-        domainMasterLifecycleUtil.awaitHostController(System.currentTimeMillis());
-        domainMasterLifecycleUtil.awaitServers(System.currentTimeMillis());
+        domainPrimaryLifecycleUtil.executeForResult(reloadWithSnapshots);
+        domainPrimaryLifecycleUtil.awaitHostController(System.currentTimeMillis());
+        domainPrimaryLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 
     private ModelNode getConfigAsFeatures() {
@@ -332,6 +332,6 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
     private ModelNode getConfigAsFeatures(boolean nested, PathAddress pathElements) {
         ModelNode getConfigAsFeatures = Util.createEmptyOperation(READ_CONFIG_AS_FEATURES_OPERATION, pathElements);
         getConfigAsFeatures.get(NESTED).set(nested);
-        return domainMasterLifecycleUtil.executeForResult(getConfigAsFeatures);
+        return domainPrimaryLifecycleUtil.executeForResult(getConfigAsFeatures);
     }
 }

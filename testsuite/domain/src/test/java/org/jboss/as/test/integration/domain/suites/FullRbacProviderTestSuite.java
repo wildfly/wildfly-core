@@ -129,14 +129,14 @@ public class FullRbacProviderTestSuite {
             final DomainTestSupport.Configuration configuration = DomainTestSupport.Configuration.create(testName,
                     "domain-configs/domain-rbac.rbac", "host-configs/host-primary-rbac.xml", "host-configs/host-secondary-rbac.xml");
             String mgmtUserProperties = WildFlyManagedConfiguration.loadConfigFileFromContextClassLoader("mgmt-users/mgmt-users.properties");
-            configuration.getMasterConfiguration().setMgmtUsersFile(mgmtUserProperties);
-            configuration.getSlaveConfiguration().setMgmtUsersFile(mgmtUserProperties);
+            configuration.getPrimaryConfiguration().setMgmtUsersFile(mgmtUserProperties);
+            configuration.getSecondaryConfiguration().setMgmtUsersFile(mgmtUserProperties);
             final DomainTestSupport testSupport = DomainTestSupport.create(configuration);
             // Add users used by tests.
             List<String> users = new ArrayList<String>();
             addUsers(users, AbstractHostScopedRolesTestCase.USERS);
             addUsers(users, AbstractServerGroupScopedRolesTestCase.USERS);
-            addUsers(users, "SlaveHostSuperUser", "OtherGroupSuperUser");
+            addUsers(users, "SecondaryHostSuperUser", "OtherGroupSuperUser");
             Files.write((new File(System.getProperty("jboss.home")).toPath().resolve("domain").resolve("configuration").resolve("application-users.properties")), users, Charset.forName("UTF-8"));
             // Start!
             testSupport.start();

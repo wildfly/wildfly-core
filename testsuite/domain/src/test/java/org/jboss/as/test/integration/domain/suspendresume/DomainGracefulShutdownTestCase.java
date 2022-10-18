@@ -84,28 +84,28 @@ public class DomainGracefulShutdownTestCase {
     public static final String WEB_SUSPEND_JAR = "web-suspend.jar";
     public static final String MAIN_SERVER_GROUP = "main-server-group";
 
-    public static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    public static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
     public static final PathAddress SERVER_MAIN_ONE = PathAddress.pathAddress(SERVER, "main-one");
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(DomainGracefulShutdownTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Before
     public void deployApp() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         DomainDeploymentManager deploymentManager = client.getDeploymentManager();
         DeploymentPlan plan = deploymentManager.newDeploymentPlan().add(WEB_SUSPEND_JAR, createDeployment().as(ZipExporter.class).exportAsInputStream())
@@ -116,7 +116,7 @@ public class DomainGracefulShutdownTestCase {
 
     @After
     public void undeployApp() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         DomainDeploymentManager deploymentManager = client.getDeploymentManager();
         DeploymentPlan plan = deploymentManager.newDeploymentPlan().undeploy(WEB_SUSPEND_JAR)
@@ -129,7 +129,7 @@ public class DomainGracefulShutdownTestCase {
 
     @Test
     public void testGracefulShutdownDomainLevel() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
         ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -174,7 +174,7 @@ public class DomainGracefulShutdownTestCase {
 
     @Test
     public void testStartSuspendedDomainMode() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP).set("reload-servers");
@@ -238,7 +238,7 @@ public class DomainGracefulShutdownTestCase {
 
     @Test
     public void testHostGracefulShutdown() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
 
         final String address = "http://" + TestSuiteEnvironment.getServerAddress() + ":8080/web-suspend";
         final ExecutorService executorService = Executors.newFixedThreadPool(2);
@@ -260,14 +260,14 @@ public class DomainGracefulShutdownTestCase {
                 public ModelNode call() throws Exception {
                     ModelNode op = new ModelNode();
                     op.get(OP).set("shutdown");
-                    op.get(OP_ADDR).set(MASTER_ADDR.toModelNode());
+                    op.get(OP_ADDR).set(PRIMARY_ADDR.toModelNode());
                     op.get(ModelDescriptionConstants.SUSPEND_TIMEOUT).set(TimeoutUtil.adjust(60));
                     op.get(ModelDescriptionConstants.RESTART).set(false);
-                    return domainMasterLifecycleUtil.executeAwaitConnectionClosed(op);
+                    return domainPrimaryLifecycleUtil.executeAwaitConnectionClosed(op);
                 }
             });
 
-            DomainTestUtils.waitUntilSuspendState(client, MASTER_ADDR.append(SERVER_MAIN_ONE), SUSPENDING);
+            DomainTestUtils.waitUntilSuspendState(client, PRIMARY_ADDR.append(SERVER_MAIN_ONE), SUSPENDING);
 
             //make sure requests are being rejected
             final HttpURLConnection conn = (HttpURLConnection) new URL(address).openConnection();
@@ -298,13 +298,13 @@ public class DomainGracefulShutdownTestCase {
                 try {
                     shutdownResult.get(TimeoutUtil.adjust(10), TimeUnit.SECONDS);
                 } catch (Exception e) {
-                    domainMasterLifecycleUtil.stop();
-                    domainMasterLifecycleUtil.start();
+                    domainPrimaryLifecycleUtil.stop();
+                    domainPrimaryLifecycleUtil.start();
                 }
             }
 
-            if (!domainMasterLifecycleUtil.isHostControllerStarted()) {
-                domainMasterLifecycleUtil.start();
+            if (!domainPrimaryLifecycleUtil.isHostControllerStarted()) {
+                domainPrimaryLifecycleUtil.start();
             }
         }
     }

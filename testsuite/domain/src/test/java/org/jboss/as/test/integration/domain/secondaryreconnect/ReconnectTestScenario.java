@@ -20,13 +20,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 
 /**
- * To hook into the {@link SlaveReconnectTestCase}, create an implementation of this class
+ * To hook into the {@link SecondaryReconnectTestCase}, create an implementation of this class
  * to perform the required tests.
  *
  * @author <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a>
@@ -36,49 +36,49 @@ abstract class ReconnectTestScenario {
     /**
      * Used to set up the domain for this test
      *
-     * @param masterClient
-     * @param slaveClient
+     * @param primaryClient
+     * @param secondaryClient
      */
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
 
     }
 
     /**
      * Clean up the domain after ourselves
-     *  @param masterClient
-     * @param slaveClient
+     *  @param primaryClient
+     * @param secondaryClient
      */
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
 
     }
 
     /**
-     * Tests on initial startup, before the master is set into admin-only mode
+     * Tests on initial startup, before the primary is set into admin-only mode
      *
-     * @param masterClient
-     * @param slaveClient
+     * @param primaryClient
+     * @param secondaryClient
      */
-    void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testOnInitialStartup(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
 
     }
 
     /**
-     * Tests while the master is in admin only mode
+     * Tests while the primary is in admin only mode
      *
-     * @param masterClient
-     * @param slaveClient
+     * @param primaryClient
+     * @param secondaryClient
      */
-    void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testWhilePrimaryInAdminOnly(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
 
     }
 
     /**
-     * Tests once the master is back in normal mode, and the slave has reconnected
+     * Tests once the primary is back in normal mode, and the secondary has reconnected
      *
-     * @param masterClient
-     * @param slaveClient
+     * @param primaryClient
+     * @param secondaryClient
      */
-    void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testAfterReconnect(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
 
     }
 

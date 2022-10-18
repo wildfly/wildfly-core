@@ -82,68 +82,68 @@ import org.xnio.IoUtils;
  */
 public class AuditLogTestCase {
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil masterLifecycleUtil;
-    private static DomainLifecycleUtil slaveLifecycleUtil;
+    private static DomainLifecycleUtil primaryLifecycleUtil;
+    private static DomainLifecycleUtil secondaryLifecycleUtil;
 
     private static final int SYSLOG_PORT = 10514;
 
     private static final int ADJUSTED_SECOND = TimeoutUtil.adjust(1000);
 
 
-    private PathAddress masterAuditAddress = PathAddress.pathAddress(
+    private PathAddress primaryAuditAddress = PathAddress.pathAddress(
             PathElement.pathElement(HOST, "primary"),
             CoreManagementResourceDefinition.PATH_ELEMENT,
             AccessAuditResourceDefinition.PATH_ELEMENT);
 
-    private PathAddress masterCoreLogggerAddress = masterAuditAddress.append(AuditLogLoggerResourceDefinition.PATH_ELEMENT);
+    private PathAddress primaryCoreLogggerAddress = primaryAuditAddress.append(AuditLogLoggerResourceDefinition.PATH_ELEMENT);
 
-    private PathAddress masterServerLoggerAddress = masterAuditAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
+    private PathAddress primaryServerLoggerAddress = primaryAuditAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
 
-    private PathAddress slaveAuditAddress = PathAddress.pathAddress(
+    private PathAddress secondaryAuditAddress = PathAddress.pathAddress(
             PathElement.pathElement(HOST, "secondary"),
             CoreManagementResourceDefinition.PATH_ELEMENT,
             AccessAuditResourceDefinition.PATH_ELEMENT);
 
 
-    private PathAddress slaveCoreLogggerAddress = slaveAuditAddress.append(AuditLogLoggerResourceDefinition.PATH_ELEMENT);
+    private PathAddress secondaryCoreLogggerAddress = secondaryAuditAddress.append(AuditLogLoggerResourceDefinition.PATH_ELEMENT);
 
-    private PathAddress slaveServerLoggerAddress = slaveAuditAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
+    private PathAddress secondaryServerLoggerAddress = secondaryAuditAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
 
-    private static File masterAuditLog;
-    private static File masterServerAuditLog;
-    private static File slaveAuditLog;
-    private static File slaveServerAuditLog;
+    private static File primaryAuditLog;
+    private static File primaryServerAuditLog;
+    private static File secondaryAuditLog;
+    private static File secondaryServerAuditLog;
     private static SimpleSyslogServer server;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(AuditLogTestCase.class.getSimpleName());
-        masterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        slaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        primaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        secondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
-        File file = new File(testSupport.getDomainMasterConfiguration().getDomainDirectory());
+        File file = new File(testSupport.getDomainPrimaryConfiguration().getDomainDirectory());
         file = new File(file, "data");
         file = new File(file, "audit-log.log");
-        masterAuditLog = file;
+        primaryAuditLog = file;
 
-        file = new File(testSupport.getDomainMasterConfiguration().getDomainDirectory());
+        file = new File(testSupport.getDomainPrimaryConfiguration().getDomainDirectory());
         file = new File(file, "servers");
         file = new File(file, "main-one");
         file = new File(file, "data");
         file = new File(file, "audit-log.log");
-        masterServerAuditLog = file;
+        primaryServerAuditLog = file;
 
-        file = new File(testSupport.getDomainSlaveConfiguration().getDomainDirectory());
+        file = new File(testSupport.getDomainSecondaryConfiguration().getDomainDirectory());
         file = new File(file, "data");
         file = new File(file, "audit-log.log");
-        slaveAuditLog = file;
+        secondaryAuditLog = file;
 
-        file = new File(testSupport.getDomainSlaveConfiguration().getDomainDirectory());
+        file = new File(testSupport.getDomainSecondaryConfiguration().getDomainDirectory());
         file = new File(file, "data");
         file = new File(file, "servers");
         file = new File(file, "main-three");
         file = new File(file, "audit-log.log");
-        slaveServerAuditLog = file;
+        secondaryServerAuditLog = file;
 
         //Start up syslog server
         server = SimpleSyslogServer.createUdp(SYSLOG_PORT);
@@ -152,8 +152,8 @@ public class AuditLogTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        masterLifecycleUtil = null;
-        slaveLifecycleUtil = null;
+        primaryLifecycleUtil = null;
+        secondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
 
         //Stop syslog server
@@ -162,101 +162,101 @@ public class AuditLogTestCase {
 
     @Before
     public void before() {
-        masterAuditLog.delete();
-        masterServerAuditLog.delete();
-        slaveAuditLog.delete();
-        slaveServerAuditLog.delete();
+        primaryAuditLog.delete();
+        primaryServerAuditLog.delete();
+        secondaryAuditLog.delete();
+        secondaryServerAuditLog.delete();
     }
 
     @After
     public void turnOffSysylog() throws Exception {
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.FALSE);
-        masterLifecycleUtil.executeForResult(op);
+        ModelNode op = Util.getWriteAttributeOperation(primaryCoreLogggerAddress, ENABLED, ModelNode.FALSE);
+        primaryLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.FALSE);
-        slaveLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(secondaryCoreLogggerAddress, ENABLED, ModelNode.FALSE);
+        secondaryLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.FALSE);
-        masterLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(primaryServerLoggerAddress, ENABLED, ModelNode.FALSE);
+        primaryLifecycleUtil.executeForResult(op);
 
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.FALSE);
-        slaveLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(secondaryServerLoggerAddress, ENABLED, ModelNode.FALSE);
+        secondaryLifecycleUtil.executeForResult(op);
     }
 
     @Test
     public void testFileAuditLogInDomain() throws Exception {
-        Assert.assertFalse(masterAuditLog.exists());
-        Assert.assertFalse(masterServerAuditLog.exists());
-        Assert.assertFalse(slaveAuditLog.exists());
-        Assert.assertFalse(slaveServerAuditLog.exists());
+        Assert.assertFalse(primaryAuditLog.exists());
+        Assert.assertFalse(primaryServerAuditLog.exists());
+        Assert.assertFalse(secondaryAuditLog.exists());
+        Assert.assertFalse(secondaryServerAuditLog.exists());
 
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.TRUE);
-        masterLifecycleUtil.executeForResult(op);
-        Assert.assertTrue(masterAuditLog.exists());
-        Assert.assertFalse(masterServerAuditLog.exists());
-        Assert.assertFalse(slaveAuditLog.exists());
-        Assert.assertFalse(slaveServerAuditLog.exists());
+        ModelNode op = Util.getWriteAttributeOperation(primaryCoreLogggerAddress, ENABLED, ModelNode.TRUE);
+        primaryLifecycleUtil.executeForResult(op);
+        Assert.assertTrue(primaryAuditLog.exists());
+        Assert.assertFalse(primaryServerAuditLog.exists());
+        Assert.assertFalse(secondaryAuditLog.exists());
+        Assert.assertFalse(secondaryServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.TRUE);
-        slaveLifecycleUtil.executeForResult(op);
-        Assert.assertTrue(masterAuditLog.exists());
-        Assert.assertFalse(masterServerAuditLog.exists());
-        Assert.assertTrue(slaveAuditLog.exists());
-        Assert.assertFalse(slaveServerAuditLog.exists());
+        op = Util.getWriteAttributeOperation(secondaryCoreLogggerAddress, ENABLED, ModelNode.TRUE);
+        secondaryLifecycleUtil.executeForResult(op);
+        Assert.assertTrue(primaryAuditLog.exists());
+        Assert.assertFalse(primaryServerAuditLog.exists());
+        Assert.assertTrue(secondaryAuditLog.exists());
+        Assert.assertFalse(secondaryServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.TRUE);
-        masterLifecycleUtil.executeForResult(op);
-        Assert.assertTrue(masterAuditLog.exists());
-        Assert.assertTrue(masterServerAuditLog.exists());
-        Assert.assertTrue(slaveAuditLog.exists());
-        Assert.assertFalse(slaveServerAuditLog.exists());
+        op = Util.getWriteAttributeOperation(primaryServerLoggerAddress, ENABLED, ModelNode.TRUE);
+        primaryLifecycleUtil.executeForResult(op);
+        Assert.assertTrue(primaryAuditLog.exists());
+        Assert.assertTrue(primaryServerAuditLog.exists());
+        Assert.assertTrue(secondaryAuditLog.exists());
+        Assert.assertFalse(secondaryServerAuditLog.exists());
 
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.TRUE);
-        slaveLifecycleUtil.executeForResult(op);
-        Assert.assertTrue(masterAuditLog.exists());
-        Assert.assertTrue(masterServerAuditLog.exists());
-        Assert.assertTrue(slaveAuditLog.exists());
-        Assert.assertTrue(slaveServerAuditLog.exists());
+        op = Util.getWriteAttributeOperation(secondaryServerLoggerAddress, ENABLED, ModelNode.TRUE);
+        secondaryLifecycleUtil.executeForResult(op);
+        Assert.assertTrue(primaryAuditLog.exists());
+        Assert.assertTrue(primaryServerAuditLog.exists());
+        Assert.assertTrue(secondaryAuditLog.exists());
+        Assert.assertTrue(secondaryServerAuditLog.exists());
 
-        masterAuditLog.delete();
-        slaveAuditLog.delete();
-        masterServerAuditLog.delete();
-        slaveServerAuditLog.delete();
+        primaryAuditLog.delete();
+        secondaryAuditLog.delete();
+        primaryServerAuditLog.delete();
+        secondaryServerAuditLog.delete();
 
         String propertyName = "test" + System.currentTimeMillis();
         ModelNode addOp = Util.createAddOperation(PathAddress.pathAddress(SYSTEM_PROPERTY, propertyName));
         addOp.get(VALUE).set("abc");
-        masterLifecycleUtil.executeForResult(addOp);
-        Assert.assertTrue(masterAuditLog.exists());
-        Assert.assertTrue(masterServerAuditLog.exists());
-        Assert.assertTrue(slaveAuditLog.exists());
-        Assert.assertTrue(slaveServerAuditLog.exists());
+        primaryLifecycleUtil.executeForResult(addOp);
+        Assert.assertTrue(primaryAuditLog.exists());
+        Assert.assertTrue(primaryServerAuditLog.exists());
+        Assert.assertTrue(secondaryAuditLog.exists());
+        Assert.assertTrue(secondaryServerAuditLog.exists());
 
-        ModelNode masterRecord = readFile(masterAuditLog, 1).get(0);
-        Assert.assertTrue(masterRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).isDefined());
-        String domainUUID = masterRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString();
-        ModelNode masterOp = getOp(masterRecord);
-        compareOpsWithoutHeaders(addOp, masterOp);
-        Assert.assertFalse(masterOp.get(OPERATION_HEADERS, DOMAIN_UUID).isDefined());
+        ModelNode primaryRecord = readFile(primaryAuditLog, 1).get(0);
+        Assert.assertTrue(primaryRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).isDefined());
+        String domainUUID = primaryRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString();
+        ModelNode primaryOp = getOp(primaryRecord);
+        compareOpsWithoutHeaders(addOp, primaryOp);
+        Assert.assertFalse(primaryOp.get(OPERATION_HEADERS, DOMAIN_UUID).isDefined());
 
-        ModelNode masterServerRecord = readFile(masterServerAuditLog, 1).get(0);
-        Assert.assertEquals(domainUUID, masterServerRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
-        ModelNode masterServerOp = getOp(masterServerRecord);
-        Assert.assertEquals(domainUUID, masterServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
-        compareOpsWithoutHeaders(addOp, masterServerOp, BOOT_TIME);
+        ModelNode primaryServerRecord = readFile(primaryServerAuditLog, 1).get(0);
+        Assert.assertEquals(domainUUID, primaryServerRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
+        ModelNode primaryServerOp = getOp(primaryServerRecord);
+        Assert.assertEquals(domainUUID, primaryServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
+        compareOpsWithoutHeaders(addOp, primaryServerOp, BOOT_TIME);
 
         boolean mainThree = false;
         boolean otherTwo = false;
         boolean domainCopy = false;
-        List<ModelNode> slaveRecords = readFile(slaveAuditLog, 3);
-        for (ModelNode slaveRecord : slaveRecords){
-            Assert.assertEquals(domainUUID, slaveRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
-            ModelNode slaveOp = getOp(slaveRecord);
-            Assert.assertEquals(domainUUID, slaveOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
+        List<ModelNode> secondaryRecords = readFile(secondaryAuditLog, 3);
+        for (ModelNode secondaryRecord : secondaryRecords){
+            Assert.assertEquals(domainUUID, secondaryRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
+            ModelNode secondaryOp = getOp(secondaryRecord);
+            Assert.assertEquals(domainUUID, secondaryOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
 
             //The addresses will be different for the different ops so compare a copy with the address adjusted
             ModelNode addOpClone = addOp.clone();
-            String address = slaveOp.get(OP_ADDR).asString();
+            String address = secondaryOp.get(OP_ADDR).asString();
             if (address.contains("main-three")){
                 Assert.assertFalse(mainThree);
                 mainThree = true;
@@ -278,41 +278,41 @@ public class AuditLogTestCase {
                 domainCopy = true;
             }
 
-            compareOpsWithoutHeaders(addOpClone, slaveOp, BOOT_TIME);
+            compareOpsWithoutHeaders(addOpClone, secondaryOp, BOOT_TIME);
         }
         Assert.assertTrue(mainThree);
         Assert.assertTrue(otherTwo);
         Assert.assertTrue(domainCopy);
 
-        ModelNode slaveServerRecord = readFile(slaveServerAuditLog, 1).get(0);
-        Assert.assertEquals(domainUUID, slaveServerRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
-        ModelNode slaveServerOp = getOp(slaveServerRecord);
-        Assert.assertEquals(domainUUID, slaveServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
-        compareOpsWithoutHeaders(addOp, slaveServerOp, BOOT_TIME);
+        ModelNode secondaryServerRecord = readFile(secondaryServerAuditLog, 1).get(0);
+        Assert.assertEquals(domainUUID, secondaryServerRecord.get(JsonAuditLogItemFormatter.DOMAIN_UUID).asString());
+        ModelNode secondaryServerOp = getOp(secondaryServerRecord);
+        Assert.assertEquals(domainUUID, secondaryServerOp.get(OPERATION_HEADERS, DOMAIN_UUID).asString());
+        compareOpsWithoutHeaders(addOp, secondaryServerOp, BOOT_TIME);
     }
 
     @Test
-    public void testCanAddSyslogServerToMaster() throws Exception {
-        testCanAddSyslogServer(masterAuditAddress);
+    public void testCanAddSyslogServerToPrimary() throws Exception {
+        testCanAddSyslogServer(primaryAuditAddress);
     }
 
     @Test
-    public void testCanAddSyslogServerToSlave() throws Exception {
-        testCanAddSyslogServer(slaveAuditAddress);
+    public void testCanAddSyslogServerToSecondary() throws Exception {
+        testCanAddSyslogServer(secondaryAuditAddress);
     }
 
     private void testCanAddSyslogServer(PathAddress baseAddress) throws Exception {
         final PathAddress handlerAddress = PathAddress.pathAddress(baseAddress.append(SYSLOG_HANDLER, "test-syslog"));
 
         //First enable all the loggers
-        ModelNode op = Util.getWriteAttributeOperation(masterCoreLogggerAddress, ENABLED, ModelNode.TRUE);
-        masterLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(slaveCoreLogggerAddress, ENABLED, ModelNode.TRUE);
-        slaveLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(masterServerLoggerAddress, ENABLED, ModelNode.TRUE);
-        masterLifecycleUtil.executeForResult(op);
-        op = Util.getWriteAttributeOperation(slaveServerLoggerAddress, ENABLED, ModelNode.TRUE);
-        slaveLifecycleUtil.executeForResult(op);
+        ModelNode op = Util.getWriteAttributeOperation(primaryCoreLogggerAddress, ENABLED, ModelNode.TRUE);
+        primaryLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(secondaryCoreLogggerAddress, ENABLED, ModelNode.TRUE);
+        secondaryLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(primaryServerLoggerAddress, ENABLED, ModelNode.TRUE);
+        primaryLifecycleUtil.executeForResult(op);
+        op = Util.getWriteAttributeOperation(secondaryServerLoggerAddress, ENABLED, ModelNode.TRUE);
+        secondaryLifecycleUtil.executeForResult(op);
 
 
 
@@ -327,7 +327,7 @@ public class AuditLogTestCase {
         add.get(PORT).set(SYSLOG_PORT);
         compositeAdd.get(STEPS).add(add);
 
-        masterLifecycleUtil.executeForResult(compositeAdd);
+        primaryLifecycleUtil.executeForResult(compositeAdd);
 
         try {
             expectNoSyslogData();
@@ -336,10 +336,10 @@ public class AuditLogTestCase {
             final PathElement testHandlerReference = PathElement.pathElement(HANDLER, "test-syslog");
             final PathAddress serverLoggerHandlerReferenceAddress = baseAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT).append(testHandlerReference);
             final ModelNode addServerLoggerHandlerReference = Util.createAddOperation(serverLoggerHandlerReferenceAddress);
-            masterLifecycleUtil.executeForResult(addServerLoggerHandlerReference);
+            primaryLifecycleUtil.executeForResult(addServerLoggerHandlerReference);
             boolean removed = false;
             try {
-                //Master has one server, slave has two
+                //Primary has one server, secondary has two
                 final List<String> servers = new ArrayList<String>();
                 if (baseAddress.getElement(0).getValue().equals("primary")) {
                     servers.add("main-one");
@@ -357,7 +357,7 @@ public class AuditLogTestCase {
                 //Now disable the server logger
                 PathAddress serverLoggerAddress = baseAddress.append(AuditLogLoggerResourceDefinition.HOST_SERVER_PATH_ELEMENT);
                 final ModelNode writeFalseEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, ModelNode.FALSE);
-                masterLifecycleUtil.executeForResult(writeFalseEnabled);
+                primaryLifecycleUtil.executeForResult(writeFalseEnabled);
                 for (int i = 0 ; i < servers.size() ; i++) {
                     expectSyslogData(serverLoggerAddressOnServer, writeFalseEnabled, false);
                 }
@@ -367,12 +367,12 @@ public class AuditLogTestCase {
                 final PathAddress serverAddress = PathAddress.pathAddress(baseAddress.getElement(0)).append(SERVER_CONFIG, servers.get(0));
                 final ModelNode restartOp = Util.createEmptyOperation("reload", serverAddress);
                 restartOp.get(BLOCKING).set(true);
-                masterLifecycleUtil.executeForResult(restartOp);
+                primaryLifecycleUtil.executeForResult(restartOp);
                 expectNoSyslogData();
 
                 //Now enable the server logger again
                 final ModelNode writeTrueEnabled = Util.getWriteAttributeOperation(serverLoggerAddress, ENABLED, ModelNode.TRUE);
-                masterLifecycleUtil.executeForResult(writeTrueEnabled);
+                primaryLifecycleUtil.executeForResult(writeTrueEnabled);
                 for (int i = 0 ; i < servers.size() ; i++) {
                     expectSyslogData(serverLoggerAddressOnServer, writeTrueEnabled, false);
                 }
@@ -381,7 +381,7 @@ public class AuditLogTestCase {
 
                 //Remove handler address
                 final ModelNode removeServerLoggerHandlerReference = Util.createRemoveOperation(serverLoggerHandlerReferenceAddress);
-                masterLifecycleUtil.executeForResult(removeServerLoggerHandlerReference);
+                primaryLifecycleUtil.executeForResult(removeServerLoggerHandlerReference);
                 removed = true;
                 for (int i = 0 ; i < servers.size() ; i++) {
                     expectSyslogData(serverLoggerAddressOnServer.append(testHandlerReference), removeServerLoggerHandlerReference, false);
@@ -389,7 +389,7 @@ public class AuditLogTestCase {
                 expectNoSyslogData();
             } finally {
                 if (!removed) {
-                    masterLifecycleUtil.executeForResult(Util.createRemoveOperation(serverLoggerHandlerReferenceAddress));
+                    primaryLifecycleUtil.executeForResult(Util.createRemoveOperation(serverLoggerHandlerReferenceAddress));
                 }
             }
 
@@ -397,19 +397,19 @@ public class AuditLogTestCase {
             //Add handler reference to host logger and check it gets logged, then remove handler reference when done
             final PathAddress hostLoggerHandlerReferenceAddress = baseAddress.append(AuditLogLoggerResourceDefinition.PATH_ELEMENT).append(PathElement.pathElement(HANDLER, "test-syslog"));
             final ModelNode addHostLoggerHandlerReference = Util.createAddOperation(hostLoggerHandlerReferenceAddress);
-            masterLifecycleUtil.executeForResult(addHostLoggerHandlerReference);
+            primaryLifecycleUtil.executeForResult(addHostLoggerHandlerReference);
             removed = false;
             try {
                 expectSyslogData(hostLoggerHandlerReferenceAddress, addHostLoggerHandlerReference, false);
                 expectNoSyslogData();
                 final ModelNode removeHostLoggerHandlerReference = Util.createRemoveOperation(hostLoggerHandlerReferenceAddress);
-                masterLifecycleUtil.executeForResult(removeHostLoggerHandlerReference);
+                primaryLifecycleUtil.executeForResult(removeHostLoggerHandlerReference);
                 removed = true;
                 expectSyslogData(hostLoggerHandlerReferenceAddress, removeHostLoggerHandlerReference, false);
                 expectNoSyslogData();
             } finally {
                 if (!removed) {
-                    masterLifecycleUtil.executeForResult(Util.createRemoveOperation(hostLoggerHandlerReferenceAddress));
+                    primaryLifecycleUtil.executeForResult(Util.createRemoveOperation(hostLoggerHandlerReferenceAddress));
                 }
             }
 
@@ -417,18 +417,18 @@ public class AuditLogTestCase {
             e.printStackTrace();
             throw e;
         } finally {
-            masterLifecycleUtil.executeForResult(Util.createRemoveOperation(handlerAddress));
+            primaryLifecycleUtil.executeForResult(Util.createRemoveOperation(handlerAddress));
         }
     }
 
-    private ModelNode expectSyslogData(PathAddress pathAddress, ModelNode op, boolean masterOnlyOp) throws Exception {
+    private ModelNode expectSyslogData(PathAddress pathAddress, ModelNode op, boolean primaryOnlyOp) throws Exception {
         byte[] data = server.receiveData(5 * ADJUSTED_SECOND, TimeUnit.MILLISECONDS);
         Assert.assertNotNull(data);
         String msg = new String(data, StandardCharsets.UTF_8);
         msg = msg.substring(msg.indexOf('{')).replace("#012", "\n");
         ModelNode syslogData =  ModelNode.fromJSONString(msg);
 
-        Assert.assertEquals(!masterOnlyOp, syslogData.hasDefined("domainUUID"));
+        Assert.assertEquals(!primaryOnlyOp, syslogData.hasDefined("domainUUID"));
         Assert.assertEquals(AccessMechanism.NATIVE.toString(), syslogData.get(ACCESS).asString());
         Assert.assertTrue(syslogData.hasDefined("remote-address") && syslogData.get("remote-address").asString().length() > 0);
         Assert.assertFalse(syslogData.hasDefined("r/o") && syslogData.get("r/o").asBoolean());

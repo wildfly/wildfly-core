@@ -50,17 +50,17 @@ import org.junit.Test;
 public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
 
 
-    private static final String MASTER = "primary";
-    private static final String SLAVE = "secondary";
-    private static final String MASTER_SERVER = "main-one";
-    private static final String SLAVE_SERVER = "main-three";
+    private static final String PRIMARY = "primary";
+    private static final String SECONDARY = "secondary";
+    private static final String PRIMARY_SERVER = "main-one";
+    private static final String SECONDARY_SERVER = "main-three";
 
     private static ModelControllerClient client;
 
     @BeforeClass
     public static void setup() throws UnknownHostException {
         DomainTestSupport testSupport = DomainTestSuite.createSupport(ValidateOperationOperationTestCase.class.getSimpleName());
-        client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
     }
 
     @AfterClass
@@ -102,13 +102,13 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     @Test
-    public void testValidMasterHcOperation() throws IOException, MgmtOperationException {
-        testValidHcOperation(MASTER);
+    public void testValidPrimaryHcOperation() throws IOException, MgmtOperationException {
+        testValidHcOperation(PRIMARY);
     }
 
     @Test
-    public void testValidSlaveHcOperation() throws IOException, MgmtOperationException {
-        testValidHcOperation(SLAVE);
+    public void testValidSecondaryHcOperation() throws IOException, MgmtOperationException {
+        testValidHcOperation(SECONDARY);
     }
 
     public void testValidHcOperation(String host) throws IOException, MgmtOperationException {
@@ -118,13 +118,13 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     @Test
-    public void testInvalidMasterHcOperation() throws IOException {
-        testInvalidHcOperation(MASTER);
+    public void testInvalidPrimaryHcOperation() throws IOException {
+        testInvalidHcOperation(PRIMARY);
     }
 
     @Test
-    public void testInvalidSlaveHcOperation() throws IOException {
-        testInvalidHcOperation(SLAVE);
+    public void testInvalidSecondaryHcOperation() throws IOException {
+        testInvalidHcOperation(SECONDARY);
     }
 
     private void testInvalidHcOperation(String host) throws IOException {
@@ -133,13 +133,13 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     @Test
-    public void testValidMasterHcServerOperation() throws IOException, MgmtOperationException {
-        testValidServerOperation(MASTER, MASTER_SERVER);
+    public void testValidPrimaryHcServerOperation() throws IOException, MgmtOperationException {
+        testValidServerOperation(PRIMARY, PRIMARY_SERVER);
     }
 
     @Test
-    public void testValidSlaveHcServerOperation() throws IOException, MgmtOperationException {
-        testValidServerOperation(SLAVE, SLAVE_SERVER);
+    public void testValidSecondaryHcServerOperation() throws IOException, MgmtOperationException {
+        testValidServerOperation(SECONDARY, SECONDARY_SERVER);
     }
 
     private void testValidServerOperation(String host, String server) throws IOException, MgmtOperationException {
@@ -148,13 +148,13 @@ public class ValidateOperationOperationTestCase extends AbstractMgmtTestBase {
     }
 
     @Test
-    public void testInvalidMasterHcServerOperation() throws IOException, MgmtOperationException {
-        testInvalidServerOperation(MASTER, MASTER_SERVER);
+    public void testInvalidPrimaryHcServerOperation() throws IOException, MgmtOperationException {
+        testInvalidServerOperation(PRIMARY, PRIMARY_SERVER);
     }
 
     @Test
-    public void testInvalidSlaveHcServerOperation() throws IOException, MgmtOperationException {
-        testInvalidServerOperation(SLAVE, SLAVE_SERVER);
+    public void testInvalidSecondaryHcServerOperation() throws IOException, MgmtOperationException {
+        testInvalidServerOperation(SECONDARY, SECONDARY_SERVER);
     }
 
     private void testInvalidServerOperation(String host, String server) throws IOException, MgmtOperationException {

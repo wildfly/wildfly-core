@@ -31,8 +31,8 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUCCESS;
-import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_PASSWORD;
-import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SLAVE_HOST_USERNAME;
+import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SECONDARY_HOST_PASSWORD;
+import static org.jboss.as.test.integration.domain.management.util.DomainLifecycleUtil.SECONDARY_HOST_USERNAME;
 import static org.jboss.as.test.integration.management.util.CustomCLIExecutor.MANAGEMENT_HTTP_PORT;
 import static org.jboss.as.test.integration.management.util.ModelUtil.createOpNode;
 
@@ -65,13 +65,13 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 
 /**
- * Common base for tests of SSL secured communication between master and slave.
+ * Common base for tests of SSL secured communication between primary and secondary.
  *
  * @author Ondrej Kotek <okotek@redhat.com>
  */
-public abstract class AbstractSSLMasterSlaveTestCase {
+public abstract class AbstractSSLPrimarySecondaryTestCase {
 
-    protected static final String MASTER_MANAGEMENT_REALM = "MasterManagementRealm";
+    protected static final String PRIMARY_MANAGEMENT_REALM = "PrimaryManagementRealm";
     private static final String MGMT_CTX = "/management";
     private static final int TIMEOUT = 60000;
 
@@ -85,29 +85,29 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         CoreUtils.createKeyMaterial(workDir);
     }
 
-    protected static void setMasterManagementNativeInterfaceAndCheck(ModelControllerClient client) throws Exception {
-        checkHostStatusOnMaster("secondary");
-        setMasterManagementNativeInterface(client);
-        reloadMaster();
-        checkHostStatusOnMaster("primary");
+    protected static void setPrimaryManagementNativeInterfaceAndCheck(ModelControllerClient client) throws Exception {
+        checkHostStatusOnPrimary("secondary");
+        setPrimaryManagementNativeInterface(client);
+        reloadPrimary();
+        checkHostStatusOnPrimary("primary");
     }
 
-    protected static void setOriginMasterManagementNativeInterfaceAndCheck() throws Exception {
-        setOriginMasterManagementNativeInterface();
-        reloadMaster();
-        checkHostStatusOnMaster("primary");
+    protected static void setOriginPrimaryManagementNativeInterfaceAndCheck() throws Exception {
+        setOriginPrimaryManagementNativeInterface();
+        reloadPrimary();
+        checkHostStatusOnPrimary("primary");
     }
 
-    protected static void reloadMaster() throws Exception {
+    protected static void reloadPrimary() throws Exception {
         ModelNode op = new ModelNode();
         op.get(OP).set("reload");
         op.get(OP_ADDR).add(HOST, "primary");
         op.get(ADMIN_ONLY).set(false);
-        executeOverHttp(getMasterMgmtUri(), op.toJSONString(true));
+        executeOverHttp(getPrimaryMgmtUri(), op.toJSONString(true));
     }
 
-    protected static void checkHostStatusOnMaster(String host) throws Exception {
-        final URI mgmtURI = getMasterMgmtUri();
+    protected static void checkHostStatusOnPrimary(String host) throws Exception {
+        final URI mgmtURI = getPrimaryMgmtUri();
         final String operation = createHostStateRunningOperationJson(host);
         final long time = System.currentTimeMillis() + TIMEOUT;
         do {
@@ -120,7 +120,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         Assert.fail("Cannot validate host '" + host + "' is running");
     }
 
-    protected static void checkHostStatusOnMasterOverRemote(String host, DomainClient domainClient) throws IOException, InterruptedException {
+    protected static void checkHostStatusOnPrimaryOverRemote(String host, DomainClient domainClient) throws IOException, InterruptedException {
         final long time = System.currentTimeMillis() + TIMEOUT;
         do {
             if (checkResultIsRunning(domainClient.execute(getHostStateRunningOperation(host)))) {
@@ -132,24 +132,24 @@ public abstract class AbstractSSLMasterSlaveTestCase {
         Assert.fail("Cannot validate host '" + host + "' is running");
     }
 
-    private static void setMasterManagementNativeInterface(ModelControllerClient client) throws Exception {
+    private static void setPrimaryManagementNativeInterface(ModelControllerClient client) throws Exception {
         ModelNode operation = createOpNode("host=primary/core-service=management/management-interface=native-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         operation.get("name").set("security-realm");
-        operation.get("value").set(MASTER_MANAGEMENT_REALM);
+        operation.get("value").set(PRIMARY_MANAGEMENT_REALM);
         CoreUtils.applyUpdate(operation, client);
     }
 
-    private static void setOriginMasterManagementNativeInterface() throws Exception {
+    private static void setOriginPrimaryManagementNativeInterface() throws Exception {
         ModelNode operation = createOpNode("host=primary/core-service=management/management-interface=native-interface",
                 ModelDescriptionConstants.WRITE_ATTRIBUTE_OPERATION);
         operation.get("name").set("security-realm");
         operation.get("value").set("ManagementRealm");
-        executeOverHttp(getMasterMgmtUri(), operation.toJSONString(true));
+        executeOverHttp(getPrimaryMgmtUri(), operation.toJSONString(true));
     }
 
-    private static URI getMasterMgmtUri() throws MalformedURLException, URISyntaxException {
-        return new URL("http", DomainTestSupport.masterAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX).toURI();
+    private static URI getPrimaryMgmtUri() throws MalformedURLException, URISyntaxException {
+        return new URL("http", DomainTestSupport.primaryAddress, MANAGEMENT_HTTP_PORT, MGMT_CTX).toURI();
     }
 
     private static boolean checkResultIsRunning(ModelNode result) {
@@ -204,7 +204,7 @@ public abstract class AbstractSSLMasterSlaveTestCase {
     }
 
     private static CloseableHttpClient createHttpClient(URI mgmtURI) {
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(SLAVE_HOST_USERNAME, SLAVE_HOST_PASSWORD);
+        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(SECONDARY_HOST_USERNAME, SECONDARY_HOST_PASSWORD);
         AuthScope authScope = new AuthScope(mgmtURI.getHost(), mgmtURI.getPort());
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(authScope, credentials);

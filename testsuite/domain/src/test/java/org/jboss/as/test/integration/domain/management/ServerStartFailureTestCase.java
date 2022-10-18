@@ -50,9 +50,9 @@ import org.junit.Test;
 public class ServerStartFailureTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static final ModelNode hostMaster = new ModelNode();
-    private static final ModelNode hostSlave = new ModelNode();
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static final ModelNode hostPrimary = new ModelNode();
+    private static final ModelNode hostSecondary = new ModelNode();
     private static final ModelNode mainOne = new ModelNode();
     private static final ModelNode mainTwo = new ModelNode();
     private static final ModelNode mainThree = new ModelNode();
@@ -64,33 +64,33 @@ public class ServerStartFailureTestCase {
 
 
     static {
-        // (host=master)
-        hostMaster.add("host", "primary");
-        // (host=master),(server-config=main-one)
+        // (host=primary)
+        hostPrimary.add("host", "primary");
+        // (host=primary),(server-config=main-one)
         mainOne.add("host", "primary");
         mainOne.add("server-config", "main-one");
-        // (host=master),(server-config=main-two)
+        // (host=primary),(server-config=main-two)
         mainTwo.add("host", "primary");
         mainTwo.add("server-config", "main-two");
-        // (host=master),(server-config=other-one)
+        // (host=primary),(server-config=other-one)
         otherOne.add("host", "primary");
         otherOne.add("server-config", "other-one");
-        // (host=master),(server-config=other-two)
+        // (host=primary),(server-config=other-two)
         otherTwo.add("host", "primary");
         otherTwo.add("server-config", "other-two");
 
-        // (host=slave)
-        hostSlave.add("host", "secondary");
-        // (host=slave),(server-config=main-three)
+        // (host=secondary)
+        hostSecondary.add("host", "secondary");
+        // (host=secondary),(server-config=main-three)
         mainThree.add("host", "secondary");
         mainThree.add("server-config", "main-three");
-        // (host=slave),(server-config=main-four)
+        // (host=secondary),(server-config=main-four)
         mainFour.add("host", "secondary");
         mainFour.add("server-config", "main-four");
-        // (host=slave),(server-config=other-three)
+        // (host=secondary),(server-config=other-three)
         otherThree.add("host", "secondary");
         otherThree.add("server-config", "other-three");
-        // (host=slave),(server-config=other-four)
+        // (host=secondary),(server-config=other-four)
         otherFour.add("host", "secondary");
         otherFour.add("server-config", "other-four");
 
@@ -100,23 +100,23 @@ public class ServerStartFailureTestCase {
     public static void setupDomain() throws Exception {
         Configuration configuration = DomainTestSupport.Configuration.create(ServerStartFailureTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary-failure.xml");
-        configuration.getMasterConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n");
-        configuration.getSlaveConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=9787,server=y,suspend=n");
+        configuration.getPrimaryConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n");
+        configuration.getSecondaryConfiguration().addHostCommandLineProperty("-agentlib:jdwp=transport=dt_socket,address=9787,server=y,suspend=n");
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
     }
 
     @Test
     public void testDomainLifecycleMethods() throws Throwable {
 
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         executeLifecycleOperation(client, null, START_SERVERS);
         waitUntilState(client, "primary", "main-one", "STARTED");
         waitUntilState(client, "primary", "main-two", "STARTED");

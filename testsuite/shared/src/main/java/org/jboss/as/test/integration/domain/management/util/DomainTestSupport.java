@@ -56,8 +56,8 @@ public class DomainTestSupport implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger("org.jboss.as.test.integration.domain");
 
-    public static final String masterAddress = System.getProperty("jboss.test.host.primary.address", "127.0.0.1");
-    public static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address", "127.0.0.1");
+    public static final String primaryAddress = System.getProperty("jboss.test.host.primary.address", "127.0.0.1");
+    public static final String secondaryAddress = System.getProperty("jboss.test.host.secondary.address", "127.0.0.1");
     /** @deprecated unused */
     @Deprecated()
     public static final long domainBootTimeout = Long.valueOf(System.getProperty("jboss.test.domain.boot.timeout", "60000"));
@@ -65,13 +65,13 @@ public class DomainTestSupport implements AutoCloseable {
     @Deprecated
     public static final long domainShutdownTimeout = Long.valueOf(System.getProperty("jboss.test.domain.shutdown.timeout", "20000"));
     @SuppressWarnings("WeakerAccess")
-    public static final String masterJvmHome = System.getProperty("jboss.test.host.primary.jvmhome");
+    public static final String primaryJvmHome = System.getProperty("jboss.test.host.primary.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String slaveJvmHome = System.getProperty("jboss.test.host.secondary.jvmhome");
+    public static final String secondaryJvmHome = System.getProperty("jboss.test.host.secondary.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String masterControllerJvmHome = System.getProperty("jboss.test.host.primary.controller.jvmhome");
+    public static final String primaryControllerJvmHome = System.getProperty("jboss.test.host.primary.controller.jvmhome");
     @SuppressWarnings("WeakerAccess")
-    public static final String slaveControllerJvmHome = System.getProperty("jboss.test.host.secondary.controller.jvmhome");
+    public static final String secondaryControllerJvmHome = System.getProperty("jboss.test.host.secondary.controller.jvmhome");
 
     /**
      * Create and start a default configuration for the domain tests.
@@ -83,10 +83,10 @@ public class DomainTestSupport implements AutoCloseable {
         try {
             final Configuration configuration;
             if(Boolean.getBoolean("wildfly.primary.debug")) {
-                 configuration = DomainTestSupport.Configuration.createDebugMaster(testName,
+                 configuration = DomainTestSupport.Configuration.createDebugPrimary(testName,
                     "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             } else if (Boolean.getBoolean("wildfly.secondary.debug")) {
-                configuration = DomainTestSupport.Configuration.createDebugSlave(testName,
+                configuration = DomainTestSupport.Configuration.createDebugSecondary(testName,
                     "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
             } else {
                 configuration = DomainTestSupport.Configuration.create(testName,
@@ -118,48 +118,48 @@ public class DomainTestSupport implements AutoCloseable {
         }
     }
 
-    public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
+    public static WildFlyManagedConfiguration getPrimaryConfiguration(String domainConfigPath, String hostConfigPath,
                                                                      String testName, boolean readOnlyDomain, boolean readOnlyHost) {
-        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, null, readOnlyDomain, readOnlyHost);
+        return getPrimaryConfiguration(domainConfigPath, hostConfigPath, testName, null, readOnlyDomain, readOnlyHost);
     }
 
-    public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
+    public static WildFlyManagedConfiguration getPrimaryConfiguration(String domainConfigPath, String hostConfigPath,
                 String testName, WildFlyManagedConfiguration baseConfig,
                 boolean readOnlyDomain, boolean readOnlyHost) {
-        return getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, Boolean.getBoolean("wildfly.primary.debug"));
+        return getPrimaryConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, Boolean.getBoolean("wildfly.primary.debug"));
     }
 
-    public static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
+    public static WildFlyManagedConfiguration getPrimaryConfiguration(String domainConfigPath, String hostConfigPath,
                 String testName, WildFlyManagedConfiguration baseConfig,
                 boolean readOnlyDomain, boolean readOnlyHost, boolean debug) {
-        return Configuration.getMasterConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, debug);
+        return Configuration.getPrimaryConfiguration(domainConfigPath, hostConfigPath, testName, baseConfig, readOnlyDomain, readOnlyHost, debug);
     }
-    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
+    public static WildFlyManagedConfiguration getSecondaryConfiguration(String hostConfigPath, String testName,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration("secondary", hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
+        return getSecondaryConfiguration("secondary", hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
     }
 
-    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
+    public static WildFlyManagedConfiguration getSecondaryConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration(hostName, hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
+        return getSecondaryConfiguration(hostName, hostConfigPath, testName, new WildFlyManagedConfiguration(), readOnlyHost);
     }
 
-    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
+    public static WildFlyManagedConfiguration getSecondaryConfiguration(String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration("secondary", hostConfigPath, testName, baseConfig, readOnlyHost);
+        return getSecondaryConfiguration("secondary", hostConfigPath, testName, baseConfig, readOnlyHost);
     }
 
-    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
+    public static WildFlyManagedConfiguration getSecondaryConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost) {
-        return getSlaveConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, Boolean.getBoolean("wildfly.secondary.debug"));
+        return getSecondaryConfiguration(hostName, hostConfigPath, testName, baseConfig, readOnlyHost, Boolean.getBoolean("wildfly.secondary.debug"));
     }
 
-    public static WildFlyManagedConfiguration getSlaveConfiguration(String hostName, String hostConfigPath, String testName,
+    public static WildFlyManagedConfiguration getSecondaryConfiguration(String hostName, String hostConfigPath, String testName,
                                                                     WildFlyManagedConfiguration baseConfig,
                                                                     boolean readOnlyHost, boolean debug) {
-        return Configuration.getSlaveConfiguration(hostConfigPath, testName, hostName, baseConfig, readOnlyHost, debug);
+        return Configuration.getSecondaryConfiguration(hostConfigPath, testName, hostName, baseConfig, readOnlyHost, debug);
     }
 
     private static URI toURI(URL url) {
@@ -350,86 +350,86 @@ public class DomainTestSupport implements AutoCloseable {
         }
     }
 
-    private final WildFlyManagedConfiguration masterConfiguration;
-    private final WildFlyManagedConfiguration slaveConfiguration;
-    private final DomainLifecycleUtil domainMasterLifecycleUtil;
-    private final DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private final WildFlyManagedConfiguration primaryConfiguration;
+    private final WildFlyManagedConfiguration secondaryConfiguration;
+    private final DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private final DomainLifecycleUtil domainSecondaryLifecycleUtil;
     private final DomainControllerClientConfig sharedClientConfig;
     private final String testClass;
     private volatile boolean closed;
 
 
 
-    protected DomainTestSupport(final String testClass, final String domainConfig, final String masterConfig,
-                                final String slaveConfig, WildFlyManagedConfiguration masterBase,
-                                final WildFlyManagedConfiguration slaveBase) throws Exception {
-        this(testClass, domainConfig, masterConfig, slaveConfig, masterBase, slaveBase, false, false, false);
+    protected DomainTestSupport(final String testClass, final String domainConfig, final String primaryConfig,
+                                final String secondaryConfig, WildFlyManagedConfiguration primaryBase,
+                                final WildFlyManagedConfiguration secondaryBase) throws Exception {
+        this(testClass, domainConfig, primaryConfig, secondaryConfig, primaryBase, secondaryBase, false, false, false);
     }
 
-    protected DomainTestSupport(final String testClass, final String domainConfig, final String masterConfig,
-                                final String slaveConfig, WildFlyManagedConfiguration masterBase,
-                                final WildFlyManagedConfiguration slaveBase, final boolean readOnlyDomainConfig,
-                                final boolean readOnlyMasterHostConfig, final boolean readOnlySlaveHostConfig) throws Exception {
-        this(testClass, getMasterConfiguration(domainConfig, masterConfig, testClass, masterBase, readOnlyDomainConfig, readOnlyMasterHostConfig),
-                slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testClass, slaveBase, readOnlySlaveHostConfig));
+    protected DomainTestSupport(final String testClass, final String domainConfig, final String primaryConfig,
+                                final String secondaryConfig, WildFlyManagedConfiguration primaryBase,
+                                final WildFlyManagedConfiguration secondaryBase, final boolean readOnlyDomainConfig,
+                                final boolean readOnlyPrimaryHostConfig, final boolean readOnlySecondaryHostConfig) throws Exception {
+        this(testClass, getPrimaryConfiguration(domainConfig, primaryConfig, testClass, primaryBase, readOnlyDomainConfig, readOnlyPrimaryHostConfig),
+                secondaryConfig == null ? null : getSecondaryConfiguration(secondaryConfig, testClass, secondaryBase, readOnlySecondaryHostConfig));
     }
 
-    protected DomainTestSupport(final String testClass, final WildFlyManagedConfiguration masterConfiguration,
-                                final WildFlyManagedConfiguration slaveConfiguration) throws Exception {
+    protected DomainTestSupport(final String testClass, final WildFlyManagedConfiguration primaryConfiguration,
+                                final WildFlyManagedConfiguration secondaryConfiguration) throws Exception {
         this.testClass = testClass;
         this.sharedClientConfig = DomainControllerClientConfig.create();
-        this.masterConfiguration = masterConfiguration;
-        this.domainMasterLifecycleUtil = new DomainLifecycleUtil(masterConfiguration, sharedClientConfig);
-        this.slaveConfiguration = slaveConfiguration;
-        if (slaveConfiguration != null) {
-            this.domainSlaveLifecycleUtil = new DomainLifecycleUtil(slaveConfiguration, sharedClientConfig);
+        this.primaryConfiguration = primaryConfiguration;
+        this.domainPrimaryLifecycleUtil = new DomainLifecycleUtil(primaryConfiguration, sharedClientConfig);
+        this.secondaryConfiguration = secondaryConfiguration;
+        if (secondaryConfiguration != null) {
+            this.domainSecondaryLifecycleUtil = new DomainLifecycleUtil(secondaryConfiguration, sharedClientConfig);
         } else {
-            this.domainSlaveLifecycleUtil = null;
+            this.domainSecondaryLifecycleUtil = null;
         }
     }
 
     public static DomainTestSupport create(final Configuration configuration) throws Exception {
-        return new DomainTestSupport(configuration.getTestName(), configuration.getMasterConfiguration(), configuration.getSlaveConfiguration());
+        return new DomainTestSupport(configuration.getTestName(), configuration.getPrimaryConfiguration(), configuration.getSecondaryConfiguration());
     }
 
     public static DomainTestSupport create(final String testClass, final Configuration configuration) throws Exception {
-        return new DomainTestSupport(testClass, configuration.getMasterConfiguration(), configuration.getSlaveConfiguration());
+        return new DomainTestSupport(testClass, configuration.getPrimaryConfiguration(), configuration.getSecondaryConfiguration());
     }
 
-    public static DomainTestSupport create(final String testClass, final WildFlyManagedConfiguration masterConfiguration,
-                                           final WildFlyManagedConfiguration slaveConfiguration) throws Exception {
-        return new DomainTestSupport(testClass, masterConfiguration, slaveConfiguration);
+    public static DomainTestSupport create(final String testClass, final WildFlyManagedConfiguration primaryConfiguration,
+                                           final WildFlyManagedConfiguration secondaryConfiguration) throws Exception {
+        return new DomainTestSupport(testClass, primaryConfiguration, secondaryConfiguration);
     }
 
-    public WildFlyManagedConfiguration getDomainMasterConfiguration() {
-        return masterConfiguration;
+    public WildFlyManagedConfiguration getDomainPrimaryConfiguration() {
+        return primaryConfiguration;
     }
 
     /**
-     * Gets the {@link DomainLifecycleUtil} object for interacting with the master @{code HostController}.
+     * Gets the {@link DomainLifecycleUtil} object for interacting with the primary @{code HostController}.
      * @return the util object. Will not return {@code null}
      *
      * @throws IllegalStateException if {@link #close()} has previously been called
      */
-    public DomainLifecycleUtil getDomainMasterLifecycleUtil() {
+    public DomainLifecycleUtil getDomainPrimaryLifecycleUtil() {
         checkClosed();
-        return domainMasterLifecycleUtil;
+        return domainPrimaryLifecycleUtil;
     }
 
-    public WildFlyManagedConfiguration getDomainSlaveConfiguration() {
-        return slaveConfiguration;
+    public WildFlyManagedConfiguration getDomainSecondaryConfiguration() {
+        return secondaryConfiguration;
     }
 
     /**
-     * Gets the {@link DomainLifecycleUtil} object for interacting with the non-master @{code HostController}, if there
+     * Gets the {@link DomainLifecycleUtil} object for interacting with the non-primary @{code HostController}, if there
      * is one.
-     * @return the util object. May return {@code null} if this object was not configured to provide a non-master.
+     * @return the util object. May return {@code null} if this object was not configured to provide a non-primary.
      *
      * @throws IllegalStateException if {@link #close()} has previously been called
      */
-    public DomainLifecycleUtil getDomainSlaveLifecycleUtil() {
+    public DomainLifecycleUtil getDomainSecondaryLifecycleUtil() {
         checkClosed();
-        return domainSlaveLifecycleUtil;
+        return domainSecondaryLifecycleUtil;
     }
 
     public DomainControllerClientConfig getSharedClientConfiguration() {
@@ -443,14 +443,14 @@ public class DomainTestSupport implements AutoCloseable {
      */
     public void start() {
         checkClosed();
-        domainMasterLifecycleUtil.start();
-        if (domainSlaveLifecycleUtil != null) {
+        domainPrimaryLifecycleUtil.start();
+        if (domainSecondaryLifecycleUtil != null) {
             try {
-                domainSlaveLifecycleUtil.start();
+                domainSecondaryLifecycleUtil.start();
             } catch (RuntimeException e) {
                 try {
-                    //Clean up after ourselves if slave failed to start
-                    domainMasterLifecycleUtil.stop();
+                    //Clean up after ourselves if secondary failed to start
+                    domainPrimaryLifecycleUtil.stop();
                 } catch (RuntimeException ignore) {
                 }
                 throw e;
@@ -501,8 +501,8 @@ public class DomainTestSupport implements AutoCloseable {
     }
 
     /**
-     * Stops the {@link #getDomainMasterLifecycleUtil() master host} and, if there is one, the
-     * {@link #getDomainSlaveLifecycleUtil() slave host}, and also closes any
+     * Stops the {@link #getDomainPrimaryLifecycleUtil() primary host} and, if there is one, the
+     * {@link #getDomainSecondaryLifecycleUtil() secondary host}, and also closes any
      * {@link #getSharedClientConfiguration() shared client configuration}. This object and any
      * {@link DomainLifecycleUtil} objects obtained from it cannot be used
      * for controlling or interacting with hosts after this is called.
@@ -511,11 +511,11 @@ public class DomainTestSupport implements AutoCloseable {
         closed = true;
         try {
             try {
-                if (domainSlaveLifecycleUtil != null) {
-                    domainSlaveLifecycleUtil.close();
+                if (domainSecondaryLifecycleUtil != null) {
+                    domainSecondaryLifecycleUtil.close();
                 }
             } finally {
-                domainMasterLifecycleUtil.close();
+                domainPrimaryLifecycleUtil.close();
             }
         } finally {
             StreamUtils.safeClose(sharedClientConfig);
@@ -534,16 +534,16 @@ public class DomainTestSupport implements AutoCloseable {
     }
 
     /**
-     * Stops the {@link #getDomainMasterLifecycleUtil() master host} and, if there is one, the
-     * {@link #getDomainSlaveLifecycleUtil() slave host}. Stops are done concurrently with 2 minute
+     * Stops the {@link #getDomainPrimaryLifecycleUtil() primary host} and, if there is one, the
+     * {@link #getDomainSecondaryLifecycleUtil() secondary host}. Stops are done concurrently with 2 minute
      * timeout for a host to stop.
      */
     public void stopHosts() {
         //checkClosed(); -- don't fail if already closed, as this is harmless
-        if (domainSlaveLifecycleUtil != null) {
-            stopHosts(120000, domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
+        if (domainSecondaryLifecycleUtil != null) {
+            stopHosts(120000, domainSecondaryLifecycleUtil, domainPrimaryLifecycleUtil);
         } else {
-            stopHosts(120000, domainMasterLifecycleUtil);
+            stopHosts(120000, domainPrimaryLifecycleUtil);
         }
     }
 
@@ -556,59 +556,59 @@ public class DomainTestSupport implements AutoCloseable {
     public static class Configuration {
 
         private final String testName;
-        private final WildFlyManagedConfiguration masterConfiguration;
-        private final WildFlyManagedConfiguration slaveConfiguration;
+        private final WildFlyManagedConfiguration primaryConfiguration;
+        private final WildFlyManagedConfiguration secondaryConfiguration;
 
 
-        protected Configuration(final String testName, WildFlyManagedConfiguration masterConfiguration,
-                                WildFlyManagedConfiguration slaveConfiguration) {
+        protected Configuration(final String testName, WildFlyManagedConfiguration primaryConfiguration,
+                                WildFlyManagedConfiguration secondaryConfiguration) {
             this.testName = testName;
-            this.masterConfiguration = masterConfiguration;
-            this.slaveConfiguration = slaveConfiguration;
+            this.primaryConfiguration = primaryConfiguration;
+            this.secondaryConfiguration = secondaryConfiguration;
         }
 
         public String getTestName() {
             return testName;
         }
 
-        public WildFlyManagedConfiguration getMasterConfiguration() {
-            return masterConfiguration;
+        public WildFlyManagedConfiguration getPrimaryConfiguration() {
+            return primaryConfiguration;
         }
 
-        public WildFlyManagedConfiguration getSlaveConfiguration() {
-            return slaveConfiguration;
+        public WildFlyManagedConfiguration getSecondaryConfiguration() {
+            return secondaryConfiguration;
         }
 
-        public static Configuration create(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
-            return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false);
-        }
-
-        @SuppressWarnings("WeakerAccess")
-        public static Configuration createDebugMaster(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
-            return create(testName, domainConfig, masterConfig, slaveConfig, false, false, true, false, false);
+        public static Configuration create(final String testName, final String domainConfig, final String primaryConfig, final String secondaryConfig) {
+            return create(testName, domainConfig, primaryConfig, secondaryConfig, false, false, false);
         }
 
         @SuppressWarnings("WeakerAccess")
-        public static Configuration createDebugSlave(final String testName, final String domainConfig, final String masterConfig, final String slaveConfig) {
-            return create(testName, domainConfig, masterConfig, slaveConfig, false, false, false, false, true);
+        public static Configuration createDebugPrimary(final String testName, final String domainConfig, final String primaryConfig, final String secondaryConfig) {
+            return create(testName, domainConfig, primaryConfig, secondaryConfig, false, false, true, false, false);
         }
 
-        public static Configuration create(final String testName, final String domainConfig, final String masterConfig,
-                                           final String slaveConfig, boolean readOnlyMasterDomain, boolean readOnlyMasterHost, boolean readOnlySlaveHost) {
-            return create(testName, domainConfig, masterConfig, slaveConfig, readOnlyMasterDomain, readOnlyMasterHost, false, readOnlySlaveHost, false);
+        @SuppressWarnings("WeakerAccess")
+        public static Configuration createDebugSecondary(final String testName, final String domainConfig, final String primaryConfig, final String secondaryConfig) {
+            return create(testName, domainConfig, primaryConfig, secondaryConfig, false, false, false, false, true);
         }
 
-        public static Configuration create(final String testName, final String domainConfig, final String masterConfig,
-                                           final String slaveConfig,
-                                           boolean readOnlyMasterDomain, boolean readOnlyMasterHost, boolean masterDebug,
-                                           boolean readOnlySlaveHost, boolean slaveDebug) {
-
-            WildFlyManagedConfiguration masterConfiguration = getMasterConfiguration(domainConfig, masterConfig, testName, null, readOnlyMasterDomain, readOnlyMasterHost, masterDebug);
-            WildFlyManagedConfiguration slaveConfiguration = slaveConfig == null ? null : getSlaveConfiguration(slaveConfig, testName, "secondary", null, readOnlySlaveHost, slaveDebug);
-            return new Configuration(testName, masterConfiguration, slaveConfiguration);
+        public static Configuration create(final String testName, final String domainConfig, final String primaryConfig,
+                                           final String secondaryConfig, boolean readOnlyPrimaryDomain, boolean readOnlyPrimaryHost, boolean readOnlySecondaryHost) {
+            return create(testName, domainConfig, primaryConfig, secondaryConfig, readOnlyPrimaryDomain, readOnlyPrimaryHost, false, readOnlySecondaryHost, false);
         }
 
-        private static WildFlyManagedConfiguration getMasterConfiguration(String domainConfigPath, String hostConfigPath,
+        public static Configuration create(final String testName, final String domainConfig, final String primaryConfig,
+                                           final String secondaryConfig,
+                                           boolean readOnlyPrimaryDomain, boolean readOnlyPrimaryHost, boolean primaryDebug,
+                                           boolean readOnlySecondaryHost, boolean secondaryDebug) {
+
+            WildFlyManagedConfiguration primaryConfiguration = getPrimaryConfiguration(domainConfig, primaryConfig, testName, null, readOnlyPrimaryDomain, readOnlyPrimaryHost, primaryDebug);
+            WildFlyManagedConfiguration secondaryConfiguration = secondaryConfig == null ? null : getSecondaryConfiguration(secondaryConfig, testName, "secondary", null, readOnlySecondaryHost, secondaryDebug);
+            return new Configuration(testName, primaryConfiguration, secondaryConfiguration);
+        }
+
+        private static WildFlyManagedConfiguration getPrimaryConfiguration(String domainConfigPath, String hostConfigPath,
                                                                          String testName, WildFlyManagedConfiguration baseConfig,
                                                                          boolean readOnlyDomain, boolean readOnlyHost, boolean debug) {
             final String hostName = "primary";
@@ -616,62 +616,62 @@ public class DomainTestSupport implements AutoCloseable {
             File extraModules = getAddedModulesDir(testName);
             File overrideModules = getHostOverrideModulesDir(testName, hostName);
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-            final WildFlyManagedConfiguration masterConfig = baseConfig == null ? new WildFlyManagedConfiguration() : baseConfig;
-            configureModulePath(masterConfig, overrideModules, extraModules);
-            masterConfig.setHostControllerManagementAddress(masterAddress);
-            masterConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress);
+            final WildFlyManagedConfiguration primaryConfig = baseConfig == null ? new WildFlyManagedConfiguration() : baseConfig;
+            configureModulePath(primaryConfig, overrideModules, extraModules);
+            primaryConfig.setHostControllerManagementAddress(primaryAddress);
+            primaryConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + primaryAddress);
             if(debug) {
-                masterConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y " +
-                       masterConfig.getHostCommandLineProperties());
+                primaryConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=y " +
+                       primaryConfig.getHostCommandLineProperties());
             }
-            masterConfig.setReadOnlyDomain(readOnlyDomain);
-            masterConfig.setReadOnlyHost(readOnlyHost);
+            primaryConfig.setReadOnlyDomain(readOnlyDomain);
+            primaryConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(domainConfigPath);
             assert url != null : "cannot find domainConfigPath";
-            masterConfig.setDomainConfigFile(new File(toURI(url)).getAbsolutePath());
+            primaryConfig.setDomainConfigFile(new File(toURI(url)).getAbsolutePath());
             url = tccl.getResource(hostConfigPath);
             assert url != null : "cannot find hostConfigPath";
-            masterConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
-            File masterDir = new File(domains, hostName);
+            primaryConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
+            File primaryDir = new File(domains, hostName);
             // TODO this should not be necessary
-            File cfgDir = new File(masterDir, "configuration");
+            File cfgDir = new File(primaryDir, "configuration");
             checkedMkDirs(cfgDir);
-            masterConfig.setDomainDirectory(masterDir.getAbsolutePath());
-            if (masterJvmHome != null) masterConfig.setJavaHome(masterJvmHome);
-            if (masterControllerJvmHome != null) masterConfig.setControllerJavaHome(masterControllerJvmHome);
-            return masterConfig;
+            primaryConfig.setDomainDirectory(primaryDir.getAbsolutePath());
+            if (primaryJvmHome != null) primaryConfig.setJavaHome(primaryJvmHome);
+            if (primaryControllerJvmHome != null) primaryConfig.setControllerJavaHome(primaryControllerJvmHome);
+            return primaryConfig;
         }
 
-        private static WildFlyManagedConfiguration getSlaveConfiguration(String hostConfigPath, String testName,
+        private static WildFlyManagedConfiguration getSecondaryConfiguration(String hostConfigPath, String testName,
                                                                          String hostName, WildFlyManagedConfiguration baseConfig,
                                                                          boolean readOnlyHost, boolean debug) {
             File domains = getBaseDir(testName);
             File extraModules = getAddedModulesDir(testName);
             File overrideModules = getHostOverrideModulesDir(testName, hostName);
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-            final WildFlyManagedConfiguration slaveConfig = baseConfig == null ? new WildFlyManagedConfiguration() : baseConfig;
-            configureModulePath(slaveConfig, overrideModules, extraModules);
-            slaveConfig.setHostName(hostName);
-            slaveConfig.setHostControllerManagementAddress(slaveAddress);
-            slaveConfig.setHostControllerManagementPort(19999);
-            slaveConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress +
-                    " -Djboss.test.host.secondary.address=" + slaveAddress);
+            final WildFlyManagedConfiguration secondaryConfig = baseConfig == null ? new WildFlyManagedConfiguration() : baseConfig;
+            configureModulePath(secondaryConfig, overrideModules, extraModules);
+            secondaryConfig.setHostName(hostName);
+            secondaryConfig.setHostControllerManagementAddress(secondaryAddress);
+            secondaryConfig.setHostControllerManagementPort(19999);
+            secondaryConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + primaryAddress +
+                    " -Djboss.test.host.secondary.address=" + secondaryAddress);
             if(debug) {
-                slaveConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8788,server=y,suspend=y " +
-                       slaveConfig.getHostCommandLineProperties());
+                secondaryConfig.setHostCommandLineProperties("-agentlib:jdwp=transport=dt_socket,address=8788,server=y,suspend=y " +
+                       secondaryConfig.getHostCommandLineProperties());
             }
-            slaveConfig.setReadOnlyHost(readOnlyHost);
+            secondaryConfig.setReadOnlyHost(readOnlyHost);
             URL url = tccl.getResource(hostConfigPath);
             assert url != null;
-            slaveConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
-            File slaveDir = new File(domains, hostName);
+            secondaryConfig.setHostConfigFile(new File(toURI(url)).getAbsolutePath());
+            File secondaryDir = new File(domains, hostName);
             // TODO this should not be necessary
-            File cfgDir = new File(slaveDir, "configuration");
+            File cfgDir = new File(secondaryDir, "configuration");
             checkedMkDirs(cfgDir);
-            slaveConfig.setDomainDirectory(slaveDir.getAbsolutePath());
-            if (slaveJvmHome != null) slaveConfig.setJavaHome(slaveJvmHome);
-            if (slaveControllerJvmHome != null) slaveConfig.setControllerJavaHome(slaveControllerJvmHome);
-            return slaveConfig;
+            secondaryConfig.setDomainDirectory(secondaryDir.getAbsolutePath());
+            if (secondaryJvmHome != null) secondaryConfig.setJavaHome(secondaryJvmHome);
+            if (secondaryControllerJvmHome != null) secondaryConfig.setControllerJavaHome(secondaryControllerJvmHome);
+            return secondaryConfig;
         }
     }
 

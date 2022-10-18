@@ -63,9 +63,9 @@ public class NonExistentServerGroupTestCase {
     @Test
     public void testBootAdminOnly() {
         DomainTestSupport.Configuration configuration = getDomainConfiguration();
-        configuration.getMasterConfiguration().setAdminOnly(true);
+        configuration.getPrimaryConfiguration().setAdminOnly(true);
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
-        Assert.assertTrue(testSupport.getDomainMasterLifecycleUtil().areServersStarted());
+        Assert.assertTrue(testSupport.getDomainPrimaryLifecycleUtil().areServersStarted());
     }
 
     private static DomainTestSupport.Configuration getDomainConfiguration() {

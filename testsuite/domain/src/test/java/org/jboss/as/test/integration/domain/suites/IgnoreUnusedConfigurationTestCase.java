@@ -69,39 +69,39 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test of slave hosts ignoring unused deployment and configuration when ignore-unused-configuration is true
- * on the slave
+ * Test of secondary hosts ignoring unused deployment and configuration when ignore-unused-configuration is true
+ * on the secondary
  *
  * @author Ken Wills (c) 2015 Red Hat Inc.
  */
 public class IgnoreUnusedConfigurationTestCase {
 
-    static final PathAddress SLAVE_ADDR = PathAddress.pathAddress(HOST, "secondary");
-    static final PathAddress MASTER_ADDR = PathAddress.pathAddress(HOST, "primary");
+    static final PathAddress SECONDARY_ADDR = PathAddress.pathAddress(HOST, "secondary");
+    static final PathAddress PRIMARY_ADDR = PathAddress.pathAddress(HOST, "primary");
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(IgnoredResourcesTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
-        createServerGroup(domainMasterLifecycleUtil.getDomainClient(), "slave-ignore-group", "default");
-        createServer(domainMasterLifecycleUtil.getDomainClient(), "master-only-server", "slave-ignore-group");
-        startServer(domainMasterLifecycleUtil.getDomainClient(), "master-only-server");
+        createServerGroup(domainPrimaryLifecycleUtil.getDomainClient(), "secondary-ignore-group", "default");
+        createServer(domainPrimaryLifecycleUtil.getDomainClient(), "primary-only-server", "secondary-ignore-group");
+        startServer(domainPrimaryLifecycleUtil.getDomainClient(), "primary-only-server");
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        stopServer(domainMasterLifecycleUtil.getDomainClient(), "master-only-server");
-        DomainTestUtils.executeForResult(Util.createRemoveOperation(MASTER_ADDR.append(SERVER_CONFIG, "master-only-server")), domainMasterLifecycleUtil.getDomainClient());
-        DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "slave-ignore-group")), domainMasterLifecycleUtil.getDomainClient());
+        stopServer(domainPrimaryLifecycleUtil.getDomainClient(), "primary-only-server");
+        DomainTestUtils.executeForResult(Util.createRemoveOperation(PRIMARY_ADDR.append(SERVER_CONFIG, "primary-only-server")), domainPrimaryLifecycleUtil.getDomainClient());
+        DomainTestUtils.executeForResult(Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "secondary-ignore-group")), domainPrimaryLifecycleUtil.getDomainClient());
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -125,11 +125,11 @@ public class IgnoreUnusedConfigurationTestCase {
 
             final ModelNode sAdd = steps.add();
             sAdd.get(OP).set(ADD);
-            sAdd.get(OP_ADDR).add(SERVER_GROUP, "slave-ignore-group").add(DEPLOYMENT, "testIUC.jar");
+            sAdd.get(OP_ADDR).add(SERVER_GROUP, "secondary-ignore-group").add(DEPLOYMENT, "testIUC.jar");
 
             final Operation operation = OperationBuilder.create(composite).addInputStream(is).build();
 
-            final ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(operation);
+            final ModelNode result = domainPrimaryLifecycleUtil.getDomainClient().execute(operation);
             Assert.assertEquals(result.asString(), result.get(OUTCOME).asString(), SUCCESS);
 
             final ModelNode ra = new ModelNode();
@@ -137,23 +137,23 @@ public class IgnoreUnusedConfigurationTestCase {
             ra.get(OP_ADDR).add(DEPLOYMENT, "testIUC.jar");
             ra.get(NAME).set(CONTENT);
 
-            final ModelNode r = DomainTestUtils.executeForResult(ra, domainMasterLifecycleUtil.getDomainClient());
+            final ModelNode r = DomainTestUtils.executeForResult(ra, domainPrimaryLifecycleUtil.getDomainClient());
             final byte[] hash = r.get(0).get(HASH).asBytes();
 
-            Assert.assertTrue(exists(domainMasterLifecycleUtil, hash));
-            Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
+            Assert.assertTrue(exists(domainPrimaryLifecycleUtil, hash));
+            Assert.assertFalse(exists(domainSecondaryLifecycleUtil, hash));
 
-            // undeploy and check that both master and slave don't have the deployment
+            // undeploy and check that both primary and secondary don't have the deployment
             ModelNode undeploy = new ModelNode();
             undeploy.get(OP).set(COMPOSITE);
             ModelNode undeploySteps = undeploy.get(STEPS);
             undeploySteps.add(Util.createRemoveOperation(
-                    PathAddress.pathAddress(SERVER_GROUP, "slave-ignore-group").append(DEPLOYMENT, "testIUC.jar")));
+                    PathAddress.pathAddress(SERVER_GROUP, "secondary-ignore-group").append(DEPLOYMENT, "testIUC.jar")));
             undeploySteps.add(Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT, "testIUC.jar")));
-            ModelNode undeployResult = DomainTestUtils.executeForResult(undeploy, domainMasterLifecycleUtil.getDomainClient());
+            ModelNode undeployResult = DomainTestUtils.executeForResult(undeploy, domainPrimaryLifecycleUtil.getDomainClient());
 
-            Assert.assertFalse(exists(domainMasterLifecycleUtil, hash));
-            Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
+            Assert.assertFalse(exists(domainPrimaryLifecycleUtil, hash));
+            Assert.assertFalse(exists(domainSecondaryLifecycleUtil, hash));
         } finally {
             if (is != null) try {
                 is.close();
@@ -193,20 +193,20 @@ public class IgnoreUnusedConfigurationTestCase {
     }
 
     static void createServer(DomainClient client, String name, String serverGroup) throws Exception {
-        ModelNode add = Util.createAddOperation(MASTER_ADDR.append(SERVER_CONFIG, name));
+        ModelNode add = Util.createAddOperation(PRIMARY_ADDR.append(SERVER_CONFIG, name));
         add.get(GROUP).set(serverGroup);
         //add.get(PORT_OFFSET).set(portOffset);
         DomainTestUtils.executeForResult(add, client);
     }
 
     static void startServer(DomainClient client, String name) throws Exception {
-        ModelNode start = Util.createEmptyOperation(START, MASTER_ADDR.append(SERVER_CONFIG, name));
+        ModelNode start = Util.createEmptyOperation(START, PRIMARY_ADDR.append(SERVER_CONFIG, name));
         start.get(BLOCKING).set(true);
         DomainTestUtils.executeForResult(start, client);
     }
 
     static void stopServer(DomainClient client, String name) throws Exception {
-        PathAddress serverAddr = MASTER_ADDR.append(SERVER_CONFIG, name);
+        PathAddress serverAddr = PRIMARY_ADDR.append(SERVER_CONFIG, name);
         ModelNode stop = Util.createEmptyOperation(STOP, serverAddr);
         stop.get(BLOCKING).set(true);
         DomainTestUtils.executeForResult(stop, client);

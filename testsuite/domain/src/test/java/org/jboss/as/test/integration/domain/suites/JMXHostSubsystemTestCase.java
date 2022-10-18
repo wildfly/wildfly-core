@@ -71,62 +71,62 @@ public class JMXHostSubsystemTestCase {
 
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
-    private DomainClient masterClient;
-    private DomainClient slaveClient;
-    JMXConnector masterConnector;
-    MBeanServerConnection masterConnection;
-    JMXConnector slaveConnector;
-    MBeanServerConnection slaveConnection;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
+    private DomainClient primaryClient;
+    private DomainClient secondaryClient;
+    JMXConnector primaryConnector;
+    MBeanServerConnection primaryConnection;
+    JMXConnector secondaryConnector;
+    MBeanServerConnection secondaryConnection;
 
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(JMXHostSubsystemTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
 
     @Before
     public void initialize() throws Exception {
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
-        masterConnector = setupAndGetConnector(domainMasterLifecycleUtil);
-        masterConnection = masterConnector.getMBeanServerConnection();
-        slaveClient = domainSlaveLifecycleUtil.getDomainClient();
-        slaveConnector = setupAndGetConnector(domainSlaveLifecycleUtil);
-        slaveConnection = slaveConnector.getMBeanServerConnection();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        primaryConnector = setupAndGetConnector(domainPrimaryLifecycleUtil);
+        primaryConnection = primaryConnector.getMBeanServerConnection();
+        secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
+        secondaryConnector = setupAndGetConnector(domainSecondaryLifecycleUtil);
+        secondaryConnection = secondaryConnector.getMBeanServerConnection();
     }
 
     @After
     public void closeConnection() throws Exception {
-        IoUtils.safeClose(masterConnector);
-        IoUtils.safeClose(slaveConnector);
+        IoUtils.safeClose(primaryConnector);
+        IoUtils.safeClose(secondaryConnector);
     }
 
     /**
      * Test that all the MBean infos can be read properly
      */
     @Test
-    public void testAllMBeanInfosMaster() throws Exception {
-        testAllMBeanInfos(masterConnection);
+    public void testAllMBeanInfosPrimary() throws Exception {
+        testAllMBeanInfos(primaryConnection);
     }
 
     /**
      * Test that all the MBean infos can be read properly
      */
     @Test
-    public void testAllMBeanInfosSlave() throws Exception {
-        testAllMBeanInfos(slaveConnection);
+    public void testAllMBeanInfosSecondary() throws Exception {
+        testAllMBeanInfos(secondaryConnection);
     }
 
     private void testAllMBeanInfos(MBeanServerConnection connection) throws Exception {
@@ -145,18 +145,18 @@ public class JMXHostSubsystemTestCase {
     }
 
     @Test
-    public void testSystemPropertiesMaster() throws Exception {
-        //testDomainModelSystemProperties(masterClient, true, masterConnection);
-        //For now disable writes on the master while we decide if it is a good idea or not
-        testDomainModelSystemProperties(masterClient, false, masterConnection);
+    public void testSystemPropertiesPrimary() throws Exception {
+        //testDomainModelSystemProperties(primaryClient, true, primaryConnection);
+        //For now disable writes on the primary while we decide if it is a good idea or not
+        testDomainModelSystemProperties(primaryClient, false, primaryConnection);
     }
 
     @Test
-    public void testSystemPropertiesSlave() throws Exception {
-        testDomainModelSystemProperties(slaveClient, false, slaveConnection);
+    public void testSystemPropertiesSecondary() throws Exception {
+        testDomainModelSystemProperties(secondaryClient, false, secondaryConnection);
     }
 
-    private void testDomainModelSystemProperties(DomainClient client, boolean master, MBeanServerConnection connection) throws Exception {
+    private void testDomainModelSystemProperties(DomainClient client, boolean primary, MBeanServerConnection connection) throws Exception {
         String[] initialNames = getSystemPropertyNames(client);
 
         ObjectName testName = new ObjectName(RESOLVED_DOMAIN + ":system-property=mbeantest");
@@ -171,17 +171,17 @@ public class JMXHostSubsystemTestCase {
 
             }
         }
-        Assert.assertEquals(master, opInfo != null);
+        Assert.assertEquals(primary, opInfo != null);
 
         try {
             connection.invoke(RESOLVED_ROOT_MODEL_NAME, "addSystemProperty", new Object[] {"mbeantest", false, "800"}, new String[] {String.class.getName(), Boolean.class.getName(), String.class.getName()});
-            Assert.assertTrue(master);//The invoke should not work if it is a slave since the domain model is only writable from the slave
+            Assert.assertTrue(primary);//The invoke should not work if it is a secondary since the domain model is only writable from the secondary
         } catch (Exception e) {
-            if (master) {
-                //There should be no exception executing the invoke from a master HC
+            if (primary) {
+                //There should be no exception executing the invoke from a primary HC
                 throw e;
             }
-            //Expected for a slave; we can't do any more
+            //Expected for a secondary; we can't do any more
             return;
         }
         try {
@@ -206,19 +206,19 @@ public class JMXHostSubsystemTestCase {
     }
 
     @Test
-    public void testNoSlaveMBeansVisibleFromMaster() throws Exception {
-        testNoMBeansVisible(masterConnection, true);
+    public void testNoSecondaryMBeansVisibleFromPrimary() throws Exception {
+        testNoMBeansVisible(primaryConnection, true);
     }
 
     @Test
-    public void testNoMasterMBeansVisibleFromSlave() throws Exception {
-        testNoMBeansVisible(slaveConnection, false);
+    public void testNoPrimaryMBeansVisibleFromSecondary() throws Exception {
+        testNoMBeansVisible(secondaryConnection, false);
     }
 
-    private void testNoMBeansVisible(MBeanServerConnection connection, boolean master) throws Exception {
+    private void testNoMBeansVisible(MBeanServerConnection connection, boolean primary) throws Exception {
         String pattern = "jboss.as:host=%s,extension=org.jboss.as.jmx";
-        ObjectName mine = createObjectName(String.format(pattern, master ? "primary" : "secondary"));
-        ObjectName other = createObjectName(String.format(pattern, master ? "secondary" : "primary"));
+        ObjectName mine = createObjectName(String.format(pattern, primary ? "primary" : "secondary"));
+        ObjectName other = createObjectName(String.format(pattern, primary ? "secondary" : "primary"));
         assertNoMBean(other, connection);
         Assert.assertNotNull(connection.getMBeanInfo(mine));
     }

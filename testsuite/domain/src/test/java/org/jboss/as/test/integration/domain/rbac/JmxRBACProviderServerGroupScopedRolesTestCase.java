@@ -82,8 +82,8 @@ public class JmxRBACProviderServerGroupScopedRolesTestCase extends AbstractServe
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(JmxRBACProviderServerGroupScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         setNonCoreMbeanSensitivity(domainClient, true);
         ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -121,17 +121,17 @@ public class JmxRBACProviderServerGroupScopedRolesTestCase extends AbstractServe
     @After
     public void activateMBeanSensitivity() throws IOException {
         mbeanSensitivity = true;
-        setNonCoreMbeanSensitivity(testSupport.getDomainMasterLifecycleUtil().getDomainClient(), true);
+        setNonCoreMbeanSensitivity(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient(), true);
     }
 
     protected void deactivateMBeanSensitivity() throws IOException {
         mbeanSensitivity = false;
-        setNonCoreMbeanSensitivity(testSupport.getDomainMasterLifecycleUtil().getDomainClient(), false);
+        setNonCoreMbeanSensitivity(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient(), false);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         try {
             ServerGroupRolesMappingSetup.INSTANCE.tearDown(domainClient);
         } finally {
@@ -234,7 +234,7 @@ public class JmxRBACProviderServerGroupScopedRolesTestCase extends AbstractServe
 
     private void test(String userName) throws Exception {
         String urlString = System.getProperty("jmx.service.url", "service:jmx:remoting-jmx://"
-                        + NetworkUtils.formatPossibleIpv6Address(masterClientConfig.getHostControllerManagementAddress()) + ":12345");
+                        + NetworkUtils.formatPossibleIpv6Address(primaryClientConfig.getHostControllerManagementAddress()) + ":12345");
         JmxManagementInterface jmx = JmxManagementInterface.create(new JMXServiceURL(urlString),
                 userName, RbacAdminCallbackHandler.STD_PASSWORD,
                 null // not needed, as the only thing from JmxManagementInterface used in this test is getConnection()

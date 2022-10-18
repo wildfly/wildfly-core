@@ -53,7 +53,7 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
     public static void setup() throws Exception {
 
         CLITestSuite.createSupport(WildCardReadsTestCase.class.getSimpleName());
-        AbstractCliTestBase.initCLI(DomainTestSupport.masterAddress);
+        AbstractCliTestBase.initCLI(DomainTestSupport.primaryAddress);
     }
 
     @AfterClass
@@ -117,7 +117,7 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testSlaveAllServersReadRootAttribute() throws IOException {
+    public void testSecondaryAllServersReadRootAttribute() throws IOException {
         cli.sendLine("/host=secondary/server=*:read-attribute(name=\"server-state\")");
         CLIOpResult opResult = cli.readAllAsOpResult();
         Assert.assertTrue(opResult.isIsOutcomeSuccess());
@@ -133,7 +133,7 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testSlaveAllServersReadResource() throws IOException {
+    public void testSecondaryAllServersReadResource() throws IOException {
         cli.sendLine("/host=secondary/server=*/interface=*:read-resource()");
         CLIOpResult opResult = cli.readAllAsOpResult();
         Assert.assertTrue(opResult.isIsOutcomeSuccess());
@@ -143,7 +143,7 @@ public class WildCardReadsTestCase extends AbstractCliTestBase {
     }
 
     @Test
-    public void testSlaveAllServersReadResourceDescription() throws IOException {
+    public void testSecondaryAllServersReadResourceDescription() throws IOException {
         cli.sendLine("/host=secondary/server=*/interface=public:read-resource-description()");
         CLIOpResult opResult = cli.readAllAsOpResult();
         Assert.assertTrue(opResult.isIsOutcomeSuccess());

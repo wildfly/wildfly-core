@@ -67,23 +67,23 @@ import org.junit.Test;
 public class ProductInfoUnitTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(ProductInfoUnitTestCase.class.getSimpleName(),
                 "domain-configs/domain-minimal.xml", "host-configs/host-primary.xml", "host-configs/host-minimal.xml", false, false, false, false, false));
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Test
@@ -91,13 +91,13 @@ public class ProductInfoUnitTestCase {
         final ModelNode operation = new ModelNode();
         operation.get(OP_ADDR).set(PathAddress.EMPTY_ADDRESS.toModelNode());
         operation.get(OP).set(OPERATION_NAME);
-        List<ModelNode> results = validateResponse(domainMasterLifecycleUtil.createDomainClient().execute(operation), true).asList();
+        List<ModelNode> results = validateResponse(domainPrimaryLifecycleUtil.createDomainClient().execute(operation), true).asList();
         assertThat(results.size(), is(2));
-        checkMaster(results.get(0));
-        checkSlave(results.get(1));
+        checkPrimary(results.get(0));
+        checkSecondary(results.get(1));
     }
 
-    private void checkMaster(ModelNode result) {
+    private void checkPrimary(ModelNode result) {
         List<Property> response = validateResponse(result, true).asPropertyList();
         assertThat(response.size(), is(5));
         for (Property serverSummary : response) {
@@ -133,7 +133,7 @@ public class ProductInfoUnitTestCase {
         }
     }
 
-    private void checkSlave(ModelNode result) {
+    private void checkSecondary(ModelNode result) {
         List<Property> response = validateResponse(result, true).asPropertyList();
         assertThat(response.size(), is(5));
         for (Property serverSummary : response) {

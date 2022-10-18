@@ -83,17 +83,17 @@ import org.junit.runners.MethodSorters;
 public class AutoIgnoredResourcesDomainTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final ModelNode ROOT_ADDRESS = new ModelNode().setEmptyList();
-    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
-    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
+    private static final ModelNode Primary_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
+    private static final ModelNode Secondary_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
 
     static {
         ROOT_ADDRESS.protect();
-        MASTER_ROOT_ADDRESS.protect();
-        SLAVE_ROOT_ADDRESS.protect();
+        Primary_ROOT_ADDRESS.protect();
+        Secondary_ROOT_ADDRESS.protect();
     }
 
     private static final String EXTENSION_JMX = "org.jboss.as.jmx";
@@ -125,81 +125,81 @@ public class AutoIgnoredResourcesDomainTestCase {
         setupDomain(false, false);
     }
 
-    public static void setupDomain(boolean slaveIsBackupDC, boolean slaveIsCachedDc) throws Exception {
+    public static void setupDomain(boolean secondaryIsBackupDC, boolean secondaryIsCachedDc) throws Exception {
         //Make all the configs read-only so we can stop and start when we like to reset
         DomainTestSupport.Configuration config = DomainTestSupport.Configuration.create(AutoIgnoredResourcesDomainTestCase.class.getSimpleName(),
                 "domain-configs/domain-auto-ignore.xml", "host-configs/host-auto-ignore-primary.xml", "host-configs/host-auto-ignore-secondary.xml",
                 true, true, true);
-        if (slaveIsBackupDC)
-            config.getSlaveConfiguration().setBackupDC(true);
-        if (slaveIsCachedDc)
-            config.getSlaveConfiguration().setCachedDC(true);
+        if (secondaryIsBackupDC)
+            config.getSecondaryConfiguration().setBackupDC(true);
+        if (secondaryIsCachedDc)
+            config.getSecondaryConfiguration().setCachedDC(true);
         testSupport = DomainTestSupport.create(config);
         // Start!
         testSupport.start();
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         testSupport = null;
     }
 
-    private DomainClient masterClient;
-    private DomainClient slaveClient;
+    private DomainClient primaryClient;
+    private DomainClient secondaryClient;
 
     @Before
     public void setup() throws Exception {
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
-        slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
     }
 
     /////////////////////////////////////////////////////////////////
-    // These tests check that a simple operation on the slave server
+    // These tests check that a simple operation on the secondary server
     // config pulls down the missing data from the DC
 
     @Test
     public void test00_CheckInitialBootExclusions() throws Exception {
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, ROOT_SOCKETS1);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, ROOT_SOCKETS1);
         checkSystemProperties(0);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
-    public void test01_ChangeSlaveServerConfigSocketBindingGroupOverridePullsDownDataFromDc() throws Exception {
-        validateResponse(slaveClient.execute(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA)), false);
+    public void test01_ChangeSecondaryServerConfigSocketBindingGroupOverridePullsDownDataFromDc() throws Exception {
+        validateResponse(secondaryClient.execute(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA)), false);
 
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, ROOT_SOCKETS1, SOCKETSA);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, ROOT_SOCKETS1, SOCKETSA);
         checkSystemProperties(0);
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
-    public void test02_ChangeSlaveServerConfigGroupPullsDownDataFromDc() throws Exception {
-        validateResponse(slaveClient.execute(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2)), false);
+    public void test02_ChangeSecondaryServerConfigGroupPullsDownDataFromDc() throws Exception {
+        validateResponse(secondaryClient.execute(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2)), false);
 
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(0);
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
@@ -207,27 +207,27 @@ public class AutoIgnoredResourcesDomainTestCase {
         ModelNode addGroupOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "testgroup")));
         addGroupOp.get(PROFILE).set(PROFILE3);
         addGroupOp.get(SOCKET_BINDING_GROUP).set(SOCKETS3);
-        validateResponse(masterClient.execute(addGroupOp), false);
+        validateResponse(primaryClient.execute(addGroupOp), false);
 
-        //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        //New data should not be pushed yet since nothing on the secondary uses it
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(0);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
-        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSlaveServerConfigAddress("testserver")));
+        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSecondaryServerConfigAddress("testserver")));
         addConfigOp.get(GROUP).set("testgroup");
-        validateResponse(slaveClient.execute(addConfigOp), false);
+        validateResponse(secondaryClient.execute(addConfigOp), false);
 
         //Now that we have a group using the new data it should be pulled down
-        checkSlaveProfiles(PROFILE2, PROFILE3, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
-        checkSlaveServerGroups(GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
+        checkSecondaryProfiles(PROFILE2, PROFILE3, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
+        checkSecondaryServerGroups(GROUP2, "testgroup");
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
         checkSystemProperties(0);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
@@ -238,37 +238,37 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     /////////////////////////////////////////////////////////////////
     // These tests use a composite to obtain the DC lock, and check
-    // that an operation on the slave server config pulls down the
+    // that an operation on the secondary server config pulls down the
     // missing data from the DC
 
     @Test
-    public void test10_ChangeSlaveServerConfigSocketBindingGroupOverridePullsDownDataFromDcWithDcLockTaken() throws Exception {
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))), false);
+    public void test10_ChangeSecondaryServerConfigSocketBindingGroupOverridePullsDownDataFromDcWithDcLockTaken() throws Exception {
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))), false);
 
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, ROOT_SOCKETS1, SOCKETSA);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, ROOT_SOCKETS1, SOCKETSA);
         checkSystemProperties(1); //Composite added a property
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
-    public void test11_ChangeSlaveServerConfigGroupPullsDownDataFromDcWithDcLockTaken() throws Exception {
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
+    public void test11_ChangeSecondaryServerConfigGroupPullsDownDataFromDcWithDcLockTaken() throws Exception {
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
 
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(2); //Composite added a property
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
@@ -276,27 +276,27 @@ public class AutoIgnoredResourcesDomainTestCase {
         ModelNode addGroupOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "testgroup")));
         addGroupOp.get(PROFILE).set(PROFILE3);
         addGroupOp.get(SOCKET_BINDING_GROUP).set(SOCKETS3);
-        validateResponse(masterClient.execute(createDcLockTakenComposite(addGroupOp)), false);
+        validateResponse(primaryClient.execute(createDcLockTakenComposite(addGroupOp)), false);
 
-        //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        //New data should not be pushed yet since nothing on the secondary uses it
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(3); //Composite added a property
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
-        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSlaveServerConfigAddress("testserver")));
+        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSecondaryServerConfigAddress("testserver")));
         addConfigOp.get(GROUP).set("testgroup");
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(addConfigOp)), false);
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(addConfigOp)), false);
 
         //Now that we have a group using the new data it should be pulled down
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2, PROFILE3);
-        checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
-        checkSlaveServerGroups(GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2, PROFILE3);
+        checkSecondaryExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
+        checkSecondaryServerGroups(GROUP2, "testgroup");
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
         checkSystemProperties(4); //Composite added a property
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
 
@@ -309,57 +309,57 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     /////////////////////////////////////////////////////////////////
     // These tests use a composite to obtain the DC lock, and check
-    // that an operation on the slave server config pulls down the
+    // that an operation on the secondary server config pulls down the
     // missing data from the DC
     // The first time this is attempted the operation will roll back
     // The second time it should succeed
 
 
     @Test
-    public void test20_ChangeSlaveServerConfigSocketBindingGroupOverridePullsDownDataFromDcWithDcLockTakenAndRollback() throws Exception {
-        validateFailedResponse(slaveClient.execute(createDcLockTakenCompositeWithRollback(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))));
+    public void test20_ChangeSecondaryServerConfigSocketBindingGroupOverridePullsDownDataFromDcWithDcLockTakenAndRollback() throws Exception {
+        validateFailedResponse(secondaryClient.execute(createDcLockTakenCompositeWithRollback(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))));
 
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, ROOT_SOCKETS1);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, ROOT_SOCKETS1);
         checkSystemProperties(0);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))), false);
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, ROOT_SOCKETS1);
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETSA))), false);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, SOCKETSA, ROOT_SOCKETS1);
         checkSystemProperties(1); //Composite added a property
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
-    public void test21_ChangeSlaveServerConfigGroupPullsDownDataFromDcWithDcLockTakenAndRollback() throws Exception {
-        validateFailedResponse(slaveClient.execute(createDcLockTakenCompositeWithRollback(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2))));
+    public void test21_ChangeSecondaryServerConfigGroupPullsDownDataFromDcWithDcLockTakenAndRollback() throws Exception {
+        validateFailedResponse(secondaryClient.execute(createDcLockTakenCompositeWithRollback(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2))));
 
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS1, SOCKETSA, ROOT_SOCKETS1);
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS1, SOCKETSA, ROOT_SOCKETS1);
         checkSystemProperties(1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2))), false);
 
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(2); //Composite added a property
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
@@ -367,34 +367,34 @@ public class AutoIgnoredResourcesDomainTestCase {
         ModelNode addGroupOp = Util.createAddOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, "testgroup")));
         addGroupOp.get(PROFILE).set(PROFILE3);
         addGroupOp.get(SOCKET_BINDING_GROUP).set(SOCKETS3);
-        validateResponse(masterClient.execute(createDcLockTakenComposite(addGroupOp)), false);
+        validateResponse(primaryClient.execute(createDcLockTakenComposite(addGroupOp)), false);
 
-        //New data should not be pushed yet since nothing on the slave uses it
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        //New data should not be pushed yet since nothing on the secondary uses it
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(3); //Composite added a property
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
-        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSlaveServerConfigAddress("testserver")));
+        ModelNode addConfigOp = Util.createAddOperation(PathAddress.pathAddress(getSecondaryServerConfigAddress("testserver")));
         addConfigOp.get(GROUP).set("testgroup");
-        validateFailedResponse(slaveClient.execute(createDcLockTakenCompositeWithRollback(addConfigOp)));
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
+        validateFailedResponse(secondaryClient.execute(createDcLockTakenCompositeWithRollback(addConfigOp)));
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, ROOT_SOCKETS2);
         checkSystemProperties(3);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
         //Now that we have a group using the new data it should be pulled down
-        validateResponse(slaveClient.execute(createDcLockTakenComposite(addConfigOp)), false);
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2, PROFILE3);
-        checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
-        checkSlaveServerGroups(GROUP2, "testgroup");
-        checkSlaveSocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
+        validateResponse(secondaryClient.execute(createDcLockTakenComposite(addConfigOp)), false);
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2, PROFILE3);
+        checkSecondaryExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
+        checkSecondaryServerGroups(GROUP2, "testgroup");
+        checkSecondarySocketBindingGroups(SOCKETSA, SOCKETS2, SOCKETS3, ROOT_SOCKETS2);
         checkSystemProperties(4); //Composite added a property
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     @Test
@@ -405,37 +405,37 @@ public class AutoIgnoredResourcesDomainTestCase {
 
     /////////////////////////////////////////////////////////////////
     // These tests test that changing a server group on the DC
-    // piggybacks missing data to the slave
+    // piggybacks missing data to the secondary
 
     @Test
-    public void test30_ChangeServerGroupSocketBindingGroupGetsPushedToSlave() throws Exception {
+    public void test30_ChangeServerGroupSocketBindingGroupGetsPushedToSecondary() throws Exception {
         ModelNode op = Util.getWriteAttributeOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, GROUP1)).toModelNode(), SOCKET_BINDING_GROUP, SOCKETS2);
-        validateResponse(masterClient.execute(op));
+        validateResponse(primaryClient.execute(op));
 
-        checkSlaveProfiles(PROFILE1, ROOT_PROFILE1);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        checkSecondaryProfiles(PROFILE1, ROOT_PROFILE1);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
 
     @Test
-    public void test31_ChangeServerGroupProfileGetsPushedToSlave() throws Exception {
+    public void test31_ChangeServerGroupProfileGetsPushedToSecondary() throws Exception {
         ModelNode op = Util.getWriteAttributeOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, GROUP1)).toModelNode(), PROFILE, PROFILE2);
-        validateResponse(masterClient.execute(op));
+        validateResponse(primaryClient.execute(op));
 
-        checkSlaveProfiles(PROFILE2, ROOT_PROFILE2);
-        checkSlaveExtensions(EXTENSION_LOGGING);
-        checkSlaveServerGroups(GROUP1);
-        checkSlaveSocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        checkSecondaryProfiles(PROFILE2, ROOT_PROFILE2);
+        checkSecondaryExtensions(EXTENSION_LOGGING);
+        checkSecondaryServerGroups(GROUP1);
+        checkSecondarySocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
     /////////////////////////////////////////////////////////////////
@@ -461,24 +461,24 @@ public class AutoIgnoredResourcesDomainTestCase {
         deployment.addAsManifestResource(new StringAsset(serviceXml), "jboss-service.xml");
 
         InputStream in = deployment.as(ZipExporter.class).exportAsInputStream();
-        masterClient.getDeploymentManager().execute(masterClient.getDeploymentManager().newDeploymentPlan().add("sardeployment.sar", in).deploy("sardeployment.sar").toServerGroup(GROUP2).build());
+        primaryClient.getDeploymentManager().execute(primaryClient.getDeploymentManager().newDeploymentPlan().add("sardeployment.sar", in).deploy("sardeployment.sar").toServerGroup(GROUP2).build());
 
         ModelNode op = Util.getWriteAttributeOperation(PathAddress.pathAddress(PathElement.pathElement(SERVER_GROUP, GROUP2)).toModelNode(), PROFILE, PROFILE3);
-        validateResponse(masterClient.execute(op));
+        validateResponse(primaryClient.execute(op));
 
-        op = Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2);
-        validateResponse(slaveClient.execute(op));
+        op = Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2);
+        validateResponse(secondaryClient.execute(op));
 
-        checkSlaveProfiles(PROFILE3);
-        checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
-        checkSlaveServerGroups(GROUP2);
-        checkSlaveSocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveServerStatus(SERVER1));
+        checkSecondaryProfiles(PROFILE3);
+        checkSecondaryExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
+        checkSecondaryServerGroups(GROUP2);
+        checkSecondarySocketBindingGroups(SOCKETS2, ROOT_SOCKETS2);
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryServerStatus(SERVER1));
 
         Assert.assertFalse(testMarker.exists());
 
-        restartSlaveServer(SERVER1);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        restartSecondaryServer(SERVER1);
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
 
         //The mbean should have created this file
         // Assert.assertTrue(testMarker.exists());
@@ -504,17 +504,17 @@ public class AutoIgnoredResourcesDomainTestCase {
         addGroupOp.get(SOCKET_BINDING_GROUP).set(SOCKETS3);
 
         steps.add(addGroupOp);
-        steps.add(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETS3));
-        steps.add(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, GROUP2));
-        steps.add(Util.getWriteAttributeOperation(getSlaveServerConfigAddress(SERVER1), GROUP, "testgroup"));
+        steps.add(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), SOCKET_BINDING_GROUP, SOCKETS3));
+        steps.add(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, GROUP2));
+        steps.add(Util.getWriteAttributeOperation(getSecondaryServerConfigAddress(SERVER1), GROUP, "testgroup"));
 
 
-        validateResponse(masterClient.execute(composite));
+        validateResponse(primaryClient.execute(composite));
 
-        checkSlaveProfiles(PROFILE3);
-        checkSlaveExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
-        checkSlaveServerGroups("testgroup");
-        checkSlaveSocketBindingGroups(SOCKETS3);
+        checkSecondaryProfiles(PROFILE3);
+        checkSecondaryExtensions(EXTENSION_LOGGING, EXTENSION_JMX);
+        checkSecondaryServerGroups("testgroup");
+        checkSecondarySocketBindingGroups(SOCKETS3);
 
     }
 
@@ -624,12 +624,12 @@ public class AutoIgnoredResourcesDomainTestCase {
     // Private stuff
 
     private void checkFullConfiguration() throws Exception {
-        checkSlaveProfiles(ROOT_PROFILE1, ROOT_PROFILE2, PROFILE1, PROFILE2, PROFILE3);
-        checkSlaveExtensions(EXTENSION_JMX, EXTENSION_LOGGING, EXTENSION_REMOTING, EXTENSION_IO, EXTENSION_RC);
-        checkSlaveServerGroups(GROUP1, GROUP2);
-        checkSlaveSocketBindingGroups(ROOT_SOCKETS1, ROOT_SOCKETS2, SOCKETS1, SOCKETS2, SOCKETS3, SOCKETSA);
+        checkSecondaryProfiles(ROOT_PROFILE1, ROOT_PROFILE2, PROFILE1, PROFILE2, PROFILE3);
+        checkSecondaryExtensions(EXTENSION_JMX, EXTENSION_LOGGING, EXTENSION_REMOTING, EXTENSION_IO, EXTENSION_RC);
+        checkSecondaryServerGroups(GROUP1, GROUP2);
+        checkSecondarySocketBindingGroups(ROOT_SOCKETS1, ROOT_SOCKETS2, SOCKETS1, SOCKETS2, SOCKETS3, SOCKETSA);
         checkSystemProperties(0);
-        Assert.assertEquals("running", getSlaveServerStatus(SERVER1));
+        Assert.assertEquals("running", getSecondaryServerStatus(SERVER1));
     }
 
 
@@ -648,85 +648,85 @@ public class AutoIgnoredResourcesDomainTestCase {
     private ModelNode createDcLockTakenCompositeWithRollback(ModelNode op) {
         ModelNode composite = createDcLockTakenComposite(op);
 
-        ModelNode rollback = Util.getWriteAttributeOperation(SLAVE_ROOT_ADDRESS.clone().add(SYSTEM_PROPERTY, "rollback-does-not-exist" + String.valueOf(System.currentTimeMillis())), VALUE, "xxx");
+        ModelNode rollback = Util.getWriteAttributeOperation(Secondary_ROOT_ADDRESS.clone().add(SYSTEM_PROPERTY, "rollback-does-not-exist" + String.valueOf(System.currentTimeMillis())), VALUE, "xxx");
         composite.get(STEPS).add(rollback);
         return composite;
     }
 
     private void checkSystemProperties(int size) throws Exception {
-        Assert.assertEquals(size, getChildrenOfTypeOnSlave(SYSTEM_PROPERTY).asList().size());
+        Assert.assertEquals(size, getChildrenOfTypeOnSecondary(SYSTEM_PROPERTY).asList().size());
     }
 
-    private void checkSlaveProfiles(String... profiles) throws Exception {
-        checkEqualContents(getChildrenOfTypeOnSlave(PROFILE).asList(), profiles);
+    private void checkSecondaryProfiles(String... profiles) throws Exception {
+        checkEqualContents(getChildrenOfTypeOnSecondary(PROFILE).asList(), profiles);
     }
 
 
-    private void checkSlaveExtensions(String... extensions) throws Exception {
+    private void checkSecondaryExtensions(String... extensions) throws Exception {
         if (true) {
             return; // Automatically ignoring extensions is disabled atm
         }
-        checkEqualContents(getChildrenOfTypeOnSlave(EXTENSION).asList(), extensions);
+        checkEqualContents(getChildrenOfTypeOnSecondary(EXTENSION).asList(), extensions);
     }
 
-    private void checkSlaveServerGroups(String... groups) throws Exception {
-        checkEqualContents(getChildrenOfTypeOnSlave(SERVER_GROUP).asList(), groups);
+    private void checkSecondaryServerGroups(String... groups) throws Exception {
+        checkEqualContents(getChildrenOfTypeOnSecondary(SERVER_GROUP).asList(), groups);
     }
 
-    private void checkSlaveSocketBindingGroups(String... groups) throws Exception {
-        checkEqualContents(getChildrenOfTypeOnSlave(SOCKET_BINDING_GROUP).asList(), groups);
+    private void checkSecondarySocketBindingGroups(String... groups) throws Exception {
+        checkEqualContents(getChildrenOfTypeOnSecondary(SOCKET_BINDING_GROUP).asList(), groups);
     }
 
     private void undefineIgnoreUnsusedConfiguration() throws Exception {
         // undefine ignore-unused-configuration
-        ModelNode slaveModel = validateResponse(masterClient.execute(Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
-        slaveModel.get(REMOTE).remove(IGNORE_UNUSED_CONFIG);
-        ModelNode op = Operations.createWriteAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER, slaveModel);
-        validateResponse(masterClient.execute(op));
+        ModelNode secondaryModel = validateResponse(primaryClient.execute(Operations.createReadAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
+        secondaryModel.get(REMOTE).remove(IGNORE_UNUSED_CONFIG);
+        ModelNode op = Operations.createWriteAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER, secondaryModel);
+        validateResponse(primaryClient.execute(op));
 
-        // reload slave
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveHostStatus());
-        reloadSlaveHost();
+        // reload secondary
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryHostStatus());
+        reloadSecondaryHost();
 
         // verify that ignore-unused-configuration is undefined
-        op = Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER);
-        Assert.assertFalse(validateResponse(masterClient.execute(op), true).get(REMOTE).hasDefined(IGNORE_UNUSED_CONFIG));
+        op = Operations.createReadAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER);
+        Assert.assertFalse(validateResponse(primaryClient.execute(op), true).get(REMOTE).hasDefined(IGNORE_UNUSED_CONFIG));
     }
 
     private void setIgnoreUnusedConfiguration(boolean ignoreUnusedConfiguration) throws Exception {
-        ModelNode slaveModel = validateResponse(masterClient.execute(Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
-        slaveModel.get(REMOTE).get(IGNORE_UNUSED_CONFIG).set(ignoreUnusedConfiguration);
-        ModelNode op = Operations.createWriteAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER, slaveModel);
-        validateResponse(masterClient.execute(op));
+        ModelNode secondaryModel = validateResponse(primaryClient.execute(Operations.createReadAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER)), true);
+        secondaryModel.get(REMOTE).get(IGNORE_UNUSED_CONFIG).set(ignoreUnusedConfiguration);
+        ModelNode op = Operations.createWriteAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER, secondaryModel);
+        validateResponse(primaryClient.execute(op));
 
-        // reload slave
-        Assert.assertEquals(RELOAD_REQUIRED, getSlaveHostStatus());
-        reloadSlaveHost();
+        // reload secondary
+        Assert.assertEquals(RELOAD_REQUIRED, getSecondaryHostStatus());
+        reloadSecondaryHost();
 
         // verify value of ignore-unused-configuration
-        op = Operations.createReadAttributeOperation(SLAVE_ROOT_ADDRESS, DOMAIN_CONTROLLER);
-        Assert.assertEquals(ignoreUnusedConfiguration, validateResponse(masterClient.execute(op), true).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
+        op = Operations.createReadAttributeOperation(Secondary_ROOT_ADDRESS, DOMAIN_CONTROLLER);
+        Assert.assertEquals(ignoreUnusedConfiguration, validateResponse(primaryClient.execute(op), true).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
     }
 
-    private ModelNode getChildrenOfTypeOnSlave(String type) throws Exception {
+    private ModelNode getChildrenOfTypeOnSecondary(String type) throws Exception {
         ModelNode op = Util.createOperation(READ_CHILDREN_NAMES_OPERATION, PathAddress.EMPTY_ADDRESS);
         op.get(CHILD_TYPE).set(type);
-        ModelNode result = slaveClient.execute(op);
+        ModelNode result = secondaryClient.execute(op);
         return validateResponse(result);
     }
 
-    private String getSlaveServerStatus(String serverName) throws Exception {
-        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(getSlaveRunningServerAddress(serverName)), "server-state");
-        ModelNode result = slaveClient.execute(op);
+    private String getSecondaryServerStatus(String serverName) throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(getSecondaryRunningServerAddress(serverName)), "server-state");
+        ModelNode result = secondaryClient.execute(op);
         return validateResponse(result).asString();
     }
 
-    private ModelNode getSlaveServerConfigAddress(String serverName) {
-        return SLAVE_ROOT_ADDRESS.clone().add(SERVER_CONFIG, serverName);
+    private ModelNode getSecondaryServerConfigAddress(String serverName) {
+        return Secondary_ROOT_ADDRESS.clone().add(SERVER_CONFIG, serverName);
     }
 
-    private ModelNode getSlaveRunningServerAddress(String serverName) {
-        return SLAVE_ROOT_ADDRESS.clone().add(SERVER, serverName);
+    private ModelNode getSecondaryRunningServerAddress(String serverName) {
+        return Secondary_ROOT_ADDRESS.clone().add(SERVER, serverName);
     }
 
     private void checkEqualContents(List<ModelNode> values, String... expected) {
@@ -738,34 +738,34 @@ public class AutoIgnoredResourcesDomainTestCase {
         Assert.assertEquals("Expected " + expectedSet + "; was " + actualSet, expectedSet, actualSet);
     }
 
-    private void restartSlaveServer(String serverName) throws Exception {
-        ModelNode op = Util.createOperation(RESTART, PathAddress.pathAddress(getSlaveServerConfigAddress(serverName)));
+    private void restartSecondaryServer(String serverName) throws Exception {
+        ModelNode op = Util.createOperation(RESTART, PathAddress.pathAddress(getSecondaryServerConfigAddress(serverName)));
         op.get(BLOCKING).set(true);
-        Assert.assertEquals("STARTED", validateResponse(slaveClient.execute(op), true).asString());
+        Assert.assertEquals("STARTED", validateResponse(secondaryClient.execute(op), true).asString());
     }
 
-    private String getSlaveHostStatus() throws Exception {
-        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(SLAVE_ROOT_ADDRESS), HOST_STATE);
-        ModelNode result = slaveClient.execute(op);
+    private String getSecondaryHostStatus() throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.pathAddress(Secondary_ROOT_ADDRESS), HOST_STATE);
+        ModelNode result = secondaryClient.execute(op);
         return validateResponse(result).asString();
     }
 
-    private void reloadSlaveHost() throws Exception {
-        domainSlaveLifecycleUtil.executeAwaitConnectionClosed(Operations.createOperation("reload", SLAVE_ROOT_ADDRESS));
-        domainSlaveLifecycleUtil.connect();
-        domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
+    private void reloadSecondaryHost() throws Exception {
+        domainSecondaryLifecycleUtil.executeAwaitConnectionClosed(Operations.createOperation("reload", Secondary_ROOT_ADDRESS));
+        domainSecondaryLifecycleUtil.connect();
+        domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
     }
 
     private void restartDomainAndReloadReadOnlyConfig() throws Exception {
         restartDomainAndReloadReadOnlyConfig(false, false);
     }
 
-    private void restartDomainAndReloadReadOnlyConfig(boolean slaveIsBackupDC, boolean slaveIsCachedDC) throws Exception {
-        DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSlaveLifecycleUtil, domainMasterLifecycleUtil);
+    private void restartDomainAndReloadReadOnlyConfig(boolean secondaryIsBackupDC, boolean secondaryIsCachedDC) throws Exception {
+        DomainTestSupport.stopHosts(TimeoutUtil.adjust(30000), domainSecondaryLifecycleUtil, domainPrimaryLifecycleUtil);
         testSupport.close();
 
         //Totally reinitialize the domain client
-        setupDomain(slaveIsBackupDC, slaveIsCachedDC);
+        setupDomain(secondaryIsBackupDC, secondaryIsCachedDC);
         setup();
         //Check we're back to where we were
         test00_CheckInitialBootExclusions();

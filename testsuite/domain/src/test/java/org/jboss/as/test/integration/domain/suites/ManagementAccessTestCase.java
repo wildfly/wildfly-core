@@ -71,18 +71,18 @@ import org.junit.Test;
 public class ManagementAccessTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final String TEST = "mgmt-access-test";
     private static final ModelNode ROOT_ADDRESS = new ModelNode().setEmptyList();
-    private static final ModelNode MASTER_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
-    private static final ModelNode SLAVE_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
+    private static final ModelNode PRIMARY_ROOT_ADDRESS = new ModelNode().add(HOST, "primary");
+    private static final ModelNode SECONDARY_ROOT_ADDRESS = new ModelNode().add(HOST, "secondary");
     private static final ModelNode ROOT_PROP_ADDRESS = new ModelNode().add(SYSTEM_PROPERTY, TEST);
     private static final ModelNode OTHER_SERVER_GROUP_ADDRESS = new ModelNode().add(SERVER_GROUP, "other-server-group");
     private static final ModelNode TEST_SERVER_GROUP_ADDRESS = new ModelNode().add(SERVER_GROUP, "test-server-group");
-    private static final ModelNode MASTER_INTERFACE_ADDRESS = new ModelNode().set(MASTER_ROOT_ADDRESS).add(INTERFACE, "management");
-    private static final ModelNode SLAVE_INTERFACE_ADDRESS = new ModelNode().set(SLAVE_ROOT_ADDRESS).add(INTERFACE, "management");
+    private static final ModelNode PRIMARY_INTERFACE_ADDRESS = new ModelNode().set(PRIMARY_ROOT_ADDRESS).add(INTERFACE, "management");
+    private static final ModelNode SECONDARY_INTERFACE_ADDRESS = new ModelNode().set(SECONDARY_ROOT_ADDRESS).add(INTERFACE, "management");
     private static final ModelNode MAIN_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "primary").add(SERVER, "main-one");
     private static final ModelNode MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS = new ModelNode().set(MAIN_RUNNING_SERVER_ADDRESS).add(CORE_SERVICE, PLATFORM_MBEAN).add(TYPE, "class-loading");
     private static final ModelNode OTHER_RUNNING_SERVER_ADDRESS = new ModelNode().add(HOST, "secondary").add(SERVER, "other-two");
@@ -90,12 +90,12 @@ public class ManagementAccessTestCase {
 
     static {
         ROOT_ADDRESS.protect();
-        MASTER_ROOT_ADDRESS.protect();
-        SLAVE_ROOT_ADDRESS.protect();
+        PRIMARY_ROOT_ADDRESS.protect();
+        SECONDARY_ROOT_ADDRESS.protect();
         ROOT_PROP_ADDRESS.protect();
         OTHER_SERVER_GROUP_ADDRESS.protect();
-        MASTER_INTERFACE_ADDRESS.protect();
-        SLAVE_INTERFACE_ADDRESS.protect();
+        PRIMARY_INTERFACE_ADDRESS.protect();
+        SECONDARY_INTERFACE_ADDRESS.protect();
         MAIN_RUNNING_SERVER_ADDRESS.protect();
         MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS.protect();
         OTHER_RUNNING_SERVER_ADDRESS.protect();
@@ -105,56 +105,56 @@ public class ManagementAccessTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ManagementAccessTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
-    private DomainClient masterClient;
-    private DomainClient slaveClient;
+    private DomainClient primaryClient;
+    private DomainClient secondaryClient;
 
     @Before
     public void setup() throws Exception {
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
-        slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
     }
 
     @After
     public void teardown() throws Exception {
-        masterClient.execute(Util.getEmptyOperation(REMOVE, TEST_SERVER_GROUP_ADDRESS));
-        masterClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(ROOT_ADDRESS, "uri"));
-        masterClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(MASTER_ROOT_ADDRESS, "uri"));
-        masterClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(SLAVE_ROOT_ADDRESS, "uri"));
+        primaryClient.execute(Util.getEmptyOperation(REMOVE, TEST_SERVER_GROUP_ADDRESS));
+        primaryClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(ROOT_ADDRESS, "uri"));
+        primaryClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(PRIMARY_ROOT_ADDRESS, "uri"));
+        primaryClient.execute(SchemaLocationRemoveHandler.getRemoveSchemaLocationOperation(SECONDARY_ROOT_ADDRESS, "uri"));
     }
 
     @Test
     public void testDomainReadAccess() throws IOException {
 
         // Start with reads of the root resource
-        ModelNode response = masterClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
+        ModelNode response = primaryClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
         ModelNode returnVal = validateResponse(response);
 
-        response = slaveClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
-        ModelNode slaveReturnVal = validateResponse(response);
+        response = secondaryClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
+        ModelNode secondaryReturnVal = validateResponse(response);
 
-        Assert.assertEquals(returnVal, slaveReturnVal);
+        Assert.assertEquals(returnVal, secondaryReturnVal);
 
         // Now try a resource below root
-        response = masterClient.execute(getReadAttributeOperation(OTHER_SERVER_GROUP_ADDRESS, PROFILE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_SERVER_GROUP_ADDRESS, PROFILE));
         returnVal = validateResponse(response);
         Assert.assertEquals("other", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(OTHER_SERVER_GROUP_ADDRESS, PROFILE));
-        slaveReturnVal = validateResponse(response);
+        response = secondaryClient.execute(getReadAttributeOperation(OTHER_SERVER_GROUP_ADDRESS, PROFILE));
+        secondaryReturnVal = validateResponse(response);
 
-        Assert.assertEquals(returnVal, slaveReturnVal);
+        Assert.assertEquals(returnVal, secondaryReturnVal);
     }
 
     @Test
@@ -166,63 +166,63 @@ public class ManagementAccessTestCase {
         steps.add(getReadAttributeOperation(OTHER_SERVER_GROUP_ADDRESS, PROFILE));
         request.protect();
 
-        ModelNode response = masterClient.execute(request);
+        ModelNode response = primaryClient.execute(request);
         System.out.println(response);
         ModelNode returnVal = validateResponse(response);
         validateResponse(returnVal.get("step-1"));
         ModelNode profile = validateResponse(returnVal.get("step-2"));
         Assert.assertEquals("other", profile.asString());
 
-        response = slaveClient.execute(request);
+        response = secondaryClient.execute(request);
         System.out.println(response);
-        ModelNode slaveReturnVal = validateResponse(response);
-        Assert.assertEquals(returnVal, slaveReturnVal);
+        ModelNode secondaryReturnVal = validateResponse(response);
+        Assert.assertEquals(returnVal, secondaryReturnVal);
     }
 
     @Test
     public void testHostReadAccess() throws IOException {
 
         // Start with reads of the root resource
-        ModelNode response = masterClient.execute(getReadAttributeOperation(MASTER_ROOT_ADDRESS, NAME));
+        ModelNode response = primaryClient.execute(getReadAttributeOperation(PRIMARY_ROOT_ADDRESS, NAME));
         ModelNode returnVal = validateResponse(response);
         Assert.assertEquals("primary", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(SLAVE_ROOT_ADDRESS, NAME));
-        ModelNode slaveReturnVal = validateResponse(response);
-        Assert.assertEquals("secondary", slaveReturnVal.asString());
+        response = secondaryClient.execute(getReadAttributeOperation(SECONDARY_ROOT_ADDRESS, NAME));
+        ModelNode secondaryReturnVal = validateResponse(response);
+        Assert.assertEquals("secondary", secondaryReturnVal.asString());
 
         // Now try a resource below root
-        response = masterClient.execute(getReadAttributeOperation(MASTER_INTERFACE_ADDRESS, INET_ADDRESS));
+        response = primaryClient.execute(getReadAttributeOperation(PRIMARY_INTERFACE_ADDRESS, INET_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
 
-        response = slaveClient.execute(getReadAttributeOperation(SLAVE_INTERFACE_ADDRESS, INET_ADDRESS));
-        slaveReturnVal = validateResponse(response);
-        Assert.assertEquals(ModelType.EXPRESSION, slaveReturnVal.getType());
+        response = secondaryClient.execute(getReadAttributeOperation(SECONDARY_INTERFACE_ADDRESS, INET_ADDRESS));
+        secondaryReturnVal = validateResponse(response);
+        Assert.assertEquals(ModelType.EXPRESSION, secondaryReturnVal.getType());
 
-        response = masterClient.execute(getReadAttributeOperation(SLAVE_INTERFACE_ADDRESS, INET_ADDRESS));
+        response = primaryClient.execute(getReadAttributeOperation(SECONDARY_INTERFACE_ADDRESS, INET_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
 
-        Assert.assertEquals(returnVal, slaveReturnVal);
+        Assert.assertEquals(returnVal, secondaryReturnVal);
 
-        // Can't access the master via the slave
-        response = slaveClient.execute(getReadAttributeOperation(MASTER_ROOT_ADDRESS, NAME));
+        // Can't access the primary via the secondary
+        response = secondaryClient.execute(getReadAttributeOperation(PRIMARY_ROOT_ADDRESS, NAME));
         validateFailedResponse(response);
-        response = slaveClient.execute(getReadAttributeOperation(MASTER_INTERFACE_ADDRESS, INET_ADDRESS));
+        response = secondaryClient.execute(getReadAttributeOperation(PRIMARY_INTERFACE_ADDRESS, INET_ADDRESS));
         validateFailedResponse(response);
     }
 
     @Test
     public void testCompositeHostReadAccess() throws IOException {
 
-        ModelNode masterRequest = getEmptyOperation(COMPOSITE, null);
-        ModelNode steps = masterRequest.get(STEPS);
-        steps.add(getReadAttributeOperation(MASTER_ROOT_ADDRESS, NAME));
-        steps.add(getReadAttributeOperation(MASTER_INTERFACE_ADDRESS, INET_ADDRESS));
-        masterRequest.protect();
+        ModelNode primaryRequest = getEmptyOperation(COMPOSITE, null);
+        ModelNode steps = primaryRequest.get(STEPS);
+        steps.add(getReadAttributeOperation(PRIMARY_ROOT_ADDRESS, NAME));
+        steps.add(getReadAttributeOperation(PRIMARY_INTERFACE_ADDRESS, INET_ADDRESS));
+        primaryRequest.protect();
 
-        ModelNode response = masterClient.execute(masterRequest);
+        ModelNode response = primaryClient.execute(primaryRequest);
         System.out.println(response);
         ModelNode returnVal = validateResponse(response);
         ModelNode name = validateResponse(returnVal.get("step-1"));
@@ -230,45 +230,45 @@ public class ManagementAccessTestCase {
         ModelNode inetAddress = validateResponse(returnVal.get("step-2"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
 
-        ModelNode slaveRequest = getEmptyOperation(COMPOSITE, null);
-        steps = slaveRequest.get(STEPS);
-        steps.add(getReadAttributeOperation(SLAVE_ROOT_ADDRESS, NAME));
-        steps.add(getReadAttributeOperation(SLAVE_INTERFACE_ADDRESS, INET_ADDRESS));
-        masterRequest.protect();
+        ModelNode secondaryRequest = getEmptyOperation(COMPOSITE, null);
+        steps = secondaryRequest.get(STEPS);
+        steps.add(getReadAttributeOperation(SECONDARY_ROOT_ADDRESS, NAME));
+        steps.add(getReadAttributeOperation(SECONDARY_INTERFACE_ADDRESS, INET_ADDRESS));
+        primaryRequest.protect();
 
-        response = slaveClient.execute(slaveRequest);
+        response = secondaryClient.execute(secondaryRequest);
         System.out.println(response);
-        ModelNode slaveReturnVal = validateResponse(response);
-        name = validateResponse(slaveReturnVal.get("step-1"));
+        ModelNode secondaryReturnVal = validateResponse(response);
+        name = validateResponse(secondaryReturnVal.get("step-1"));
         Assert.assertEquals("secondary", name.asString());
-        inetAddress = validateResponse(slaveReturnVal.get("step-2"));
+        inetAddress = validateResponse(secondaryReturnVal.get("step-2"));
         Assert.assertEquals(ModelType.EXPRESSION, inetAddress.getType());
 
-        // Check we get the same thing via the master
-        response = masterClient.execute(slaveRequest);
+        // Check we get the same thing via the primary
+        response = primaryClient.execute(secondaryRequest);
         returnVal = validateResponse(response);
-        Assert.assertEquals(returnVal, slaveReturnVal);
+        Assert.assertEquals(returnVal, secondaryReturnVal);
 
-        // Can't access the master via the slave
-        response = slaveClient.execute(masterRequest);
+        // Can't access the primary via the secondary
+        response = secondaryClient.execute(primaryRequest);
         validateFailedResponse(response);
     }
 
     @Test
     public void testCompositeCrossHostReadAccess() throws IOException {
 
-        ModelNode masterRequest = getEmptyOperation(COMPOSITE, null);
-        ModelNode steps = masterRequest.get(STEPS);
-        steps.add(getReadAttributeOperation(MASTER_ROOT_ADDRESS, NAME));
-        steps.add(getReadAttributeOperation(MASTER_INTERFACE_ADDRESS, INET_ADDRESS));
-        steps.add(getReadAttributeOperation(SLAVE_ROOT_ADDRESS, NAME));
-        steps.add(getReadAttributeOperation(SLAVE_INTERFACE_ADDRESS, INET_ADDRESS));
+        ModelNode primaryRequest = getEmptyOperation(COMPOSITE, null);
+        ModelNode steps = primaryRequest.get(STEPS);
+        steps.add(getReadAttributeOperation(PRIMARY_ROOT_ADDRESS, NAME));
+        steps.add(getReadAttributeOperation(PRIMARY_INTERFACE_ADDRESS, INET_ADDRESS));
+        steps.add(getReadAttributeOperation(SECONDARY_ROOT_ADDRESS, NAME));
+        steps.add(getReadAttributeOperation(SECONDARY_INTERFACE_ADDRESS, INET_ADDRESS));
         steps.add(getReadAttributeOperation(MAIN_RUNNING_SERVER_ADDRESS, NAME));
         steps.add(getReadAttributeOperation(OTHER_RUNNING_SERVER_ADDRESS, NAME));
-        masterRequest.protect();
+        primaryRequest.protect();
 
-        System.out.println(masterRequest);
-        ModelNode response = masterClient.execute(masterRequest);
+        System.out.println(primaryRequest);
+        ModelNode response = primaryClient.execute(primaryRequest);
         System.out.println(response);
         ModelNode returnVal = validateResponse(response);
         ModelNode name = validateResponse(returnVal.get("step-1"));
@@ -284,8 +284,8 @@ public class ManagementAccessTestCase {
         name = validateResponse(returnVal.get("step-6"));
         Assert.assertEquals("other-two", name.asString());
 
-        // Can't access the master via the slave
-        response = slaveClient.execute(masterRequest);
+        // Can't access the primary via the secondary
+        response = secondaryClient.execute(primaryRequest);
         validateFailedResponse(response);
     }
 
@@ -294,10 +294,10 @@ public class ManagementAccessTestCase {
 
         // Start with writes of the root resource
         final ModelNode addSchemaLocRequest = SchemaLocationAddHandler.getAddSchemaLocationOperation(ROOT_ADDRESS, "uri", "location");
-        ModelNode response = masterClient.execute(addSchemaLocRequest);
+        ModelNode response = primaryClient.execute(addSchemaLocRequest);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
+        response = primaryClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
         ModelNode returnVal = validateResponse(response);
         Assert.assertTrue(hasTestSchemaLocation(returnVal));
 
@@ -306,26 +306,26 @@ public class ManagementAccessTestCase {
         addServerGroupRequest.get(PROFILE).set("default");
         addServerGroupRequest.get(SOCKET_BINDING_GROUP).set("standard-sockets");
 
-        response = masterClient.execute(addServerGroupRequest);
+        response = primaryClient.execute(addServerGroupRequest);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(TEST_SERVER_GROUP_ADDRESS, PROFILE));
+        response = primaryClient.execute(getReadAttributeOperation(TEST_SERVER_GROUP_ADDRESS, PROFILE));
         returnVal = validateResponse(response);
         Assert.assertEquals("default", returnVal.asString());
 
-        // Slave can't write
-        response = slaveClient.execute(addSchemaLocRequest);
+        // Secondary can't write
+        response = secondaryClient.execute(addSchemaLocRequest);
         validateFailedResponse(response);
 
-        response = slaveClient.execute(addServerGroupRequest);
+        response = secondaryClient.execute(addServerGroupRequest);
         validateFailedResponse(response);
     }
 
     @Test
     public void testCompositeDomainWriteAccess() throws IOException {
 
-        ModelNode masterRequest = getEmptyOperation(COMPOSITE, null);
-        ModelNode steps = masterRequest.get(STEPS);
+        ModelNode primaryRequest = getEmptyOperation(COMPOSITE, null);
+        ModelNode steps = primaryRequest.get(STEPS);
         steps.add(SchemaLocationAddHandler.getAddSchemaLocationOperation(ROOT_ADDRESS, "uri", "location"));
 
         // Now try a resource below root
@@ -334,22 +334,22 @@ public class ManagementAccessTestCase {
         addServerGroupRequest.get(SOCKET_BINDING_GROUP).set("standard-sockets");
 
         steps.add(addServerGroupRequest);
-        masterRequest.protect();
+        primaryRequest.protect();
 
-        ModelNode response = masterClient.execute(masterRequest);
+        ModelNode response = primaryClient.execute(primaryRequest);
         System.out.println(response);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
+        response = primaryClient.execute(getReadAttributeOperation(ROOT_ADDRESS, SCHEMA_LOCATIONS));
         ModelNode returnVal = validateResponse(response);
         Assert.assertTrue(hasTestSchemaLocation(returnVal));
 
-        response = masterClient.execute(getReadAttributeOperation(TEST_SERVER_GROUP_ADDRESS, PROFILE));
+        response = primaryClient.execute(getReadAttributeOperation(TEST_SERVER_GROUP_ADDRESS, PROFILE));
         returnVal = validateResponse(response);
         Assert.assertEquals("default", returnVal.asString());
 
-        // Slave can't write
-        response = slaveClient.execute(masterRequest);
+        // Secondary can't write
+        response = secondaryClient.execute(primaryRequest);
         validateFailedResponse(response);
     }
 

@@ -79,8 +79,8 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(WildcardReadsTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.StandardUsersSetup.INSTANCE.setup(domainClient);
         AbstractServerGroupScopedRolesTestCase.setupRoles(domainClient);
         RBACProviderServerGroupScopedRolesTestCase.ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -91,7 +91,7 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     @SuppressWarnings("ConstantConditions")
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.INSTANCE.tearDown(domainClient);
@@ -119,7 +119,7 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testMaintainer() throws IOException {
-        ModelControllerClient client = getClientForUser(MAINTAINER_USER, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(MAINTAINER_USER, false, primaryClientConfig);
 
         ModelNode op = createOpNode("host=*/server=*/subsystem=1/rbac-constrained=*", READ_RESOURCE_OPERATION);
         configureRoles(op, new String[]{MAINTAINER_USER});
@@ -157,17 +157,17 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     }
 
     @Test
-    public void testMasterHostScopedRoleReadResource() throws IOException {
+    public void testPrimaryHostScopedRoleReadResource() throws IOException {
         testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "primary", "primary-a");
     }
 
     @Test
-    public void testSlaveHostScopedRoleReadResource() throws IOException {
-        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "secondary", "secondary-b");
+    public void testSecondaryHostScopedRoleReadResource() throws IOException {
+        testHostScopedRoleReadResource(AbstractHostScopedRolesTestCase.SECONDARY_MAINTAINER_USER, "secondary", "secondary-b");
     }
 
     private void testHostScopedRoleReadResource(final String user, final String host, final String server) throws IOException {
-        ModelControllerClient client = getClientForUser(user, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(user, false, primaryClientConfig);
 
         ModelNode op = createOpNode("host=*/server=*/subsystem=1/rbac-constrained=*", READ_RESOURCE_OPERATION);
         configureRoles(op, new String[]{user});
@@ -233,17 +233,17 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
     }
 
     @Test
-    public void testMasterHostScopedRoleReadResourceDescription() throws IOException {
+    public void testPrimaryHostScopedRoleReadResourceDescription() throws IOException {
         testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.MAINTAINER_USER, "primary", "primary-a");
     }
 
     @Test
-    public void testSlaveHostScopedRoleReadResourceDescription() throws IOException {
-        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.SLAVE_MAINTAINER_USER, "secondary", "secondary-b");
+    public void testSecondaryHostScopedRoleReadResourceDescription() throws IOException {
+        testHostScopedRoleReadResourceDescription(AbstractHostScopedRolesTestCase.SECONDARY_MAINTAINER_USER, "secondary", "secondary-b");
     }
 
     private void testHostScopedRoleReadResourceDescription(final String user, final String host, final String server) throws IOException {
-        ModelControllerClient client = getClientForUser(user, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(user, false, primaryClientConfig);
 
         ModelNode op = createOpNode("host=*", READ_RESOURCE_DESCRIPTION_OPERATION);
         configureRoles(op, new String[]{user});
@@ -299,7 +299,7 @@ public class WildcardReadsTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testServerGroupScopedRole() throws IOException {
-        ModelControllerClient client = getClientForUser(AbstractServerGroupScopedRolesTestCase.MAINTAINER_USER, false, masterClientConfig);
+        ModelControllerClient client = getClientForUser(AbstractServerGroupScopedRolesTestCase.MAINTAINER_USER, false, primaryClientConfig);
 
         ModelNode op = createOpNode("host=*/server=*/subsystem=1/rbac-constrained=*", READ_RESOURCE_OPERATION);
         configureRoles(op, new String[]{AbstractServerGroupScopedRolesTestCase.MAINTAINER_USER});

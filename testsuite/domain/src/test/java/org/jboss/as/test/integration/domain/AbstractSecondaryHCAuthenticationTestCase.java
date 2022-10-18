@@ -44,35 +44,35 @@ import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
 
 /**
- * Encapsulates some of the logic for tests where a slave host controller attempts to authenticate to master controller.
+ * Encapsulates some of the logic for tests where a secondary host controller attempts to authenticate to primary controller.
  */
-public abstract class AbstractSlaveHCAuthenticationTestCase {
+public abstract class AbstractSecondaryHCAuthenticationTestCase {
 
     private static final int TIMEOUT = 60000;
 
-    protected abstract ModelControllerClient getDomainMasterClient();
-    protected abstract ModelControllerClient getDomainSlaveClient();
+    protected abstract ModelControllerClient getDomainPrimaryClient();
+    protected abstract ModelControllerClient getDomainSecondaryClient();
 
-    protected void reloadSlave() throws Exception {
+    protected void reloadSecondary() throws Exception {
         ModelNode op = new ModelNode();
         op.get(OP).set("reload");
         op.get(OP_ADDR).add(HOST, "secondary");
         op.get(ADMIN_ONLY).set(false);
         try {
-            getDomainSlaveClient().execute(new OperationBuilder(op).build());
+            getDomainSecondaryClient().execute(new OperationBuilder(op).build());
         } catch(IOException e) {
             final Throwable cause = e.getCause();
             if (!(cause instanceof ExecutionException) && !(cause instanceof CancellationException)) {
                 throw e;
             } // else ignore, this might happen if the channel gets closed before we got the response
         }
-        // use testSupport.getDomainSlaveLifecycleUtil().awaitHostController(System.currentTimeMillis());
-        // in the subclass waiting to know when the slaveHC is available before continuing.
+        // use testSupport.getDomainSecondaryLifecycleUtil().awaitHostController(System.currentTimeMillis());
+        // in the subclass waiting to know when the secondaryHC is available before continuing.
     }
 
     protected void readHostControllerStatus(ModelControllerClient client) throws Exception {
         if (!lookupHostInModel(client))
-            Assert.fail("Cannot validate host 'slave' is running");
+            Assert.fail("Cannot validate host 'secondary' is running");
     }
 
     protected boolean lookupHostInModel(ModelControllerClient client) throws Exception {
@@ -96,12 +96,12 @@ public abstract class AbstractSlaveHCAuthenticationTestCase {
         return false;
     }
 
-    protected void setSlaveSecret(String value) throws IOException {
+    protected void setSecondarySecret(String value) throws IOException {
         ModelNode op = new ModelNode();
         op.get(OP).set(WRITE_ATTRIBUTE_OPERATION);
         op.get(OP_ADDR).add(HOST, "secondary").add(CORE_SERVICE, MANAGEMENT).add(SECURITY_REALM, "ManagementRealm").add(SERVER_IDENTITY, SECRET);
         op.get(NAME).set(VALUE);
         op.get(VALUE).set(value);
-        getDomainSlaveClient().execute(new OperationBuilder(op).build());
+        getDomainSecondaryClient().execute(new OperationBuilder(op).build());
     }
 }

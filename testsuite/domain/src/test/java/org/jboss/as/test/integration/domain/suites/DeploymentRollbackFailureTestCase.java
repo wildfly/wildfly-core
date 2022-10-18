@@ -88,14 +88,14 @@ public class DeploymentRollbackFailureTestCase {
     private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"),
             PathElement.pathElement(SERVER_CONFIG, "main-three"), PathElement.pathElement(SYSTEM_PROPERTY, ServiceActivatorDeployment.FAIL_SYS_PROP));
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
     private static File tmpDir;
     private static File deployment;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(DeploymentRollbackFailureTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         File tmpRoot = new File(System.getProperty("java.io.tmpdir"));
         tmpDir = new File(tmpRoot, DeploymentRollbackFailureTestCase.class.getSimpleName() + System.currentTimeMillis());
@@ -111,7 +111,7 @@ public class DeploymentRollbackFailureTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        masterClient = null;
+        primaryClient = null;
         DomainTestSuite.stopSupport();
 
         if (deployment != null && !deployment.delete() && deployment.exists()) {
@@ -155,12 +155,12 @@ public class DeploymentRollbackFailureTestCase {
     private void configureDeploymentFailure() throws IOException, MgmtOperationException {
         ModelNode op = Util.createAddOperation(SYS_PROP_ADDR);
         op.get(VALUE).set("true");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void installBrokenDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getDeploymentCompositeOp();
-        final ModelNode ret = masterClient.execute(op);
+        final ModelNode ret = primaryClient.execute(op);
         if (! SUCCESS.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation failed.", op, ret);
         }
@@ -176,7 +176,7 @@ public class DeploymentRollbackFailureTestCase {
         ModelNode content = new ModelNode();
         content.get(URL).set(deployment.toURI().toURL().toString());
         op.get(CONTENT).add(content);
-        final ModelNode ret = masterClient.execute(op);
+        final ModelNode ret = primaryClient.execute(op);
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
@@ -219,7 +219,7 @@ public class DeploymentRollbackFailureTestCase {
     private void succeedInstallFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getDeploymentCompositeOp();
         op.get(OPERATION_HEADERS, ROLLOUT_PLAN).set(getRolloutPlanO());
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private ModelNode getRolloutPlanO() {
@@ -246,25 +246,25 @@ public class DeploymentRollbackFailureTestCase {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH));
         op.get(ENABLED).set(true);
         op.get(OPERATION_HEADERS, ROLLOUT_PLAN).set(getRolloutPlanO());
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanDeployment() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT_PATH));
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanSystemProperty() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(SYS_PROP_ADDR);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private String readLogs() throws IOException {
-        ModelNode readLog = Util.createOperation("read-log-file", PathAddress.parseCLIStyleAddress("/host=slave/server=main-three/subsystem=logging"));
+        ModelNode readLog = Util.createOperation("read-log-file", PathAddress.parseCLIStyleAddress("/host=secondary/server=main-three/subsystem=logging"));
         readLog.get(NAME).set("server.log");
         readLog.get("tail").set(true);
         readLog.get("lines").set(40);
-        final ModelNode ret = masterClient.execute(readLog);
+        final ModelNode ret = primaryClient.execute(readLog);
         Assert.assertEquals(SUCCESS, ret.get(OUTCOME).asString());
         return ret.get(RESULT).asList().stream().map(ModelNode::asString).collect(Collectors.joining(System.lineSeparator()));
     }

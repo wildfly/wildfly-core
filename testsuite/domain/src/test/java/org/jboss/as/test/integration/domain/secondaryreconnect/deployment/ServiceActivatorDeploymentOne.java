@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect.deployment;
+package org.jboss.as.test.integration.domain.secondaryreconnect.deployment;
 
 /**
  * ServiceActivator that installs itself as a service and sets a set of system
@@ -29,8 +29,8 @@ package org.jboss.as.test.integration.domain.slavereconnect.deployment;
  *
  * @author Brian Stansberry (c) 2014 Red Hat Inc.
  */
-public class ServiceActivatorDeploymentThree extends ServiceActivatorBaseDeployment {
-    public ServiceActivatorDeploymentThree() {
-        super("three");
+public class ServiceActivatorDeploymentOne extends ServiceActivatorBaseDeployment {
+    public ServiceActivatorDeploymentOne() {
+        super("one");
     }
 }

@@ -66,81 +66,81 @@ public class LegacyConfigurationChangesTestCase extends AbstractConfigurationCha
     @Test
     public void testConfigurationChanges() throws Exception {
         try {
-            createConfigurationChanges(HOST_MASTER);
-            createConfigurationChanges(HOST_SLAVE);
-            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER), 11);
-            checkConfigurationChanges(readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
-            checkConfigurationChanges(readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE), 11);
-            checkRootConfigurationChangeWarning(domainMasterLifecycleUtil.getDomainClient());
+            createConfigurationChanges(HOST_PRIMARY);
+            createConfigurationChanges(HOST_SECONDARY);
+            checkConfigurationChanges(readConfigurationChanges(domainPrimaryLifecycleUtil.getDomainClient(), HOST_PRIMARY), 11);
+            checkConfigurationChanges(readConfigurationChanges(domainPrimaryLifecycleUtil.getDomainClient(), HOST_SECONDARY), 11);
+            checkConfigurationChanges(readConfigurationChanges(domainSecondaryLifecycleUtil.getDomainClient(), HOST_SECONDARY), 11);
+            checkRootConfigurationChangeWarning(domainPrimaryLifecycleUtil.getDomainClient());
 
-            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_MASTER, 19);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE);
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
+            setConfigurationChangeMaxHistory(domainPrimaryLifecycleUtil.getDomainClient(), HOST_PRIMARY, 19);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY, PathElement.pathElement(SERVER, "main-one"));
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SECONDARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SECONDARY);
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), MAX_HISTORY_SIZE, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
 
-            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE, 20);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE);
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            setConfigurationChangeMaxHistory(domainPrimaryLifecycleUtil.getDomainClient(), HOST_SECONDARY, 20);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY);
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY, PathElement.pathElement(SERVER, "main-one"));
 
-            setConfigurationChangeMaxHistory(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE, 21);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE);
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 21, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 19, HOST_MASTER, PathElement.pathElement(SERVER, "main-one"));
+            setConfigurationChangeMaxHistory(domainSecondaryLifecycleUtil.getDomainClient(), HOST_SECONDARY, 21);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 21, HOST_SECONDARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 21, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), 21, HOST_SECONDARY);
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), 21, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 19, HOST_PRIMARY, PathElement.pathElement(SERVER, "main-one"));
         } finally {
-            clearConfigurationChanges(HOST_MASTER);
-            clearConfigurationChanges(HOST_SLAVE);
+            clearConfigurationChanges(HOST_PRIMARY);
+            clearConfigurationChanges(HOST_SECONDARY);
         }
     }
 
     @Test
-    public void testConfigurationChangesOnSlave() throws Exception {
+    public void testConfigurationChangesOnSecondary() throws Exception {
         try {
-            createConfigurationChanges(HOST_SLAVE);
-            PathAddress systemPropertyAddress = PathAddress.pathAddress().append(HOST_SLAVE).append(SYSTEM_PROPERTY, "secondary");
+            createConfigurationChanges(HOST_SECONDARY);
+            PathAddress systemPropertyAddress = PathAddress.pathAddress().append(HOST_SECONDARY).append(SYSTEM_PROPERTY, "secondary");
             ModelNode setSystemProperty = Util.createAddOperation(systemPropertyAddress);
-            setSystemProperty.get(VALUE).set("slave-config");
-            domainSlaveLifecycleUtil.getDomainClient().execute(setSystemProperty);
+            setSystemProperty.get(VALUE).set("secondary-config");
+            domainSecondaryLifecycleUtil.getDomainClient().execute(setSystemProperty);
             systemPropertyAddress = PathAddress.pathAddress().append(SERVER_GROUP, "main-server-group").append(SYSTEM_PROPERTY, "main");
             setSystemProperty = Util.createAddOperation(systemPropertyAddress);
             setSystemProperty.get(VALUE).set("main-config");
-            domainMasterLifecycleUtil.getDomainClient().execute(setSystemProperty);
-            List<ModelNode> changesOnSlaveHC = readConfigurationChanges(domainSlaveLifecycleUtil.getDomainClient(), HOST_SLAVE);
-            List<ModelNode> changesOnSlaveDC = readConfigurationChanges(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE);
-            checkSlaveConfigurationChanges(changesOnSlaveHC, 12);
-            setConfigurationChangeMaxHistory(domainMasterLifecycleUtil.getDomainClient(), HOST_SLAVE, 20);
-            checkMaxHistorySize(domainMasterLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            checkMaxHistorySize(domainSlaveLifecycleUtil.getDomainClient(), 20, HOST_SLAVE, PathElement.pathElement(SERVER, "other-three"));
-            assertThat(changesOnSlaveHC.size(), is(changesOnSlaveDC.size()));
+            domainPrimaryLifecycleUtil.getDomainClient().execute(setSystemProperty);
+            List<ModelNode> changesOnSecondaryHC = readConfigurationChanges(domainSecondaryLifecycleUtil.getDomainClient(), HOST_SECONDARY);
+            List<ModelNode> changesOnSecondaryDC = readConfigurationChanges(domainPrimaryLifecycleUtil.getDomainClient(), HOST_SECONDARY);
+            checkSecondaryConfigurationChanges(changesOnSecondaryHC, 12);
+            setConfigurationChangeMaxHistory(domainPrimaryLifecycleUtil.getDomainClient(), HOST_SECONDARY, 20);
+            checkMaxHistorySize(domainPrimaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            checkMaxHistorySize(domainSecondaryLifecycleUtil.getDomainClient(), 20, HOST_SECONDARY, PathElement.pathElement(SERVER, "other-three"));
+            assertThat(changesOnSecondaryHC.size(), is(changesOnSecondaryDC.size()));
         } finally {
-            clearConfigurationChanges(HOST_SLAVE);
+            clearConfigurationChanges(HOST_SECONDARY);
         }
     }
 
     @Test
     public void testEnablingConfigurationChangesOnHC() throws Exception {
-        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient client = domainSecondaryLifecycleUtil.getDomainClient();
         try {
-            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SLAVE).append(getAddress()));
+            final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(HOST_SECONDARY).append(getAddress()));
             add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
             executeForResult(client, add);
         } finally {
-            clearConfigurationChanges(HOST_SLAVE);
+            clearConfigurationChanges(HOST_SECONDARY);
         }
     }
 
     @Test
     public void testEnablingConfigurationChangesOnHC2() throws Exception {
-        DomainClient client = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient client = domainSecondaryLifecycleUtil.getDomainClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(getAddress()));
         add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         ModelNode response = client.execute(add);
@@ -150,7 +150,7 @@ public class LegacyConfigurationChangesTestCase extends AbstractConfigurationCha
 
     @Test
     public void testNotSpecifiedHost() throws Exception {
-        DomainClient client = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient client = domainPrimaryLifecycleUtil.getDomainClient();
         final ModelNode add = Util.createAddOperation(PathAddress.pathAddress().append(getAddress()));
         add.get(LegacyConfigurationChangeResourceDefinition.MAX_HISTORY.getName()).set(MAX_HISTORY_SIZE);
         ModelNode response = client.execute(add);
@@ -182,7 +182,7 @@ public class LegacyConfigurationChangesTestCase extends AbstractConfigurationCha
         validateChanges(changes);
     }
 
-    private void checkSlaveConfigurationChanges( List<ModelNode> changes, int size) throws IOException {
+    private void checkSecondaryConfigurationChanges( List<ModelNode> changes, int size) throws IOException {
         assertThat(changes.size(), is(size));
         for (ModelNode change : changes) {
             assertThat(change.hasDefined(OPERATION_DATE), is(true));
@@ -199,7 +199,7 @@ public class LegacyConfigurationChangesTestCase extends AbstractConfigurationCha
         ModelNode currentChangeOp = currentChange.get(OPERATIONS).asList().get(0);
         assertThat(currentChangeOp.get(OP).asString(), is(ADD));
         assertThat(removePrefix(currentChangeOp).toString(), is(PathAddress.pathAddress(SYSTEM_PROPERTY, "secondary").toString()));
-        assertThat(currentChangeOp.get(VALUE).asString(), is("slave-config"));
+        assertThat(currentChangeOp.get(VALUE).asString(), is("secondary-config"));
         validateChanges(changes.subList(1, changes.size() - 1));
     }
 
