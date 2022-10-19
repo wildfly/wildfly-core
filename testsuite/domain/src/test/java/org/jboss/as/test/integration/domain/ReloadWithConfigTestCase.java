@@ -59,78 +59,78 @@ import org.junit.Test;
  * @author Kabir Khan
  */
 public class ReloadWithConfigTestCase {
-    private static final String MASTER = "primary";
-    private static final String SLAVE = "secondary";
+    private static final String PRIMARY = "primary";
+    private static final String SECONDARY = "secondary";
     private static final String RELOAD_TEST_CASE_ONE = "reload-test-case-one";
     private static final String RELOAD_TEST_CASE_TWO = "reload-test-case-two";
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     Map<String, File> snapshotDirectories = new HashMap<>();
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ReloadWithConfigTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Test
     public void reloadFromSnapshotTestCase() throws Exception {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
-        cleanSnapshotDirectory(masterClient, null);
-        cleanSnapshotDirectory(masterClient, MASTER);
-        cleanSnapshotDirectory(slaveClient, SLAVE);
+        cleanSnapshotDirectory(primaryClient, null);
+        cleanSnapshotDirectory(primaryClient, PRIMARY);
+        cleanSnapshotDirectory(secondaryClient, SECONDARY);
 
         try {
-            addSystemProperty(masterClient, null, RELOAD_TEST_CASE_ONE, "1");
-            addSystemProperty(masterClient, MASTER, RELOAD_TEST_CASE_ONE, "1");
-            addSystemProperty(slaveClient, SLAVE, RELOAD_TEST_CASE_ONE, "1");
+            addSystemProperty(primaryClient, null, RELOAD_TEST_CASE_ONE, "1");
+            addSystemProperty(primaryClient, PRIMARY, RELOAD_TEST_CASE_ONE, "1");
+            addSystemProperty(secondaryClient, SECONDARY, RELOAD_TEST_CASE_ONE, "1");
 
-            takeSnapshot(masterClient, null);
-            takeSnapshot(masterClient, MASTER);
-            takeSnapshot(slaveClient, SLAVE);
+            takeSnapshot(primaryClient, null);
+            takeSnapshot(primaryClient, PRIMARY);
+            takeSnapshot(secondaryClient, SECONDARY);
 
-            addSystemProperty(masterClient, null, RELOAD_TEST_CASE_TWO, "2");
-            addSystemProperty(masterClient, MASTER, RELOAD_TEST_CASE_TWO, "2");
-            addSystemProperty(slaveClient, SLAVE, RELOAD_TEST_CASE_TWO, "2");
+            addSystemProperty(primaryClient, null, RELOAD_TEST_CASE_TWO, "2");
+            addSystemProperty(primaryClient, PRIMARY, RELOAD_TEST_CASE_TWO, "2");
+            addSystemProperty(secondaryClient, SECONDARY, RELOAD_TEST_CASE_TWO, "2");
 
-            List<File> domainSnapshots = listSnapshots(masterClient, null);
-            List<File> masterSnapshots = listSnapshots(masterClient, MASTER);
-            List<File> slaveSnapshots = listSnapshots(slaveClient, SLAVE);
+            List<File> domainSnapshots = listSnapshots(primaryClient, null);
+            List<File> primarySnapshots = listSnapshots(primaryClient, PRIMARY);
+            List<File> secondarySnapshots = listSnapshots(secondaryClient, SECONDARY);
             Assert.assertEquals(1, domainSnapshots.size());
-            Assert.assertEquals(1, masterSnapshots.size());
-            Assert.assertEquals(1, slaveSnapshots.size());
+            Assert.assertEquals(1, primarySnapshots.size());
+            Assert.assertEquals(1, secondarySnapshots.size());
 
-            masterClient = reloadHost(domainMasterLifecycleUtil, MASTER, masterSnapshots.get(0).getName(), domainSnapshots.get(0).getName());
-            slaveClient = reloadHost(domainSlaveLifecycleUtil, SLAVE, slaveSnapshots.get(0).getName(), null);
+            primaryClient = reloadHost(domainPrimaryLifecycleUtil, PRIMARY, primarySnapshots.get(0).getName(), domainSnapshots.get(0).getName());
+            secondaryClient = reloadHost(domainSecondaryLifecycleUtil, SECONDARY, secondarySnapshots.get(0).getName(), null);
 
-            assertSystemPropertyOneButNotTwo(masterClient, null);
-            assertSystemPropertyOneButNotTwo(masterClient, MASTER);
-            assertSystemPropertyOneButNotTwo(slaveClient, SLAVE);
+            assertSystemPropertyOneButNotTwo(primaryClient, null);
+            assertSystemPropertyOneButNotTwo(primaryClient, PRIMARY);
+            assertSystemPropertyOneButNotTwo(secondaryClient, SECONDARY);
         } finally {
-            removeSystemProperty(masterClient, null, RELOAD_TEST_CASE_ONE);
-            removeSystemProperty(masterClient, null, RELOAD_TEST_CASE_TWO);
-            removeSystemProperty(masterClient, MASTER, RELOAD_TEST_CASE_ONE);
-            removeSystemProperty(masterClient, MASTER, RELOAD_TEST_CASE_TWO);
-            removeSystemProperty(slaveClient, SLAVE, RELOAD_TEST_CASE_ONE);
-            removeSystemProperty(slaveClient, SLAVE, RELOAD_TEST_CASE_TWO);
+            removeSystemProperty(primaryClient, null, RELOAD_TEST_CASE_ONE);
+            removeSystemProperty(primaryClient, null, RELOAD_TEST_CASE_TWO);
+            removeSystemProperty(primaryClient, PRIMARY, RELOAD_TEST_CASE_ONE);
+            removeSystemProperty(primaryClient, PRIMARY, RELOAD_TEST_CASE_TWO);
+            removeSystemProperty(secondaryClient, SECONDARY, RELOAD_TEST_CASE_ONE);
+            removeSystemProperty(secondaryClient, SECONDARY, RELOAD_TEST_CASE_TWO);
 
-            cleanSnapshotDirectory(masterClient, null);
-            cleanSnapshotDirectory(masterClient, MASTER);
-            cleanSnapshotDirectory(slaveClient, SLAVE);
+            cleanSnapshotDirectory(primaryClient, null);
+            cleanSnapshotDirectory(primaryClient, PRIMARY);
+            cleanSnapshotDirectory(secondaryClient, SECONDARY);
         }
     }
 

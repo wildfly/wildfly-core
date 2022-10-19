@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect.deployment;
+package org.jboss.as.test.integration.domain.secondaryreconnect.deployment;
 
 import java.io.BufferedReader;
 import java.io.IOException;

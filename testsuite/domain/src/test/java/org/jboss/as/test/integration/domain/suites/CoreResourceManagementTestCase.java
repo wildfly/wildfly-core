@@ -120,8 +120,8 @@ import org.junit.Test;
 public class CoreResourceManagementTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     private static final String TEST = "test";
     private static final String BOOT_PROPERTY_NAME = "boot-test";
@@ -194,253 +194,253 @@ public class CoreResourceManagementTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(CoreResourceManagementTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
     @Test
     public void testSystemPropertyManagement() throws IOException {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
-        ModelNode response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        ModelNode response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         ModelNode returnVal = validateResponse(response);
         int origPropCount = returnVal.asInt();
 
         ModelNode request = getSystemPropertyAddOperation(ROOT_PROP_ADDRESS, "domain", Boolean.FALSE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
         // TODO validate response structure
 
-        response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount + 1, returnVal.asList().size());
 
-        response = masterClient.execute(getReadChildrenNamesOperation(OTHER_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(OTHER_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount + 1, returnVal.asList().size());
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain", returnVal.asString());
 
         // Override at server-group
         request = getSystemPropertyAddOperation(SERVER_GROUP_PROP_ADDRESS, "group", Boolean.FALSE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("group", returnVal.asString());
 
         // Change the domain level value, confirm it does not replace override
         request = getWriteAttributeOperation(ROOT_PROP_ADDRESS, "domain2");
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain2", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("group", returnVal.asString());
 
         // Override at the host level
         request = getSystemPropertyAddOperation(HOST_PROP_ADDRESS, "host", Boolean.FALSE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain2", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("host", returnVal.asString());
 
         // Change the domain level value, confirm it does not replace override
         request = getWriteAttributeOperation(ROOT_PROP_ADDRESS, "domain3");
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain3", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("host", returnVal.asString());
 
         // Change the server group level value, confirm it does not replace override
         request = getWriteAttributeOperation(SERVER_GROUP_PROP_ADDRESS, "group2");
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain3", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("host", returnVal.asString());
 
         // Override at the server level
         request = getSystemPropertyAddOperation(SERVER_PROP_ADDRESS, "server", Boolean.FALSE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain3", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server", returnVal.asString());
 
         // Change the server group level value, confirm it does not replace override
         request = getWriteAttributeOperation(HOST_PROP_ADDRESS, "host2");
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain3", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server", returnVal.asString());
 
         // Modify the server level value
         request = getWriteAttributeOperation(SERVER_PROP_ADDRESS, "server1");
-        response = slaveClient.execute(request);   // Start using the slave client
+        response = secondaryClient.execute(request);   // Start using the secondary client
         validateResponse(response);
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("domain3", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server1", returnVal.asString());
 
         // Remove from top down
         request = getEmptyOperation(REMOVE, ROOT_PROP_ADDRESS);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
 
-        response = slaveClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server1", returnVal.asString());
 
         request = getEmptyOperation(REMOVE, SERVER_GROUP_PROP_ADDRESS);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
 
-        response = slaveClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server1", returnVal.asString());
 
         request = getEmptyOperation(REMOVE, HOST_PROP_ADDRESS);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
 
-        response = slaveClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_PROP_ADDRESS, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("server1", returnVal.asString());
 
         request = getEmptyOperation(REMOVE, SERVER_PROP_ADDRESS);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
 
-        response = slaveClient.execute(getReadChildrenNamesOperation(OTHER_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+        response = secondaryClient.execute(getReadChildrenNamesOperation(OTHER_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         returnVal = validateResponse(response);
         Assert.assertEquals(origPropCount, returnVal.asList().size());
     }
 
     @Test //Covers WFCORE-499
     public void testSystemPropertyBootTime() throws IOException, MgmtOperationException {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode propertyAddress = MAIN_RUNNING_SERVER_CONFIG_ADDRESS.toModelNode().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
-        validateBootProperty(masterClient, propertyAddress);
+        validateBootProperty(primaryClient, propertyAddress);
         propertyAddress = new ModelNode().add(SERVER_GROUP, "main-server-group").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
-        validateBootProperty(masterClient, propertyAddress);
+        validateBootProperty(primaryClient, propertyAddress);
         propertyAddress = new ModelNode().add(HOST, "primary").add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
-        validateBootProperty(masterClient, propertyAddress);
+        validateBootProperty(primaryClient, propertyAddress);
         propertyAddress = new ModelNode().add(SYSTEM_PROPERTY, BOOT_PROPERTY_NAME);
-        validateBootProperty(masterClient, propertyAddress);
+        validateBootProperty(primaryClient, propertyAddress);
     }
 
-    private void validateBootProperty(DomainClient masterClient, ModelNode propertyAddress) throws IOException, MgmtOperationException {
-        ModelNode response = masterClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
+    private void validateBootProperty(DomainClient primaryClient, ModelNode propertyAddress) throws IOException, MgmtOperationException {
+        ModelNode response = primaryClient.execute(getReadChildrenNamesOperation(MAIN_RUNNING_SERVER_ADDRESS, SYSTEM_PROPERTY));
         ModelNode returnVal = validateResponse(response);
         int origPropCount = returnVal.asInt();
 
-        ServiceActivatorDeploymentUtil.validateNoProperties(masterClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
+        ServiceActivatorDeploymentUtil.validateNoProperties(primaryClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
 
         ModelNode request = getSystemPropertyAddOperation(propertyAddress, BOOT_PROPERTY_VALUE, Boolean.FALSE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        validateBootSystemProperty(masterClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
+        validateBootSystemProperty(primaryClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
 
         request = getSystemPropertyRemoveOperation(propertyAddress);
-        validateResponse(masterClient.execute(request));
-        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
+        validateResponse(primaryClient.execute(request));
+        restartServer(primaryClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
 
-        ServiceActivatorDeploymentUtil.validateNoProperties(masterClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
+        ServiceActivatorDeploymentUtil.validateNoProperties(primaryClient, PathAddress.pathAddress(MAIN_RUNNING_SERVER_ADDRESS), BOOT_TEST_PROPERTIES.keySet());
         request = getSystemPropertyAddOperation(propertyAddress, BOOT_PROPERTY_VALUE, Boolean.TRUE);
-        response = masterClient.execute(request);
+        response = primaryClient.execute(request);
         validateResponse(response);
 
-        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
+        restartServer(primaryClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
         // TODO validate response structure
-        validateBootSystemProperty(masterClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
+        validateBootSystemProperty(primaryClient, MAIN_RUNNING_SERVER_ADDRESS, true, origPropCount, BOOT_PROPERTY_VALUE);
 
         request = getSystemPropertyRemoveOperation(propertyAddress);
-        validateResponse(masterClient.execute(request));
-        restartServer(masterClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
+        validateResponse(primaryClient.execute(request));
+        restartServer(primaryClient, MAIN_RUNNING_SERVER_CONFIG_ADDRESS);
     }
 
     /** Test for AS7-3443 */
     @Test
     public void testSystemPropertyComposites() throws Exception {
 
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
         ModelNode composite = new ModelNode();
         composite.get(OP).set(COMPOSITE);
@@ -448,19 +448,19 @@ public class CoreResourceManagementTestCase {
         steps.add(getSystemPropertyAddOperation(HOST_COMPOSITE_PROP_ADDRESS, "host", null));
         steps.add(getWriteAttributeOperation(HOST_COMPOSITE_PROP_ADDRESS, "host2"));
 
-        ModelNode response = masterClient.execute(composite);
+        ModelNode response = primaryClient.execute(composite);
         validateResponse(response);
 
-        masterClient.execute(getEmptyOperation(REMOVE, HOST_COMPOSITE_PROP_ADDRESS));
+        primaryClient.execute(getEmptyOperation(REMOVE, HOST_COMPOSITE_PROP_ADDRESS));
 
-        response = slaveClient.execute(composite);
+        response = secondaryClient.execute(composite);
         validateResponse(response);
     }
 
     @Test
     public void testSystemPropertyExpressions() throws Exception {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
 
         //Make sure that the domain.xml system properties can be resolved on the servers
         final String propOne = "jboss.domain.test.property.one";
@@ -474,39 +474,39 @@ public class CoreResourceManagementTestCase {
         final ModelNode otherServerTwo = getPropertyAddress(OTHER_RUNNING_SERVER_PROP_ADDRESS, propTwo);
 
         //Check the raw values
-        ModelNode response = masterClient.execute(getReadAttributeOperation(rootOneAddr, VALUE));
+        ModelNode response = primaryClient.execute(getReadAttributeOperation(rootOneAddr, VALUE));
         ModelNode returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(rootTwoAddr, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(rootTwoAddr, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(mainServerOne, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(mainServerOne, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(mainServerTwo, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(mainServerTwo, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(otherServerOne, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(otherServerOne, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(otherServerTwo, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(otherServerTwo, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
         //Resolve the system properties
-        response = masterClient.execute(getResolveExpressionOperation(propTwo, MAIN_RUNNING_SERVER_ADDRESS));
+        response = primaryClient.execute(getResolveExpressionOperation(propTwo, MAIN_RUNNING_SERVER_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
-        response = slaveClient.execute(getResolveExpressionOperation(propTwo, OTHER_RUNNING_SERVER_ADDRESS));
+        response = secondaryClient.execute(getResolveExpressionOperation(propTwo, OTHER_RUNNING_SERVER_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
@@ -515,33 +515,33 @@ public class CoreResourceManagementTestCase {
         addOp.get(OP).set(ADD);
         addOp.get(OP_ADDR).add(SYSTEM_PROPERTY, propThree);
         addOp.get(VALUE).set("${jboss.domain.test.property.one}");
-        response = masterClient.execute(addOp);
+        response = primaryClient.execute(addOp);
         validateResponse(response);
 
         final ModelNode rootThreeAddr = getPropertyAddress(ROOT_PROP_ADDRESS, propThree);
         final ModelNode mainServerThree = getPropertyAddress(MAIN_RUNNING_SERVER_PROP_ADDRESS, propThree);
         final ModelNode otherServerThree = getPropertyAddress(OTHER_RUNNING_SERVER_PROP_ADDRESS, propThree);
 
-        response = masterClient.execute(getReadAttributeOperation(rootThreeAddr, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(rootThreeAddr, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
-        response = masterClient.execute(getReadAttributeOperation(mainServerThree, VALUE));
+        response = primaryClient.execute(getReadAttributeOperation(mainServerThree, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
-        response = slaveClient.execute(getReadAttributeOperation(otherServerThree, VALUE));
+        response = secondaryClient.execute(getReadAttributeOperation(otherServerThree, VALUE));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.EXPRESSION, returnVal.getType());
         Assert.assertEquals("${jboss.domain.test.property.one}", returnVal.asString());
 
-        response = masterClient.execute(getResolveExpressionOperation(propThree, MAIN_RUNNING_SERVER_ADDRESS));
+        response = primaryClient.execute(getResolveExpressionOperation(propThree, MAIN_RUNNING_SERVER_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
 
-        response = slaveClient.execute(getResolveExpressionOperation(propThree, OTHER_RUNNING_SERVER_ADDRESS));
+        response = secondaryClient.execute(getResolveExpressionOperation(propThree, OTHER_RUNNING_SERVER_ADDRESS));
         returnVal = validateResponse(response);
         Assert.assertEquals("ONE", returnVal.asString());
     }
@@ -550,17 +550,17 @@ public class CoreResourceManagementTestCase {
     public void testPlatformMBeanManagement() throws Exception {
 
         // Just validate that the resources exist at the expected location
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
-        ModelNode response = masterClient.execute(getReadAttributeOperation(HOST_CLASSLOADING_ADDRESS, "loaded-class-count"));
+        ModelNode response = primaryClient.execute(getReadAttributeOperation(HOST_CLASSLOADING_ADDRESS, "loaded-class-count"));
         ModelNode returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.INT, returnVal.getType());
 
-        response = masterClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS, "loaded-class-count"));
+        response = primaryClient.execute(getReadAttributeOperation(MAIN_RUNNING_SERVER_CLASSLOADING_ADDRESS, "loaded-class-count"));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.INT, returnVal.getType());
 
-        response = masterClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS, "loaded-class-count"));
+        response = primaryClient.execute(getReadAttributeOperation(OTHER_RUNNING_SERVER_CLASSLOADING_ADDRESS, "loaded-class-count"));
         returnVal = validateResponse(response);
         Assert.assertEquals(ModelType.INT, returnVal.getType());
 
@@ -568,7 +568,7 @@ public class CoreResourceManagementTestCase {
 
     @Test
     public void testUndefineSocketBindingPortOffset() throws IOException {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode address = new ModelNode();
         address.add("server-group", "other-server-group");
@@ -580,7 +580,7 @@ public class CoreResourceManagementTestCase {
             operation.get(NAME).set("socket-binding-port-offset");
             operation.get(INCLUDE_DEFAULTS).set(false);
 
-            final ModelNode response = masterClient.execute(operation);
+            final ModelNode response = primaryClient.execute(operation);
             validateResponse(response);
             Assert.assertFalse(response.get(RESULT).isDefined());
         }
@@ -591,7 +591,7 @@ public class CoreResourceManagementTestCase {
             operation.get(NAME).set("socket-binding-port-offset");
             operation.get(VALUE).set(0);
 
-            final ModelNode response = masterClient.execute(operation);
+            final ModelNode response = primaryClient.execute(operation);
             validateResponse(response);
         }
         {
@@ -601,7 +601,7 @@ public class CoreResourceManagementTestCase {
             operation.get(NAME).set("socket-binding-port-offset");
             operation.get(INCLUDE_DEFAULTS).set(false);
 
-            final ModelNode response = masterClient.execute(operation);
+            final ModelNode response = primaryClient.execute(operation);
             validateResponse(response);
             Assert.assertTrue(response.get(RESULT).isDefined());
             Assert.assertEquals(0, response.get(RESULT).asInt());
@@ -612,7 +612,7 @@ public class CoreResourceManagementTestCase {
             operation.get(OP_ADDR).set(address);
             operation.get(NAME).set("socket-binding-port-offset");
 
-            final ModelNode response = masterClient.execute(operation);
+            final ModelNode response = primaryClient.execute(operation);
             validateResponse(response);
         }
         {
@@ -622,7 +622,7 @@ public class CoreResourceManagementTestCase {
             operation.get(NAME).set("socket-binding-port-offset");
             operation.get(INCLUDE_DEFAULTS).set(false);
 
-            final ModelNode response = masterClient.execute(operation);
+            final ModelNode response = primaryClient.execute(operation);
             validateResponse(response);
             Assert.assertFalse(response.get(RESULT).isDefined());
         }
@@ -630,19 +630,19 @@ public class CoreResourceManagementTestCase {
 
     @Test
     public void testDomainSnapshot() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode snapshotOperation = new ModelNode();
         snapshotOperation.get(OP).set(SnapshotTakeHandler.DEFINITION.getName());
         snapshotOperation.get(OP_ADDR).setEmptyList();
-        final String snapshot = validateResponse(masterClient.execute(snapshotOperation)).asString();
+        final String snapshot = validateResponse(primaryClient.execute(snapshotOperation)).asString();
         Assert.assertNotNull(snapshot);
         Assert.assertFalse(snapshot.isEmpty());
 
         ModelNode listSnapshotOperation = new ModelNode();
         listSnapshotOperation.get(OP).set(SnapshotListHandler.DEFINITION.getName());
         listSnapshotOperation.get(OP_ADDR).setEmptyList();
-        ModelNode listResult = validateResponse(masterClient.execute(listSnapshotOperation));
+        ModelNode listResult = validateResponse(primaryClient.execute(listSnapshotOperation));
         Set<String> snapshots = new HashSet<String>();
         for (ModelNode curr : listResult.get(NAMES).asList()) {
             snapshots.add(listResult.get(DIRECTORY).asString() + fileSeparator + curr.asString());
@@ -654,9 +654,9 @@ public class CoreResourceManagementTestCase {
         deleteSnapshotOperation.get(OP).set(SnapshotDeleteHandler.DEFINITION.getName());
         deleteSnapshotOperation.get(OP_ADDR).setEmptyList();
         deleteSnapshotOperation.get(NAME).set(snapshot.substring(snapshot.lastIndexOf(fileSeparator)  + fileSeparator.length()));
-        validateResponse(masterClient.execute(deleteSnapshotOperation), false);
+        validateResponse(primaryClient.execute(deleteSnapshotOperation), false);
 
-        listResult = validateResponse(masterClient.execute(listSnapshotOperation));
+        listResult = validateResponse(primaryClient.execute(listSnapshotOperation));
         snapshots = new HashSet<String>();
         for (ModelNode curr : listResult.get(NAMES).asList()) {
             snapshots.add(listResult.get(DIRECTORY).asString() + fileSeparator + curr.asString());
@@ -666,56 +666,56 @@ public class CoreResourceManagementTestCase {
     }
 
     @Test
-    public void testMasterSnapshot() throws Exception {
+    public void testPrimarySnapshot() throws Exception {
         testSnapshot(new ModelNode().add(HOST, "primary"));
     }
 
     @Test
-    public void testSlaveSnapshot() throws Exception {
+    public void testSecondarySnapshot() throws Exception {
         testSnapshot(new ModelNode().add(HOST, "secondary"));
     }
 
     @Test
     public void testCannotInvokeManagedServerOperations() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode serverAddTf = getAddWorkerOperation(
                 new ModelNode().add("host", "primary").add("server", "main-one").add("subsystem", "io").add("worker", ("cannot-" + workerName++)));
 
-        ModelNode desc = validateFailedResponse(masterClient.execute(serverAddTf));
+        ModelNode desc = validateFailedResponse(primaryClient.execute(serverAddTf));
         String errorCode = getNotAuthorizedErrorCode();
         Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
 
-        ModelNode slaveThreeAddress = new ModelNode().add("host", "secondary").add("server", "main-three").add("subsystem", "io").add("worker", ("cannot-" + workerName++));
-        serverAddTf = getAddWorkerOperation(slaveThreeAddress);
+        ModelNode secondaryThreeAddress = new ModelNode().add("host", "secondary").add("server", "main-three").add("subsystem", "io").add("worker", ("cannot-" + workerName++));
+        serverAddTf = getAddWorkerOperation(secondaryThreeAddress);
 
-        desc = validateFailedResponse(masterClient.execute(serverAddTf));
+        desc = validateFailedResponse(primaryClient.execute(serverAddTf));
         Assert.assertTrue(desc.toString() + " does not contain " + errorCode, desc.toString().contains(errorCode));
     }
 
     @Test
-    public void testCannotInvokeManagedMasterServerOperationsInDomainComposite() throws Exception {
+    public void testCannotInvokeManagedPrimaryServerOperationsInDomainComposite() throws Exception {
         testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "primary").add("server", "main-one").add("subsystem", "io"));
     }
 
     @Test
-    public void testCannotInvokeManagedSlaveServerOperationsInDomainComposite() throws Exception {
+    public void testCannotInvokeManagedSecondaryServerOperationsInDomainComposite() throws Exception {
         testCannotInvokeManagedServerOperationsComposite(new ModelNode().add("host", "secondary").add("server", "main-three").add("subsystem", "io"));
     }
 
     @Test
-    public void testCannotInvokeManagedMasterServerOperationsInServerComposite() throws Exception {
+    public void testCannotInvokeManagedPrimaryServerOperationsInServerComposite() throws Exception {
         testCannotInvokeManagedServerOperationsComposite("primary", "main-one", new ModelNode().add("subsystem", "io"));
     }
 
     @Test
-    public void testCannotInvokeManagedSlaveServerOperationsInServerComposite() throws Exception {
+    public void testCannotInvokeManagedSecondaryServerOperationsInServerComposite() throws Exception {
         testCannotInvokeManagedServerOperationsComposite("secondary", "main-three", new ModelNode().add("subsystem", "io"));
     }
 
     @Test
     public void testReadSystemPropertyResourceOnServerFromComposite() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode composite = new ModelNode();
         composite.get(OP).set(CompositeOperationHandler.NAME);
@@ -731,13 +731,13 @@ public class CoreResourceManagementTestCase {
         composite.get(STEPS).add(server1);
         composite.get(STEPS).add(server3);
 
-        ModelNode result = masterClient.execute(composite);
+        ModelNode result = primaryClient.execute(composite);
         validateResponse(result);
     }
 
     @Test
     public void testSetSystemPropertyOnServerFromComposite() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode composite = new ModelNode();
         composite.get(OP).set(CompositeOperationHandler.NAME);
@@ -753,7 +753,7 @@ public class CoreResourceManagementTestCase {
         composite.get(STEPS).add(server1);
         composite.get(STEPS).add(server3);
 
-        ModelNode response = masterClient.execute(composite);
+        ModelNode response = primaryClient.execute(composite);
         validateFailedResponse(response);
 
         String errorCode = getNotAuthorizedErrorCode();
@@ -767,7 +767,7 @@ public class CoreResourceManagementTestCase {
      */
     @Test
     public void testAddRemoveHostInterface() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         final String ifaceName = "testing-interface";
 
         ModelNode add = new ModelNode();
@@ -775,24 +775,24 @@ public class CoreResourceManagementTestCase {
         add.get(OP_ADDR).add(HOST, "primary").add(INTERFACE, ifaceName);
         add.get(ANY_ADDRESS).set(true);
 
-        validateResponse(masterClient.execute(add));
+        validateResponse(primaryClient.execute(add));
 
         ModelNode read = new ModelNode();
         read.get(OP).set(READ_RESOURCE_OPERATION);
         read.get(OP_ADDR).add(HOST, "primary").add(SERVER, "main-one").add(INTERFACE, ifaceName);
-        validateResponse(masterClient.execute(read));
+        validateResponse(primaryClient.execute(read));
 
         ModelNode remove = new ModelNode();
         remove.get(OP).set(REMOVE);
         remove.get(OP_ADDR).add(HOST, "primary").add(INTERFACE, ifaceName);
-        validateResponse(masterClient.execute(remove));
+        validateResponse(primaryClient.execute(remove));
 
-        validateFailedResponse(masterClient.execute(read));
+        validateFailedResponse(primaryClient.execute(read));
     }
 
     @Test
     public void testAddRemoveSocketBindingGroup() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         final String bindingGroupName = "testing-binding-group";
         final String serverGroupName = "testing-server-group";
 
@@ -801,7 +801,7 @@ public class CoreResourceManagementTestCase {
         add.get(OP).set(ADD);
         add.get(OP_ADDR).add(SOCKET_BINDING_GROUP, bindingGroupName);
         add.get(DEFAULT_INTERFACE).set("public");
-        validateResponse(masterClient.execute(add));
+        validateResponse(primaryClient.execute(add));
 
         // add server group using new binding group
         add = new ModelNode();
@@ -809,25 +809,25 @@ public class CoreResourceManagementTestCase {
         add.get(OP_ADDR).add(SERVER_GROUP, serverGroupName);
         add.get(PROFILE).set("default");
         add.get(SOCKET_BINDING_GROUP).set(bindingGroupName);
-        validateResponse(masterClient.execute(add));
+        validateResponse(primaryClient.execute(add));
 
         // remove server group
         ModelNode remove = new ModelNode();
         remove.get(OP).set(REMOVE);
         remove.get(OP_ADDR).add(SERVER_GROUP, serverGroupName);
-        validateResponse(masterClient.execute(remove));
+        validateResponse(primaryClient.execute(remove));
 
         // remove binding group
         remove = new ModelNode();
         remove.get(OP).set(REMOVE);
         remove.get(OP_ADDR).add(SOCKET_BINDING_GROUP, bindingGroupName);
-        validateResponse(masterClient.execute(remove));
+        validateResponse(primaryClient.execute(remove));
 
         // check the binding group is gone
         ModelNode read = new ModelNode();
         add.get(OP).set(READ_RESOURCE_OPERATION);
         add.get(OP_ADDR).add(SOCKET_BINDING_GROUP, bindingGroupName);
-        validateFailedResponse(masterClient.execute(read));
+        validateFailedResponse(primaryClient.execute(read));
 
     }
 
@@ -836,13 +836,13 @@ public class CoreResourceManagementTestCase {
      */
     @Test
     public void testCanFindServerRestartRequiredAfterChangingSocketBindingPortOffset() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode read = new ModelNode();
         read.get(OP).set(READ_ATTRIBUTE_OPERATION);
         read.get(OP_ADDR).add(HOST, "primary").add(SERVER_CONFIG, "main-one");
         read.get(NAME).set("socket-binding-port-offset");
-        ModelNode result = validateResponse(masterClient.execute(read));
+        ModelNode result = validateResponse(primaryClient.execute(read));
         int original = result.isDefined() ? result.asInt() : 0;
 
         //The bug causing AS7-3643 caused execution of this op to fail
@@ -851,7 +851,7 @@ public class CoreResourceManagementTestCase {
         write.get(OP_ADDR).add(HOST, "primary").add(SERVER_CONFIG, "main-one");
         write.get(NAME).set("socket-binding-port-offset");
         write.get(VALUE).set(original + 1);
-        ModelNode response = masterClient.execute(write);
+        ModelNode response = primaryClient.execute(write);
         validateResponse(response);
 
         final String mainServerGroup = "main-server-group";
@@ -863,25 +863,25 @@ public class CoreResourceManagementTestCase {
 
         //Now just set back to the original
         write.get(VALUE).set(original);
-        validateResponse(masterClient.execute(write));
+        validateResponse(primaryClient.execute(write));
     }
 
     @Test
     public void testCannotRemoveUsedServerGroup() throws Exception {
 
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(REMOVE);
         operation.get(OP_ADDR).add(SERVER_GROUP, "main-server-group");
 
-        validateFailedResponse(masterClient.execute(operation));
+        validateFailedResponse(primaryClient.execute(operation));
     }
 
     @Test
     public void testAddRemoveServerConfig() throws Exception {
 
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode serverAddress = new ModelNode();
         serverAddress.add(HOST, "secondary");
@@ -905,13 +905,13 @@ public class CoreResourceManagementTestCase {
         step2.get(VALUE).set("test");
 
         try {
-            final ModelNode response = masterClient.execute(composite);
+            final ModelNode response = primaryClient.execute(composite);
             validateResponse(response);
         } finally {
             final ModelNode remove = new ModelNode();
             remove.get(OP).set(REMOVE);
             remove.get(OP_ADDR).set(serverAddress);
-            masterClient.execute(remove);
+            primaryClient.execute(remove);
         }
 
     }
@@ -920,7 +920,7 @@ public class CoreResourceManagementTestCase {
     @Test
     public void testQueryOperations() throws Exception {
 
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         final ModelNode operation = new ModelNode();
         operation.get(OP).set(QUERY);
@@ -930,7 +930,7 @@ public class CoreResourceManagementTestCase {
         operation.get(SELECT).add("running-mode");
         operation.get(WHERE).add("primary", "false");
 
-        ModelNode response = masterClient.execute(operation);
+        ModelNode response = primaryClient.execute(operation);
 
         validateResponse(response);
 
@@ -948,32 +948,32 @@ public class CoreResourceManagementTestCase {
     /** WFCORE-3730 */
     @Test
     public void testDomainRelativeToDomainBaseDir() throws IOException {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         PathAddress pa = PathAddress.pathAddress("path", "wfcore-3730");
         ModelNode operation = Util.createAddOperation(pa);
         operation.get("path").set("wfcore-3730");
         operation.get("relative-to").set("jboss.domain.base.dir");
-        ModelNode response = masterClient.execute(operation);
+        ModelNode response = primaryClient.execute(operation);
         validateResponse(response);
 
         operation = Util.createRemoveOperation(pa);
-        response = masterClient.execute(operation);
+        response = primaryClient.execute(operation);
         validateResponse(response);
     }
 
     /** WFCORE-3730 */
     @Test
     public void testHostRelativeToDomainBaseDir() throws IOException {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         PathAddress pa = PathAddress.pathAddress("host", "primary").append("path", "wfcore-3730");
         ModelNode operation = Util.createAddOperation(pa);
         operation.get("path").set("wfcore-3730");
         operation.get("relative-to").set("jboss.domain.base.dir");
-        ModelNode response = masterClient.execute(operation);
+        ModelNode response = primaryClient.execute(operation);
         validateResponse(response);
 
         operation = Util.createRemoveOperation(pa);
-        response = masterClient.execute(operation);
+        response = primaryClient.execute(operation);
         validateResponse(response);
 
     }
@@ -981,9 +981,9 @@ public class CoreResourceManagementTestCase {
     /** WFCORE-5960 */
     @Test
     public void testHostRelativeToDomainBaseDirConfiguration() throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         final PathAddress hostAddress = PathAddress.pathAddress("host", "primary");
-        final Path domainDirectory = Paths.get(testSupport.getDomainMasterConfiguration().getDomainDirectory(), "audit.log");
+        final Path domainDirectory = Paths.get(testSupport.getDomainPrimaryConfiguration().getDomainDirectory(), "audit.log");
 
         Assert.assertFalse("Found an existing audit.log at " + domainDirectory.toAbsolutePath().getParent() + ". The test cannot continue.", Files.exists(domainDirectory));
 
@@ -992,24 +992,24 @@ public class CoreResourceManagementTestCase {
                 .append("file-audit-log", "local-audit");
 
         ModelNode operation = Util.getReadAttributeOperation(pa, "relative-to");
-        ModelNode response = masterClient.execute(operation);
+        ModelNode response = primaryClient.execute(operation);
         ModelNode initialValue = validateResponse(response);
 
         try {
             operation = Util.getWriteAttributeOperation(pa, "relative-to", "jboss.domain.base.dir");
-            DomainTestUtils.executeForResult(operation, masterClient);
-            reloadHost(domainMasterLifecycleUtil, hostAddress);
+            DomainTestUtils.executeForResult(operation, primaryClient);
+            reloadHost(domainPrimaryLifecycleUtil, hostAddress);
             Assert.assertTrue("Cannot found " + domainDirectory.toAbsolutePath(), Files.exists(domainDirectory));
         } finally {
             operation = Util.getWriteAttributeOperation(pa, "relative-to", initialValue.asString());
-            DomainTestUtils.executeForResult(operation, masterClient);
-            reloadHost(domainMasterLifecycleUtil, hostAddress);
+            DomainTestUtils.executeForResult(operation, primaryClient);
+            reloadHost(domainPrimaryLifecycleUtil, hostAddress);
             Files.deleteIfExists(domainDirectory);
         }
     }
 
     private void testCannotInvokeManagedServerOperationsComposite(ModelNode stepAddress) throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode composite = new ModelNode();
         composite.get(OP).set(CompositeOperationHandler.NAME);
@@ -1022,7 +1022,7 @@ public class CoreResourceManagementTestCase {
         composite.get(STEPS).add(goodServerOp);
         composite.get(STEPS).add(getAddWorkerOperation(stepAddress.clone().add("worker", ("cannot-" + workerName++))));
 
-        ModelNode result = masterClient.execute(composite);
+        ModelNode result = primaryClient.execute(composite);
 
         validateFailedResponse(result);
 
@@ -1051,7 +1051,7 @@ public class CoreResourceManagementTestCase {
     }
 
     private void testCannotInvokeManagedServerOperationsComposite(String host, String server, ModelNode stepAddress) throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode composite = new ModelNode();
         composite.get(OP).set(CompositeOperationHandler.NAME);
@@ -1065,7 +1065,7 @@ public class CoreResourceManagementTestCase {
         composite.get(STEPS).add(goodServerOp);
         composite.get(STEPS).add(getAddWorkerOperation(stepAddress.clone().add("worker", ("cannot-" + workerName++))));
 
-        ModelNode result = masterClient.execute(composite);
+        ModelNode result = primaryClient.execute(composite);
 
         validateFailedResponse(result);
 
@@ -1112,12 +1112,12 @@ public class CoreResourceManagementTestCase {
     }
 
     private void testSnapshot(ModelNode addr) throws Exception {
-        final DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode snapshotOperation = new ModelNode();
         snapshotOperation.get(OP).set(SnapshotTakeHandler.DEFINITION.getName());
         snapshotOperation.get(OP_ADDR).set(addr);
-        ModelNode response = masterClient.execute(snapshotOperation);
+        ModelNode response = primaryClient.execute(snapshotOperation);
         final String snapshot = validateResponse(response).asString();
         Assert.assertNotNull(snapshot);
         Assert.assertFalse(snapshot.isEmpty());
@@ -1125,7 +1125,7 @@ public class CoreResourceManagementTestCase {
         ModelNode listSnapshotOperation = new ModelNode();
         listSnapshotOperation.get(OP).set(SnapshotListHandler.DEFINITION.getName());
         listSnapshotOperation.get(OP_ADDR).set(addr);
-        ModelNode listResult = validateResponse(masterClient.execute(listSnapshotOperation));
+        ModelNode listResult = validateResponse(primaryClient.execute(listSnapshotOperation));
         Set<String> snapshots = new HashSet<String>();
         for (ModelNode curr : listResult.get(NAMES).asList()) {
             snapshots.add(listResult.get(DIRECTORY).asString() + fileSeparator + curr.asString());
@@ -1137,9 +1137,9 @@ public class CoreResourceManagementTestCase {
         deleteSnapshotOperation.get(OP).set(SnapshotDeleteHandler.DEFINITION.getName());
         deleteSnapshotOperation.get(OP_ADDR).set(addr);
         deleteSnapshotOperation.get(NAME).set(snapshot.substring(snapshot.lastIndexOf(fileSeparator)  + fileSeparator.length()));
-        validateResponse(masterClient.execute(deleteSnapshotOperation));
+        validateResponse(primaryClient.execute(deleteSnapshotOperation));
 
-        listResult = validateResponse(masterClient.execute(listSnapshotOperation));
+        listResult = validateResponse(primaryClient.execute(listSnapshotOperation));
         snapshots = new HashSet<String>();
         for (ModelNode curr : listResult.get(NAMES).asList()) {
             snapshots.add(listResult.get(DIRECTORY).asString() + fileSeparator + curr.asString());

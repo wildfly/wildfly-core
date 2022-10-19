@@ -20,17 +20,17 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_CONFIG;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVER_GROUP;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.SLAVE_ADDR;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.cloneProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServerGroup;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.removeProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.startServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.stopServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SECONDARY_ADDR;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.cloneProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServerGroup;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.removeProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.startServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.stopServer;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -63,33 +63,33 @@ public class UnaffectedScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Add minimal server
-        cloneProfile(masterClient, "minimal", PROFILE.getValue());
+        cloneProfile(primaryClient, "minimal", PROFILE.getValue());
         initialized = 1;
-        createServerGroup(masterClient, GROUP.getValue(), PROFILE.getValue());
+        createServerGroup(primaryClient, GROUP.getValue(), PROFILE.getValue());
         initialized = 2;
-        createServer(slaveClient, SERVER.getValue(), GROUP.getValue(), portOffset);
+        createServer(secondaryClient, SERVER.getValue(), GROUP.getValue(), portOffset);
         initialized = 3;
-        startServer(slaveClient, SERVER.getValue());
+        startServer(secondaryClient, SERVER.getValue());
         initialized = 4;
     }
 
     @Override
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         if (initialized >= 4) {
-            stopServer(slaveClient, SERVER.getValue());
+            stopServer(secondaryClient, SERVER.getValue());
         }
         if (initialized >= 3) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(SLAVE_ADDR.append(SERVER_CFG)), masterClient);
+                    Util.createRemoveOperation(SECONDARY_ADDR.append(SERVER_CFG)), primaryClient);
         }
         if (initialized >= 2) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(PathAddress.pathAddress(GROUP)), masterClient);
+                    Util.createRemoveOperation(PathAddress.pathAddress(GROUP)), primaryClient);
         }
         if (initialized >= 1) {
-            removeProfile(masterClient, PROFILE.getValue());
+            removeProfile(primaryClient, PROFILE.getValue());
         }
     }
 }

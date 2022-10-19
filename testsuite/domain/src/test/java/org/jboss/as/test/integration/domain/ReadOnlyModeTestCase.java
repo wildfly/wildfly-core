@@ -34,79 +34,79 @@ import org.junit.Test;
 public class ReadOnlyModeTestCase {
 
     private DomainTestSupport domainManager;
-    private DomainLifecycleUtil domainMasterLifecycleUtil;
-    private DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @Before
     public void setupDomain() throws Exception {
         DomainTestSupport.Configuration domainConfig = DomainTestSupport.Configuration.create(ReadOnlyModeTestCase.class.getSimpleName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary.xml");
-        domainConfig.getMasterConfiguration().setReadOnlyHost(true);
-        domainConfig.getMasterConfiguration().setReadOnlyDomain(true);
-        domainConfig.getSlaveConfiguration().setReadOnlyDomain(true);
-        domainConfig.getSlaveConfiguration().setReadOnlyHost(false);
+        domainConfig.getPrimaryConfiguration().setReadOnlyHost(true);
+        domainConfig.getPrimaryConfiguration().setReadOnlyDomain(true);
+        domainConfig.getSecondaryConfiguration().setReadOnlyDomain(true);
+        domainConfig.getSecondaryConfiguration().setReadOnlyHost(false);
         domainManager = DomainTestSupport.create(domainConfig);
         domainManager.start();
-        domainMasterLifecycleUtil = domainManager.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = domainManager.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = domainManager.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = domainManager.getDomainSecondaryLifecycleUtil();
     }
 
     @After
     public void tearDownDomain() throws Exception {
         domainManager.close();
         domainManager = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Test
     public void testConfigurationNotUpdated() throws Exception {
         ModelNode domainAddress = PathAddress.pathAddress("system-property", "domain-read-only").toModelNode();
-        ModelNode masterAddress = PathAddress.pathAddress("host", "primary").append("system-property", "master-read-only").toModelNode();
-        ModelNode slaveAddress = PathAddress.pathAddress("host", "secondary").append("system-property", "slave-read-only").toModelNode();
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        ModelNode primaryAddress = PathAddress.pathAddress("host", "primary").append("system-property", "primary-read-only").toModelNode();
+        ModelNode secondaryAddress = PathAddress.pathAddress("host", "secondary").append("system-property", "secondary-read-only").toModelNode();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
 
         ModelNode op = Operations.createAddOperation(domainAddress);
         op.get("value").set(true);
-        Operations.isSuccessfulOutcome(masterClient.execute(op));
-        op = Operations.createAddOperation(masterAddress);
+        Operations.isSuccessfulOutcome(primaryClient.execute(op));
+        op = Operations.createAddOperation(primaryAddress);
         op.get("value").set(true);
-        Operations.isSuccessfulOutcome(masterClient.execute(op));
-        op = Operations.createAddOperation(slaveAddress);
+        Operations.isSuccessfulOutcome(primaryClient.execute(op));
+        op = Operations.createAddOperation(secondaryAddress);
         op.get("value").set(true);
-        Operations.isSuccessfulOutcome(masterClient.execute(op));
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
+        Operations.isSuccessfulOutcome(primaryClient.execute(op));
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(primaryAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(secondaryAddress, "value"))).asBoolean());
 
-        // reload master HC
-        domainMasterLifecycleUtil.reload("primary");
+        // reload primary HC
+        domainPrimaryLifecycleUtil.reload("primary");
 
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(primaryAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(secondaryAddress, "value"))).asBoolean());
 
-        // reload slave HC
-        domainSlaveLifecycleUtil.reload("secondary");
+        // reload secondary HC
+        domainSecondaryLifecycleUtil.reload("secondary");
 
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asBoolean());
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(primaryAddress, "value"))).asBoolean());
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(secondaryAddress, "value"))).asBoolean());
 
-        domainSlaveLifecycleUtil.stop();
-        domainMasterLifecycleUtil.stop();
+        domainSecondaryLifecycleUtil.stop();
+        domainPrimaryLifecycleUtil.stop();
 
-        domainMasterLifecycleUtil.getConfiguration().setRewriteConfigFiles(false);
-        domainSlaveLifecycleUtil.getConfiguration().setRewriteConfigFiles(false);
-        Future<Void> masterFuture = domainMasterLifecycleUtil.startAsync();
-        Future<Void> slaveFuture = domainSlaveLifecycleUtil.startAsync();
-        masterFuture.get();
-        slaveFuture.get();
+        domainPrimaryLifecycleUtil.getConfiguration().setRewriteConfigFiles(false);
+        domainSecondaryLifecycleUtil.getConfiguration().setRewriteConfigFiles(false);
+        Future<Void> primaryFuture = domainPrimaryLifecycleUtil.startAsync();
+        Future<Void> secondaryFuture = domainSecondaryLifecycleUtil.startAsync();
+        primaryFuture.get();
+        secondaryFuture.get();
 
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
-        Assert.assertTrue(Operations.getFailureDescription(masterClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asString().contains("WFLYCTL0216"));
-        Assert.assertTrue(Operations.getFailureDescription(masterClient.execute(Operations.createReadAttributeOperation(masterAddress, "value"))).asString().contains("WFLYCTL0216"));
-        Assert.assertTrue(Operations.readResult(masterClient.execute(Operations.createReadAttributeOperation(slaveAddress, "value"))).asBoolean());
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
+        Assert.assertTrue(Operations.getFailureDescription(primaryClient.execute(Operations.createReadAttributeOperation(domainAddress, "value"))).asString().contains("WFLYCTL0216"));
+        Assert.assertTrue(Operations.getFailureDescription(primaryClient.execute(Operations.createReadAttributeOperation(primaryAddress, "value"))).asString().contains("WFLYCTL0216"));
+        Assert.assertTrue(Operations.readResult(primaryClient.execute(Operations.createReadAttributeOperation(secondaryAddress, "value"))).asBoolean());
 
     }
 

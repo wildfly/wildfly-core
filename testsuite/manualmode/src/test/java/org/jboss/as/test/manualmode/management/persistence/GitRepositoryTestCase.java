@@ -113,7 +113,7 @@ public class GitRepositoryTestCase extends AbstractGitRepositoryTestCase {
         Assert.assertEquals("Repository initialized", commits.get(1));
         container.stop();
 
-        // create tag in local repo and change master for next test
+        // create tag in local repo and change Primary for next test
         container.startGitBackedConfiguration("local", null, null);
         takeSnapshot("my_tag", null);
         Assert.assertEquals(1, listTags(repository).size());

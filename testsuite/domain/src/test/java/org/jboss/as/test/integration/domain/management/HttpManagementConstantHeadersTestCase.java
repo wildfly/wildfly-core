@@ -85,8 +85,8 @@ public class HttpManagementConstantHeadersTestCase {
    private static final PathAddress INTERFACE_ADDRESS = PathAddress.pathAddress(PathElement.pathElement(HOST, "primary"), PathElement.pathElement(CORE_SERVICE, MANAGEMENT), PathElement.pathElement(MANAGEMENT_INTERFACE, HTTP_INTERFACE));
 
    private static DomainTestSupport testSupport;
-   private static DomainLifecycleUtil domainMasterLifecycleUtil;
-   private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+   private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+   private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
    private URL managementUrl;
    private URL errorUrl;
    private HttpClient httpClient;
@@ -94,14 +94,14 @@ public class HttpManagementConstantHeadersTestCase {
    @BeforeClass
    public static void before() {
       testSupport = DomainTestSupport.createAndStartDefaultSupport(HttpManagementConstantHeadersTestCase.class.getSimpleName());
-      domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-      domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+      domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+      domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
    }
 
    @Before
    public void createClient() throws Exception {
-      this.managementUrl = new URL("http", DomainTestSupport.masterAddress, MGMT_PORT, MGMT_CTX);
-      this.errorUrl = new URL("http", DomainTestSupport.masterAddress, MGMT_PORT, ERROR_CTX);
+      this.managementUrl = new URL("http", DomainTestSupport.primaryAddress, MGMT_PORT, MGMT_CTX);
+      this.errorUrl = new URL("http", DomainTestSupport.primaryAddress, MGMT_PORT, ERROR_CTX);
 
       CredentialsProvider credsProvider = new BasicCredentialsProvider();
       credsProvider.setCredentials(new AuthScope(managementUrl.getHost(), managementUrl.getPort()), new UsernamePasswordCredentials(Authentication.USERNAME, Authentication.PASSWORD));
@@ -129,7 +129,7 @@ public class HttpManagementConstantHeadersTestCase {
       undefineAttribute.get(OPERATION).set(UNDEFINE_ATTRIBUTE_OPERATION);
       undefineAttribute.get(NAME).set(CONSTANT_HEADERS);
 
-      domainMasterLifecycleUtil.executeForResult(undefineAttribute);
+      domainPrimaryLifecycleUtil.executeForResult(undefineAttribute);
       reload();
    }
 
@@ -137,8 +137,8 @@ public class HttpManagementConstantHeadersTestCase {
    public static void after() {
       testSupport.close();
       testSupport = null;
-      domainMasterLifecycleUtil = null;
-      domainSlaveLifecycleUtil = null;
+      domainPrimaryLifecycleUtil = null;
+      domainSecondaryLifecycleUtil = null;
    }
 
    /**
@@ -193,7 +193,7 @@ public class HttpManagementConstantHeadersTestCase {
       headersMap.put(MGMT_CTX, Collections.singletonMap(TEST_HEADER_2, TEST_VALUE_2));
       headersMap.put(ERROR_CTX, Collections.singletonMap(TEST_HEADER_3, TEST_VALUE_3));
 
-      domainMasterLifecycleUtil.executeForResult(createConstantHeadersOperation(headersMap));
+      domainPrimaryLifecycleUtil.executeForResult(createConstantHeadersOperation(headersMap));
       reload();
    }
 
@@ -239,7 +239,7 @@ public class HttpManagementConstantHeadersTestCase {
 
       headersMap.put(MGMT_CTX, headers);
 
-      domainMasterLifecycleUtil.executeForResult(createConstantHeadersOperation(headersMap));
+      domainPrimaryLifecycleUtil.executeForResult(createConstantHeadersOperation(headersMap));
 
       reload();
    }
@@ -278,9 +278,9 @@ public class HttpManagementConstantHeadersTestCase {
    }
 
    private void reload() throws IOException, TimeoutException, InterruptedException {
-      domainMasterLifecycleUtil.reload("primary", null, true);
+      domainPrimaryLifecycleUtil.reload("primary", null, true);
 
-      domainSlaveLifecycleUtil.awaitServers(System.currentTimeMillis());
-      domainSlaveLifecycleUtil.awaitHostController(System.currentTimeMillis());
+      domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
+      domainSecondaryLifecycleUtil.awaitHostController(System.currentTimeMillis());
    }
 }

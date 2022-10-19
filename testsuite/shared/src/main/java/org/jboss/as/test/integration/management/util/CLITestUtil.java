@@ -59,7 +59,7 @@ public class CLITestUtil {
     }
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport) throws CliInitializationException {
-        return getCommandContext(domainTestSupport.getDomainMasterConfiguration());
+        return getCommandContext(domainTestSupport.getDomainPrimaryConfiguration());
     }
 
     public static CommandContext getCommandContext(WildFlyManagedConfiguration config) throws CliInitializationException {
@@ -120,7 +120,7 @@ public class CLITestUtil {
 
     public static CommandContext getCommandContext(DomainTestSupport domainTestSupport, InputStream in, OutputStream out) throws CliInitializationException {
         setJBossCliConfig();
-        WildFlyManagedConfiguration config = domainTestSupport.getDomainMasterConfiguration();
+        WildFlyManagedConfiguration config = domainTestSupport.getDomainPrimaryConfiguration();
         return CommandContextFactory.getInstance().
                 newCommandContext(constructUri(config.getHostControllerManagementProtocol(),
                         config.getHostControllerManagementAddress(),

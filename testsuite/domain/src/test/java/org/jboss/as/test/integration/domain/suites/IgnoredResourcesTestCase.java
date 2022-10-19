@@ -67,40 +67,39 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test of slave hosts ability to ignore ops sent by master for certain resources (AS7-3174).
+ * Test of secondary hosts ability to ignore ops sent by primary for certain resources (AS7-3174).
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
 public class IgnoredResourcesTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(IgnoredResourcesTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
-        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
-                domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
+        final ModelNode secondaryModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
+                domainPrimaryLifecycleUtil.getDomainClient()).get(REMOTE);
 
-        slaveModel.get(IGNORE_UNUSED_CONFIG).set(false);
-        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSlaveLifecycleUtil.getDomainClient());
+        secondaryModel.get(IGNORE_UNUSED_CONFIG).set(false);
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSecondaryLifecycleUtil.getDomainClient());
         ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary"));
-        for (String key : slaveModel.keys()) {
-            writeRemoteDc.get(key).set(slaveModel.get(key));
+        for (String key : secondaryModel.keys()) {
+            writeRemoteDc.get(key).set(secondaryModel.get(key));
         }
-        DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
+        DomainTestUtils.executeForResult(writeRemoteDc, domainSecondaryLifecycleUtil.getDomainClient());
 
-        domainSlaveLifecycleUtil.reload("secondary", false, false);
+        domainSecondaryLifecycleUtil.reload("secondary", false, false);
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
-
-        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
-        ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode secondaryIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
+        ModelNode result = DomainTestUtils.executeForResult(secondaryIgnore, domainSecondaryLifecycleUtil.getDomainClient());
         // make sure that ignore-unused-configuration is false
         Assert.assertFalse(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
     }
@@ -108,30 +107,29 @@ public class IgnoredResourcesTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         // reset ignore-unused-configuration back to true, and reload
-        final ModelNode slaveModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
-                domainMasterLifecycleUtil.getDomainClient()).get(REMOTE);
+        final ModelNode secondaryModel = DomainTestUtils.executeForResult(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST, "secondary"), DOMAIN_CONTROLLER),
+                domainPrimaryLifecycleUtil.getDomainClient()).get(REMOTE);
 
-        slaveModel.get(IGNORE_UNUSED_CONFIG).set(true);
-        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSlaveLifecycleUtil.getDomainClient());
+        secondaryModel.get(IGNORE_UNUSED_CONFIG).set(true);
+        DomainTestUtils.executeForResult(Util.createEmptyOperation("remove-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary")), domainSecondaryLifecycleUtil.getDomainClient());
         ModelNode writeRemoteDc = Util.createEmptyOperation("write-remote-domain-controller", PathAddress.pathAddress(HOST, "secondary"));
-        for (String key : slaveModel.keys()) {
-            writeRemoteDc.get(key).set(slaveModel.get(key));
+        for (String key : secondaryModel.keys()) {
+            writeRemoteDc.get(key).set(secondaryModel.get(key));
         }
-        DomainTestUtils.executeForResult(writeRemoteDc, domainSlaveLifecycleUtil.getDomainClient());
+        DomainTestUtils.executeForResult(writeRemoteDc, domainSecondaryLifecycleUtil.getDomainClient());
 
-        domainSlaveLifecycleUtil.reload("secondary", false, false);
+        domainSecondaryLifecycleUtil.reload("secondary", false, false);
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
-
-        ModelNode slaveIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
-        ModelNode result = DomainTestUtils.executeForResult(slaveIgnore, domainSlaveLifecycleUtil.getDomainClient());
+        ModelNode secondaryIgnore = Util.createEmptyOperation(READ_RESOURCE_OPERATION, PathAddress.pathAddress(HOST, "secondary"));
+        ModelNode result = DomainTestUtils.executeForResult(secondaryIgnore, domainSecondaryLifecycleUtil.getDomainClient());
         // make sure that ignore-unused-configuration is true
         Assert.assertTrue(result.get(DOMAIN_CONTROLLER).get(REMOTE).get(IGNORE_UNUSED_CONFIG).asBoolean());
 
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -142,7 +140,7 @@ public class IgnoredResourcesTestCase {
         op.get("child-type").set("profile");
 
         // Sanity check againt domain
-        ModelNode result = executeOperation(op, domainMasterLifecycleUtil.getDomainClient());
+        ModelNode result = executeOperation(op, domainPrimaryLifecycleUtil.getDomainClient());
         boolean found = false;
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
@@ -152,8 +150,8 @@ public class IgnoredResourcesTestCase {
         }
         Assert.assertTrue(found);
 
-        // Resource should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
                 Assert.fail("found profile 'ignored'");
@@ -162,10 +160,10 @@ public class IgnoredResourcesTestCase {
 
         // Modify the ignored profile
         ModelNode mod = createOpNode("profile=ignored/subsystem=io", "add");
-        executeOperation(mod, domainMasterLifecycleUtil.getDomainClient());
+        executeOperation(mod, domainPrimaryLifecycleUtil.getDomainClient());
 
-        // Resource still should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource still should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
                 Assert.fail("found profile 'ignored'");
@@ -180,7 +178,7 @@ public class IgnoredResourcesTestCase {
         op.get("child-type").set("socket-binding-group");
 
         // Sanity check againt domain
-        ModelNode result = executeOperation(op, domainMasterLifecycleUtil.getDomainClient());
+        ModelNode result = executeOperation(op, domainPrimaryLifecycleUtil.getDomainClient());
         boolean found = false;
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
@@ -190,8 +188,8 @@ public class IgnoredResourcesTestCase {
         }
         Assert.assertTrue(found);
 
-        // Resource should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
                 Assert.fail("found socket-binding-group 'ignored'");
@@ -201,10 +199,10 @@ public class IgnoredResourcesTestCase {
         // Modify the ignored group
         ModelNode mod = createOpNode("socket-binding-group=ignored/socket-binding=test", "add");
         mod.get("port").set(12345);
-        executeOperation(mod, domainMasterLifecycleUtil.getDomainClient());
+        executeOperation(mod, domainPrimaryLifecycleUtil.getDomainClient());
 
-        // Resource still should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource still should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("ignored".equals(profile.asString())) {
                 Assert.fail("found socket-binding-group 'ignored'");
@@ -220,15 +218,15 @@ public class IgnoredResourcesTestCase {
         op.get("child-type").set("extension");
 
         // Sanity check againt domain
-        ModelNode result = executeOperation(op, domainMasterLifecycleUtil.getDomainClient());
+        ModelNode result = executeOperation(op, domainPrimaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("org.jboss.as.threads".equals(profile.asString())) {
                 Assert.fail("found extension 'org.jboss.as.threads'");
             }
         }
 
-        // Resource should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("org.jboss.as.threads".equals(profile.asString())) {
                 Assert.fail("found extension 'org.jboss.as.threads'");
@@ -237,10 +235,10 @@ public class IgnoredResourcesTestCase {
 
         // Add the ignored extension
         ModelNode mod = createOpNode("extension=org.jboss.as.threads", "add");
-        executeOperation(mod, domainMasterLifecycleUtil.getDomainClient());
+        executeOperation(mod, domainPrimaryLifecycleUtil.getDomainClient());
 
-        // Resource still should not exist on slave
-        result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        // Resource still should not exist on secondary
+        result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("org.jboss.as.threads".equals(profile.asString())) {
                 Assert.fail("found extension 'org.jboss.as.threads'");
@@ -248,7 +246,7 @@ public class IgnoredResourcesTestCase {
         }
 
         //do cleanup
-        executeOperation(createOpNode("extension=org.jboss.as.threads", "remove"), domainMasterLifecycleUtil.getDomainClient());
+        executeOperation(createOpNode("extension=org.jboss.as.threads", "remove"), domainPrimaryLifecycleUtil.getDomainClient());
 
     }
 
@@ -259,7 +257,7 @@ public class IgnoredResourcesTestCase {
         op.get("wildcard").set(true);
 
         try {
-            executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+            executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
             Assert.fail("should not be able to ignore type 'host'");
         } catch (MgmtOperationException good) {
             //
@@ -272,7 +270,7 @@ public class IgnoredResourcesTestCase {
         final ModelNode op = createOpNode(null, "read-children-names");
         op.get("child-type").set("server-group");
 
-        final ModelNode result = executeOperation(op, domainSlaveLifecycleUtil.getDomainClient());
+        final ModelNode result = executeOperation(op, domainSecondaryLifecycleUtil.getDomainClient());
         for (ModelNode profile : result.asList()) {
             if ("minimal".equals(profile.asString())) {
                 Assert.fail("found server-group 'minimal'");
@@ -305,7 +303,7 @@ public class IgnoredResourcesTestCase {
 
             final Operation operation = OperationBuilder.create(composite).addInputStream(is).build();
 
-            final ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(operation);
+            final ModelNode result = domainPrimaryLifecycleUtil.getDomainClient().execute(operation);
             Assert.assertEquals(result.asString(), result.get(OUTCOME).asString(), SUCCESS);
 
             final ModelNode ra = new ModelNode();
@@ -313,11 +311,11 @@ public class IgnoredResourcesTestCase {
             ra.get(OP_ADDR).add(DEPLOYMENT, "test.jar");
             ra.get(NAME).set(CONTENT);
 
-            final ModelNode r = DomainTestUtils.executeForResult(ra, domainMasterLifecycleUtil.getDomainClient());
+            final ModelNode r = DomainTestUtils.executeForResult(ra, domainPrimaryLifecycleUtil.getDomainClient());
             final byte[] hash = r.get(0).get(HASH).asBytes();
 
-            Assert.assertTrue(exists(domainMasterLifecycleUtil, hash));
-            Assert.assertFalse(exists(domainSlaveLifecycleUtil, hash));
+            Assert.assertTrue(exists(domainPrimaryLifecycleUtil, hash));
+            Assert.assertFalse(exists(domainSecondaryLifecycleUtil, hash));
 
         } finally {
             if (is != null) try {

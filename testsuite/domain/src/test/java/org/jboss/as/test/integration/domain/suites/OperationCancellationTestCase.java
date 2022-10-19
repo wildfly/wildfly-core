@@ -105,20 +105,20 @@ public class OperationCancellationTestCase {
             PathElement.pathElement(CORE_SERVICE, MANAGEMENT),
             PathElement.pathElement(SERVICE, MANAGEMENT_OPERATIONS)
     );
-    private static final PathAddress MASTER_ADDRESS = PathAddress.pathAddress(HOST, PRIMARY);
-    private static final PathAddress SLAVE_ADDRESS = PathAddress.pathAddress(HOST, "secondary");
+    private static final PathAddress PRIMARY_ADDRESS = PathAddress.pathAddress(HOST, PRIMARY);
+    private static final PathAddress SECONDARY_ADDRESS = PathAddress.pathAddress(HOST, "secondary");
 
     private static final Set<BlockerExtension.BlockPoint> RUNTIME_POINTS =
             EnumSet.of(BlockerExtension.BlockPoint.RUNTIME, BlockerExtension.BlockPoint.SERVICE_START, BlockerExtension.BlockPoint.SERVICE_STOP);
     private static final long GET_TIMEOUT = TimeoutUtil.adjust(10000);
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(OperationCancellationTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         // Initialize the test extension
         ExtensionSetup.initializeBlockerExtension(testSupport);
@@ -126,24 +126,24 @@ public class OperationCancellationTestCase {
         PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME);
         ModelNode addExtension = Util.createAddOperation(extensionAddress);
 
-        executeForResult(addExtension, masterClient);
+        executeForResult(addExtension, primaryClient);
 
         ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
-        executeForResult(addSubsystem, masterClient);
+        executeForResult(addSubsystem, primaryClient);
 
-        ModelNode addMasterExtension = Util.createAddOperation(MASTER_ADDRESS.append(extensionAddress));
-        executeForResult(addMasterExtension, masterClient);
+        ModelNode addPrimaryExtension = Util.createAddOperation(PRIMARY_ADDRESS.append(extensionAddress));
+        executeForResult(addPrimaryExtension, primaryClient);
 
-        ModelNode addMasterSubsystem = Util.createAddOperation(MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
-        executeForResult(addMasterSubsystem, masterClient);
+        ModelNode addPrimarySubsystem = Util.createAddOperation(PRIMARY_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(addPrimarySubsystem, primaryClient);
 
-        ModelNode addSlaveExtension = Util.createAddOperation(SLAVE_ADDRESS.append(extensionAddress));
-        executeForResult(addSlaveExtension, masterClient);
+        ModelNode addSecondaryExtension = Util.createAddOperation(SECONDARY_ADDRESS.append(extensionAddress));
+        executeForResult(addSecondaryExtension, primaryClient);
 
-        ModelNode addSlaveSubsystem = Util.createAddOperation(SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
-        executeForResult(addSlaveSubsystem, masterClient);
+        ModelNode addSecondarySubsystem = Util.createAddOperation(SECONDARY_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(addSecondarySubsystem, primaryClient);
     }
 
     @AfterClass
@@ -151,26 +151,26 @@ public class OperationCancellationTestCase {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 SUBSYSTEM_ELEMENT));
-        executeForResult(removeSubsystem, masterClient);
+        executeForResult(removeSubsystem, primaryClient);
 
         PathAddress extensionAddress = PathAddress.pathAddress(EXTENSION, BlockerExtension.MODULE_NAME);
         ModelNode removeExtension = Util.createEmptyOperation(REMOVE, extensionAddress);
-        executeForResult(removeExtension, masterClient);
+        executeForResult(removeExtension, primaryClient);
 
-        ModelNode removeSlaveSubsystem = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(SUBSYSTEM_ELEMENT));
-        executeForResult(removeSlaveSubsystem, masterClient);
+        ModelNode removeSecondarySubsystem = Util.createEmptyOperation(REMOVE, SECONDARY_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(removeSecondarySubsystem, primaryClient);
 
-        ModelNode removeSlaveExtension = Util.createEmptyOperation(REMOVE, SLAVE_ADDRESS.append(extensionAddress));
-        executeForResult(removeSlaveExtension, masterClient);
+        ModelNode removeSecondaryExtension = Util.createEmptyOperation(REMOVE, SECONDARY_ADDRESS.append(extensionAddress));
+        executeForResult(removeSecondaryExtension, primaryClient);
 
-        ModelNode removeMasterSubsystem = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(SUBSYSTEM_ELEMENT));
-        executeForResult(removeMasterSubsystem, masterClient);
+        ModelNode removePrimarySubsystem = Util.createEmptyOperation(REMOVE, PRIMARY_ADDRESS.append(SUBSYSTEM_ELEMENT));
+        executeForResult(removePrimarySubsystem, primaryClient);
 
-        ModelNode removeMasterExtension = Util.createEmptyOperation(REMOVE, MASTER_ADDRESS.append(extensionAddress));
-        executeForResult(removeMasterExtension, masterClient);
+        ModelNode removePrimaryExtension = Util.createEmptyOperation(REMOVE, PRIMARY_ADDRESS.append(extensionAddress));
+        executeForResult(removePrimaryExtension, primaryClient);
 
         testSupport = null;
-        masterClient = null;
+        primaryClient = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -179,52 +179,52 @@ public class OperationCancellationTestCase {
         // Start from the leaves of the domain process tree and work inward validating
         // that all block ops are cleared locally. This ensures that a later test doesn't
         // mistakenly cancel a completing op from an earlier test
-        validateNoActiveOperation(masterClient, "primary", "main-one");
-        validateNoActiveOperation(masterClient, "secondary", "main-three");
-        validateNoActiveOperation(masterClient, "secondary", null);
-        validateNoActiveOperation(masterClient, "primary", null);
+        validateNoActiveOperation(primaryClient, "primary", "main-one");
+        validateNoActiveOperation(primaryClient, "secondary", "main-three");
+        validateNoActiveOperation(primaryClient, "secondary", null);
+        validateNoActiveOperation(primaryClient, "primary", null);
     }
 
     @Test
-    public void testMasterBlockModel() throws Exception {
+    public void testPrimaryBlockModel() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
-        validateNoActiveOperation(masterClient, "primary", null, id, false);
+        validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
 
     @Test
-    public void testMasterBlockRuntime() throws Exception {
+    public void testPrimaryBlockRuntime() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
-        validateNoActiveOperation(masterClient, "primary", null, id, false);
+        validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testMasterBlockServiceStart() throws Exception {
+    public void testPrimaryBlockServiceStart() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", null, id, false);
+        validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testMasterBlockServiceStartCancelFuture() throws Exception {
+    public void testPrimaryBlockServiceStartCancelFuture() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
             ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -232,109 +232,109 @@ public class OperationCancellationTestCase {
         } catch (CancellationException good) {
             // good
         }
-        validateNoActiveOperation(masterClient, "primary", null, id, false);
+        validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
 
     @Test
-    public void testMasterBlockVerify() throws Exception {
+    public void testPrimaryBlockVerify() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.EXECUTING, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertFailedOrCancelled(response);
-        validateNoActiveOperation(masterClient, "primary", null, id, false);
+        validateNoActiveOperation(primaryClient, "primary", null, id, false);
     }
 
     @Test
-    public void testMasterBlockCompletion() throws Exception {
+    public void testPrimaryBlockCompletion() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.COMMIT);
-        String blockId = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
+        String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "primary", null, blockId, false);
     }
 
     @Test
-    public void testMasterBlockRollback() throws Exception {
+    public void testPrimaryBlockRollback() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.ROLLBACK);
-        String blockId = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
+        String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // master has already failed when we cancel, so it reports as failed
+        // primary has already failed when we cancel, so it reports as failed
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "primary", null, blockId, false);
     }
 
     @Test
-    public void testMasterBlockOtherOpCancelOtherOp() throws Exception {
+    public void testPrimaryBlockOtherOpCancelOtherOp() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", null, BlockerExtension.BlockPoint.COMMIT);
-        String blockId = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        Future<ModelNode> writeFuture = masterClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
-        cancel(masterClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
+        String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
+        cancel(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
         ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         blockFuture.cancel(true);
-        validateNoActiveOperation(masterClient, "primary", null, blockId, true);
+        validateNoActiveOperation(primaryClient, "primary", null, blockId, true);
     }
 
     @Test
-    public void testMasterBlockOtherOpCancelBlockOp() throws Exception {
+    public void testPrimaryBlockOtherOpCancelBlockOp() throws Exception {
         long start = System.currentTimeMillis();
         block("primary", null, BlockerExtension.BlockPoint.COMMIT);
-        String blockId = findActiveOperation(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        Future<ModelNode> writeFuture = masterClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
-        findActiveOperation(masterClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start);
-        cancel(masterClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
+        String blockId = findActiveOperation(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
+        findActiveOperation(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start);
+        cancel(primaryClient, "primary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
         ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", null, blockId, true);
+        validateNoActiveOperation(primaryClient, "primary", null, blockId, true);
     }
 
     @Test
-    public void testSlaveBlockModelCancelMaster() throws Exception {
+    public void testSecondaryBlockModelCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
-    public void testSlaveBlockRuntimeCancelMaster() throws Exception {
+    public void testSecondaryBlockRuntimeCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveBlockServiceStartCancelMaster() throws Exception {
+    public void testSecondaryBlockServiceStartCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveBlockServiceStartCancelMasterFuture() throws Exception {
+    public void testSecondaryBlockServiceStartCancelPrimaryFuture() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
             ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -342,170 +342,170 @@ public class OperationCancellationTestCase {
         } catch (CancellationException good) {
             // good
         }
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
-    public void testSlaveBlockVerifyCancelMaster() throws Exception {
+    public void testSecondaryBlockVerifyCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
-    public void testSlaveBlockCompletionCancelMaster() throws Exception {
+    public void testSecondaryBlockCompletionCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // The master may or may not be done with DomainSlaveHandler.execute and DomainRolloutStepHandler.execute
+        // The primary may or may not be done with DomainSecondaryHandler.execute and DomainRolloutStepHandler.execute
         // when cancelled. If yes, result is SUCCESS, if not result is CANCELLED
         assertSuccessOrCancelled(response);
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
-    public void testSlaveBlockRollbackCancelMaster() throws Exception {
+    public void testSecondaryBlockRollbackCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Slave fails before Stage.DONE so no normal prepared message in DONE with the failure. The block in
-        // rollback prevents the failure coming via the final response. So the master doesn't know about
+        // Secondary fails before Stage.DONE so no normal prepared message in DONE with the failure. The block in
+        // rollback prevents the failure coming via the final response. So the primary doesn't know about
         // the failure and just detects the local cancellation. So, CANCELLED
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, id, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, id, true);
     }
 
     @Test
-    public void testSlaveBlockOtherOpCancelMaster() throws Exception {
+    public void testSecondaryBlockOtherOpCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        Future<ModelNode> writeFuture = masterClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
-        cancel(masterClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        Future<ModelNode> writeFuture = primaryClient.executeAsync(WRITE_FOO_OP, OperationMessageHandler.DISCARD);
+        cancel(primaryClient, "primary", null, "write-attribute", OperationContext.ExecutionStatus.AWAITING_OTHER_OPERATION, start, false);
         ModelNode response = writeFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
         blockFuture.cancel(true);
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, true);
     }
 
     @Test
-    public void testSlaveBlockModelCancelSlave() throws Exception {
+    public void testSecondaryBlockModelCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.MODEL);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "secondary", null, "block", null, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "secondary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
 
     @Test
-    public void testSlaveBlockRuntimeCancelSlave() throws Exception {
+    public void testSecondaryBlockRuntimeCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.RUNTIME);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "secondary", null, "block", null, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "secondary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveBlockServiceStartCancelSlave() throws Exception {
+    public void testSecondaryBlockServiceStartCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.SERVICE_START);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
 
     @Test
-    public void testSlaveBlockVerifyCancelSlave() throws Exception {
+    public void testSecondaryBlockVerifyCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.VERIFY);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "secondary", null, "block", null, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "secondary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, false);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, false);
     }
 
     @Test
-    public void testSlaveBlockCompletionCancelSlave() throws Exception {
+    public void testSecondaryBlockCompletionCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.COMMIT);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING , start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING , start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // cancellation any time in Stage.DONE on slave will not result in a prepare-phase failed response to
-        // master, so this should always be success
+        // cancellation any time in Stage.DONE on secondary will not result in a prepare-phase failed response to
+        // primary, so this should always be success
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, true);
     }
 
     @Test
-    public void testSlaveBlockRollbackCancelSlave() throws Exception {
+    public void testSecondaryBlockRollbackCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", null, BlockerExtension.BlockPoint.ROLLBACK);
-        String blockId = findActiveOperation(masterClient, "secondary", null, "block", null, start);
-        cancel(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
+        String blockId = findActiveOperation(primaryClient, "secondary", null, "block", null, start);
+        cancel(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.ROLLING_BACK, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Cancelling the rollback does not prevent the master learning that the slave failed.
+        // Cancelling the rollback does not prevent the primary learning that the secondary failed.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", null, blockId, true);
+        validateNoActiveOperation(primaryClient, "secondary", null, blockId, true);
     }
 
     @Test
-    public void testMasterServerBlockModelCancelMaster() throws Exception {
+    public void testPrimaryServerBlockModelCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockRuntimeCancelMaster() throws Exception {
+    public void testPrimaryServerBlockRuntimeCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testMasterServerBlockServiceStartCancelMaster() throws Exception {
+    public void testPrimaryServerBlockServiceStartCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testMasterServerBlockServiceStartCancelMasterFuture() throws Exception {
+    public void testPrimaryServerBlockServiceStartCancelPrimaryFuture() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
             ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -513,156 +513,156 @@ public class OperationCancellationTestCase {
         } catch (CancellationException good) {
             // good
         }
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockVerifyCancelMaster() throws Exception {
+    public void testPrimaryServerBlockVerifyCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockCompletionCancelMaster() throws Exception {
+    public void testPrimaryServerBlockCompletionCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         // The result may be success or cancelled depending on whether the cancelled executed while
         // DomainRolloutStepHandler.execute was running (CANCELLED) or afterwards (SUCCESS)
         assertSuccessOrCancelled(response);
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockRollbackCancelMaster() throws Exception {
+    public void testPrimaryServerBlockRollbackCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // The server op does not reach the prepare stage, so the master doesn't either and reports as cancelled
+        // The server op does not reach the prepare stage, so the primary doesn't either and reports as cancelled
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockModelCancelServer() throws Exception {
+    public void testPrimaryServerBlockModelCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", "main-one", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", "main-one", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, false);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
 
     @Test
-    public void testMasterServerBlockRuntimeCancelServer() throws Exception {
+    public void testPrimaryServerBlockRuntimeCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", "main-one", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", "main-one", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, false);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testMasterServerBlockServiceStartCancelServer() throws Exception {
+    public void testPrimaryServerBlockServiceStartCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, false);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
 
     @Test
-    public void testMasterServerBlockVerifyCancelServer() throws Exception {
+    public void testPrimaryServerBlockVerifyCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", null, start);
-        cancel(masterClient, "primary", "main-one", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", null, start);
+        cancel(primaryClient, "primary", "main-one", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, false);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, false);
     }
 
     @Test
-    public void testMasterServerBlockCompletionCancelServer() throws Exception {
+    public void testPrimaryServerBlockCompletionCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "primary", "main-one", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "primary", "main-one", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to master,
+        // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testMasterServerBlockRollbackCancelServer() throws Exception {
+    public void testPrimaryServerBlockRollbackCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("primary", "main-one", BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "primary", "main-one", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "primary", "main-one", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "primary", "main-one", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Server never reaches Stage.DONE before blocking, so master is waiting for initial response.
-        // Cancelling the rollback on server doesn't change that response from FAILED. So master sees and reports failure.
+        // Server never reaches Stage.DONE before blocking, so primary is waiting for initial response.
+        // Cancelling the rollback on server doesn't change that response from FAILED. So primary sees and reports failure.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "primary", "main-one", id, true);
+        validateNoActiveOperation(primaryClient, "primary", "main-one", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockModelCancelMaster() throws Exception {
+    public void testSecondaryServerBlockModelCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id , true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id , true);
     }
 
     @Test
-    public void testSlaveServerBlockRuntimeCancelMaster() throws Exception {
+    public void testSecondaryServerBlockRuntimeCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveServerBlockServiceStartCancelMaster() throws Exception {
+    public void testSecondaryServerBlockServiceStartCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveServerBlockServiceStartCancelMasterFuture() throws Exception {
+    public void testSecondaryServerBlockServiceStartCancelPrimaryFuture() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         blockFuture.cancel(true);
         try {
             ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -670,200 +670,200 @@ public class OperationCancellationTestCase {
         } catch (CancellationException good) {
             // good
         }
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockVerifyCancelMaster() throws Exception {
+    public void testSecondaryServerBlockVerifyCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockCompletionCancelMaster() throws Exception {
+    public void testSecondaryServerBlockCompletionCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         // The result may be success or cancelled depending on whether the cancelled executed while
         // DomainRolloutStepHandler.execute was running (CANCELLED) or afterwards (SUCCESS)
         assertSuccessOrCancelled(response);
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockRollbackCancelMaster() throws Exception {
+    public void testSecondaryServerBlockRollbackCancelPrimary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "primary", null, "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "primary", null, "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Server doesn't get to DONE so doesn't report there, so master is waiting for initial report, which is blocking
-        // on server. So master detects local cancellation and reports it
+        // Server doesn't get to DONE so doesn't report there, so primary is waiting for initial report, which is blocking
+        // on server. So primary detects local cancellation and reports it
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
 
-    // Tests of cancelling an op blocking on a slave server via an op on the slave
+    // Tests of cancelling an op blocking on a secondary server via an op on the secondary
 
     // NOTE: Not the way a user should cancel a server op -- either cancel it on the coordinating HC
-    // (i.e. master for a domain-wide op) or on the server itself. Otherwise it's easy to mistakenly
-    // cancel the master's call to the slave HC and not its proxied call to the server.
+    // (i.e. primary for a domain-wide op) or on the server itself. Otherwise it's easy to mistakenly
+    // cancel the primary's call to the secondary HC and not its proxied call to the server.
     // But we test this for completeness.
 
     @Test
-    public void testSlaveServerBlockModelCancelSlave() throws Exception {
+    public void testSecondaryServerBlockModelCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockRuntimeCancelSlave() throws Exception {
+    public void testSecondaryServerBlockRuntimeCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveServerBlockServiceStartCancelSlave() throws Exception {
+    public void testSecondaryServerBlockServiceStartCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockVerifyCancelSlave() throws Exception {
+    public void testSecondaryServerBlockVerifyCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockCompletionCancelSlave() throws Exception {
+    public void testSecondaryServerBlockCompletionCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // The slave will already have sent its prepare phase response to master before the slave op even gets started.
+        // The secondary will already have sent its prepare phase response to primary before the secondary op even gets started.
         // So the subsequent cancellation will not affect the overall result, so it's SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockRollbackCancelSlave() throws Exception {
+    public void testSecondaryServerBlockRollbackCancelSecondary() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
         // Here we must pass 'true' to the 'serverOpOnly' param to ensure we cancel the server op, and not the non-blocking HC op
-        cancel(masterClient, "secondary", null, "block", null, start, true);
+        cancel(primaryClient, "secondary", null, "block", null, start, true);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Server can't report it's failure as a prepared message in DONE because it doesn't get there. So master is
-        // waiting for the initial report. The slave then cancelling releases the initial report but doesn't change
-        // its outcome from FAILED. So master sees failure
+        // Server can't report it's failure as a prepared message in DONE because it doesn't get there. So primary is
+        // waiting for the initial report. The secondary then cancelling releases the initial report but doesn't change
+        // its outcome from FAILED. So primary sees failure
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
-    public void testSlaveServerBlockModelCancelServer() throws Exception {
+    public void testSecondaryServerBlockModelCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.MODEL);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "secondary", "main-three", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     @Test
-    public void testSlaveServerBlockRuntimeCancelServer() throws Exception {
+    public void testSecondaryServerBlockRuntimeCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "secondary", "main-three", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     @Test
     @Ignore("MSC-143")
-    public void testSlaveServerBlockServiceStartCancelServer() throws Exception {
+    public void testSecondaryServerBlockServiceStartCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.SERVICE_START);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.AWAITING_STABILITY, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     @Test
-    public void testSlaveServerBlockVerifyCancelServer() throws Exception {
+    public void testSecondaryServerBlockVerifyCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.VERIFY);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "secondary", "main-three", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     @Test
-    public void testSlaveServerBlockCompletionCancelServer() throws Exception {
+    public void testSecondaryServerBlockCompletionCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.COMMIT);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", null, start);
-        cancel(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", null, start);
+        cancel(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.COMPLETING, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to master,
+        // cancelling on the server during Stage.DONE should not result in a prepare-phase failure sent to primary,
         // so result should always be SUCCESS
         assertEquals(response.asString(), SUCCESS, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     @Test
-    public void testSlaveServerBlockRollbackCancelServer() throws Exception {
+    public void testSecondaryServerBlockRollbackCancelServer() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.ROLLBACK);
-        String id = findActiveOperation(masterClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
-        cancel(masterClient, "secondary", "main-three", "block", null, start, false);
+        String id = findActiveOperation(primaryClient, "secondary", "main-three", "block", OperationContext.ExecutionStatus.ROLLING_BACK, start);
+        cancel(primaryClient, "secondary", "main-three", "block", null, start, false);
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
-        // Cancelling in rollback doesn't change the server's FAILED outcome, so master sees it and reports it.
+        // Cancelling in rollback doesn't change the server's FAILED outcome, so primary sees it and reports it.
         assertEquals(response.asString(), FAILED, response.get(OUTCOME).asString());
-        validateNoActiveOperation(masterClient, "secondary", "main-three", id, false);
+        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, false);
     }
 
     // Tests of helper methods
@@ -872,33 +872,33 @@ public class OperationCancellationTestCase {
     public void testCancelNonProgressingOperation() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "primary", null, "block", null, start);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", null, start);
         ModelNode op = Util.createEmptyOperation("cancel-non-progressing-operation",
                 PathAddress.pathAddress(PathElement.pathElement(HOST, "primary")).append(MGMT_CONTROLLER));
         op.get("timeout").set(0);
-        ModelNode result = executeForResult(op, masterClient);
+        ModelNode result = executeForResult(op, primaryClient);
         assertEquals(result.toString(), id, result.asString());
         ModelNode response = blockFuture.get(GET_TIMEOUT, TimeUnit.MILLISECONDS);
         assertEquals(response.asString(), CANCELLED, response.get(OUTCOME).asString());
-        // Bogus as "id" is not the id on slave/main-three
-//        validateNoActiveOperation(masterClient, "secondary", "main-three", id, true);
+        // Bogus as "id" is not the id on secondary/main-three
+//        validateNoActiveOperation(primaryClient, "secondary", "main-three", id, true);
     }
 
     @Test
     public void testFindNonProgressingOperation() throws Exception {
         long start = System.currentTimeMillis();
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
-        String id = findActiveOperation(masterClient, "primary", null, "block", null, start);
+        String id = findActiveOperation(primaryClient, "primary", null, "block", null, start);
         try {
             ModelNode op = Util.createEmptyOperation("find-non-progressing-operation",
                     PathAddress.pathAddress(PathElement.pathElement(HOST, "primary")).append(MGMT_CONTROLLER));
             op.get("timeout").set(0);
-            ModelNode result = executeForResult(op, masterClient);
+            ModelNode result = executeForResult(op, primaryClient);
             assertEquals(result.toString(), id, result.asString());
         } finally {
             try {
                 blockFuture.cancel(true);
-                validateNoActiveOperation(masterClient, "primary", null, id, true);
+                validateNoActiveOperation(primaryClient, "primary", null, id, true);
             } catch (Exception toLog) {
                 log.error("Failed to cancel in testFindNonProgressingOperation" , toLog);
             }
@@ -922,20 +922,20 @@ public class OperationCancellationTestCase {
         Future<ModelNode> blockFuture = block("secondary", "main-three", BlockerExtension.BlockPoint.RUNTIME);
         String id = null;
         try {
-            id = findActiveOperation(masterClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
+            id = findActiveOperation(primaryClient, "secondary", null, "block", OperationContext.ExecutionStatus.COMPLETING, start);
             ModelNode op = Util.createEmptyOperation(opName,
                     PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary")).append(MGMT_CONTROLLER));
             op.get("timeout").set(0);
-            ModelNode cancelled = executeForResult(op, masterClient);
+            ModelNode cancelled = executeForResult(op, primaryClient);
             assertTrue(cancelled.isDefined());
             if (opName.contains("cancel")) {
-                validateNoActiveOperation(masterClient, "secondary", null, cancelled.asString(), true);
+                validateNoActiveOperation(primaryClient, "secondary", null, cancelled.asString(), true);
             }
         } finally {
             try {
                 blockFuture.cancel(true);
                 if (id != null) {
-                    validateNoActiveOperation(masterClient, "secondary", null, id, true);
+                    validateNoActiveOperation(primaryClient, "secondary", null, id, true);
                 }
             } catch (Exception toLog) {
                 log.error("Failed to cancel in failNonProgressingDomainRolloutTest of " + opName , toLog);
@@ -953,10 +953,10 @@ public class OperationCancellationTestCase {
         op.get(CALLER.getName()).set(getTestMethod());
         if (server == null && RUNTIME_POINTS.contains(blockPoint)) {
             // retarget the op to the HC subsystem
-            PathAddress addr = host.equals("primary") ? MASTER_ADDRESS : SLAVE_ADDRESS;
+            PathAddress addr = host.equals("primary") ? PRIMARY_ADDRESS : SECONDARY_ADDRESS;
             op.get(OP_ADDR).set(addr.append(SUBSYSTEM_ELEMENT).toModelNode());
         }
-        return masterClient.executeAsync(op, OperationMessageHandler.DISCARD);
+        return primaryClient.executeAsync(op, OperationMessageHandler.DISCARD);
     }
 
     private void cancel(DomainClient client, String host, String server, String opName,

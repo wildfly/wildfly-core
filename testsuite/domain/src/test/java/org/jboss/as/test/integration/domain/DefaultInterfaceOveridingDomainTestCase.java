@@ -65,8 +65,8 @@ public class DefaultInterfaceOveridingDomainTestCase {
     private static final Logger log = Logger.getLogger(DefaultInterfaceOveridingDomainTestCase.class.getName());
 
     private static final String[] SERVERS = new String[] {"main-one", "other-two"};
-    private static final String masterAddress = System.getProperty("jboss.test.host.primary.address");
-    private static final String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
+    private static final String PrimaryAddress = System.getProperty("jboss.test.host.primary.address");
+    private static final String secondaryAddress = System.getProperty("jboss.test.host.secondary.address");
 
     private static DomainControllerClientConfig domainControllerClientConfig;
     private static DomainLifecycleUtil hostUtils;
@@ -101,8 +101,8 @@ public class DefaultInterfaceOveridingDomainTestCase {
 
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
-        hostConfig.setHostControllerManagementAddress(masterAddress);
-        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress + " -Djboss.test.host.secondary.address=" + slaveAddress);
+        hostConfig.setHostControllerManagementAddress(PrimaryAddress);
+        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + PrimaryAddress + " -Djboss.test.host.secondary.address=" + secondaryAddress);
         URL url = tccl.getResource("domain-configs/domain-default-interface.xml");
         assert url != null;
         hostConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
@@ -118,7 +118,7 @@ public class DefaultInterfaceOveridingDomainTestCase {
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
-                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
+                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("secondary", "ManagementRealm", "secondary_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
         return hostConfig;
     }
 

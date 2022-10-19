@@ -103,14 +103,14 @@ public class RespawnTestCase {
     public static void createProcessController() throws IOException, URISyntaxException, NoSuchAlgorithmException {
 
         // Setup client
-        utils = TestControllerUtils.create(DomainTestSupport.masterAddress, HC_PORT, getCallbackHandler());
+        utils = TestControllerUtils.create(DomainTestSupport.primaryAddress, HC_PORT, getCallbackHandler());
         client = new TestControllerClient(utils.getConfiguration(), utils.getExecutor());
 
         final String testName = RespawnTestCase.class.getSimpleName();
         final File domains = new File("target" + File.separator + "domains" + File.separator + testName);
-        final File masterDir = new File(domains, "primary");
-        final String masterDirPath = masterDir.getAbsolutePath();
-        domainConfigDir = new File(masterDir, "configuration");
+        final File primaryDir = new File(domains, "primary");
+        final String primaryDirPath = primaryDir.getAbsolutePath();
+        domainConfigDir = new File(primaryDir, "configuration");
         // TODO this should not be necessary
         domainConfigDir.mkdirs();
 
@@ -140,7 +140,7 @@ public class RespawnTestCase {
         // No point backing up the file in a test scenario, just write what we need.
         File usersFile = new File(domainConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
-                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n")
+                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("secondary", "ManagementRealm", "secondary_user_password".toCharArray())+"\n")
                         .getBytes(StandardCharsets.UTF_8));
         String localRepo = System.getProperty("settings.localRepository");
 
@@ -155,7 +155,7 @@ public class RespawnTestCase {
         if(localRepo != null) {
             args.add("-Dmaven.repo.local=" + localRepo);
         }
-        args.add("-Dorg.jboss.boot.log.file=" + masterDirPath + "/log/host-controller.log");
+        args.add("-Dorg.jboss.boot.log.file=" + primaryDirPath + "/log/host-controller.log");
         args.add("-Dlogging.configuration=file:" + jbossHome + "/domain/configuration/logging.properties");
         args.add("-Djboss.test.host.primary.address=" + address);
         TestSuiteEnvironment.getIpv6Args(args);
@@ -172,7 +172,7 @@ public class RespawnTestCase {
         args.add("--host-config=" + hostXml.getName());
         args.add("--domain-config=" + domainXml.getName());
         args.add("-Djboss.test.host.primary.address=" + address);
-        args.add("-Djboss.domain.base.dir=" + masterDir.getAbsolutePath());
+        args.add("-Djboss.domain.base.dir=" + primaryDir.getAbsolutePath());
         if(localRepo != null) {
             args.add("-Dmaven.repo.local=" + localRepo);
         }
@@ -204,7 +204,7 @@ public class RespawnTestCase {
         //Make sure everything started
         List<RunningProcess> processes = waitForAllProcessesFullyStarted();
 
-        //Kill the master HC and make sure that it gets restarted
+        //Kill the primary HC and make sure that it gets restarted
         RunningProcess originalHc = processUtil.getProcess(processes, HOST_CONTROLLER);
         Assert.assertNotNull(originalHc);
         processUtil.killProcess(originalHc);
@@ -308,7 +308,7 @@ public class RespawnTestCase {
         //Wait for servers
         readHostControllerServer(SERVER_TWO);
 
-        // we need to wait for the master being in running state before execute this operation
+        // we need to wait for the primary being in running state before execute this operation
         awaitHostController(PRIMARY);
 
         manageServer("stop", SERVER_ONE);

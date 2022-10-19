@@ -42,15 +42,15 @@ public class SimpleProviderServerGroupScopedRolesTestCase extends AbstractServer
         // Launch the domain
 
         testSupport = SimpleRbacProviderTestSuite.createSupport(SimpleProviderServerGroupScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         deployDeployment1(domainClient);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             tearDownRoles(domainClient);

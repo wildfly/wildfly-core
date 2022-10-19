@@ -74,15 +74,15 @@ import org.wildfly.test.jmx.JMXServiceDeploymentSetupTask;
 public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRolesTestCase {
     private static JMXServiceDeploymentSetupTask jmxTask = new JMXServiceDeploymentSetupTask();
     public static final String  OBJECT_NAME = "jboss.test:service=testdeployments";
-    private static final String SLAVE_HOST_USER = "SlaveHostSuperUser";
-    private static final String SLAVE_HOST_ROLE = "SlaveHostSuperUser";
+    private static final String SECONDARY_HOST_USER = "SecondaryHostSuperUser";
+    private static final String SECONDARY_HOST_ROLE = "SecondaryHostSuperUser";
     private boolean mbeanSensitivity = true;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(JmxRBACProviderHostScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         setNonCoreMbeanSensitivity(domainClient, true);
         ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -92,15 +92,15 @@ public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRo
 
     protected static void setupRoles(DomainClient domainClient) throws IOException {
         AbstractHostScopedRolesTestCase.setupRoles(domainClient);
-        ModelNode op = createOpNode(SCOPED_ROLE + SLAVE_HOST_ROLE, ADD);
+        ModelNode op = createOpNode(SCOPED_ROLE + SECONDARY_HOST_ROLE, ADD);
         op.get(BASE_ROLE).set(RbacUtil.SUPERUSER_USER);
-        op.get(HOSTS).add(SLAVE);
+        op.get(HOSTS).add(SECONDARY);
         RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
     }
 
     protected static void tearDownRoles(DomainClient domainClient) throws IOException {
         AbstractHostScopedRolesTestCase.tearDownRoles(domainClient);
-        ModelNode op = createOpNode(SCOPED_ROLE + SLAVE_HOST_ROLE, REMOVE);
+        ModelNode op = createOpNode(SCOPED_ROLE + SECONDARY_HOST_ROLE, REMOVE);
         RbacUtil.executeOperation(domainClient, op, Outcome.SUCCESS);
     }
 
@@ -120,17 +120,17 @@ public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRo
     @After
     public void activateMBeanSensitivity() throws IOException {
         mbeanSensitivity = true;
-        setNonCoreMbeanSensitivity(testSupport.getDomainMasterLifecycleUtil().getDomainClient(), true);
+        setNonCoreMbeanSensitivity(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient(), true);
     }
 
     protected void deactivateMBeanSensitivity() throws IOException {
         mbeanSensitivity = false;
-        setNonCoreMbeanSensitivity(testSupport.getDomainMasterLifecycleUtil().getDomainClient(), false);
+        setNonCoreMbeanSensitivity(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient(), false);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         try {
             ServerGroupRolesMappingSetup.INSTANCE.tearDown(domainClient);
         } finally {
@@ -196,8 +196,8 @@ public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRo
 
 
     @Test
-    public void testSlaveSuperUser() throws Exception {
-        test(SLAVE_HOST_USER);
+    public void testSecondarySuperUser() throws Exception {
+        test(SECONDARY_HOST_USER);
     }
 
     protected boolean isReadAllowed(String userName) {
@@ -234,7 +234,7 @@ public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRo
 
     private void test(String userName) throws Exception {
         String urlString = System.getProperty("jmx.service.url", "service:jmx:remoting-jmx://"
-                        + NetworkUtils.formatPossibleIpv6Address(masterClientConfig.getHostControllerManagementAddress()) + ":12345");
+                        + NetworkUtils.formatPossibleIpv6Address(primaryClientConfig.getHostControllerManagementAddress()) + ":12345");
         JmxManagementInterface jmx = JmxManagementInterface.create(new JMXServiceURL(urlString),
                 userName, RbacAdminCallbackHandler.STD_PASSWORD,
                 null // not needed, as the only thing from JmxManagementInterface used in this test is getConnection()
@@ -360,7 +360,7 @@ public class JmxRBACProviderHostScopedRolesTestCase extends AbstractHostScopedRo
             rolesToUsers.put(ADMINISTRATOR_USER, Collections.singleton(ADMINISTRATOR_USER));
             rolesToUsers.put(AUDITOR_USER, Collections.singleton(AUDITOR_USER));
             rolesToUsers.put(SUPERUSER_USER, Collections.singleton(SUPERUSER_USER));
-            rolesToUsers.put(SLAVE_HOST_ROLE, Collections.singleton(SLAVE_HOST_USER));
+            rolesToUsers.put(SECONDARY_HOST_ROLE, Collections.singleton(SECONDARY_HOST_USER));
             STANDARD_USERS = rolesToUsers;
         }
 

@@ -42,8 +42,8 @@ public class SimpleProviderStandardRolesTestCase extends AbstractStandardRolesTe
         // Launch the domain
 
         testSupport = SimpleRbacProviderTestSuite.createSupport(SimpleProviderStandardRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         deployDeployment1(domainClient);
     }
@@ -52,7 +52,7 @@ public class SimpleProviderStandardRolesTestCase extends AbstractStandardRolesTe
     public static void tearDownDomain() throws Exception {
 
         try {
-            removeDeployment1(testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+            removeDeployment1(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
         } finally {
             testSupport = null;
             SimpleRbacProviderTestSuite.stopSupport();

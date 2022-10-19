@@ -60,29 +60,29 @@ import org.junit.Test;
 public class DiscoveryOptionTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartSupport(DomainTestSupport.Configuration.create(DiscoveryOptionTestCase.class.getName(),
                 "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", "host-configs/host-secondary-discovery-options.xml"));
 
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         DomainTestSuite.stopSupport();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
     }
 
     @Test
     public void testAddAndRemoveS3DiscoveryOption() throws Exception {
-        DomainClient masterClient = domainMasterLifecycleUtil.getDomainClient();
+        DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         ModelNode discoveryOptionProperties = new ModelNode();
         discoveryOptionProperties.get(ACCESS_KEY).set("access_key");
         discoveryOptionProperties.get(SECRET_ACCESS_KEY).set("secret_access_key");
@@ -90,41 +90,41 @@ public class DiscoveryOptionTestCase {
 
         ModelNode addDiscoveryOption = getS3DiscoveryOptionAddOperation(discoveryOptionProperties);
 
-        // (host=master),(core-service=discovery-options),(discovery-option=option-one)
-        ModelNode newMasterDiscoveryOptionAddress = new ModelNode();
-        newMasterDiscoveryOptionAddress.add("host", "primary");
-        newMasterDiscoveryOptionAddress.add("core-service", "discovery-options");
-        newMasterDiscoveryOptionAddress.add("discovery-option", "option-one");
-        addAndRemoveDiscoveryOptionTest(masterClient, newMasterDiscoveryOptionAddress, addDiscoveryOption);
+        // (host=primary),(core-service=discovery-options),(discovery-option=option-one)
+        ModelNode newPrimaryDiscoveryOptionAddress = new ModelNode();
+        newPrimaryDiscoveryOptionAddress.add("host", "primary");
+        newPrimaryDiscoveryOptionAddress.add("core-service", "discovery-options");
+        newPrimaryDiscoveryOptionAddress.add("discovery-option", "option-one");
+        addAndRemoveDiscoveryOptionTest(primaryClient, newPrimaryDiscoveryOptionAddress, addDiscoveryOption);
 
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
-        // (host=slave),(core-service=discovery-options),(discovery-option=option-one)
-        ModelNode newSlaveDiscoveryOptionAddress = new ModelNode();
-        newSlaveDiscoveryOptionAddress.add("host", "secondary");
-        newSlaveDiscoveryOptionAddress.add("core-service", "discovery-options");
-        newSlaveDiscoveryOptionAddress.add("discovery-option", "option-one");
-        addAndRemoveDiscoveryOptionTest(slaveClient, newSlaveDiscoveryOptionAddress, addDiscoveryOption);
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
+        // (host=secondary),(core-service=discovery-options),(discovery-option=option-one)
+        ModelNode newSecondaryDiscoveryOptionAddress = new ModelNode();
+        newSecondaryDiscoveryOptionAddress.add("host", "secondary");
+        newSecondaryDiscoveryOptionAddress.add("core-service", "discovery-options");
+        newSecondaryDiscoveryOptionAddress.add("discovery-option", "option-one");
+        addAndRemoveDiscoveryOptionTest(secondaryClient, newSecondaryDiscoveryOptionAddress, addDiscoveryOption);
     }
 
     @Test
     public void testAddAndRemoveStaticDiscoveryOption() throws Exception {
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
         ModelNode addDiscoveryOption = new ModelNode();
         addDiscoveryOption.get(OP).set(ADD);
         addDiscoveryOption.get(HOST).set("127.0.0.2");
         addDiscoveryOption.get(PORT).set("9999");
 
-        // (host=slave),(core-service=discovery-options),(static-discovery=option-one)
-        ModelNode newSlaveDiscoveryOptionAddress = new ModelNode();
-        newSlaveDiscoveryOptionAddress.add("host", "secondary");
-        newSlaveDiscoveryOptionAddress.add("core-service", "discovery-options");
-        newSlaveDiscoveryOptionAddress.add("static-discovery", "option-one");
-        addAndRemoveDiscoveryOptionTest(slaveClient, newSlaveDiscoveryOptionAddress, addDiscoveryOption);
+        // (host=secondary),(core-service=discovery-options),(static-discovery=option-one)
+        ModelNode newSecondaryDiscoveryOptionAddress = new ModelNode();
+        newSecondaryDiscoveryOptionAddress.add("host", "secondary");
+        newSecondaryDiscoveryOptionAddress.add("core-service", "discovery-options");
+        newSecondaryDiscoveryOptionAddress.add("static-discovery", "option-one");
+        addAndRemoveDiscoveryOptionTest(secondaryClient, newSecondaryDiscoveryOptionAddress, addDiscoveryOption);
     }
 
     @Test
     public void testDiscoveryOptionsOrdering() throws Exception {
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
         ModelNode discoveryOptionsAddress = new ModelNode();
         discoveryOptionsAddress.add("host", "secondary");
         discoveryOptionsAddress.add("core-service", "discovery-options");
@@ -145,41 +145,41 @@ public class DiscoveryOptionTestCase {
         addStaticDiscoveryOption.get(HOST).set("127.0.0.2");
         addStaticDiscoveryOption.get(PORT).set("9999");
 
-        ModelNode result = slaveClient.execute(readDiscoveryOptionsOrdering);
+        ModelNode result = secondaryClient.execute(readDiscoveryOptionsOrdering);
         ModelNode returnVal = validateResponse(result);
         Assert.assertEquals(originalOptionsOrdering, returnVal);
 
-        // (host=slave),(core-service=discovery-options),(discovery-option=option-one)
+        // (host=secondary),(core-service=discovery-options),(discovery-option=option-one)
         ModelNode discoveryOptionAddressOne = discoveryOptionsAddress.clone().add("discovery-option", "option-one");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressOne, addS3DiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressOne, addS3DiscoveryOption);
         expectedDiscoveryOptionsOrdering.add("discovery-option", "option-one");
 
-        // (host=slave),(core-service=discovery-options),(static-discovery=option-two)
+        // (host=secondary),(core-service=discovery-options),(static-discovery=option-two)
         ModelNode discoveryOptionAddressTwo = discoveryOptionsAddress.clone().add("static-discovery", "option-two");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressTwo, addStaticDiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressTwo, addStaticDiscoveryOption);
         expectedDiscoveryOptionsOrdering.add("static-discovery", "option-two");
 
-        // (host=slave),(core-service=discovery-options),(discovery-option=option-three)
+        // (host=secondary),(core-service=discovery-options),(discovery-option=option-three)
         ModelNode discoveryOptionAddressThree = discoveryOptionsAddress.clone().add("discovery-option", "option-three");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressThree, addS3DiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressThree, addS3DiscoveryOption);
         expectedDiscoveryOptionsOrdering.add("discovery-option", "option-three");
 
-        result = slaveClient.execute(readDiscoveryOptionsOrdering);
+        result = secondaryClient.execute(readDiscoveryOptionsOrdering);
         returnVal = validateResponse(result);
         Assert.assertEquals(expectedDiscoveryOptionsOrdering, returnVal);
 
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressOne);
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressTwo);
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressThree);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressOne);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressTwo);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressThree);
 
-        result = slaveClient.execute(readDiscoveryOptionsOrdering);
+        result = secondaryClient.execute(readDiscoveryOptionsOrdering);
         returnVal = validateResponse(result);
         Assert.assertEquals(originalOptionsOrdering, returnVal);
     }
 
     @Test
     public void testOptionsAttribute() throws Exception {
-        DomainClient slaveClient = domainSlaveLifecycleUtil.getDomainClient();
+        DomainClient secondaryClient = domainSecondaryLifecycleUtil.getDomainClient();
         ModelNode discoveryOptionsAddress = new ModelNode();
         discoveryOptionsAddress.add("host", "secondary");
         discoveryOptionsAddress.add("core-service", "discovery-options");
@@ -208,13 +208,13 @@ public class DiscoveryOptionTestCase {
         addStaticDiscoveryOption.get(HOST).set("127.0.0.2");
         addStaticDiscoveryOption.get(PORT).set("9999");
 
-        ModelNode result = slaveClient.execute(readOptionsAttr);
+        ModelNode result = secondaryClient.execute(readOptionsAttr);
         ModelNode returnVal = validateResponse(result);
         Assert.assertEquals(originalOptions, returnVal);
 
-        // (host=slave),(core-service=discovery-options),(discovery-option=option-one)
+        // (host=secondary),(core-service=discovery-options),(discovery-option=option-one)
         ModelNode discoveryOptionAddressOne = discoveryOptionsAddress.clone().add("discovery-option", "option-one");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressOne, addS3DiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressOne, addS3DiscoveryOption);
 
         item = new ModelNode();
         value = item.get("custom-discovery");
@@ -224,9 +224,9 @@ public class DiscoveryOptionTestCase {
         value.get("properties").set(discoveryOptionProperties);
         expectedOptions.add(item);
 
-        // (host=slave),(core-service=discovery-options),(static-discovery=option-two)
+        // (host=secondary),(core-service=discovery-options),(static-discovery=option-two)
         ModelNode discoveryOptionAddressTwo = discoveryOptionsAddress.clone().add("static-discovery", "option-two");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressTwo, addStaticDiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressTwo, addStaticDiscoveryOption);
         item = new ModelNode();
         value = item.get("static-discovery");
         value.get("name").set("option-two");
@@ -235,9 +235,9 @@ public class DiscoveryOptionTestCase {
         value.get("port").set(9999);
         expectedOptions.add(item);
 
-        // (host=slave),(core-service=discovery-options),(discovery-option=option-three)
+        // (host=secondary),(core-service=discovery-options),(discovery-option=option-three)
         ModelNode discoveryOptionAddressThree = discoveryOptionsAddress.clone().add("discovery-option", "option-three");
-        addDiscoveryOptionTest(slaveClient, discoveryOptionAddressThree, addS3DiscoveryOption);
+        addDiscoveryOptionTest(secondaryClient, discoveryOptionAddressThree, addS3DiscoveryOption);
         item = new ModelNode();
         value = item.get("custom-discovery");
         value.get("name").set("option-three");
@@ -246,15 +246,15 @@ public class DiscoveryOptionTestCase {
         value.get("properties").set(discoveryOptionProperties);
         expectedOptions.add(item);
 
-        result = slaveClient.execute(readOptionsAttr);
+        result = secondaryClient.execute(readOptionsAttr);
         returnVal = validateResponse(result);
         Assert.assertEquals(expectedOptions, returnVal);
 
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressOne);
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressTwo);
-        removeDiscoveryOptionTest(slaveClient, discoveryOptionAddressThree);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressOne);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressTwo);
+        removeDiscoveryOptionTest(secondaryClient, discoveryOptionAddressThree);
 
-        result = slaveClient.execute(readOptionsAttr);
+        result = secondaryClient.execute(readOptionsAttr);
         returnVal = validateResponse(result);
         Assert.assertEquals(originalOptions, returnVal);
     }

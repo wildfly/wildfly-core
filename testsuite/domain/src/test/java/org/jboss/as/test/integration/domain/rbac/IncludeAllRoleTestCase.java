@@ -66,8 +66,8 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(IncludeAllRoleTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
         AbstractServerGroupScopedRolesTestCase.setupRoles(domainClient);
         RBACProviderServerGroupScopedRolesTestCase.ServerGroupRolesMappingSetup.INSTANCE.setup(domainClient);
@@ -77,7 +77,7 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             RBACProviderHostScopedRolesTestCase.HostRolesMappingSetup.INSTANCE.tearDown(domainClient);
@@ -110,7 +110,7 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testServerGroupScopedRoleShouldBeInStandardRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         addServerGroupScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, SERVER_GROUP_A);
         addRoleMapping(NEW_ROLE, client);
@@ -127,7 +127,7 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testServerGroupScopedRoleShouldBeInServerGroupScopedRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         addServerGroupScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, SERVER_GROUP_A);
         addRoleMapping(NEW_ROLE, client);
@@ -144,9 +144,9 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testHostScopedRoleShouldBeInStandardRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
-        addHostScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, MASTER);
+        addHostScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, PRIMARY);
         addRoleMapping(NEW_ROLE, client);
         addRoleUser(NEW_ROLE, NEW_USER, client);
 
@@ -161,9 +161,9 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testHostScopedRoleShouldBeInHostScopedRole() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
-        addHostScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, MASTER);
+        addHostScopedRole(client, NEW_ROLE, RbacUtil.MONITOR_ROLE, PRIMARY);
         addRoleMapping(NEW_ROLE, client);
         addRoleUser(NEW_ROLE, NEW_USER, client);
 
@@ -177,23 +177,23 @@ public class IncludeAllRoleTestCase extends AbstractRbacTestCase {
     }
 
     private void test(String includeAllRole) throws Exception {
-        ModelControllerClient mgmtClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient mgmtClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
-        ModelControllerClient newUserClient = getClientForUser(NEW_USER, false, masterClientConfig);
+        ModelControllerClient newUserClient = getClientForUser(NEW_USER, false, primaryClientConfig);
         assertIsCallerInRole(newUserClient, NEW_ROLE, true);
         assertIsCallerInRole(newUserClient, includeAllRole, false);
         removeClientForUser(NEW_USER, false);
 
         setRoleMappingIncludeAll(mgmtClient, includeAllRole, true);
 
-        newUserClient = getClientForUser(NEW_USER, false, masterClientConfig);
+        newUserClient = getClientForUser(NEW_USER, false, primaryClientConfig);
         assertIsCallerInRole(newUserClient, NEW_ROLE, true);
         assertIsCallerInRole(newUserClient, includeAllRole, true);
         removeClientForUser(NEW_USER, false);
 
         setRoleMappingIncludeAll(mgmtClient, includeAllRole, false);
 
-        newUserClient = getClientForUser(NEW_USER, false, masterClientConfig);
+        newUserClient = getClientForUser(NEW_USER, false, primaryClientConfig);
         assertIsCallerInRole(newUserClient, NEW_ROLE, true);
         assertIsCallerInRole(newUserClient, includeAllRole, false);
         removeClientForUser(NEW_USER, false);

@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.as.test.integration.domain.slavereconnect;
+package org.jboss.as.test.integration.domain.secondaryreconnect;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -45,13 +45,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYS
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.TYPE;
 import static org.jboss.as.controller.operations.common.Util.createAddOperation;
 import static org.jboss.as.controller.operations.common.Util.createEmptyOperation;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.SLAVE_ADDR;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.cloneProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.createServerGroup;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.removeProfile;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.startServer;
-import static org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.stopServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.SECONDARY_ADDR;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.cloneProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.createServerGroup;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.removeProfile;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.startServer;
+import static org.jboss.as.test.integration.domain.secondaryreconnect.SecondaryReconnectTestCase.stopServer;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -67,8 +67,8 @@ import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorBaseDeployment;
-import org.jboss.as.test.integration.domain.slavereconnect.deployment.ServiceActivatorDeploymentOne;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorBaseDeployment;
+import org.jboss.as.test.integration.domain.secondaryreconnect.deployment.ServiceActivatorDeploymentOne;
 import org.jboss.as.test.shared.PermissionUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -85,11 +85,11 @@ import org.junit.Assert;
 public class DeploymentOverlayScenario extends ReconnectTestScenario {
 
     private final List<File> tmpDirs = new ArrayList<>();
-    private final String DEPLOYMENT_NAME = "reconnect-slave-dep.jar";
+    private final String DEPLOYMENT_NAME = "reconnect-secondary-dep.jar";
 
     private final PathAddress OVERLAY_ADDRESS = PathAddress.pathAddress(DEPLOYMENT_OVERLAY, "test");
     private final PathAddress OVERLAY_CONTENT_ADDRESS =
-            OVERLAY_ADDRESS.append(CONTENT, "/org/jboss/as/test/integration/domain/slavereconnect/deployment/overlay");
+            OVERLAY_ADDRESS.append(CONTENT, "/org/jboss/as/test/integration/domain/secondaryreconnect/deployment/overlay");
     private final PathAddress SERVER_GROUP_OVERLAY_ADDRESS =
             PathAddress.pathAddress(SERVER_GROUP, "overlay-group-affected").append(DEPLOYMENT_OVERLAY, "test");
     private final PathAddress SERVER_GROUP_DEPLOYMENT_ADDRESS =
@@ -106,117 +106,117 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
     }
 
     @Override
-    void setUpDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void setUpDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Add minimal server
-        cloneProfile(masterClient, "minimal", "overlay-affected");
+        cloneProfile(primaryClient, "minimal", "overlay-affected");
         initialized = 1;
-        createServerGroup(masterClient, "overlay-group-affected", "overlay-affected");
+        createServerGroup(primaryClient, "overlay-group-affected", "overlay-affected");
         initialized = 2;
-        createServer(slaveClient, "server-affected", "overlay-group-affected", portOffset);
+        createServer(secondaryClient, "server-affected", "overlay-group-affected", portOffset);
         initialized = 3;
-        startServer(slaveClient, "server-affected");
+        startServer(secondaryClient, "server-affected");
         initialized = 4;
-        DomainTestUtils.executeForResult(Util.createAddOperation(OVERLAY_ADDRESS), masterClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(OVERLAY_ADDRESS), primaryClient);
         initialized = 5;
         ModelNode addOverlayContent = Util.createAddOperation(OVERLAY_CONTENT_ADDRESS);
         addOverlayContent.get(CONTENT, INPUT_STREAM_INDEX).set(0);
         OperationBuilder builder = OperationBuilder.create(addOverlayContent);
         builder.addInputStream(new ByteArrayInputStream("initial".getBytes(StandardCharsets.UTF_8)));
-        ModelNode result = masterClient.execute(builder.build());
+        ModelNode result = primaryClient.execute(builder.build());
         Assert.assertEquals(result.get(FAILURE_DESCRIPTION).asString(), SUCCESS, result.get(OUTCOME).asString());
         initialized = 6;
-        DomainTestUtils.executeForResult(Util.createAddOperation(SERVER_GROUP_OVERLAY_ADDRESS), masterClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(SERVER_GROUP_OVERLAY_ADDRESS), primaryClient);
         initialized = 7;
-        DomainTestUtils.executeForResult(Util.createAddOperation(SERVER_GROUP_DEPLOYMENT_ADDRESS), masterClient);
+        DomainTestUtils.executeForResult(Util.createAddOperation(SERVER_GROUP_DEPLOYMENT_ADDRESS), primaryClient);
         initialized = 8;
     }
 
     @Override
-    void tearDownDomain(DomainTestSupport testSupport, DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void tearDownDomain(DomainTestSupport testSupport, DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         if (deployed) {
-            undeploy(masterClient);
+            undeploy(primaryClient);
         }
         if (initialized >= 8) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(SERVER_GROUP_DEPLOYMENT_ADDRESS), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(SERVER_GROUP_DEPLOYMENT_ADDRESS), primaryClient);
         }
         if (initialized >= 7) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(SERVER_GROUP_OVERLAY_ADDRESS), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(SERVER_GROUP_OVERLAY_ADDRESS), primaryClient);
         }
         if (initialized >= 6) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_CONTENT_ADDRESS), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_CONTENT_ADDRESS), primaryClient);
         }
         if (initialized >= 5) {
-            DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_ADDRESS), masterClient);
+            DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_ADDRESS), primaryClient);
         }
         if (initialized >= 4) {
-            stopServer(slaveClient, "server-affected");
+            stopServer(secondaryClient, "server-affected");
         }
         if (initialized >= 3) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(SLAVE_ADDR.append(SERVER_CONFIG, "server-affected")), masterClient);
+                    Util.createRemoveOperation(SECONDARY_ADDR.append(SERVER_CONFIG, "server-affected")), primaryClient);
         }
         if (initialized >= 2) {
             DomainTestUtils.executeForResult(
-                    Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "overlay-group-affected")), masterClient);
+                    Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP, "overlay-group-affected")), primaryClient);
         }
         if (initialized >= 1) {
-            removeProfile(masterClient, "overlay-affected");
+            removeProfile(primaryClient, "overlay-affected");
         }
     }
 
     @Override
-    void testOnInitialStartup(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testOnInitialStartup(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Deployments
-        Assert.assertNull(getDeploymentProperty(slaveClient));
-        Assert.assertNull(getOverrideProperty(slaveClient));
+        Assert.assertNull(getDeploymentProperty(secondaryClient));
+        Assert.assertNull(getOverrideProperty(secondaryClient));
 
         //Deploy the override
-        deployToAffectedServerGroup(masterClient, ServiceActivatorDeploymentOne.class);
+        deployToAffectedServerGroup(primaryClient, ServiceActivatorDeploymentOne.class);
 
-        Assert.assertEquals("one", getDeploymentProperty(slaveClient));
-        Assert.assertEquals("initial", getOverrideProperty(slaveClient));
+        Assert.assertEquals("one", getDeploymentProperty(secondaryClient));
+        Assert.assertEquals("initial", getOverrideProperty(secondaryClient));
     }
 
     @Override
-    void testWhileMasterInAdminOnly(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testWhilePrimaryInAdminOnly(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //TODO Update the overlay content
-        DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_CONTENT_ADDRESS), masterClient);
+        DomainTestUtils.executeForResult(Util.createRemoveOperation(OVERLAY_CONTENT_ADDRESS), primaryClient);
         ModelNode addOverlayContent = Util.createAddOperation(OVERLAY_CONTENT_ADDRESS);
         addOverlayContent.get(CONTENT, INPUT_STREAM_INDEX).set(0);
         OperationBuilder builder = OperationBuilder.create(addOverlayContent);
         builder.addInputStream(new ByteArrayInputStream("updated".getBytes(StandardCharsets.UTF_8)));
-        ModelNode result = masterClient.execute(builder.build());
+        ModelNode result = primaryClient.execute(builder.build());
         Assert.assertEquals(result.get(FAILURE_DESCRIPTION).asString(), SUCCESS, result.get(OUTCOME).asString());
 
     }
 
     @Override
-    void testAfterReconnect(DomainClient masterClient, DomainClient slaveClient) throws Exception {
+    void testAfterReconnect(DomainClient primaryClient, DomainClient secondaryClient) throws Exception {
         //Deployments
-        //The deployment values should still be the same until we restart the slave server
-        Assert.assertEquals("one", getDeploymentProperty(slaveClient));
-        Assert.assertEquals("initial", getOverrideProperty(slaveClient));
+        //The deployment values should still be the same until we restart the secondary server
+        Assert.assertEquals("one", getDeploymentProperty(secondaryClient));
+        Assert.assertEquals("initial", getOverrideProperty(secondaryClient));
 
         //https://issues.jboss.org/browse/WFCORE-710 - even non-affected servers get the overlays
         Assert.assertEquals(/* "ok" */ "reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(UnaffectedScenario.SERVER), "runtime-configuration-state"), secondaryClient).asString());
         Assert.assertEquals(/* "running" */ "reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(UnaffectedScenario.SERVER), "server-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(UnaffectedScenario.SERVER), "server-state"), secondaryClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "server-affected"), "runtime-configuration-state"), secondaryClient).asString());
         Assert.assertEquals("reload-required",
                 DomainTestUtils.executeForResult(
-                        Util.getReadAttributeOperation(SLAVE_ADDR.append(SERVER, "server-affected"), "server-state"), slaveClient).asString());
+                        Util.getReadAttributeOperation(SECONDARY_ADDR.append(SERVER, "server-affected"), "server-state"), secondaryClient).asString());
 
-        ModelNode reload = Util.createEmptyOperation("reload", SLAVE_ADDR.append(SERVER_CONFIG, "server-affected"));
+        ModelNode reload = Util.createEmptyOperation("reload", SECONDARY_ADDR.append(SERVER_CONFIG, "server-affected"));
         reload.get(BLOCKING).set(true);
-        DomainTestUtils.executeForResult(reload, slaveClient);
+        DomainTestUtils.executeForResult(reload, secondaryClient);
 
-        Assert.assertEquals("one", getDeploymentProperty(slaveClient));
-        Assert.assertEquals("updated", getOverrideProperty(slaveClient));
+        Assert.assertEquals("one", getDeploymentProperty(secondaryClient));
+        Assert.assertEquals("updated", getOverrideProperty(secondaryClient));
 
     }
 
@@ -246,7 +246,7 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
         return deployment;
     }
 
-    private void deployToAffectedServerGroup(DomainClient masterClient, Class<? extends ServiceActivator> clazz) throws Exception {
+    private void deployToAffectedServerGroup(DomainClient primaryClient, Class<? extends ServiceActivator> clazz) throws Exception {
         File deployment = createDeployment(clazz);
 
         ModelNode composite = createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
@@ -261,35 +261,35 @@ public class DeploymentOverlayScenario extends ReconnectTestScenario {
         sg.set(createAddOperation(
                 PathAddress.pathAddress(SERVER_GROUP, "overlay-group-affected").append(DEPLOYMENT, deployment.getName())));
         sg.get(ENABLED).set(true);
-        DomainTestUtils.executeForResult(composite, masterClient);
+        DomainTestUtils.executeForResult(composite, primaryClient);
         deployed = true;
     }
 
 
-    private void undeploy(DomainClient masterClient) throws Exception {
+    private void undeploy(DomainClient primaryClient) throws Exception {
         ModelNode composite = createEmptyOperation(COMPOSITE, PathAddress.EMPTY_ADDRESS);
         ModelNode steps = composite.get(STEPS);
         String deploymentName = DEPLOYMENT_NAME;
         steps.add(Util.createRemoveOperation(
                 PathAddress.pathAddress(SERVER_GROUP, "overlay-group-affected").append(DEPLOYMENT, deploymentName)));
         steps.add(Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT, deploymentName)));
-        DomainTestUtils.executeForResult(composite, masterClient);
+        DomainTestUtils.executeForResult(composite, primaryClient);
         deployed = false;
     }
 
-    private String getDeploymentProperty(DomainClient slaveClient) throws Exception {
-        return getServerProperty(slaveClient, "test.deployment.prop.one");
+    private String getDeploymentProperty(DomainClient secondaryClient) throws Exception {
+        return getServerProperty(secondaryClient, "test.deployment.prop.one");
     }
 
-    private String getOverrideProperty(DomainClient slaveClient) throws Exception {
-        return getServerProperty(slaveClient, "test.overlay.prop.one");
+    private String getOverrideProperty(DomainClient secondaryClient) throws Exception {
+        return getServerProperty(secondaryClient, "test.overlay.prop.one");
     }
 
-    private String getServerProperty(DomainClient slaveClient, String propName) throws Exception {
-        PathAddress addr = SLAVE_ADDR.append(SERVER, "server-affected")
+    private String getServerProperty(DomainClient secondaryClient, String propName) throws Exception {
+        PathAddress addr = SECONDARY_ADDR.append(SERVER, "server-affected")
                 .append(CORE_SERVICE, PLATFORM_MBEAN).append(TYPE, "runtime");
         ModelNode op = Util.getReadAttributeOperation(addr, SYSTEM_PROPERTIES);
-        ModelNode props = DomainTestUtils.executeForResult(op, slaveClient);
+        ModelNode props = DomainTestUtils.executeForResult(op, secondaryClient);
         for (ModelNode prop : props.asList()) {
             Property property = prop.asProperty();
             if (property.getName().equals(propName)) {

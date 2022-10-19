@@ -72,13 +72,13 @@ public class OutboundLdapConnectionTestCase {
     private static final String USER_PASSWORD = "theduke";
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
     private static URL managementInterfaceUrl;
 
     private static DirectoryService directoryService;
     private static LdapServer ldapServer;
 
-    private DomainClient masterClient;
+    private DomainClient primaryClient;
 
 
     @Test
@@ -154,7 +154,7 @@ public class OutboundLdapConnectionTestCase {
     }
 
     private ModelNode executeOperation(ModelNode operation) throws IOException, MgmtOperationException {
-        final ModelNode ret = this.masterClient.execute(operation);
+        final ModelNode ret = this.primaryClient.execute(operation);
 
         if (!SUCCESS.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation failed: " + ret.get(FAILURE_DESCRIPTION), operation, ret);
@@ -163,7 +163,7 @@ public class OutboundLdapConnectionTestCase {
     }
 
     private void reload() throws IOException, TimeoutException, InterruptedException {
-        domainMasterLifecycleUtil.reload("primary", null, false);
+        domainPrimaryLifecycleUtil.reload("primary", null, false);
     }
 
 
@@ -205,20 +205,20 @@ public class OutboundLdapConnectionTestCase {
 
         testSupport = DomainTestSupport.create(config);
         testSupport.start();
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        managementInterfaceUrl = new URL("http://" + TestSuiteEnvironment.formatPossibleIpv6Address(DomainTestSupport.masterAddress) + ":9990/management");
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        managementInterfaceUrl = new URL("http://" + TestSuiteEnvironment.formatPossibleIpv6Address(DomainTestSupport.primaryAddress) + ":9990/management");
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport.close();
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         testSupport = null;
     }
 
 
     @Before
     public void setup() throws Exception {
-        this.masterClient = domainMasterLifecycleUtil.getDomainClient();
+        this.primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
     }
 }

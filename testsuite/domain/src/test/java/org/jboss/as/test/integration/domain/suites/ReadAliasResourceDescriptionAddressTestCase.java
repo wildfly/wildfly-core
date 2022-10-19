@@ -65,7 +65,7 @@ import org.junit.Test;
 public class ReadAliasResourceDescriptionAddressTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
     private static final PathAddress PROFILE_SINGLETON_ALIAS = PathAddress.pathAddress(PROFILE, "default")
             .append(SUBSYSTEM, SUBSYSTEM_NAME)
             .append("thing", "*")
@@ -106,7 +106,7 @@ public class ReadAliasResourceDescriptionAddressTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(ReadAliasResourceDescriptionAddressTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         // Initialize the test extension
         ExtensionSetup.initializeTestAliasReadResourceAddressExtension(testSupport);
@@ -114,12 +114,12 @@ public class ReadAliasResourceDescriptionAddressTestCase {
         ModelNode addExtension = Util.createAddOperation(
                 PathAddress.pathAddress(EXTENSION, MODULE_NAME));
 
-        executeForResult(addExtension, masterClient);
+        executeForResult(addExtension, primaryClient);
 
         ModelNode addSubsystem = Util.createAddOperation(PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME)));
-        executeForResult(addSubsystem, masterClient);
+        executeForResult(addSubsystem, primaryClient);
     }
 
     @AfterClass
@@ -128,14 +128,14 @@ public class ReadAliasResourceDescriptionAddressTestCase {
                 PathAddress.pathAddress(
                         PathElement.pathElement(PROFILE, "default"),
                         PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME)));
-        executeForResult(removeSubsystem, masterClient);
+        executeForResult(removeSubsystem, primaryClient);
 
         ModelNode removeExtension = Util.createRemoveOperation(
                 PathAddress.pathAddress(EXTENSION, MODULE_NAME));
-        executeForResult(removeExtension, masterClient);
+        executeForResult(removeExtension, primaryClient);
 
         testSupport = null;
-        masterClient = null;
+        primaryClient = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -153,19 +153,19 @@ public class ReadAliasResourceDescriptionAddressTestCase {
                                       PathAddress serverSingleton, PathAddress serverWildcard) throws Exception {
         ModelNode readProfileSingleton = createRrd(profileSingleton);
         checkAddress(profileSingleton, false,
-                DomainTestUtils.executeForResult(readProfileSingleton, masterClient));
+                DomainTestUtils.executeForResult(readProfileSingleton, primaryClient));
 
         ModelNode readProfileWildcard = createRrd(profileWildcard);
         checkAddress(profileWildcard, false,
-                DomainTestUtils.executeForResult(readProfileWildcard, masterClient));
+                DomainTestUtils.executeForResult(readProfileWildcard, primaryClient));
 
         ModelNode readServerSingleton = createRrd(serverSingleton);
         checkAddress(serverSingleton, true,
-                DomainTestUtils.executeForResult(readServerSingleton, masterClient));
+                DomainTestUtils.executeForResult(readServerSingleton, primaryClient));
 
         ModelNode readServerWildcard = createRrd(serverWildcard);
         checkAddress(serverWildcard, true,
-                DomainTestUtils.executeForResult(readServerWildcard, masterClient));
+                DomainTestUtils.executeForResult(readServerWildcard, primaryClient));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class ReadAliasResourceDescriptionAddressTestCase {
         for (ModelNode op: ops) {
             steps.add(op.clone());
         }
-        ModelNode result = DomainTestUtils.executeForResult(composite, masterClient);
+        ModelNode result = DomainTestUtils.executeForResult(composite, primaryClient);
 
         Assert.assertEquals(ops.length, result.keys().size());
         for (int i = 0; i < ops.length; i++) {

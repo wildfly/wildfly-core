@@ -56,10 +56,10 @@ import org.junit.Test;
 public class OperationWarningTestsCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainLifecycleUtil domainSlaveLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainLifecycleUtil domainSecondaryLifecycleUtil;
 
-    protected static final String NAME_WORKER = "puppet-master";
+    protected static final String NAME_WORKER = "puppet-primary";
     protected static final String WORKER = "worker";
     protected static final String NAME_PROFILE = "default";
     protected static final PathAddress ADDRESS_WORKER = PathAddress.pathAddress(PathElement.pathElement(PROFILE, NAME_PROFILE),
@@ -72,8 +72,8 @@ public class OperationWarningTestsCase {
     @BeforeClass
     public static void beforeClass() throws Exception {
         testSupport = DomainTestSuite.createSupport(OperationWarningTestsCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        domainSlaveLifecycleUtil = testSupport.getDomainSlaveLifecycleUtil();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
         addWorker();
     }
 
@@ -89,8 +89,8 @@ public class OperationWarningTestsCase {
         } catch (Exception e) {
         }
         testSupport = null;
-        domainMasterLifecycleUtil = null;
-        domainSlaveLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
+        domainSecondaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -126,7 +126,7 @@ public class OperationWarningTestsCase {
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP_ADDR).set(ADDRESS_WORKER.toModelNode());
         op.get(ModelDescriptionConstants.OP).set(ADD);
-        ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        ModelNode result = domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         Assert.assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
     }
 
@@ -134,7 +134,7 @@ public class OperationWarningTestsCase {
         ModelNode op = new ModelNode();
         op.get(ModelDescriptionConstants.OP_ADDR).set(ADDRESS_WORKER.toModelNode());
         op.get(ModelDescriptionConstants.OP).set(REMOVE);
-        ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        ModelNode result = domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         Assert.assertTrue(result.toString(), Operations.isSuccessfulOutcome(result));
     }
 
@@ -145,7 +145,7 @@ public class OperationWarningTestsCase {
         op.get(NAME).set(WORKER);
         op.get(VALUE).set(name);
         op.get(OPERATION_HEADERS).get(ModelDescriptionConstants.WARNING_LEVEL).set(level);
-        ModelNode result = domainMasterLifecycleUtil.getDomainClient().execute(op);
+        ModelNode result = domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         return result;
     }
 }

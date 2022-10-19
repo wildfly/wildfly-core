@@ -61,9 +61,9 @@ import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 public class JmxControlledStateNotificationsTestCase {
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
 
-    static final Path DATA = TestSuiteEnvironment.isJ9Jvm() ? Paths.get("target/domains/JmxControlledStateNotificationsTestCase/master/target/notifications/data") : Paths.get("target/wildfly-core/target/notifications/data");
+    static final Path DATA = TestSuiteEnvironment.isJ9Jvm() ? Paths.get("target/domains/JmxControlledStateNotificationsTestCase/primary/target/notifications/data") : Paths.get("target/wildfly-core/target/notifications/data");
 
     private static JMXListenerDeploymentSetupTask task = new JMXListenerDeploymentSetupTask();
     static final File JMX_FACADE_RUNNING = DATA.resolve(JMX_FACADE_FILE).resolve(RUNNING_FILENAME).toAbsolutePath().toFile();
@@ -78,16 +78,16 @@ public class JmxControlledStateNotificationsTestCase {
                 .create(JmxControlledStateNotificationsTestCase.class.getSimpleName(),
                         "domain-configs/domain-standard.xml", "host-configs/host-primary.xml", null));
         testSupport.start();
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        task.setup(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        task.setup(domainPrimaryLifecycleUtil.getDomainClient(), "main-server-group");
     }
 
     @AfterClass
     public static void cleanClass() throws Exception {
-        task.tearDown(domainMasterLifecycleUtil.getDomainClient(), "main-server-group");
+        task.tearDown(domainPrimaryLifecycleUtil.getDomainClient(), "main-server-group");
         testSupport.close();
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -125,7 +125,7 @@ public class JmxControlledStateNotificationsTestCase {
 
     @Test
     public void checkNotificationsAfterForcingRestartRequired() throws Exception {
-        forceRestartRequired(domainMasterLifecycleUtil.getDomainClient(), "primary", "main-one");
+        forceRestartRequired(domainPrimaryLifecycleUtil.getDomainClient(), "primary", "main-one");
         restart(testSupport, "primary", "main-one");
 
         checkFacadeJmxNotifications(
@@ -155,21 +155,21 @@ public class JmxControlledStateNotificationsTestCase {
      */
     private void reload(DomainTestSupport testSupport) throws Exception {
         ModelNode reload = Util
-                .createEmptyOperation("reload", testSupport.getDomainMasterLifecycleUtil().getAddress());
-        testSupport.getDomainMasterLifecycleUtil().executeAwaitConnectionClosed(reload);
-        testSupport.getDomainMasterLifecycleUtil().connect();
-        testSupport.getDomainMasterLifecycleUtil().awaitServers(System.currentTimeMillis());
+                .createEmptyOperation("reload", testSupport.getDomainPrimaryLifecycleUtil().getAddress());
+        testSupport.getDomainPrimaryLifecycleUtil().executeAwaitConnectionClosed(reload);
+        testSupport.getDomainPrimaryLifecycleUtil().connect();
+        testSupport.getDomainPrimaryLifecycleUtil().awaitServers(System.currentTimeMillis());
     }
 
     /**
      * Restart  a particular server in the domain
      */
     private void restart(DomainTestSupport testSupport, String host, String server) throws Exception {
-        ModelNode response = testSupport.getDomainMasterLifecycleUtil().getDomainClient()
+        ModelNode response = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient()
                 .execute(Operations.createOperation("restart",
                     PathAddress.pathAddress("host", host).append("server", server).toModelNode()));
         Assert.assertTrue(response.toString(), Operations.isSuccessfulOutcome(response));
-        testSupport.getDomainMasterLifecycleUtil().awaitServers(System.currentTimeMillis());
+        testSupport.getDomainPrimaryLifecycleUtil().awaitServers(System.currentTimeMillis());
     }
 
     private List<Pair<String, String>> createListOf(String... transitionPairs) {

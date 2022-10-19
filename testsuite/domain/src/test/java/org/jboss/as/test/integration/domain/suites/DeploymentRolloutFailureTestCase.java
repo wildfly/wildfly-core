@@ -86,14 +86,14 @@ public class DeploymentRolloutFailureTestCase {
     private static final PathAddress SYS_PROP_ADDR = PathAddress.pathAddress(PathElement.pathElement(HOST, "secondary"),
             PathElement.pathElement(SERVER_CONFIG, "main-three"), PathElement.pathElement(SYSTEM_PROPERTY, ServiceActivatorDeployment.FAIL_SYS_PROP));
     private static DomainTestSupport testSupport;
-    private static DomainClient masterClient;
+    private static DomainClient primaryClient;
     private static File tmpDir;
     private static File deployment;
 
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(DeploymentRolloutFailureTestCase.class.getSimpleName());
-        masterClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         File tmpRoot = new File(System.getProperty("java.io.tmpdir"));
         tmpDir = new File(tmpRoot, DeploymentRolloutFailureTestCase.class.getSimpleName() + System.currentTimeMillis());
@@ -112,7 +112,7 @@ public class DeploymentRolloutFailureTestCase {
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        masterClient = null;
+        primaryClient = null;
         DomainTestSuite.stopSupport();
 
         if (deployment != null && !deployment.delete() && deployment.exists()) {
@@ -158,12 +158,12 @@ public class DeploymentRolloutFailureTestCase {
     private void configureDeploymentFailure() throws IOException, MgmtOperationException {
         ModelNode op = Util.createAddOperation(SYS_PROP_ADDR);
         op.get(VALUE).set("true");
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void failInstallFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getDeploymentCompositeOp();
-        final ModelNode ret = masterClient.execute(op);
+        final ModelNode ret = primaryClient.execute(op);
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
@@ -203,7 +203,7 @@ public class DeploymentRolloutFailureTestCase {
     private void succeedInstallFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getDeploymentCompositeOp();
         op.get(OPERATION_HEADERS, ROLLOUT_PLAN).set(getRolloutPlanO());
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private ModelNode getRolloutPlanO() {
@@ -215,7 +215,7 @@ public class DeploymentRolloutFailureTestCase {
 
     private void failRemoveFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getUndeployCompositeOp();
-        final ModelNode ret = masterClient.execute(op);
+        final ModelNode ret = primaryClient.execute(op);
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
         }
@@ -249,23 +249,23 @@ public class DeploymentRolloutFailureTestCase {
     private void succeedRemoveFailedDeployment() throws IOException, MgmtOperationException {
         ModelNode op = getUndeployCompositeOp();
         op.get(OPERATION_HEADERS, ROLLOUT_PLAN).set(getRolloutPlanO());
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanDeploymentFromServerGroup() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(MAIN_SERVER_GROUP, DEPLOYMENT_PATH));
         op.get(ENABLED).set(true);
         op.get(OPERATION_HEADERS, ROLLOUT_PLAN).set(getRolloutPlanO());
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanDeployment() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT_PATH));
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanSystemProperty() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(SYS_PROP_ADDR);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 }

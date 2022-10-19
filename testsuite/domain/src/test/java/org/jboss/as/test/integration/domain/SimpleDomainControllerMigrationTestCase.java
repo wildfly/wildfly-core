@@ -70,8 +70,8 @@ public class SimpleDomainControllerMigrationTestCase {
     private static String[] SERVERS = new String[] {"failover-one", "failover-two", "failover-three"};
     private static String[] HOSTS = new String[] {"failover-h1", "failover-h2", "failover-h3"};
     private static int[] MGMT_PORTS = new int[] {9999, 9989, 19999};
-    private static String masterAddress = System.getProperty("jboss.test.host.primary.address");
-    private static String slaveAddress = System.getProperty("jboss.test.host.secondary.address");
+    private static String primaryAddress = System.getProperty("jboss.test.host.primary.address");
+    private static String secondaryAddress = System.getProperty("jboss.test.host.secondary.address");
     private static final String DEPLOYMENT_NAME = "service-activator.jar";
 
     private static DomainControllerClientConfig domainControllerClientConfig;
@@ -123,8 +123,8 @@ public class SimpleDomainControllerMigrationTestCase {
 
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         final WildFlyManagedConfiguration hostConfig = new WildFlyManagedConfiguration();
-        hostConfig.setHostControllerManagementAddress(host == 1 ? masterAddress : slaveAddress);
-        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + masterAddress + " -Djboss.test.host.secondary.address=" + slaveAddress);
+        hostConfig.setHostControllerManagementAddress(host == 1 ? primaryAddress : secondaryAddress);
+        hostConfig.setHostCommandLineProperties("-Djboss.test.host.primary.address=" + primaryAddress + " -Djboss.test.host.secondary.address=" + secondaryAddress);
         URL url = tccl.getResource("domain-configs/domain-standard.xml");
         assert url != null;
         hostConfig.setDomainConfigFile(new File(url.toURI()).getAbsolutePath());
@@ -138,7 +138,7 @@ public class SimpleDomainControllerMigrationTestCase {
         hostConfig.setBackupDC(true);
         File usersFile = new File(hostConfigDir, "mgmt-users.properties");
         Files.write(usersFile.toPath(),
-                ("slave=" + new UsernamePasswordHashUtil().generateHashedHexURP("slave", "ManagementRealm", "slave_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
+                ("secondary=" + new UsernamePasswordHashUtil().generateHashedHexURP("secondary", "ManagementRealm", "secondary_user_password".toCharArray())+"\n").getBytes(StandardCharsets.UTF_8));
         return hostConfig;
     }
 
@@ -171,7 +171,7 @@ public class SimpleDomainControllerMigrationTestCase {
         // WFLY-3418 Add but don't map a deployment so we can prove the backup gets the content
         Operation addDeployOp = buildDeploymentAddOperation();
         hostUtils[0].executeForResult(addDeployOp);
-        assertSlaveHostInfo(hostUtils[0].getDomainClient());
+        assertSecondaryHostInfo(hostUtils[0].getDomainClient());
 
         // kill the domain process controller on failover-h1
         log.info("Stopping the domain controller on failover-h1.");
@@ -186,10 +186,10 @@ public class SimpleDomainControllerMigrationTestCase {
         // Reconfigure failover-h2 host so it acts as domain controller
         ModelNode localDc = new ModelNode();
         localDc.get("local").setEmptyObject() ;
-        ModelNode becomeMasterOp = Util.getWriteAttributeOperation(PathAddress.EMPTY_ADDRESS.append(ModelDescriptionConstants.HOST, "failover-h2"),
+        ModelNode becomePrimaryOp = Util.getWriteAttributeOperation(PathAddress.EMPTY_ADDRESS.append(ModelDescriptionConstants.HOST, "failover-h2"),
                  "domain-controller", localDc);
 
-        hostUtils[1].executeForResult(becomeMasterOp);
+        hostUtils[1].executeForResult(becomePrimaryOp);
 
         hostUtils[1].reload("failover-h2", false, false);
 
@@ -208,14 +208,14 @@ public class SimpleDomainControllerMigrationTestCase {
         hostUtils[1].executeForResult(addSystemProp);
 
         // Reconfigure failover-h3 to point to the new domain controller
-        ModelNode changeMasterOp = new ModelNode();
-        changeMasterOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, HOSTS[2]);
-        changeMasterOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
-        changeMasterOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.secondary.address}");
-        changeMasterOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
-        changeMasterOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
+        ModelNode changePrimaryOp = new ModelNode();
+        changePrimaryOp.get(ModelDescriptionConstants.ADDRESS).add(ModelDescriptionConstants.HOST, HOSTS[2]);
+        changePrimaryOp.get(ModelDescriptionConstants.OP).set(RemoteDomainControllerAddHandler.OPERATION_NAME);
+        changePrimaryOp.get(ModelDescriptionConstants.HOST).set("${jboss.test.host.secondary.address}");
+        changePrimaryOp.get(ModelDescriptionConstants.PORT).set(MGMT_PORTS[1]);
+        changePrimaryOp.get(ModelDescriptionConstants.SECURITY_REALM).set("ManagementRealm");
 
-        hostUtils[2].executeForResult(changeMasterOp);
+        hostUtils[2].executeForResult(changePrimaryOp);
 
         hostUtils[2].reload(HOSTS[2], false, false);
 
@@ -300,7 +300,7 @@ public class SimpleDomainControllerMigrationTestCase {
         ServiceActivatorDeploymentUtil.validateProperties(client, pathAddress);
     }
 
-    private void assertSlaveHostInfo(final ModelControllerClient client) throws Exception {
+    private void assertSecondaryHostInfo(final ModelControllerClient client) throws Exception {
 
         final ModelNode operation = new ModelNode();
         operation.get(ModelDescriptionConstants.OP).set(ModelDescriptionConstants.READ_RESOURCE_OPERATION);

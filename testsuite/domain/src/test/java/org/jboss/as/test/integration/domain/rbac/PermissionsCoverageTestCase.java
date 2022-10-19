@@ -45,15 +45,15 @@ public class PermissionsCoverageTestCase extends AbstractRbacTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(PermissionsCoverageTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.setup(domainClient);
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         try {
-            UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.tearDown(testSupport.getDomainMasterLifecycleUtil().getDomainClient());
+            UserRolesMappingServerSetupTask.StandardUsersSetup.INSTANCE.tearDown(testSupport.getDomainPrimaryLifecycleUtil().getDomainClient());
         } finally {
             FullRbacProviderTestSuite.stopSupport();
             testSupport = null;
@@ -67,7 +67,7 @@ public class PermissionsCoverageTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testTheEntireDomainTreeHasPermissionsDefined() throws IOException {
-        ModelControllerClient client = getClientForUser(RbacUtil.SUPERUSER_USER, true, masterClientConfig);
+        ModelControllerClient client = getClientForUser(RbacUtil.SUPERUSER_USER, true, primaryClientConfig);
         assertTheEntireDomainTreeHasPermissionsDefined(client);
     }
 }

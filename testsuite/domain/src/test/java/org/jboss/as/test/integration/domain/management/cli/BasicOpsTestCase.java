@@ -51,19 +51,19 @@ public class BasicOpsTestCase {
 
     @Test
     public void testConnect() throws Exception {
-        CLIWrapper cli = new CLIWrapper(false, DomainTestSupport.masterAddress);
+        CLIWrapper cli = new CLIWrapper(false, DomainTestSupport.primaryAddress);
         assertFalse(cli.isConnected());
-        assertTrue(cli.sendConnect(DomainTestSupport.masterAddress));
+        assertTrue(cli.sendConnect(DomainTestSupport.primaryAddress));
         assertTrue(cli.isConnected());
         cli.quit();
     }
 
     @Test
     public void testDomainSetup() throws Exception {
-        CLIWrapper cli = new CLIWrapper(false, DomainTestSupport.masterAddress);
+        CLIWrapper cli = new CLIWrapper(false, DomainTestSupport.primaryAddress);
         assertFalse(cli.isConnected());
 
-        assertTrue(cli.sendConnect(DomainTestSupport.masterAddress));
+        assertTrue(cli.sendConnect(DomainTestSupport.primaryAddress));
         assertTrue(cli.isConnected());
 
         // check hosts
@@ -85,7 +85,7 @@ public class BasicOpsTestCase {
     @Test
     public void testWalkLocalHosts() throws Exception {
 
-        CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.masterAddress);
+        CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.primaryAddress);
         try {
             cli.sendLine("cd /host=primary/server=main-one");
             cli.sendLine("cd /host=primary");
@@ -106,7 +106,7 @@ public class BasicOpsTestCase {
     @Test
     public void testWalkRemoteHosts() throws Exception {
 
-        CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.masterAddress);
+        CLIWrapper cli = new CLIWrapper(true, DomainTestSupport.primaryAddress);
         try {
             cli.sendLine("cd /host=secondary/server=main-three");
             cli.sendLine("cd /host=secondary");

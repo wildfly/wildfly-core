@@ -105,8 +105,8 @@ public class CompositeOperationTestCase {
     private static final PathElement DEPLOYMENT_PATH = PathElement.pathElement(DEPLOYMENT, DEPLOYMENT_NAME);
     protected static final PathAddress SERVER_GROUP_MAIN_SERVER_GROUP = PathAddress.pathAddress(SERVER_GROUP, "main-server-group");
 
-    private static final PathElement HOST_MASTER = PathElement.pathElement(HOST, "primary");
-    private static final PathElement HOST_SLAVE = PathElement.pathElement(HOST, "secondary");
+    private static final PathElement HOST_PRIMARY = PathElement.pathElement(HOST, "primary");
+    private static final PathElement HOST_SECONDARY = PathElement.pathElement(HOST, "secondary");
     private static final PathElement SERVER_ONE = PathElement.pathElement(RUNNING_SERVER, "main-one");
     private static final PathElement SERVER_TWO = PathElement.pathElement(RUNNING_SERVER, "main-two");
     private static final PathElement SERVER_THREE = PathElement.pathElement(RUNNING_SERVER, "main-three");
@@ -115,8 +115,8 @@ public class CompositeOperationTestCase {
     private static final PathElement HOST_SYS_PROP_ELEMENT = PathElement.pathElement(SYSTEM_PROPERTY, "composite-op-host");
 
     private static DomainTestSupport testSupport;
-    private static DomainLifecycleUtil domainMasterLifecycleUtil;
-    private static DomainClient masterClient;
+    private static DomainLifecycleUtil domainPrimaryLifecycleUtil;
+    private static DomainClient primaryClient;
 
     private int sysPropVal = 0;
     private static File tmpDir;
@@ -125,14 +125,14 @@ public class CompositeOperationTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSuite.createSupport(CompositeOperationTestCase.class.getSimpleName());
-        domainMasterLifecycleUtil = testSupport.getDomainMasterLifecycleUtil();
-        masterClient = domainMasterLifecycleUtil.getDomainClient();
+        domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
+        primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
         testSupport = null;
-        domainMasterLifecycleUtil = null;
+        domainPrimaryLifecycleUtil = null;
         DomainTestSuite.stopSupport();
     }
 
@@ -141,13 +141,13 @@ public class CompositeOperationTestCase {
         sysPropVal = 0;
         ModelNode op = Util.createAddOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
-        domainMasterLifecycleUtil.getDomainClient().execute(op);
-        op = Util.createAddOperation(PathAddress.pathAddress(HOST_MASTER, HOST_SYS_PROP_ELEMENT));
+        domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+        op = Util.createAddOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
-        domainMasterLifecycleUtil.getDomainClient().execute(op);
-        op = Util.createAddOperation(PathAddress.pathAddress(HOST_SLAVE, HOST_SYS_PROP_ELEMENT));
+        domainPrimaryLifecycleUtil.getDomainClient().execute(op);
+        op = Util.createAddOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
         op.get(VALUE).set(sysPropVal);
-        domainMasterLifecycleUtil.getDomainClient().execute(op);
+        domainPrimaryLifecycleUtil.getDomainClient().execute(op);
     }
 
 
@@ -155,14 +155,14 @@ public class CompositeOperationTestCase {
     public void tearDown() throws IOException {
         try {
             ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT));
-            domainMasterLifecycleUtil.getDomainClient().execute(op);
+            domainPrimaryLifecycleUtil.getDomainClient().execute(op);
         } finally {
             try {
-                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_MASTER, HOST_SYS_PROP_ELEMENT));
-                domainMasterLifecycleUtil.getDomainClient().execute(op);
+                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT));
+                domainPrimaryLifecycleUtil.getDomainClient().execute(op);
             } finally {
-                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SLAVE, HOST_SYS_PROP_ELEMENT));
-                domainMasterLifecycleUtil.getDomainClient().execute(op);
+                ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT));
+                domainPrimaryLifecycleUtil.getDomainClient().execute(op);
             }
         }
     }
@@ -183,30 +183,30 @@ public class CompositeOperationTestCase {
         final ModelNode address = new ModelNode();
         address.setEmptyList();
 
-        // host=slave
+        // host=secondary
         address.add(HOST, "secondary");
         steps.add().set(createReadResourceOperation(address));
 
-        // host=slave,server=main-three
+        // host=secondary,server=main-three
         address.add(RUNNING_SERVER, "main-three");
         steps.add().set(createReadResourceOperation(address));
 
-        // host=slave,server=main-three,subsystem=io
+        // host=secondary,server=main-three,subsystem=io
         address.add(SUBSYSTEM, "io");
         steps.add().set(createReadResourceOperation(address));
 
         // add steps involving a different host
         address.setEmptyList();
 
-        // host=master
+        // host=primary
         address.add(HOST, "primary");
         steps.add().set(createReadResourceOperation(address));
 
-        // host=master,server=main-one
+        // host=primary,server=main-one
         address.add(RUNNING_SERVER, "main-one");
         steps.add().set(createReadResourceOperation(address));
 
-        // host=master,server=main-one,subsystem=io
+        // host=primary,server=main-one,subsystem=io
         address.add(SUBSYSTEM, "io");
         steps.add().set(createReadResourceOperation(address));
 
@@ -218,34 +218,34 @@ public class CompositeOperationTestCase {
 
         address.setEmptyList();
 
-        // host=slave
+        // host=secondary
         address.add(HOST, "secondary");
         nestedSteps.add().set(createReadResourceOperation(address));
 
-        // host=slave,server=main-three
+        // host=secondary,server=main-three
         address.add(RUNNING_SERVER, "main-three");
         nestedSteps.add().set(createReadResourceOperation(address));
 
-        // host=slave,server=main-three,subsystem=io
+        // host=secondary,server=main-three,subsystem=io
         address.add(SUBSYSTEM, "io");
         nestedSteps.add().set(createReadResourceOperation(address));
 
         // add steps involving a different host
         address.setEmptyList();
 
-        // host=master
+        // host=primary
         address.add(HOST, "primary");
         nestedSteps.add().set(createReadResourceOperation(address));
 
-        // host=master,server=main-one
+        // host=primary,server=main-one
         address.add(RUNNING_SERVER, "main-one");
         nestedSteps.add().set(createReadResourceOperation(address));
 
-        // host=master,server=main-one,subsystem=io
+        // host=primary,server=main-one,subsystem=io
         address.add(SUBSYSTEM, "io");
         nestedSteps.add().set(createReadResourceOperation(address));
 
-        final ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+        final ModelNode response = domainPrimaryLifecycleUtil.getDomainClient().execute(composite);
 
         assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         assertTrue(response.toString(), response.hasDefined(RESULT));
@@ -319,25 +319,25 @@ public class CompositeOperationTestCase {
         // Modify the domain-wide prop
         steps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, SYS_PROP_ELEMENT), VALUE));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, SYS_PROP_ELEMENT), VALUE));
 
-        // Modify the host=master prop
+        // Modify the host=primary prop
 
-        steps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_MASTER, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
+        steps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        // Modify the host=slave prop
+        // Modify the host=secondary prop
 
-        steps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
+        steps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
+        steps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
 
         // Now repeat the whole thing, but nested
 
@@ -348,27 +348,27 @@ public class CompositeOperationTestCase {
         // Domain wide
         nestedSteps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, SYS_PROP_ELEMENT), VALUE));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, SYS_PROP_ELEMENT), VALUE));
 
-        // host=master
+        // host=primary
 
-        nestedSteps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_MASTER, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
+        nestedSteps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        // host=slave
+        // host=secondary
 
-        nestedSteps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
+        nestedSteps.add().set(Util.getWriteAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, HOST_SYS_PROP_ELEMENT), VALUE, ++sysPropVal));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_MASTER, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
+        nestedSteps.add().set(Util.getReadAttributeOperation(PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE, HOST_SYS_PROP_ELEMENT), VALUE));
 
-        final ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+        final ModelNode response = domainPrimaryLifecycleUtil.getDomainClient().execute(composite);
 
         assertEquals(response.toString(), SUCCESS, response.get(OUTCOME).asString());
         assertTrue(response.toString(), response.hasDefined(RESULT));
@@ -482,35 +482,35 @@ public class CompositeOperationTestCase {
         final ModelNode steps = composite.get(STEPS);
 
         // First an operation that just has a single step calling r-r-d on the stopped server resource
-        ModelNode step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SLAVE, SERVER_FOUR));
+        ModelNode step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SECONDARY, SERVER_FOUR));
         step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
 
         steps.add(step);
 
-        ModelNode response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+        ModelNode response = domainPrimaryLifecycleUtil.getDomainClient().execute(composite);
 
         validateRRDResponse(response, 1);
 
-        // Now include a step reading a stopped server on master
-        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_MASTER, SERVER_TWO));
+        // Now include a step reading a stopped server on primary
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_PRIMARY, SERVER_TWO));
         step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
 
         steps.add(step);
 
-        response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+        response = domainPrimaryLifecycleUtil.getDomainClient().execute(composite);
 
         validateRRDResponse(response, 2);
 
 
         // Now add steps for some running servers too
-        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_MASTER, SERVER_ONE));
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_PRIMARY, SERVER_ONE));
         step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
         steps.add(step);
-        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SLAVE, SERVER_THREE));
+        step = Util.createEmptyOperation(READ_RESOURCE_DESCRIPTION_OPERATION, PathAddress.pathAddress(HOST_SECONDARY, SERVER_THREE));
         step.get(ACCESS_CONTROL).set(ReadResourceDescriptionHandler.AccessControl.COMBINED_DESCRIPTIONS.toString());
         steps.add(step);
 
-        response = domainMasterLifecycleUtil.getDomainClient().execute(composite);
+        response = domainPrimaryLifecycleUtil.getDomainClient().execute(composite);
 
         validateRRDResponse(response, 4);
     }
@@ -574,12 +574,12 @@ public class CompositeOperationTestCase {
     public void testCompositeOperationsWriteLockAcquired() throws Exception {
         ModelNode result, op;
 
-        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.pathAddress(HOST_SLAVE));
-        result = DomainTestUtils.executeForResult(op, masterClient);
-        final List<String> slaveChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
+        op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.pathAddress(HOST_SECONDARY));
+        result = DomainTestUtils.executeForResult(op, primaryClient);
+        final List<String> secondaryChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
 
         op = Util.createEmptyOperation(READ_CHILDREN_TYPES_OPERATION, PathAddress.EMPTY_ADDRESS);
-        result = DomainTestUtils.executeForResult(op, masterClient);
+        result = DomainTestUtils.executeForResult(op, primaryClient);
         final List<String> emptyAddressChildrenTypes = result.asList().stream().map(m -> m.asString()).collect(Collectors.toList());
 
         createDeployment();
@@ -592,7 +592,7 @@ public class CompositeOperationTestCase {
                 public ModelNode call() throws Exception {
                     // Take the DC write lock
                     final ModelNode op = getDeploymentCompositeOp();
-                    DomainClient client = domainMasterLifecycleUtil.createDomainClient();
+                    DomainClient client = domainPrimaryLifecycleUtil.createDomainClient();
                     return DomainTestUtils.executeForResult(op, client);
                 }
             });
@@ -603,18 +603,18 @@ public class CompositeOperationTestCase {
             // it could ensure we have acquired the lock by the deployment operation executed before
             TimeUnit.SECONDS.sleep(TimeoutUtil.adjust(1));
 
-            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SLAVE), slaveChildrenTypes);
+            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SECONDARY), secondaryChildrenTypes);
             op = createComposite(steps);
-            DomainTestUtils.executeForResult(op, masterClient);
+            DomainTestUtils.executeForResult(op, primaryClient);
 
             steps = prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes);
             op = createComposite(steps);
-            DomainTestUtils.executeForResult(op, masterClient);
+            DomainTestUtils.executeForResult(op, primaryClient);
 
-            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SLAVE), slaveChildrenTypes);
+            steps = prepareReadCompositeOperations(PathAddress.pathAddress(HOST_SECONDARY), secondaryChildrenTypes);
             steps.addAll(prepareReadCompositeOperations(PathAddress.EMPTY_ADDRESS, emptyAddressChildrenTypes));
             op = createComposite(steps);
-            DomainTestUtils.executeForResult(op, masterClient);
+            DomainTestUtils.executeForResult(op, primaryClient);
 
             Assert.assertEquals("It is expected deployment operation is still in progress", false, deploymentFuture.isDone());
 
@@ -673,12 +673,12 @@ public class CompositeOperationTestCase {
     private void cleanDeploymentFromServerGroup() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(SERVER_GROUP_MAIN_SERVER_GROUP, DEPLOYMENT_PATH));
         op.get(ENABLED).set(true);
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private void cleanDeployment() throws IOException, MgmtOperationException {
         ModelNode op = Util.createRemoveOperation(PathAddress.pathAddress(DEPLOYMENT_PATH));
-        DomainTestUtils.executeForResult(op, masterClient);
+        DomainTestUtils.executeForResult(op, primaryClient);
     }
 
     private ModelNode createComposite(List<ModelNode> steps) {

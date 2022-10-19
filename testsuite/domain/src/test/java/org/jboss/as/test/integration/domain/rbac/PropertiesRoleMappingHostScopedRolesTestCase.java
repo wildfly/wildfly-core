@@ -45,8 +45,8 @@ public class PropertiesRoleMappingHostScopedRolesTestCase extends AbstractHostSc
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderPropertiesRoleMappingTestSuite.createSupport(PropertiesRoleMappingHostScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         HostScopedRolesMappingSetup.INSTANCE.setup(domainClient);
         deployDeployment1(domainClient);
@@ -54,7 +54,7 @@ public class PropertiesRoleMappingHostScopedRolesTestCase extends AbstractHostSc
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
 
         try {
             HostScopedRolesMappingSetup.INSTANCE.tearDown(domainClient);

@@ -56,8 +56,8 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
         // Launch the domain
 
         testSupport = SimpleRbacProviderTestSuite.createSupport(AccessConstraintUtilizationTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
     }
 
     @AfterClass
@@ -149,7 +149,7 @@ public class AccessConstraintUtilizationTestCase extends AbstractRbacTestCase {
 
     @Test
     public void testConstraintUtilization() throws Exception {
-        ModelControllerClient client = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        ModelControllerClient client = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         for (ExpectedDef expectedDef : EXPECTED_DEFS) {
             AccessConstraintKey acdKey = expectedDef.key;
             String constraint = ModelDescriptionConstants.SENSITIVE.equals(acdKey.getType())

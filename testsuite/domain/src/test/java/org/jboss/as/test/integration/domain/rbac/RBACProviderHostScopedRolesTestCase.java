@@ -46,8 +46,8 @@ public class RBACProviderHostScopedRolesTestCase extends AbstractHostScopedRoles
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = FullRbacProviderTestSuite.createSupport(RBACProviderHostScopedRolesTestCase.class.getSimpleName());
-        masterClientConfig = testSupport.getDomainMasterConfiguration();
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        primaryClientConfig = testSupport.getDomainPrimaryConfiguration();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         setupRoles(domainClient);
         HostRolesMappingSetup.INSTANCE.setup(domainClient);
         deployDeployment1(domainClient);
@@ -55,7 +55,7 @@ public class RBACProviderHostScopedRolesTestCase extends AbstractHostScopedRoles
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        DomainClient domainClient = testSupport.getDomainMasterLifecycleUtil().getDomainClient();
+        DomainClient domainClient = testSupport.getDomainPrimaryLifecycleUtil().getDomainClient();
         try {
             HostRolesMappingSetup.INSTANCE.tearDown(domainClient);
         } finally {
@@ -95,12 +95,12 @@ public class RBACProviderHostScopedRolesTestCase extends AbstractHostScopedRoles
             rolesToUsers.put(ADMINISTRATOR_USER, Collections.singleton(ADMINISTRATOR_USER));
             rolesToUsers.put(AUDITOR_USER, Collections.singleton(AUDITOR_USER));
             rolesToUsers.put(SUPERUSER_USER, Collections.singleton(SUPERUSER_USER));
-            rolesToUsers.put(SLAVE_OPERATOR_USER, Collections.singleton(SLAVE_OPERATOR_USER));
-            rolesToUsers.put(SLAVE_MAINTAINER_USER, Collections.singleton(SLAVE_MAINTAINER_USER));
-            rolesToUsers.put(SLAVE_DEPLOYER_USER, Collections.singleton(SLAVE_DEPLOYER_USER));
-            rolesToUsers.put(SLAVE_ADMINISTRATOR_USER, Collections.singleton(SLAVE_ADMINISTRATOR_USER));
-            rolesToUsers.put(SLAVE_AUDITOR_USER, Collections.singleton(SLAVE_AUDITOR_USER));
-            rolesToUsers.put(SLAVE_SUPERUSER_USER, Collections.singleton(SLAVE_SUPERUSER_USER));
+            rolesToUsers.put(SECONDARY_OPERATOR_USER, Collections.singleton(SECONDARY_OPERATOR_USER));
+            rolesToUsers.put(SECONDARY_MAINTAINER_USER, Collections.singleton(SECONDARY_MAINTAINER_USER));
+            rolesToUsers.put(SECONDARY_DEPLOYER_USER, Collections.singleton(SECONDARY_DEPLOYER_USER));
+            rolesToUsers.put(SECONDARY_ADMINISTRATOR_USER, Collections.singleton(SECONDARY_ADMINISTRATOR_USER));
+            rolesToUsers.put(SECONDARY_AUDITOR_USER, Collections.singleton(SECONDARY_AUDITOR_USER));
+            rolesToUsers.put(SECONDARY_SUPERUSER_USER, Collections.singleton(SECONDARY_SUPERUSER_USER));
             STANDARD_USERS = rolesToUsers;
         }
 

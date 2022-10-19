@@ -279,7 +279,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         sshServer.setTestUserPublicKey(SSH_DIR.resolve(EC_PUBKEY));
 
         // start with remote repository containing configuration
-        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
         //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
         container.startGitBackedConfiguration("ssh://" + EC_USER + "@127.0.0.1:" + port + "/doesntmatter",
                 Constants.MASTER, AUTH_FILE);
@@ -291,7 +291,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         publish(null);
         commits = listCommits(remoteRepository);
         Assert.assertEquals(3, commits.size());
-        // create branch in remote repo and change master for next test
+        // create branch in remote repo and change Primary for next test
         try (Git git = new Git(remoteRepository)) {
             git.checkout().setName("my_branch").setCreateBranch(true).call();
         }
@@ -324,7 +324,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         sshServer.setTestUserPublicKey(SSH_DIR.resolve(PKCS_PUBKEY));
 
         // start with remote repository containing configuration
-        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
         //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
         container.startGitBackedConfiguration("ssh://" + PKCS_USER + "@127.0.0.1:" + port + "/doesntmatter",
                 Constants.MASTER, AUTH_FILE);
@@ -336,7 +336,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         publish(null);
         commits = listCommits(remoteRepository);
         Assert.assertEquals(3, commits.size());
-        // create branch in remote repo and change master for next test
+        // create branch in remote repo and change Primary for next test
         try (Git git = new Git(remoteRepository)) {
             git.checkout().setName("my_branch").setCreateBranch(true).call();
         }
@@ -369,7 +369,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         sshServer.setTestUserPublicKey(SSH_DIR.resolve(RSA_PUBKEY));
 
         // start with remote repository containing configuration
-        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
         //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
         container.startGitBackedConfiguration("ssh://" + RSA_USER + "@127.0.0.1:" + port + "/doesntmatter",
                 Constants.MASTER, AUTH_FILE);
@@ -381,7 +381,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         publish(null);
         commits = listCommits(remoteRepository);
         Assert.assertEquals(3, commits.size());
-        // create branch in remote repo and change master for next test
+        // create branch in remote repo and change Primary for next test
         try (Git git = new Git(remoteRepository)) {
             git.checkout().setName("my_branch").setCreateBranch(true).call();
         }
@@ -414,7 +414,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         sshServer.setTestUserPublicKey(CS_PUBKEY);
 
         // start with remote repository containing configuration
-        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+        //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
         //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
         container.startGitBackedConfiguration("ssh://" + CS_REF_USER + "@127.0.0.1:" + port + "/doesntmatter",
                 Constants.MASTER, AUTH_FILE);
@@ -426,7 +426,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
         publish(null);
         commits = listCommits(remoteRepository);
         Assert.assertEquals(3, commits.size());
-        // create branch in remote repo and change master for next test
+        // create branch in remote repo and change Primary for next test
         try (Git git = new Git(remoteRepository)) {
             git.checkout().setName("my_branch").setCreateBranch(true).call();
         }
@@ -460,7 +460,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
 
         try {
             // start with remote repository containing configuration
-            //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+            //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
             //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
             //Trying to access EC_USER, should not be authorized
             container.startGitBackedConfiguration("ssh://" + EC_USER + "@127.0.0.1:" + port + "/doesntmatter",
@@ -483,7 +483,7 @@ public class RemoteSshGitRepositoryTestCase extends AbstractGitRepositoryTestCas
 
         try {
             // start with remote repository containing configuration
-            //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=master
+            //(--git-repo=ssh://testDefault@127.0.0.1:testPort/doesntmatter --git-branch=Primary
             //--git-auth=file:./src/test/resources/git-persistence/ssh-auth/wildfly-config.xml)
             container.startGitBackedConfiguration("ssh://" + UNKNOWN_HOSTS_USER + "@127.0.0.1:" + port + "/doesntmatter",
                     Constants.MASTER, AUTH_FILE);

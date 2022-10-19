@@ -52,7 +52,7 @@ public class DirectoryGroupingByTypeTestCase {
 
     @Test
     public void testDirectoryLocations() throws Exception {
-        File baseDir = new File(testSupport.getDomainSlaveConfiguration().getDomainDirectory());
+        File baseDir = new File(testSupport.getDomainSecondaryConfiguration().getDomainDirectory());
         validateDirectory(baseDir);
         File data = new File(baseDir, "data");
         validateDirectory(data);
