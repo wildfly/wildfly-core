@@ -41,6 +41,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.jboss.as.test.shared.TimeoutUtil;
 import org.w3c.dom.Document;
 import org.wildfly.core.launcher.StandaloneCommandBuilder;
 import org.xml.sax.SAXException;
@@ -208,7 +209,7 @@ public class LayersTest {
             }
         };
         try {
-            executor.submit(r).get(1, TimeUnit.MINUTES);
+            executor.submit(r).get(TimeoutUtil.adjust(1), TimeUnit.MINUTES);
         } catch (Exception ex) {
             throw new Exception("Exception checking " + installation.getFileName().toString()
                     + "\n Server log \n" + str.toString(), ex);
