@@ -133,7 +133,10 @@ public class CertificateAuthoritiesTestCase extends AbstractSubsystemTest {
         }
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource(subsystemXml).build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
     }
 

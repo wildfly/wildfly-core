@@ -100,7 +100,10 @@ public class CredentialStoreUpdatesTestCase extends AbstractSubsystemTest {
     public void init() throws Exception {
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("credential-store-updates.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         emptyCSUtil = new CredentialStoreUtility(EMPTY_CS_PATH, EMPTY_CS_PASSWORD);
         nonEmptyCSUtil = new CredentialStoreUtility(NON_EMPTY_CS_PATH, NON_EMPTY_CS_PASSWORD);

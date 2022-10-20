@@ -70,7 +70,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testPrincipalTransformerTree() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
@@ -89,7 +92,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testCasePrincipalTransformerUpperCase() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainUpperCase");
@@ -105,7 +111,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testCasePrincipalTransformerLowerCase() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainLowerCase");
@@ -121,7 +130,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testEvidenceDecoder() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
 
@@ -157,7 +169,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testCustomEvidenceDecoder() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "CustomTestingDomain");
 
@@ -175,7 +190,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testSourceAddressRoleDecoder() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomain");
 
@@ -196,7 +214,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testSourceAddressRoleDecoderWithIPv6() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainIPv6");
 
@@ -217,7 +238,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testSourceAddressRoleDecoderWithRegex() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegex");
 
@@ -246,7 +270,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testSourceAddressRoleDecoderWithRegexIPv6() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainRegexIPv6");
 
@@ -276,7 +303,10 @@ public class MappersTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAggregateRoleDecoder() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestingDomainAggregate");
 

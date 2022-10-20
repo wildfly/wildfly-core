@@ -186,7 +186,10 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
     public void testExpressionEncryptionOperations() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(emptySubsystemXml()).build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         String testStorePath = "target/secret-key-store.cs";
@@ -355,7 +358,10 @@ public class ExpressionResolutionTestCase extends AbstractElytronSubsystemBaseTe
 
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXml(emptySubsystemXml()).build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ModelNode result = services.executeOperation(composite);

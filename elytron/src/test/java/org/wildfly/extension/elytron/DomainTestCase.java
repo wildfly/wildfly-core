@@ -97,7 +97,10 @@ public class DomainTestCase extends AbstractSubsystemTest {
         TestEnvironment.mockCallerModuleClassloader();
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("domain-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "MyDomain");

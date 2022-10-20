@@ -120,7 +120,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testPropertyRealm() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         // hex encoded using UTF-8
@@ -238,7 +241,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testFilesystemRealm() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm");
@@ -260,7 +266,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testFileSystemRealmEncodingAndCharset() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         // Testing filesystem realm hex encoded using UTF-8 charset
@@ -286,7 +295,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testFilesystemRealmEncrypted() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealm5");
@@ -366,7 +378,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testFilesystemRealmIntegrity() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("FilesystemRealmIntegrity");
         ModifiableSecurityRealm securityRealm = (ModifiableSecurityRealm) services.getContainer().getService(serviceName).getValue();
@@ -522,7 +537,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testJwtRealm() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("JwtRealm");
@@ -538,7 +556,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testOAuth2Realm() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("OAuth2Realm");
@@ -550,7 +571,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAggregateRealm() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmOne");
@@ -572,7 +596,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testAggregateRealmWithPrincipalTransformer() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         ServiceName serviceName = Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY.getCapabilityServiceName("AggregateRealmTwo");
@@ -647,7 +674,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testEntryInJAASConfigMustBeProvided() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR)
@@ -666,7 +696,10 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
     public void testPathToJAASConfigFileDoesNotExist() throws Exception {
         KernelServices services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("realms-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         ModelNode operation = new ModelNode();
         operation.get(ClientConstants.OP_ADDR)
