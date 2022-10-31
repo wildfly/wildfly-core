@@ -330,8 +330,6 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
 
         command.add(localJvmType.getJavaExecutable());
 
-        command.addAll(localJvmType.getDefaultArguments());
-
         command.add("-D[" + ManagedServer.getServerProcessName(serverName) + "]");
 
         if (includeProcessId) {
@@ -370,6 +368,8 @@ public class ManagedServerBootCmdFactory implements ManagedServerBootConfigurati
                 command.add(sb.toString());
             }
         }
+
+        command.addAll(localJvmType.getDefaultArguments());
 
         command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_LOG_DIR, this.logDir));
         command.add(String.format("-D%s=%s", ServerEnvironment.SERVER_TEMP_DIR, this.tmpDir));
