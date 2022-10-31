@@ -144,6 +144,13 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <!-- This is a transitive dep of com.google.guava -->
+            <groupId>com.google.guava</groupId>
+            <artifactId>failureaccess</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- JSONP javax API and IMPL -->
         <dependency>
             <groupId>jakarta.json</groupId>
