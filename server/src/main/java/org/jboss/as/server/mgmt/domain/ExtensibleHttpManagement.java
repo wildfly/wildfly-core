@@ -25,10 +25,7 @@ import io.undertow.server.handlers.resource.ResourceManager;
  * by adding specific types of new contexts.
  *
  * @author Brian Stansberry
- *
- * @deprecated Experimental; may be removed or incompatibly modified in a future minor or major release
  */
-@Deprecated
 public interface ExtensibleHttpManagement extends HttpManagement {
 
     /**
