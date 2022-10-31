@@ -235,8 +235,10 @@ public class Scanner {
             return;
         }
         seen.add(module);
-        Path path = Paths.get(modulePath.toString(), module.replaceAll("\\.", "/"),
-                "main/module.xml");
+
+        String suffix = module.indexOf(':') > 0 ? "/module.xml" : "main/module.xml";
+        String moduleIdPath = module.replaceAll("\\.", "/").replace(':', '/');
+        Path path = Paths.get(modulePath.toString(), moduleIdPath, suffix);
         if (!Files.exists(path)) {
             // pseudo module
             return;
