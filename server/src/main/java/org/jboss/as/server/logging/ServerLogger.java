@@ -63,7 +63,6 @@ import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.annotations.Message;
 import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
-import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceNotFoundException;
@@ -934,8 +933,8 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 156, value = "Failed to index deployment root for annotations")
     DeploymentUnitProcessingException deploymentIndexingFailed(@Cause Throwable cause);
 
-    @Message(id = 157, value = "No Seam Integration jar present: %s")
-    DeploymentUnitProcessingException noSeamIntegrationJarPresent(Module module);
+//    @Message(id = 157, value = "No Seam Integration jar present: %s")
+//    DeploymentUnitProcessingException noSeamIntegrationJarPresent(Module module);
 
     @Message(id = 158, value = "Failed to instantiate a %s")
     DeploymentUnitProcessingException failedToInstantiateClassTransformer(String clazz, @Cause Exception cause);

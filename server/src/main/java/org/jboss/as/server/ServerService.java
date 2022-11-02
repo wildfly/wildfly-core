@@ -100,7 +100,6 @@ import org.jboss.as.server.deployment.annotation.AnnotationIndexProcessor;
 import org.jboss.as.server.deployment.annotation.CleanupAnnotationIndexProcessor;
 import org.jboss.as.server.deployment.annotation.CompositeIndexProcessor;
 import org.jboss.as.server.deployment.dependencies.DeploymentDependenciesProcessor;
-import org.jboss.as.server.deployment.integration.Seam2Processor;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXMLParsingProcessor;
 import org.jboss.as.server.deployment.module.ClassTransformerProcessor;
 import org.jboss.as.server.deployment.module.DeploymentRootMountProcessor;
@@ -386,10 +385,6 @@ public final class ServerService extends AbstractControllerService {
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.INSTALL, Phase.INSTALL_DEPLOYMENT_COMPLETE_SERVICE, new DeploymentCompleteServiceProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.CLEANUP, Phase.CLEANUP_REFLECTION_INDEX, new CleanupReflectionIndexProcessor());
             DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.CLEANUP, Phase.CLEANUP_ANNOTATION_INDEX, new CleanupAnnotationIndexProcessor());
-
-            // Ext integration deployers
-
-            DeployerChainAddHandler.addDeploymentProcessor(SERVER_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_SEAM, new Seam2Processor(serviceTarget));
 
             //jboss.xml parsers
             DeploymentStructureDescriptorParser.registerJBossXMLParsers();
