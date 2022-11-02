@@ -374,13 +374,13 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
 
         /**
          * Gets whether undefined list elements are valid. In the unlikely case {@link #setAllowNullElement(boolean)}
-         * has been called, that value is returned; otherwise the value of {@link #isAllowNull()} is used.
+         * has been called, that value is returned; otherwise the value of {@link #isNillable()} is used.
          *
          * @return {@code true} if undefined list elements are valid
          */
         @SuppressWarnings("WeakerAccess")
         public boolean getAllowNullElement() {
-            return allowNullElement == null ? isAllowNull() : allowNullElement;
+            return allowNullElement == null ? isNillable() : allowNullElement;
         }
 
         /**
@@ -412,7 +412,7 @@ public abstract class ListAttributeDefinition extends AttributeDefinition {
                 ParameterValidator listElementValidator = getElementValidator();
                 // Subclasses must call setElementValidator before calling this
                 assert listElementValidator != null;
-                result = new ListValidator(getElementValidator(), isAllowNull(), getMinSize(), getMaxSize(), allowDuplicates);
+                result = new ListValidator(getElementValidator(), isNillable(), getMinSize(), getMaxSize(), allowDuplicates);
             }
             return result;
         }

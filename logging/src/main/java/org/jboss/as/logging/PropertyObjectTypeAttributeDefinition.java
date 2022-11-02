@@ -99,7 +99,7 @@ public class PropertyObjectTypeAttributeDefinition extends ObjectTypeAttributeDe
 
         public PropertyObjectTypeAttributeDefinition build() {
             if (getValidator() == null) {
-                setValidator(new ObjectTypeValidator(isAllowNull(), valueTypes));
+                setValidator(new ObjectTypeValidator(isNillable(), valueTypes));
             }
             return new PropertyObjectTypeAttributeDefinition(this);
         }

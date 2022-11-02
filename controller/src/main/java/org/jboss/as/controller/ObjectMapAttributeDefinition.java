@@ -87,9 +87,9 @@ public class ObjectMapAttributeDefinition extends MapAttributeDefinition {
         node.get(ModelDescriptionConstants.DESCRIPTION); // placeholder
         node.get(ModelDescriptionConstants.EXPRESSIONS_ALLOWED).set(valueType.isAllowExpression());
         if (forOperation) {
-            node.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isAllowNull());
+            node.get(ModelDescriptionConstants.REQUIRED).set(!valueType.isNillable());
         }
-        node.get(ModelDescriptionConstants.NILLABLE).set(isAllowNull());
+        node.get(ModelDescriptionConstants.NILLABLE).set(isNillable());
         final ModelNode defaultValue = valueType.getDefaultValue();
         if (!forOperation && defaultValue != null && defaultValue.isDefined()) {
             node.get(ModelDescriptionConstants.DEFAULT).set(defaultValue);
