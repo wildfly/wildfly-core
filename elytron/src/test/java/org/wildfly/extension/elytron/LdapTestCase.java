@@ -172,7 +172,10 @@ public class LdapTestCase extends AbstractSubsystemTest {
     public void initializeSubsystem() throws Exception {
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("ldap.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
     }
 

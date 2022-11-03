@@ -69,7 +69,10 @@ public class SyslogAuditLogTestCase extends AbstractSubsystemTest {
     public void init() throws Exception {
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("syslog-audit-logging.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
         udpOperation = createUdpSyslogOperation(SERVER_ADDRESS);
     }

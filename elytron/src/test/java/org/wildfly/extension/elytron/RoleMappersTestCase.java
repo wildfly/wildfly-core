@@ -52,7 +52,10 @@ public class RoleMappersTestCase extends AbstractElytronSubsystemBaseTest {
     private void init(String... domainsToActivate) throws Exception {
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("role-mappers-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
 
         TestEnvironment.activateService(services, Capabilities.SECURITY_DOMAIN_RUNTIME_CAPABILITY, "TestDomain1");

@@ -68,7 +68,10 @@ public class SaslTestCase extends AbstractSubsystemTest {
         TestEnvironment.mockCallerModuleClassloader(); // to allow loading classes from testsuite
         services = super.createKernelServicesBuilder(new TestEnvironment()).setSubsystemXmlResource("sasl-test.xml").build();
         if (!services.isSuccessfulBoot()) {
-            Assert.fail(services.getBootError().toString());
+            if (services.getBootError() != null) {
+                Assert.fail(services.getBootError().toString());
+            }
+            Assert.fail("Failed to boot, no reason provided");
         }
     }
 
