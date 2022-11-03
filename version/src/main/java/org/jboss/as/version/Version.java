@@ -35,7 +35,7 @@ public class Version {
     public static final String UNKNOWN_CODENAME = "";
     public static final String AS_VERSION;
     public static final String AS_RELEASE_CODENAME;
-    public static final int MANAGEMENT_MAJOR_VERSION = 20;
+    public static final int MANAGEMENT_MAJOR_VERSION = 21;
     public static final int MANAGEMENT_MINOR_VERSION = 0;
     public static final int MANAGEMENT_MICRO_VERSION = 0;
 
