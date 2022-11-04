@@ -2,7 +2,7 @@
  
 ## Security Contacts and Procedures
  
-<PROJECT_NAME> community takes security very seriously, and we aim to take immediate action to address serious security-related problems that involve our products or services.
+The WildFly community takes security very seriously, and we aim to take immediate action to address serious security-related problems that involve our products or services.
  
 Please report any suspected security vulnerability in this project to Red Hat Product Security at secalert@redhat.com. You can use our GPG key to communicate with us securely.
  
