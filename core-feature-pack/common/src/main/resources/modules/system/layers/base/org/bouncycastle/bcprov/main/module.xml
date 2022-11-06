@@ -37,5 +37,6 @@
     <dependencies>
         <module name="java.naming"/>
         <module name="java.sql"/>
+        <module name="java.logging"/>
     </dependencies>
 </module>
