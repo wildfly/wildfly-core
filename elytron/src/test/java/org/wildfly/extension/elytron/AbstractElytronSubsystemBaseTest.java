@@ -16,7 +16,7 @@
 
 package org.wildfly.extension.elytron;
 
-import static javax.security.auth.message.config.AuthConfigFactory.DEFAULT_FACTORY_SECURITY_PROPERTY;
+import static jakarta.security.auth.message.config.AuthConfigFactory.DEFAULT_FACTORY_SECURITY_PROPERTY;
 
 import java.security.Security;
 
