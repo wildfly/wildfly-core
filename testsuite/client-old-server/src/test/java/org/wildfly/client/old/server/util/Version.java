@@ -32,25 +32,7 @@ public class Version {
     static final String EAP = "jboss-eap-";
 
     public enum AsVersion {
-        //For these we only had a full distribution
-        AS_7_1_2_FINAL(AS, "7.1.2.Final", false, JDK.JDK6, "remote", "9999"),
-        AS_7_1_3_FINAL(AS, "7.1.3.Final", false, JDK.JDK6, "remote", "9999"),
-        AS_7_2_0_FINAL(AS, "7.2.0.Final", false, JDK.JDK6, "remote", "9999"),
-        WF_8_0_0_FINAL(WILDFLY, "8.0.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
-        WF_8_1_0_FINAL(WILDFLY, "8.1.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
-        WF_8_2_0_FINAL(WILDFLY, "8.2.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
-
-        //For these we have a core distribution, and these versions are not tested in mixed domain. So to save space on
-        //the CI we just use the core versions used in the WildFly versions
-        WF_9_0_0_FINAL(WILDFLY_CORE, "1.0.0.Final", false, JDK.JDK8, "http-remoting", "9990"),
-        WF_10_0_0_FINAL(WILDFLY_CORE, "2.0.10.Final", false, JDK.JDK8, "http-remoting", "9990"),
-
-        //For these we only had a full distribution
-        EAP_6_2_0(EAP, "6.2.0", true, JDK.JDK6, "remote", "9999"),
-        EAP_6_3_0(EAP, "6.3.0", true, JDK.JDK7, "remote", "9999"),
-        EAP_6_4_0(EAP, "6.4.0", true, JDK.JDK8, "remote", "9999"),
-        //Although EAP >= 7 is split, the full distribution is needed in the mixed domain tests
-        EAP_7_0_0(EAP, "7.0.0", true, JDK.JDK8, "http-remoting", "9990");
+        EAP_7_4_0(EAP, "7.4.0", true, JDK.JDK11, "http-remoting", "9990");
 
 
         private final String basename;
@@ -101,8 +83,7 @@ public class Version {
     }
 
     enum JDK {
-        JDK6,
-        JDK7,
-        JDK8
+        JDK8,
+        JDK11
     }
 }
