@@ -1149,14 +1149,14 @@ public interface DomainManagementLogger extends BasicLogger {
     @Message(id = 110, value = "Unable to load a simple name for group '%s'")
     NamingException unableToLoadSimpleNameForGroup(String distinguishedName);
 
-    @Message(id = 111, value = "Keystore %s not found, it will be auto generated on first use with a self signed certificate for host %s")
+    @Message(id = 111, value = "Keystore %s not found, it will be auto-generated on first use with a self-signed certificate for host %s")
     @LogMessage(level = WARN)
     void keystoreWillBeCreated(String file, String host);
 
-    @Message(id = 112, value = "Failed to generate self signed certificate")
+    @Message(id = 112, value = "Failed to generate self-signed certificate")
     RuntimeException failedToGenerateSelfSignedCertificate(@Cause Exception e);
 
-    @Message(id = 113, value = "Generated self signed certificate at %s. Please note that self signed certificates are not secure, and should only be used for testing purposes. Do not use this self signed certificate in production.%nSHA-1 fingerprint of the generated key is %s%nSHA-256 fingerprint of the generated key is %s")
+    @Message(id = 113, value = "Generated self-signed certificate at %s. Please note that self-signed certificates are not secure, and should only be used for testing purposes. Do not use this self-signed certificate in production.%nSHA-1 fingerprint of the generated key is %s%nSHA-256 fingerprint of the generated key is %s")
     @LogMessage(level = WARN)
     void keystoreHasBeenCreated(String file, String sha1, String sha256);
 

@@ -299,7 +299,7 @@ public class SNICombinedWithALPNTestCase {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, PASSWORD.toCharArray());
 
-            //Generate self signed certificate
+            //Generate self-signed certificate
             X509Certificate[] chain = new X509Certificate[1];
             chain[0] = cert;
             keyStore.setKeyEntry(ALIAS, pair.getPrivate(), PASSWORD.toCharArray(), chain);
