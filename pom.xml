@@ -142,7 +142,7 @@
         <version.org.wildfly.galleon-plugins>6.1.0.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
-        <version.org.wildfly.jar.plugin>8.0.0.Final</version.org.wildfly.jar.plugin>
+        <version.org.wildfly.jar.plugin>8.1.0.Final</version.org.wildfly.jar.plugin>
         <!-- plugins related to wildfly build and tooling -->
         <version.org.wildfly.component-matrix-plugin>1.0.3.Final</version.org.wildfly.component-matrix-plugin>
         <version.org.wildfly.plugins>2.2.0.Final</version.org.wildfly.plugins>
