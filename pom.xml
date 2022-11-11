@@ -194,7 +194,7 @@
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.io.smallrye.jandex>3.0.1</version.io.smallrye.jandex>
+        <version.io.smallrye.jandex>3.0.3</version.io.smallrye.jandex>
         <version.io.undertow>2.3.0.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.1</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
