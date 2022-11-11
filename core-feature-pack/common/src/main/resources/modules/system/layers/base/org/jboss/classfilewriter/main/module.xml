@@ -30,8 +30,4 @@
     <resources>
         <artifact name="${org.jboss.classfilewriter:jboss-classfilewriter}"/>
     </resources>
-
-    <dependencies>
-        <module name="jdk.unsupported" />
-    </dependencies>
 </module>
