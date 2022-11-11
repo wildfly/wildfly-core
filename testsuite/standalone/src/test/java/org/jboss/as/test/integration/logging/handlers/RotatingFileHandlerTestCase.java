@@ -119,13 +119,14 @@ public class RotatingFileHandlerTestCase extends AbstractLoggingTestCase {
         final Path logDir = Paths.get(resolveRelativePath("jboss.server.log.dir"));
         // Walk the path and we should have the file name plus one ending in .1 as we should have logged enough to cause
         // at least one rotation.
-        final Pattern pattern = Pattern.compile(parseFileName(fileName) + "(\\.log|\\.log\\.1|\\.log[0-9]{2}\\.1)(\\.zip)?");
+        final Pattern pattern = Pattern.compile(parseFileName(fileName) + "(\\.log|\\.log\\.1|\\.log[0-9]{2}(\\.1)?)(\\.zip)?");
         final Set<String> foundFiles = Files.list(logDir)
                 .map(path -> path.getFileName().toString())
                 .filter((name) -> pattern.matcher(name).matches())
                 .collect(Collectors.toSet());
-        // We should have at least two files
-        Assert.assertEquals("Expected to have at least 2 files found " + foundFiles.size(), 2, foundFiles.size());
+        // We should have at least two files and no more than four
+        final int size = foundFiles.size();
+        Assert.assertTrue("Expected to have between 2 and 4 files, found " + size, 2 <= size && size <= 4);
     }
 
     private static String parseFileName(final String fileName) {
