@@ -283,6 +283,7 @@ public class ContentRepositoryImpl implements ContentRepository {
             contentPath = getDeploymentContentFile(reference.getHash(), false);
         }
         Path parent = contentPath.getParent();
+        boolean interrupted = false;
         try {
             if (HashUtil.isEachHexHashInTable(reference.getHexHash()) && this.readWrite) { //Otherwise this is not a deployment content
                 if(!lock(reference.getHash())) {
@@ -294,11 +295,14 @@ public class ContentRepositoryImpl implements ContentRepository {
         } catch (IOException ex) {
             DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, contentPath.toString());
         } catch (InterruptedException ex) {
-            Thread.interrupted();
+            interrupted = true;
             DeploymentRepositoryLogger.ROOT_LOGGER.contentDeletionError(ex, contentPath.toString());
         } finally {
             if (HashUtil.isEachHexHashInTable(reference.getHexHash())) {
                 unlock(reference.getHash());
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
             }
         }
         Path grandParent = parent.getParent();
