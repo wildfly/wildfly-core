@@ -155,11 +155,7 @@ public class ContentRepositoryImpl implements ContentRepository {
             return;
         }
         synchronized (contentHashReferences) {
-            Set<ContentReference> references = contentHashReferences.get(reference.getHexHash());
-            if (references == null) {
-                references = new HashSet<>();
-                contentHashReferences.put(reference.getHexHash(), references);
-            }
+            Set<ContentReference> references = contentHashReferences.computeIfAbsent(reference.getHexHash(), k -> new HashSet<>());
             references.add(reference);
         }
     }
@@ -308,7 +304,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         Path grandParent = parent.getParent();
         if(Files.exists(grandParent)) {
             try (Stream<Path> files = Files.list(grandParent)) {
-                if (!files.anyMatch(Files::isDirectory)) {
+                if (files.noneMatch(Files::isDirectory)) {
                     deleteRecursively(grandParent);
                 }
             } catch (IOException ex) {
@@ -507,6 +503,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         }
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean lock(byte[] hash) throws InterruptedException {
         String hashHex = HashUtil.bytesToHexString(hash);
         synchronized(lockedContents) {
@@ -566,8 +563,7 @@ public class ContentRepositoryImpl implements ContentRepository {
             }
             tmpDir = Files.createTempDirectory(tmpRoot.toPath(), HashUtil.bytesToHexString(deploymentHash));
             final Path rootPath = resolveSecurely(getDeploymentContentFile(deploymentHash), path);
-            List<ContentRepositoryElement> result = PathUtil.listFiles(rootPath, tmpDir, filter);
-            return result;
+            return PathUtil.listFiles(rootPath, tmpDir, filter);
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(ex);
@@ -587,7 +583,7 @@ public class ContentRepositoryImpl implements ContentRepository {
             Files.deleteIfExists(path);
             Path parent = path.getParent();
             try (Stream<Path> files = Files.list(parent)) {
-                if (Files.isDirectory(parent) && !files.findAny().isPresent()) {
+                if (Files.isDirectory(parent) && files.findAny().isEmpty()) {
                     deleteFileWithEmptyAncestorDirectories(parent);
                 }
             }
