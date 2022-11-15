@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.jboss.as.repository.logging.DeploymentRepositoryLogger;
 import org.jboss.vfs.VFS;
@@ -67,7 +68,7 @@ public class ContentRepositoryImpl implements ContentRepository {
     protected static final String CONTENT = "content";
     private final File repoRoot;
     private final File tmpRoot;
-    protected final MessageDigest messageDigest;
+    protected final AtomicReference<MessageDigest> messageDigestRef;
     private final Map<String, Set<ContentReference>> contentHashReferences = new HashMap<>();
     private final Map<String, ReentrantLock> lockedContents = new HashMap<>();
     private final Map<String, Long> obsoleteContents = new HashMap<>();
@@ -84,11 +85,7 @@ public class ContentRepositoryImpl implements ContentRepository {
         this.tmpRoot = tmpRoot;
         this.obsolescenceTimeout = obsolescenceTimeout;
         this.lockTimeout = lockTimeout;
-        try {
-            this.messageDigest = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
-            throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotObtainSha1(e, MessageDigest.class.getSimpleName());
-        }
+        this.messageDigestRef = new AtomicReference<>(createMessageDigest());
     }
 
     private void checkDirectory(final File directory) {
@@ -118,27 +115,22 @@ public class ContentRepositoryImpl implements ContentRepository {
         byte[] sha1Bytes;
         Path tmp = File.createTempFile(CONTENT, ".tmp", repoRoot).toPath();
         if (stream != null) {
-            try (OutputStream fos = Files.newOutputStream(tmp)) {
-                synchronized (messageDigest) {
-                    messageDigest.reset();
-                    DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);
-                    BufferedInputStream bis = new BufferedInputStream(stream);
-                    byte[] bytes = new byte[8192];
-                    int read;
-                    while ((read = bis.read(bytes)) > -1) {
-                        dos.write(bytes, 0, read);
-                    }
-                    fos.flush();
+            try (OutputStream fos = Files.newOutputStream(tmp); MessageDigestHandle digestHandle = new MessageDigestHandle()) {
+                MessageDigest messageDigest = digestHandle.getMessageDigest();
+                DigestOutputStream dos = new DigestOutputStream(fos, messageDigest);
+                BufferedInputStream bis = new BufferedInputStream(stream);
+                byte[] bytes = new byte[8192];
+                int read;
+                while ((read = bis.read(bytes)) > -1) {
+                    dos.write(bytes, 0, read);
                 }
+                fos.flush();
                 sha1Bytes = messageDigest.digest();
             }
         } else {//create a directory instead
             Files.delete(tmp);
             Files.createDirectory(tmp);
-            synchronized (messageDigest) {
-                messageDigest.reset();
-                sha1Bytes = HashUtil.hashPath(messageDigest, tmp);
-            }
+            sha1Bytes = getSha1Bytes(tmp);
         }
         final Path realFile = getDeploymentContentFile(sha1Bytes, true);
         if (hasContent(sha1Bytes)) {
@@ -414,7 +406,7 @@ public class ContentRepositoryImpl implements ContentRepository {
             Path tmp = createTempDirectory(repoRoot.toPath(), CONTENT);
             Path contentDir = Files.createDirectory(tmp.resolve(CONTENT));
             unzip(contentPath, contentDir);
-            byte[] sha1Bytes = HashUtil.hashPath(messageDigest, contentDir);
+            byte[] sha1Bytes = getSha1Bytes(contentDir);
             final Path realFile = getDeploymentContentFile(sha1Bytes, true);
             if (hasContent(sha1Bytes)) {
                 // we've already got this content
@@ -457,7 +449,7 @@ public class ContentRepositoryImpl implements ContentRepository {
                     deleteRecursively(targetPath);
                 }
                 unzip(sourcePath, targetPath);
-                byte[] sha1Bytes = HashUtil.hashPath(messageDigest, contentDir);
+                byte[] sha1Bytes = getSha1Bytes(contentDir);
                 final Path realFile = getDeploymentContentFile(sha1Bytes, true);
                 if (hasContent(sha1Bytes)) {
                     // we've already got this content
@@ -623,7 +615,7 @@ public class ContentRepositoryImpl implements ContentRepository {
                         }
                     }
                 }
-                byte[] sha1Bytes = HashUtil.hashPath(messageDigest, contentDir);
+                byte[] sha1Bytes = getSha1Bytes(contentDir);
                 final Path realFile = getDeploymentContentFile(sha1Bytes, true);
                 if (hasContent(sha1Bytes)) {
                     // we've already got this content
@@ -660,7 +652,7 @@ public class ContentRepositoryImpl implements ContentRepository {
                     Path targetFile = resolveSecurely(contentDir, path);
                     deleteFileWithEmptyAncestorDirectories(targetFile);
                 }
-                byte[] sha1Bytes = HashUtil.hashPath(messageDigest, contentDir);
+                byte[] sha1Bytes = getSha1Bytes(contentDir);
                 final Path realFile = getDeploymentContentFile(sha1Bytes, true);
                 if (hasContent(sha1Bytes)) {
                     // we've already got this content
@@ -682,6 +674,46 @@ public class ContentRepositoryImpl implements ContentRepository {
         } catch (IOException ex) {
             DeploymentRepositoryLogger.ROOT_LOGGER.warn(ex);
             throw DeploymentRepositoryLogger.ROOT_LOGGER.errorUpdatingDeployment(ex);
+        }
+    }
+
+    private byte[] getSha1Bytes(Path path) throws IOException {
+        try (MessageDigestHandle handle = new MessageDigestHandle()) {
+            return HashUtil.hashPath(handle.getMessageDigest(), path);
+        }
+    }
+
+    private static MessageDigest createMessageDigest() {
+        try {
+            return MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw DeploymentRepositoryLogger.ROOT_LOGGER.cannotObtainSha1(e, MessageDigest.class.getSimpleName());
+        }
+    }
+
+    // try-with-resources resource that wraps a potentially-shared MessageDigest
+    private class MessageDigestHandle implements AutoCloseable {
+
+        private final MessageDigest digest;
+        private final boolean shared;
+
+        private MessageDigestHandle() {
+            // Try and take the shared md; if unsuccessful create our own
+            MessageDigest md = messageDigestRef.getAndSet(null);
+            this.shared = md != null;
+            this.digest = shared ? md : createMessageDigest();
+        }
+
+        private MessageDigest getMessageDigest() {
+            return digest;
+        }
+
+        @Override
+        public void close() {
+            if (shared) {
+                digest.reset();
+                messageDigestRef.set(digest);
+            }
         }
     }
 }
