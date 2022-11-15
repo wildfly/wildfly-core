@@ -269,13 +269,12 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
         // packages
         ModelNode packages = feature.require(PACKAGES);
-        Assert.assertEquals(4, packages.asList().size());
+        Assert.assertEquals(3, packages.asList().size());
         int expected = packages.asList().size();
         for (ModelNode mn : packages.asList()) {
             String name = mn.get(PACKAGE).asString();
             switch (name) {
-                case MAIN_RESOURCE_REQUIRED_PACKAGE_NAME:
-                case MAIN_RESOURCE_PACKAGE_NAME: {
+                case MAIN_RESOURCE_REQUIRED_PACKAGE_NAME: {
                     expected -= 1;
                     Assert.assertFalse(mn.hasDefined(OPTIONAL));
                     Assert.assertFalse(mn.hasDefined(PASSIVE));
@@ -610,9 +609,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
 
     private static class MainResourceDefinition extends SimpleResourceDefinition {
 
-        private static final RuntimeCapability MAIN_RESOURCE_CAPABILITY =
+        private static final RuntimeCapability<?> MAIN_RESOURCE_CAPABILITY =
                 RuntimeCapability.Builder.of(MAIN_RESOURCE_CAPABILITY_NAME, true)
-                        .addAdditionalRequiredPackages(MAIN_RESOURCE_PACKAGE_NAME, MAIN_RESOURCE_PACKAGE_NAME)
                         .build();
 
         private static final AttributeDefinition OPTIONAL_ATTRIBUTE =
@@ -646,7 +644,8 @@ public class ReadFeatureDescriptionTestCase extends AbstractControllerTestBase {
         MainResourceDefinition(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
             super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
                     .setAddHandler(new AddHandler())
-                    .addCapabilities(MAIN_RESOURCE_CAPABILITY));
+                    .addCapabilities(MAIN_RESOURCE_CAPABILITY)
+            );
         }
 
         @Override

@@ -702,22 +702,6 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
             if (capabilityRegistry != null) {
                 capabilityRegistry.registerPossibleCapability(capability, getPathAddress());
             }
-
-            // Move packages associated to the capability in additionalPackages set
-            // additionalPackages becomes the only package provider
-            Set<String> packages = capability.getAdditionalRequiredPackages();
-            if (!packages.isEmpty()) {
-                if (additionalPackages == null) {
-                    additionalPackages = new HashMap<>();
-                }
-                for (String pkg : packages) {
-                    if (additionalPackages.containsKey(pkg)) {
-                        ControllerLogger.ROOT_LOGGER.runtimePackageDependencyAlreadyRegistered(pkg, getLocationString());
-                    } else {
-                        additionalPackages.put(pkg, RuntimePackageDependency.required(pkg));
-                    }
-                }
-            }
         } finally {
             writeLock.unlock();
         }
