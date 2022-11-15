@@ -49,7 +49,7 @@ import org.wildfly.common.ref.Reference;
  */
 public class RemotingModelControllerClient extends AbstractModelControllerClient {
 
-    private static final Reaper<RemotingModelControllerClient, ClientCloseable> REAPER = new Reaper<RemotingModelControllerClient, ClientCloseable>() {
+    private static final Reaper<RemotingModelControllerClient, ClientCloseable> REAPER = new Reaper<>() {
         @Override
         public void reap(Reference<RemotingModelControllerClient, ClientCloseable> reference) {
             ClientCloseable closeable = reference.getAttachment();
@@ -65,19 +65,16 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
     };
 
     public static RemotingModelControllerClient create(final ModelControllerClientConfiguration configuration) {
-        @SuppressWarnings("deprecation")
         RemotingModelControllerClient client = new RemotingModelControllerClient(configuration);
         // Use a PhantomReference instead of overriding finalize() to ensure close gets called
         // CleanerReference handles ensuring there's a strong ref to itself so we can just construct it and move on
-        new CleanerReference<RemotingModelControllerClient, ClientCloseable>(client, client.closeable, REAPER);
+        new CleanerReference<>(client, client.closeable, REAPER);
         return client;
     }
 
     private final ClientCloseable closeable;
 
-    /** @deprecated Use {@link #create(ModelControllerClientConfiguration)}  */
-    @Deprecated
-    public RemotingModelControllerClient(final ModelControllerClientConfiguration configuration) {
+    private RemotingModelControllerClient(final ModelControllerClientConfiguration configuration) {
 
         ManagementChannelHandler handler = new ManagementChannelHandler(new ManagementClientChannelStrategy() {
             @Override
@@ -117,7 +114,7 @@ public class RemotingModelControllerClient extends AbstractModelControllerClient
 
                     closeable.strategy = ManagementClientChannelStrategy.create(configuration, closeable.channelAssociation, closeable.clientConfiguration.getCallbackHandler(),
                             closeable.clientConfiguration.getSaslOptions(), closeable.clientConfiguration.getSSLContext(),
-                            new CloseHandler<Channel>() {
+                            new CloseHandler<>() {
                                 @Override
                                 public void handleClose(final Channel closed, final IOException exception) {
                                     closeable.channelAssociation.handleChannelClosed(closed, exception);
