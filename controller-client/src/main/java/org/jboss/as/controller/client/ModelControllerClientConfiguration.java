@@ -29,9 +29,7 @@ import static java.security.AccessController.doPrivileged;
 import javax.net.ssl.SSLContext;
 import javax.security.auth.callback.CallbackHandler;
 import java.io.Closeable;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -139,6 +137,14 @@ public interface ModelControllerClientConfiguration extends Closeable {
     }
 
     class Builder {
+
+        // Global thread group for created pools. WFCORE-5 static to avoid leaking whenever createDefaultExecutor is called
+        private static final ThreadGroup defaultThreadGroup = new ThreadGroup("management-client-thread");
+        // Global count of created pools
+        private static final AtomicInteger executorCount = new AtomicInteger();
+        private static final String MAX_THREADS_PROP = "org.jboss.as.controller.client.max-threads";
+        private static final int MAX_THREADS_DEFAULT = 6;
+
         private String hostName;
         private String clientBindAddress;
         private int port;
@@ -270,208 +276,42 @@ public interface ModelControllerClientConfiguration extends Closeable {
          */
         public ModelControllerClientConfiguration build() {
            return new ClientConfigurationImpl(hostName, port, handler, saslOptions, sslContextFactory,
-                   Factory.createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress, authConfigUri);
+                   createDefaultExecutor(), true, connectionTimeout, protocol, clientBindAddress, authConfigUri);
         }
 
-    }
-
-    /**
-     * @deprecated Use {@link org.jboss.as.controller.client.ModelControllerClientConfiguration.Builder} instead.
-     */
-    @Deprecated
-    class Factory {
-        // Global count of created pools
-        private static final AtomicInteger executorCount = new AtomicInteger();
-        // Global thread group for created pools. WFCORE-5 static to avoid leaking whenever createDefaultExecutor is called
-        private static final ThreadGroup defaultThreadGroup = new ThreadGroup("management-client-thread");
-
-        static ExecutorService createDefaultExecutor() {
+        private static ExecutorService createDefaultExecutor() {
             final ThreadFactory threadFactory = doPrivileged(new PrivilegedAction<JBossThreadFactory>() {
                 public JBossThreadFactory run() {
                     return new JBossThreadFactory(defaultThreadGroup, Boolean.FALSE, null, "%G " + executorCount.incrementAndGet() + "-%t", null, null);
                 }
             });
-            final int maxThreads = getSystemProperty("org.jboss.as.controller.client.max-threads", 6);
+            final int maxThreads = getMaxThreads();
             return EnhancedQueueExecutor.DISABLE_HINT ?
-                new ThreadPoolExecutor(2, maxThreads, 60, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), threadFactory) :
-                new EnhancedQueueExecutor.Builder()
-                    .setCorePoolSize(2)
-                    .setMaximumPoolSize(maxThreads)
-                    .setKeepAliveTime(60, TimeUnit.SECONDS)
-                    .setThreadFactory(threadFactory)
-                    .build();
+                    new ThreadPoolExecutor(2, maxThreads, 60, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), threadFactory) :
+                    new EnhancedQueueExecutor.Builder()
+                            .setCorePoolSize(2)
+                            .setMaximumPoolSize(maxThreads)
+                            .setKeepAliveTime(60, TimeUnit.SECONDS)
+                            .setThreadFactory(threadFactory)
+                            .build();
         }
 
-        private static int getSystemProperty(final String name, final int defaultValue) {
-            final String value = getStringProperty(name);
+        private static int getMaxThreads() {
+            final String value = getMaxThreadsProperty();
             try {
-                return value == null ? defaultValue : Integer.parseInt(value);
+                return value == null ? MAX_THREADS_DEFAULT : Integer.parseInt(value);
             } catch (NumberFormatException ignored) {
-                return defaultValue;
+                return MAX_THREADS_DEFAULT;
             }
         }
 
-        private static String getStringProperty(final String name) {
-            return getSecurityManager() == null ? getProperty(name) : doPrivileged(new PrivilegedAction<String>() {
+        private static String getMaxThreadsProperty() {
+            return getSecurityManager() == null ? getProperty(MAX_THREADS_PROP) : doPrivileged(new PrivilegedAction<String>() {
                 @Override
                 public String run() {
-                    return getProperty(name);
+                    return getProperty(MAX_THREADS_PROP);
                 }
             });
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port) throws UnknownHostException {
-            return new Builder()
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final InetAddress address, final int port, final CallbackHandler handler) {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final InetAddress address, final int port) {
-            return new Builder()
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return new Builder()
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setHandler(handler)
-                    .setSslContext(sslContext)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final InetAddress address, final int port) {
-                return new Builder()
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler) {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return new Builder()
-                    .setConnectionTimeout(connectionTimeout)
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .setSslContext(sslContext)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .setSaslOptions(saslOptions)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final InetAddress address, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(address.getHostAddress())
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .setSaslOptions(saslOptions)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext) throws UnknownHostException {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .setSslContext(sslContext)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setSaslOptions(saslOptions)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String hostName, final int port) throws UnknownHostException {
-            return new Builder()
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String hostName, final int port, final CallbackHandler handler) throws UnknownHostException {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout) throws UnknownHostException {
-            return new Builder()
-                    .setConnectionTimeout(connectionTimeout)
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setSslContext(sslContext)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final SSLContext sslContext, final int connectionTimeout, final Map<String, String> saslOptions) throws UnknownHostException {
-            return new Builder()
-                    .setConnectionTimeout(connectionTimeout)
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .setSaslOptions(saslOptions)
-                    .setSslContext(sslContext)
-                    .build();
-        }
-
-        public static ModelControllerClientConfiguration create(final String protocol, final String hostName, final int port, final CallbackHandler handler, final Map<String, String> saslOptions) throws UnknownHostException {
-            return new Builder()
-                    .setHandler(handler)
-                    .setHostName(hostName)
-                    .setPort(port)
-                    .setProtocol(protocol)
-                    .setSaslOptions(saslOptions)
-                    .build();
         }
 
     }
