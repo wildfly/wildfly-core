@@ -882,11 +882,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
         return allowNull;
     }
 
-    @Deprecated
-    public boolean isAllowNull() {
-        return allowNull;
-    }
-
     public boolean isAllowExpression() {
         return allowExpression;
     }
