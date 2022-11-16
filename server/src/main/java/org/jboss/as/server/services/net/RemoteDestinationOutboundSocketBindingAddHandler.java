@@ -155,7 +155,8 @@ public class RemoteDestinationOutboundSocketBindingAddHandler extends AbstractAd
         final Supplier<NetworkInterfaceBinding> nibSupplier = sourceInterfaceName != null ? builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, sourceInterfaceName) : null;
         builder.setInstance(new RemoteDestinationOutboundSocketBindingService(osbConsumer, sbmSupplier, nibSupplier, outboundSocketName, destinationHost, destinationPort, sourcePort, fixedSourcePort));
         builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
-        builder.addAliases(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(outboundSocketName));
+
+        builder.addAliases(OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName((outboundSocketName)));
         builder.install();
     }
 }

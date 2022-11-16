@@ -22,6 +22,7 @@
 package org.jboss.as.jmx;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -88,7 +89,6 @@ import org.jboss.as.controller.operations.common.ResolveExpressionHandler;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.jmx.model.ModelControllerMBeanHelper;
-import org.jboss.as.network.SocketBinding;
 import org.jboss.as.remoting.EndpointService;
 import org.jboss.as.remoting.RemotingServices;
 import org.jboss.as.remoting.management.ManagementRemotingServices;
@@ -1681,7 +1681,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
             ServiceName tmpDirPath = ServiceName.JBOSS.append("server", "path", "jboss.controller.temp.dir");
 
             RemotingServices.installConnectorServicesForSocketBinding(target, ManagementRemotingServices.MANAGEMENT_ENDPOINT,
-                    "server", SocketBinding.JBOSS_BINDING_NAME.append("server"), OptionMap.EMPTY,
+                    "server", SOCKET_BINDING_CAPABILITY.getCapabilityServiceName("server"), OptionMap.EMPTY,
                     null, null, ServiceName.parse("org.wildfly.management.socket-binding-manager"));
         }
 
