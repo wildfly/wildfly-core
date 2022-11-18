@@ -40,6 +40,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.parsing.Attribute;
+import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.server.controller.descriptions.ServerDescriptions;
 import org.jboss.as.server.operations.HttpManagementAddHandler;
 import org.jboss.as.server.operations.HttpManagementRemoveHandler;
@@ -80,6 +81,7 @@ public class HttpManagementResourceDefinition extends BaseHttpInterfaceResourceD
             .setAddHandler(HttpManagementAddHandler.INSTANCE)
             .setRemoveHandler(HttpManagementRemoveHandler.INSTANCE)
             .setCapabilities(UndertowHttpManagementService.EXTENSIBLE_HTTP_MANAGEMENT_CAPABILITY)
+            .setAdditionalPackages(RuntimePackageDependency.required("org.jboss.as.domain-http-error-context"))
         );
     }
 
