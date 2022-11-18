@@ -31,8 +31,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.server.deployment.DeploymentUnitProcessor;
-import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -41,17 +39,7 @@ import org.jboss.dmr.ModelNode;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 public abstract class AbstractDeploymentChainStep implements OperationStepHandler {
-    @SuppressWarnings("deprecation")
-    private static DeploymentProcessorTarget TARGET = new DeploymentProcessorTarget() {
-        public void addDeploymentProcessor(final String subsystemName, final Phase phase, final int priority, final DeploymentUnitProcessor processor) {
-            DeployerChainAddHandler.addDeploymentProcessor(subsystemName, phase, priority, processor);
-        }
-
-        @Override
-        public void addDeploymentProcessor(final Phase phase, final int priority, final DeploymentUnitProcessor processor) {
-            addDeploymentProcessor("", phase, priority, processor);
-        }
-    };
+    private static final DeploymentProcessorTarget TARGET = DeployerChainAddHandler::addDeploymentProcessor;
 
     public final void execute(final OperationContext context, final ModelNode operation) {
         if (context.isBooting()) {
