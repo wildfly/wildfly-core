@@ -644,7 +644,7 @@ public interface ElytronSubsystemMessages extends BasicLogger {
     @Message(id = 1083, value = "No '%s' found in injected value.")
     RuntimeException noTypeFoundForLazyInitKeyManager(final String type);
 
-    @Message(id = 1084, value = "KeyStore %s not found, it will be auto generated on first use with a self-signed certificate for host %s")
+    @Message(id = 1084, value = "KeyStore %s not found, it will be auto-generated on first use with a self-signed certificate for host %s")
     @LogMessage(level = WARN)
     void selfSignedCertificateWillBeCreated(String file, String host);
 
