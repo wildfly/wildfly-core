@@ -28,10 +28,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.jboss.as.controller._private.OperationFailedRuntimeException;
@@ -52,7 +50,7 @@ public class PathAddress implements Iterable<PathElement> {
     /**
      * An empty address.
      */
-    public static final PathAddress EMPTY_ADDRESS = new PathAddress(Collections.<PathElement>emptyList());
+    public static final PathAddress EMPTY_ADDRESS = new PathAddress(Collections.emptyList());
 
     /**
      * Creates a PathAddress from the given ModelNode address. The given node is expected to be an address node.
@@ -67,7 +65,7 @@ public class PathAddress implements Iterable<PathElement> {
 //            final List<Property> props = node.asPropertyList();
             // Following bit is crap TODO; uncomment above and delete below
             // when bug is fixed
-            final List<Property> props = new ArrayList<Property>();
+            final List<Property> props = new ArrayList<>();
             String key = null;
             for (ModelNode element : node.asList()) {
                 Property prop = null;
@@ -87,8 +85,8 @@ public class PathAddress implements Iterable<PathElement> {
             if (props.isEmpty()) {
                 return EMPTY_ADDRESS;
             } else {
-                final Set<String> seen = new HashSet<String>();
-                final List<PathElement> values = new ArrayList<PathElement>();
+                final Set<String> seen = new HashSet<>();
+                final List<PathElement> values = new ArrayList<>();
                 int index = 0;
                 for (final Property prop : props) {
                     final String name = prop.getName();
@@ -113,8 +111,8 @@ public class PathAddress implements Iterable<PathElement> {
         if (elements.isEmpty()) {
             return EMPTY_ADDRESS;
         }
-        final ArrayList<PathElement> newList = new ArrayList<PathElement>(elements.size());
-        final Set<String> seen = new HashSet<String>();
+        final ArrayList<PathElement> newList = new ArrayList<>(elements.size());
+        final Set<String> seen = new HashSet<>();
         int index = 0;
         for (PathElement element : elements) {
             final String name = element.getKey();
@@ -133,7 +131,7 @@ public class PathAddress implements Iterable<PathElement> {
     }
 
     public static PathAddress pathAddress(PathElement... elements) {
-        return pathAddress(Arrays.<PathElement>asList(elements));
+        return pathAddress(Arrays.asList(elements));
     }
 
     public static PathAddress pathAddress(String key, String value) {
@@ -141,10 +139,8 @@ public class PathAddress implements Iterable<PathElement> {
     }
 
     public static PathAddress pathAddress(PathAddress parent, PathElement... elements) {
-        List<PathElement> list = new ArrayList<PathElement>(parent.pathAddressList);
-        for (PathElement element : elements) {
-            list.add(element);
-        }
+        List<PathElement> list = new ArrayList<>(parent.pathAddressList);
+        Collections.addAll(list, elements);
         return pathAddress(list);
     }
 
@@ -230,8 +226,7 @@ public class PathAddress implements Iterable<PathElement> {
      * @throws IndexOutOfBoundsException if the index is out of range (<tt>index &lt; 0 || index &gt;= size()</tt>)
      */
     public PathElement getElement(int index) {
-        final List<PathElement> list = pathAddressList;
-        return list.get(index);
+        return pathAddressList.get(index);
     }
 
     /**
@@ -273,7 +268,7 @@ public class PathAddress implements Iterable<PathElement> {
      * @return the new path address
      */
     public PathAddress append(List<PathElement> additionalElements) {
-        final ArrayList<PathElement> newList = new ArrayList<PathElement>(pathAddressList.size() + additionalElements.size());
+        final ArrayList<PathElement> newList = new ArrayList<>(pathAddressList.size() + additionalElements.size());
         newList.addAll(pathAddressList);
         newList.addAll(additionalElements);
         return pathAddress(newList);
@@ -305,64 +300,6 @@ public class PathAddress implements Iterable<PathElement> {
 
     public PathAddress append(String key) {
         return append(PathElement.pathElement(key));
-    }
-
-    /**
-     * Navigate to this address in the given model node.
-     *
-     * @param model the model node
-     * @param create {@code true} to create the last part of the node if it does not exist
-     * @return the submodel
-     * @throws NoSuchElementException if the model contains no such element
-     *
-     * @deprecated manipulating a deep DMR node tree via PathAddress is no longer how the management layer works
-     *             internally, so this method has become legacy cruft. Management operation handlers
-     *             should obtain a {@link org.jboss.as.controller.registry.Resource Resource} from the
-     *             {@link org.jboss.as.controller.OperationContext#readResource(PathAddress) OperationContext}
-     *             and use the {@code Resource} API to access child resources
-     */
-    @Deprecated
-    public ModelNode navigate(ModelNode model, boolean create) throws NoSuchElementException {
-        final Iterator<PathElement> i = pathAddressList.iterator();
-        while (i.hasNext()) {
-            final PathElement element = i.next();
-            if (create && !i.hasNext()) {
-                if (element.isMultiTarget()) {
-                    throw new IllegalStateException();
-                }
-                model = model.require(element.getKey()).get(element.getValue());
-            } else {
-                model = model.require(element.getKey()).require(element.getValue());
-            }
-        }
-        return model;
-    }
-
-    /**
-     * Navigate to, and remove, this address in the given model node.
-     *
-     * @param model the model node
-     * @return the submodel
-     * @throws NoSuchElementException if the model contains no such element
-     *
-     * @deprecated manipulating a deep DMR node tree via PathAddress is no longer how the management layer works
-     *             internally, so this method has become legacy cruft. Management operation handlers would
-     *             use {@link org.jboss.as.controller.OperationContext#removeResource(PathAddress)} to
-     *             remove resources.
-     */
-    @Deprecated
-    public ModelNode remove(ModelNode model) throws NoSuchElementException {
-        final Iterator<PathElement> i = pathAddressList.iterator();
-        while (i.hasNext()) {
-            final PathElement element = i.next();
-            if (i.hasNext()) {
-                model = model.require(element.getKey()).require(element.getValue());
-            } else {
-                final ModelNode parent = model.require(element.getKey());
-                model = parent.remove(element.getValue()).clone();
-            }
-        }
-        return model;
     }
 
     /**
@@ -456,10 +393,6 @@ public class PathAddress implements Iterable<PathElement> {
         return toString('=');
     }
 
-    public String toHttpStyleString() {
-        return toString('/');
-    }
-
     public String toPathStyleString() {
         return toString('/');
     }
@@ -517,10 +450,7 @@ public class PathAddress implements Iterable<PathElement> {
             sb.append(pe.getKey());
             sb.append(keyValSeparator);
 
-            boolean quote = false;
-            if (pe.getValue().contains("/") || pe.getValue().contains("=")) {
-                quote = true;
-            }
+            boolean quote = pe.getValue().contains("/") || pe.getValue().contains("=");
             if (quote) {
                 sb.append("\"");
             }
