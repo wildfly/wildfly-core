@@ -95,8 +95,16 @@ public final class BootstrapListener {
         startedWitErrorsMessage = null;
     }
 
+    /*
+     * @Deprecated Use {@Link BootstrapListener#bootFailure(Throwable)} instead.
+     */
+    @Deprecated
     public void bootFailure(String message) {
         futureContainer.failed(new Exception(message));
+    }
+
+    public void bootFailure(Throwable throwable) {
+        futureContainer.failed(throwable);
     }
 
     private void done(final long bootstrapTime, final StabilityStatistics statistics, String message) {

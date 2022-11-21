@@ -651,6 +651,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ServiceTarget serviceTarget = context.getServiceTarget();
         boolean ok = false;
         boolean reachedServers = false;
+        Throwable cause = null;
 
         try {
             // Install server inventory callback
@@ -877,6 +878,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
 
         } catch (Exception e) {
             ROOT_LOGGER.caughtExceptionDuringBoot(e);
+            cause = e;
             if (!reachedServers) {
                 ok = false;
             }
@@ -920,7 +922,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 }
                 String failed = ROOT_LOGGER.unsuccessfulBoot(message);
                 ROOT_LOGGER.fatal(failed);
-                bootstrapListener.bootFailure(failed);
+                bootstrapListener.bootFailure(new Exception(failed, cause));
 
                 // don't exit if we're embedded
                 if (processType != ProcessType.EMBEDDED_HOST_CONTROLLER) {
