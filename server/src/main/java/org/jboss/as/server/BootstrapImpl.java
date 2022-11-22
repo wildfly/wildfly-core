@@ -214,8 +214,12 @@ final class BootstrapImpl implements Bootstrap {
             setResult(container);
         }
 
-        void failed(Throwable t) {
-            setFailed(t);
+        /**
+         * @param t – the cause of failure, if null a generic IllegalStateException will be set.
+         */
+        void failed(final Throwable t) {
+            Throwable cause = t != null ? t : ServerLogger.ROOT_LOGGER.throwableIsNull();
+            setFailed(cause);
         }
     }
 

@@ -1396,6 +1396,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 290, value = "Couldn't find the specified YAML file %s")
     IllegalArgumentException unableToFindYaml(String file);
 
+    /**
+     * Creates an exception as placeholder for a missing exception.
+     *
+     * @return an {@link IllegalStateException} for the error.
+     */
+    @Message(id = 291, value = "The error cause is unknown at this thread. Check other log messages and caller to know the possible cause.")
+    IllegalStateException throwableIsNull();
+
     ////////////////////////////////////////////////
     //Messages without IDs
 

@@ -31,6 +31,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.common.Assert;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -152,9 +153,13 @@ public class ServerBootOperationsService implements Service<Void> {
             setResult(result);
         }
 
+        /**
+         * @param e the cause of failure, must not be null
+         */
         @Override
-        public void failed(Exception e) {
-            setFailed(e);
+        public void failed(final Exception e) {
+            Assert.checkNotNullParam("Exception", e);
+            super.setFailed(e);
         }
 
         @Override
