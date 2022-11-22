@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package org.jboss.as.test.manualmode.deployment;
+package org.wildfly.core.test.standalone.deployment;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,14 +42,10 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
-import org.wildfly.core.testrunner.ServerControl;
-import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.UnsuccessfulOperationException;
 import org.wildfly.core.testrunner.WildFlyRunner;
 
@@ -61,26 +57,10 @@ import org.wildfly.core.testrunner.WildFlyRunner;
  * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 @RunWith(WildFlyRunner.class)
-@ServerControl(manual = true)
 public class InterdependentDeploymentTestCase {
 
-    @SuppressWarnings("unused")
     @Inject
-    private ServerController container;
-
     private ManagementClient managementClient;
-
-    @Before
-    public void before() {
-        container.start();
-        managementClient = container.getClient();
-    }
-
-    @After
-    public void after() {
-        container.stop();
-        managementClient = null;
-    }
 
     @Test
     public void test() throws Exception {
