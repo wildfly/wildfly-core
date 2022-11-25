@@ -37,6 +37,7 @@ import org.jboss.as.test.integration.management.cli.CliProcessWrapper;
 import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,6 +67,7 @@ public class RemoveManagementRealmTestCase {
 
     @Before
     public void beforeTest() throws Exception {
+        Assert.assertNotNull(container);
         container.start();
         String jbossDist = TestSuiteEnvironment.getSystemProperty("jboss.dist");
         source = Paths.get(jbossDist, "standalone", "configuration", "standalone.xml");
@@ -94,9 +96,14 @@ public class RemoveManagementRealmTestCase {
     @After
     public void afterTest() throws Exception {
         try {
+            Assert.assertNotNull(container);
             container.stop();
         } finally {
-            Files.copy(target, source, StandardCopyOption.REPLACE_EXISTING);
+            // source and target are only null if the container fails to start,
+            // which is already visible in the logs
+            if (source != null && target != null) {
+                Files.copy(target, source, StandardCopyOption.REPLACE_EXISTING);
+            }
         }
     }
 

@@ -39,6 +39,7 @@ import org.jboss.msc.service.ServiceActivator;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -55,6 +56,8 @@ public abstract class AbstractCustomModuleTestCase extends AbstractLoggingTestCa
 
     @AfterClass
     public static void cleanup() throws Exception {
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container.isStarted()); // if container is not started, we get a NPE in container.getClient() within undeploy()
         container.undeploy(DEPLOYMENT_NAME);
         try {
             final CompositeOperationBuilder builder = CompositeOperationBuilder.create();
@@ -73,6 +76,7 @@ public abstract class AbstractCustomModuleTestCase extends AbstractLoggingTestCa
     @BeforeClass
     public static void startServer() {
         TestEnvironment.createModules();
+        Assert.assertNotNull(container);
         container.start();
     }
 

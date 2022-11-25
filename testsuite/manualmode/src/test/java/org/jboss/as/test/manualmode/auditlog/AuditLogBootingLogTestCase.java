@@ -144,6 +144,7 @@ public class AuditLogBootingLogTestCase {
         }
 
         // Start the server
+        Assert.assertNotNull(container);
         container.start();
         managementClient = container.getClient();
         final ModelControllerClient client = managementClient.getControllerClient();
@@ -199,6 +200,8 @@ public class AuditLogBootingLogTestCase {
 
     @After
     public void afterTest() throws Exception {
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container.isStarted()); // if container is not started, we get a NPE in container.getClient()
         final ModelControllerClient client = container.getClient().getControllerClient();
         ModelNode result;
         ModelNode op = Util.getWriteAttributeOperation(auditLogConfigAddress, AuditLogLoggerResourceDefinition.ENABLED.getName(),

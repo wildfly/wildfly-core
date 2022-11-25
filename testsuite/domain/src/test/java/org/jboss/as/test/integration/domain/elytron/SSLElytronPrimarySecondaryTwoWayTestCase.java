@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.as.test.integration.domain.AbstractSSLPrimarySecondaryTestCase;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,10 +54,13 @@ public class SSLElytronPrimarySecondaryTwoWayTestCase extends AbstractSSLPrimary
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.close();
-        testSupport = null;
-
-        FileUtils.deleteDirectory(WORK_DIR);
+        try {
+            Assert.assertNotNull(testSupport);
+            testSupport.close();
+        } finally {
+            testSupport = null;
+            FileUtils.deleteDirectory(WORK_DIR);
+        }
     }
 
     @Test

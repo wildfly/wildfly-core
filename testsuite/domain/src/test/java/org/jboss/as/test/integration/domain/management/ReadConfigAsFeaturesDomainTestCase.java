@@ -65,9 +65,13 @@ public class ReadConfigAsFeaturesDomainTestCase extends ReadConfigAsFeaturesTest
 
     @AfterClass
     public static void tearDownDomain() {
-        testSupport.close();
-        testSupport = null;
-        domainPrimaryLifecycleUtil = null;
+        try {
+            Assert.assertNotNull(testSupport);
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     @Test

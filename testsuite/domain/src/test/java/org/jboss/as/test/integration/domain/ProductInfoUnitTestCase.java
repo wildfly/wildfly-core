@@ -23,6 +23,8 @@ package org.jboss.as.test.integration.domain;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.JVM;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -44,7 +46,6 @@ import static org.jboss.as.controller.operations.global.GlobalInstallationReport
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.STANDALONE_DOMAIN_IDENTIFIER;
 import static org.jboss.as.controller.operations.global.GlobalInstallationReportHandler.SUMMARY;
 import static org.jboss.as.test.integration.domain.management.util.DomainTestSupport.validateResponse;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
 import org.jboss.as.controller.PathAddress;
@@ -80,10 +81,14 @@ public class ProductInfoUnitTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.close();
-        testSupport = null;
-        domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
+        try {
+            assertThat("testSupport", testSupport, is(notNullValue()));
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            domainSecondaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     @Test
