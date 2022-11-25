@@ -34,8 +34,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import org.jboss.msc.service.ServiceName;
-
 /**
  * The socket binding manager represents a registry of all
  * active (bound) sockets.
@@ -43,10 +41,6 @@ import org.jboss.msc.service.ServiceName;
  * @author Emanuel Muckenhuber
  */
 public interface SocketBindingManager {
-
-    /** @deprecated Use the org.wildfly.management.socket-binding-manager capability */
-    @Deprecated
-    ServiceName SOCKET_BINDING_MANAGER = ServiceName.JBOSS.append("socket-binding-manager");
 
     /**
      * Get the managed server socket factory.

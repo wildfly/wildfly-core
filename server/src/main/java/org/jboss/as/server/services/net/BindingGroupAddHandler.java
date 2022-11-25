@@ -116,7 +116,6 @@ public class BindingGroupAddHandler extends AbstractAddStepHandler {
         final Supplier<NetworkInterfaceBinding> nibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, defaultInterface);
         builder.setInstance(new SocketBindingManagerService(sbmConsumer, nibSupplier, portOffset));
         builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
-        builder.addAliases(SocketBindingManager.SOCKET_BINDING_MANAGER);
         builder.install();
     }
 }
