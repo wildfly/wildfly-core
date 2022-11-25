@@ -231,12 +231,12 @@ public interface ServerLogger extends BasicLogger {
     void cannotAddURLStreamHandlerFactory(@Cause Exception cause, String moduleID);
 
     @LogMessage(level = INFO)
-    @Message(id = 25, value = "%s started in %dms - Started %d of %d services (%d services are lazy, passive or on-demand) %s")
-    void startedClean(String prettyVersionString, long time, int startedServices, int allServices, int passiveOnDemandServices, String append);
+    @Message(id = 25, value = "%s")
+    void startedClean(String bootStatisticsMessage);
 
     @LogMessage(level = ERROR)
-    @Message(id = 26, value = "%s started (with errors) in %dms - Started %d of %d services (%d services failed or missing dependencies, %d services are lazy, passive or on-demand) %s")
-    void startedWitErrors(String prettyVersionString, long time, int startedServices, int allServices, int problemServices, int passiveOnDemandServices, String append);
+    @Message(id = 26, value = "%s")
+    void startedWitErrors(String bootStatisticsMessage);
 
     @LogMessage(level = INFO)
     @Message(id = 27, value = "Starting deployment of \"%s\" (runtime-name: \"%s\")")
@@ -1413,4 +1413,11 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "- Server configuration file in use: %s")
     String serverConfigFileInUse(String serverConfigFile);
+
+    @Message(id = Message.NONE, value = "%s started in %dms - Started %d of %d services (%d services are lazy, passive or on-demand) %s")
+    String startedCleanMessage(String prettyVersionString, long time, int startedServices, int allServices, int passiveOnDemandServices, String append);
+
+    @Message(id = Message.NONE, value = "%s started (with errors) in %dms - Started %d of %d services (%d services failed or missing dependencies, %d services are lazy, passive or on-demand) %s")
+    String startedWitErrorsMessage(String prettyVersionString, long time, int startedServices, int allServices, int problemServices, int passiveOnDemandServices, String append);
+
 }
