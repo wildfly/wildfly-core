@@ -45,7 +45,6 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.ModelVersionRange;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -91,11 +90,7 @@ import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.transform.CombinedTransformer;
-import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformerRegistry;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -764,7 +759,6 @@ public final class ExtensionRegistry {
         private final ExtensionRegistryType extensionRegistryType;
         private final String extensionModuleName;
         private volatile boolean hostCapable;
-        private volatile boolean modelsRegistered;
 
         private SubsystemRegistrationImpl(String name, ModelVersion version,
                                           ManagementResourceRegistration profileRegistration,
@@ -787,9 +781,6 @@ public final class ExtensionRegistry {
 
         @Override
         public void setHostCapable() {
-            if (modelsRegistered) {
-                throw ControllerLogger.ROOT_LOGGER.registerHostCapableMustHappenFirst(name);
-            }
             hostCapable = true;
         }
 
@@ -814,36 +805,6 @@ public final class ExtensionRegistry {
         @Override
         public void registerXMLElementWriter(Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
             writerRegistry.registerSubsystemWriter(name, writer);
-        }
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, range, subsystemTransformer);
-        }
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
-        }
-
-        @Override
-        @Deprecated
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, false);
-        }
-
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
 
         @Override

@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SubsystemRegistration;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
@@ -42,11 +41,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.WRI
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.RejectExpressionValuesTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
+import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -71,7 +72,11 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
     private static final SubsystemInitialization TEST_SUBSYSTEM = new SubsystemInitialization(SUBSYSTEM_NAME, true);
     private static final RejectExpressionValuesTransformer rejectExpressions = new RejectExpressionValuesTransformer("int", "string");
 
-    void processTestSubsystem(final SubsystemRegistration subsystem, final ManagementResourceRegistration registration) {
+    @Override
+    public void initialize(final ExtensionContext context) {
+        // Normal test subsystem
+        final SubsystemInitialization.RegistrationResult result1 = TEST_SUBSYSTEM.initializeSubsystem(context, ModelVersion.create(2, 0, 0));
+        final ManagementResourceRegistration registration = result1.getResourceRegistration();
 
         // Register an update operation, which requires the transformer to create composite operation
         registration.registerOperationHandler(getOperationDefinition("update"), new OperationStepHandler() {
@@ -95,17 +100,29 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
                 context.getResult().set(true);
             }
         });
+    }
 
-        //
-        // Transformation rules
-        //
+    @Override
+    public void initializeParsers(ExtensionParsingContext context) {
+        TEST_SUBSYSTEM.initializeParsers(context);
+    }
 
-        final ResourceTransformationDescriptionBuilder subsystemBuilder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        subsystemBuilder.getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "int", "string")
-                .end()
-                .addRawOperationTransformationOverride("update", new UpdateTransformer())
-                .addOperationTransformationOverride("test")
+    public static final class TransformerRegistration implements ExtensionTransformerRegistration {
+
+        @Override
+        public String getSubsystemName() {
+            return SUBSYSTEM_NAME;
+        }
+
+        @Override
+        public void registerTransformers(SubsystemTransformerRegistration subsystemRegistration) {
+
+            final ResourceTransformationDescriptionBuilder subsystemBuilder = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+            subsystemBuilder.getAttributeBuilder()
+                    .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, "int", "string")
+                    .end()
+                    .addRawOperationTransformationOverride("update", new UpdateTransformer())
+                    .addOperationTransformationOverride("test")
                     .inheritResourceAttributeDefinitions()
                     .setCustomOperationTransformer(new OperationTransformer() {
                         @Override
@@ -119,29 +136,18 @@ public class VersionedExtension2 extends VersionedExtensionCommon {
                             });
                         }
                     })
-        ;
+            ;
 
-        final ModelVersion version = ModelVersion.create(1, 0, 0);
-        // Discard the operations to the new element
-        subsystemBuilder.discardChildResource(NEW_ELEMENT);
-        // Reject operations to the other new element
-        subsystemBuilder.rejectChildResource(OTHER_NEW_ELEMENT);
-        // Register an alias operation transformer, transforming renamed>element to element>renamed
-        subsystemBuilder.addChildRedirection(RENAMED, PathElement.pathElement("element", "renamed"));
-        // Register
-        TransformationDescription.Tools.register(subsystemBuilder.build(), subsystem, version);
-    }
-
-    @Override
-    public void initialize(final ExtensionContext context) {
-        // Normal test subsystem
-        final SubsystemInitialization.RegistrationResult result1 = TEST_SUBSYSTEM.initializeSubsystem(context, ModelVersion.create(2, 0, 0));
-        processTestSubsystem(result1.getSubsystemRegistration(), result1.getResourceRegistration());
-    }
-
-    @Override
-    public void initializeParsers(ExtensionParsingContext context) {
-        TEST_SUBSYSTEM.initializeParsers(context);
+            final ModelVersion version = ModelVersion.create(1, 0, 0);
+            // Discard the operations to the new element
+            subsystemBuilder.discardChildResource(NEW_ELEMENT);
+            // Reject operations to the other new element
+            subsystemBuilder.rejectChildResource(OTHER_NEW_ELEMENT);
+            // Register an alias operation transformer, transforming renamed>element to element>renamed
+            subsystemBuilder.addChildRedirection(RENAMED, PathElement.pathElement("element", "renamed"));
+            // Register
+            TransformationDescription.Tools.register(subsystemBuilder.build(), subsystemRegistration, version);
+        }
     }
 
     static ResourceTransformer RESOURCE_TRANSFORMER = new ResourceTransformer() {

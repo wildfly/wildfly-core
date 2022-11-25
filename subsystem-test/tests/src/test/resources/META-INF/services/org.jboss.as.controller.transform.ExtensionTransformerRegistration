@@ -1,0 +1,2 @@
+org.jboss.as.subsystem.test.transformers.subsystem.map_to_child_resource.NewExtension$TransformerRegistration
+org.jboss.as.subsystem.test.transformers.subsystem.simple.VersionedExtension2$TransformerRegistration

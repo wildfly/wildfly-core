@@ -29,7 +29,6 @@ import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 
 /**
@@ -64,16 +63,6 @@ class ChainedTransformationDescriptionBuilderImpl implements ChainedTransformati
             }
         });
         return doBuild(allVersions);
-    }
-
-
-    @Override
-    public void buildAndRegister(SubsystemRegistration registration, ModelVersion[]...chains) {
-        for (ModelVersion[] chain : chains) {
-            for (Map.Entry<ModelVersion, TransformationDescription> entry : build(chain).entrySet()) {
-                TransformationDescription.Tools.register(entry.getValue(), registration, entry.getKey());
-            }
-        }
     }
 
     @Override

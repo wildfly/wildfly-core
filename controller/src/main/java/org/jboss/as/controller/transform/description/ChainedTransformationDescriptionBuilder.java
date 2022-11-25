@@ -24,7 +24,6 @@ package org.jboss.as.controller.transform.description;
 import java.util.Map;
 
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 
 /**
@@ -58,16 +57,6 @@ public interface ChainedTransformationDescriptionBuilder {
      *
      */
     Map<ModelVersion, TransformationDescription> build(ModelVersion...versions);
-
-    /**
-     * Builds and registers the transformer chains for this builder against a subsystem
-     *
-     *@param registration the subsystem registrations
-     *@param chains the version chains (not including the 'current' version as in {@link #build(ModelVersion...)})
-     *@deprecated use {@link #buildAndRegister(SubsystemTransformerRegistration, ModelVersion[]...)} instead
-     */
-    @Deprecated
-    void buildAndRegister(SubsystemRegistration registration, ModelVersion[]...chains);
 
 
     /**

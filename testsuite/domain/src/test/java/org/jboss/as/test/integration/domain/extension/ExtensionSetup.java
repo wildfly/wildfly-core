@@ -31,6 +31,7 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.helpers.domain.DomainClient;
 import org.jboss.as.controller.operations.common.Util;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.DomainTestUtils;
 import org.jboss.as.test.integration.management.extension.EmptySubsystemParser;
@@ -106,7 +107,7 @@ public class ExtensionSetup {
 
         // primary - version2
         moduleXml = getModuleXml("transformers-module.xml");
-        final StreamExporter version2 = createResourceRoot(VersionedExtension2.class, ExtensionSetup.class.getPackage());
+        final StreamExporter version2 = createResourceRoot(VersionedExtension2.class, VersionedExtension2.TransformerRegistration.class, ExtensionSetup.class.getPackage());
         Map<String, StreamExporter> v2 = Collections.singletonMap("transformers-extension.jar", version2);
         support.addOverrideModule("primary", VersionedExtensionCommon.EXTENSION_NAME, moduleXml, v2);
 
@@ -159,6 +160,11 @@ public class ExtensionSetup {
     }
 
     static StreamExporter createResourceRoot(Class<? extends Extension> extension, Package... additionalPackages) throws IOException {
+        return createResourceRoot(extension, null, additionalPackages);
+    }
+
+    static StreamExporter createResourceRoot(Class<? extends Extension> extension, Class<? extends ExtensionTransformerRegistration> transformerRegistration,
+                                             Package... additionalPackages) throws IOException {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class);
         archive.addPackage(extension.getPackage());
         if (additionalPackages != null) {
@@ -167,6 +173,9 @@ public class ExtensionSetup {
             }
         }
         archive.addAsServiceProvider(Extension.class, extension);
+        if (transformerRegistration != null) {
+            archive.addAsServiceProvider(ExtensionTransformerRegistration.class, transformerRegistration);
+        }
         return archive.as(ZipExporter.class);
     }
 
