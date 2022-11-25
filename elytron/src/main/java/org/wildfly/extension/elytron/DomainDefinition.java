@@ -430,8 +430,7 @@ class DomainDefinition extends SimpleResourceDefinition {
     private static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
         List<SecurityIdentity> outflowIdentities = new ArrayList<>(outflowDomains.size());
         for (SecurityDomain d : outflowDomains) {
-            ServerAuthenticationContext sac = d.createNewAuthenticationContext();
-            try {
+            try(ServerAuthenticationContext sac = d.createNewAuthenticationContext()) {
                 if (sac.importIdentity(identity)) {
                     outflowIdentities.add(sac.getAuthorizedIdentity());
                 } else if (outflowAnonymous) {
@@ -620,10 +619,9 @@ class DomainDefinition extends SimpleResourceDefinition {
             ServiceController<SecurityDomain> serviceController = getRequiredService(serviceRegistry, domainServiceName, SecurityDomain.class);
             startSecurityDomainServiceIfNotUp(serviceController);
             SecurityDomain domain = serviceController.getValue();
-            ServerAuthenticationContext authenticationContext = domain.createNewAuthenticationContext();
             String principalName = NAME.resolveModelAttribute(context, operation).asString();
 
-            try {
+            try(ServerAuthenticationContext authenticationContext = domain.createNewAuthenticationContext()) {
                 authenticationContext.setAuthenticationName(principalName);
 
                 if (!authenticationContext.exists()) {
