@@ -76,9 +76,7 @@ public class OldVersionTestRunner extends Suite {
     //  /Library/Java/JavaVirtualMachines/jdk1.7.0_71.jdk/Contents/Home
     //The latter variety causes problems like:
     //  "Cannot run program "/Library/Java/JavaVirtualMachines/jdk1.7.0_71.jdk/Contents/Home/bin/java": error=2, No such file or directory"
-    static final String JDK7_LOCATION = "jboss.test.client.old.server.jdk7";
-
-    static final String JDK6_LOCATION = "jboss.test.client.old.server.jdk6";
+    static final String JDK8_LOCATION = "jboss.test.client.old.server.jdk8";
 
     /**
      * Annotation for a method which provides parameters to be injected into the
@@ -236,14 +234,11 @@ public class OldVersionTestRunner extends Suite {
             System.setProperty("jboss.home", file.getAbsolutePath());
             System.setProperty("management.protocol", version.getManagementProtocol());
             System.setProperty("management.port", version.getManagementPort());
-            if (version.getJdk() != Version.JDK.JDK8) {
+            if (version.getJdk() != Version.JDK.JDK11) {
                 final String prop;
                 switch (version.getJdk()){
-                    case JDK6:
-                        prop = JDK6_LOCATION;
-                        break;
-                    case JDK7:
-                        prop = JDK7_LOCATION;
+                    case JDK8:
+                        prop = JDK8_LOCATION;
                         break;
                     default:
                         throw new IllegalStateException("Unknown jdk");
@@ -255,10 +250,7 @@ public class OldVersionTestRunner extends Suite {
                 }
                 System.setProperty(LEGACY_JAVA_HOME, jdkHome);
 
-                //Server has this
-                //    private final String jvmArgs = System.getProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
-                //-XX:MaxMetaspaceSize is not available < JDK 8, so remove it:
-                System.setProperty("jvm.args", "-Xmx512m");
+                System.setProperty("jvm.args", "-Xmx512m -XX:MaxMetaspaceSize=256m");
             } else {
                 System.clearProperty(LEGACY_JAVA_HOME);
             }

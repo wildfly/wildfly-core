@@ -40,23 +40,8 @@ public class OldVersionTestParameter {
 
     public static List<OldVersionTestParameter> setupVersions() {
         List<OldVersionTestParameter> data = new ArrayList<>();
-        //These two need a much higher time out (x20)
-        //data.add(new OldVersionTestParameter(Version.AsVersion.AS_7_1_2_FINAL));
-        //data.add(new OldVersionTestParameter(Version.AsVersion.AS_7_1_3_FINAL));
 
-        data.add(new OldVersionTestParameter(Version.AsVersion.AS_7_2_0_FINAL));
-
-
-        data.add(new OldVersionTestParameter(Version.AsVersion.WF_8_0_0_FINAL));
-        data.add(new OldVersionTestParameter(Version.AsVersion.WF_8_1_0_FINAL));
-        data.add(new OldVersionTestParameter(Version.AsVersion.WF_8_2_0_FINAL));
-        data.add(new OldVersionTestParameter(Version.AsVersion.WF_9_0_0_FINAL));
-        data.add(new OldVersionTestParameter(Version.AsVersion.WF_10_0_0_FINAL));
-
-        data.add(new OldVersionTestParameter(Version.AsVersion.EAP_6_2_0));
-        data.add(new OldVersionTestParameter(Version.AsVersion.EAP_6_3_0));
-        data.add(new OldVersionTestParameter(Version.AsVersion.EAP_6_4_0));
-        data.add(new OldVersionTestParameter(Version.AsVersion.EAP_7_0_0));
+        data.add(new OldVersionTestParameter(Version.AsVersion.EAP_7_4_0));
 
         return data;
     }
