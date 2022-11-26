@@ -1,22 +1,35 @@
 package org.jboss.as.logging;
 
-import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
+import org.wildfly.common.Assert;
 
 /**
- * Adds the ability to register transformers in a resource definition.
+ * Handles resource transformation registration for a management resource definition.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public abstract class TransformerResourceDefinition extends SimpleResourceDefinition {
+public abstract class TransformerResourceDefinition {
+
+    private final PathElement pathElement;
 
     /**
-     * Creates a new resource definition.
+     * Creates a new transformer resource definition.
      *
-     * @param parameters the parameters used to construct the resource
+     * @param pathElement the path element of the resource. Cannot be {@code null}
      */
-    protected TransformerResourceDefinition(final Parameters parameters) {
-        super(parameters);
+    protected TransformerResourceDefinition(final PathElement pathElement) {
+        Assert.checkNotNullParam("pathElement", pathElement);
+        this.pathElement = pathElement;
+    }
+
+    /**
+     * Gets the final element of the resource's address.
+     *
+     * @return the path element of the resource. Will not be {@code null}
+     */
+    public final PathElement getPathElement() {
+        return pathElement;
     }
 
     /**

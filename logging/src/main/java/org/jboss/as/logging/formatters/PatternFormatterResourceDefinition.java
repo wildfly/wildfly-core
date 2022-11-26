@@ -31,6 +31,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.KnownModelVersion;
@@ -51,7 +52,7 @@ import org.jboss.logmanager.formatters.PatternFormatter;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class PatternFormatterResourceDefinition extends TransformerResourceDefinition {
+public class PatternFormatterResourceDefinition extends SimpleResourceDefinition {
 
     private static final String COLOR_MAP_VALIDATION_PATTERN = "^((severe|fatal|error|warn|warning|info|debug|trace|config|fine|finer|finest|):(clear|black|green|red|yellow|blue|magenta|cyan|white|brightblack|brightred|brightgreen|brightblue|brightyellow|brightmagenta|brightcyan|brightwhite|)(,(?!$)|$))*$";
 
@@ -180,8 +181,15 @@ public class PatternFormatterResourceDefinition extends TransformerResourceDefin
         }
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        // do nothing by default
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            // do nothing by default
+        }
     }
 }

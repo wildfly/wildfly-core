@@ -41,4 +41,12 @@ public class CustomHandlerResourceDefinition extends AbstractHandlerDefinition {
         super(CUSTOM_HANDLE_PATH, null,
                 (includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
     }
+
+
+    public static final class TransformerDefinition extends AbstractHandlerTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(CUSTOM_HANDLE_PATH);
+        }
+    }
 }

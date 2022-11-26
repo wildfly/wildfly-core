@@ -50,6 +50,8 @@ import org.jboss.as.controller.services.path.PathInfoHandler;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.as.controller.services.path.PathResourceDefinition;
 import org.jboss.as.controller.services.path.ResolvePathHandler;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
+import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.description.ChainedTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
@@ -217,7 +219,7 @@ public class LoggingExtension implements Extension {
         final ManagementResourceRegistration registration = subsystem.registerSubsystemModel(rootResource);
         registration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, DESCRIBE_HANDLER);
         // Register root sub-models
-        registerSubModels(registration, true, subsystem, rootResource, context.isRegisterTransformers(), pathManager);
+        registerSubModels(registration, true, pathManager);
 
         // Register logging profile sub-models
         ApplicationTypeConfig atc = new ApplicationTypeConfig(SUBSYSTEM_NAME, CommonAttributes.LOGGING_PROFILE);
@@ -265,18 +267,18 @@ public class LoggingExtension implements Extension {
         // Hack to ensure the Element and Attribute enums are loaded during this call which
         // is part of concurrent boot. These enums trigger a lot of classloading and static
         // initialization that we don't want deferred until the single-threaded parsing phase
+        //noinspection ConstantConditions,EqualsBetweenInconvertibleTypes
         if (Element.forName("").equals(Attribute.forName(""))) { // never true
             throw new IllegalStateException();
         }
     }
 
     private void registerLoggingProfileSubModels(final ManagementResourceRegistration registration, final PathManager pathManager) {
-        registerSubModels(registration, false, null, null, false, pathManager);
+        registerSubModels(registration, false, pathManager);
     }
 
     private void registerSubModels(final ManagementResourceRegistration registration,
-                                   final boolean includeLegacyAttributes, final SubsystemRegistration subsystem,
-                                   final LoggingResourceDefinition subsystemResourceDefinition, final boolean registerTransformers, final PathManager pathManager) {
+                                   final boolean includeLegacyAttributes, final PathManager pathManager) {
         // Only register if the path manager is not null, e.g. is a server
         ResolvePathHandler resolvePathHandler = null;
         PathInfoHandler diskUsagePathHandler = null;
@@ -326,67 +328,77 @@ public class LoggingExtension implements Extension {
         registration.registerSubModel(XmlFormatterResourceDefinition.INSTANCE);
         registration.registerSubModel(SocketHandlerResourceDefinition.INSTANCE);
         registration.registerSubModel(FilterResourceDefinition.INSTANCE);
+    }
 
-        if (registerTransformers) {
-            registerTransformers(subsystem,
-                    subsystemResourceDefinition,
-                    rootLoggerResourceDefinition,
-                    loggerResourceDefinition,
-                    asyncHandlerResourceDefinition,
-                    consoleHandlerResourceDefinition,
-                    fileHandlerResourceDefinition,
-                    periodicHandlerResourceDefinition,
-                    periodicSizeRotatingHandlerResourceDefinition,
-                    sizeRotatingHandlerResourceDefinition,
-                    customHandlerResourceDefinition,
-                    SyslogHandlerResourceDefinition.INSTANCE,
-                    PatternFormatterResourceDefinition.INSTANCE,
-                    CustomFormatterResourceDefinition.INSTANCE,
-                    JsonFormatterResourceDefinition.INSTANCE,
-                    XmlFormatterResourceDefinition.INSTANCE,
-                    SocketHandlerResourceDefinition.INSTANCE,
-                    FilterResourceDefinition.INSTANCE);
+    public static final class TransformerRegistration implements ExtensionTransformerRegistration {
+
+        @Override
+        public String getSubsystemName() {
+            return SUBSYSTEM_NAME;
         }
-    }
 
-    private void registerTransformers(final SubsystemRegistration registration, final TransformerResourceDefinition... defs) {
-        ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(registration.getSubsystemVersion());
+        @Override
+        public void registerTransformers(SubsystemTransformerRegistration subsystemRegistration) {
 
-        registerTransformers(chainedBuilder, registration.getSubsystemVersion(), KnownModelVersion.VERSION_8_0_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_8_0_0, KnownModelVersion.VERSION_7_0_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_7_0_0, KnownModelVersion.VERSION_6_0_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_6_0_0, KnownModelVersion.VERSION_5_0_0, defs);
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
-        // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
-        // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
-        registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
+            registerTransformerDefinitions(subsystemRegistration,
+                    new LoggingResourceDefinition.TransformerDefinition(),
+                    new RootLoggerResourceDefinition.TransformerDefinition(),
+                    new LoggerResourceDefinition.TransformerDefinition(),
+                    new AsyncHandlerResourceDefinition.TransformerDefinition(),
+                    new ConsoleHandlerResourceDefinition.TransformerDefinition(),
+                    new FileHandlerResourceDefinition.TransformerDefinition(),
+                    new PeriodicHandlerResourceDefinition.TransformerDefinition(),
+                    new PeriodicSizeRotatingHandlerResourceDefinition.TransformerDefinition(),
+                    new SizeRotatingHandlerResourceDefinition.TransformerDefinition(),
+                    new CustomHandlerResourceDefinition.TransformerDefinition(),
+                    new SyslogHandlerResourceDefinition.TransformerDefinition(),
+                    new PatternFormatterResourceDefinition.TransformerDefinition(),
+                    new CustomFormatterResourceDefinition.TransformerDefinition(),
+                    new JsonFormatterResourceDefinition.TransformerDefinition(),
+                    new XmlFormatterResourceDefinition.TransformerDefinition(),
+                    new SocketHandlerResourceDefinition.TransformerDefinition(),
+                    new FilterResourceDefinition.TransformerDefinition());
+        }
 
-        chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
-                KnownModelVersion.VERSION_2_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_6_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_8_0_0.getModelVersion(),
-        }, new ModelVersion[] {
-                KnownModelVersion.VERSION_1_5_0.getModelVersion(),
-                KnownModelVersion.VERSION_3_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_4_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_5_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_6_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_7_0_0.getModelVersion(),
-                KnownModelVersion.VERSION_8_0_0.getModelVersion(),
-        });
-    }
+        private static void registerTransformerDefinitions(final SubsystemTransformerRegistration registration, final TransformerResourceDefinition... defs) {
+            ChainedTransformationDescriptionBuilder chainedBuilder = TransformationDescriptionBuilder.Factory.createChainedSubystemInstance(CURRENT_VERSION);
 
-    private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final KnownModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
-        registerTransformers(chainedBuilder, fromVersion.getModelVersion(), toVersion, defs);
-    }
+            registerTransformers(chainedBuilder, CURRENT_VERSION, KnownModelVersion.VERSION_8_0_0, defs);
+            registerTransformers(chainedBuilder, KnownModelVersion.VERSION_8_0_0, KnownModelVersion.VERSION_7_0_0, defs);
+            registerTransformers(chainedBuilder, KnownModelVersion.VERSION_7_0_0, KnownModelVersion.VERSION_6_0_0, defs);
+            registerTransformers(chainedBuilder, KnownModelVersion.VERSION_6_0_0, KnownModelVersion.VERSION_5_0_0, defs);
+            registerTransformers(chainedBuilder, KnownModelVersion.VERSION_5_0_0, KnownModelVersion.VERSION_2_0_0, defs);
+            // Version 1.5.0 has the periodic-size-rotating-file-handler and the suffix attribute on the size-rotating-file-handler.
+            // Neither of these are in 2.0.0 (WildFly 8.x). Mapping from 3.0.0 to 1.5.0 is required
+            registerTransformers(chainedBuilder, KnownModelVersion.VERSION_3_0_0, KnownModelVersion.VERSION_1_5_0, defs);
 
-    private void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final ModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
-        final ResourceTransformationDescriptionBuilder subsystemBuilder = chainedBuilder.createBuilder(fromVersion, toVersion.getModelVersion());
-        final ResourceTransformationDescriptionBuilder loggingProfileBuilder = subsystemBuilder.addChildResource(LOGGING_PROFILE_PATH);
+            chainedBuilder.buildAndRegister(registration, new ModelVersion[] {
+                    KnownModelVersion.VERSION_2_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_7_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_8_0_0.getModelVersion(),
+            }, new ModelVersion[] {
+                    KnownModelVersion.VERSION_1_5_0.getModelVersion(),
+                    KnownModelVersion.VERSION_3_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_4_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_5_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_6_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_7_0_0.getModelVersion(),
+                    KnownModelVersion.VERSION_8_0_0.getModelVersion(),
+            });
+        }
 
-        for (TransformerResourceDefinition def : defs) {
-            def.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
+        private static void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final KnownModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
+            registerTransformers(chainedBuilder, fromVersion.getModelVersion(), toVersion, defs);
+        }
+
+        private static void registerTransformers(final ChainedTransformationDescriptionBuilder chainedBuilder, final ModelVersion fromVersion, final KnownModelVersion toVersion, final TransformerResourceDefinition... defs) {
+            final ResourceTransformationDescriptionBuilder subsystemBuilder = chainedBuilder.createBuilder(fromVersion, toVersion.getModelVersion());
+            final ResourceTransformationDescriptionBuilder loggingProfileBuilder = subsystemBuilder.addChildResource(LOGGING_PROFILE_PATH);
+
+            for (TransformerResourceDefinition def : defs) {
+                def.registerTransformers(toVersion, subsystemBuilder, loggingProfileBuilder);
+            }
         }
     }
 

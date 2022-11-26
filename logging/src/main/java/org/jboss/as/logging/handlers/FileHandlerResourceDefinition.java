@@ -50,4 +50,12 @@ public class FileHandlerResourceDefinition extends AbstractFileHandlerDefinition
         super(FILE_HANDLER_PATH, FileHandler.class, resolvePathHandler, diskUsagePathHandler, (
                 includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
     }
+
+
+    public static final class TransformerDefinition extends AbstractHandlerTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(FILE_HANDLER_PATH);
+        }
+    }
 }

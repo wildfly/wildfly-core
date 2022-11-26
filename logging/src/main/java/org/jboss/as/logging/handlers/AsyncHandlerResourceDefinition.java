@@ -40,10 +40,8 @@ import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
-import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.CommonAttributes;
 import org.jboss.as.logging.ElementAttributeMarshaller;
-import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.Logging;
 import org.jboss.as.logging.PropertyAttributeDefinition;
 import org.jboss.as.logging.capabilities.Capabilities;
@@ -134,8 +132,11 @@ public class AsyncHandlerResourceDefinition extends AbstractHandlerDefinition {
                 .build(), HandlerOperations.REMOVE_SUBHANDLER);
     }
 
-    @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        // do nothing by default
+
+    public static final class TransformerDefinition extends AbstractHandlerTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(ASYNC_HANDLER_PATH);
+        }
     }
 }

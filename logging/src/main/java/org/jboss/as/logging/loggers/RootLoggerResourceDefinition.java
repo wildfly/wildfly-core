@@ -34,6 +34,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -48,7 +49,7 @@ import org.jboss.as.logging.capabilities.Capabilities;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class RootLoggerResourceDefinition extends TransformerResourceDefinition {
+public class RootLoggerResourceDefinition extends SimpleResourceDefinition {
     public static final String ROOT_LOGGER_ADD_OPERATION_NAME = "set-root-logger";
     public static final String NAME = "root-logger";
     public static final String RESOURCE_NAME = "ROOT";
@@ -141,8 +142,15 @@ public class RootLoggerResourceDefinition extends TransformerResourceDefinition 
         registration.registerOperationHandler(LEGACY_REMOVE_HANDLER_OPERATION, LoggerOperations.REMOVE_HANDLER);
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        //do nothing
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(ROOT_LOGGER_PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            //do nothing
+        }
     }
 }

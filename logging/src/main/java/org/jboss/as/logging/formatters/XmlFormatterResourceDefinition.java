@@ -48,4 +48,11 @@ public class XmlFormatterResourceDefinition extends StructuredFormatterResourceD
     private XmlFormatterResourceDefinition() {
         super(PATH, NAME, XmlFormatter.class, PRINT_NAMESPACE, NAMESPACE_URI);
     }
+
+    public static final class TransformerDefinition extends StructuredFormatterTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(PATH);
+        }
+    }
 }
