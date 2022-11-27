@@ -112,10 +112,8 @@ public final class ExtensionRegistry {
     // Hack to restrict the extensions to which we expose ExtensionContextSupplement
     private static final Set<String> legallySupplemented;
     static {
-        Set<String> set = new HashSet<>(4);
-        set.add("org.jboss.as.jmx");
-        set.add("Test");  // used by shared subsystem test fixture TestModelControllerService
-        legallySupplemented = Collections.unmodifiableSet(set);
+        // used by shared subsystem test fixture TestModelControllerService
+        legallySupplemented = Set.of("org.jboss.as.jmx", "Test");
     }
 
     private final ProcessType processType;
@@ -124,14 +122,14 @@ public final class ExtensionRegistry {
     private volatile PathManager pathManager;
     private volatile ResolverExtensionRegistry resolverExtensionRegistry;
 
-    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<String, ExtensionInfo>();
+    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<>();
     // subsystem -> extension
-    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<>();
     private final RunningModeControl runningModeControl;
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
-    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
+    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
 
@@ -214,7 +212,7 @@ public final class ExtensionRegistry {
         if (info != null) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (info) {
-                result = Collections.unmodifiableMap(new HashMap<String, SubsystemInformation>(info.subsystems));
+                result = Map.copyOf(info.subsystems);
             }
         }
         return result;
@@ -245,7 +243,7 @@ public final class ExtensionRegistry {
      * @param xmlMapper  the {@link XMLMapper} handling the extension parsing. Can be {@code null} if there won't
      *                   be any actual parsing (e.g. in a slave Host Controller or in a server in a managed domain)
      */
-    public final void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
+    public void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
         ExtensionParsingContextImpl parsingContext = new ExtensionParsingContextImpl(moduleName, xmlMapper);
         extension.initializeParsers(parsingContext);
         parsingContext.attemptCurrentParserInitialization();
@@ -277,7 +275,7 @@ public final class ExtensionRegistry {
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
-        Set<ProfileParsingCompletionHandler> result = new HashSet<ProfileParsingCompletionHandler>();
+        Set<ProfileParsingCompletionHandler> result = new HashSet<>();
 
         for (ExtensionInfo extensionInfo : extensions.values()) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
@@ -325,8 +323,7 @@ public final class ExtensionRegistry {
 
                 Set<String> subsystemNames = extension.subsystems.keySet();
 
-                final boolean dcExtension = processType.isHostController() ?
-                    rootRegistration.getPathAddress().size() == 0 : false;
+                final boolean dcExtension = processType.isHostController() && rootRegistration.getPathAddress().size() == 0;
 
                 for (String subsystem : subsystemNames) {
                     if (hasSubsystemsRegistered(rootResource, subsystem, dcExtension)) {
@@ -344,7 +341,7 @@ public final class ExtensionRegistry {
                     }
 
                     if (extension.xmlMapper != null) {
-                        SubsystemInformationImpl subsystemInformation = SubsystemInformationImpl.class.cast(entry.getValue());
+                        SubsystemInformationImpl subsystemInformation = (SubsystemInformationImpl) entry.getValue();
                         for (String namespace : subsystemInformation.getXMLNamespaces()) {
                             extension.xmlMapper.unregisterRootElement(new QName(namespace, SUBSYSTEM));
                         }
@@ -607,10 +604,7 @@ public final class ExtensionRegistry {
             if (processType.isServer()) {
                 return true;
             }
-            if (processType.isHostController() && extensionRegistryType == ExtensionRegistryType.HOST) {
-                return true;
-            }
-            return false;
+            return processType.isHostController() && extensionRegistryType == ExtensionRegistryType.HOST;
         }
 
         @Override
@@ -668,10 +662,10 @@ public final class ExtensionRegistry {
         }
     }
 
-    private class SubsystemInformationImpl implements SubsystemInformation {
+    private static class SubsystemInformationImpl implements SubsystemInformation {
 
         private ModelVersion version;
-        private final List<String> parsingNamespaces = new ArrayList<String>();
+        private final List<String> parsingNamespaces = new ArrayList<>();
 
         @Override
         public List<String> getXMLNamespaces() {
@@ -755,6 +749,7 @@ public final class ExtensionRegistry {
 
         @Override
         public void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer) {
+            //noinspection deprecation
             writerRegistry.registerSubsystemWriter(name, writer);
         }
 
@@ -776,7 +771,7 @@ public final class ExtensionRegistry {
     }
 
     private class ExtensionInfo {
-        private final Map<String, SubsystemInformation> subsystems = new HashMap<String, SubsystemInformation>();
+        private final Map<String, SubsystemInformation> subsystems = new HashMap<>();
         private final String extensionModuleName;
         private XMLMapper xmlMapper;
         private ProfileParsingCompletionHandler parsingCompletionHandler;
@@ -790,7 +785,7 @@ public final class ExtensionRegistry {
         private SubsystemInformationImpl getSubsystemInfo(final String subsystemName) {
             checkNewSubystem(extensionModuleName, subsystemName);
             synchronized (this) {
-                SubsystemInformationImpl subsystem = SubsystemInformationImpl.class.cast(subsystems.get(subsystemName));
+                SubsystemInformationImpl subsystem = (SubsystemInformationImpl) subsystems.get(subsystemName);
                 if (subsystem == null) {
                     subsystem = new SubsystemInformationImpl();
                     subsystems.put(subsystemName, subsystem);
