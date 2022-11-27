@@ -325,7 +325,6 @@ public final class ServerService extends AbstractControllerService {
                 }
             }
             context.getServiceTarget().addService(SUSPEND_CONTROLLER_CAPABILITY.getCapabilityServiceName(), suspendController)
-                    .addAliases(SuspendController.SERVICE_NAME)
                     .addDependency(JBOSS_SERVER_NOTIFICATION_REGISTRY, NotificationHandlerRegistry.class, suspendController.getNotificationHandlerRegistry())
                     .install();
 
