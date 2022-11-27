@@ -28,6 +28,7 @@ package org.jboss.as.controller;
  * @author Emanuel Muckenhuber
  * @deprecated internal usage only
  */
+@SuppressWarnings("DeprecatedIsStillUsed")
 @Deprecated
 public final class CurrentOperationIdHolder {
 
