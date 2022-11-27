@@ -571,26 +571,6 @@ public final class ExtensionRegistry {
         }
 
         @Override
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion) throws IllegalArgumentException, IllegalStateException {
-            return registerSubsystem(name, majorVersion, minorVersion, 0);
-        }
-
-        @Override
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion) {
-            return registerSubsystem(name, majorVersion, minorVersion, microVersion, false);
-        }
-
-        @Override
-        @Deprecated
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated) {
-            return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
-        }
-
-        @Override
         public SubsystemRegistration registerSubsystem(String name, ModelVersion version, boolean deprecated) {
             assert name != null : "name is null";
             checkNewSubystem(extension.extensionModuleName, name);
@@ -657,12 +637,6 @@ public final class ExtensionRegistry {
                 throw ControllerLogger.ROOT_LOGGER.pathManagerNotAvailable(processType);
             }
             return pathManager;
-        }
-
-        @Override
-        @Deprecated
-        public boolean isRegisterTransformers() {
-            return registerTransformers;
         }
 
         // ExtensionContextSupplement implementation
