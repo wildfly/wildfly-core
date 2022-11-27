@@ -155,7 +155,7 @@ public final class ExtensionRegistry {
     }
 
     /**
-     * Constructor
+     * Constructor used by legacy controllers when testing backwards compatibility.
      *
      * @param processType the type of the process
      * @param runningModeControl the process' running mode
@@ -249,24 +249,6 @@ public final class ExtensionRegistry {
         ExtensionParsingContextImpl parsingContext = new ExtensionParsingContextImpl(moduleName, xmlMapper);
         extension.initializeParsers(parsingContext);
         parsingContext.attemptCurrentParserInitialization();
-    }
-
-    /**
-     * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
-     * a resource representing an {@link org.jboss.as.controller.Extension}.
-     *
-     * @param moduleName the name of the extension's module. Cannot be {@code null}
-     * @param rootRegistration the root management resource registration
-     * @param isMasterDomainController set to {@code true} if we are the master domain controller, in which case transformers get registered
-     *
-     * @return  the {@link ExtensionContext}.  Will not return {@code null}
-     *
-     * @deprecated use {@link #getExtensionContext(String, ManagementResourceRegistration, ExtensionRegistryType)}. Main code should be using this, but this is left behind in case any tests need to use this code.
-     */
-    @Deprecated
-    public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, boolean isMasterDomainController) {
-        ExtensionRegistryType type = isMasterDomainController ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
-        return getExtensionContext(moduleName, rootRegistration, type);
     }
 
     /**
