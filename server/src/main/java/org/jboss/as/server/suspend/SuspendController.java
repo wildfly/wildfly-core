@@ -1,20 +1,12 @@
 package org.jboss.as.server.suspend;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_OPERATIONS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SERVICE;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.notification.NotificationHandlerRegistry;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.Service;
-import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -33,16 +25,6 @@ import org.jboss.msc.value.InjectedValue;
  */
 public class SuspendController implements Service<SuspendController> {
 
-    //TODO: should this notification handling be placed into its own class
-    private static final PathAddress NOTIFICATION_ADDRESS = PathAddress.pathAddress(CORE_SERVICE, MANAGEMENT).append(SERVICE, MANAGEMENT_OPERATIONS);
-
-    /**
-     * @deprecated Use org.jboss.as.server.Services.JBOSS_SUSPEND_CONTROLLER instead which gets the service name
-     * via org.wildfly.server.suspend-controller capability
-     */
-    @Deprecated
-    public static final ServiceName SERVICE_NAME = ServiceName.JBOSS.append("server", "suspend-controller");
-
     /**
      * Timer that handles the timeout. We create it on pause, rather than leaving it hanging round.
      */
@@ -60,7 +42,7 @@ public class SuspendController implements Service<SuspendController> {
 
     private boolean startSuspended;
 
-    private final ServerActivityCallback listener = () -> activityPaused();
+    private final ServerActivityCallback listener = this::activityPaused;
 
     public SuspendController() {
         this.startSuspended = false;

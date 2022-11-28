@@ -93,7 +93,6 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
                     }
                 }));
                 target.addService(JBOSS_SUSPEND_CONTROLLER, suspendController)
-                        .addAliases(SuspendController.SERVICE_NAME)
                         .install();
             }
 
