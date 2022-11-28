@@ -46,6 +46,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -83,7 +84,7 @@ import org.wildfly.common.function.Functions;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("Convert2Lambda")
-public class SocketHandlerResourceDefinition extends TransformerResourceDefinition {
+public class SocketHandlerResourceDefinition extends SimpleResourceDefinition {
     public static final String NAME = "socket-handler";
     private static final PathElement PATH = PathElement.pathElement(NAME);
 
@@ -304,14 +305,21 @@ public class SocketHandlerResourceDefinition extends TransformerResourceDefiniti
         }
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder,
-                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_6_0_0:
-                rootResourceBuilder.rejectChildResource(getPathElement());
-                loggingProfileBuilder.rejectChildResource(getPathElement());
-                break;
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            switch (modelVersion) {
+                case VERSION_6_0_0:
+                    rootResourceBuilder.rejectChildResource(getPathElement());
+                    loggingProfileBuilder.rejectChildResource(getPathElement());
+                    break;
+            }
         }
     }
 

@@ -93,26 +93,33 @@ public class SizeRotatingHandlerResourceDefinition extends AbstractFileHandlerDe
                 (includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
     }
 
-    @Override
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_2_0_0: {
-                resourceBuilder
-                        .getAttributeBuilder()
-                        .setDiscard(DiscardAttributeChecker.UNDEFINED, SUFFIX)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, SUFFIX)
-                        .end();
-                if (loggingProfileBuilder != null) {
-                    loggingProfileBuilder
+    public static final class TransformerDefinition extends AbstractHandlerTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(SIZE_ROTATING_HANDLER_PATH);
+        }
+
+        @Override
+        void registerResourceTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder resourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            switch (modelVersion) {
+                case VERSION_2_0_0: {
+                    resourceBuilder
                             .getAttributeBuilder()
                             .setDiscard(DiscardAttributeChecker.UNDEFINED, SUFFIX)
                             .addRejectCheck(RejectAttributeChecker.DEFINED, SUFFIX)
                             .end();
+                    if (loggingProfileBuilder != null) {
+                        loggingProfileBuilder
+                                .getAttributeBuilder()
+                                .setDiscard(DiscardAttributeChecker.UNDEFINED, SUFFIX)
+                                .addRejectCheck(RejectAttributeChecker.DEFINED, SUFFIX)
+                                .end();
+                    }
+                    break;
                 }
-                break;
             }
-        }
 
+        }
     }
 
 }

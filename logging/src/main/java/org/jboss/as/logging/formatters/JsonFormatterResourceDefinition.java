@@ -34,4 +34,11 @@ public class JsonFormatterResourceDefinition extends StructuredFormatterResource
     private JsonFormatterResourceDefinition() {
         super(PATH, NAME, JsonFormatter.class);
     }
+
+    public static final class TransformerDefinition extends StructuredFormatterTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(PATH);
+        }
+    }
 }

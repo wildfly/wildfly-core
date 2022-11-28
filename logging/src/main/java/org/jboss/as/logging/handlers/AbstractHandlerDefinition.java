@@ -41,6 +41,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinition;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -61,7 +62,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public abstract class AbstractHandlerDefinition extends TransformerResourceDefinition {
+public abstract class AbstractHandlerDefinition extends SimpleResourceDefinition {
 
     public static final String UPDATE_OPERATION_NAME = "update-properties";
     public static final String CHANGE_LEVEL_OPERATION_NAME = "change-log-level";
@@ -209,29 +210,36 @@ public abstract class AbstractHandlerDefinition extends TransformerResourceDefin
         }
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion,
-                                     final ResourceTransformationDescriptionBuilder rootResourceBuilder,
-                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        if (modelVersion.hasTransformers()) {
-            final PathElement pathElement = getPathElement();
-            final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
-            final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
-            registerResourceTransformers(modelVersion, resourceBuilder, loggingProfileResourceBuilder);
-        }
-    }
+    static class AbstractHandlerTransformerDefinition extends TransformerResourceDefinition {
 
-    /**
-     * Register the transformers for the resource.
-     *
-     * @param modelVersion          the model version we're registering
-     * @param resourceBuilder       the builder for the resource
-     * @param loggingProfileBuilder the builder for the logging profile
-     */
-    protected void registerResourceTransformers(final KnownModelVersion modelVersion,
-                                                final ResourceTransformationDescriptionBuilder resourceBuilder,
-                                                final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        // do nothing by default
+        AbstractHandlerTransformerDefinition(PathElement pathElement) {
+            super(pathElement);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion,
+                                         final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            if (modelVersion.hasTransformers()) {
+                final PathElement pathElement = getPathElement();
+                final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(pathElement);
+                final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(pathElement);
+                registerResourceTransformers(modelVersion, resourceBuilder, loggingProfileResourceBuilder);
+            }
+        }
+
+        /**
+         * Register the transformers for the resource.
+         *
+         * @param modelVersion          the model version we're registering
+         * @param resourceBuilder       the builder for the resource
+         * @param loggingProfileBuilder the builder for the logging profile
+         */
+        void registerResourceTransformers(final KnownModelVersion modelVersion,
+                                          final ResourceTransformationDescriptionBuilder resourceBuilder,
+                                          final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            // do nothing by default
+        }
     }
 
     /**

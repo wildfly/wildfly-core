@@ -35,6 +35,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -61,7 +62,7 @@ import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class SyslogHandlerResourceDefinition extends TransformerResourceDefinition {
+public class SyslogHandlerResourceDefinition extends SimpleResourceDefinition {
 
     public static final String NAME = "syslog-handler";
     private static final PathElement SYSLOG_HANDLER_PATH = PathElement.pathElement(NAME);
@@ -161,21 +162,28 @@ public class SyslogHandlerResourceDefinition extends TransformerResourceDefiniti
         }
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_7_0_0: {
-                final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(SYSLOG_HANDLER_PATH);
-                final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(SYSLOG_HANDLER_PATH);
-                resourceBuilder.getAttributeBuilder()
-                        .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                        .end();
-                loggingProfileResourceBuilder.getAttributeBuilder()
-                        .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
-                        .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
-                        .end();
-                break;
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(SYSLOG_HANDLER_PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            switch (modelVersion) {
+                case VERSION_7_0_0: {
+                    final ResourceTransformationDescriptionBuilder resourceBuilder = rootResourceBuilder.addChildResource(SYSLOG_HANDLER_PATH);
+                    final ResourceTransformationDescriptionBuilder loggingProfileResourceBuilder = loggingProfileBuilder.addChildResource(SYSLOG_HANDLER_PATH);
+                    resourceBuilder.getAttributeBuilder()
+                            .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
+                            .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                            .end();
+                    loggingProfileResourceBuilder.getAttributeBuilder()
+                            .setDiscard(DiscardAttributeChecker.UNDEFINED, NAMED_FORMATTER)
+                            .addRejectCheck(RejectAttributeChecker.DEFINED, NAMED_FORMATTER)
+                            .end();
+                    break;
+                }
             }
         }
     }

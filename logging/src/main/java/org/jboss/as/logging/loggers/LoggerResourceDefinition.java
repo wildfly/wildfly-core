@@ -36,6 +36,7 @@ import org.jboss.as.controller.ReadResourceNameOperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.constraint.ApplicationTypeConfig;
 import org.jboss.as.controller.access.management.ApplicationTypeAccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
@@ -55,7 +56,7 @@ import org.jboss.dmr.ModelType;
  * @author <a href="mailto:tomaz.cerar@redhat.com">Tomaz Cerar</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class LoggerResourceDefinition extends TransformerResourceDefinition {
+public class LoggerResourceDefinition extends SimpleResourceDefinition {
     public static final String NAME = "logger";
 
     private static final String CHANGE_LEVEL_OPERATION_NAME = "change-log-level";
@@ -148,10 +149,17 @@ public class LoggerResourceDefinition extends TransformerResourceDefinition {
         registration.registerOperationHandler(LEGACY_REMOVE_HANDLER_OPERATION, LoggerOperations.REMOVE_HANDLER);
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion,
-                                     final ResourceTransformationDescriptionBuilder rootResourceBuilder,
-                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        // do nothing by default
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(LOGGER_PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion,
+                                         final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            // do nothing by default
+        }
     }
 }

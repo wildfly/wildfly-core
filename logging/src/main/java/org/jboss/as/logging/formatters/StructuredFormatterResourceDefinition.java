@@ -34,6 +34,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.operations.validation.StringAllowedValuesValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -62,7 +63,7 @@ import org.jboss.logmanager.formatters.StructuredFormatter;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("Convert2Lambda")
-public abstract class StructuredFormatterResourceDefinition extends TransformerResourceDefinition {
+public abstract class StructuredFormatterResourceDefinition extends SimpleResourceDefinition {
 
     public static final PropertyAttributeDefinition DATE_FORMAT = PropertyAttributeDefinition.Builder.of("date-format", ModelType.STRING, true)
             .setAllowExpression(true)
@@ -320,13 +321,20 @@ public abstract class StructuredFormatterResourceDefinition extends TransformerR
         super.registerChildren(resourceRegistration);
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_5_0_0:
-                rootResourceBuilder.rejectChildResource(getPathElement());
-                loggingProfileBuilder.rejectChildResource(getPathElement());
-                break;
+    static class StructuredFormatterTransformerDefinition extends TransformerResourceDefinition {
+
+        public StructuredFormatterTransformerDefinition(PathElement pathElement) {
+            super(pathElement);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            switch (modelVersion) {
+                case VERSION_5_0_0:
+                    rootResourceBuilder.rejectChildResource(getPathElement());
+                    loggingProfileBuilder.rejectChildResource(getPathElement());
+                    break;
+            }
         }
     }
 

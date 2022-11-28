@@ -59,4 +59,11 @@ public class PeriodicHandlerResourceDefinition extends AbstractFileHandlerDefini
         super(PERIODIC_HANDLER_PATH, PeriodicRotatingFileHandler.class, resolvePathHandler, diskUsagePathHandler,
                 (includeLegacyAttributes ? Logging.join(ATTRIBUTES, LEGACY_ATTRIBUTES) : ATTRIBUTES));
     }
+
+    public static final class TransformerDefinition extends AbstractHandlerTransformerDefinition {
+
+        public TransformerDefinition() {
+            super(PERIODIC_HANDLER_PATH);
+        }
+    }
 }

@@ -35,6 +35,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleMapAttributeDefinition;
+import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -56,7 +57,7 @@ import org.jboss.logmanager.config.LogContextConfiguration;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class FilterResourceDefinition extends TransformerResourceDefinition {
+public class FilterResourceDefinition extends SimpleResourceDefinition {
     public static final String NAME = "filter";
 
     public static final SimpleMapAttributeDefinition CONSTRUCTOR_PROPERTIES = new SimpleMapAttributeDefinition.Builder("constructor-properties", true)
@@ -227,11 +228,18 @@ public class FilterResourceDefinition extends TransformerResourceDefinition {
         }
     }
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        if (modelVersion == KnownModelVersion.VERSION_8_0_0) {
-            rootResourceBuilder.rejectChildResource(getPathElement());
-            loggingProfileBuilder.rejectChildResource(getPathElement());
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
+
+        public TransformerDefinition() {
+            super(PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion, final ResourceTransformationDescriptionBuilder rootResourceBuilder, final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            if (modelVersion == KnownModelVersion.VERSION_8_0_0) {
+                rootResourceBuilder.rejectChildResource(getPathElement());
+                loggingProfileBuilder.rejectChildResource(getPathElement());
+            }
         }
     }
 }

@@ -34,6 +34,7 @@ import org.jboss.as.controller.services.path.ResolvePathHandler;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.logging.KnownModelVersion;
 import org.jboss.as.logging.Logging;
+import org.jboss.as.logging.TransformerResourceDefinition;
 import org.jboss.logmanager.handlers.PeriodicSizeRotatingFileHandler;
 
 /**
@@ -52,16 +53,22 @@ public class PeriodicSizeRotatingHandlerResourceDefinition extends AbstractFileH
         super(PERIODIC_SIZE_ROTATING_HANDLER_PATH, false, PeriodicSizeRotatingFileHandler.class, resolvePathHandler, diskUsagePathHandler, ATTRIBUTES);
     }
 
+    public static final class TransformerDefinition extends TransformerResourceDefinition {
 
-    @Override
-    public void registerTransformers(final KnownModelVersion modelVersion,
-                                     final ResourceTransformationDescriptionBuilder rootResourceBuilder,
-                                     final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
-        switch (modelVersion) {
-            case VERSION_2_0_0: {
-                rootResourceBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
-                loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
-                break;
+        public TransformerDefinition() {
+            super(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+        }
+
+        @Override
+        public void registerTransformers(final KnownModelVersion modelVersion,
+                                         final ResourceTransformationDescriptionBuilder rootResourceBuilder,
+                                         final ResourceTransformationDescriptionBuilder loggingProfileBuilder) {
+            switch (modelVersion) {
+                case VERSION_2_0_0: {
+                    rootResourceBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+                    loggingProfileBuilder.rejectChildResource(PERIODIC_SIZE_ROTATING_HANDLER_PATH);
+                    break;
+                }
             }
         }
     }
