@@ -1199,7 +1199,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     public void testAttributeChangeNotificationUsingMSc() throws Exception {
         KernelServices kernelServices = setup(new MBeanInfoAdditionalInitialization(ProcessType.STANDALONE_SERVER, new TestExtension()));
         ServiceController<?> service = kernelServices.getContainer().getService(MBeanServerService.SERVICE_NAME);
-        MBeanServer mbeanServer = MBeanServer.class.cast(service.getValue());
+        MBeanServer mbeanServer = MBeanServer.class.cast(service.awaitValue(5, TimeUnit.MINUTES));
 
         doTestAttributeChangeNotification(mbeanServer, true);
     }
@@ -1356,7 +1356,7 @@ public class ModelControllerMBeanTestCase extends AbstractSubsystemTest {
     public void testMBeanServerNotification_UNREGISTRATION_NOTIFICATIONUsingMsc() throws Exception {
         KernelServices kernelServices = setup(new MBeanInfoAdditionalInitialization(ProcessType.STANDALONE_SERVER, new SubystemWithSingleFixedChildExtension()));
         ServiceController<?> service = kernelServices.getContainer().getService(MBeanServerService.SERVICE_NAME);
-        MBeanServer mBeanServer = MBeanServer.class.cast(service.getValue());
+        MBeanServer mBeanServer = MBeanServer.class.cast(service.awaitValue(5, TimeUnit.MINUTES));
 
         doTestMBeanServerNotification_UNREGISTRATION_NOTIFICATION(mBeanServer, true);
     }
