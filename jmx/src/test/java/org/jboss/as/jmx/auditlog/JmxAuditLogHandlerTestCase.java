@@ -610,7 +610,7 @@ public class JmxAuditLogHandlerTestCase extends AbstractControllerTestBase {
 
     private MBeanServer getMBeanServer() throws Exception {
         ServiceController controller = getContainer().getRequiredService(MBeanServerService.SERVICE_NAME);
-        return (PluggableMBeanServer)controller.getValue();
+        return (PluggableMBeanServer) controller.awaitValue(5, TimeUnit.MINUTES);
     }
 
     private ModelNode createAddFileHandlerOperation(String handlerName, String formatterName, String fileName) {

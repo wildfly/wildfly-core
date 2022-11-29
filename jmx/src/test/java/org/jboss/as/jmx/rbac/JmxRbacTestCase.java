@@ -599,7 +599,7 @@ public abstract class JmxRbacTestCase extends AbstractControllerTestBase {
 
     private MBeanServer getMBeanServer() throws Exception {
         ServiceController controller = getContainer().getRequiredService(MBeanServerService.SERVICE_NAME);
-        return (PluggableMBeanServer)controller.getValue();
+        return (PluggableMBeanServer) controller.awaitValue(5, TimeUnit.MINUTES);
     }
 
     protected void initModel(ManagementModel managementModel) {

@@ -53,6 +53,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
@@ -81,7 +82,7 @@ public class PluggableMBeanServerTestCase extends AbstractSubsystemTest {
         KernelServices services = builder.build();
 
         ServiceController<?> controller = services.getContainer().getRequiredService(MBeanServerService.SERVICE_NAME);
-        server = (PluggableMBeanServer)controller.getValue();
+        server = (PluggableMBeanServer)controller.awaitValue(5, TimeUnit.MINUTES);
     }
 
     @Test
