@@ -425,6 +425,12 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
 
         // Verify a new identity generates a signature and is correct
         ModifiableRealmIdentity identity3 = securityRealm.getRealmIdentityForUpdate(new NamePrincipal("user3"));
+        // This identity may exist from a previous test execution if no maven clean was performed.
+        // If so, remove it, otherwise the create() call will fail.
+        if (identity3.exists()) {
+            identity3.delete();
+            Assert.assertFalse(identity3.exists());
+        }
         identity3.create();
         identity3.setAttributes(newAttributes);
         PasswordFactory factory = PasswordFactory.getInstance(ClearPassword.ALGORITHM_CLEAR, WildFlyElytronPasswordProvider.getInstance());
@@ -439,6 +445,12 @@ public class RealmsTestCase extends AbstractElytronSubsystemBaseTest {
 
         // Verify that this works for a realm with encryption and integrity enabled
         identity = securityRealmBoth.getRealmIdentityForUpdate(new NamePrincipal("user1"));
+        // This identity may exist from a previous test execution if no maven clean was performed.
+        // If so, remove it, otherwise the create() call will fail.
+        if (identity.exists()) {
+            identity.delete();
+            Assert.assertFalse(identity.exists());
+        }
         identity.create();
         identity.setAttributes(newAttributes);
         identity.setCredentials(Collections.singleton(new PasswordCredential(clearPassword)));
