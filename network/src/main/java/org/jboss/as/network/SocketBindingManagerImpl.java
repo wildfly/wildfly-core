@@ -32,7 +32,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -283,44 +285,51 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         }
     }
 
-    private static class CloseableManagedBinding extends WrapperBinding {
+    private static class NetworkChannelManagedBinding extends WrapperBinding {
         private final String name;
-        private final InetSocketAddress address;
-        private final Closeable closeable;
+        private final NetworkChannel channel;
         private final ManagedBindingRegistry registry;
 
-        CloseableManagedBinding(final InetSocketAddress address, final Closeable closeable, final ManagedBindingRegistry registry) {
-            this(null, address, closeable, registry);
+        NetworkChannelManagedBinding(final NetworkChannel channel, final ManagedBindingRegistry registry) {
+            this(null, channel, registry);
         }
 
-        CloseableManagedBinding(final String name, final InetSocketAddress address,
-                final Closeable closeable, final ManagedBindingRegistry registry) {
-            assert closeable != null;
+        NetworkChannelManagedBinding(final String name, NetworkChannel channel, final ManagedBindingRegistry registry) {
+            assert channel != null;
             this.name = name;
-            this.address = address;
-            this.closeable = closeable;
+            this.channel = channel;
             this.registry = registry;
         }
+
         @Override
         public String getSocketBindingName() {
             return name;
         }
+
         @Override
         public InetSocketAddress getBindAddress() {
-            return address;
+            try {
+                return (InetSocketAddress) channel.getLocalAddress();
+            } catch (ClosedChannelException e) {
+                registry.unregisterBinding(this);
+                return null;
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
+
         @Override
         public void close() throws IOException {
             try {
                 registry.unregisterBinding(this);
             } finally {
-                closeable.close();
+                channel.close();
             }
         }
 
         @Override
         Object getWrappedObject() {
-            return closeable;
+            return channel;
         }
     }
 
@@ -532,7 +541,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(String name, SocketChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding(name, (InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(name, channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -540,7 +549,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(String name, ServerSocketChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding(name, (InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(name, channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -548,7 +557,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(String name, DatagramChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding(name, (InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(name, channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -619,7 +628,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(SocketChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -627,7 +636,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(ServerSocketChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -635,7 +644,7 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public Closeable registerChannel(DatagramChannel channel) {
-            final ManagedBinding binding = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            final ManagedBinding binding = new NetworkChannelManagedBinding(channel, this);
             registerBinding(binding);
             return binding;
         }
@@ -661,21 +670,21 @@ public abstract class SocketBindingManagerImpl implements SocketBindingManager {
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(SocketChannel channel) {
-            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            WrapperBinding wrapper = new NetworkChannelManagedBinding(channel, this);
             bindings.remove(wrapper);
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(ServerSocketChannel channel) {
-            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            WrapperBinding wrapper = new NetworkChannelManagedBinding(channel, this);
             bindings.remove(wrapper);
         }
 
         /** {@inheritDoc} */
         @Override
         public void unregisterChannel(DatagramChannel channel) {
-            WrapperBinding wrapper = new CloseableManagedBinding((InetSocketAddress) channel.socket().getLocalSocketAddress(), channel, this);
+            WrapperBinding wrapper = new NetworkChannelManagedBinding(channel, this);
             bindings.remove(wrapper);
         }
     }
