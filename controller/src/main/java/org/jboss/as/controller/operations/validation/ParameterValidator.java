@@ -26,6 +26,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
+@FunctionalInterface
 public interface ParameterValidator {
 
     /**
@@ -37,22 +38,4 @@ public interface ParameterValidator {
      * @throws OperationFailedException if the value is not valid
      */
     void validateParameter(String parameterName, ModelNode value) throws OperationFailedException;
-
-    /**
-     * Validate the parameter with the given name, after first
-     * resolving any {@link org.jboss.dmr.ValueExpression} in the given {@code value}.
-     *
-     * @param parameterName the name of the parameter. Cannot be {@code null}
-     * @param value the parameter value. Cannot be {@code null}
-     *
-     * @throws OperationFailedException if the value is not valid
-     *
-     * @deprecated Callers should resolve the value themselves with an {@link org.jboss.as.controller.ExpressionResolver}
-     *             and then use {@link #validateParameter(String, ModelNode)} since a {@code ParameterValidator} does not
-     *             have access to all expression resolution sources
-     */
-    @Deprecated
-    default void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-        throw new UnsupportedOperationException();
-    }
 }

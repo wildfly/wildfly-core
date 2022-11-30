@@ -33,7 +33,7 @@ import org.jboss.dmr.ModelNode;
  */
 public class ParametersValidator implements ParameterValidator {
 
-    final Map<String, ParameterValidator> validators = Collections.synchronizedMap(new HashMap<String, ParameterValidator>());
+    final Map<String, ParameterValidator> validators = Collections.synchronizedMap(new HashMap<>());
 
     public ParametersValidator() {
     }
@@ -52,13 +52,6 @@ public class ParametersValidator implements ParameterValidator {
             ModelNode paramVal = operation.has(paramName) ? operation.get(paramName) : new ModelNode();
             entry.getValue().validateParameter(paramName, paramVal);
         }
-    }
-
-    /** @deprecated use {@link #validate(ModelNode)} */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public void validateResolved(ModelNode operation) throws OperationFailedException {
-        validate(operation);
     }
 
     public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {

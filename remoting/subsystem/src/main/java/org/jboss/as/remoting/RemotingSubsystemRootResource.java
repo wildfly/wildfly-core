@@ -255,10 +255,5 @@ public class RemotingSubsystemRootResource extends SimpleResourceDefinition {
                 throw RemotingLogger.ROOT_LOGGER.workerConfigurationIgnored();
             }
         }
-
-        @Override
-        public void validateResolvedParameter(String parameterName, ModelNode value) throws OperationFailedException {
-            validateParameter(parameterName, value);
-        }
     }
 }

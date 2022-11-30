@@ -44,7 +44,6 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
-import org.jboss.as.controller.operations.validation.AbstractParameterValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.test.AbstractControllerTestBase;
@@ -80,12 +79,9 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .build();
 
     private static final SimpleAttributeDefinition other = new SimpleAttributeDefinitionBuilder("other", ModelType.STRING, true)
-            .setValidator(new AbstractParameterValidator() {
-                @Override
-                public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-                    if (value.asString().equals("break")){
-                        throw new OperationFailedException("we need to break");
-                    }
+            .setValidator((parameterName, value) -> {
+                if (value.asString().equals("break")){
+                    throw new OperationFailedException("we need to break");
                 }
             })
             .build();
