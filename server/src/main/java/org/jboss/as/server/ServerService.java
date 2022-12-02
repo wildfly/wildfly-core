@@ -305,6 +305,7 @@ public final class ServerService extends AbstractControllerService {
 
     protected void boot(final BootContext context) throws ConfigurationPersistenceException {
         boolean ok;
+        Throwable cause = null;
         try {
             final ServerEnvironment serverEnvironment = configuration.getServerEnvironment();
             final ServiceTarget serviceTarget = context.getServiceTarget();
@@ -416,6 +417,7 @@ public final class ServerService extends AbstractControllerService {
         } catch (Exception e) {
             ServerLogger.ROOT_LOGGER.caughtExceptionDuringBoot(e);
             ok = false;
+            cause = e;
         }
 
         if (ok) {
@@ -436,7 +438,7 @@ public final class ServerService extends AbstractControllerService {
                 messageToAppend = ServerLogger.ROOT_LOGGER.serverConfigFileInUse(configuration.getServerEnvironment().getServerConfigurationFile().getMainFile().getName());
             }
             String message = ServerLogger.ROOT_LOGGER.unsuccessfulBoot(messageToAppend);
-            bootstrapListener.bootFailure(message);
+            bootstrapListener.bootFailure(new Exception(message, cause));
             SystemExiter.logAndExit(new SystemExiter.ExitLogger() {
                 @Override
                 public void logExit() {
