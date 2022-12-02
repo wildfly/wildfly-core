@@ -25,6 +25,7 @@ package org.jboss.as.server.services.net;
 import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -119,8 +120,11 @@ public final class BindingRuntimeHandlers {
         void execute(final ModelNode operation, final SocketBinding binding, final ModelNode result) {
             ManagedBinding managedBinding = binding.getManagedBinding();
             if (managedBinding != null) {
-                InetAddress addr = managedBinding.getBindAddress().getAddress();
-                result.set(NetworkUtils.canonize(addr.getHostAddress()));
+                InetSocketAddress bindAddress = managedBinding.getBindAddress();
+                if (bindAddress != null) {
+                    InetAddress addr = bindAddress.getAddress();
+                    result.set(NetworkUtils.canonize(addr.getHostAddress()));
+                }
             }
         }
 
@@ -149,8 +153,11 @@ public final class BindingRuntimeHandlers {
         void execute(final ModelNode operation, final SocketBinding binding, final ModelNode result) {
             ManagedBinding managedBinding = binding.getManagedBinding();
             if (managedBinding != null) {
-                int port = managedBinding.getBindAddress().getPort();
-                result.set(port);
+                InetSocketAddress bindAddress = managedBinding.getBindAddress();
+                if (bindAddress != null) {
+                    int port = bindAddress.getPort();
+                    result.set(port);
+                }
             }
         }
 
