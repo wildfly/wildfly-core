@@ -43,10 +43,8 @@ import org.jboss.as.controller.operations.common.SchemaLocationAddHandler;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
-import org.jboss.as.controller.parsing.WriteUtils;
 import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
-import org.jboss.as.server.services.net.SocketBindingGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLElementReader;
@@ -81,19 +79,6 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
 
     protected CommonXml(SocketBindingsXml socketBindingsXml) {
         this.socketBindingsXml = socketBindingsXml;
-    }
-
-    /**
-     * @deprecated @deprecated WFCORE-726 Only here for AppClientXml in Full while waiting for a core release
-     */
-    @Deprecated
-    protected CommonXml() {
-        socketBindingsXml = new SocketBindingsXml() {
-            @Override
-            protected void writeExtraAttributes(XMLExtendedStreamWriter writer, ModelNode bindingGroup) throws XMLStreamException {
-                SocketBindingGroupResourceDefinition.PORT_OFFSET.marshallAsAttribute(bindingGroup, writer);
-            }
-        };
     }
 
     protected void parseNamespaces(final XMLExtendedStreamReader reader, final ModelNode address, final List<ModelNode> nodes) {
@@ -171,14 +156,6 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         if (needXsd && !wroteXsd) {
             writer.writeNamespace("xsd", xsdUri);
         }
-    }
-
-    /**
-     * @deprecated {@see WriteUtils#writeElement(XMLExtendedStreamWriter, Element)}
-     */
-    @Deprecated
-    protected static void writeElement(final XMLExtendedStreamWriter writer, final Element element) throws XMLStreamException {
-        WriteUtils.writeElement(writer, element);
     }
 
     protected void writePaths(final XMLExtendedStreamWriter writer, final ModelNode node, final boolean namedPath) throws XMLStreamException {
@@ -288,26 +265,9 @@ public abstract class CommonXml implements XMLElementReader<List<ModelNode>> {
         }
     }
 
-    /**
-     * @deprecated {@see WriteUtils#writeAttribute(XMLExtendedStreamWriter, Attribute, String)}
-     */
-    @Deprecated
-    protected static void writeAttribute(XMLExtendedStreamWriter writer, Attribute attribute, String value)
-            throws XMLStreamException {
-        WriteUtils.writeAttribute(writer, attribute, value);
-    }
-
     protected static void writeContentItem(final XMLExtendedStreamWriter writer, final ModelNode contentItem)
             throws XMLStreamException {
         DeploymentsXml.writeContentItem(writer, contentItem);
-    }
-
-    /**
-     * @deprecated {@see WriteUtils#writeNewLine(XMLExtendedStreamWriter)}
-     */
-    @Deprecated
-    protected static void writeNewLine(XMLExtendedStreamWriter writer) throws XMLStreamException {
-        WriteUtils.writeNewLine(writer);
     }
 
     protected void writeDeploymentOverlays(final XMLExtendedStreamWriter writer, final ModelNode modelNode) throws XMLStreamException {
