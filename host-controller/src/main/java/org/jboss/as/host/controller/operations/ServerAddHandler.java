@@ -60,7 +60,7 @@ public class ServerAddHandler extends AbstractAddStepHandler {
      * Create the ServerAddHandler
      */
     private ServerAddHandler(LocalHostControllerInfo hostControllerInfo, ServerInventory serverInventory, ControlledProcessState processState, File domainDataDir) {
-        super(ServerConfigResourceDefinition.SERVER_CONFIG_CAPABILITY, ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES);
+        super(ServerConfigResourceDefinition.WRITABLE_ATTRIBUTES);
         this.hostControllerInfo = hostControllerInfo;
         this.serverInventory = serverInventory;
         this.processState = processState;

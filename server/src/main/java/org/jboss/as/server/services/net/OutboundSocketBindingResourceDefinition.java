@@ -22,14 +22,11 @@
 
 package org.jboss.as.server.services.net;
 
-import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
-import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -70,11 +67,7 @@ public abstract class OutboundSocketBindingResourceDefinition extends SimpleReso
             .setFlags(AttributeAccess.Flag.RESTART_ALL_SERVICES)
             .build();
 
-    protected OutboundSocketBindingResourceDefinition(final PathElement pathElement, final ResourceDescriptionResolver descriptionResolver,
-                                                      final OperationStepHandler addHandler, final OperationStepHandler removeHandler) {
-        super(new SimpleResourceDefinition.Parameters(pathElement, descriptionResolver)
-                .setAddHandler(addHandler)
-                .setRemoveHandler(removeHandler)
-                .addCapabilities(OUTBOUND_SOCKET_BINDING_CAPABILITY));
+    protected OutboundSocketBindingResourceDefinition(final Parameters parameters) {
+        super(parameters.addCapabilities(OUTBOUND_SOCKET_BINDING_CAPABILITY));
     }
 }

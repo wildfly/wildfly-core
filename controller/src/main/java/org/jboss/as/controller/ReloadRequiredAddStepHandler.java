@@ -23,9 +23,7 @@
 package org.jboss.as.controller;
 
 import java.util.Collection;
-import java.util.Set;
 
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
@@ -53,16 +51,6 @@ public class ReloadRequiredAddStepHandler extends AbstractAddStepHandler {
 
     public ReloadRequiredAddStepHandler(Collection<AttributeDefinition> attributes) {
         super(attributes);
-    }
-
-    @Deprecated
-    public ReloadRequiredAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
-        super(capability, attributes);
-    }
-
-    @Deprecated
-    public ReloadRequiredAddStepHandler(Set<RuntimeCapability> capabilities, Collection<AttributeDefinition> attributes) {
-        super(capabilities, attributes);
     }
 
     public ReloadRequiredAddStepHandler(Parameters parameters) {

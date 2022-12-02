@@ -37,7 +37,7 @@ public class ProfileAddHandler extends AbstractAddStepHandler {
     public static final ProfileAddHandler INSTANCE = new ProfileAddHandler();
 
     ProfileAddHandler() {
-        super(ProfileResourceDefinition.PROFILE_CAPABILITY, ProfileResourceDefinition.ATTRIBUTES);
+        super(ProfileResourceDefinition.ATTRIBUTES);
     }
 
     protected void populateModel(final OperationContext context, final ModelNode operation, final Resource resource) throws OperationFailedException {

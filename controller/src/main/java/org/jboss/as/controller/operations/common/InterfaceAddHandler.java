@@ -23,7 +23,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.resource.InterfaceDefinition;
@@ -42,8 +41,8 @@ public class InterfaceAddHandler extends AbstractAddStepHandler {
     /**
      * Create the InterfaceAddHandler
      */
-    protected InterfaceAddHandler(boolean specified, RuntimeCapability capability) {
-        super(capability);
+    protected InterfaceAddHandler(boolean specified) {
+        super();
         this.specified = specified;
     }
 
