@@ -66,6 +66,7 @@ public class EndpointService implements Service {
         final EndpointBuilder builder = Endpoint.builder();
         builder.setEndpointName(endpointName);
         builder.setXnioWorker(workerSupplier.get());
+        builder.setDefaultConnectionsOptionMap(optionMap);
         try {
             endpoint = builder.build();
         } catch (IOException e) {
