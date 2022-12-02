@@ -68,12 +68,12 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
  */
 public abstract class VersionedExtensionCommon implements Extension {
 
-    public static final String SUBSYSTEM_NAME = "test-subsystem";
+    public static final String SUBSYSTEM_NAME = "versioned-subsystem";
     public static final String EXTENSION_NAME = "org.jboss.as.test.transformers";
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
     static final AttributeDefinition TEST_ATTRIBUTE = SimpleAttributeDefinitionBuilder.create("test-attribute", ModelType.STRING).build();
 
-    private SubsystemParser parser = new SubsystemParser(EXTENSION_NAME);
+    private final SubsystemParser parser = new SubsystemParser(EXTENSION_NAME);
 
     public SubsystemParser getParser() {
         return parser;
@@ -133,7 +133,7 @@ public abstract class VersionedExtensionCommon implements Extension {
         }
     }
 
-    private static AbstractRemoveStepHandler NOOP_REMOVE_HANDLER = new AbstractRemoveStepHandler() {
+    private static final AbstractRemoveStepHandler NOOP_REMOVE_HANDLER = new AbstractRemoveStepHandler() {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             super.performRuntime(context, operation, model);
@@ -193,9 +193,9 @@ public abstract class VersionedExtensionCommon implements Extension {
         }
     }
 
-    static ResourceDescriptionResolver TEST_RESOURCE_DESCRIPTION_RESOLVER = new NonResolvingResourceDescriptionResolver();
+    static final ResourceDescriptionResolver TEST_RESOURCE_DESCRIPTION_RESOLVER = new NonResolvingResourceDescriptionResolver();
 
-    public static class TestAttachment {
+    public static final class TestAttachment {
         public static final OperationContext.AttachmentKey<TestAttachment> KEY = OperationContext.AttachmentKey.create(TestAttachment.class);
 
         public volatile String s;

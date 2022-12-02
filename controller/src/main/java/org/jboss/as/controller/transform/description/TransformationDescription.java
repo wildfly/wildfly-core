@@ -106,7 +106,7 @@ public interface TransformationDescription {
      */
     boolean isPlaceHolder();
 
-    public static final class Tools {
+    final class Tools {
 
         private Tools() {
             //
@@ -150,37 +150,8 @@ public interface TransformationDescription {
          * @param versions the model versions the transformation description applies to
          * @return the created sub registration
          */
-        @Deprecated
-        public static TransformersSubRegistration register(TransformationDescription description, SubsystemRegistration registration, ModelVersion... versions) {
-            return register(description, registration, ModelVersionRange.Versions.range(versions));
-        }
-
-        /**
-         * Register a transformation description as a sub-resource at a given {@linkplain SubsystemRegistration}.
-         *
-         * @param description the subsystem transformation description
-         * @param registration the subsystem registrations
-         * @param versions the model versions the transformation description applies to
-         * @return the created sub registration
-         */
         public static TransformersSubRegistration register(TransformationDescription description, SubsystemTransformerRegistration registration, ModelVersion... versions) {
             return register(description, registration, ModelVersionRange.Versions.range(versions));
-        }
-
-        /**
-         * Register a transformation description as a sub-resource at a given {@linkplain SubsystemRegistration}.
-         *
-         * @param description the subsystem transformation description
-         * @param registration the subsystem registrations
-         * @param range the model version range the transformation applies to
-         * @return the create sub registration
-         */
-        @Deprecated
-        public static TransformersSubRegistration register(TransformationDescription description, SubsystemRegistration registration, ModelVersionRange range) {
-            final TransformersSubRegistration subRegistration = registration.registerModelTransformers(range, description.getResourceTransformer(),
-                    description.getOperationTransformer(), description.isPlaceHolder());
-
-            return getTransformersSubRegistration(description, subRegistration);
         }
 
         private static TransformersSubRegistration getTransformersSubRegistration(TransformationDescription description, TransformersSubRegistration subRegistration) {

@@ -45,7 +45,6 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.CapabilityReferenceRecorder;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.ModelVersionRange;
 import org.jboss.as.controller.NotificationDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
@@ -91,11 +90,7 @@ import org.jboss.as.controller.registry.NotificationEntry;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.controller.services.path.PathManager;
-import org.jboss.as.controller.transform.CombinedTransformer;
-import org.jboss.as.controller.transform.OperationTransformer;
-import org.jboss.as.controller.transform.ResourceTransformer;
 import org.jboss.as.controller.transform.TransformerRegistry;
-import org.jboss.as.controller.transform.TransformersSubRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLElementWriter;
@@ -117,10 +112,8 @@ public final class ExtensionRegistry {
     // Hack to restrict the extensions to which we expose ExtensionContextSupplement
     private static final Set<String> legallySupplemented;
     static {
-        Set<String> set = new HashSet<>(4);
-        set.add("org.jboss.as.jmx");
-        set.add("Test");  // used by shared subsystem test fixture TestModelControllerService
-        legallySupplemented = Collections.unmodifiableSet(set);
+        // used by shared subsystem test fixture TestModelControllerService
+        legallySupplemented = Set.of("org.jboss.as.jmx", "Test");
     }
 
     private final ProcessType processType;
@@ -129,14 +122,14 @@ public final class ExtensionRegistry {
     private volatile PathManager pathManager;
     private volatile ResolverExtensionRegistry resolverExtensionRegistry;
 
-    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<String, ExtensionInfo>();
+    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<>();
     // subsystem -> extension
-    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<>();
     private final RunningModeControl runningModeControl;
     private final ManagedAuditLogger auditLogger;
     private final JmxAuthorizer authorizer;
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
-    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<String, SubsystemInformation>();
+    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<>();
     private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
     private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
 
@@ -160,7 +153,7 @@ public final class ExtensionRegistry {
     }
 
     /**
-     * Constructor
+     * Constructor used by legacy controllers when testing backwards compatibility.
      *
      * @param processType the type of the process
      * @param runningModeControl the process' running mode
@@ -219,7 +212,7 @@ public final class ExtensionRegistry {
         if (info != null) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (info) {
-                result = Collections.unmodifiableMap(new HashMap<String, SubsystemInformation>(info.subsystems));
+                result = Map.copyOf(info.subsystems);
             }
         }
         return result;
@@ -250,28 +243,10 @@ public final class ExtensionRegistry {
      * @param xmlMapper  the {@link XMLMapper} handling the extension parsing. Can be {@code null} if there won't
      *                   be any actual parsing (e.g. in a slave Host Controller or in a server in a managed domain)
      */
-    public final void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
+    public void initializeParsers(final Extension extension, final String moduleName, final XMLMapper xmlMapper) {
         ExtensionParsingContextImpl parsingContext = new ExtensionParsingContextImpl(moduleName, xmlMapper);
         extension.initializeParsers(parsingContext);
         parsingContext.attemptCurrentParserInitialization();
-    }
-
-    /**
-     * Gets an {@link ExtensionContext} for use when handling an {@code add} operation for
-     * a resource representing an {@link org.jboss.as.controller.Extension}.
-     *
-     * @param moduleName the name of the extension's module. Cannot be {@code null}
-     * @param rootRegistration the root management resource registration
-     * @param isMasterDomainController set to {@code true} if we are the master domain controller, in which case transformers get registered
-     *
-     * @return  the {@link ExtensionContext}.  Will not return {@code null}
-     *
-     * @deprecated use {@link #getExtensionContext(String, ManagementResourceRegistration, ExtensionRegistryType)}. Main code should be using this, but this is left behind in case any tests need to use this code.
-     */
-    @Deprecated
-    public ExtensionContext getExtensionContext(final String moduleName, ManagementResourceRegistration rootRegistration, boolean isMasterDomainController) {
-        ExtensionRegistryType type = isMasterDomainController ? ExtensionRegistryType.MASTER : ExtensionRegistryType.SLAVE;
-        return getExtensionContext(moduleName, rootRegistration, type);
     }
 
     /**
@@ -300,7 +275,7 @@ public final class ExtensionRegistry {
     }
 
     public Set<ProfileParsingCompletionHandler> getProfileParsingCompletionHandlers() {
-        Set<ProfileParsingCompletionHandler> result = new HashSet<ProfileParsingCompletionHandler>();
+        Set<ProfileParsingCompletionHandler> result = new HashSet<>();
 
         for (ExtensionInfo extensionInfo : extensions.values()) {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
@@ -348,8 +323,7 @@ public final class ExtensionRegistry {
 
                 Set<String> subsystemNames = extension.subsystems.keySet();
 
-                final boolean dcExtension = processType.isHostController() ?
-                    rootRegistration.getPathAddress().size() == 0 : false;
+                final boolean dcExtension = processType.isHostController() && rootRegistration.getPathAddress().size() == 0;
 
                 for (String subsystem : subsystemNames) {
                     if (hasSubsystemsRegistered(rootResource, subsystem, dcExtension)) {
@@ -367,7 +341,7 @@ public final class ExtensionRegistry {
                     }
 
                     if (extension.xmlMapper != null) {
-                        SubsystemInformationImpl subsystemInformation = SubsystemInformationImpl.class.cast(entry.getValue());
+                        SubsystemInformationImpl subsystemInformation = (SubsystemInformationImpl) entry.getValue();
                         for (String namespace : subsystemInformation.getXMLNamespaces()) {
                             extension.xmlMapper.unregisterRootElement(new QName(namespace, SUBSYSTEM));
                         }
@@ -576,26 +550,6 @@ public final class ExtensionRegistry {
         }
 
         @Override
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion) throws IllegalArgumentException, IllegalStateException {
-            return registerSubsystem(name, majorVersion, minorVersion, 0);
-        }
-
-        @Override
-        @Deprecated
-        @SuppressWarnings("deprecation")
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion) {
-            return registerSubsystem(name, majorVersion, minorVersion, microVersion, false);
-        }
-
-        @Override
-        @Deprecated
-        public SubsystemRegistration registerSubsystem(String name, int majorVersion, int minorVersion, int microVersion, boolean deprecated) {
-            return registerSubsystem(name, ModelVersion.create(majorVersion, minorVersion, microVersion), deprecated);
-        }
-
-        @Override
         public SubsystemRegistration registerSubsystem(String name, ModelVersion version, boolean deprecated) {
             assert name != null : "name is null";
             checkNewSubystem(extension.extensionModuleName, name);
@@ -650,10 +604,7 @@ public final class ExtensionRegistry {
             if (processType.isServer()) {
                 return true;
             }
-            if (processType.isHostController() && extensionRegistryType == ExtensionRegistryType.HOST) {
-                return true;
-            }
-            return false;
+            return processType.isHostController() && extensionRegistryType == ExtensionRegistryType.HOST;
         }
 
         @Override
@@ -662,12 +613,6 @@ public final class ExtensionRegistry {
                 throw ControllerLogger.ROOT_LOGGER.pathManagerNotAvailable(processType);
             }
             return pathManager;
-        }
-
-        @Override
-        @Deprecated
-        public boolean isRegisterTransformers() {
-            return registerTransformers;
         }
 
         // ExtensionContextSupplement implementation
@@ -717,10 +662,10 @@ public final class ExtensionRegistry {
         }
     }
 
-    private class SubsystemInformationImpl implements SubsystemInformation {
+    private static class SubsystemInformationImpl implements SubsystemInformation {
 
         private ModelVersion version;
-        private final List<String> parsingNamespaces = new ArrayList<String>();
+        private final List<String> parsingNamespaces = new ArrayList<>();
 
         @Override
         public List<String> getXMLNamespaces() {
@@ -764,7 +709,6 @@ public final class ExtensionRegistry {
         private final ExtensionRegistryType extensionRegistryType;
         private final String extensionModuleName;
         private volatile boolean hostCapable;
-        private volatile boolean modelsRegistered;
 
         private SubsystemRegistrationImpl(String name, ModelVersion version,
                                           ManagementResourceRegistration profileRegistration,
@@ -787,9 +731,6 @@ public final class ExtensionRegistry {
 
         @Override
         public void setHostCapable() {
-            if (modelsRegistered) {
-                throw ControllerLogger.ROOT_LOGGER.registerHostCapableMustHappenFirst(name);
-            }
             hostCapable = true;
         }
 
@@ -808,42 +749,13 @@ public final class ExtensionRegistry {
 
         @Override
         public void registerXMLElementWriter(XMLElementWriter<SubsystemMarshallingContext> writer) {
+            //noinspection deprecation
             writerRegistry.registerSubsystemWriter(name, writer);
         }
 
         @Override
         public void registerXMLElementWriter(Supplier<XMLElementWriter<SubsystemMarshallingContext>> writer) {
             writerRegistry.registerSubsystemWriter(name, writer);
-        }
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(final ModelVersionRange range, final ResourceTransformer subsystemTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, range, subsystemTransformer);
-        }
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer, boolean placeholder) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, placeholder);
-        }
-
-        @Override
-        @Deprecated
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, ResourceTransformer resourceTransformer, OperationTransformer operationTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, resourceTransformer, operationTransformer, false);
-        }
-
-
-        @Override
-        public TransformersSubRegistration registerModelTransformers(ModelVersionRange version, CombinedTransformer combinedTransformer) {
-            modelsRegistered = true;
-            checkHostCapable();
-            return transformerRegistry.registerSubsystemTransformers(name, version, combinedTransformer, combinedTransformer, false);
         }
 
         @Override
@@ -859,7 +771,7 @@ public final class ExtensionRegistry {
     }
 
     private class ExtensionInfo {
-        private final Map<String, SubsystemInformation> subsystems = new HashMap<String, SubsystemInformation>();
+        private final Map<String, SubsystemInformation> subsystems = new HashMap<>();
         private final String extensionModuleName;
         private XMLMapper xmlMapper;
         private ProfileParsingCompletionHandler parsingCompletionHandler;
@@ -873,7 +785,7 @@ public final class ExtensionRegistry {
         private SubsystemInformationImpl getSubsystemInfo(final String subsystemName) {
             checkNewSubystem(extensionModuleName, subsystemName);
             synchronized (this) {
-                SubsystemInformationImpl subsystem = SubsystemInformationImpl.class.cast(subsystems.get(subsystemName));
+                SubsystemInformationImpl subsystem = (SubsystemInformationImpl) subsystems.get(subsystemName);
                 if (subsystem == null) {
                     subsystem = new SubsystemInformationImpl();
                     subsystems.put(subsystemName, subsystem);

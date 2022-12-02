@@ -3288,8 +3288,8 @@ public interface ControllerLogger extends BasicLogger {
     @Message(id = 383, value = "No operation is defined %s")
     String noOperationDefined(final ModelNode operation);
 
-    @Message(id = 384, value = "The call to registerHostCapable() should happen before registering models or transformers for the '%s' subsystem.")
-    IllegalStateException registerHostCapableMustHappenFirst(String name);
+//    @Message(id = 384, value = "The call to registerHostCapable() should happen before registering models or transformers for the '%s' subsystem.")
+//    IllegalStateException registerHostCapableMustHappenFirst(String name);
 
     @Message(id = 385, value = "An attempt was made to register the non-host capable subsystem '%s' from extension module '%s' in the host model.")
     IllegalStateException nonHostCapableSubsystemInHostModel(String subsystemName, String extensionModuleName);

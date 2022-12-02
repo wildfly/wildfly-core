@@ -48,6 +48,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.PropertiesAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
+import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -59,10 +60,12 @@ import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.persistence.SubsystemMarshallingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
 import org.jboss.as.controller.transform.OperationResultTransformer;
 import org.jboss.as.controller.transform.OperationTransformer;
 import org.jboss.as.controller.transform.ResourceTransformationContext;
 import org.jboss.as.controller.transform.ResourceTransformer;
+import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.TransformationContext;
 import org.jboss.as.controller.transform.TransformerOperationAttachment;
 import org.jboss.as.controller.transform.description.AttributeConverter;
@@ -84,9 +87,9 @@ public class NewExtension implements Extension {
     public static final String EXTENSION_NAME = "org.jboss.as.test.transformers";
     static final PathElement SUBSYSTEM_PATH = PathElement.pathElement(ModelDescriptionConstants.SUBSYSTEM, SUBSYSTEM_NAME);
 
-    private SubsystemParser parser = new SubsystemParser(EXTENSION_NAME);
+    private final SubsystemParser parser = new SubsystemParser(EXTENSION_NAME);
 
-    static final SimpleAttributeDefinition TEST = new SimpleAttributeDefinition("test", ModelType.STRING, false);
+    static final SimpleAttributeDefinition TEST = new SimpleAttributeDefinitionBuilder("test", ModelType.STRING, false).build();
     static final AttributeDefinition PROPERTIES = new PropertiesAttributeDefinition.Builder("properties", true).build();
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] {TEST, PROPERTIES};
@@ -94,10 +97,8 @@ public class NewExtension implements Extension {
     @Override
     public void initialize(final ExtensionContext context) {
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(2, 0, 0));
-        registration.registerXMLElementWriter(new SubsystemParser(EXTENSION_NAME));
-        final ManagementResourceRegistration reg = registration.registerSubsystemModel(new TestResourceDefinition());
-
-        registerTransformers(registration);
+        registration.registerXMLElementWriter(parser);
+        registration.registerSubsystemModel(new TestResourceDefinition());
     }
 
     @Override
@@ -105,10 +106,18 @@ public class NewExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, EXTENSION_NAME, parser);
     }
 
-    private void registerTransformers(SubsystemRegistration subsystem) {
-        // Register the transformers
-        ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        builder.getAttributeBuilder()
+    public static final class TransformerRegistration implements ExtensionTransformerRegistration {
+
+        @Override
+        public String getSubsystemName() {
+            return SUBSYSTEM_NAME;
+        }
+
+        @Override
+        public void registerTransformers(SubsystemTransformerRegistration subsystemRegistration) {
+            // Register the transformers
+            ResourceTransformationDescriptionBuilder builder = ResourceTransformationDescriptionBuilder.Factory.createSubsystemInstance();
+            builder.getAttributeBuilder()
                     .setValueConverter(new AttributeConverter.DefaultAttributeConverter() {
                         @Override
                         protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
@@ -117,24 +126,26 @@ public class NewExtension implements Extension {
                             }
                         }
                     }, TEST)
-                .end();
-        builder.addOperationTransformationOverride(ADD)
-                .inheritResourceAttributeDefinitions()
-                .setCustomOperationTransformer(PROPERTIES_ADD_OPERATION_TRANSFORMER);
-        builder.setCustomResourceTransformer(PROPERTIES_RESOURCE_TRANSFORMER);
-
-        Set<String> writeAttributeOperations = new HashSet<>(MapOperations.MAP_OPERATION_NAMES);
-        writeAttributeOperations.add(WRITE_ATTRIBUTE_OPERATION);
-        writeAttributeOperations.add(UNDEFINE_ATTRIBUTE_OPERATION);
-        for (String opName : writeAttributeOperations) {
-            builder.addOperationTransformationOverride(opName)
+                    .end();
+            builder.addOperationTransformationOverride(ADD)
                     .inheritResourceAttributeDefinitions()
-                    .setCustomOperationTransformer(PROPERTIES_WRITE_ATTRIBUTE_TRANSFORMER);
+                    .setCustomOperationTransformer(PROPERTIES_ADD_OPERATION_TRANSFORMER);
+            builder.setCustomResourceTransformer(PROPERTIES_RESOURCE_TRANSFORMER);
+
+            Set<String> writeAttributeOperations = new HashSet<>(MapOperations.MAP_OPERATION_NAMES);
+            writeAttributeOperations.add(WRITE_ATTRIBUTE_OPERATION);
+            writeAttributeOperations.add(UNDEFINE_ATTRIBUTE_OPERATION);
+            for (String opName : writeAttributeOperations) {
+                builder.addOperationTransformationOverride(opName)
+                        .inheritResourceAttributeDefinitions()
+                        .setCustomOperationTransformer(PROPERTIES_WRITE_ATTRIBUTE_TRANSFORMER);
+            }
+            TransformationDescription.Tools.register(builder.build(), subsystemRegistration, ModelVersion.create(1, 0, 0));
+
         }
-        TransformationDescription.Tools.register(builder.build(), subsystem, ModelVersion.create(1, 0, 0));
     }
 
-    private class SubsystemParser implements XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
+    private static final class SubsystemParser implements XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
 
         private final String namespace;
 
@@ -203,9 +214,9 @@ public class NewExtension implements Extension {
         }
     }
 
-    private static ResourceTransformer PROPERTIES_RESOURCE_TRANSFORMER = new ResourceTransformer() {
+    private static final ResourceTransformer PROPERTIES_RESOURCE_TRANSFORMER = new ResourceTransformer() {
         @Override
-        public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource) throws OperationFailedException {
+        public void transformResource(ResourceTransformationContext context, PathAddress address, Resource resource) {
             ModelNode properties = resource.getModel().remove("properties");
             ResourceTransformationContext childCtx = context.addTransformedResourceFromRoot(address, resource);
 
@@ -218,9 +229,9 @@ public class NewExtension implements Extension {
         }
     };
 
-    private static OperationTransformer PROPERTIES_ADD_OPERATION_TRANSFORMER = new OperationTransformer() {
+    private static final OperationTransformer PROPERTIES_ADD_OPERATION_TRANSFORMER = new OperationTransformer() {
         @Override
-        public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation) throws OperationFailedException {
+        public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation) {
             ModelNode properties = operation.remove("properties");
 
             ModelNode composite = Util.createEmptyOperation("composite", PathAddress.EMPTY_ADDRESS);
@@ -238,7 +249,7 @@ public class NewExtension implements Extension {
         }
     };
 
-    private static OperationTransformer PROPERTIES_WRITE_ATTRIBUTE_TRANSFORMER = new OperationTransformer() {
+    private static final OperationTransformer PROPERTIES_WRITE_ATTRIBUTE_TRANSFORMER = new OperationTransformer() {
         @Override
         public TransformedOperation transformOperation(TransformationContext context, PathAddress address, ModelNode operation) throws OperationFailedException {
             String attributeName = operation.get(NAME).asString();
