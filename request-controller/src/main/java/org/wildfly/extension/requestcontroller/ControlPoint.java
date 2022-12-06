@@ -124,7 +124,7 @@ public class ControlPoint {
      * If it returns {@code RUN} then the task should proceed as normal, and the {@link #requestComplete()} method
      * must be called once the task is complete, usually via a try/finally construct.
      */
-    public RunResult beginRequest() throws Exception {
+    public RunResult beginRequest() {
         if (paused) {
             return RunResult.REJECTED;
         }
@@ -149,7 +149,7 @@ public class ControlPoint {
      * If it returns {@code RUN} then the task should proceed as normal, and the {@link #requestComplete()} method
      * must be called once the task is complete, usually via a try/finally construct.
      */
-    public RunResult forceBeginRequest() throws Exception {
+    public RunResult forceBeginRequest() {
         if(trackIndividualControlPoints) {
             activeRequestCountUpdater.incrementAndGet(this);
         }
