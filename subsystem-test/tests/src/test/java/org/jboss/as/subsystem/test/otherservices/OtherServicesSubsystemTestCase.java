@@ -88,7 +88,7 @@ public class OtherServicesSubsystemTestCase extends AbstractSubsystemTest {
 
         Assert.assertNotNull(services.getContainer().getService(OtherService.NAME));
         Assert.assertNotNull(services.getContainer().getService(MyService.NAME));
-        MyService myService = (MyService)services.getContainer().getService(MyService.NAME).awaitValue();
+        MyService myService = (MyService)services.getContainer().getService(MyService.NAME).getValue();
         Assert.assertNotNull(myService.otherValue.getValue());
     }
 
@@ -144,7 +144,7 @@ public class OtherServicesSubsystemTestCase extends AbstractSubsystemTest {
 
         ServiceController<?> controller = services.getContainer().getService(SocketBindingUserService.NAME);
         Assert.assertNotNull(controller);
-        SocketBindingUserService service = (SocketBindingUserService)controller.awaitValue();
+        SocketBindingUserService service = (SocketBindingUserService)controller.getValue();
         SocketBinding socketBinding = service.socketBindingValue.getValue();
         Assert.assertEquals(8000, socketBinding.getSocketBindings().getPortOffset());
         Assert.assertFalse("fixed port", socketBinding.isFixedPort());
@@ -189,7 +189,7 @@ public class OtherServicesSubsystemTestCase extends AbstractSubsystemTest {
 
         ServiceController<?> controller = services.getContainer().getService(SocketBindingUserService.NAME);
         Assert.assertNotNull(controller);
-        SocketBindingUserService service = (SocketBindingUserService)controller.awaitValue();
+        SocketBindingUserService service = (SocketBindingUserService)controller.getValue();
         SocketBinding socketBinding = service.socketBindingValue.getValue();
         Assert.assertEquals(234, socketBinding.getPort());
         Assert.assertEquals("127.0.0.1", socketBinding.getAddress().getHostAddress());
@@ -226,7 +226,7 @@ public class OtherServicesSubsystemTestCase extends AbstractSubsystemTest {
 
         ServiceController<?> controller = services.getContainer().getService(PathUserService.NAME);
         Assert.assertNotNull(controller);
-        PathUserService service = (PathUserService)controller.awaitValue();
+        PathUserService service = (PathUserService)controller.getValue();
         Assert.assertEquals(new File(".", "target").getAbsolutePath(), service.pathValue.getValue());
     }
 
