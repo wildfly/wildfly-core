@@ -846,7 +846,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 ExecutionStatus origStatus = executionStatus;
                 try {
                     executionStatus = ExecutionStatus.AWAITING_STABILITY;
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false);
+                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false); // interruption forbidden - see WFCORE-6158
                     notifyModificationBegun();
                 } catch (InterruptedException e) {
                     if (resultAction != ResultAction.ROLLBACK) {
@@ -1219,7 +1219,7 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // is going to have to await the monitor uninterruptibly anyway before proceeding.
                 long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 try {
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false);
+                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false); // interruption forbidden - see WFCORE-6158
                 }  catch (InterruptedException e) {
                     // Cancelled in some way
                     interrupted = true;
