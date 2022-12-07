@@ -73,6 +73,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
+@org.junit.Ignore
 public class OperationCancellationUnitTestCase {
 
     private static final Executor executor = Executors.newCachedThreadPool();
