@@ -216,7 +216,7 @@ public class SNICombinedWithALPNTestCase {
         XnioSsl ssl = createClientSSL(hostNameKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
-        ClientConnection connection = client.connect(new URI("https", null, "localhost", TestSuiteEnvironment.getHttpPort(), "", null, null), XnioWorker.getContextManager().get(), ssl, pool, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        ClientConnection connection = client.connect(new URI("https", null, "localhost", TestSuiteEnvironment.getHttpPort(), "", null, null), XnioWorker.getContextManager().get(), ssl, pool, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true, UndertowOptions.SSL_SNI_HOSTNAME, "localhost")).get();
         performSimpleTest(pool, connection);
     }
 
@@ -228,7 +228,7 @@ public class SNICombinedWithALPNTestCase {
         XnioSsl ssl = createClientSSL(ipKeystore);
         UndertowClient client = UndertowClient.getInstance();
         DefaultByteBufferPool pool = new DefaultByteBufferPool(false, 1024);
-        ClientConnection connection = client.connect(new URI("https", null, "127.0.0.1", TestSuiteEnvironment.getHttpPort(), "", null, null), XnioWorker.getContextManager().get(), ssl, pool, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true)).get();
+        ClientConnection connection = client.connect(new URI("https", null, "127.0.0.1", TestSuiteEnvironment.getHttpPort(), "", null, null), XnioWorker.getContextManager().get(), ssl, pool, OptionMap.create(UndertowOptions.ENABLE_HTTP2, true, UndertowOptions.SSL_SNI_HOSTNAME, "127.0.0.1")).get();
         performSimpleTest(pool, connection);
     }
 
