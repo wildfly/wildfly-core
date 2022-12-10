@@ -166,7 +166,7 @@
          -->
         <version.com.googlecode.javaewah>1.1.13</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
-        <version.com.google.guava>30.1.1-jre</version.com.google.guava>
+        <version.com.google.guava>31.1-jre</version.com.google.guava>
         <version.com.google.guava.failureaccess>1.0.1</version.com.google.guava.failureaccess>
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.4</version.commons-cli>
