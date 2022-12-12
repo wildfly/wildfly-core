@@ -198,18 +198,30 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
     /** Tests logging behavior with no --std-out param */
     @Test
     public void testStdOutDefault() throws Exception {
+        // TODO: remove this assumption once WFCORE-6167 is fixed
+        Assume.assumeFalse("Skipping testHelp, test is not ran on JDK 20.",
+                System.getProperty("java.specification.version").equals("20"));
+
         stdoutTest(null);
     }
 
     /** Tests logging behavior with --std-out=discard */
     @Test
     public void testStdOutDiscard() throws Exception {
+        // TODO: remove this assumption once WFCORE-6167 is fixed
+        Assume.assumeFalse("Skipping testHelp, test is not ran on JDK 20.",
+                System.getProperty("java.specification.version").equals("20"));
+
         stdoutTest("discard");
     }
 
     /** Tests logging behavior with --std-out=echo */
     @Test
     public void testStdOutEcho() throws Exception {
+        // TODO: remove this assumption once WFCORE-6167 is fixed
+        Assume.assumeFalse("Skipping testHelp, test is not ran on JDK 20.",
+                System.getProperty("java.specification.version").equals("20"));
+
         stdoutTest("echo");
     }
 
@@ -544,6 +556,10 @@ public class CLIEmbedServerTestCase extends AbstractCliTestBase {
      */
     @Test
     public void testHelp() throws IOException {
+        // TODO: remove this assumption once WFCORE-6167 is fixed
+        Assume.assumeFalse("Skipping testHelp, test is not ran on JDK 20.",
+                System.getProperty("java.specification.version").equals("20"));
+
         cli.sendLine("embed-server --help");
         checkLogging("embed-server");
 
