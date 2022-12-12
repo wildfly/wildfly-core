@@ -190,7 +190,6 @@ class ModelControllerImpl implements ModelController {
         this.prepareStep = prepareStep == null ? new DefaultPrepareStepHandler() : prepareStep;
         assert processState != null;
         this.processState = processState;
-        this.serviceTarget.addMonitor(stateMonitor.getStabilityMonitor());
         this.executorService = executorService;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;
@@ -867,9 +866,9 @@ class ModelControllerImpl implements ModelController {
      *
      * @param timeout maximum period to wait for service container stability
      * @param timeUnit unit in which {@code timeout} is expressed
-     * @param interruptibly {@code true} if thread interruption should be ignored
+     * @param interruptibly {@code false} if thread interruption should be ignored
      *
-     * @throws java.lang.InterruptedException if {@code interruptibly} is {@code false} and the thread is interrupted while awaiting service container stability
+     * @throws java.lang.InterruptedException if {@code interruptibly} is {@code true} and the thread is interrupted while awaiting service container stability
      * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
      */
     void awaitContainerStability(long timeout, TimeUnit timeUnit, final boolean interruptibly)

@@ -33,10 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartException;
 
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
@@ -47,17 +46,15 @@ import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
  */
 final class ContainerStateMonitor {
 
-    private final ServiceRegistry serviceRegistry;
-    private final StabilityMonitor monitor;
+    private final ServiceContainer container;
     private final Set<ServiceController<?>> failed = new HashSet<ServiceController<?>>();
     private final Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
 
     private Set<ServiceName> previousMissingDepSet = new HashSet<ServiceName>();
     private Set<ServiceController<?>> previousFailedSet = new HashSet<>();
 
-    ContainerStateMonitor(final ServiceRegistry registry, final StabilityMonitor stabilityMonitor) {
-        serviceRegistry = registry;
-        monitor = stabilityMonitor;
+    ContainerStateMonitor(final ServiceContainer container) {
+        this.container = container;
     }
 
     /**
@@ -72,10 +69,6 @@ final class ContainerStateMonitor {
             final String msg = createChangeReportLogMessage(changeReport, false);
             ROOT_LOGGER.info(msg);
         }
-    }
-
-    StabilityMonitor getStabilityMonitor() {
-        return monitor;
     }
 
     /**
@@ -96,7 +89,7 @@ final class ContainerStateMonitor {
                     toWait = msTimeout - System.currentTimeMillis();
                 }
                 try {
-                    if (toWait <= 0 || !monitor.awaitStability(toWait, TimeUnit.MILLISECONDS, failed, problems)) {
+                    if (toWait <= 0 || !container.awaitStability(toWait, TimeUnit.MILLISECONDS, failed, problems)) {
                         throw new TimeoutException();
                     }
                     break;
@@ -121,7 +114,7 @@ final class ContainerStateMonitor {
      * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
      */
     void awaitStability(long timeout, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
-        if (!monitor.awaitStability(timeout, timeUnit, failed, problems)) {
+        if (!container.awaitStability(timeout, timeUnit, failed, problems)) {
             throw new TimeoutException();
         }
     }
@@ -140,7 +133,7 @@ final class ContainerStateMonitor {
      * @throws java.util.concurrent.TimeoutException if service container stability is not reached before the specified timeout
      */
     ContainerStateChangeReport awaitContainerStateChangeReport(long timeout, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
-        if (monitor.awaitStability(timeout, timeUnit, failed, problems)) {
+        if (container.awaitStability(timeout, timeUnit, failed, problems)) {
             return createContainerStateChangeReport(false);
         }
         throw new TimeoutException();
@@ -188,7 +181,7 @@ final class ContainerStateMonitor {
             noLongerMissingServices = new TreeMap<ServiceName, Boolean>();
             for (ServiceName name : previousMissing) {
                 if (!missingDeps.containsKey(name)) {
-                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    ServiceController<?> controller = container.getService(name);
                     noLongerMissingServices.put(name, controller != null);
                 }
             }
@@ -203,7 +196,7 @@ final class ContainerStateMonitor {
             for (Map.Entry<ServiceName, Set<ServiceName>> entry : missingDeps.entrySet()) {
                 final ServiceName name = entry.getKey();
                 if (!previousMissing.contains(name)) {
-                    ServiceController<?> controller = serviceRegistry.getService(name);
+                    ServiceController<?> controller = container.getService(name);
                     boolean unavailable = controller != null && controller.getMode() != ServiceController.Mode.NEVER;
                     missingServices.put(name, new MissingDependencyInfo(name, unavailable, entry.getValue()));
                 }
