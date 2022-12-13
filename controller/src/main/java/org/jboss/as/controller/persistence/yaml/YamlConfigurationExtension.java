@@ -56,6 +56,7 @@ import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.wildfly.security.manager.WildFlySecurityManager;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Construct;
@@ -103,7 +104,7 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
             if (file != null && Files.exists(file) && Files.isRegularFile(file)) {
                 Map<String, Object> yamlConfig = Collections.emptyMap();
                 try (InputStream inputStream = Files.newInputStream(file)) {
-                    Yaml yaml = new Yaml(new OperationConstructor());
+                    Yaml yaml = new Yaml(new OperationConstructor(new LoaderOptions()));
                     yamlConfig = yaml.load(inputStream);
                 } catch (IOException ioex) {
                     throw MGMT_OP_LOGGER.failedToParseYamlConfigurationFile(file.toAbsolutePath().toString(), ioex);
@@ -597,10 +598,20 @@ public class YamlConfigurationExtension implements ConfigurationExtension {
         private final Tag UNDEFINE = new Tag("!undefine");
         private final Tag ADD = new Tag("!list-add");
 
-        public OperationConstructor() {
+        public OperationConstructor(LoaderOptions loadingConfig) {
+            super(loadingConfig);
             this.yamlConstructors.put(REMOVE, new ConstructRemoveOperation());
             this.yamlConstructors.put(UNDEFINE, new ConstructUndefineOperation());
             this.yamlConstructors.put(ADD, new ConstructListAddOperation());
+        }
+
+        @Override
+        protected Class<?> getClassForNode(Node node) {
+            Class<? extends Object> classForTag = typeTags.get(node.getTag());
+            if (classForTag == null) {
+                throw new YAMLException("Class not found: " + node.getTag().getClassName());
+            }
+            return classForTag;
         }
 
         @Override
