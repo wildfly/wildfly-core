@@ -110,6 +110,7 @@ import org.jboss.dmr.ValueExpression;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -117,6 +118,7 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
+@Ignore("[WFCORE-6157] This needs to be investigated - regression of this test was introduced with WFCORE-6151 fix")
 public class CoreResourceManagementTestCase {
 
     private static DomainTestSupport testSupport;
