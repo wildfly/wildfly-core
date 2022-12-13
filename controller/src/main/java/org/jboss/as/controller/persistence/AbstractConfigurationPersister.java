@@ -25,6 +25,7 @@ package org.jboss.as.controller.persistence;
 import static org.jboss.as.controller.logging.ControllerLogger.ROOT_LOGGER;
 
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,7 +82,7 @@ public abstract class AbstractConfigurationPersister implements ExtensibleConfig
         try {
             XMLStreamWriter streamWriter = null;
             try {
-                streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(output);
+                streamWriter = new UTF8XmlStringWriterDelegate(XMLOutputFactory.newInstance().createXMLStreamWriter(output, StandardCharsets.UTF_8.name()));
                 final ModelMarshallingContext extensibleModel = new ModelMarshallingContext() {
 
                     @Override
