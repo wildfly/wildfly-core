@@ -35,18 +35,6 @@ public interface InitialDeploymentPlanBuilder extends DeploymentPlanBuilder {
     /**
      * Indicates all <code>deploy</code>, <code>undeploy</code>, <code>replace</code>
      * or <code>remove</code> operations associated with the deployment plan
-     * should be rolled back in case of a failure in any of them.
-     *
-     * @return a builder that can continue building the overall deployment plan
-     *
-     * @deprecated rollback is the default behavior for a deployment plan and doesn't need to be enabled
-     */
-    @Deprecated
-    DeploymentPlanBuilder withRollback();
-
-    /**
-     * Indicates all <code>deploy</code>, <code>undeploy</code>, <code>replace</code>
-     * or <code>remove</code> operations associated with the deployment plan
      * should <strong>not</strong> be rolled back in case of a failure in any of them.
      *
      * @return a builder that can continue building the overall deployment plan

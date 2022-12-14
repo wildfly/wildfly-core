@@ -174,7 +174,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void removeContent() throws IOException {
                 Future<?> future = manager.execute(manager.newDeploymentPlan()
-                        .removeContenFromDeployment("test-deployment.jar", Collections.singletonList("SimpleTest.properties"))
+                        .removeContentFromDeployment("test-deployment.jar", Collections.singletonList("SimpleTest.properties"))
                         .redeploy("test-deployment.jar")
                         .build());
                 awaitDeploymentExecution(future);
@@ -377,7 +377,7 @@ public class ExplodedDeploymentTestCase {
             @Override
             public void removeContent() throws IOException {
                 Future<?> future = manager.execute(manager.newDeploymentPlan()
-                        .removeContenFromDeployment("test-deployment.jar", Collections.singletonList("SimpleTest.properties"))
+                        .removeContentFromDeployment("test-deployment.jar", Collections.singletonList("SimpleTest.properties"))
                         .build());
                 awaitDeploymentExecution(future);
             }

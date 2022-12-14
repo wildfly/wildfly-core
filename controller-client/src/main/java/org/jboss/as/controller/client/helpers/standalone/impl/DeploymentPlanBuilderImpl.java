@@ -60,7 +60,7 @@ class DeploymentPlanBuilderImpl
     private final boolean globalRollback;
     private volatile boolean cleanupInFinalize = true;
 
-    private final List<DeploymentActionImpl> deploymentActions = new ArrayList<DeploymentActionImpl>();
+    private final List<DeploymentActionImpl> deploymentActions = new ArrayList<>();
 
     DeploymentPlanBuilderImpl() {
         this.shutdown = false;
@@ -104,7 +104,7 @@ class DeploymentPlanBuilderImpl
 
     @Override
     public List<DeploymentAction> getDeploymentActions() {
-        return new ArrayList<DeploymentAction>(deploymentActions);
+        return new ArrayList<>(deploymentActions);
     }
 
     @Override
@@ -295,21 +295,6 @@ class DeploymentPlanBuilderImpl
     }
 
     @Override
-    @Deprecated
-    public DeploymentPlanBuilder withRollback() {
-        if (!deploymentActions.isEmpty()) {
-            // Someone has cast to this impl class
-            cleanup();
-            throw ControllerClientLogger.ROOT_LOGGER.operationsNotAllowed(InitialDeploymentPlanBuilder.class.getSimpleName());
-        }
-        if (shutdown) {
-            cleanup();
-            throw ControllerClientLogger.ROOT_LOGGER.globalRollbackNotCompatible();
-        }
-        return new DeploymentPlanBuilderImpl(this, true);
-    }
-
-    @Override
     public DeploymentPlanBuilder withoutRollback() {
         if (!deploymentActions.isEmpty()) {
             // Someone has cast to this impl class
@@ -441,7 +426,7 @@ class DeploymentPlanBuilderImpl
     }
 
     @Override
-    public DeploymentPlanBuilder removeContenFromDeployment(String deploymentName, List<String> paths) throws IOException {
+    public DeploymentPlanBuilder removeContentFromDeployment(String deploymentName, List<String> paths) throws IOException {
          DeploymentActionImpl mod = DeploymentActionImpl.getRemoveContentAction(deploymentName, paths);
         return new DeploymentPlanBuilderImpl(this, mod);
     }
