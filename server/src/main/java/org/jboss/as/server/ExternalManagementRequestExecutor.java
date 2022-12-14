@@ -32,6 +32,7 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -87,11 +88,13 @@ public class ExternalManagementRequestExecutor implements Service<ExecutorServic
     private ExecutorService executorService;
 
     @SuppressWarnings("deprecation")
-    public static void install(ServiceTarget target, ThreadGroup threadGroup, ServiceName cleanupExecutor) {
+    public static void install(ServiceTarget target, ThreadGroup threadGroup, ServiceName cleanupExecutor,
+                               StabilityMonitor monitor) {
         final ExternalManagementRequestExecutor service = new ExternalManagementRequestExecutor(threadGroup);
         ServiceController<?> controller = target.addService(SERVICE_NAME, service)
                 .addDependency(cleanupExecutor, ExecutorService.class, service.injectedExecutor)
                 .setInitialMode(ServiceController.Mode.ON_DEMAND).install();
+        monitor.addController(controller);
     }
 
     private ExternalManagementRequestExecutor(ThreadGroup threadGroup) {

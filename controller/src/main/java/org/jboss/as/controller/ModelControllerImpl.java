@@ -190,6 +190,7 @@ class ModelControllerImpl implements ModelController {
         this.prepareStep = prepareStep == null ? new DefaultPrepareStepHandler() : prepareStep;
         assert processState != null;
         this.processState = processState;
+        this.serviceTarget.addMonitor(stateMonitor.getStabilityMonitor());
         this.executorService = executorService;
         assert expressionResolver != null;
         this.expressionResolver = expressionResolver;

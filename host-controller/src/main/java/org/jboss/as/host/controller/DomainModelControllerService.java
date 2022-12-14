@@ -303,7 +303,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
         sb.install();
 
         ExternalManagementRequestExecutor.install(serviceTarget, threadGroup,
-                EXECUTOR_CAPABILITY.getCapabilityServiceName());
+                EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
     }
 
     private DomainModelControllerService(final Supplier<ExecutorService> executorService,

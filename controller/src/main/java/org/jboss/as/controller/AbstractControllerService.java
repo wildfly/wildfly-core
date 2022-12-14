@@ -89,6 +89,7 @@ import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StabilityMonitor;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
@@ -207,6 +208,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
     private final Supplier<ControllerInstabilityListener> instabilityListener;
     private final ExpressionResolver expressionResolver;
     private volatile ModelControllerImpl controller;
+    private volatile StabilityMonitor stabilityMonitor;
     private ConfigurationPersister configurationPersister;
     private final ManagedAuditLogger auditLogger;
     private final BootErrorCollector bootErrorCollector;
@@ -422,7 +424,7 @@ public abstract class AbstractControllerService implements Service<ModelControll
         ManagementResourceRegistration rootResourceRegistration = ManagementResourceRegistration.Factory.forProcessType(processType).createRegistration(rootResourceDefinition, authorizerConfig, capabilityRegistry);
         final ModelControllerImpl controller = new ModelControllerImpl(container, target,
                 rootResourceRegistration,
-                new ContainerStateMonitor(container),
+                new ContainerStateMonitor(container, getStabilityMonitor()),
                 configurationPersister, processType, runningModeControl, prepareStep,
                 processState, executorService, expressionResolver, authorizer, securityIdentitySupplier, auditLogger, notificationSupport,
                 bootErrorCollector, createExtraValidationStepHandler(), capabilityRegistry, getPartialModelIndicator(),
@@ -665,11 +667,19 @@ public abstract class AbstractControllerService implements Service<ModelControll
         return PartialModelIndicator.DEFAULT;
     }
 
+    protected final StabilityMonitor getStabilityMonitor() {
+        if (stabilityMonitor == null) {
+            stabilityMonitor = new StabilityMonitor();
+        }
+        return stabilityMonitor;
+    }
+
     public void stop(final StopContext context) {
         capabilityRegistry.clear();
         capabilityRegistry.publish();
         ServiceNameFactory.clearCache();
         controller = null;
+        stabilityMonitor = null;
         processState.setStopping();
         Runnable r = new Runnable() {
             @Override

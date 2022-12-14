@@ -273,7 +273,8 @@ public final class ServerService extends AbstractControllerService {
 
         serviceBuilder.install();
 
-        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName());
+        ExternalManagementRequestExecutor.install(serviceTarget, threadGroup, EXECUTOR_CAPABILITY.getCapabilityServiceName(), service.getStabilityMonitor());
+
     }
 
     public synchronized void start(final StartContext context) throws StartException {
