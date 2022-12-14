@@ -169,9 +169,9 @@ public class SNICombinedWithALPNTestCase {
             managementClient.executeForResult(modelNode);
 
             modelNode = createAddOperation(createAddress(SNI_SSL_CONTEXT));
-            modelNode.get("default-ssl-context").set("host");
+            modelNode.get("default-ssl-context").set("ip");
             ModelNode hostContextMap = new ModelNode();
-            hostContextMap.get("127.0.0.1").set("ip");
+            hostContextMap.get("localhost").set("host");
             modelNode.get("host-context-map").set(hostContextMap);
             managementClient.executeForResult(modelNode);
 
