@@ -285,7 +285,7 @@ public interface DeploymentPlanBuilder {
      * @return a builder that can continue building the overall deployment plan
      * @throws java.io.IOException
      */
-    DeploymentPlanBuilder removeContenFromDeployment(String deploymentName, List<String> paths) throws IOException;
+    DeploymentPlanBuilder removeContentFromDeployment(String deploymentName, List<String> paths) throws IOException;
 
     /**
      * Indicates the specified deployment content should be deployed.
