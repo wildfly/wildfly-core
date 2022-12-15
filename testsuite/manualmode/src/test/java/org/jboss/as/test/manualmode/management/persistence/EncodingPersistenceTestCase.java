@@ -34,6 +34,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ManagementClient;
+import org.wildfly.core.testrunner.Server;
 import org.wildfly.core.testrunner.ServerControl;
 import org.wildfly.core.testrunner.ServerController;
 import org.wildfly.core.testrunner.WildFlyRunner;
@@ -54,10 +55,15 @@ public class EncodingPersistenceTestCase {
      */
     @Test
     public void testEncodingManagementClient() throws Exception {
-        String originalArgs = System.getProperty("jvm.args");
+        final Path confDir = Paths.get(TestSuiteEnvironment.getJBossHome()).resolve("standalone").resolve("configuration");
+        final Path origConfig = confDir.resolve("standalone.xml");
+        final Path testConfig = confDir.resolve("encoding-standalone.xml");
+        Files.copy(origConfig, testConfig);
+
+        final String originalArgs = System.getProperty("jvm.args");
         try {
             System.setProperty("jvm.args", originalArgs + " -Dfile.encoding=windows-1250");
-            serverController.start();
+            serverController.start(testConfig.getFileName().toString(), Server.StartMode.NORMAL);
 
             final ManagementClient client = serverController.getClient();
 
@@ -67,11 +73,12 @@ public class EncodingPersistenceTestCase {
             client.executeForResult(op);
 
             serverController.stop();
-            serverController.start();
+            serverController.start(testConfig.getFileName().toString(), Server.StartMode.NORMAL);
 
             op = Util.getReadResourceOperation(PROPERTY_ADDR);
             ModelNode result = client.executeForResult(op);
             Assert.assertEquals("áéíóú", result.get(VALUE).asString());
+
         } finally {
             System.setProperty("jvm.args", originalArgs);
             if (serverController.isStarted()) {
