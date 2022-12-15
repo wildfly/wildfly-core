@@ -33,7 +33,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>18.1.2-2-PSI</version>
+    <version>18.1.2-3-PSI-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
