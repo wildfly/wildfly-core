@@ -47,7 +47,7 @@ public class EmbeddedHostControllerBootstrap {
     private final ServiceContainer serviceContainer;
     private final HostControllerEnvironment environment;
     private final String authCode;
-    private FutureServiceContainer futureContainer;
+    private final FutureServiceContainer futureContainer;
 
     public EmbeddedHostControllerBootstrap(FutureServiceContainer futureContainer, final HostControllerEnvironment environment, final String authCode) {
         this.environment = environment;

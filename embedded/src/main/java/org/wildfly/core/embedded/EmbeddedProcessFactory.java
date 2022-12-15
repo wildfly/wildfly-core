@@ -36,7 +36,7 @@ import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
  * <p>
- * Factory that sets up an embedded server or Host Controller process using modular classloading.
+ * Factory that sets up an embedded {@link StandaloneServer} or {@link HostController} process using modular classloading.
  * </p>
  * <p>
  * If a clean run is wanted, you can specify <code>${jboss.embedded.root}</code> to an existing directory
