@@ -49,6 +49,7 @@
         <version.io.netty>4.1.77.Final</version.io.netty>
         <version.jakarta.inject.jakarta.inject-api>2.0.1</version.jakarta.inject.jakarta.inject-api>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
+        <version.org.codehaus.plexus.plexus-utils>3.5.0</version.org.codehaus.plexus.plexus-utils>
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>2.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_4.0_spec>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
         <version.xom.xom>1.3.7</version.xom.xom>
@@ -204,6 +205,12 @@
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity-engine-scripting</artifactId>
                 <version>${version.org.apache.velocity}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-utils</artifactId>
+                <version>${version.org.codehaus.plexus.plexus-utils}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

@@ -219,7 +219,6 @@
         <version.org.apache.sshd>2.9.2</version.org.apache.sshd>
         <version.org.bouncycastle>1.72</version.org.bouncycastle>
         <version.org.bouncycastle.bcpg-jdk18on>1.72.1</version.org.bouncycastle.bcpg-jdk18on>
-        <version.org.codehaus.plexus.plexus-utils>3.1.1</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.1</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
@@ -990,11 +989,6 @@
                 <version>${version.org.apache.maven.resolver}</version>
             </dependency>
             <!-- This dependency needs to be managed due to the dependency convergence enforcer rule -->
-            <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-utils</artifactId>
-                <version>${version.org.codehaus.plexus.plexus-utils}</version>
-            </dependency>
             <dependency>
                 <groupId>org.fusesource.jansi</groupId>
                 <artifactId>jansi</artifactId>
