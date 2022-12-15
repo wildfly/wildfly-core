@@ -23,11 +23,9 @@ package org.jboss.as.controller.client;
 
 import org.jboss.as.protocol.StreamUtils;
 import org.jboss.dmr.ModelNode;
-import org.wildfly.common.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,21 +61,6 @@ class OperationImpl implements Operation {
             return Collections.emptyList();
         }
         return Collections.unmodifiableList(inputStreams);
-    }
-
-    @Override
-    @Deprecated
-    public Operation clone() {
-        List<InputStream> streamsCopy = inputStreams == null ? null : new ArrayList<InputStream>(inputStreams);
-        return new OperationImpl(operation.clone(), streamsCopy);
-    }
-
-    @Override
-    @Deprecated
-    public Operation clone(final ModelNode operation) {
-        Assert.checkNotNullParam("operation", operation);
-        List<InputStream> streamsCopy = inputStreams == null ? null : new ArrayList<InputStream>(inputStreams);
-        return new OperationImpl(operation, streamsCopy);
     }
 
     @Override

@@ -61,7 +61,7 @@ class OperationAttachmentsProxy implements Operation {
     }
 
     private static List<ProxiedInputStream> getProxiedStreams(final ManagementChannelAssociation channelAssociation, final int batchId, final int size) {
-        List<ProxiedInputStream> proxiedStreams = new ArrayList<ProxiedInputStream>(size);
+        List<ProxiedInputStream> proxiedStreams = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             proxiedStreams.add(new ProxiedInputStream(channelAssociation, batchId, i));
         }
@@ -75,8 +75,7 @@ class OperationAttachmentsProxy implements Operation {
 
     @Override
     public List<InputStream> getInputStreams() {
-        List<InputStream> result = new ArrayList<InputStream>();
-        result.addAll(proxiedStreams);
+        List<InputStream> result = new ArrayList<>(proxiedStreams);
         return Collections.unmodifiableList(result);
     }
 
@@ -94,19 +93,6 @@ class OperationAttachmentsProxy implements Operation {
     @Override
     public ModelNode getOperation() {
         return operation;
-    }
-
-    @SuppressWarnings("CloneDoesntCallSuperClone")
-    @Override
-    @Deprecated
-    public final Operation clone() {
-        return new OperationAttachmentsProxy(operation, proxiedStreams);
-    }
-
-    @Override
-    @Deprecated
-    public Operation clone(ModelNode operation) {
-        return new OperationAttachmentsProxy(operation, proxiedStreams);
     }
 
     private static class ProxiedInputStream extends InputStream {
@@ -168,7 +154,7 @@ class OperationAttachmentsProxy implements Operation {
                 try {
                     final OutputStream os = pipe.getOut();
                     // Execute the async request
-                    channelAssociation.executeRequest(batchId, new AbstractManagementRequest<Object, Object>() {
+                    channelAssociation.executeRequest(batchId, new AbstractManagementRequest<>() {
 
                         @Override
                         public byte getOperationType() {

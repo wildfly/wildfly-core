@@ -43,18 +43,6 @@ public interface Operation extends OperationAttachments {
      */
     ModelNode getOperation();
 
-    /**
-     * Clones this operation.
-     */
-    @Deprecated
-    Operation clone();
-
-    /**
-     * Clones this operation, but overrides the raw operation node
-     */
-    @Deprecated
-    Operation clone(ModelNode operation);
-
     /** Factory methods for creating {@code Operation}s */
     class Factory {
         /**
@@ -65,7 +53,7 @@ public interface Operation extends OperationAttachments {
          * @return the operation. Will not be {@code null}
          */
         public static Operation create(final ModelNode operation) {
-            return create(operation, Collections.<InputStream>emptyList());
+            return create(operation, Collections.emptyList());
         }
         /**
          * Create a simple operation with stream attachments. The streams will not
