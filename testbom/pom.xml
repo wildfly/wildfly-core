@@ -41,8 +41,8 @@
 
     <properties>
         <version.ch.qos.reload4j>1.2.18.5</version.ch.qos.reload4j>
-        <version.com.fasterxml.jackson>2.13.4</version.com.fasterxml.jackson>
-        <version.com.fasterxml.jackson.databind>2.13.4.2</version.com.fasterxml.jackson.databind>
+        <version.com.fasterxml.jackson>2.14.1</version.com.fasterxml.jackson>
+        <version.com.fasterxml.jackson.databind>2.14.1</version.com.fasterxml.jackson.databind>
         <version.commons-io>2.10.0</version.commons-io>
         <version.io.netty>4.1.71.Final</version.io.netty>
         <version.org.apache.velocity>2.3</version.org.apache.velocity>
