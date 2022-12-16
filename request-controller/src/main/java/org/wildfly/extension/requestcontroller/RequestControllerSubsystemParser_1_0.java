@@ -35,7 +35,7 @@ class RequestControllerSubsystemParser_1_0 extends PersistentResourceXMLParser {
 
     @Override
     public PersistentResourceXMLDescription getParserDescription() {
-        return builder(RequestControllerRootDefinition.INSTANCE, Namespace.CURRENT.getUriString())
+        return builder(RequestControllerRootDefinition.INSTANCE.getPathElement(), Namespace.CURRENT.getUriString())
                 .addAttributes(RequestControllerRootDefinition.MAX_REQUESTS, RequestControllerRootDefinition.TRACK_INDIVIDUAL_ENDPOINTS)
                 .build();
     }
