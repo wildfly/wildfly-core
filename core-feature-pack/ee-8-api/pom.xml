@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-feature-pack-parent</artifactId>
-        <version>13.0.3-13-PSI-SNAPSHOT</version>
+        <version>13.0.3-13-PSI</version>
     </parent>
 
     <artifactId>wildfly-core-feature-pack-ee-8-api</artifactId>
