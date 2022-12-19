@@ -494,6 +494,27 @@ public class Server {
         fail("Live Server did not reload in the imparted time.");
     }
 
+    void waitForServerToStop(long timeout, int expectedExitCode) {
+        long start = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() - start < timeout) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+            }
+            try {
+                int exitCode = process.exitValue();
+                if (exitCode == expectedExitCode) {
+                    return;
+                } else {
+                    fail("Server stopped with unexpected exit code: " + exitCode);
+                }
+            } catch (IllegalThreadStateException e) {
+            }
+        }
+        fail("Server did not stopped in the imparted time.");
+    }
+
     /**
      * Adjusts timeout for operations.
      *

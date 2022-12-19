@@ -17,6 +17,8 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
  */
 public class ServerController {
 
+    private static final int RESTART_PROCESS_FROM_STARTUP_SCRIPT = 10;
+
     private static final AtomicBoolean started = new AtomicBoolean(false);
     private static volatile Server server;
 
@@ -252,6 +254,28 @@ public class ServerController {
 
     public void waitForLiveServerToReload(int timeout){
         server.waitForLiveServerToReload(timeout);
+    }
+
+    /**
+     * Spawns a thread to execute a given {@code restartTrigger} task and then starts a new server
+     * process once the existing server exits with the usual restart exit code.
+     *
+     * @param restartTrigger a runnable that will result in the existing server process exiting with the
+     *                       restart exit code. Cannot be {@code null}
+     * @param timeout maximum time in ms to wait for the server process to exit
+     * @param restart whether to restart server after being successfully stopped
+     *
+     * @throws RuntimeException if {@code restartTrigger} throws an exception
+     * @throws AssertionError if {@code restartTrigger} throws an AssertionError, if the server does not stop within
+     *                        {@code timeout} ms, or if the server's exit code is not the one expected.
+     */
+    public void handleServerRestart(Runnable restartTrigger, long timeout, boolean restart) {
+        Thread restartThread = new Thread(restartTrigger);
+        restartThread.start();
+        server.waitForServerToStop(timeout, RESTART_PROCESS_FROM_STARTUP_SCRIPT);
+        if (restart) {
+            server.start();
+        }
     }
 
 }
