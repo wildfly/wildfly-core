@@ -593,7 +593,7 @@ final class SubsystemTestDelegate {
                 LegacyControllerKernelServicesProxy legacyServices = legacyInitializer.install(kernelServices, transformedBootOperations);
                 kernelServices.addLegacyKernelService(entry.getKey(), legacyServices);
             }
-
+            kernelServices.getContainer().awaitStability();
             return kernelServices;
         }
 
