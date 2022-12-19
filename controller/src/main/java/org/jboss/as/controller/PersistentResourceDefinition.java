@@ -4,13 +4,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
-import org.jboss.as.controller.registry.OperationEntry.Flag;
 
 /**
  * A persistent resource definition. This needs to be combined with {@link PersistentResourceXMLDescription} to
@@ -56,14 +54,6 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
                         .setRuntime(isRuntime)
         );
     }
-
-    /** @deprecated Use the {@link #PersistentResourceDefinition(SimpleResourceDefinition.Parameters)} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected PersistentResourceDefinition(Parameters parameters){
-        this((SimpleResourceDefinition.Parameters)parameters);
-    }
-
     protected PersistentResourceDefinition(SimpleResourceDefinition.Parameters parameters){
         super(parameters);
     }
@@ -93,88 +83,4 @@ public abstract class PersistentResourceDefinition extends SimpleResourceDefinit
     }
 
     public abstract Collection<AttributeDefinition> getAttributes();
-
-    /** @deprecated Use the superclass */
-    @Deprecated
-    public static class Parameters extends SimpleResourceDefinition.Parameters {
-
-        /**
-         * Creates a Parameters object
-         *
-         * @param pathElement         the path element of the created ResourceDefinition. Cannot be {@code null}
-         * @param descriptionResolver the description provider. Cannot be {@code null}
-         * @deprecated Use the superclass
-         */
-        @Deprecated
-        public Parameters(PathElement pathElement, ResourceDescriptionResolver descriptionResolver) {
-            super(pathElement, descriptionResolver);
-        }
-
-        public Parameters setDescriptionResolver(ResourceDescriptionResolver descriptionResolver) {
-            super.setDescriptionResolver(descriptionResolver);
-
-            return this;
-        }
-
-        public Parameters setAddHandler(OperationStepHandler addHandler) {
-            super.setAddHandler(addHandler);
-
-            return this;
-        }
-
-        public Parameters setRemoveHandler(OperationStepHandler removeHandler) {
-            super.setRemoveHandler(removeHandler);
-
-            return this;
-        }
-
-        public Parameters setAddRestartLevel(Flag addRestartLevel) {
-            super.setAddRestartLevel(addRestartLevel);
-
-            return this;
-        }
-
-        public Parameters setRemoveRestartLevel(Flag removeRestartLevel) {
-            super.setRemoveRestartLevel(removeRestartLevel);
-
-            return this;
-        }
-
-        public Parameters setRuntime() {
-            super.setRuntime();
-
-            return this;
-        }
-
-        public Parameters setRuntime(boolean isRuntime) {
-            super.setRuntime(isRuntime);
-
-            return this;
-        }
-
-        public Parameters setDeprecationData(DeprecationData deprecationData) {
-            super.setDeprecationData(deprecationData);
-
-            return this;
-        }
-
-        public Parameters setDeprecatedSince(ModelVersion deprecatedSince) {
-            super.setDeprecatedSince(deprecatedSince);
-
-            return this;
-        }
-
-        public Parameters setOrderedChild() {
-            super.setOrderedChild();
-
-            return this;
-        }
-
-        public Parameters setCapabilities(RuntimeCapability... capabilities) {
-            super.setCapabilities(capabilities);
-
-            return this;
-        }
-
-    }
 }
