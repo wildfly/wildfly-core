@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'wildfly'
     steps:
-    - uses: actions/stale@v3
+    - uses: actions/stale@v7
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-pr-message: 'There has been no activity on this PR for 45 days. It will be auto-closed after 90 days.'
