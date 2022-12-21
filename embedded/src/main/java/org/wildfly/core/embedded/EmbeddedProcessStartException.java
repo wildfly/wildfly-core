@@ -21,7 +21,7 @@ package org.wildfly.core.embedded;
  *
  * @author Brian Stansberry
  */
-public class EmbeddedProcessStartException extends ServerStartException {
+public class EmbeddedProcessStartException extends Exception {
 
     private static final long serialVersionUID = 7991468792402261287L;
 

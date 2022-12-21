@@ -58,10 +58,10 @@ public interface EmbeddedManagedProcess {
     /**
      * Check if the implementation of this interface is able to use getProcessState() to retrieve the current process state.
      * <p>
-     * The implementation class could be an implementation comming from an older server version that does not support to check
+     * The implementation class could be an implementation coming from an older server version that does not support checking
      * the process state directly.
      *
-     * @return Whether the implementation supports to query for the process state.
+     * @return Whether the implementation supports querying for the process state.
      */
     boolean canQueryProcessState();
 

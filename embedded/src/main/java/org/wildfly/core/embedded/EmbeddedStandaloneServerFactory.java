@@ -56,9 +56,9 @@ import org.jboss.msc.value.Value;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
- * This is the counter-part of EmbeddedServerFactory which lives behind a module class loader.
+ * This is the standalone server counter-part of EmbeddedProcessFactory which lives behind a module class loader.
  * <p>
- * ServerFactory that sets up a standalone server using modular classloading.
+ * Factory that sets up an embedded @{link StandaloneServer} using modular classloading.
  * </p>
  * <p>
  * To use this class the <code>jboss.home.dir</code> system property must be set to the
@@ -274,29 +274,6 @@ public class EmbeddedStandaloneServerFactory {
                     bootstrap = Bootstrap.Factory.newInstance();
 
                     Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironment);
-
-                    /*
-                     * This would setup an {@link TransientConfigurationPersister} which does not persist anything
-                     *
-                    final ExtensionRegistry extensionRegistry = configuration.getExtensionRegistry();
-                    final Bootstrap.ConfigurationPersisterFactory configurationPersisterFactory = new Bootstrap.ConfigurationPersisterFactory() {
-                        @Override
-                        public ExtensibleConfigurationPersister createConfigurationPersister(ServerEnvironment serverEnvironment, ExecutorService executorService) {
-                            final QName rootElement = new QName(Namespace.CURRENT.getUriString(), "server");
-                            final StandaloneXml parser = new StandaloneXml(Module.getBootModuleLoader(), executorService, extensionRegistry);
-                            final File configurationFile = serverEnvironment.getServerConfigurationFile().getBootFile();
-                            XmlConfigurationPersister persister = new TransientConfigurationPersister(configurationFile, rootElement, parser, parser);
-                            for (Namespace namespace : Namespace.domainValues()) {
-                                if (!namespace.equals(Namespace.CURRENT)) {
-                                    persister.registerAdditionalRootElement(new QName(namespace.getUriString(), "server"), parser);
-                                }
-                            }
-                            extensionRegistry.setWriterRegistry(persister);
-                            return persister;
-                        }
-                    };
-                    configuration.setConfigurationPersisterFactory(configurationPersisterFactory);
-                    */
 
                     configuration.setModuleLoader(moduleLoader);
 

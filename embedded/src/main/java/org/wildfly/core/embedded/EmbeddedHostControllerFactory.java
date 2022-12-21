@@ -63,9 +63,9 @@ import org.jboss.msc.value.Value;
 import org.wildfly.core.embedded.logging.EmbeddedLogger;
 
 /**
- * This is the host controller counterpart to EmbeddedServerFactory which lives behind a module class loader.
+ * This is the host controller counterpart to EmbeddedProcessFactory which lives behind a module class loader.
  * <p>
- * HostContollerFactory that sets up an embedded server using modular classloading.
+ * Factory that sets up an embedded {@link HostController} using modular classloading.
  * </p>
  * <p>
  * To use this class the <code>jboss.home.dir</code> system property must be set to the
@@ -267,7 +267,7 @@ public class EmbeddedHostControllerFactory {
                         }
                     });
 
-                    // Determine the ServerEnvironment
+                    // Determine the HostControllerEnvironment
                     HostControllerEnvironment environment = createHostControllerEnvironment(jbossHomeDir, cmdargs, startTime);
 
                     FutureServiceContainer futureContainer = new FutureServiceContainer();
