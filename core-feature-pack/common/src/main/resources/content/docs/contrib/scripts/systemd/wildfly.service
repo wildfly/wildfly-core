@@ -8,7 +8,7 @@ Environment=LAUNCH_JBOSS_IN_BACKGROUND=1
 EnvironmentFile=-/etc/wildfly/wildfly.conf
 User=wildfly
 LimitNOFILE=102642
-PIDFile=/var/run/wildfly/wildfly.pid
+PIDFile=/run/wildfly/wildfly.pid
 ExecStart=/opt/wildfly/bin/launch.sh $WILDFLY_MODE $WILDFLY_CONFIG $WILDFLY_BIND
 StandardOutput=null
 
