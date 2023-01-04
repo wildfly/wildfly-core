@@ -33,6 +33,7 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.services.path.PathManager;
+import org.jboss.as.controller.services.path.PathManagerService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.ServiceBuilder;
@@ -139,6 +140,8 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
                 throw ROOT_LOGGER.failedToLoadCallbackhandlerFromProvidedModule();
             }
 
+            final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
+
             CallbackHandler finalCallbackHandler = callbackhandler;
             TrivialService<SecurityRealm> jaasRealmService = new TrivialService<>(
                     new TrivialService.ValueSupplier<SecurityRealm>() {
@@ -149,7 +152,6 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
                             String rootPath = null;
                             if (jaasConfigPath != null) {
                                 pathResolver = pathResolver();
-                                final InjectedValue<PathManager> pathManagerInjector = new InjectedValue<>();
                                 File jaasConfigFile = pathResolver.path(jaasConfigPath).relativeTo(relativeTo, pathManagerInjector.getOptionalValue()).resolve();
                                 if (!jaasConfigFile.exists()) {
                                     throw ROOT_LOGGER.jaasFileDoesNotExist(jaasConfigFile.getPath());
@@ -172,8 +174,8 @@ public class JaasRealmDefinition extends SimpleResourceDefinition {
             ServiceBuilder<SecurityRealm> serviceBuilder = serviceTarget.addService(realmName, jaasRealmService);
 
             if (relativeTo != null) {
+                serviceBuilder.addDependency(PathManagerService.SERVICE_NAME, PathManager.class, pathManagerInjector);
                 serviceBuilder.requires(pathName(relativeTo));
-                serviceBuilder.requires(pathName(jaasConfigPath));
             }
 
             commonDependencies(serviceBuilder)
