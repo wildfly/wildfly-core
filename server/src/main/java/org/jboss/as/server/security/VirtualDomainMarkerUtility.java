@@ -16,8 +16,13 @@
 
 package org.jboss.as.server.security;
 
+import static org.jboss.as.server.deployment.Attachments.CAPABILITY_SERVICE_SUPPORT;
+
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.server.deployment.AttachmentKey;
+import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.server.deployment.Services;
 import org.jboss.msc.service.ServiceName;
 
 /**
@@ -29,6 +34,7 @@ public class VirtualDomainMarkerUtility {
 
     private static final AttachmentKey<Boolean> REQUIRED = AttachmentKey.create(Boolean.class);
     private static final ServiceName DOMAIN_SUFFIX = ServiceName.of("security-domain", "virtual");
+    private static final String VIRTUAL_SECURITY_DOMAIN_CAPABILITY = "org.wildfly.security.virtual-security-domain";
 
     public static void virtualDomainRequired(final DeploymentUnit deploymentUnit) {
         DeploymentUnit rootUnit = toRoot(deploymentUnit);
@@ -46,6 +52,20 @@ public class VirtualDomainMarkerUtility {
         DeploymentUnit rootUnit = toRoot(deploymentUnit);
 
         return rootUnit.getServiceName().append(DOMAIN_SUFFIX);
+    }
+
+    public static ServiceName virtualDomainName(final String domainName) {
+        return Services.deploymentUnitName(domainName).append(DOMAIN_SUFFIX);
+    }
+
+    public static ServiceName virtualDomainMetaDataName(final DeploymentPhaseContext context, final DeploymentUnit deploymentUnit) {
+        CapabilityServiceSupport capabilityServiceSupport = context.getDeploymentUnit().getAttachment(CAPABILITY_SERVICE_SUPPORT);
+        return capabilityServiceSupport.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, toRoot(deploymentUnit).getName());
+    }
+
+    public static ServiceName virtualDomainMetaDataName(final DeploymentPhaseContext context, final String virtualDomainName) {
+        CapabilityServiceSupport capabilityServiceSupport = context.getDeploymentUnit().getAttachment(CAPABILITY_SERVICE_SUPPORT);
+        return capabilityServiceSupport.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, virtualDomainName);
     }
 
     private static DeploymentUnit toRoot(final DeploymentUnit deploymentUnit) {

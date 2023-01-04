@@ -836,9 +836,10 @@
                 Container for the security domain definitions.
             </xs:documentation>
         </xs:annotation>
-        <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
             <xs:element name="security-domain" type="securityDomainType" maxOccurs="unbounded" />
-        </xs:sequence>
+            <xs:element name="virtual-security-domain" type="virtualSecurityDomainType" maxOccurs="unbounded" />
+        </xs:choice>
     </xs:complexType>
 
     <xs:complexType name="securityDomainType">
@@ -918,6 +919,13 @@
             <xs:annotation>
                 <xs:documentation>
                     A list of references to security domains that are trusted by this security domain.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="trusted-virtual-security-domains" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A list of references to virtual security domains that are trusted by this security domain.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -6345,4 +6353,35 @@
             <xs:enumeration value="DEFAULT" />
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="virtualSecurityDomainType">
+        <xs:annotation>
+            <xs:documentation>
+                Complex type for the definition of a single virtual security domain.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="outflow-anonymous" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Where automatic outflow to a security domain is configured, if outflowing
+                    the current identity is not authorized should the
+                    anonymous identity of that domain be used instead?
+
+                    Outflowing an identity replaces any previously
+                    established identity for the outflow domain for the
+                    ongoing call, outflowing anonymous has the effect of
+                    clearing the identity.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="outflow-security-domains" type="stringListType" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A list of references to security domains that any identity established for this
+                    virtual domain should automatically outflow to.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

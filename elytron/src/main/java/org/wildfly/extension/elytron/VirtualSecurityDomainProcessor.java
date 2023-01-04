@@ -18,6 +18,7 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.server.security.VirtualDomainMarkerUtility.isVirtualDomainRequired;
 import static org.jboss.as.server.security.VirtualDomainMarkerUtility.virtualDomainName;
+import static org.jboss.as.server.security.VirtualDomainUtil.configureVirtualDomain;
 
 import java.util.function.Consumer;
 
@@ -25,6 +26,7 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.security.VirtualDomainMetaData;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -51,7 +53,13 @@ class VirtualSecurityDomainProcessor implements DeploymentUnitProcessor {
 
         ServiceBuilder<?> serviceBuilder = serviceTarget.addService(virtualDomainName);
 
-        final SecurityDomain virtualDomain = SecurityDomain.builder().build();
+        SecurityDomain.Builder virtualDomainBuilder = SecurityDomain.builder();
+        VirtualDomainMetaData virtualDomainMetaData = configureVirtualDomain(phaseContext, deploymentUnit, virtualDomainBuilder);
+        final SecurityDomain virtualDomain = virtualDomainBuilder.build();
+        if (virtualDomainMetaData != null) {
+            virtualDomainMetaData.setSecurityDomain(virtualDomain);
+        }
+
         final Consumer<SecurityDomain> consumer = serviceBuilder.provides(virtualDomainName);
 
         serviceBuilder.setInstance(Service.newInstance(consumer, virtualDomain));

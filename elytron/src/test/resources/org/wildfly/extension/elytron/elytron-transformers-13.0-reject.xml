@@ -59,7 +59,16 @@
         </credential-store>
         <secret-key-credential-store name="secretkeycredentialstore" path="target/test-classes/org/wildfly/extension/elytron/mysecretkeycredstore.cs" create="true" populate="true" />
     </credential-stores>
+    <security-domains>
+        <security-domain name="myDomain" default-realm="PropertiesRealm" trusted-virtual-security-domains="myVirtualDomain">
+            <realm name="PropertiesRealm"/>
+        </security-domain>
+        <virtual-security-domain name="myVirtualDomain" outflow-security-domains="myDomain"/>
+    </security-domains>
     <security-realms>
+        <properties-realm name="PropertiesRealm">
+            <users-properties path="target/test-classes/org/wildfly/extension/elytron/users.properties"/>
+        </properties-realm>
         <properties-realm name="PropertiesRealmEncodingCharset" hash-charset="GB2312" hash-encoding="base64">
             <users-properties path="target/test-classes/org/wildfly/extension/elytron/users-hashedbase64charset.properties" digest-realm-name="ManagementRealm"/>
         </properties-realm>

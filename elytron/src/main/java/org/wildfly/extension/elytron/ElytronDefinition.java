@@ -200,6 +200,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
         // Domain
         resourceRegistration.registerSubModel(new DomainDefinition());
+        resourceRegistration.registerSubModel(new VirtualDomainDefinition());
 
         // Security Realms
         resourceRegistration.registerSubModel(new AggregateRealmDefinition());

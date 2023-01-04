@@ -31,6 +31,7 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_RUNTIME
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_EVENT_LISTENER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.SECURITY_REALM_RUNTIME_CAPABILITY;
+import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
 import static org.wildfly.extension.elytron.ElytronExtension.getRequiredService;
@@ -70,6 +71,7 @@ import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
+import org.jboss.as.server.security.VirtualDomainMetaData;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.inject.Injector;
@@ -193,6 +195,13 @@ class DomainDefinition extends SimpleResourceDefinition {
             .setCapabilityReference(SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
             .build();
 
+    static final StringListAttributeDefinition TRUSTED_VIRTUAL_SECURITY_DOMAINS = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS)
+            .setRequired(false)
+            .setMinSize(1)
+            .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+            .setCapabilityReference(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, SECURITY_DOMAIN_CAPABILITY)
+            .build();
+
     static final SimpleAttributeDefinition OUTFLOW_ANONYMOUS = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.OUTFLOW_ANONYMOUS, ModelType.BOOLEAN, true)
             .setAllowExpression(true)
             .setDefaultValue(ModelNode.FALSE)
@@ -215,7 +224,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final AttributeDefinition[] ATTRIBUTES = new AttributeDefinition[] { PRE_REALM_PRINCIPAL_TRANSFORMER, POST_REALM_PRINCIPAL_TRANSFORMER, PRINCIPAL_DECODER,
-            REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER,
+            REALM_MAPPER, ROLE_MAPPER, PERMISSION_MAPPER, DEFAULT_REALM, REALMS, TRUSTED_SECURITY_DOMAINS, TRUSTED_VIRTUAL_SECURITY_DOMAINS, OUTFLOW_ANONYMOUS, OUTFLOW_SECURITY_DOMAINS, SECURITY_EVENT_LISTENER,
             EVIDENCE_DECODER, ROLE_DECODER};
 
     private static final DomainAddHandler ADD = new DomainAddHandler();
@@ -348,12 +357,28 @@ class DomainDefinition extends SimpleResourceDefinition {
         final List<InjectedValue<SecurityDomain>> trustedSecurityDomainInjectors = new ArrayList<>(trustedSecurityDomainNames.size());
         final Set<SecurityDomain> trustedSecurityDomains = new HashSet<>();
 
+        List<String> trustedVirtualSecurityDomainNames = TRUSTED_VIRTUAL_SECURITY_DOMAINS.unwrap(context, model);
+        final List<InjectedValue<VirtualDomainMetaData>> trustedVirtualSecurityDomainInjectors = new ArrayList<>(trustedVirtualSecurityDomainNames.size());
+        final Set<VirtualDomainMetaData> trustedVirtualSecurityDomains = new HashSet<>();
+
         List<String> outflowSecurityDomainNames = OUTFLOW_SECURITY_DOMAINS.unwrap(context, model);
         final boolean outflowAnonymous = OUTFLOW_ANONYMOUS.resolveModelAttribute(context, model).asBoolean();
         final List<InjectedValue<SecurityDomain>> outflowSecurityDomainInjectors = new ArrayList<>(outflowSecurityDomainNames.size());
         final Set<SecurityDomain> outflowSecurityDomains = new HashSet<>();
 
-        installInitialService(context, initialName, model, trustedSecurityDomains::contains,
+        Predicate<SecurityDomain> isTrustedSecurityDomain = domain -> {
+            if (trustedSecurityDomains.contains(domain)) {
+                return true;
+            }
+            for (VirtualDomainMetaData trustedVirtualDomainMetaData : trustedVirtualSecurityDomains) {
+                if (trustedVirtualDomainMetaData.getSecurityDomain() != null && trustedVirtualDomainMetaData.getSecurityDomain().equals(domain)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        installInitialService(context, initialName, model, isTrustedSecurityDomain,
                 !outflowSecurityDomainNames.isEmpty() ? i -> outflow(i, outflowAnonymous, outflowSecurityDomains) : UnaryOperator.identity());
 
         TrivialService<SecurityDomain> finalDomainService = new TrivialService<SecurityDomain>();
@@ -364,6 +389,9 @@ class DomainDefinition extends SimpleResourceDefinition {
                 for (InjectedValue<SecurityDomain> trustedSecurityDomainInjector : trustedSecurityDomainInjectors) {
                     trustedSecurityDomains.add(trustedSecurityDomainInjector.getValue());
                 }
+                for (InjectedValue<VirtualDomainMetaData> trustedVirtualSecurityDomainInjector : trustedVirtualSecurityDomainInjectors) {
+                    trustedVirtualSecurityDomains.add(trustedVirtualSecurityDomainInjector.getValue());
+                }
                 for (InjectedValue<SecurityDomain> i : outflowSecurityDomainInjectors) {
                     outflowSecurityDomains.add(i.getValue());
                 }
@@ -373,6 +401,7 @@ class DomainDefinition extends SimpleResourceDefinition {
             @Override
             public void dispose() {
                 trustedSecurityDomains.clear();
+                trustedVirtualSecurityDomains.clear();
             }
 
         });
@@ -387,6 +416,12 @@ class DomainDefinition extends SimpleResourceDefinition {
             trustedSecurityDomainInjectors.add(trustedDomainInjector);
         }
 
+        for (String trustedVirtualDomainName : trustedVirtualSecurityDomainNames) {
+            InjectedValue<VirtualDomainMetaData> trustedVirtualDomainInjector = new InjectedValue<>();
+            domainBuilder.addDependency(context.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, trustedVirtualDomainName, VirtualDomainMetaData.class).append(INITIAL), VirtualDomainMetaData.class, trustedVirtualDomainInjector);
+            trustedVirtualSecurityDomainInjectors.add(trustedVirtualDomainInjector);
+        }
+
         for (String outflowDomainName : outflowSecurityDomainNames) {
             InjectedValue<SecurityDomain> outflowDomainInjector = new InjectedValue<>();
             domainBuilder.addDependency(context.getCapabilityServiceName(SECURITY_DOMAIN_CAPABILITY, outflowDomainName, SecurityDomain.class).append(INITIAL), SecurityDomain.class, outflowDomainInjector);
@@ -397,7 +432,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         return domainBuilder.install();
     }
 
-    private static SecurityIdentity outflow(final SecurityIdentity identity, final boolean outflowAnonymous, final Set<SecurityDomain> outflowDomains) {
+    static SecurityIdentity outflow(final SecurityIdentity identity, final boolean outflowAnonymous, final Set<SecurityDomain> outflowDomains) {
         return identity.withSecurityIdentitySupplier(new Supplier<SecurityIdentity[]>() {
 
             private volatile SecurityIdentity[] outflowIdentities = null;
@@ -427,7 +462,7 @@ class DomainDefinition extends SimpleResourceDefinition {
         });
     }
 
-    private static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
+    static SecurityIdentity[] performOutflow(SecurityIdentity identity, boolean outflowAnonymous, Set<SecurityDomain> outflowDomains) {
         List<SecurityIdentity> outflowIdentities = new ArrayList<>(outflowDomains.size());
         for (SecurityDomain d : outflowDomains) {
             try(ServerAuthenticationContext sac = d.createNewAuthenticationContext()) {

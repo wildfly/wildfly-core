@@ -43,9 +43,11 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_S
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECRET_KEY;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY_DOMAIN;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_10_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_11_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_12_0_0;
@@ -146,6 +148,11 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
 
     private static void from17(ChainedTransformationDescriptionBuilder chainedBuilder) {
         ResourceTransformationDescriptionBuilder builder = chainedBuilder.createBuilder(ELYTRON_17_0_0, ELYTRON_16_0_0);
+        builder.rejectChildResource(PathElement.pathElement(ElytronDescriptionConstants.VIRTUAL_SECURITY_DOMAIN));
+        builder.addChildResource(PathElement.pathElement(SECURITY_DOMAIN))
+                .getAttributeBuilder()
+                .addRejectCheck(RejectAttributeChecker.DEFINED, TRUSTED_VIRTUAL_SECURITY_DOMAINS)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, TRUSTED_VIRTUAL_SECURITY_DOMAINS);
     }
 
     private static void from16(ChainedTransformationDescriptionBuilder chainedBuilder) {

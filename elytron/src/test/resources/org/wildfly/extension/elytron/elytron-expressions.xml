@@ -50,6 +50,10 @@
         <security-domain name="AggregateRealm" default-realm="PropRealm" role-decoder="aggregateRoleDecoder">
             <realm name="PropRealm"/>
         </security-domain>
+        <security-domain name="TestDomain" default-realm="PropRealm" permission-mapper="LoginPermissionMapper" trusted-virtual-security-domains="VirtualDomain">
+            <realm name="PropRealm"/>
+        </security-domain>
+        <virtual-security-domain name="VirtualDomain" outflow-security-domains="MyDomain" outflow-anonymous="${exp.anonymous:true}" />
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="PropRealm" authorization-realm="FileRealm" principal-transformer="${exp.transformer:NameRewriterXY}"/>
