@@ -123,7 +123,6 @@ import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.Value;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
@@ -2134,7 +2133,7 @@ final class OperationContextImpl extends AbstractOperationContext {
 
         @Override
         public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
-            return new CapabilityServiceBuilderImpl<>(addServiceValue(name, new ImmediateValue<>(service)), targetAddress);
+            return new CapabilityServiceBuilderImpl<>(addServiceValue(name, () -> service), targetAddress);
         }
 
         @Override
