@@ -142,6 +142,7 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.hal.release-stream>
          -->
+        <version.com.fasterxml.jackson>2.10.4</version.com.fasterxml.jackson>
         <version.com.fasterxml.jackson.core.jackson-databind>2.10.4</version.com.fasterxml.jackson.core.jackson-databind>
         <version.com.googlecode.javaewah>1.1.7</version.com.googlecode.javaewah>
         <version.com.google.code.findbugs>3.0.2</version.com.google.code.findbugs>
@@ -211,6 +212,8 @@
         <version.org.jboss.xnio.xnio-api>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-api>
         <version.org.jboss.xnio.xnio-nio>${version.org.jboss.xnio}</version.org.jboss.xnio.xnio-nio>
         <version.org.jmockit>1.39</version.org.jmockit>
+        <version.io.netty>4.1.86.Final</version.io.netty>
+        <version.org.apache.velocity>2.3</version.org.apache.velocity>
         <version.org.mockito>2.18.0</version.org.mockito>
         <version.org.mock-server.mockserver-netty>5.8.1</version.org.mock-server.mockserver-netty>
         <version.org.picketbox>5.0.3.Final-redhat-00006</version.org.picketbox>
@@ -2165,8 +2168,20 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${version.com.fasterxml.jackson}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.com.fasterxml.jackson}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.com.fasterxml.jackson.core.jackson-databind}</version>
+                <version>${version.com.fasterxml.jackson}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -2211,6 +2226,56 @@
                 <version>${version.org.mockito}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- mockserver-netty uses .... netty!  But we want a later version with some CVE fixes-->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-buffer</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-socks</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-handler-proxy</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${version.io.netty}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.mock-server</groupId>
                 <artifactId>mockserver-netty</artifactId>
@@ -2232,18 +2297,6 @@
                     <exclusion>
                         <groupId>com.fasterxml.jackson.core</groupId>
                         <artifactId>jackson-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcmail-jdk15on</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.bouncycastle</groupId>
