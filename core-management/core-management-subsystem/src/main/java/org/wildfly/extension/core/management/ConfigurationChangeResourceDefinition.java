@@ -60,7 +60,6 @@ import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractService;
 
 /**
  * Resource to list all configuration changes.
@@ -115,7 +114,7 @@ public class ConfigurationChangeResourceDefinition extends PersistentResourceDef
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             super.performRuntime(context, operation, resource);
-            context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName(), new AbstractService<Void>() {}).install();
+            context.getServiceTarget().addService(CONFIGURATION_CHANGES_CAPABILITY.getCapabilityServiceName()).install();
             ModelNode maxHistory = MAX_HISTORY.resolveModelAttribute(context, operation);
             ConfigurationChangesCollector.INSTANCE.setMaxHistory(maxHistory.asInt());
         }
