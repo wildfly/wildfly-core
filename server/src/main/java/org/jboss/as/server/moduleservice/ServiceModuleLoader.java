@@ -139,9 +139,7 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     @Override
     protected Module preloadModule(final ModuleIdentifier identifier) throws ModuleLoadException {
         if (identifier.getName().startsWith(MODULE_PREFIX)) {
-            synchronized (ServiceModuleLoader.class) { // WFCORE-2235
-                return super.preloadModule(identifier);
-            }
+            return super.preloadModule(identifier);
         } else {
             return preloadModule(identifier, mainModuleLoader);
         }
@@ -177,7 +175,7 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     }
 
     @Override
-    public synchronized void start(StartContext context) throws StartException {
+    public void start(StartContext context) throws StartException {
         if (serviceContainer != null) {
             throw ServerLogger.ROOT_LOGGER.serviceModuleLoaderAlreadyStarted();
         }
@@ -185,7 +183,7 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     }
 
     @Override
-    public synchronized void stop(StopContext context) {
+    public void stop(StopContext context) {
         if (serviceContainer == null) {
             throw ServerLogger.ROOT_LOGGER.serviceModuleLoaderAlreadyStopped();
         }
