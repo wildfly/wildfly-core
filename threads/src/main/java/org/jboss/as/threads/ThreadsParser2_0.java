@@ -33,7 +33,7 @@ public class ThreadsParser2_0 extends PersistentResourceXMLParser {
 
 
     @SuppressWarnings("deprecation")
-    private final PersistentResourceXMLDescription xmlDescription = builder(new ThreadSubsystemResourceDefinition(false), Namespace.CURRENT.getUriString())
+    private final PersistentResourceXMLDescription xmlDescription = builder(new ThreadSubsystemResourceDefinition(false).getPathElement(), Namespace.CURRENT.getUriString())
             .addChild(THREAD_FACTORY_PARSER)
             .addChild(getUnboundedQueueThreadPoolParser(UnboundedQueueThreadPoolResourceDefinition.create(false)))
             .addChild(getBoundedQueueThreadPoolParser(BoundedQueueThreadPoolResourceDefinition.create(false, false)))

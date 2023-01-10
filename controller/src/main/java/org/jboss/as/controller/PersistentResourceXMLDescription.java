@@ -514,41 +514,6 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
     }
 
     /**
-     * @param resource resource for which path we are creating builder
-     * @return PersistentResourceXMLBuilder
-     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource) {
-        return new PersistentResourceXMLBuilder(resource.getPathElement());
-    }
-
-    /**
-     * @param resource resource for which path we are creating builder
-     * @return PersistentResourceXMLBuilder
-     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public static PersistentResourceXMLBuilder builder(ResourceDefinition resource) {
-        return new PersistentResourceXMLBuilder(resource.getPathElement());
-    }
-
-    /**
-     *
-     * @param resource resource for which path we are creating builder
-     * @param namespaceURI xml namespace to use for this resource, usually used for top level elements such as subsystems
-     * @return PersistentResourceXMLBuilder
-     * @deprecated please use {@linkplain PersistentResourceXMLBuilder(PathElement, String)} variant
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public static PersistentResourceXMLBuilder builder(PersistentResourceDefinition resource, String namespaceURI) {
-        return new PersistentResourceXMLBuilder(resource.getPathElement(), namespaceURI);
-    }
-
-    /**
      * Creates builder for passed path element
      * @param pathElement for which we are creating builder
      * @return PersistentResourceXMLBuilder
