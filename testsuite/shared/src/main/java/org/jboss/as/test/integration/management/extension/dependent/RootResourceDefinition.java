@@ -48,8 +48,6 @@ import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.OutboundSocketBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.jboss.msc.service.AbstractService;
-import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 
@@ -109,8 +107,7 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
             String osb = ATTRIBUTE.resolveModelAttribute(context, resource.getModel()).asString();
-            Service<Void> service = new AbstractService<Void>() {};
-            ServiceBuilder sb = context.getServiceTarget().addService(ServiceName.of("wfcore-1106"), service);
+            ServiceBuilder sb = context.getServiceTarget().addService(ServiceName.of("wfcore-1106"));
             sb.requires(context.getCapabilityServiceName("org.wildfly.network.outbound-socket-binding", osb, OutboundSocketBinding.class));
             sb.install();
         }
