@@ -61,7 +61,9 @@ public class ServerServiceThreadPoolTestCase {
         } else {
             System.setProperty("jboss.args", jbossArgs);
         }
+        Assert.assertNotNull(connector);
         connector.close();
+        Assert.assertNotNull(container);
         container.stop();
     }
 
@@ -85,7 +87,6 @@ public class ServerServiceThreadPoolTestCase {
         final String maxPoolSize = "";
 
         starContainer(corePoolSize, maxPoolSize);
-        Assert.assertTrue(container.isStarted());
         ObjectName objectName = new ObjectName("jboss.threads:name=\"ServerService\",type=thread-pool");
         Integer currentCorePoolSize = (Integer) connection.getAttribute(objectName, "CorePoolSize");
         Integer currentMaxPoolSize = (Integer) connection.getAttribute(objectName, "MaximumPoolSize");
@@ -107,7 +108,7 @@ public class ServerServiceThreadPoolTestCase {
         }
 
         System.setProperty("jboss.args", serverArgs);
-
+        Assert.assertNotNull(container);
         container.start();
         managementClient = container.getClient();
         setupAndGetConnection();

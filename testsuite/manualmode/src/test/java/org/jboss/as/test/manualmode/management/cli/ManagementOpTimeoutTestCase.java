@@ -43,6 +43,7 @@ import org.jboss.as.test.integration.management.extension.blocker.BlockerExtensi
 import org.jboss.as.test.integration.management.util.CLIOpResult;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +69,7 @@ public class ManagementOpTimeoutTestCase extends AbstractCliTestBase {
     //NOTE: BeforeClass is not subject to ARQ injection.
     @Before
     public void initServer() throws Exception {
+        Assert.assertNotNull(container);
         container.start();
         initCLI();
         ExtensionUtils.createExtensionModule("org.wildfly.extension.blocker-test", BlockerExtension.class,
@@ -76,10 +78,14 @@ public class ManagementOpTimeoutTestCase extends AbstractCliTestBase {
 
     @After
     public void closeServer() throws Exception {
+        Assert.assertNotNull(cli);
         cli.sendLine("/subsystem=blocker-test:remove", true);
         cli.sendLine("/extension=org.wildfly.extension.blocker-test:remove");
         closeCLI();
+
+        Assert.assertNotNull(container);
         container.stop();
+
         ExtensionUtils.deleteExtensionModule("org.wildfly.extension.blocker-test");
     }
 

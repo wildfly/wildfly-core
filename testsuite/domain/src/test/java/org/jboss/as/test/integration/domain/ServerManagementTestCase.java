@@ -144,6 +144,7 @@ public class ServerManagementTestCase {
 
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
+        Assert.assertNotNull("domainSecondaryLifecycleUtil", domainSecondaryLifecycleUtil);
         ExtensionSetup.initialiseProfileIncludesExtension(testSupport);
         final DomainClient primaryClient = domainPrimaryLifecycleUtil.getDomainClient();
         DomainTestUtils.executeForResult(Util.createAddOperation(
@@ -154,13 +155,17 @@ public class ServerManagementTestCase {
     public static void tearDownDomain() throws Exception {
         if (domainPrimaryLifecycleUtil != null) {
             DomainTestUtils.executeForResult(Util.createRemoveOperation(
-                    PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.profile-includes-test")), domainPrimaryLifecycleUtil.getDomainClient());
+                PathAddress.pathAddress(EXTENSION, "org.wildfly.extension.profile-includes-test")), domainPrimaryLifecycleUtil.getDomainClient());
         }
 
-        testSupport.close();
-        testSupport = null;
-        domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
+        try {
+            Assert.assertNotNull("testSupport", testSupport);
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            domainSecondaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     @Test

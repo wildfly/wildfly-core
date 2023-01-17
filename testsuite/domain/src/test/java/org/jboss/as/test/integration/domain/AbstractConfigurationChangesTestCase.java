@@ -16,6 +16,7 @@
 package org.jboss.as.test.integration.domain;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUDIT_LOG;
@@ -32,6 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.helpers.ClientConstants;
@@ -85,14 +87,19 @@ public abstract class AbstractConfigurationChangesTestCase {
         testSupport = DomainTestSupport.createAndStartSupport(configuration);
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
+        assertThat("domainSecondaryLifecycleUtil", domainSecondaryLifecycleUtil, is(notNullValue()));
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.close();
-        domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
-        testSupport = null;
+        try {
+            assertThat("testSupport", testSupport, is(notNullValue()));
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            domainSecondaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     protected abstract PathAddress getAddress();

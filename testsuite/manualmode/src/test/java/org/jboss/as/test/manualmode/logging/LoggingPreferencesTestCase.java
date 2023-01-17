@@ -75,6 +75,7 @@ public class LoggingPreferencesTestCase extends AbstractLoggingTestCase {
     @Before
     public void prepareContainer() throws Exception {
         // Start the container
+        Assert.assertNotNull(container);
         container.start();
 
         if (profileLog == null) {
@@ -110,6 +111,8 @@ public class LoggingPreferencesTestCase extends AbstractLoggingTestCase {
 
     @After
     public void stopContainer() throws Exception {
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container.isStarted()); // if container is not started, we get a NPE in container.getClient() within undeploy()
         // Remove the servlet
         undeploy();
 

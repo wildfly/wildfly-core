@@ -109,7 +109,7 @@ public class SimpleDomainControllerMigrationTestCase {
                 domainControllerClientConfig.close();
             }
         }
-
+        Assert.assertNotNull(jarFile);
         Assert.assertTrue(jarFile.delete());
     }
 

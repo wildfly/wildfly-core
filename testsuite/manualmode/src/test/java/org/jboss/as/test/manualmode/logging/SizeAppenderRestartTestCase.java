@@ -63,8 +63,8 @@ public class SizeAppenderRestartTestCase extends AbstractLoggingTestCase {
     @Before
     public void startContainer() throws Exception {
         // Start the server
+        Assert.assertNotNull(container);
         container.start();
-        Assert.assertTrue("Container is not started", container.isStarted());
         logFile = getAbsoluteLogFilePath(FILE_NAME);
         // Deploy the servlet
         deploy();
@@ -84,6 +84,8 @@ public class SizeAppenderRestartTestCase extends AbstractLoggingTestCase {
 
     @After
     public void stopContainer() throws Exception {
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container.isStarted()); // if container is not started, we get a NPE in container.getClient() within undeploy()
         // Remove the servlet
         undeploy();
 
