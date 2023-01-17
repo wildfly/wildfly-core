@@ -25,6 +25,7 @@ import org.jboss.as.protocol.logging.ProtocolLogger;
 import org.jboss.remoting3.Channel;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.common.Assert;
 import org.xnio.Cancellable;
 
 /** Standard ActiveOperation implementation */
@@ -91,8 +92,13 @@ class ActiveOperationImpl<T, A> extends AsyncFutureTask<T> implements ActiveOper
                 }
             }
 
+            /**
+             * @param t the exception must not be null
+             * @return true if the result was successfully set, or false if a result was already set
+             */
             @Override
-            public boolean failed(Throwable t) {
+            public boolean failed(final Throwable t) {
+                Assert.checkNotNullParam("Throwable", t);
                 try {
                     boolean failed = ActiveOperationImpl.this.setFailed(t);
                     if(failed) {

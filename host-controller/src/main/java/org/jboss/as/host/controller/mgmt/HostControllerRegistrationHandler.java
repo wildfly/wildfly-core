@@ -340,7 +340,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 boolean as711 = (major == 1 && minor == 1);
                 if (as711) {
                     final OperationFailedException failure = HostControllerLogger.ROOT_LOGGER.unsupportedManagementVersionForHost(major, minor, 1, 2);
-                    registrationContext.failed(SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
+                    registrationContext.failed(failure, SlaveRegistrationException.ErrorCode.INCOMPATIBLE_VERSION, failure.getMessage());
                     throw failure;
                 }
                 // Initialize the transformers
@@ -427,7 +427,7 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
 
         @Override
         public void failed(Exception e) {
-            failed(SlaveRegistrationException.ErrorCode.UNKNOWN, e.getClass().getName() + ":" + e.getMessage());
+            failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, e.getClass().getName() + ":" + e.getMessage());
         }
 
         @Override
@@ -443,9 +443,9 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 try {
                     registerHost(transaction, result);
                 } catch (SlaveRegistrationException e) {
-                    failed(e.getErrorCode(), e.getErrorMessage());
+                    failed(e, e.getErrorCode(), e.getErrorMessage());
                 } catch (Exception e) {
-                    failed(SlaveRegistrationException.ErrorCode.UNKNOWN, e.getClass().getName() + ":" + e.getMessage());
+                    failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, e.getClass().getName() + ":" + e.getMessage());
                 }
                 if(failed) {
                     transaction.rollback();
@@ -587,13 +587,18 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             completeTask(!failed);
         }
 
-        void failed(SlaveRegistrationException.ErrorCode error, String message) {
+        /**
+         * @param t  - the cause of failure, must not be null
+         * @param error code representing the failure cause {@link SlaveRegistrationException.ErrorCode}
+         * @param message - text explaining the failure
+         */
+        void failed(final Throwable t, SlaveRegistrationException.ErrorCode error, String message) {
             byte errorCode = error.getCode();
             if(completed.compareAndSet(false, true)) {
                 failed = true;
                 final IOTask<?> task = this.task;
                 if(task != null) {
-                    task.setFailed();
+                    task.failed(t);
                 }
                 try {
                     sendFailedResponse(responseChannel, errorCode, message);
@@ -603,6 +608,11 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                 activeOperation.getResultHandler().done(null);
                 addFailureEvent(error);
             }
+        }
+
+        void failed(final SlaveRegistrationException.ErrorCode error, final String message) {
+            Exception ex = new Exception(message);
+            failed(ex, error, message);
         }
 
         void addFailureEvent(SlaveRegistrationException.ErrorCode error) {
@@ -663,23 +673,23 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
                     try {
                         task.sendMessage(output);
                     } catch (IOException e) {
-                        failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendMessage(e.getMessage()));
+                        failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendMessage(e.getMessage()));
                         throw new IllegalStateException(e);
                     } finally {
                         StreamUtils.safeClose(output);
                     }
                 } catch (IOException e) {
-                    failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendResponseHeader(e.getMessage()));
+                    failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.failedToSendResponseHeader(e.getMessage()));
                     throw new IllegalStateException(e);
                 }
             }
             try {
                 return task.get();
             } catch (InterruptedException e) {
-                failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.registrationTaskGotInterrupted());
+                failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.registrationTaskGotInterrupted());
                 throw new IllegalStateException(e);
             } catch (ExecutionException e) {
-                failed(SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.registrationTaskFailed(e.getMessage()));
+                failed(e, SlaveRegistrationException.ErrorCode.UNKNOWN, DomainControllerLogger.ROOT_LOGGER.registrationTaskFailed(e.getMessage()));
                 throw new IllegalStateException(e);
             }
         }
@@ -699,8 +709,13 @@ public class HostControllerRegistrationHandler implements ManagementRequestHandl
             return setResult((T) result);
         }
 
-        boolean setFailed() {
-            return setFailed(null);
+        /**
+         * @param t – the cause of failure, must not be null.
+         * @return true if the result was successfully set, or false if a result was already set
+         */
+        boolean failed(Throwable t) {
+            Assert.checkNotNullParam("Throwable", t);
+            return super.setFailed(t);
         }
     }
 
