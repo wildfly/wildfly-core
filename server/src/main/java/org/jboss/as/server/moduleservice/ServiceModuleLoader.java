@@ -21,6 +21,8 @@
  */
 package org.jboss.as.server.moduleservice;
 
+import java.util.function.Consumer;
+
 import org.jboss.as.controller.UninterruptibleCountDownLatch;
 import org.jboss.as.server.Bootstrap;
 import org.jboss.as.server.logging.ServerLogger;
@@ -42,8 +44,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
 
 /**
  * {@link ModuleLoader} that loads module definitions from msc services. Module specs are looked up in msc services that
@@ -219,9 +219,12 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     }
 
     public static void installModuleResolvedService(ServiceTarget serviceTarget, ModuleIdentifier identifier) {
-        final ValueService<ModuleIdentifier> resolvedService = new ValueService<ModuleIdentifier>(new ImmediateValue<ModuleIdentifier>(identifier));
-        final ServiceBuilder sb = serviceTarget.addService(ServiceModuleLoader.moduleResolvedServiceName(identifier), resolvedService);
+        final ServiceName sn = ServiceModuleLoader.moduleResolvedServiceName(identifier);
+        final ServiceBuilder<?> sb = serviceTarget.addService(sn);
+        final Consumer<ModuleIdentifier> moduleIdConsumer = sb.provides(sn);
         sb.requires(moduleSpecServiceName(identifier));
+        final org.jboss.msc.Service resolvedService = org.jboss.msc.Service.newInstance(moduleIdConsumer, identifier);
+        sb.setInstance(resolvedService);
         sb.install();
     }
 

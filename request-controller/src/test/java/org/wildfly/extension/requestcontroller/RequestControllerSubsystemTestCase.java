@@ -40,7 +40,6 @@ import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.as.subsystem.test.KernelServicesBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.ImmediateValue;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -81,7 +80,7 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
             @Override
             protected void addExtraServices(ServiceTarget target) {
                 SuspendController suspendController = new SuspendController();
-                suspendController.getNotificationHandlerRegistry().setValue(new ImmediateValue<>(new NotificationHandlerRegistry() {
+                final NotificationHandlerRegistry nhr = new NotificationHandlerRegistry() {
                     @Override
                     public void registerNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
 
@@ -91,7 +90,8 @@ public class RequestControllerSubsystemTestCase extends AbstractSubsystemBaseTes
                     public void unregisterNotificationHandler(PathAddress source, NotificationHandler handler, NotificationFilter filter) {
 
                     }
-                }));
+                };
+                suspendController.getNotificationHandlerRegistry().setValue(() -> nhr);
                 target.addService(JBOSS_SUSPEND_CONTROLLER, suspendController)
                         .install();
             }
