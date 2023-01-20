@@ -62,7 +62,7 @@ import org.wildfly.extension.elytron.expression.ExpressionResolverRuntimeHandler
  */
 class ExpressionResolverResourceDefinition extends SimpleResourceDefinition {
 
-    public static final Pattern INITIAL_PATTERN = Pattern.compile("\\$\\{.+::.*:.+}");
+    public static final Pattern INITIAL_PATTERN = Pattern.compile("\\$\\{.+::.+}");
 
     // Resource Resolver
     private static final StandardResourceDescriptionResolver RESOURCE_RESOLVER =
