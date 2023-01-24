@@ -28,6 +28,6 @@
     </resources>
 
     <dependencies>
-        <module name="org.slf4j.impl"/>
+        <module name="org.slf4j.impl" services="import"/>
     </dependencies>
 </module>
