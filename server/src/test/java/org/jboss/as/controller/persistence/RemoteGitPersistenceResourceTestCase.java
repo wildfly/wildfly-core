@@ -54,6 +54,7 @@ public class RemoteGitPersistenceResourceTestCase extends AbstractGitPersistence
             try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
                 git.add().addFilepattern("standard.xml").call();
                 git.commit().setMessage("Repository initialized").call();
