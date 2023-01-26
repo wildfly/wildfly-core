@@ -137,11 +137,11 @@ public class ServiceModuleLoader extends ModuleLoader implements Service<Service
     }
 
     @Override
-    protected Module preloadModule(final ModuleIdentifier identifier) throws ModuleLoadException {
-        if (identifier.getName().startsWith(MODULE_PREFIX)) {
-            return super.preloadModule(identifier);
+    protected Module preloadModule(final String name) throws ModuleLoadException {
+        if (name.startsWith(MODULE_PREFIX)) {
+            return super.preloadModule(name);
         } else {
-            return preloadModule(identifier, mainModuleLoader);
+            return preloadModule(name, mainModuleLoader);
         }
     }
 
