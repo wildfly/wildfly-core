@@ -26,7 +26,7 @@ import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 
 /**
  * A very trivial {@link Service} implementation where creation of the value type can easily be wrapped using a {@link Supplier}

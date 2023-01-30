@@ -1745,11 +1745,6 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
-                <version>${version.org.wildfly.security.elytron}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-auth-server-http</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>

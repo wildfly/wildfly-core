@@ -71,7 +71,7 @@ import org.jboss.as.server.mgmt.domain.HttpManagement;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.wildfly.security.manager.WildFlySecurityManager;
 import org.xnio.XnioWorker;
 

@@ -358,6 +358,10 @@
             <artifactId>wildfly-openssl-windows-x86_64</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-auth-server-sasl</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

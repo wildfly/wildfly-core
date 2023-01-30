@@ -70,7 +70,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.xnio.XnioWorker;
 
 import io.undertow.server.ListenerRegistry;

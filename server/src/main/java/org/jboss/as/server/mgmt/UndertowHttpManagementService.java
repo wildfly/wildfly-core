@@ -57,7 +57,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.wildfly.common.Assert;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.xnio.SslClientAuthMode;
 import org.xnio.XnioWorker;
 

@@ -300,10 +300,6 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-auth-util</artifactId>
         </dependency>
         <dependency>

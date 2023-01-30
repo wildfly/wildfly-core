@@ -42,7 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.security.auth.callback.ChannelBindingCallback;
 import org.wildfly.security.auth.callback.CredentialCallback;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.sasl.SaslAuthenticationFactory;
 import org.wildfly.security.credential.PasswordCredential;
 import org.wildfly.security.password.Password;
 import org.wildfly.security.password.PasswordFactory;

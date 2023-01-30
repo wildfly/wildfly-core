@@ -48,7 +48,7 @@ import org.jboss.remoting3.UnknownURISchemeException;
 import org.jboss.remoting3.spi.ExternalConnectionProvider;
 import org.wildfly.security.auth.permission.LoginPermission;
 import org.wildfly.security.auth.server.MechanismConfiguration;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.sasl.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.auth.server.SecurityRealm;
 import org.wildfly.security.permission.PermissionVerifier;

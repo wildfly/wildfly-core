@@ -30,7 +30,7 @@ import org.jboss.as.network.ManagedBinding;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.as.network.SocketBindingManager;
 import org.jboss.remoting3.Endpoint;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.sasl.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
 import org.xnio.channels.AcceptingChannel;

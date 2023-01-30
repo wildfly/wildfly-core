@@ -36,7 +36,7 @@ import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.remoting3.Endpoint;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.sasl.SaslAuthenticationFactory;
 import org.xnio.OptionMap;
 import org.xnio.StreamConnection;
 import org.xnio.XnioWorker;

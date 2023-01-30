@@ -55,7 +55,7 @@ import org.jboss.modules.ModuleLoadException;
 import org.wildfly.common.Assert;
 import org.wildfly.elytron.web.undertow.server.ElytronContextAssociationHandler;
 import org.wildfly.elytron.web.undertow.server.ElytronHttpExchange;
-import org.wildfly.security.auth.server.HttpAuthenticationFactory;
+import org.wildfly.security.auth.server.http.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.xnio.BufferAllocator;

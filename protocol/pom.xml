@@ -83,7 +83,7 @@
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-auth-server-deprecated</artifactId>
+            <artifactId>wildfly-elytron-auth-server-sasl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>

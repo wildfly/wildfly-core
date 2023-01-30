@@ -36,7 +36,7 @@ import org.jboss.remoting3.ServiceRegistrationException;
 import org.jboss.remoting3.spi.NetworkServerProvider;
 import org.wildfly.security.auth.realm.SimpleMapBackedSecurityRealm;
 import org.wildfly.security.auth.server.MechanismConfiguration;
-import org.wildfly.security.auth.server.SaslAuthenticationFactory;
+import org.wildfly.security.auth.server.sasl.SaslAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.permission.PermissionVerifier;
 import org.wildfly.security.sasl.anonymous.AnonymousServerFactory;
