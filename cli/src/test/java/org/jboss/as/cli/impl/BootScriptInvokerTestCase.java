@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -214,7 +215,7 @@ public class BootScriptInvokerTestCase {
         Set<String> operations = new HashSet<>();
         operations.add("op1");
         operations.add("op2");
-        Set<String> echos = new HashSet<>();
+        Set<String> echos = new LinkedHashSet<>();
         echos.add("echo TestWarning > ${" + propWarning + "}");
         echos.add("echo TestError > ${" + propError + "}");
         echos.add("echo TestFoo >> ${" + propFoo + "}");
