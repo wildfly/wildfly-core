@@ -218,22 +218,6 @@
         <packageUrl regex="true">^pkg:maven/org\.wildfly\.galleon\-plugins/wildfly\-galleon\-plugins@.*$</packageUrl>
         <cve>CVE-2022-1278</cve>
     </suppress>
-	
-	<!-- Vulnerable class is not used in wildfly-core (Wildfly inherits "vulnerable" modules from wildfly-core) -->
-	<suppress>
-		<notes><![CDATA[
-		file name: sshd-core-2.7.0.jar
-		]]></notes>
-		<packageUrl regex="true">^pkg:maven/org\.apache\.sshd/sshd\-core@.*$</packageUrl>
-		<cve>CVE-2022-45047</cve>
-	</suppress>
-	<suppress>
-		<notes><![CDATA[
-		file name: sshd-common-2.7.0.jar
-		]]></notes>
-		<packageUrl regex="true">^pkg:maven/org\.apache\.sshd/sshd\-common@.*$</packageUrl>
-		<cve>CVE-2022-45047</cve>
-	</suppress>
 	<suppress>
         <notes><![CDATA[
 		file name: snakeyaml-1.32.jar
