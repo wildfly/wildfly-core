@@ -32,29 +32,15 @@ import org.jboss.as.domain.management.logging.DomainManagementLogger;
 public class UpdateUser extends UpdatePropertiesHandler implements State {
 
     private final StateValues stateValues;
-    private final ConsoleWrapper theConsole;
 
-    public UpdateUser(ConsoleWrapper theConsole,final StateValues stateValues) {
+    public UpdateUser(ConsoleWrapper theConsole, final StateValues stateValues) {
         super(theConsole);
-        this.theConsole = theConsole;
         this.stateValues = stateValues;
     }
 
     @Override
     public State execute() {
-        State nextState = update(stateValues);
-
-        /*
-         * If this is interactive mode, the password is not null (enable/disable mode) and no error occurred
-         * offer to display the Base64 password of the user - otherwise the util can end.
-         */
-        if (null == nextState && null != stateValues.getPassword() && (stateValues.isInteractive() || !stateValues.isSilent() && stateValues.isDisplaySecret())) {
-            nextState = (stateValues.isDisplaySecret()) ?
-                    new DisplaySecret(theConsole, stateValues):
-                    new ConfirmationChoice(theConsole, DomainManagementLogger.ROOT_LOGGER.serverUser(), DomainManagementLogger.ROOT_LOGGER.yesNo(), new DisplaySecret(theConsole, stateValues), null);
-
-        }
-        return nextState;
+        return update(stateValues);
     }
 
     @Override
