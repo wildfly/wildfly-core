@@ -94,6 +94,7 @@
         <artifact name="${org.wildfly.security:wildfly-elytron-security-manager}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-security-manager-action}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-ssl}"/>
+        <artifact name="${org.wildfly.security:wildfly-elytron-ssh-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-util}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500}"/>
         <artifact name="${org.wildfly.security:wildfly-elytron-x500-cert}"/>
