@@ -1730,6 +1730,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-ssh-util</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-audit</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
