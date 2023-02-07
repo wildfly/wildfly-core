@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -623,6 +625,11 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
 
         public PersistentResourceXMLBuilder addAttributes(AttributeDefinition... attributes) {
             Collections.addAll(this.attributeList, attributes);
+            return this;
+        }
+
+        public PersistentResourceXMLBuilder addAttributes(Stream<? extends AttributeDefinition> attributes) {
+            attributes.forEach(this::addAttribute);
             return this;
         }
 
