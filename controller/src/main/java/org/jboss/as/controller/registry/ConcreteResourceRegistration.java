@@ -1004,20 +1004,22 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
 
     @Override
     public void registerAdditionalRuntimePackages(RuntimePackageDependency... pkgs) {
-        writeLock.lock();
-        try {
-            if (additionalPackages == null) {
-                additionalPackages = new HashMap<>();
-            }
-            for (RuntimePackageDependency pkg : pkgs) {
-                if(additionalPackages.containsKey(pkg.getName())) {
-                    ControllerLogger.ROOT_LOGGER.runtimePackageDependencyAlreadyRegistered(pkg.getName(), getLocationString());
-                } else {
-                    additionalPackages.put(pkg.getName(), pkg);
+        if (pkgs.length > 0) {
+            writeLock.lock();
+            try {
+                if (additionalPackages == null) {
+                    additionalPackages = new HashMap<>();
                 }
+                for (RuntimePackageDependency pkg : pkgs) {
+                    if (additionalPackages.containsKey(pkg.getName())) {
+                        ControllerLogger.ROOT_LOGGER.runtimePackageDependencyAlreadyRegistered(pkg.getName(), getLocationString());
+                    } else {
+                        additionalPackages.put(pkg.getName(), pkg);
+                    }
+                }
+            } finally {
+                writeLock.unlock();
             }
-        } finally {
-            writeLock.unlock();
         }
     }
 
