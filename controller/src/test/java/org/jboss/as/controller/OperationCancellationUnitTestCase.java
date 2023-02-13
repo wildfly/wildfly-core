@@ -66,7 +66,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -74,7 +73,6 @@ import org.junit.Test;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-@Ignore("WFCORE-6158")
 public class OperationCancellationUnitTestCase {
 
     private static final Executor executor = Executors.newCachedThreadPool();

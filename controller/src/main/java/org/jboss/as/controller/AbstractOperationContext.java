@@ -139,7 +139,7 @@ abstract class AbstractOperationContext implements OperationContext {
     // returning, any calls that can throw InterruptedException are converted to
     // an uninterruptible form. This is to ensure rollback changes are not
     // interrupted
-    boolean respectInterruption = true;
+    volatile boolean respectInterruption = true;
 
     /**
      * The notifications are stored when {@code emit(Notification)} is called and effectively
