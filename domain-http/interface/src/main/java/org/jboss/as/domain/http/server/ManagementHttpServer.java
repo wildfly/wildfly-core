@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.ModelController;
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.cors.CorsHttpHandler;
 import org.jboss.as.domain.http.server.logging.HttpServerLogger;
@@ -464,7 +463,6 @@ public class ManagementHttpServer {
         private SSLContext sslContext;
         private SslClientAuthMode sslClientAuthMode;
         private HttpAuthenticationFactory httpAuthenticationFactory;
-        private ProcessStateNotifier processStateNotifier;
         private ConsoleMode consoleMode;
         private String consoleSlot;
         private ChannelUpgradeHandler upgradeHandler;
@@ -511,25 +509,6 @@ public class ManagementHttpServer {
             this.httpAuthenticationFactory = httpAuthenticationFactory;
 
             return this;
-        }
-
-        /**
-         * @deprecated The management Http Server no longer needs the processStateNotifier. This class was used to see if it was possible
-         * to process an Http Request to the server. If the process status was starting or stopping, those requests were rejected.
-         * Now its use has been replaced by using {@link ConsoleAvailability} which maintains this behavior.
-         */
-        @Deprecated
-        public Builder setControlledProcessStateNotifier(ProcessStateNotifier processStateNotifier) {
-            assertNotBuilt();
-            this.processStateNotifier = processStateNotifier;
-
-            return this;
-        }
-
-        /** @deprecated use {@link #setControlledProcessStateNotifier(ProcessStateNotifier)} */
-        @Deprecated
-        public Builder setControlledProcessStateService(ProcessStateNotifier processStateNotifier) {
-            return setControlledProcessStateNotifier(processStateNotifier);
         }
 
         public Builder setConsoleMode(ConsoleMode consoleMode) {
