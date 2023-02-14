@@ -307,24 +307,6 @@ public class ModuleSpecification extends SimpleAttachable {
         this.localDependenciesTransitive = localDependenciesTransitive;
     }
 
-    /**
-     * @return
-     * @deprecated since AS 8.x. Use {@link #isLocalDependenciesTransitive()} instead
-     */
-    @Deprecated
-    public boolean isRequiresTransitiveDependencies() {
-        return localDependenciesTransitive;
-    }
-
-    /**
-     * @param requiresTransitiveDependencies
-     * @deprecated since AS 8.x. Use {@link #setLocalDependenciesTransitive(boolean)} instead
-     */
-    @Deprecated
-    public void setRequiresTransitiveDependencies(final boolean requiresTransitiveDependencies) {
-        this.localDependenciesTransitive = requiresTransitiveDependencies;
-    }
-
     public boolean isLocalLast() {
         return localLast;
     }
