@@ -562,6 +562,7 @@ public enum Phase {
     public static final int POST_MODULE_PERMISSIONS_VALIDATION          = 0x3700;
     public static final int POST_MODULE_MICROPROFILE_CONFIG             = 0x3750;
     public static final int POST_MODULE_METRICS                         = 0x3755;
+    public static final int POST_MODULE_MICROMETER                      = 0x3756;
     public static final int POST_MODULE_MICROPROFILE_METRICS            = 0x3760;
     public static final int POST_MODULE_HEALTH                          = 0x3765;
     public static final int POST_MODULE_MICROPROFILE_HEALTH             = 0x3770;
