@@ -84,15 +84,9 @@ public class TransformerSubsystemTestCase extends AbstractSubsystemBaseTest {
     public void testTransformersAS() throws Exception {
         testTransformers(ModelTestControllerVersion.MASTER);
     }
-
     @Test
-    public void testTransformersEAP640() throws Exception {
-        testTransformers(ModelTestControllerVersion.EAP_6_4_0);
-    }
-
-    @Test
-    public void testTransformersEAP700() throws Exception {
-        testTransformers(ModelTestControllerVersion.EAP_7_0_0);
+    public void testTransformersEAP740() throws Exception {
+        testTransformers(ModelTestControllerVersion.EAP_7_4_0);
     }
 
     private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
