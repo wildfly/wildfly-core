@@ -443,28 +443,12 @@ public interface DomainManagementLogger extends BasicLogger {
     String errorHeader();
 
     /**
-     * A message to check if this user is going to be used by a host controller to connect to the domain controller.
-     *
-     * @return a {@link String} for the message.
-     */
-    @Message(id = Message.NONE, value = "Is this new user going to be used for one AS process to connect to another AS process? %ne.g. for a secondary host controller connecting to the primary or for a Remoting connection for server to server Jakarta Enterprise Beans calls.")
-    String serverUser();
-
-    /**
      * Simple yes/no prompt.
      *
      * @return a {@link String} for the message.
      */
     @Message(id = Message.NONE, value = "yes/no?")
     String yesNo();
-
-    /**
-     * To represent this user use the following secret entry in the server-identities.
-     *
-     * @return a {@link String} for the message.
-     */
-    @Message(id = Message.NONE, value = "To represent the user add the following to the server-identities definition <secret value=\"%s\" />")
-    String secretElement(String base64);
 
     /**
      * Error message if more than one username/password authentication mechanism is defined.
@@ -1483,13 +1467,6 @@ public interface DomainManagementLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "Automatically confirm warning in interactive mode")
     String argConfirmWarning();
-
-    /**
-     * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#DISPLAY_SECRET} command line argument.
-     * @return the message.
-     */
-    @Message(id = Message.NONE, value = "If set the secret value will be printed.")
-    String argDisplaySecret();
 
     /**
      * Instructions for the {@link org.jboss.as.domain.management.security.adduser.AddUser.CommandLineArgument#HELP} command line argument.

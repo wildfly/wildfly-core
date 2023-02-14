@@ -98,9 +98,6 @@ public class AddUser {
         }
         stateValues.setHowInteractive(howInteractive);
 
-        final boolean shouldDisplaySecret = Boolean.parseBoolean(argsCliProps.getProperty(CommandLineArgument.DISPLAY_SECRET.key()));
-        stateValues.setDisplaySecret(shouldDisplaySecret);
-
         // Username should not be null or empty.
         if (user == null || user.isEmpty()) {
             nextState = new ErrorState(theConsole, DomainManagementLogger.ROOT_LOGGER.noUsernameExiting(), null, stateValues);
@@ -180,8 +177,6 @@ public class AddUser {
                             value = Boolean.TRUE.toString();
                         } else if (CommandLineArgument.ENABLE.equals(commandLineArgument)) {
                             value = Boolean.TRUE.toString();
-                        } else if (CommandLineArgument.DISPLAY_SECRET.equals(commandLineArgument)) {
-                            value = Boolean.TRUE.toString();
                         } else {
                             value = it.hasNext() ? it.next() : null;
                         }
@@ -215,9 +210,6 @@ public class AddUser {
 
         if (argsCliProps.containsKey(CommandLineArgument.CONFIRM_WARNING.key())) {
             options.setConfirmWarning(true);
-        }
-        if (argsCliProps.containsKey(CommandLineArgument.DISPLAY_SECRET.key())) {
-            options.setDisplaySecret(true);
         }
         if (argsCliProps.containsKey(CommandLineArgument.PASSWORD.key()) || argsCliProps.containsKey(CommandLineArgument.USER.key())) {
             final String password = argsCliProps.getProperty(CommandLineArgument.PASSWORD.key());
@@ -412,12 +404,6 @@ public class AddUser {
             @Override
             public String instructions() {
                 return DomainManagementLogger.ROOT_LOGGER.argHelp();
-            }
-        },
-        DISPLAY_SECRET("-ds", "--display-secret") {
-            @Override
-            public String instructions() {
-                return DomainManagementLogger.ROOT_LOGGER.argDisplaySecret();
             }
         };
 

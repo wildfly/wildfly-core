@@ -52,15 +52,6 @@ public class AddUserState extends UpdatePropertiesHandler implements State {
             nextState = update(stateValues);
         }
 
-        /*
-         * If this is interactive mode and no error occurred offer to display the
-         * Base64 password of the user - otherwise the util can end.
-         */
-        if (nextState == null && (stateValues.isInteractive() || !stateValues.isSilent() && stateValues.isDisplaySecret())) {
-            nextState = (stateValues.isDisplaySecret()) ?
-                    new DisplaySecret(theConsole, stateValues):
-                    new ConfirmationChoice(theConsole, DomainManagementLogger.ROOT_LOGGER.serverUser(), DomainManagementLogger.ROOT_LOGGER.yesNo(), new DisplaySecret(theConsole, stateValues), null);
-        }
         return nextState;
     }
 
