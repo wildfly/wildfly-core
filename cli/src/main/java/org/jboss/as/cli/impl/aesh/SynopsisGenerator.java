@@ -17,6 +17,7 @@ package org.jboss.as.cli.impl.aesh;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TreeSet;
 import org.aesh.command.activator.OptionActivator;
 import org.aesh.command.impl.internal.ProcessedOption;
 import org.wildfly.core.cli.command.aesh.activator.DependOptionActivator;
@@ -181,7 +183,8 @@ class SynopsisGenerator {
             synopsisBuilder.append(" |");
             // Keep the set of all conflicts, they will be removed from all conflicts, being handled at this level.
             Set<SynopsisOption> conflicts = new HashSet<>(currentOption.conflictWith);
-            Set<SynopsisOption> conflicts2 = new HashSet<>(currentOption.conflictWith);
+            Set<SynopsisOption> conflicts2 = new TreeSet<>(Comparator.comparing(SynopsisOption::getName));
+            conflicts2.addAll(currentOption.conflictWith);
             // Conflicts can have dependencies that must be added prior to them
             for (SynopsisOption so : conflicts2) {
                 Set<SynopsisOption> conflictAndDependencies = retrieveAllDependencies(so);
