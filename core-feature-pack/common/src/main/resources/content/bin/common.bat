@@ -44,6 +44,7 @@ goto :eof
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED"
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED"
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED"
+      set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
       rem Needed if Hibernate applications use Javassist
       set "DEFAULT_MODULAR_JVM_OPTIONS=!DEFAULT_MODULAR_JVM_OPTIONS! --add-opens=java.base/java.lang=ALL-UNNAMED"
       rem Needed by the MicroProfile REST Client subsystem
