@@ -41,7 +41,6 @@ import org.jboss.as.controller.CapabilityServiceTarget;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
@@ -155,7 +154,6 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<ModelController> mcSupplier = builder.requires(DomainModelControllerService.SERVICE_NAME);
         final Supplier<NetworkInterfaceBinding> ibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, interfaceName);
         final Supplier<NetworkInterfaceBinding> sibSupplier = builder.requiresCapability("org.wildfly.network.interface", NetworkInterfaceBinding.class, secureInterfaceName);
-        final Supplier<ProcessStateNotifier> cpsnSupplier = builder.requiresCapability("org.wildfly.management.process-state-notifier", ProcessStateNotifier.class);
         final Supplier<ConsoleAvailability> caSupplier = builder.requiresCapability("org.wildfly.management.console-availability", ConsoleAvailability.class);
         final Supplier<ManagementHttpRequestProcessor> rpSupplier = builder.requires(requestProcessorName);
         final Supplier<XnioWorker> xwSupplier = builder.requires(ManagementWorkerService.SERVICE_NAME);
@@ -163,7 +161,7 @@ public class HttpManagementAddHandler extends BaseHttpInterfaceAddStepHandler {
         final Supplier<HttpAuthenticationFactory> hafSupplier = httpAuthenticationFactory != null ? builder.requiresCapability(HTTP_AUTHENTICATION_FACTORY_CAPABILITY, HttpAuthenticationFactory.class, httpAuthenticationFactory) : null;
         final Supplier<SSLContext> scSupplier = sslContext != null ? builder.requiresCapability(SSL_CONTEXT_CAPABILITY, SSLContext.class, sslContext) : null;
         final UndertowHttpManagementService service = new UndertowHttpManagementService(hmConsumer, lrSupplier, mcSupplier, null, null, null, ibSupplier, sibSupplier,
-                cpsnSupplier, rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode,
+                rpSupplier, xwSupplier, eSupplier, hafSupplier, scSupplier, port, securePort, commonPolicy.getAllowedOrigins(), consoleMode,
                 environment.getProductConfig().getConsoleSlot(), commonPolicy.getConstantHeaders(), caSupplier);
         builder.setInstance(service);
         builder.setInitialMode(onDemand ? ServiceController.Mode.ON_DEMAND : ServiceController.Mode.ACTIVE).install();
