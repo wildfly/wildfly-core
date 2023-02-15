@@ -128,10 +128,19 @@ public class SNICombinedWithALPNTestCase {
     private static File hostNameKeystore;
     private static File ipKeystore;
 
+    private static boolean assumptionsSatisfied = true;
+
     static class Setup implements ServerSetupTask {
 
         @Override
         public void setup(ManagementClient managementClient) throws Exception {
+            if (!canHostAddressBeTranslated()) {
+                // This is checked by Assumption in the beforeClass() method, but needs to be handled also here because
+                // the setup runs before the beforeClass() method.
+                assumptionsSatisfied = false;
+                return;
+            }
+
             InetAddress[] addresses = InetAddress.getAllByName(TestSuiteEnvironment.getHttpAddress());
             String hostname = addresses[0].getHostName();
 
@@ -202,6 +211,11 @@ public class SNICombinedWithALPNTestCase {
 
         @Override
         public void tearDown(ManagementClient managementClient) throws Exception {
+            if (!assumptionsSatisfied) {
+                // No setup has been done if assumptions failed.
+                return;
+            }
+
             hostNameKeystore.delete();
             ipKeystore.delete();
 
@@ -222,9 +236,13 @@ public class SNICombinedWithALPNTestCase {
     public static void beforeClass() throws UnknownHostException {
         Assume.assumeFalse("There is no ALPN implementation in IBM JDK 8 and less; also ALPN-hack that serves" +
                 " as a workaround for other JDKs does not work with IBM JDK.", isIbmJdk() && jdkLessThan9());
+        Assume.assumeTrue("Assuming the test if no resolution for the http address",
+                canHostAddressBeTranslated());
+    }
+
+    private static boolean canHostAddressBeTranslated() throws UnknownHostException {
         InetAddress address = InetAddress.getByName(TestSuiteEnvironment.getHttpAddress());
-        Assume.assumeFalse("Assuming the test if no resolution for the http address",
-                address.getHostName().equals(address.getHostAddress()));
+        return !address.getHostName().equals(address.getHostAddress());
     }
 
     @Test
