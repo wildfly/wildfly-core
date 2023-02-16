@@ -41,7 +41,7 @@ import org.jboss.modules.ModuleLoader;
 public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
 
     private static ModuleIdentifier[] DEFAULT_MODULES = new ModuleIdentifier[] {
-        ModuleIdentifier.create("javax.api"),
+        ModuleIdentifier.create("java.se"),
         ModuleIdentifier.create("org.jboss.vfs"),
     };
 
