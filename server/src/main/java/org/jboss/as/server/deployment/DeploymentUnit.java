@@ -22,10 +22,6 @@
 
 package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -62,59 +58,5 @@ public interface DeploymentUnit extends Attachable {
      * @return the service registry
      */
     ServiceRegistry getServiceRegistry();
-
-    /**
-     * Get the extension deployment model root.
-     *
-     * @param subsystemName the subsystem name.
-     * @return the model
-     *
-     * @deprecated Use {@link org.jboss.as.server.deployment.DeploymentResourceSupport#getDeploymentSubsystemModel(String)}
-     */
-    @Deprecated
-    ModelNode getDeploymentSubsystemModel(final String subsystemName);
-
-    /**
-     * Create a management sub-model for components from the deployment itself. Operations, metrics and descriptions
-     * have to be registered as part of the subsystem registration {@link org.jboss.as.controller.ExtensionContext} and
-     * {@linkplain org.jboss.as.controller.SubsystemRegistration#registerDeploymentModel(org.jboss.as.controller.ResourceDefinition)}.
-     *
-     * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @return the model node
-     *
-     * @deprecated Use {@link org.jboss.as.server.deployment.DeploymentResourceSupport#getDeploymentSubModel(String, org.jboss.as.controller.PathElement)}
-     */
-    @Deprecated
-    ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address);
-
-    /**
-     *
-     * This method is extension of {@link #createDeploymentSubModel(String, PathElement)}, the difference is that this method traverses recursively till last
-     * element in {@link PathAddress}.
-     *
-     * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @return the model node
-     *
-     * @deprecated Use {@link org.jboss.as.server.deployment.DeploymentResourceSupport#getDeploymentSubModel(String, org.jboss.as.controller.PathAddress)}
-     */
-    @Deprecated
-    ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address);
-
-    /**
-     *
-     * This method is extension of {@link #createDeploymentSubModel(String, PathAddress)}, the difference is that it accepts resource that should be registered
-     * at specified path.
-     *
-     * @param subsystemName the subsystem name the model was registered
-     * @param address the path address this sub-model should be created in
-     * @param resource the resource that needs to be registered as submodule
-     * @return the model node
-     *
-     * @deprecated Use {@link org.jboss.as.server.deployment.DeploymentResourceSupport#registerDeploymentSubResource(String, org.jboss.as.controller.PathAddress, org.jboss.as.controller.registry.Resource)}
-     */
-    @Deprecated
-    ModelNode createDeploymentSubModel(final String subsystemName, final PathAddress address, final Resource resource);
 
 }

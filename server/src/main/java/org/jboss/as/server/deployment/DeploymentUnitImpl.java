@@ -22,10 +22,6 @@
 
 package org.jboss.as.server.deployment;
 
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.controller.registry.Resource;
-import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 
@@ -82,27 +78,5 @@ class DeploymentUnitImpl extends SimpleAttachable implements DeploymentUnit {
         } else {
             return String.format("deployment \"%s\"", name);
         }
-    }
-
-    @Override
-    public ModelNode getDeploymentSubsystemModel(final String subsystemName) {
-        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, null, this);
-    }
-
-    @Override
-    public ModelNode createDeploymentSubModel(final String subsystemName, final PathElement address) {
-        // Using the getDeploymentSubModel results in the previous behavior
-        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, address, this);
-    }
-
-    @Override
-    public ModelNode createDeploymentSubModel(String subsystemName, PathAddress address) {
-        return this.createDeploymentSubModel(subsystemName, address, null);
-    }
-
-    @Override
-    public ModelNode createDeploymentSubModel(String subsystemName, PathAddress address, Resource resource) {
-        // Using the getDeploymentSubModel results in the previous behavior
-        return DeploymentResourceSupport.getDeploymentSubModel(subsystemName, address, resource, this);
     }
 }
