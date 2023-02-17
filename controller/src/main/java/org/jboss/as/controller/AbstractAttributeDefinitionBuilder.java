@@ -186,24 +186,6 @@ public abstract class AbstractAttributeDefinitionBuilder<BUILDER extends Abstrac
     }
 
     /**
-     * Inverse of the preferred {@link #setRequired(boolean)}; sets whether the attribute should
-     * {@link AttributeDefinition#isNillable() allow undefined values}
-     * in the absence of {@link #setAlternatives(String...) alternatives}.
-     * If not set the default value is the value provided to the builder constructor, or {@code false}
-     * if no value is provided.
-     *
-     * @param allowNull {@code true} if undefined values should be allowed in the absence of alternatives
-     * @return a builder that can be used to continue building the attribute definition
-     *
-     * @deprecated use {@link #setRequired(boolean)}
-     */
-    @Deprecated
-    public BUILDER setAllowNull(boolean allowNull) {
-        this.allowNull = allowNull;
-        return (BUILDER) this;
-    }
-
-    /**
      * Sets whether the attribute should {@link AttributeDefinition#isAllowExpression() allow expressions}
      * If not set the default value is {@code false}.
      *
