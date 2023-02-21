@@ -249,7 +249,7 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>2.0.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>2.1.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>3.0.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Final</version.org.wildfly.security.jakarta.elytron-ee>
         <version.org.yaml.snakeyaml>1.33</version.org.yaml.snakeyaml>
