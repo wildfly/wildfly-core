@@ -205,7 +205,7 @@
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.9.2</version.org.apache.sshd>
         <version.org.bouncycastle>1.72</version.org.bouncycastle>
-        <version.org.bouncycastle.bcpg-jdk18on>1.72.1</version.org.bouncycastle.bcpg-jdk18on>
+        <version.org.bouncycastle.bcpg-jdk18on>1.72.2</version.org.bouncycastle.bcpg-jdk18on>
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.1</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
