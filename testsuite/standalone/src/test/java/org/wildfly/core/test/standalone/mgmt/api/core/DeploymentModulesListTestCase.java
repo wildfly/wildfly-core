@@ -66,7 +66,7 @@ public class DeploymentModulesListTestCase {
 
     private JavaArchive archive;
     private static final String NODE_TYPE = "deployment";
-    private static final String EXAMPLE_MODULE_TO_EXCLUDE = "ibm.jdk";
+    private static final String EXAMPLE_MODULE_TO_EXCLUDE = "org.jboss.logmanager";
     private static final String EXAMPLE_USER_MODULE = "jdk.net";
     private static final String JAR_DEPLOYMENT_NAME_SUFFIX = "-module-test.jar";
     private static final String JAR_DEPLOYMENT_NAME = EXAMPLE_USER_MODULE + JAR_DEPLOYMENT_NAME_SUFFIX;

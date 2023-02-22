@@ -39,6 +39,7 @@ public class LayersTestCase {
         // deprecated
         "org.jboss.as.threads",
         "javax.api",
+        "ibm.jdk",
         // Un-used
         "javax.xml.stream.api",
         // Un-used
@@ -61,8 +62,6 @@ public class LayersTestCase {
     // This is the expected set of un-referenced modules found when scanning
     // the default configuration.
     private static final String[] NOT_REFERENCED = {
-        // injected by root resource
-        "ibm.jdk",
         //  injected by server in UndertowHttpManagementService
         "org.jboss.as.domain-http-error-context",
         // injected by elytron

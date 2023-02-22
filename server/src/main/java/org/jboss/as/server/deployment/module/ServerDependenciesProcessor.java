@@ -49,7 +49,6 @@ public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
             // The Sun JDK is added as a dependency with service import = true since it's required for JSR-223 Javascript engine to be available.
             // @see https://issues.jboss.org/browse/AS7-1116 and https://issues.jboss.org/browse/WFLY-1373
             ModuleIdentifier.create("sun.jdk"),
-            ModuleIdentifier.create("ibm.jdk"),
     };
 
     @Override
