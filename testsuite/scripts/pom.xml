@@ -40,8 +40,6 @@
         <wildfly.home>${project.basedir}${file.separator}target${file.separator}${server.name}</wildfly.home>
         <test.log.level>INFO</test.log.level>
         <test.log.file>${project.build.directory}${file.separator}test.log</test.log.file>
-        <maven.test.skip>false</maven.test.skip>
-        <skipTests>${maven.test.skip}</skipTests>
     </properties>
 
     <build>

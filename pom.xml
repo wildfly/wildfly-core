@@ -2507,5 +2507,26 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>quick-build</id>
+            <activation>
+                <property>
+                    <name>quickly</name>
+                </property>
+            </activation>
+            <properties>
+                <license.skip>true</license.skip>
+                <skipTests>true</skipTests>
+                <enforcer.skip>true</enforcer.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <skipITs>true</skipITs>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.buildNumber.skip>true</maven.buildNumber.skip>
+            </properties>
+            <build>
+                <defaultGoal>clean install</defaultGoal>
+            </build>
+        </profile>
     </profiles>
 </project>
