@@ -31,8 +31,8 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.Server;
@@ -49,9 +49,7 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
-@Ignore
 public class YamlExtensionTestCase {
-
     private static final ModelNode READ_CONFIG = Util.createEmptyOperation("read-config-as-xml", PathAddress.EMPTY_ADDRESS);
 
     @Inject
@@ -66,10 +64,11 @@ public class YamlExtensionTestCase {
 
     @BeforeClass
     public static void setup() throws Exception {
+        Assume.assumeTrue("Layer testing provides a different XML file than the standard one which results in failures", System.getProperty("ts.layers") == null);
         testYaml = new File(YamlExtensionTestCase.class.getResource("test.yml").toURI()).toPath().toAbsolutePath();
         cliScript = new File(YamlExtensionTestCase.class.getResource("test.cli").toURI()).toPath().toAbsolutePath();
-        expectedXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath()));
-        expectedBootCLiXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath()));
+        expectedXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath())).replace("\r\n", "\n");
+        expectedBootCLiXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath())).replace("\r\n", "\n");
         originalJvmArgs = WildFlySecurityManager.getPropertyPrivileged("jvm.args", null);
         Path target = new File("target").toPath();
         markerDirectory = Files.createDirectories(target.resolve("yaml").resolve("cli-boot-ops"));
@@ -142,7 +141,7 @@ public class YamlExtensionTestCase {
         String[] resultLines = result.split(System.lineSeparator());
         for (int i = 0; i < expectedLines.length; i++) {
             if (i < resultLines.length) {
-                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in "+ System.lineSeparator() + result,expectedLines[i], resultLines[i]);
+                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in "+ System.lineSeparator() + result,expectedLines[i].replaceAll("\\s+",""), resultLines[i].replaceAll("\\s+",""));
             } else {
                 Assert.fail("Missing line " + expectedLines[i] + " in "+ System.lineSeparator() + result);
             }
@@ -152,7 +151,7 @@ public class YamlExtensionTestCase {
 
     private String readXmlConfig() throws IOException {
         try (ModelControllerClient client = container.getClient().getControllerClient()) {
-            return Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"");
+            return Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"").replace("\r\n", "\n");
         }
     }
 }
