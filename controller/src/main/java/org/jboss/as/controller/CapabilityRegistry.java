@@ -943,11 +943,24 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
         if (satisfactoryCapability == null) {
             if (forServer) {
                 throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
+            }
+            if (getRegistrationPoints(capabilityName).isEmpty()) {
+                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapability(capabilityName);
             } else {
-                throw ControllerLogger.MGMT_OP_LOGGER.unknownCapabilityInContext(capabilityName, capabilityScope.getName());
+                throw ControllerLogger.MGMT_OP_LOGGER.noSatisfactoryCapability(capabilityName, capabilityScope.getName(), getRegistrationPoints(capabilityName), capabilityScope.getName());
             }
         }
         return capabilities.get(satisfactoryCapability.singleCapability);
+    }
+
+    private Set<RegistrationPoint> getRegistrationPoints(String capabilityName) {
+        Set<RegistrationPoint> registrationPoints = new HashSet<>();
+        for (CapabilityId key: capabilities.keySet()) {
+            if (key.getName().equals(capabilityName)) {
+                registrationPoints = capabilities.get(key).getRegistrationPoints();
+            }
+        }
+        return registrationPoints;
     }
 
     private SatisfactoryCapability findSatisfactoryCapability(String capabilityName, CapabilityScope dependentContext,

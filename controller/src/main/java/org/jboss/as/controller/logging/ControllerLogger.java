@@ -3736,4 +3736,7 @@ public interface ControllerLogger extends BasicLogger {
      */
     @Message(id = Message.NONE, value = "The yaml configuration files for customizing the configuration. Paths can be absolute, relative to the current execution directory or relative to the standalone configuration directory.")
     String argYaml();
+
+    @Message(id = 499, value = "There is no satisfactory capability '%s' available to resources with capability scope '%s'. This capability is registered at address(es) '%s', and are not accessible to resources with scope '%s'.")
+    IllegalStateException noSatisfactoryCapability(String capability, String scopeName, Set<RegistrationPoint> addresses, String scopeNameAgain);
 }
