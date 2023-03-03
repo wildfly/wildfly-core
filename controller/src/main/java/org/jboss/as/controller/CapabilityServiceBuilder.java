@@ -69,19 +69,6 @@ public interface CapabilityServiceBuilder<T> extends ServiceBuilder<T> {
     <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target);
 
     /**
-     * Adds capability requirement to capability which we are building
-     *
-     * @param capabilityName name of capability requirement
-     * @param type           the class of the value of the dependency
-     * @param <I>            the type of the value of the dependency
-     * @return this builder
-     * @deprecated Use {@link CapabilityServiceBuilder#requiresCapability(String, Class, String...)} instead.
-     * This method will be removed in a future release.
-     */
-    @Deprecated
-    <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type);
-
-    /**
      * {@inheritDoc}
      * @return this builder
      */

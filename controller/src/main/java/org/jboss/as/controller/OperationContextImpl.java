@@ -2625,14 +2625,6 @@ final class OperationContextImpl extends AbstractOperationContext {
             return this;
         }
 
-
-        @Override
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type) {
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
-            requires(serviceName);
-            return this;
-        }
-
         @Override
         public CapabilityServiceBuilder<T> setInitialMode(ServiceController.Mode mode) {
             super.setInitialMode(mode);
