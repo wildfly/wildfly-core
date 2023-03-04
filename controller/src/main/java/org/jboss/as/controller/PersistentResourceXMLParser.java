@@ -19,6 +19,9 @@
 package org.jboss.as.controller;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
+
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 
@@ -32,37 +35,31 @@ import org.jboss.staxmapper.XMLExtendedStreamWriter;
 /**
  * @author Tomaz Cerar (c) 2015 Red Hat Inc.
  */
-public abstract class PersistentResourceXMLParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext> {
+public abstract class PersistentResourceXMLParser implements XMLStreamConstants, XMLElementReader<List<ModelNode>>, XMLElementWriter<SubsystemMarshallingContext>, UnaryOperator<PersistentResourceXMLDescription> {
 
-    private volatile PersistentResourceXMLDescription cachedDescription;
+    private final AtomicReference<PersistentResourceXMLDescription> cachedDescription = new AtomicReference<>();
 
     public abstract PersistentResourceXMLDescription getParserDescription();
 
     /** @deprecated Experimental; for internal use only. May be removed at any time. */
     @Deprecated
     public final void cacheXMLDescription() {
-        if (cachedDescription == null) {
-            cachedDescription = getParserDescription();
-        }
+        this.cachedDescription.updateAndGet(this);
     }
 
     @Override
-    public void readElement(XMLExtendedStreamReader xmlExtendedStreamReader, List<ModelNode> modelNodes) throws XMLStreamException {
-        PersistentResourceXMLDescription xmlDescription = cachedDescription;
-        if (xmlDescription == null) {
-            xmlDescription = getParserDescription();
-        } else {
-            // To reduce memory footprint, we only cache for a single parsing run
-            cachedDescription = null;
-        }
-        xmlDescription.parse(xmlExtendedStreamReader, PathAddress.EMPTY_ADDRESS, modelNodes);
+    public PersistentResourceXMLDescription apply(PersistentResourceXMLDescription description) {
+        return (description != null) ? description : this.getParserDescription();
+    }
+
+    @Override
+    public void readElement(XMLExtendedStreamReader reader, List<ModelNode> modelNodes) throws XMLStreamException {
+        // To reduce memory footprint, we only cache for a single parsing run
+        new PersistentResourceXMLDescriptionReader(this.apply(this.cachedDescription.getAndSet(null))).readElement(reader, modelNodes);
     }
 
     @Override
     public void writeContent(XMLExtendedStreamWriter writer, SubsystemMarshallingContext context) throws XMLStreamException {
-        PersistentResourceXMLDescription description = getParserDescription();
-        ModelNode model = new ModelNode();
-        model.get(description.getPathElement().getKeyValuePair()).set(context.getModelNode());
-        description.persist(writer, model);
+        new PersistentResourceXMLDescriptionWriter(this.apply(this.cachedDescription.get())).writeContent(writer, context);
     }
 }
