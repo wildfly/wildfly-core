@@ -22,12 +22,6 @@ if ($SECMGR) {
     $MODULE_OPTS +="-secmgr";
 }
 
-if (Is-Java-Server-Option $JAVA_OPTS) {
-	$JAVA_OPTS = ,"-server" + $JAVA_OPTS
-	$HOST_CONTROLLER_JAVA_OPTS = ,"-server" + $HOST_CONTROLLER_JAVA_OPTS
-	$PROCESS_CONTROLLER_JAVA_OPTS = ,"-server" + $PROCESS_CONTROLLER_JAVA_OPTS
-}
-
 Set-Global-Variables-Domain
 
 # consolidate the host-controller and command line opts

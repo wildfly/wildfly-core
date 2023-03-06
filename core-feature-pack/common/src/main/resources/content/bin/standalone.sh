@@ -243,33 +243,6 @@ fi
 
 
 if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
-    # Check for -d32/-d64 in JAVA_OPTS
-    JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`
-    JVM_D32_OPTION=`echo $JAVA_OPTS | $GREP "\-d32"`
-
-    # Check If server or client is specified
-    SERVER_SET=`echo $JAVA_OPTS | $GREP "\-server"`
-    CLIENT_SET=`echo $JAVA_OPTS | $GREP "\-client"`
-
-    if [ "x$JVM_D32_OPTION" != "x" ]; then
-        JVM_OPTVERSION="-d32"
-    elif [ "x$JVM_D64_OPTION" != "x" ]; then
-        JVM_OPTVERSION="-d64"
-    elif $darwin && [ "x$SERVER_SET" = "x" ]; then
-        # Use 32-bit on Mac, unless server has been specified or the user opts are incompatible
-        "$JAVA" -d32 $JAVA_OPTS -version > /dev/null 2>&1 && PREPEND_JAVA_OPTS="-d32" && JVM_OPTVERSION="-d32"
-    fi
-
-    if [ "x$CLIENT_SET" = "x" -a "x$SERVER_SET" = "x" ]; then
-        # neither -client nor -server is specified
-        if $darwin && [ "$JVM_OPTVERSION" = "-d32" ]; then
-            # Prefer client for Macs, since they are primarily used for development
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -client"
-        else
-            PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS -server"
-        fi
-    fi
-
     # Set flag if JVM is modular
     setModularJdk
 
@@ -296,7 +269,7 @@ if [ "$PRESERVE_JAVA_OPTS" != "true" ]; then
                 TMP_PARAM="-verbose:gc -Xloggc:\"$JBOSS_LOG_DIR/gc.log\" -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=3M -XX:-TraceClassUnloading"
             fi
 
-            eval "$JAVA" $JVM_OPTVERSION $TMP_PARAM -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS $TMP_PARAM"
+            eval "$JAVA" $TMP_PARAM -version >/dev/null 2>&1 && PREPEND_JAVA_OPTS="$PREPEND_JAVA_OPTS $TMP_PARAM"
             # Remove the gc.log file from the -version check
             rm -f "$JBOSS_LOG_DIR/gc.log" >/dev/null 2>&1
         fi
