@@ -59,7 +59,7 @@ class ElytronSubsystemParser1_0 extends PersistentResourceXMLParser {
             .build();
 
     final PersistentResourceXMLDescription dirContextParser = PersistentResourceXMLDescription.decorator(DIR_CONTEXTS)
-            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT), null)
+            .addChild(builder(PathElement.pathElement(ElytronDescriptionConstants.DIR_CONTEXT))
                     .addAttributes(DirContextDefinition.ATTRIBUTES))
             .build();
 
