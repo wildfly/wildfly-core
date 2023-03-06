@@ -35,19 +35,19 @@ import org.junit.runners.Parameterized.Parameters;
 public class DiscoverySubsystemTestCase extends AbstractSubsystemBaseTest {
 
     @Parameters
-    public static Iterable<DiscoverySchema> parameters() {
-        return EnumSet.allOf(DiscoverySchema.class);
+    public static Iterable<DiscoverySubsystemSchema> parameters() {
+        return EnumSet.allOf(DiscoverySubsystemSchema.class);
     }
 
-    private final DiscoverySchema schema;
+    private final DiscoverySubsystemSchema schema;
 
-    public DiscoverySubsystemTestCase(DiscoverySchema schema) {
+    public DiscoverySubsystemTestCase(DiscoverySubsystemSchema schema) {
         super(DiscoveryExtension.SUBSYSTEM_NAME, new DiscoveryExtension());
         this.schema = schema;
     }
 
     @Override
     protected String getSubsystemXml() throws IOException {
-        return readResource(String.format(Locale.ROOT, "discovery-%d.%d.xml", this.schema.major(), this.schema.minor()));
+        return readResource(String.format(Locale.ROOT, "discovery-%d.%d.xml", this.schema.getVersion().major(), this.schema.getVersion().minor()));
     }
 }
