@@ -28,7 +28,8 @@ import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
+import org.jboss.as.controller.descriptions.ParentResourceDescriptionResolver;
+import org.jboss.as.controller.descriptions.SubsystemResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
@@ -43,7 +44,7 @@ public final class DiscoveryExtension implements Extension {
 
     static final String SUBSYSTEM_NAME = "discovery";
 
-    static final String RESOURCE_NAME = DiscoveryExtension.class.getPackage().getName() + ".LocalDescriptions";
+    static final ParentResourceDescriptionResolver SUBSYSTEM_RESOLVER = new SubsystemResourceDescriptionResolver(SUBSYSTEM_NAME, DiscoveryExtension.class);
 
     static final RuntimeCapability<?> DISCOVERY_PROVIDER_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.discovery.provider", true)
             .setServiceType(DiscoveryProvider.class)
@@ -65,16 +66,5 @@ public final class DiscoveryExtension implements Extension {
         for (DiscoverySchema schema : EnumSet.allOf(DiscoverySchema.class)) {
             context.setSubsystemXmlMapping(SUBSYSTEM_NAME, schema.getNamespaceUri(), new DiscoverySubsystemParser(schema));
         }
-    }
-
-    static StandardResourceDescriptionResolver getResourceDescriptionResolver(final String... keyPrefixes) {
-        StringBuilder sb = new StringBuilder(SUBSYSTEM_NAME);
-        if (keyPrefixes != null) {
-            for (String current : keyPrefixes) {
-                sb.append(".").append(current);
-            }
-        }
-
-        return new StandardResourceDescriptionResolver(sb.toString(), RESOURCE_NAME, DiscoveryExtension.class.getClassLoader(), true, false);
     }
 }
