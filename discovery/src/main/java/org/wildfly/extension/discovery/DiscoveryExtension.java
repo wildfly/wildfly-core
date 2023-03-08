@@ -53,7 +53,7 @@ public final class DiscoveryExtension implements Extension {
 
     @Override
     public void initialize(final ExtensionContext context) {
-        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, DiscoveryModel.CURRENT.getVersion());
+        final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, DiscoverySubsystemModel.CURRENT.getVersion());
         subsystemRegistration.setHostCapable();
         subsystemRegistration.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(DiscoverySubsystemSchema.CURRENT));
 
