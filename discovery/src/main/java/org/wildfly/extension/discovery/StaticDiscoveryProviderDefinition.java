@@ -82,7 +82,7 @@ final class StaticDiscoveryProviderDefinition extends SimpleResourceDefinition {
     private static final AbstractAddStepHandler ADD_HANDLER = new StaticDiscoveryProviderAddHandler();
 
     StaticDiscoveryProviderDefinition() {
-        super(new Parameters(PATH, DiscoveryExtension.getResourceDescriptionResolver(PATH.getKey()))
+        super(new Parameters(PATH, DiscoveryExtension.SUBSYSTEM_RESOLVER.createChildResolver(PATH))
             .setAddHandler(ADD_HANDLER)
             .setRemoveHandler(new ServiceRemoveStepHandler(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getCapabilityServiceName(), ADD_HANDLER))
             .setCapabilities(DISCOVERY_PROVIDER_CAPABILITY));
