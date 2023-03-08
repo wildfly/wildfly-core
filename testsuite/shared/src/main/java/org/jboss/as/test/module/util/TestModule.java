@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -298,7 +299,7 @@ public class TestModule {
             modulePath = pathElement;
         }
 
-        File moduleDir = new File(modulePath);
+        File moduleDir = Path.of(modulePath).toFile();
 
         if (!moduleDir.exists()) {
             if (create && isUnderCurrentProjectBuildDir(moduleDir)) {
@@ -320,7 +321,8 @@ public class TestModule {
     }
 
     private static boolean isImmutableModulePath(String path) {
-        return path.contains(ILLEGAL_BUILD_DIR) || path.contains(ILLEGAL_DIST_DIR);
+        String thePath = Path.of(path).toString();
+        return thePath.contains(ILLEGAL_BUILD_DIR) || thePath.contains(ILLEGAL_DIST_DIR);
     }
 
     private static boolean isUnderCurrentProjectBuildDir(File moduleRoot) {
