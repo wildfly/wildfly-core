@@ -27,6 +27,7 @@ import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.staxmapper.Namespace;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
@@ -533,6 +534,17 @@ public final class PersistentResourceXMLDescription implements ResourceParser, R
      */
     public static PersistentResourceXMLBuilder builder(final PathElement pathElement, final String namespaceURI) {
         return new PersistentResourceXMLBuilder(pathElement, namespaceURI);
+    }
+
+    /**
+     * Creates builder for the given subsystem path and namespace.
+     *
+     * @param path a subsystem path element
+     * @param namespace the subsystem namespace
+     * @return a builder for creating a {@link PersistentResourceXMLDescription}.
+     */
+    public static PersistentResourceXMLBuilder builder(PathElement path, Namespace namespace) {
+        return new PersistentResourceXMLBuilder(path, namespace.getUri());
     }
 
     /**

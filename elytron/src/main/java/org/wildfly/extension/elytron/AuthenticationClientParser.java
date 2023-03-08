@@ -35,20 +35,20 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
  */
 class AuthenticationClientParser {
 
-    private final PersistentResourceXMLDescription authenticationConfigurationParser = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION), null)
+    private final PersistentResourceXMLDescription authenticationConfigurationParser = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION))
             .addAttributes(AuthenticationClientDefinitions.AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES)
             .addAttribute(AuthenticationClientDefinitions.MECHANISM_PROPERTIES, AttributeParser.PROPERTIES_PARSER, AttributeMarshaller.PROPERTIES_MARSHALLER)
             .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getMarshaller())
             .build();
 
-    private final PersistentResourceXMLDescription authenticationConfigurationParser_9_0 = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION), null)
+    private final PersistentResourceXMLDescription authenticationConfigurationParser_9_0 = builder(PathElement.pathElement(AUTHENTICATION_CONFIGURATION))
             .addAttributes(AuthenticationClientDefinitions.AUTHENTICATION_CONFIGURATION_SIMPLE_ATTRIBUTES)
             .addAttribute(AuthenticationClientDefinitions.MECHANISM_PROPERTIES, AttributeParser.PROPERTIES_PARSER, AttributeMarshaller.PROPERTIES_MARSHALLER)
             .addAttribute(AuthenticationClientDefinitions.CREDENTIAL_REFERENCE, AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getParser(), AuthenticationClientDefinitions.CREDENTIAL_REFERENCE.getMarshaller())
             .addAttribute(AuthenticationClientDefinitions.WEBSERVICES)
             .build();
 
-    private final PersistentResourceXMLDescription authenticationContextParser = builder(PathElement.pathElement(AUTHENTICATION_CONTEXT), null)
+    private final PersistentResourceXMLDescription authenticationContextParser = builder(PathElement.pathElement(AUTHENTICATION_CONTEXT))
             .addAttribute(AuthenticationClientDefinitions.CONTEXT_EXTENDS)
             .addAttribute(AuthenticationClientDefinitions.MATCH_RULES, AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER, AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();

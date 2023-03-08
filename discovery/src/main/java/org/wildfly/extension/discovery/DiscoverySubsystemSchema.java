@@ -22,47 +22,34 @@
 
 package org.wildfly.extension.discovery;
 
-import java.util.Locale;
+import org.jboss.as.controller.LegacySubsystemURN;
+import org.jboss.as.controller.PersistentResourceXMLDescription;
+import org.jboss.as.controller.PersistentSubsystemSchema;
+import org.jboss.as.controller.xml.VersionedNamespace;
+import org.jboss.staxmapper.IntVersion;
 
 /**
  * Enumeration of discovery subsystem schema versions.
  * @author Paul Ferraro
  */
-enum DiscoverySchema {
+enum DiscoverySubsystemSchema implements PersistentSubsystemSchema<DiscoverySubsystemSchema> {
     VERSION_1_0(1, 0),
     ;
-    static final DiscoverySchema CURRENT = VERSION_1_0;
+    static final DiscoverySubsystemSchema CURRENT = VERSION_1_0;
 
-    private final int major;
-    private final int minor;
+    private final VersionedNamespace<IntVersion, DiscoverySubsystemSchema> namespace;
 
-    DiscoverySchema(int major, int minor) {
-        this.major = major;
-        this.minor = minor;
+    DiscoverySubsystemSchema(int major, int minor) {
+        this.namespace = new LegacySubsystemURN<>(DiscoveryExtension.SUBSYSTEM_NAME, new IntVersion(major, minor));
     }
 
-    int major() {
-        return this.major;
+    @Override
+    public VersionedNamespace<IntVersion, DiscoverySubsystemSchema> getNamespace() {
+        return this.namespace;
     }
 
-    int minor() {
-        return this.minor;
-    }
-
-    /**
-     * Get the namespace URI of this schema.
-     * @return the namespace URI
-     */
-    String getNamespaceUri() {
-        return String.format(Locale.ROOT, "urn:jboss:domain:%s:%d.%d", DiscoveryExtension.SUBSYSTEM_NAME, this.major, this.minor);
-    }
-
-    /**
-     * Indicates whether this version of the schema is greater than or equal to the version of the specified schema.
-     * @param schema a schema version with which to compare
-     * @return true, if this version of the schema is greater than or equal to the version of the specified schema, false otherwise.
-     */
-    boolean since(DiscoverySchema schema) {
-        return (this.major() > schema.major()) || ((this.major() == schema.major()) && (this.minor() >= schema.minor()));
+    @Override
+    public PersistentResourceXMLDescription getXMLDescription() {
+        return DiscoverySubsystemXMLDescriptionFactory.INSTANCE.apply(this);
     }
 }

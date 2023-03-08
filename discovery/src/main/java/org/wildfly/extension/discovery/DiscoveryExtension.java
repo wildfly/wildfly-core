@@ -26,6 +26,7 @@ import java.util.EnumSet;
 
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.PersistentResourceXMLDescriptionWriter;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -54,7 +55,7 @@ public final class DiscoveryExtension implements Extension {
     public void initialize(final ExtensionContext context) {
         final SubsystemRegistration subsystemRegistration = context.registerSubsystem(SUBSYSTEM_NAME, DiscoveryModel.CURRENT.getVersion());
         subsystemRegistration.setHostCapable();
-        subsystemRegistration.registerXMLElementWriter(new DiscoverySubsystemParser(DiscoverySchema.CURRENT));
+        subsystemRegistration.registerXMLElementWriter(new PersistentResourceXMLDescriptionWriter(DiscoverySubsystemSchema.CURRENT));
 
         final ManagementResourceRegistration resourceRegistration = subsystemRegistration.registerSubsystemModel(new DiscoverySubsystemDefinition());
         resourceRegistration.registerOperationHandler(GenericSubsystemDescribeHandler.DEFINITION, GenericSubsystemDescribeHandler.INSTANCE);
@@ -62,8 +63,8 @@ public final class DiscoveryExtension implements Extension {
 
     @Override
     public void initializeParsers(final ExtensionParsingContext context) {
-        for (DiscoverySchema schema : EnumSet.allOf(DiscoverySchema.class)) {
-            context.setSubsystemXmlMapping(SUBSYSTEM_NAME, schema.getNamespaceUri(), new DiscoverySubsystemParser(schema));
+        for (DiscoverySubsystemSchema schema : EnumSet.allOf(DiscoverySubsystemSchema.class)) {
+            context.setSubsystemXmlMapping(SUBSYSTEM_NAME, schema.getNamespace().getUri(), schema);
         }
     }
 
