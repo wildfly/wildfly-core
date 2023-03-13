@@ -89,6 +89,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.wildfly.core.testrunner.ManagementClient;
@@ -145,6 +146,7 @@ public abstract class AbstractKerberosMgmtSaslTestBase {
     @BeforeClass
     public static void beforeClass() {
         KerberosTestUtils.assumeKerberosAuthenticationSupported();
+        Assume.assumeFalse("WFCORE-5947 temporary skip test until IBM JDK fixes are incorporated in elytron upgrade", CoreUtils.IBM_JDK);
     }
 
     /**

@@ -367,11 +367,7 @@ public class SNICombinedWithALPNTestCase {
      * @return IbmX509 in case of IBM JDK, SunX509 otherwise
      */
     private static String keyAlgorithm() {
-        if (isIbmJdk()) {
-            return "IbmX509";
-        } else {
-            return "SunX509";
-        }
+        return "SunX509";
     }
 
     /**

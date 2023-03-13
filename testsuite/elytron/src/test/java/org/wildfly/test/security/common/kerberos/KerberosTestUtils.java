@@ -65,7 +65,7 @@ public final class KerberosTestUtils {
      * @throws AssumptionViolatedException
      */
     public static void assumeKerberosAuthenticationSupported() throws AssumptionViolatedException {
-        if (CoreUtils.IBM_JDK && isIPV6()) {
+        if (isIPV6()) {
             throw new AssumptionViolatedException(
                     "Kerberos tests are not supported on IBM Java with IPv6. Find more info in https://bugzilla.redhat.com/show_bug.cgi?id=1188632");
         }
@@ -98,13 +98,6 @@ public final class KerberosTestUtils {
     public static LoginContext loginWithKerberos(final Krb5LoginConfiguration krb5Configuration, final String user,
             final String pass) throws LoginException {
         LoginContext lc = new LoginContext(krb5Configuration.getName(), new UsernamePasswordHandler(user, pass));
-        if (CoreUtils.IBM_JDK) {
-            // workaround for IBM JDK on RHEL5 issue described in https://bugzilla.redhat.com/show_bug.cgi?id=1206177
-            // The first negotiation always fail, so let's do a dummy login/logout round.
-            lc.login();
-            lc.logout();
-            lc = new LoginContext(krb5Configuration.getName(), new UsernamePasswordHandler(user, pass));
-        }
         lc.login();
         return lc;
     }
