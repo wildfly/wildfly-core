@@ -15,6 +15,8 @@
  */
 package org.jboss.as.test.manualmode.management.persistence;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_MODE;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -45,11 +47,13 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * Simple test to check that we can apply YAML configuration over an existing standard configuration.
  * Checking that reloading doesn't break the resulting configuration.
  * Testing the cli ops are compatible with the YAML changes.
+ *
  * @author Emmanuel Hugonnet (c) 2021 Red Hat, Inc.
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
 public class YamlExtensionTestCase {
+
     private static final ModelNode READ_CONFIG = Util.createEmptyOperation("read-config-as-xml", PathAddress.EMPTY_ADDRESS);
 
     @Inject
@@ -127,23 +131,46 @@ public class YamlExtensionTestCase {
             }
             WildFlySecurityManager.setPropertyPrivileged("jvm.args", sb.toString());
             container.start(null, null, Server.StartMode.ADMIN_ONLY, System.out, false, null, null, null, null, new Path[]{testYaml});
-            String xml = readXmlConfig();
-            compareXML(expectedBootCLiXml, xml);
             container.waitForLiveServerToReload(TimeoutUtil.adjust(5000));
+            waitForRunningMode("NORMAL");
+            String xml = readXmlConfig();
             compareXML(expectedBootCLiXml, xml);
         } finally {
             container.stop();
         }
     }
 
+
+    private void waitForRunningMode(String runningMode) throws Exception {
+        // Following a reload to normal mode, we might read the running mode too early and hit the admin-only server
+        // Cycle around a bit to make sure we get the server reloaded into normal mode
+        long end = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        while (true) {
+            try {
+                Thread.sleep(100);
+                Assert.assertEquals(runningMode, getRunningMode());
+                break;
+            } catch (Throwable e) {
+                if (System.currentTimeMillis() >= end) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    String getRunningMode() throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, RUNNING_MODE);
+        ModelNode result = container.getClient().executeForResult(op);
+        return result.asString();
+    }
     private void compareXML(String expected, String result) {
         String[] expectedLines = expected.split(System.lineSeparator());
         String[] resultLines = result.split(System.lineSeparator());
         for (int i = 0; i < expectedLines.length; i++) {
             if (i < resultLines.length) {
-                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in "+ System.lineSeparator() + result,expectedLines[i].replaceAll("\\s+",""), resultLines[i].replaceAll("\\s+",""));
+                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in " + System.lineSeparator() + result, expectedLines[i].replaceAll("\\s+", ""), resultLines[i].replaceAll("\\s+", ""));
             } else {
-                Assert.fail("Missing line " + expectedLines[i] + " in "+ System.lineSeparator() + result);
+                Assert.fail("Missing line " + expectedLines[i] + " in " + System.lineSeparator() + result);
             }
         }
 
