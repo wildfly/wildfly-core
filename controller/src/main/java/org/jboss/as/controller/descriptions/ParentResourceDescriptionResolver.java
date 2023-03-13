@@ -72,4 +72,13 @@ public interface ParentResourceDescriptionResolver extends ResourceDescriptionRe
      * @return a resolver of resource descriptions
      */
     ParentResourceDescriptionResolver createChildResolver(PathElement path, List<PathElement> alternates);
+
+    /**
+     * Creates a {@link ResourceDescriptionResolver} whose descriptions are located via the specified key.
+     * @param key a child description key
+     * @return a resolver of resource descriptions
+     */
+    default ParentResourceDescriptionResolver createChildResolver(String key) {
+        return this.createChildResolver(PathElement.pathElement(key), List.of());
+    }
 }
