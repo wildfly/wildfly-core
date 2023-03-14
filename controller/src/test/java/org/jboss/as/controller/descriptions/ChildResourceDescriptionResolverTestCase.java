@@ -39,415 +39,449 @@ public class ChildResourceDescriptionResolverTestCase {
 
     @Test
     public void getChildTypeDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getChildTypeDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getChildTypeDescription("test", locale, bundle));
+
+        properties.put("subsystem.test", "parent");
 
         Assert.assertEquals("parent", resolver.getChildTypeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.child.test", "foo");
 
         Assert.assertEquals("foo", resolver.getChildTypeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.value.test", "bar");
 
         Assert.assertEquals("bar", resolver.getChildTypeDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test", "foo");
+
+        Assert.assertEquals("foo", child.getChildTypeDescription("test", locale, bundle));
     }
 
     @Test
     public void getResourceBundle() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of());
+        ParentResourceDescriptionResolver parent = mock(ParentResourceDescriptionResolver.class);
+        ParentResourceDescriptionResolver child = mock(ParentResourceDescriptionResolver.class);
+        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, child, List.of());
         Locale locale = Locale.getDefault();
         ResourceBundle bundle = mock(ResourceBundle.class);
 
-        when(parent.getResourceBundle(locale)).thenReturn(bundle);
+        when(child.getResourceBundle(locale)).thenReturn(bundle);
 
         Assert.assertSame(bundle, resolver.getResourceBundle(locale));
     }
 
     @Test
     public void getResourceDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getResourceDescription(locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getResourceDescription(locale, bundle));
+
+        properties.put("subsystem", "parent");
 
         Assert.assertEquals("parent", resolver.getResourceDescription(locale, bundle));
 
-        properties.put("prefix.child", "foo");
+        properties.put("subsystem.child", "foo");
 
         Assert.assertEquals("foo", resolver.getResourceDescription(locale, bundle));
 
-        properties.put("prefix.child.value", "bar");
+        properties.put("subsystem.child.value", "bar");
 
         Assert.assertEquals("bar", resolver.getResourceDescription(locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild", "foo");
+
+        Assert.assertEquals("foo", child.getResourceDescription(locale, bundle));
     }
 
     @Test
     public void getResourceAttributeDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getResourceAttributeDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getResourceAttributeDescription("test", locale, bundle));
+
+        properties.put("subsystem.test", "parent");
 
         Assert.assertEquals("parent", resolver.getResourceAttributeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.child.test", "foo");
 
         Assert.assertEquals("foo", resolver.getResourceAttributeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.value.test", "bar");
 
         Assert.assertEquals("bar", resolver.getResourceAttributeDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test", "foo");
+
+        Assert.assertEquals("foo", child.getResourceAttributeDescription("test", locale, bundle));
     }
 
     @Test
     public void getResourceAttributeValueTypeDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
 
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
 
-        when(parent.getResourceAttributeValueTypeDescription("test", locale, bundle)).thenReturn("parent");
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getResourceAttributeValueTypeDescription("test", locale, bundle));
+
+        properties.put("subsystem.test", "parent");
 
         Assert.assertEquals("parent", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.child.test", "foo");
 
         Assert.assertEquals("foo", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.value.test", "bar");
 
         Assert.assertEquals("bar", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle));
 
-        String[] suffixes = new String[] { "suffix1", "suffix2" };
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
 
-        when(parent.getResourceAttributeValueTypeDescription("test", locale, bundle, suffixes)).thenReturn("parent");
+        properties.put("subsystem.child.value.grandchild.test", "foo");
 
-        Assert.assertEquals("parent", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.test.suffix1.suffix2", "foo");
-
-        Assert.assertEquals("foo", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.value.test.suffix1.suffix2", "bar");
-
-        Assert.assertEquals("bar", resolver.getResourceAttributeValueTypeDescription("test", locale, bundle, suffixes));
+        Assert.assertEquals("foo", child.getResourceAttributeValueTypeDescription("test", locale, bundle));
     }
 
     @Test
     public void getOperationDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationDescription("test", locale, bundle));
+
+        properties.put("subsystem.test", "parent");
 
         Assert.assertEquals("parent", resolver.getOperationDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.child.test", "foo");
 
         Assert.assertEquals("foo", resolver.getOperationDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.value.test", "bar");
 
         Assert.assertEquals("bar", resolver.getOperationDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test", "foo");
+
+        Assert.assertEquals("foo", child.getOperationDescription("test", locale, bundle));
     }
 
     @Test
     public void getOperationParameterDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationParameterDescription(ModelDescriptionConstants.ADD, "test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
 
-        Assert.assertEquals("parent", resolver.getOperationParameterDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationParameterDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.test.param", "parent");
 
-        Assert.assertEquals("foo", resolver.getOperationParameterDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("parent", resolver.getOperationParameterDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.test.param", "foo");
 
-        Assert.assertEquals("bar", resolver.getOperationParameterDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("foo", resolver.getOperationParameterDescription("test", "param", locale, bundle));
 
-        when(parent.getOperationParameterDescription("operation", "test", locale, bundle)).thenReturn("parent");
+        properties.put("subsystem.child.value.test.param", "bar");
 
-        Assert.assertEquals("parent", resolver.getOperationParameterDescription("operation", "test", locale, bundle));
+        Assert.assertEquals("bar", resolver.getOperationParameterDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.operation.test", "foo");
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
 
-        Assert.assertEquals("foo", resolver.getOperationParameterDescription("operation", "test", locale, bundle));
+        properties.put("subsystem.child.value.grandchild.test.param", "foo");
 
-        properties.put("prefix.child.value.operation.test", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationParameterDescription("operation", "test", locale, bundle));
+        Assert.assertEquals("foo", child.getOperationParameterDescription("test", "param", locale, bundle));
     }
 
     @Test
     public void getOperationParameterValueTypeDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
 
-        Assert.assertEquals("parent", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationParameterValueTypeDescription("test", "param", locale, bundle, "type"));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.test.param.type", "parent");
 
-        Assert.assertEquals("foo", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("parent", resolver.getOperationParameterValueTypeDescription("test", "param", locale, bundle, "type"));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.test.param.type", "foo");
 
-        Assert.assertEquals("bar", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("foo", resolver.getOperationParameterValueTypeDescription("test", "param", locale, bundle, "type"));
 
-        when(parent.getOperationParameterValueTypeDescription("operation", "test", locale, bundle)).thenReturn("parent");
+        properties.put("subsystem.child.value.test.param.type", "bar");
 
-        Assert.assertEquals("parent", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle));
+        Assert.assertEquals("bar", resolver.getOperationParameterValueTypeDescription("test", "param", locale, bundle, "type"));
 
-        properties.put("prefix.child.operation.test", "foo");
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
 
-        Assert.assertEquals("foo", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle));
+        properties.put("subsystem.child.value.grandchild.test.param.type", "foo");
 
-        properties.put("prefix.child.value.operation.test", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle));
-
-        String[] suffixes = new String[] { "suffix1", "suffix2" };
-
-        when(parent.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle, suffixes)).thenReturn("parent");
-
-        Assert.assertEquals("parent", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.test.suffix1.suffix2", "foo");
-
-        Assert.assertEquals("foo", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.value.test.suffix1.suffix2", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationParameterValueTypeDescription(ModelDescriptionConstants.ADD, "test", locale, bundle, suffixes));
-
-        when(parent.getOperationParameterValueTypeDescription("operation", "test", locale, bundle, suffixes)).thenReturn("parent");
-
-        Assert.assertEquals("parent", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.operation.test.suffix1.suffix2", "foo");
-
-        Assert.assertEquals("foo", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.value.operation.test.suffix1.suffix2", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationParameterValueTypeDescription("operation", "test", locale, bundle, suffixes));
+        Assert.assertEquals("foo", child.getOperationParameterValueTypeDescription("test", "param", locale, bundle, "type"));
     }
 
     @Test
     public void getOperationReplyDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationReplyDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertNull(resolver.getOperationReplyDescription("test", locale, bundle));
+
+        properties.put("subsystem.test.reply", "parent");
 
         Assert.assertEquals("parent", resolver.getOperationReplyDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test.reply", "foo");
+        properties.put("subsystem.child.test.reply", "foo");
 
         Assert.assertEquals("foo", resolver.getOperationReplyDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test.reply", "bar");
+        properties.put("subsystem.child.value.test.reply", "bar");
 
         Assert.assertEquals("bar", resolver.getOperationReplyDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test.reply", "foo");
+
+        Assert.assertEquals("foo", child.getOperationReplyDescription("test", locale, bundle));
     }
 
     @Test
     public void getOperationReplyValueTypeDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
 
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
 
-        when(parent.getOperationReplyValueTypeDescription("test", locale, bundle)).thenReturn("parent");
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationReplyValueTypeDescription("test", locale, bundle, "type"));
 
-        Assert.assertEquals("parent", resolver.getOperationReplyValueTypeDescription("test", locale, bundle));
+        properties.put("subsystem.test.reply.type", "parent");
 
-        properties.put("prefix.child.test.reply", "foo");
+        Assert.assertEquals("parent", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, "type"));
 
-        Assert.assertEquals("foo", resolver.getOperationReplyValueTypeDescription("test", locale, bundle));
+        properties.put("subsystem.child.test.reply.type", "foo");
 
-        properties.put("prefix.child.value.test.reply", "bar");
+        Assert.assertEquals("foo", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, "type"));
 
-        Assert.assertEquals("bar", resolver.getOperationReplyValueTypeDescription("test", locale, bundle));
+        properties.put("subsystem.child.value.test.reply.type", "bar");
 
-        String[] suffixes = new String[] { "suffix1", "suffix2" };
+        Assert.assertEquals("bar", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, "type"));
 
-        when(parent.getOperationReplyValueTypeDescription("test", locale, bundle, suffixes)).thenReturn("parent");
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
 
-        Assert.assertEquals("parent", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, suffixes));
+        properties.put("subsystem.child.value.grandchild.test.reply.type", "foo");
 
-        properties.put("prefix.child.test.reply.suffix1.suffix2", "foo");
-
-        Assert.assertEquals("foo", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, suffixes));
-
-        properties.put("prefix.child.value.test.reply.suffix1.suffix2", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationReplyValueTypeDescription("test", locale, bundle, suffixes));
+        Assert.assertEquals("foo", child.getOperationReplyValueTypeDescription("test", locale, bundle, "type"));
     }
 
     @Test
     public void getNotificationDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getNotificationDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getNotificationDescription("test", locale, bundle));
+
+        properties.put("subsystem.test", "parent");
 
         Assert.assertEquals("parent", resolver.getNotificationDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test", "foo");
+        properties.put("subsystem.child.test", "foo");
 
         Assert.assertEquals("foo", resolver.getNotificationDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test", "bar");
+        properties.put("subsystem.child.value.test", "bar");
 
         Assert.assertEquals("bar", resolver.getNotificationDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test", "foo");
+
+        Assert.assertEquals("foo", child.getNotificationDescription("test", locale, bundle));
     }
 
     @Test
     public void getResourceDeprecatedDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getResourceDeprecatedDescription(locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getResourceDeprecatedDescription(locale, bundle));
+
+        properties.put("subsystem.deprecated", "parent");
 
         Assert.assertEquals("parent", resolver.getResourceDeprecatedDescription(locale, bundle));
 
-        properties.put("prefix.child.deprecated", "foo");
+        properties.put("subsystem.child.deprecated", "foo");
 
         Assert.assertEquals("foo", resolver.getResourceDeprecatedDescription(locale, bundle));
 
-        properties.put("prefix.child.value.deprecated", "bar");
+        properties.put("subsystem.child.value.deprecated", "bar");
 
         Assert.assertEquals("bar", resolver.getResourceDeprecatedDescription(locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.deprecated", "foo");
+
+        Assert.assertEquals("foo", child.getResourceDeprecatedDescription(locale, bundle));
     }
 
     @Test
     public void getResourceAttributeDeprecatedDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getResourceAttributeDeprecatedDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getResourceAttributeDeprecatedDescription("test", locale, bundle));
+
+        properties.put("subsystem.test.deprecated", "parent");
 
         Assert.assertEquals("parent", resolver.getResourceAttributeDeprecatedDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test.deprecated", "foo");
+        properties.put("subsystem.child.test.deprecated", "foo");
 
         Assert.assertEquals("foo", resolver.getResourceAttributeDeprecatedDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test.deprecated", "bar");
+        properties.put("subsystem.child.value.test.deprecated", "bar");
 
         Assert.assertEquals("bar", resolver.getResourceAttributeDeprecatedDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test.deprecated", "foo");
+
+        Assert.assertEquals("foo", child.getResourceAttributeDeprecatedDescription("test", locale, bundle));
     }
 
     @Test
     public void getOperationDeprecatedDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationDeprecatedDescription("test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
+
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationDeprecatedDescription("test", locale, bundle));
+
+        properties.put("subsystem.test.deprecated", "parent");
 
         Assert.assertEquals("parent", resolver.getOperationDeprecatedDescription("test", locale, bundle));
 
-        properties.put("prefix.child.test.deprecated", "foo");
+        properties.put("subsystem.child.test.deprecated", "foo");
 
         Assert.assertEquals("foo", resolver.getOperationDeprecatedDescription("test", locale, bundle));
 
-        properties.put("prefix.child.value.test.deprecated", "bar");
+        properties.put("subsystem.child.value.test.deprecated", "bar");
 
         Assert.assertEquals("bar", resolver.getOperationDeprecatedDescription("test", locale, bundle));
+
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
+
+        properties.put("subsystem.child.value.grandchild.test.deprecated", "foo");
+
+        Assert.assertEquals("foo", child.getOperationDeprecatedDescription("test", locale, bundle));
     }
 
     @Test
     public void getOperationParameterDeprecatedDescription() {
-        ResourceDescriptionResolver parent = mock(ResourceDescriptionResolver.class);
-        String prefix = "prefix";
+        String subsystem = "subsystem";
         Locale locale = Locale.getDefault();
         Map<String, String> properties = new HashMap<>();
         ResourceBundle bundle = new PropertiesResourceBundle(properties);
-        ResourceDescriptionResolver resolver = new ChildResourceDescriptionResolver(parent, prefix, List.of(PathElement.pathElement("child", "value"), PathElement.pathElement("child")));
 
-        when(parent.getOperationParameterDeprecatedDescription(ModelDescriptionConstants.ADD, "test", locale, bundle)).thenReturn("parent");
+        ParentResourceDescriptionResolver parent = new SubsystemResourceDescriptionResolver(subsystem, this.getClass());
+        ParentResourceDescriptionResolver resolver = parent.createChildResolver(PathElement.pathElement("child", "value"), List.of(PathElement.pathElement("child")));
 
-        Assert.assertEquals("parent", resolver.getOperationParameterDeprecatedDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertThrows(MissingResourceException.class, () -> resolver.getOperationParameterDeprecatedDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.test.deprecated", "foo");
+        properties.put("subsystem.test.param.deprecated", "parent");
 
-        Assert.assertEquals("foo", resolver.getOperationParameterDeprecatedDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("parent", resolver.getOperationParameterDeprecatedDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.value.test.deprecated", "bar");
+        properties.put("subsystem.child.test.param.deprecated", "foo");
 
-        Assert.assertEquals("bar", resolver.getOperationParameterDeprecatedDescription(ModelDescriptionConstants.ADD, "test", locale, bundle));
+        Assert.assertEquals("foo", resolver.getOperationParameterDeprecatedDescription("test", "param", locale, bundle));
 
-        when(parent.getOperationParameterDeprecatedDescription("operation", "test", locale, bundle)).thenReturn("parent");
+        properties.put("subsystem.child.value.test.param.deprecated", "bar");
 
-        Assert.assertEquals("parent", resolver.getOperationParameterDeprecatedDescription("operation", "test", locale, bundle));
+        Assert.assertEquals("bar", resolver.getOperationParameterDeprecatedDescription("test", "param", locale, bundle));
 
-        properties.put("prefix.child.operation.test.deprecated", "foo");
+        ResourceDescriptionResolver child = resolver.createChildResolver(PathElement.pathElement("grandchild"));
 
-        Assert.assertEquals("foo", resolver.getOperationParameterDeprecatedDescription("operation", "test", locale, bundle));
+        properties.put("subsystem.child.value.grandchild.test.param.deprecated", "foo");
 
-        properties.put("prefix.child.value.operation.test.deprecated", "bar");
-
-        Assert.assertEquals("bar", resolver.getOperationParameterDeprecatedDescription("operation", "test", locale, bundle));
+        Assert.assertEquals("foo", child.getOperationParameterDeprecatedDescription("test", "param", locale, bundle));
     }
 
     private static class PropertiesResourceBundle extends ResourceBundle {
