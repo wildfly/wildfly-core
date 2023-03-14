@@ -23,10 +23,12 @@
 package org.jboss.as.controller.parsing;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 
@@ -84,11 +86,26 @@ public interface ExtensionParsingContext {
     void setSubsystemXmlMapping(String subsystemName, String namespaceUri, Supplier<XMLElementReader<List<ModelNode>>> supplier);
 
     /**
+     * Set the parser for the profile-wide subsystem configuration XML element.  The element is always
+     * called {@code "subsystem"}.  The reader of the schema should populate the given model node with the appropriate
+     * "subsystem add" update, without the address or operation name as that information will be automatically
+     * populated.
+     *
+     * @param <S> the schema type
+     * @param subsystemName the name of the subsystem. Cannot be {@code null}
+     * @param schemas a set of schemas to be registered
+     */
+    default <S extends SubsystemSchema<S>> void setSubsystemXmlMappings(String subsystemName, Set<S> schemas) {
+        for (S schema : schemas) {
+            this.setSubsystemXmlMapping(subsystemName, schema.getNamespace().getUri(), schema);
+        }
+    }
+
+    /**
      * Registers a {@link ProfileParsingCompletionHandler} to receive a callback upon completion of parsing of a
      * profile.
      *
      * @param handler the handler. Cannot be {@code null}
      */
     void setProfileParsingCompletionHandler(ProfileParsingCompletionHandler handler);
-
 }
