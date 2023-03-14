@@ -19,7 +19,11 @@
 package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.OperationContext;
+import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
+import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.interfaces.ParsedInterfaceCriteria;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.network.NetworkInterfaceBinding;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.Service;
@@ -36,6 +40,22 @@ public class SpecifiedInterfaceAddHandler extends InterfaceAddHandler {
 
     protected SpecifiedInterfaceAddHandler() {
         super(true);
+    }
+
+    @Override
+    protected void recordCapabilitiesAndRequirements(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
+        super.recordCapabilitiesAndRequirements(context, operation, resource);
+
+        // Directly register the capability in addition to relying on the MRR,
+        // as in some subsystem test stuff (ControllerInitializer.initializeSocketBindingsModel)
+        // due to restrictions for legacy controllers the MRR can't record the cap.
+        // This will fail if the MRR-driven registration was successful, so ignore such a failure
+        RuntimeCapability<?> cap = InterfaceResourceDefinition.INTERFACE_CAPABILITY.fromBaseCapability(context.getCurrentAddress());
+        try {
+            context.registerCapability(cap);
+        } catch (OperationFailedRuntimeException ofre) {
+            // ignore
+        }
     }
 
     @Override

@@ -35,13 +35,11 @@ public class InterfaceAddHandler extends org.jboss.as.controller.operations.comm
     /**
      * Create the InterfaceAddHandler
      *
-     * @param specified
+     * @param specified {@code true} if the interface is expected to have a specified interface selection criteria;
+     *                  {@code false} if the interface can simply be a named placeholder
      */
     InterfaceAddHandler(boolean specified) {
-        // Pass the capability through the OSH constructor rather than relying
-        // on the MRR, as in some subsystem test stuff due to restrictions for
-        // legacy controllers the MRR can't record the cap
-        super(specified, InterfaceResourceDefinition.INTERFACE_CAPABILITY);
+        super(specified);
     }
 
 }

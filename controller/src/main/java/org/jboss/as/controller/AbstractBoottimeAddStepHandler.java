@@ -23,13 +23,9 @@
 package org.jboss.as.controller;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
-import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
 /**
  * Base class for {@link OperationStepHandler} implementations that add managed resources and also perform runtime
@@ -66,40 +62,8 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
     /**
      * {@inheritDoc}
      */
-    @Deprecated
-    protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
-        super(capability, attributes);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Deprecated
-    protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
-        super(capabilities, attributes);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Deprecated
-    protected AbstractBoottimeAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
-        super(capability, attributes);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     protected AbstractBoottimeAddStepHandler(AttributeDefinition... attributes) {
         super(attributes);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Deprecated
-    protected AbstractBoottimeAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
-        super(capabilities, attributes);
     }
 
     public AbstractBoottimeAddStepHandler(Parameters parameters) {
@@ -170,19 +134,6 @@ public abstract class AbstractBoottimeAddStepHandler extends AbstractAddStepHand
      */
     @Override
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
-        revertReload(context);
-    }
-
-    /**
-     * <strong>Deprecated</strong>. Overrides the superclass to call {@link OperationContext#revertReloadRequired()}
-     * if {@link OperationContext#isBooting()} returns {@code false}.
-     *
-     * {@inheritDoc}
-     */
-    @Deprecated
-    @Override
-    @SuppressWarnings("deprecation")
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
         revertReload(context);
     }
 

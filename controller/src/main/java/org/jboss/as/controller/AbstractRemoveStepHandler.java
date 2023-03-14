@@ -25,6 +25,7 @@ package org.jboss.as.controller;
 import static org.jboss.as.controller.logging.ControllerLogger.MGMT_OP_LOGGER;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,22 +47,24 @@ import org.jboss.dmr.ModelNode;
  */
 public abstract class AbstractRemoveStepHandler implements OperationStepHandler {
 
+    static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
+
     private static final OperationContext.AttachmentKey<Set<PathAddress>> RECURSION = OperationContext.AttachmentKey.create(Set.class);
 
     private final Set<RuntimeCapability> capabilities;
 
     protected AbstractRemoveStepHandler() {
-        this.capabilities = AbstractAddStepHandler.NULL_CAPABILITIES;
+        this.capabilities = NULL_CAPABILITIES;
     }
 
     @Deprecated
     protected AbstractRemoveStepHandler(RuntimeCapability... capabilities) {
-        this(capabilities.length == 0 ? AbstractAddStepHandler.NULL_CAPABILITIES : new HashSet<RuntimeCapability>(Arrays.asList(capabilities)));
+        this(capabilities.length == 0 ? NULL_CAPABILITIES : new HashSet<RuntimeCapability>(Arrays.asList(capabilities)));
     }
 
     @Deprecated
     protected AbstractRemoveStepHandler(Set<RuntimeCapability> capabilities) {
-        this.capabilities = capabilities == null ? AbstractAddStepHandler.NULL_CAPABILITIES : capabilities;
+        this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
     }
 
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {

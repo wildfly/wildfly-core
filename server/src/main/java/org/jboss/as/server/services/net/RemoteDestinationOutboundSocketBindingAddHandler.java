@@ -61,7 +61,7 @@ public class RemoteDestinationOutboundSocketBindingAddHandler extends AbstractAd
     static final RemoteDestinationOutboundSocketBindingAddHandler INSTANCE = new RemoteDestinationOutboundSocketBindingAddHandler();
 
     private RemoteDestinationOutboundSocketBindingAddHandler() {
-        super(OutboundSocketBindingResourceDefinition.OUTBOUND_SOCKET_BINDING_CAPABILITY, RemoteDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES);
+        super(RemoteDestinationOutboundSocketBindingResourceDefinition.ATTRIBUTES);
     }
 
     @Override

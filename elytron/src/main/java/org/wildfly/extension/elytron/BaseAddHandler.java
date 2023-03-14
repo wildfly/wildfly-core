@@ -57,7 +57,7 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
     BaseAddHandler(RuntimeCapability<?> runtimeCapability, AttributeDefinition... attributes) {
-        super(runtimeCapability, attributes);
+        super(attributes);
         this.runtimeCapabilities = Collections.singleton(runtimeCapability);
     }
 
@@ -70,7 +70,7 @@ class BaseAddHandler extends AbstractAddStepHandler implements ElytronOperationS
      * @param attributes the {@link AttributeDefinition} instances associated with this resource.
      */
     BaseAddHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
-        super(capabilities, attributes);
+        super(attributes);
         this.runtimeCapabilities = capabilities;
     }
 

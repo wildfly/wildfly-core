@@ -56,11 +56,11 @@ public class LocalDestinationOutboundSocketBindingResourceDefinition extends Out
     public static final LocalDestinationOutboundSocketBindingResourceDefinition INSTANCE = new LocalDestinationOutboundSocketBindingResourceDefinition();
 
     private LocalDestinationOutboundSocketBindingResourceDefinition() {
-        super(PathElement.pathElement(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
-                ControllerResolver.getResolver(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
-                LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                new ServiceRemoveStepHandler(LocalDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                        OUTBOUND_SOCKET_BINDING_CAPABILITY));
+        super(new Parameters(PathElement.pathElement(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING),
+                ControllerResolver.getResolver(ModelDescriptionConstants.LOCAL_DESTINATION_OUTBOUND_SOCKET_BINDING))
+                .setAddHandler(LocalDestinationOutboundSocketBindingAddHandler.INSTANCE)
+                .setRemoveHandler(new ServiceRemoveStepHandler(LocalDestinationOutboundSocketBindingAddHandler.INSTANCE))
+        );
     }
 
     @Override

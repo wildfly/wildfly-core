@@ -60,11 +60,10 @@ public class RemoteDestinationOutboundSocketBindingResourceDefinition extends Ou
     public static final RemoteDestinationOutboundSocketBindingResourceDefinition INSTANCE = new RemoteDestinationOutboundSocketBindingResourceDefinition();
 
     private RemoteDestinationOutboundSocketBindingResourceDefinition() {
-        super(PATH,
-                ControllerResolver.getResolver(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING),
-                RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                new ServiceRemoveStepHandler(RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE,
-                        OUTBOUND_SOCKET_BINDING_CAPABILITY));
+        super(new Parameters(PATH, ControllerResolver.getResolver(ModelDescriptionConstants.REMOTE_DESTINATION_OUTBOUND_SOCKET_BINDING))
+                .setAddHandler(RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE)
+                .setRemoveHandler(new ServiceRemoveStepHandler(RemoteDestinationOutboundSocketBindingAddHandler.INSTANCE))
+        );
     }
 
     @Override
