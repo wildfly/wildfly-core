@@ -453,7 +453,6 @@
                 <module>rbac</module>
                 <module>domain</module>
                 <module>manualmode</module>
-                <module>patching</module>
             </modules>
         </profile>
 
@@ -504,18 +503,6 @@
                 <!-- Domain security manager argument -->
                 <jboss.domain.server.args>-secmgr</jboss.domain.server.args>
             </properties>
-        </profile>
-        <!-- -Dts.patching -->
-        <profile>
-            <id>ts.integ.group.patching</id>
-            <activation>
-                <property>
-                    <name>ts.patching</name>
-                </property>
-            </activation>
-            <modules>
-                <module>patching</module>
-            </modules>
         </profile>
 
         <!-- -Dts.manualmode -->
