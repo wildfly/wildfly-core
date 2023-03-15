@@ -59,6 +59,7 @@ import org.wildfly.core.cli.command.aesh.CLICompleterInvocation;
 import org.wildfly.core.cli.command.aesh.CLIConverterInvocation;
 import org.wildfly.core.cli.command.aesh.activator.AbstractOptionActivator;
 import org.wildfly.core.cli.command.aesh.activator.DomainOptionActivator;
+import org.wildfly.core.instmgr.cli.InstMgrGroupCommand;
 import org.wildfly.security.manager.action.ReadEnvironmentPropertyAction;
 import org.wildfly.security.manager.action.ReadPropertyAction;
 
@@ -192,6 +193,13 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
         } else if (host == null && commandInvocation.getCommandContext().isDomainMode()) {
             throw new CommandException("The --host option must be used in domain mode.");
         }
+
+        try {
+            verifyManagementVersion(commandInvocation);
+        } catch (IOException e) {
+            throw new CommandException(action + " failed", e);
+        }
+
         final PatchOperationTarget target = createPatchOperationTarget(commandInvocation.getCommandContext());
         final PatchOperationBuilder builder = createPatchOperationBuilder(commandInvocation.getCommandContext());
         final ModelNode response;
