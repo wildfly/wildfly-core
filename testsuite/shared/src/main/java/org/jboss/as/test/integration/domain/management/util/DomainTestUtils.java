@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.Operation;
 import org.jboss.as.test.integration.management.util.MgmtOperationException;
 import org.jboss.dmr.ModelNode;
 import org.junit.Assert;
@@ -163,6 +164,29 @@ public class DomainTestUtils {
        return ret.get(RESULT);
     }
 
+
+    /**
+     * Execute for a successful result.
+     *
+     * @param op the operation to execute
+     * @param modelControllerClient the controller client
+     * @return the result
+     * @throws IOException
+     * @throws MgmtOperationException
+     */
+    public static ModelNode executeForResult(final Operation op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
+        final ModelNode ret = modelControllerClient.execute(op);
+
+        if (! SUCCESS.equals(ret.get(OUTCOME).asString())) {
+            System.out.println("Failed operation:");
+            System.out.println(op.getOperation());
+            System.out.println("Response:");
+            System.out.println(ret);
+            throw new MgmtOperationException("Management operation failed.", op.getOperation(), ret);
+        }
+        return ret.get(RESULT);
+    }
+
     /**
      * Execute for a failed outcome.
      *
@@ -178,6 +202,25 @@ public class DomainTestUtils {
         if (! FAILED.equals(ret.get(OUTCOME).asString())) {
             System.out.println(ret);
             throw new MgmtOperationException("Management operation succeeded.", op, ret);
+        }
+        return ret.get(FAILURE_DESCRIPTION);
+    }
+
+    /**
+     * Execute for a failed outcome.
+     *
+     * @param op the operation to execute
+     * @param modelControllerClient the controller client
+     * @return the failure description
+     * @throws IOException
+     * @throws MgmtOperationException
+     */
+    public static ModelNode executeForFailure(final Operation op, final ModelControllerClient modelControllerClient) throws IOException, MgmtOperationException {
+        final ModelNode ret = modelControllerClient.execute(op);
+
+        if (! FAILED.equals(ret.get(OUTCOME).asString())) {
+            System.out.println(ret);
+            throw new MgmtOperationException("Management operation succeeded.", op.getOperation(), ret);
         }
         return ret.get(FAILURE_DESCRIPTION);
     }
