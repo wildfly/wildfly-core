@@ -218,7 +218,13 @@ echo.
     %*
 
 if %errorlevel% equ 10 (
-    echo Restarting...
+    echo INFO: Restarting...
+    goto RESTART
+)
+
+if %errorlevel% equ 20 (
+    echo INFO: Executing Installation Manager...
+    call "%JBOSS_HOME%\bin\installation-manager.bat" "%JBOSS_HOME%" "%JBOSS_LOG_DIR%\host-controller.log" "%JBOSS_CONFIG_DIR%\logging.properties"
     goto RESTART
 )
 

@@ -433,7 +433,7 @@ public class ServerRootResourceDefinition extends SimpleResourceDefinition {
 
         // The System.exit() based shutdown command is only valid for a server process directly launched from the command line
         if (serverEnvironment.getLaunchType() == ServerEnvironment.LaunchType.STANDALONE) {
-            ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState);
+            ServerShutdownHandler serverShutdownHandler = new ServerShutdownHandler(processState, serverEnvironment);
             resourceRegistration.registerOperationHandler(ServerShutdownHandler.DEFINITION, serverShutdownHandler);
         }
 

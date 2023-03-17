@@ -294,6 +294,7 @@
         <module>host-controller</module>
         <module>logging</module>
         <module>management-client-content</module>
+        <module>installation-manager</module>
         <module>io</module>
         <module>jmx</module>
         <module>launcher</module>
@@ -2173,6 +2174,12 @@
                 <groupId>org.wildfly.installation-manager</groupId>
                 <artifactId>installation-manager-api</artifactId>
                 <version>${version.org.wildfly.installation-manager.installation-manager-api}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-installation-manager</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
         </dependencies>

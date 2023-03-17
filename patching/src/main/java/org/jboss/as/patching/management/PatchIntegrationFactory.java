@@ -29,6 +29,7 @@ import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelControllerServiceInitialization;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
+import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.patching.installation.InstallationManager;
@@ -44,12 +45,12 @@ import org.jboss.msc.service.ServiceTarget;
 public final class PatchIntegrationFactory implements ModelControllerServiceInitialization {
 
     @Override
-    public void initializeStandalone(final ServiceTarget serviceTarget, final ManagementModel managementModel) {
+    public void initializeStandalone(final ServiceTarget serviceTarget, final ManagementModel managementModel, ProcessType processType) {
         initializeCoreServices(serviceTarget, managementModel.getRootResourceRegistration(), managementModel.getRootResource());
     }
 
     @Override
-    public void initializeHost(final ServiceTarget serviceTarget, final ManagementModel managementModel, String hostName) {
+    public void initializeHost(final ServiceTarget serviceTarget, final ManagementModel managementModel, String hostName, ProcessType processType) {
         final PathElement host = PathElement.pathElement(HOST, hostName);
         final ManagementResourceRegistration hostRegistration = managementModel.getRootResourceRegistration().getSubModel(PathAddress.EMPTY_ADDRESS.append(host));
         final Resource hostResource = managementModel.getRootResource().getChild(host);
