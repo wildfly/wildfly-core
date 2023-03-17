@@ -15,6 +15,8 @@
  */
 package org.jboss.as.test.manualmode.management.persistence;
 
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_MODE;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -31,8 +33,8 @@ import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.Server;
@@ -45,11 +47,11 @@ import org.wildfly.security.manager.WildFlySecurityManager;
  * Simple test to check that we can apply YAML configuration over an existing standard configuration.
  * Checking that reloading doesn't break the resulting configuration.
  * Testing the cli ops are compatible with the YAML changes.
+ *
  * @author Emmanuel Hugonnet (c) 2021 Red Hat, Inc.
  */
 @RunWith(WildFlyRunner.class)
 @ServerControl(manual = true)
-@Ignore
 public class YamlExtensionTestCase {
 
     private static final ModelNode READ_CONFIG = Util.createEmptyOperation("read-config-as-xml", PathAddress.EMPTY_ADDRESS);
@@ -66,10 +68,11 @@ public class YamlExtensionTestCase {
 
     @BeforeClass
     public static void setup() throws Exception {
+        Assume.assumeTrue("Layer testing provides a different XML file than the standard one which results in failures", System.getProperty("ts.layers") == null);
         testYaml = new File(YamlExtensionTestCase.class.getResource("test.yml").toURI()).toPath().toAbsolutePath();
         cliScript = new File(YamlExtensionTestCase.class.getResource("test.cli").toURI()).toPath().toAbsolutePath();
-        expectedXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath()));
-        expectedBootCLiXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath()));
+        expectedXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath())).replace("\r\n", "\n");
+        expectedBootCLiXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath())).replace("\r\n", "\n");
         originalJvmArgs = WildFlySecurityManager.getPropertyPrivileged("jvm.args", null);
         Path target = new File("target").toPath();
         markerDirectory = Files.createDirectories(target.resolve("yaml").resolve("cli-boot-ops"));
@@ -128,23 +131,46 @@ public class YamlExtensionTestCase {
             }
             WildFlySecurityManager.setPropertyPrivileged("jvm.args", sb.toString());
             container.start(null, null, Server.StartMode.ADMIN_ONLY, System.out, false, null, null, null, null, new Path[]{testYaml});
-            String xml = readXmlConfig();
-            compareXML(expectedBootCLiXml, xml);
             container.waitForLiveServerToReload(TimeoutUtil.adjust(5000));
+            waitForRunningMode("NORMAL");
+            String xml = readXmlConfig();
             compareXML(expectedBootCLiXml, xml);
         } finally {
             container.stop();
         }
     }
 
+
+    private void waitForRunningMode(String runningMode) throws Exception {
+        // Following a reload to normal mode, we might read the running mode too early and hit the admin-only server
+        // Cycle around a bit to make sure we get the server reloaded into normal mode
+        long end = System.currentTimeMillis() + TimeoutUtil.adjust(10000);
+        while (true) {
+            try {
+                Thread.sleep(100);
+                Assert.assertEquals(runningMode, getRunningMode());
+                break;
+            } catch (Throwable e) {
+                if (System.currentTimeMillis() >= end) {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    String getRunningMode() throws Exception {
+        ModelNode op = Util.getReadAttributeOperation(PathAddress.EMPTY_ADDRESS, RUNNING_MODE);
+        ModelNode result = container.getClient().executeForResult(op);
+        return result.asString();
+    }
     private void compareXML(String expected, String result) {
         String[] expectedLines = expected.split(System.lineSeparator());
         String[] resultLines = result.split(System.lineSeparator());
         for (int i = 0; i < expectedLines.length; i++) {
             if (i < resultLines.length) {
-                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in "+ System.lineSeparator() + result,expectedLines[i], resultLines[i]);
+                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in " + System.lineSeparator() + result, expectedLines[i].replaceAll("\\s+", ""), resultLines[i].replaceAll("\\s+", ""));
             } else {
-                Assert.fail("Missing line " + expectedLines[i] + " in "+ System.lineSeparator() + result);
+                Assert.fail("Missing line " + expectedLines[i] + " in " + System.lineSeparator() + result);
             }
         }
 
@@ -152,7 +178,7 @@ public class YamlExtensionTestCase {
 
     private String readXmlConfig() throws IOException {
         try (ModelControllerClient client = container.getClient().getControllerClient()) {
-            return Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"");
+            return Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"").replace("\r\n", "\n");
         }
     }
 }

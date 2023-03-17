@@ -49,6 +49,7 @@ import org.junit.Test;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test case to test custom / constant headers are applied to existing contexts.
@@ -135,10 +136,14 @@ public class HttpManagementConstantHeadersTestCase {
 
    @AfterClass
    public static void after() {
-      testSupport.close();
-      testSupport = null;
-      domainPrimaryLifecycleUtil = null;
-      domainSecondaryLifecycleUtil = null;
+      try {
+         assertNotNull(testSupport);
+         testSupport.close();
+      } finally {
+         domainPrimaryLifecycleUtil = null;
+         domainSecondaryLifecycleUtil = null;
+         testSupport = null;
+      }
    }
 
    /**
@@ -279,7 +284,7 @@ public class HttpManagementConstantHeadersTestCase {
 
    private void reload() throws IOException, TimeoutException, InterruptedException {
       domainPrimaryLifecycleUtil.reload("primary", null, true);
-
+      assertNotNull(domainSecondaryLifecycleUtil);
       domainSecondaryLifecycleUtil.awaitServers(System.currentTimeMillis());
       domainSecondaryLifecycleUtil.awaitHostController(System.currentTimeMillis());
    }

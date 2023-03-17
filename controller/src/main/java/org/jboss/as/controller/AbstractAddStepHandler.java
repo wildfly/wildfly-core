@@ -26,14 +26,13 @@ import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD_INDEX;
@@ -45,10 +44,13 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
  */
 public class AbstractAddStepHandler implements OperationStepHandler, OperationDescriptor {
 
-    static final Set<RuntimeCapability> NULL_CAPABILITIES = Collections.emptySet();
     private static final Set<? extends AttributeDefinition> NULL_ATTRIBUTES = Collections.emptySet();
+    private static final AttributeDefinition[] NULL_ATTRIBUTE_ARRAY = new AttributeDefinition[0];
 
-    private final Set<RuntimeCapability> capabilities;
+    private static AttributeDefinition[] getAttributeDefinitionArray(Collection<? extends AttributeDefinition> attributes) {
+        return (attributes == null || attributes.isEmpty()) ? NULL_ATTRIBUTE_ARRAY : attributes.toArray(NULL_ATTRIBUTE_ARRAY);
+    }
+
     protected final Collection<? extends AttributeDefinition> attributes;
 
     /**
@@ -56,7 +58,6 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      */
     public AbstractAddStepHandler() { //default constructor to preserve backward compatibility
         this.attributes = NULL_ATTRIBUTES;
-        this.capabilities = NULL_CAPABILITIES;
     }
 
     /**
@@ -64,47 +65,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(Collection<? extends AttributeDefinition> attributes) {
-        this(NULL_CAPABILITIES, attributes );
-    }
-
-    /**
-     * Constructs an add handler
-     * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     *                     {@code null} is allowed
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * @deprecated Use {@link #AbstractAddStepHandler(Collection) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
-     */
-    @Deprecated
-    public AbstractAddStepHandler(RuntimeCapability capability, Collection<? extends AttributeDefinition> attributes) {
-        this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes );
-    }
-
-    /**
-     * Constructs an add handler.
-     *
-     * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     *                     {@code null} is allowed
-     * @param attributes   attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * @deprecated Use {@link #AbstractAddStepHandler(Collection) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
-     */
-    @Deprecated
-    public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, Collection<? extends AttributeDefinition> attributes) {
-        //Please don't add more constructors, instead use the Parameters variety
-        this.attributes = attributes == null ? NULL_ATTRIBUTES : attributes;
-        this.capabilities = capabilities == null ? NULL_CAPABILITIES : capabilities;
-    }
-
-    /**
-     * Constructs an add handler
-     *
-     * @param capability capability to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     *                     {@code null} is allowed
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * @deprecated Use {@link #AbstractAddStepHandler(AttributeDefinition...) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
-     */
-    @Deprecated
-    public AbstractAddStepHandler(RuntimeCapability capability, AttributeDefinition... attributes) {
-        this(capability == null ? NULL_CAPABILITIES : Collections.singleton(capability), attributes);
+        this(new Parameters().addAttribute(getAttributeDefinitionArray(attributes)));
     }
 
     /**
@@ -113,30 +74,10 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
      */
     public AbstractAddStepHandler(AttributeDefinition... attributes) {
-        this(NULL_CAPABILITIES, attributes);
-    }
-
-    /**
-     * Constructs an add handler
-     *
-     * @param capabilities capabilities to register in {@link #recordCapabilitiesAndRequirements(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     *                     {@code null} is allowed
-     * @param attributes attributes to use in {@link #populateModel(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     * @deprecated Use {@link #AbstractAddStepHandler(AttributeDefinition...) instead. {@link RuntimeCapability} should be registered with {@link ManagementResourceRegistration}
-     */
-    @Deprecated
-    public AbstractAddStepHandler(Set<RuntimeCapability> capabilities, AttributeDefinition... attributes) {
-        this(capabilities, attributes.length > 0 ? Arrays.asList(attributes) : NULL_ATTRIBUTES);
+        this(new Parameters().addAttribute(attributes));
     }
 
     public AbstractAddStepHandler(Parameters parameters) {
-        if (parameters.capabilities == null) {
-            capabilities = NULL_CAPABILITIES;
-        } else if (parameters.capabilities.size() == 1) {
-            capabilities = Collections.singleton(parameters.capabilities.iterator().next());
-        } else {
-            capabilities = Collections.unmodifiableSet(parameters.capabilities);
-        }
 
         if (parameters.attributes == null) {
             attributes = NULL_ATTRIBUTES;
@@ -280,7 +221,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      *                 not be {@code null}
      */
     protected void recordCapabilitiesAndRequirements(final OperationContext context, final ModelNode operation, Resource resource) throws OperationFailedException {
-        Set<RuntimeCapability> capabilitySet = capabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : capabilities;
+        Set<RuntimeCapability> capabilitySet = context.getResourceRegistration().getCapabilities();
 
         for (RuntimeCapability capability : capabilitySet) {
             if (capability.isDynamicallyNamed()) {
@@ -365,39 +306,12 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * Any services that were added in {@link org.jboss.as.controller.OperationContext.Stage#RUNTIME} will be automatically removed after this
      * method executes. Called from the {@link org.jboss.as.controller.OperationContext.ResultHandler} or
      * {@link org.jboss.as.controller.OperationContext.RollbackHandler} passed to {@code OperationContext.completeStep(...)}.
-     * <p>
-     * To provide compatible behavior with previous releases, this default implementation calls the deprecated
-     * {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.dmr.ModelNode, java.util.List)}
-     * variant, passing in an empty list for the {@code controllers} parameter. Subclasses that overrode that method are
-     * encouraged to instead override this one. <strong>Subclasses that override this method should not call
-     * {@code super.rollbackRuntime(...).}</strong>
      *
      * @param context the operation context
      * @param operation the operation being executed
      * @param resource persistent configuration model node that corresponds to the address of {@code operation}
      */
-    @SuppressWarnings("deprecation")
     protected void rollbackRuntime(OperationContext context, final ModelNode operation, final Resource resource) {
-        rollbackRuntime(context, operation, resource.getModel(), new ArrayList<ServiceController<?>>(0));
-    }
-
-    /**
-     * <strong>Deprecated</strong>. Subclasses wishing for custom rollback behavior should instead override
-     * {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}.
-     * <p>
-     * This default implementation does nothing. <strong>Subclasses that override this method should not call
-     * {@code super.performRuntime(...)}.</strong>
-     * </p>
-     * </p>
-     * @param context the operation context
-     * @param operation the operation being executed
-     * @param model persistent configuration model node that corresponds to the address of {@code operation}
-     * @param controllers  will always be an empty list
-     *
-     * @deprecated instead override {@link #rollbackRuntime(OperationContext, org.jboss.dmr.ModelNode, org.jboss.as.controller.registry.Resource)}
-     */
-    @Deprecated
-    protected void rollbackRuntime(OperationContext context, final ModelNode operation, final ModelNode model, List<ServiceController<?>> controllers) {
         // no-op
     }
 
@@ -419,7 +333,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
      * and putting the ordered children in the correct place in the parent
      *
      */
-    private class OrderedResourceCreator implements ResourceCreator {
+    private static class OrderedResourceCreator implements ResourceCreator {
         private final Set<String> orderedChildTypes;
         private final boolean indexedAdd;
 
@@ -436,7 +350,7 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
          */
         public OrderedResourceCreator(boolean indexedAdd, Set<String> orderedChildTypes) {
             this.indexedAdd = indexedAdd;
-            this.orderedChildTypes = orderedChildTypes == null ? Collections.<String>emptySet() : orderedChildTypes;
+            this.orderedChildTypes = orderedChildTypes == null ? Collections.emptySet() : orderedChildTypes;
         }
 
         /**
@@ -452,10 +366,8 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
          */
         public OrderedResourceCreator(boolean indexedAdd, String... orderedChildTypes) {
             this.indexedAdd = indexedAdd;
-            Set<String> set = new HashSet<String>(orderedChildTypes.length);
-            for (String type : orderedChildTypes) {
-                set.add(type);
-            }
+            Set<String> set = new HashSet<>(orderedChildTypes.length);
+            set.addAll(Arrays.asList(orderedChildTypes));
             this.orderedChildTypes = set;
         }
 
@@ -479,32 +391,14 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
     }
 
     public static class Parameters {
-        private Set<RuntimeCapability> capabilities = null;
         protected Set<AttributeDefinition> attributes = null;
 
         public Parameters() {
         }
 
-        @Deprecated
-        public Parameters addRuntimeCapability(RuntimeCapability...capabilities) {
-            Set<RuntimeCapability> capabilitySet = getOrCreateCapabilities();
-            for (RuntimeCapability capability : capabilities) {
-                capabilitySet.add(capability);
-            }
-            return this;
-        }
-
-        @Deprecated
-        public Parameters addRuntimeCapability(Set<RuntimeCapability> capabilities) {
-            getOrCreateCapabilities().addAll(capabilities);
-            return this;
-        }
-
         public Parameters addAttribute(AttributeDefinition... attributeDefinitions) {
             Set<AttributeDefinition> attributeSet = getOrCreateAttributes();
-            for (AttributeDefinition def : attributeDefinitions) {
-                attributeSet.add(def);
-            }
+            attributeSet.addAll(Arrays.asList(attributeDefinitions));
             return this;
         }
 
@@ -513,16 +407,9 @@ public class AbstractAddStepHandler implements OperationStepHandler, OperationDe
             return this;
         }
 
-        private Set<RuntimeCapability> getOrCreateCapabilities() {
-            if (capabilities == null) {
-                capabilities = new HashSet<>();
-            }
-            return capabilities;
-        }
-
         private Set<AttributeDefinition> getOrCreateAttributes() {
             if (attributes == null) {
-                attributes = new HashSet<>();
+                attributes = new LinkedHashSet<>();
             }
             return attributes;
         }

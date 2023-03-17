@@ -25,9 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RES
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.STEPS;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -92,6 +90,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static final RuntimeCapability<Void> TEST_CAPABILITY1 = RuntimeCapability.Builder.of("org.wildfly.test.capability1", true, Void.class).build();
     private static final RuntimeCapability<Void> TEST_CAPABILITY2 = RuntimeCapability.Builder.of("org.wildfly.test.capability2", true, Void.class).build();
     private static final RuntimeCapability<Void> TEST_CAPABILITY3 = RuntimeCapability.Builder.of("org.wildfly.test.capability3", true, Void.class).build();
+    private static final RuntimeCapability<Void> TEST_CAPABILITY5 = RuntimeCapability.Builder.of("org.wildfly.test.capability5", true, Void.class).build();
     private static final RuntimeCapability<Void> PROFILE_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.profile-capability", true, Void.class).build();
     private static final RuntimeCapability<Void> HOST_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.host-capability", true, Void.class).build();
     private static final RuntimeCapability<Void> RELOADED_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.reloaded-capability", true, Void.class).build();
@@ -102,26 +101,26 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     private static final RuntimeCapability<Void> TRANS_DEP_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.trans-dep-capability", false, Void.class)
             .addRequirements(DEPENDENT_CAPABILITY.getName()).build();
 
-    private static PathAddress TEST_ADDRESS1 = PathAddress.pathAddress("subsystem", "test1");
-    private static PathAddress TEST_ADDRESS2 = PathAddress.pathAddress("subsystem", "test2");
-    private static PathAddress TEST_ADDRESS3 = PathAddress.pathAddress("sub", "resource");
-    private static PathAddress TEST_ADDRESS4 = PathAddress.pathAddress("subsystem", "test4");
-    private static PathAddress TEST_ADDRESS5 = PathAddress.pathAddress("subsystem", "broken");
+    private static final PathAddress TEST_ADDRESS1 = PathAddress.pathAddress("subsystem", "test1");
+    private static final PathAddress TEST_ADDRESS2 = PathAddress.pathAddress("subsystem", "test2");
+    private static final PathAddress TEST_ADDRESS3 = PathAddress.pathAddress("sub", "resource");
+    private static final PathAddress TEST_ADDRESS4 = PathAddress.pathAddress("subsystem", "test4");
+    private static final PathAddress TEST_ADDRESS5 = PathAddress.pathAddress("subsystem", "broken");
 
-    private static PathElement RELOAD_ELEMENT = PathElement.pathElement("subsystem", "reload");
-    private static PathElement CIRCULAR_CAP_ELEMENT = PathElement.pathElement("subsystem", "circular");
-    private static PathElement CHILD_ELEMENT = PathElement.pathElement("child", "test");
-    private static PathElement GRANDCHILD_ELEMENT = PathElement.pathElement("grandchild", "test");
-    private static PathElement INFANT_ELEMENT = PathElement.pathElement("infant", "test");
-    private static PathElement INDEPENDENT_ELEMENT = PathElement.pathElement("independent", "test");
-    private static PathElement UNINCORPORATED_ELEMENT = PathElement.pathElement("unincorporated", "test");
-    private static PathElement HOST_ELEMENT = PathElement.pathElement("host", "test");
+    private static final PathElement RELOAD_ELEMENT = PathElement.pathElement("subsystem", "reload");
+    private static final PathElement CIRCULAR_CAP_ELEMENT = PathElement.pathElement("subsystem", "circular");
+    private static final PathElement CHILD_ELEMENT = PathElement.pathElement("child", "test");
+    private static final PathElement GRANDCHILD_ELEMENT = PathElement.pathElement("grandchild", "test");
+    private static final PathElement INFANT_ELEMENT = PathElement.pathElement("infant", "test");
+    private static final PathElement INDEPENDENT_ELEMENT = PathElement.pathElement("independent", "test");
+    private static final PathElement UNINCORPORATED_ELEMENT = PathElement.pathElement("unincorporated", "test");
+    private static final PathElement HOST_ELEMENT = PathElement.pathElement("host", "test");
 
 
-    private static PathElement PROFILE_ELEMENT = PathElement.pathElement("profile", "test");
-    private static PathElement NO_CAP_ELEMENT = PathElement.pathElement("subsystem", "no-cap");
-    private static PathElement DEP_CAP_ELEMENT = PathElement.pathElement("subsystem", "dep-cap");
-    private static PathElement DEP_CAP_ELEMENT_2 = PathElement.pathElement("subsystem", "dep-cap-2");
+    private static final PathElement PROFILE_ELEMENT = PathElement.pathElement("profile", "test");
+    private static final PathElement NO_CAP_ELEMENT = PathElement.pathElement("subsystem", "no-cap");
+    private static final PathElement DEP_CAP_ELEMENT = PathElement.pathElement("subsystem", "dep-cap");
+    private static final PathElement DEP_CAP_ELEMENT_2 = PathElement.pathElement("subsystem", "dep-cap-2");
 
 
     private static final RuntimeCapability<Void> CIRCULAR_PARENT_CAPABILITY = RuntimeCapability.Builder.of("org.wildfly.test.circular-parent-capability", false, Void.class)
@@ -148,10 +147,10 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final OperationDefinition RESTART_DEFINITION = SimpleOperationDefinitionBuilder.of(RESTART, NonResolvingResourceDescriptionResolver.INSTANCE).build();
 
-    private static ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
+    private static final ResourceDefinition TEST_RESOURCE1 = ResourceBuilder.Factory.create(TEST_ADDRESS1.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(new HashSet<>(Arrays.asList(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY)), ad, other))
-            .setRemoveOperation(new AbstractRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY) {})
+            .setAddOperation(new AbstractAddStepHandler(ad, other))
+            .setRemoveOperation(new AbstractRemoveStepHandler() {})
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addOperation(SimpleOperationDefinitionBuilder.of("add-cap",
@@ -167,17 +166,17 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
     private static final ResourceDefinition SUB_RESOURCE = ResourceBuilder.Factory.create(TEST_ADDRESS3.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-                .setAddOperation(new AbstractAddStepHandler(Collections.singleton(TEST_CAPABILITY3)))
-                .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY3))
+                .setAddOperation(new AbstractAddStepHandler())
+                .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
                 .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
                 .addCapability(TEST_CAPABILITY3)
                 .build();
 
 
-    private static ResourceDefinition TEST_RESOURCE2 = ResourceBuilder.Factory.create(TEST_ADDRESS2.getElement(0),
+    private static final ResourceDefinition TEST_RESOURCE2 = ResourceBuilder.Factory.create(TEST_ADDRESS2.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(Collections.singleton(TEST_CAPABILITY2), ad, other))
-            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY2))
+            .setAddOperation(new AbstractAddStepHandler(ad, other))
+            .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addCapability(TEST_CAPABILITY2)
@@ -196,9 +195,9 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                     })
             .build();
 
-    private static ResourceDefinition TEST_RESOURCE4 = ResourceBuilder.Factory.create(TEST_ADDRESS4.getElement(0),
+    private static final ResourceDefinition TEST_RESOURCE4 = ResourceBuilder.Factory.create(TEST_ADDRESS4.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(new HashSet<>(Arrays.asList(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY)), ad, other) {
+            .setAddOperation(new AbstractAddStepHandler(ad, other) {
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
             if(operation.hasDefined("fail")) {
@@ -211,7 +210,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             return true;
         }
             })
-            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(IO_POOL_RUNTIME_CAPABILITY, IO_WORKER_RUNTIME_CAPABILITY))
+            .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
             .addReadWriteAttribute(ad, null, new ReloadRequiredWriteAttributeHandler(ad))
             .addReadWriteAttribute(other, null, new ReloadRequiredWriteAttributeHandler(other))
             .addCapability(IO_POOL_RUNTIME_CAPABILITY)
@@ -219,8 +218,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
             .build();
 
     private static class RuntimeReportAddHandler extends AbstractAddStepHandler {
-        private RuntimeReportAddHandler(Set<RuntimeCapability> caps) {
-            super(caps);
+        private RuntimeReportAddHandler() {
         }
 
         @Override
@@ -230,8 +228,7 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
     }
 
     private static class RuntimeReportRemoveHandler extends AbstractRemoveStepHandler {
-        private RuntimeReportRemoveHandler(Set<RuntimeCapability> caps) {
-            super(caps);
+        private RuntimeReportRemoveHandler() {
         }
         @Override
         protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
@@ -295,20 +292,19 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                 .addOperation(RUNTIME_ONLY_DEFINITION, RUNTIME_MOD_HANDLER);
 
         if (caps != null && caps.length > 0) {
-            Set<RuntimeCapability> capsSet = new HashSet<>(Arrays.asList(caps));
             result = result.addCapabilities(caps)
-                    .setAddOperation(new RuntimeReportAddHandler(capsSet))
-                    .setRemoveOperation(new RuntimeReportRemoveHandler(capsSet));
+                    .setAddOperation(new RuntimeReportAddHandler())
+                    .setRemoveOperation(new RuntimeReportRemoveHandler());
         }
         else {
-            result = result.setAddOperation(new RuntimeReportAddHandler(Collections.emptySet()))
-                    .setRemoveOperation(new RuntimeReportRemoveHandler(Collections.emptySet()));
+            result = result.setAddOperation(new RuntimeReportAddHandler())
+                    .setRemoveOperation(new RuntimeReportRemoveHandler());
         }
 
         return result;
     }
 
-    private static ResourceDefinition RELOAD_PARENT = createReloadRestartTestResourceBuilder(RELOAD_ELEMENT, RELOADED_CAPABILITY)
+    private static final ResourceDefinition RELOAD_PARENT = createReloadRestartTestResourceBuilder(RELOAD_ELEMENT, RELOADED_CAPABILITY)
             .pushChild(createReloadRestartTestResourceBuilder(INDEPENDENT_ELEMENT, INDEPENDENT_CAPABILITY))
                 .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .pop()
@@ -329,38 +325,38 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
 
             .build();
 
-    private static ResourceDefinition CIRCULAR_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CIRCULAR_CAP_ELEMENT)
+    private static final ResourceDefinition CIRCULAR_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CIRCULAR_CAP_ELEMENT)
             .pushChild(createReloadRestartTestResourceBuilder(INDEPENDENT_ELEMENT, INDEPENDENT_CAPABILITY)).pop()
             .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT, CIRCULAR_PARENT_CAPABILITY))
                 .pushChild(createReloadRestartTestResourceBuilder(GRANDCHILD_ELEMENT, CIRCULAR_CHILD_CAPABILITY)).pop()
             .pop()
             .build();
 
-    private static ResourceDefinition HOST_RESOURCE = createReloadRestartTestResourceBuilder(HOST_ELEMENT, HOST_CAPABILITY)
+    private static final ResourceDefinition HOST_RESOURCE = createReloadRestartTestResourceBuilder(HOST_ELEMENT, HOST_CAPABILITY)
             .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .build();
 
-    private static ResourceDefinition PROFILE_RESOURCE = createReloadRestartTestResourceBuilder(PROFILE_ELEMENT, PROFILE_CAPABILITY)
+    private static final ResourceDefinition PROFILE_RESOURCE = createReloadRestartTestResourceBuilder(PROFILE_ELEMENT, PROFILE_CAPABILITY)
             .pushChild(createReloadRestartTestResourceBuilder(NO_CAP_ELEMENT))
                 .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT)).pop()
             .pop()
             .build();
 
-    private static ResourceDefinition NO_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CHILD_ELEMENT)
+    private static final ResourceDefinition NO_CAP_RESOURCE = createReloadRestartTestResourceBuilder(CHILD_ELEMENT)
             .build();
 
-    private static ResourceDefinition DEP_CAP_RESOURCE = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT, DEPENDENT_CAPABILITY)
+    private static final ResourceDefinition DEP_CAP_RESOURCE = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT, DEPENDENT_CAPABILITY)
             .pushChild(createReloadRestartTestResourceBuilder(CHILD_ELEMENT, TRANS_DEP_CAPABILITY)).pop()
             .build();
 
-    private static ResourceDefinition DEP_CAP_RESOURCE_2 = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT_2, TRANS_DEP_CAPABILITY)
+    private static final ResourceDefinition DEP_CAP_RESOURCE_2 = createReloadRestartTestResourceBuilder(DEP_CAP_ELEMENT_2, TRANS_DEP_CAPABILITY)
             .build();
 
     private static final AtomicReference<CountDownLatch> readLatchHolder = new AtomicReference<>();
     private static final AtomicReference<CountDownLatch> failLatchHolder = new AtomicReference<>();
     private static final ResourceDefinition BAD_RESOURCE = ResourceBuilder.Factory.create(TEST_ADDRESS5.getElement(0),
             NonResolvingResourceDescriptionResolver.INSTANCE)
-            .setAddOperation(new AbstractAddStepHandler(Collections.singleton(TEST_CAPABILITY1)) {
+            .setAddOperation(new AbstractAddStepHandler() {
                 @Override
                 protected void performRuntime(OperationContext context, ModelNode operation, Resource resource) throws OperationFailedException {
 
@@ -381,12 +377,13 @@ public class CapabilityRegistryTestCase extends AbstractControllerTestBase {
                     context.getFailureDescription().set("failed per design");
                 }
             })
-            .setRemoveOperation(new ReloadRequiredRemoveStepHandler(TEST_CAPABILITY3))
+            .setRemoveOperation(ReloadRequiredRemoveStepHandler.INSTANCE)
             .addOperation(SimpleOperationDefinitionBuilder.of("read", NonResolvingResourceDescriptionResolver.INSTANCE).build(),
                     ((context, operation) -> context.getResult().set(true)))
+            .addCapability(TEST_CAPABILITY5)
             .build();
 
-    private static final int RELOAD_CAP_COUNT = 8;
+    private static final int RELOAD_CAP_COUNT = 9;
 
     private ManagementModel managementModel;
 

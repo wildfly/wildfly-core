@@ -43,6 +43,7 @@ import java.util.Set;
 import jakarta.inject.Inject;
 
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.wildfly.core.testrunner.ServerControl;
@@ -63,15 +64,24 @@ abstract class AbstractPropertiesRoleMappingTestCase extends AbstractRbacTestCas
     static BasicExtensionSetupTask setupTask = new BasicExtensionSetupTask();
 
     protected static void startServer() throws Exception {
+        Assert.assertNotNull(container);
         container.start();
         managementClient = container.getClient();
         setupTask.setup(managementClient);
     }
 
     protected static void stopServer() throws Exception {
-        setupTask.tearDown(managementClient);
-        managementClient.close();
-        container.stop();
+        try {
+            Assert.assertNotNull(managementClient);
+            setupTask.tearDown(managementClient);
+            managementClient.close();
+            Assert.assertNotNull(container);
+            container.stop();
+        } finally {
+            setupTask = null;
+            managementClient = null;
+            container = null;
+        }
     }
 
     @Test

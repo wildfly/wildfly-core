@@ -195,14 +195,19 @@ public class OperationTimeoutTestCase {
         ModelNode removeSubsystem = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(
                 PathElement.pathElement(PROFILE, "default"),
                 PathElement.pathElement(SUBSYSTEM, BlockerExtension.SUBSYSTEM_NAME)));
-        executeForResult(safeTimeout(removeSubsystem), primaryClient);
+        try {
+            assertNotNull(primaryClient);
+            executeForResult(safeTimeout(removeSubsystem), primaryClient);
 
-        ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
-        executeForResult(safeTimeout(removeExtension), primaryClient);
+            ModelNode removeExtension = Util.createEmptyOperation(REMOVE, PathAddress.pathAddress(PathElement.pathElement(EXTENSION, BlockerExtension.MODULE_NAME)));
+            executeForResult(safeTimeout(removeExtension), primaryClient);
 
-        testSupport.close();
-        testSupport = null;
-        primaryClient = null;
+            assertNotNull(testSupport);
+            testSupport.close();
+        } finally {
+            testSupport = null;
+            primaryClient = null;
+        }
     }
 
     @After

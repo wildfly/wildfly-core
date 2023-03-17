@@ -35,7 +35,7 @@ public class ServerGroupAddHandler extends AbstractAddStepHandler {
     public static OperationStepHandler INSTANCE = new ServerGroupAddHandler();
 
     ServerGroupAddHandler() {
-        super(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY, ServerGroupResourceDefinition.ADD_ATTRIBUTES);
+        super(ServerGroupResourceDefinition.ADD_ATTRIBUTES);
     }
 
     @Override

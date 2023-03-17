@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLContext;
 
 import org.jboss.as.controller.ModelController;
-import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.management.HttpInterfaceCommonPolicy.Header;
 import org.jboss.as.domain.http.server.ConsoleAvailability;
@@ -94,7 +93,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     private final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier;
     private final Supplier<NetworkInterfaceBinding> secureInterfaceBindingSupplier;
     private final Supplier<SocketBindingManager> socketBindingManagerSupplier;
-    private final Supplier<ProcessStateNotifier> processStateNotifierSupplier;
     private final Supplier<ManagementHttpRequestProcessor> requestProcessorSupplier;
     private final Supplier<XnioWorker> workerSupplier;
     private final Supplier<Executor> executorSupplier;
@@ -207,7 +205,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                                          final Supplier<SocketBindingManager> socketBindingManagerSupplier,
                                          final Supplier<NetworkInterfaceBinding> interfaceBindingSupplier,
                                          final Supplier<NetworkInterfaceBinding> secureInterfaceBindingSupplier,
-                                         final Supplier<ProcessStateNotifier> processStateNotifierSupplier,
                                          final Supplier<ManagementHttpRequestProcessor> requestProcessorSupplier,
                                          final Supplier<XnioWorker> workerSupplier,
                                          final Supplier<Executor> executorSupplier,
@@ -228,7 +225,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
         this.socketBindingManagerSupplier = socketBindingManagerSupplier;
         this.interfaceBindingSupplier = interfaceBindingSupplier;
         this.secureInterfaceBindingSupplier = secureInterfaceBindingSupplier;
-        this.processStateNotifierSupplier = processStateNotifierSupplier;
         this.requestProcessorSupplier = requestProcessorSupplier;
         this.workerSupplier = workerSupplier;
         this.executorSupplier = executorSupplier;
@@ -252,7 +248,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
     @Override
     public synchronized void start(final StartContext context) throws StartException {
         final ModelController modelController = modelControllerSupplier.get();
-        final ProcessStateNotifier processStateNotifier = processStateNotifierSupplier.get();
         final ConsoleAvailability consoleAvailability = consoleAvailabilitySupplier.get();
         socketBindingManager = socketBindingManagerSupplier != null ? socketBindingManagerSupplier.get() : null;
 
@@ -332,7 +327,6 @@ public class UndertowHttpManagementService implements Service<HttpManagement> {
                     .setModelController(modelController)
                     .setSSLContext(sslContext)
                     .setHttpAuthenticationFactory(httpAuthenticationFactory)
-                    .setControlledProcessStateNotifier(processStateNotifier)
                     .setConsoleMode(consoleMode)
                     .setConsoleSlot(consoleSlot)
                     .setChannelUpgradeHandler(upgradeHandler)

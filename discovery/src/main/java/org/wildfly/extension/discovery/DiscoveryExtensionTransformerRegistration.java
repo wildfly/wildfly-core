@@ -42,7 +42,7 @@ public class DiscoveryExtensionTransformerRegistration implements ExtensionTrans
 
     @Override
     public void registerTransformers(SubsystemTransformerRegistration registration) {
-        for (DiscoveryModel model : EnumSet.complementOf(EnumSet.of(DiscoveryModel.CURRENT))) {
+        for (DiscoverySubsystemModel model : EnumSet.complementOf(EnumSet.of(DiscoverySubsystemModel.CURRENT))) {
             ModelVersion version = model.getVersion();
             TransformationDescription.Tools.register(DiscoverySubsystemDefinition.buildTransformers(version), registration, version);
         }

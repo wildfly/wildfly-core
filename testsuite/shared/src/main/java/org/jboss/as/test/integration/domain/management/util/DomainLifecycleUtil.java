@@ -369,9 +369,11 @@ public class DomainLifecycleUtil implements AutoCloseable {
             if (closeClientConfig) {
                 try {
                     clientConfiguration.close();
-                } catch (Exception e) {
+                } catch (Exception ex) {
                     if (toThrow == null) {
-                        toThrow = new RuntimeException("Could not stop client configuration", e);
+                        toThrow = new RuntimeException("Could not stop client configuration", ex);
+                    } else {
+                        toThrow.addSuppressed(ex);
                     }
                 }
             }

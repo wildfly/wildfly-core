@@ -10,7 +10,6 @@
     </resources>
 
     <dependencies>
-        <module name="javax.api"/>
         <module name="sun.jdk"/>
         <module name="org.jboss.msc"/>
         <module name="org.jboss.as.server"/>

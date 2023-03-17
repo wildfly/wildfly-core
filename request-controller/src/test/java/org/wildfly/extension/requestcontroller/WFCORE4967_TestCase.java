@@ -43,7 +43,7 @@ public class WFCORE4967_TestCase {
     }
 
     private RequestController suspendedRCWithQueuedTasks(int i, Runnable whenExecuted) {
-        RequestController requestController = new RequestController(false);
+        RequestController requestController = new RequestController(false, () -> null);
         requestController.suspended(() -> {
         });
 

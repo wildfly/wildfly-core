@@ -47,6 +47,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.threads.AsyncFutureTask;
+import org.wildfly.common.Assert;
 
 /**
  * Service providing the {@link ServerInventory}
@@ -188,6 +189,7 @@ class ServerInventoryService implements Service<ServerInventory> {
         }
 
         private void setFailure(final Throwable t) {
+            Assert.checkNotNullParam("Throwable", t);
             super.setFailed(t);
         }
     }

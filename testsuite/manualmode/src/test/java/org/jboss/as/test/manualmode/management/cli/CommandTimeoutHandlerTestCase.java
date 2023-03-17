@@ -48,6 +48,7 @@ import org.jboss.as.test.shared.TestSuiteEnvironment;
 import org.jboss.as.test.shared.TimeoutUtil;
 import org.jboss.dmr.ModelNode;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -123,6 +124,7 @@ public class CommandTimeoutHandlerTestCase {
 
     @Before
     public void beforeTest() throws CliInitializationException, IOException, CommandLineException {
+        Assert.assertNotNull(container);
         container.start();
         consoleOutput.reset();
         ExtensionUtils.createExtensionModule("org.wildfly.extension.blocker-test", BlockerExtension.class,
@@ -144,6 +146,7 @@ public class CommandTimeoutHandlerTestCase {
     public void afterTest() throws Exception {
         // Just in case something went wrong.
         try {
+            Assert.assertNotNull(ctx);
             ctx.handle("command-timeout reset default");
             if (ctx.isBatchMode()) {
                 ctx.handle("discard-batch");
@@ -154,7 +157,9 @@ public class CommandTimeoutHandlerTestCase {
             ctx.handle("/extension=org.wildfly.extension.blocker-test:remove");
 
         } finally {
+            Assert.assertNotNull(ctx);
             ctx.terminateSession();
+            Assert.assertNotNull(container);
             container.stop();
             ExtensionUtils.deleteExtensionModule("org.wildfly.extension.blocker-test");
         }

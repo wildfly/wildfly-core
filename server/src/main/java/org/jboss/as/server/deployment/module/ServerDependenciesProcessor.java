@@ -37,12 +37,12 @@ import org.jboss.modules.ModuleLoader;
  *
  * @author Stuart Douglas
  * @author Thomas.Diesler@jboss.com
+ * @author <a href="mailto:ropalka@redhat.com">Richard Opalka</a>
  */
 public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
 
     private static ModuleIdentifier[] DEFAULT_MODULES = new ModuleIdentifier[] {
-        ModuleIdentifier.create("javax.api"),
-        ModuleIdentifier.create("org.jboss.vfs"),
+        ModuleIdentifier.create("java.se"),
     };
 
     private static ModuleIdentifier[] DEFAULT_MODULES_WITH_SERVICE_IMPORTS = new ModuleIdentifier[] {

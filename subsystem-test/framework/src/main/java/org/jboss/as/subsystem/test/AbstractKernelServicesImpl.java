@@ -1,13 +1,13 @@
 package org.jboss.as.subsystem.test;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import java.lang.reflect.Method;
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.AbstractControllerService;
 import org.jboss.as.controller.CapabilityRegistry;
@@ -27,13 +27,11 @@ import org.jboss.as.model.test.ModelTestParser;
 import org.jboss.as.model.test.StringConfigurationPersister;
 import org.jboss.as.server.Services;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.wildfly.legacy.test.spi.subsystem.TestModelControllerFactory;
 
@@ -124,8 +122,11 @@ public abstract class AbstractKernelServicesImpl extends ModelTestKernelServices
                 .setMaximumPoolSize(1024)
                 .setKeepAliveTime(20L, TimeUnit.SECONDS)
                 .build();
-            Service<ExecutorService> mgmtExecSvc = new ValueService<>(new ImmediateValue<>(mgmtExecutor));
-            target.addService(AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName(), mgmtExecSvc).install();
+            ServiceName sn = AbstractControllerService.EXECUTOR_CAPABILITY.getCapabilityServiceName();
+            ServiceBuilder sb = target.addService(sn);
+            Consumer<ExecutorService> c = sb.provides(sn);
+            sb.setInstance(Service.newInstance(c, mgmtExecutor));
+            sb.install();
         }
 
         additionalInit.addExtraServices(target);

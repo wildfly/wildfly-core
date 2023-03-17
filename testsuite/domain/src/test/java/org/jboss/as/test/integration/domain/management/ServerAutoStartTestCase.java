@@ -22,6 +22,7 @@
 package org.jboss.as.test.integration.domain.management;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTO_START;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
@@ -125,10 +126,14 @@ public class ServerAutoStartTestCase {
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.close();
-        testSupport = null;
-        domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
+        try {
+            MatcherAssert.assertThat("testSupport", testSupport, is(notNullValue()));
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            domainSecondaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     @Test

@@ -33,7 +33,7 @@
 
     <groupId>org.wildfly.core</groupId>
     <artifactId>wildfly-core-parent</artifactId>
-    <version>20.0.0.Beta5-SNAPSHOT</version>
+    <version>20.0.0.Beta8-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 
@@ -136,10 +136,10 @@
 
         <!-- Non-default maven plugin versions and configuration -->
         <version.jacoco.plugin>0.8.0</version.jacoco.plugin>
-        <version.org.jboss.galleon>5.0.7.Final</version.org.jboss.galleon>
+        <version.org.jboss.galleon>5.0.8.Final</version.org.jboss.galleon>
         <version.org.wildfly.build-tools>1.2.13.Final</version.org.wildfly.build-tools>
         <version.org.wildfly.checkstyle-config>1.0.8.Final</version.org.wildfly.checkstyle-config>
-        <version.org.wildfly.galleon-plugins>6.2.2.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.3.2.Final</version.org.wildfly.galleon-plugins>
         <!-- wildfly plugin-->
         <version.wildfly.plugin>2.0.2.Final</version.wildfly.plugin>
         <version.org.wildfly.jar.plugin>8.1.0.Final</version.org.wildfly.jar.plugin>
@@ -153,19 +153,6 @@
         <wildfly.core.release.version>${project.version}</wildfly.core.release.version>
         <wildfly.core.scm.connection>git@github.com:wildfly/wildfly-core.git</wildfly.core.scm.connection>
         <wildfly.core.scm.url>https://github.com/wildfly/wildfly-core</wildfly.core.scm.url>
-
-        <!-- WildFly Preview vs standard WildFly GAV expression properties.
-             Used to drive maven-resource-plugin filtering for module.xml files
-             where WildFly Preview and standard WildFly use different artifacts but
-             otherwise identical module.xml files. The expression encapsulates the part
-             of a groupId/artifactId/classifier that differs in the two dists.
-             Values here are the ones used by standard WildFly; WildFly Preview child
-             modules will override. Often the standard value will be an empty string
-             and WildFly Preview will change it to additional text a project uses to
-             identify its jakarta.* namespace artifacts.
-             -->
-        <module.jakarta.classifier>::jakarta</module.jakarta.classifier>
-        <module.jakarta.suffix>-jakarta</module.jakarta.suffix>
 
         <!-- JPMS settings for use in MANIFEST.MF files of jars that can 'embed' a Wildfly server,
              e.g. a bootable jar or a jboss-cli-client.jar.
@@ -194,8 +181,8 @@
         <version.com.jcraft.jsch>0.1.55</version.com.jcraft.jsch>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-lang3>3.12.0</version.commons-lang3>
-        <version.io.smallrye.jandex>3.0.3</version.io.smallrye.jandex>
-        <version.io.undertow>2.3.0.Final</version.io.undertow>
+        <version.io.smallrye.jandex>3.0.5</version.io.smallrye.jandex>
+        <version.io.undertow>2.3.4.Final</version.io.undertow>
         <version.jakarta.json.jakarta-json-api>2.1.1</version.jakarta.json.jakarta-json-api>
         <version.jakarta.interceptor.jakarta-interceptors-api>2.1.0</version.jakarta.interceptor.jakarta-interceptors-api>
         <version.jakarta.authentication.jakarta-authentication-api>3.0.0</version.jakarta.authentication.jakarta-authentication-api>
@@ -211,14 +198,14 @@
              (the current workaround causes test failures in domain-management tests).
              Cannot bump to AM25 due to https://issues.apache.org/jira/browse/DIRSERVER-2247.
         -->
-        <version.org.apache.httpcomponents.httpclient>4.5.13</version.org.apache.httpcomponents.httpclient>
-        <version.org.apache.httpcomponents.httpcore>4.4.15</version.org.apache.httpcomponents.httpcore>
+        <version.org.apache.httpcomponents.httpclient>4.5.14</version.org.apache.httpcomponents.httpclient>
+        <version.org.apache.httpcomponents.httpcore>4.4.16</version.org.apache.httpcomponents.httpcore>
         <version.org.apache.logging.log4j>2.19.0</version.org.apache.logging.log4j>
         <version.org.apache.maven.provider>3.5.4</version.org.apache.maven.provider>
         <version.org.apache.maven.resolver>1.1.1</version.org.apache.maven.resolver>
         <version.org.apache.sshd>2.9.2</version.org.apache.sshd>
         <version.org.bouncycastle>1.72</version.org.bouncycastle>
-        <version.org.bouncycastle.bcpg-jdk18on>1.72.1</version.org.bouncycastle.bcpg-jdk18on>
+        <version.org.bouncycastle.bcpg-jdk18on>1.72.2</version.org.bouncycastle.bcpg-jdk18on>
         <version.org.eclipse.jgit>6.2.0.202206071550-r</version.org.eclipse.jgit>
         <version.org.eclipse.parsson>1.1.1</version.org.eclipse.parsson>
         <version.org.fusesource.jansi>1.18</version.org.fusesource.jansi>
@@ -236,12 +223,12 @@
         <version.org.jboss.logmanager.log4j2-jboss-logmanager>1.1.1.Final</version.org.jboss.logmanager.log4j2-jboss-logmanager>
         <version.org.jboss.marshalling.jboss-marshalling>2.1.1.Final</version.org.jboss.marshalling.jboss-marshalling>
         <version.org.jboss.modules.jboss-modules>2.1.0.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.jboss.msc.jboss-msc>1.5.0.Beta4</version.org.jboss.msc.jboss-msc>
+        <version.org.jboss.msc.jboss-msc>1.5.0.CR1</version.org.jboss.msc.jboss-msc>
         <version.org.jboss.remoting>5.0.27.Final</version.org.jboss.remoting>
         <version.org.jboss.remotingjmx.remoting-jmx>3.0.4.Final</version.org.jboss.remotingjmx.remoting-jmx>
         <version.org.jboss.shrinkwrap.shrinkwrap>1.2.6</version.org.jboss.shrinkwrap.shrinkwrap>
-        <version.org.jboss.slf4j.slf4j-jboss-logmanager>1.1.0.Final</version.org.jboss.slf4j.slf4j-jboss-logmanager>
-        <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
+        <version.org.jboss.slf4j.slf4j-jboss-logmanager>2.0.1.Final</version.org.jboss.slf4j.slf4j-jboss-logmanager>
+        <version.org.jboss.staxmapper>1.4.0.Final</version.org.jboss.staxmapper>
         <version.org.jboss.stdio>1.1.0.Final</version.org.jboss.stdio>
         <version.org.jboss.threads>2.4.0.Final</version.org.jboss.threads>
         <version.org.jboss.xnio>3.8.8.Final</version.org.jboss.xnio>
@@ -250,7 +237,7 @@
         <version.org.jmockit>1.39</version.org.jmockit>
         <version.org.mockito>3.10.0</version.org.mockito>
         <version.org.projectodd.vdx>1.1.6</version.org.projectodd.vdx>
-        <version.org.slf4j>1.7.36</version.org.slf4j>
+        <version.org.slf4j>2.0.6</version.org.slf4j>
         <version.org.syslog4j>0.9.30</version.org.syslog4j>
         <version.org.wildfly.client.config>1.0.1.Final</version.org.wildfly.client.config>
         <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
@@ -262,10 +249,10 @@
         <version.org.wildfly.openssl.wildfly-openssl-linux-s390x>2.2.2.SP01</version.org.wildfly.openssl.wildfly-openssl-linux-s390x>
         <version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-macosx-x86_64>
         <version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>${version.org.wildfly.openssl.natives}</version.org.wildfly.openssl.wildfly-openssl-windows-x86_64>
-        <version.org.wildfly.security.elytron>2.0.0.Final</version.org.wildfly.security.elytron>
+        <version.org.wildfly.security.elytron>2.1.0.Final</version.org.wildfly.security.elytron>
         <version.org.wildfly.security.elytron-web>3.0.0.Final</version.org.wildfly.security.elytron-web>
         <version.org.wildfly.security.jakarta.elytron-ee>3.0.0.Final</version.org.wildfly.security.jakarta.elytron-ee>
-        <version.org.yaml.snakeyaml>1.33</version.org.yaml.snakeyaml>
+        <version.org.yaml.snakeyaml>2.0</version.org.yaml.snakeyaml>
     </properties>
 
     <modules>
@@ -1743,6 +1730,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security</groupId>
+                <artifactId>wildfly-elytron-ssh-util</artifactId>
+                <version>${version.org.wildfly.security.elytron}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.security</groupId>
                 <artifactId>wildfly-elytron-audit</artifactId>
                 <version>${version.org.wildfly.security.elytron}</version>
             </dependency>
@@ -2513,6 +2505,27 @@
                         </configuration>
                     </plugin>
                 </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>quick-build</id>
+            <activation>
+                <property>
+                    <name>quickly</name>
+                </property>
+            </activation>
+            <properties>
+                <license.skip>true</license.skip>
+                <skipTests>true</skipTests>
+                <enforcer.skip>true</enforcer.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <skipITs>true</skipITs>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.buildNumber.skip>true</maven.buildNumber.skip>
+            </properties>
+            <build>
+                <defaultGoal>clean install</defaultGoal>
             </build>
         </profile>
     </profiles>

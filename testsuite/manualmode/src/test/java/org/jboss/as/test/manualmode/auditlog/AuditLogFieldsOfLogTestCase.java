@@ -77,6 +77,7 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
     public void beforeTest() throws Exception {
         Files.deleteIfExists(FILE);
 
+        Assert.assertNotNull(container);
         container.start();
         final ModelControllerClient client = container.getClient().getControllerClient();
 
@@ -99,6 +100,8 @@ public class AuditLogFieldsOfLogTestCase extends AbstractLogFieldsOfLogTestCase 
 
     @After
     public void afterTest() throws Exception {
+        Assert.assertNotNull(container);
+        Assert.assertTrue(container.isStarted()); // if container is not started, we get a NPE in container.getClient()
         SYSLOG_SETUP.tearDown(container.getClient());
         final ModelControllerClient client = container.getClient().getControllerClient();
         final CompositeOperationBuilder compositeOp = CompositeOperationBuilder.create();

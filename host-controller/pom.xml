@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>20.0.0.Beta5-SNAPSHOT</version>
+        <version>20.0.0.Beta8-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-host-controller</artifactId>
@@ -80,6 +80,10 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.common</groupId>
+            <artifactId>wildfly-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss.logging</groupId>

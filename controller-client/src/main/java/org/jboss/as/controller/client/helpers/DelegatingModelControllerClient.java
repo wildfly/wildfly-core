@@ -40,7 +40,10 @@ public class DelegatingModelControllerClient implements ModelControllerClient {
 
     /** Provides a delegate for use by the {@code DelegatingModelControllerClient} */
     public interface DelegateProvider {
-        ModelControllerClient getDelegate();
+        /**
+         * @throws IllegalStateException if the delegate is not available.
+         */
+        ModelControllerClient getDelegate() throws IllegalStateException;
     }
 
     private final DelegateProvider provider;
@@ -49,6 +52,9 @@ public class DelegatingModelControllerClient implements ModelControllerClient {
         this(new DelegateProvider() {
             @Override
             public ModelControllerClient getDelegate() {
+                if (delegate == null) {
+                    throw new IllegalStateException("The client has been closed");
+                }
                 return delegate;
             }
         });
@@ -100,6 +106,10 @@ public class DelegatingModelControllerClient implements ModelControllerClient {
 
     @Override
     public void close() throws IOException {
-        provider.getDelegate().close();
+        try {
+            provider.getDelegate().close();
+        } catch (IllegalStateException e) {
+            // IllegalStateException is ignored, no delegate to close.
+        }
     }
 }

@@ -49,6 +49,7 @@ public class GitPersistenceResourceTestCase extends AbstractGitPersistenceResour
             try (Git git = Git.init().setDirectory(baseDir).setGitDir(gitDir).setInitialBranch(Constants.MASTER).call()) {
                 StoredConfig config = git.getRepository().getConfig();
                 config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
+                config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, false);
                 config.save();
                 git.commit().setMessage("Repository initialized").call();
             }

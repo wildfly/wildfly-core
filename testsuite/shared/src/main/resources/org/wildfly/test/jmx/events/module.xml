@@ -21,7 +21,6 @@ limitations under the License.
 
     <dependencies>
         <module name="org.wildfly.extension.core-management-client"/>
-        <module name="javax.api"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.logging"/>
     </dependencies>

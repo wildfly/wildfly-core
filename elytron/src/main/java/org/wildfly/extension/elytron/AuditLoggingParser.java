@@ -38,52 +38,52 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
  */
 class AuditLoggingParser {
 
-    private final PersistentResourceXMLDescription fileAuditLogParser = builder(PathElement.pathElement(FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription fileAuditLogParser = builder(PathElement.pathElement(FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT)
             .build();
 
-    private final PersistentResourceXMLDescription fileAuditLogParser_5_0 = builder(PathElement.pathElement(FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription fileAuditLogParser_5_0 = builder(PathElement.pathElement(FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT)
             .build();
 
-    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
             .build();
 
-    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription periodicRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(PERIODIC_ROTATING_FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.PERIODIC_SUFFIX)
             .build();
 
-    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
             .build();
 
-    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription sizeRotatingFileAuditLogParser_5_0 = builder(PathElement.pathElement(SIZE_ROTATING_FILE_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.PATH, FileAttributeDefinitions.RELATIVE_TO, AuditResourceDefinitions.AUTOFLUSH, AuditResourceDefinitions.SYNCHRONIZED, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.MAX_BACKUP_INDEX, AuditResourceDefinitions.ROTATE_ON_BOOT, AuditResourceDefinitions.ROTATE_SIZE, AuditResourceDefinitions.SIZE_SUFFIX)
             .build();
 
-    private final PersistentResourceXMLDescription syslogAuditLogParser = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription syslogAuditLogParser = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT)
             .build();
 
-    private final PersistentResourceXMLDescription syslogAuditLogParser_8_0 = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG), null)
+    private final PersistentResourceXMLDescription syslogAuditLogParser_8_0 = builder(PathElement.pathElement(SYSLOG_AUDIT_LOG))
             .setUseElementsForGroups(false)
             .addAttributes(AuditResourceDefinitions.SERVER_ADDRESS, AuditResourceDefinitions.PORT, AuditResourceDefinitions.TRANSPORT, AuditResourceDefinitions.HOST_NAME, AuditResourceDefinitions.FORMAT, AuditResourceDefinitions.SSL_CONTEXT, AuditResourceDefinitions.SYSLOG_FORMAT, AuditResourceDefinitions.RECONNECT_ATTEMPTS)
             .build();
 
 
-    private final PersistentResourceXMLDescription aggregateSecurityEventParser = builder(PathElement.pathElement(AGGREGATE_SECURITY_EVENT_LISTENER), null)
+    private final PersistentResourceXMLDescription aggregateSecurityEventParser = builder(PathElement.pathElement(AGGREGATE_SECURITY_EVENT_LISTENER))
             .addAttribute(AuditResourceDefinitions.REFERENCES, new AttributeParsers.NamedStringListParser(SECURITY_EVENT_LISTENER), new AttributeMarshallers.NamedStringListMarshaller(SECURITY_EVENT_LISTENER))
             .build();
 
-    private final PersistentResourceXMLDescription customSecurityEventParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER), null)
+    private final PersistentResourceXMLDescription customSecurityEventParser = builder(PathElement.pathElement(ElytronDescriptionConstants.CUSTOM_SECURITY_EVENT_LISTENER))
             .addAttributes(CustomComponentDefinition.ATTRIBUTES)
             .setUseElementsForGroups(false)
             .build();

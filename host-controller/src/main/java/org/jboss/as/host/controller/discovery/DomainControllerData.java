@@ -105,9 +105,9 @@ public class DomainControllerData {
     @Override
     public String toString() {
         StringBuilder sb=new StringBuilder();
-        sb.append("master_host=").append(getHost());
-        sb.append(",master_port=").append(getPort());
-        sb.append(",master_protocol=").append(getProtocol());
+        sb.append("primary_host=").append(getHost());
+        sb.append(",primary_port=").append(getPort());
+        sb.append(",primary_protocol=").append(getProtocol());
         return sb.toString();
     }
 }

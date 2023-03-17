@@ -52,7 +52,7 @@ class JMXSubsystemAdd extends AbstractAddStepHandler {
     private final RuntimeHostControllerInfoAccessor hostInfoAccessor;
 
     JMXSubsystemAdd(ManagedAuditLogger auditLoggerInfo, JmxAuthorizer authorizer, Supplier<SecurityIdentity> securityIdentitySupplier,  RuntimeHostControllerInfoAccessor hostInfoAccessor) {
-        super(JMXSubsystemRootResource.JMX_CAPABILITY, JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY);
+        super(JMXSubsystemRootResource.NON_CORE_MBEAN_SENSITIVITY);
         this.auditLoggerInfo = auditLoggerInfo;
         this.authorizer = authorizer;
         this.securityIdentitySupplier = securityIdentitySupplier;

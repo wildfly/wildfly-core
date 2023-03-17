@@ -1,6 +1,6 @@
-<?xml version="1.0" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 
-<server xmlns="urn:jboss:domain:19.0">
+<server xmlns="urn:jboss:domain:20.0">
     <extensions>
         <extension module="org.jboss.as.jmx"/>
         <extension module="org.jboss.as.logging"/>
@@ -10,6 +10,9 @@
         <extension module="org.wildfly.extension.request-controller"/>
         <extension module="org.wildfly.extension.security.manager"/>
     </extensions>
+    <system-properties>
+        <property name="foo" value="bar"/>
+    </system-properties>
     <management>
         <audit-log>
             <formatters>
@@ -84,7 +87,7 @@
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
         <subsystem xmlns="urn:jboss:domain:discovery:1.0"/>
-        <subsystem xmlns="urn:wildfly:elytron:15.1" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+        <subsystem xmlns="urn:wildfly:elytron:16.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
             <providers>
                 <aggregate-providers name="combined-providers">
                     <providers name="elytron"/>
@@ -105,6 +108,9 @@
                     <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
                     <realm name="local" role-mapper="super-user-mapper"/>
                 </security-domain>
+                <security-domain name="BootableDomain" default-realm="bootable-realm" permission-mapper="default-permission-mapper">
+                    <realm name="bootable-realm" role-decoder="groups-to-roles"/>
+                </security-domain>
             </security-domains>
             <security-realms>
                 <identity-realm name="local" identity="$local"/>
@@ -115,6 +121,10 @@
                 <properties-realm name="ManagementRealm">
                     <users-properties path="mgmt-users.properties" relative-to="jboss.server.config.dir" digest-realm-name="ManagementRealm"/>
                     <groups-properties path="mgmt-groups.properties" relative-to="jboss.server.config.dir"/>
+                </properties-realm>
+                <properties-realm name="bootable-realm">
+                    <users-properties path="bootable-users.properties" relative-to="jboss.server.config.dir" plain-text="true"/>
+                    <groups-properties path="bootable-groups.properties" relative-to="jboss.server.config.dir"/>
                 </properties-realm>
             </security-realms>
             <mappers>
@@ -221,7 +231,15 @@
         </interface>
     </interfaces>
     <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+        <socket-binding name="http" interface="public"/>
+        <socket-binding name="https"/>
         <socket-binding name="management-http" interface="management" port="${jboss.management.http.port:9990}"/>
         <socket-binding name="management-https" interface="management" port="${jboss.management.https.port:9993}"/>
+        <outbound-socket-binding name="foo2">
+            <remote-destination host="foo2" port="8082"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="mail-snmt">
+            <remote-destination host="foo" port="8081"/>
+        </outbound-socket-binding>
     </socket-binding-group>
 </server>

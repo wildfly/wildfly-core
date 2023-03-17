@@ -115,6 +115,7 @@ public class GitRepository implements Closeable {
                 try (Git git = Git.init().setDirectory(baseDir).setInitialBranch(branch).call()) {
                     StoredConfig config = git.getRepository().getConfig();
                     config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
+                    config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
                     final AddCommand addCommand = git.add();
                     addCommand.addFilepattern("data/content/");
@@ -139,6 +140,7 @@ public class GitRepository implements Closeable {
                     config.setString("remote", remoteName, "url", gitConfig.getRepository());
                     config.setString("remote", remoteName, "fetch", "+" + R_HEADS + "*:" + R_REMOTES + remoteName + "/*");
                     config.setBoolean(ConfigConstants.CONFIG_COMMIT_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
+                    config.setBoolean(ConfigConstants.CONFIG_TAG_SECTION, null, ConfigConstants.CONFIG_KEY_GPGSIGN, gitConfig.isSign());
                     config.save();
                     git.clean().call();
                     git.pull().setRemote(remoteName).setRemoteBranchName(branch).setStrategy(MergeStrategy.RESOLVE).call();

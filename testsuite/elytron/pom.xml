@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-testsuite</artifactId>
-        <version>20.0.0.Beta5-SNAPSHOT</version>
+        <version>20.0.0.Beta8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -143,6 +143,10 @@
         <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron-sasl-scram</artifactId>
+        </dependency>
+             <dependency>
+            <groupId>org.wildfly.security</groupId>
+            <artifactId>wildfly-elytron-ssh-util</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly.security</groupId>

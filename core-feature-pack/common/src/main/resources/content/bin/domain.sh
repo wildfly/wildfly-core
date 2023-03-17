@@ -98,45 +98,6 @@ if [ "x$JAVA" = "x" ]; then
     fi
 fi
 
-# Check for -d32/-d64 in JAVA_OPTS
-JVM_OPTVERSION="-version"
-JVM_D64_OPTION=`echo $JAVA_OPTS | $GREP "\-d64"`
-JVM_D32_OPTION=`echo $JAVA_OPTS | $GREP "\-d32"`
-test "x$JVM_D64_OPTION" != "x" && JVM_OPTVERSION="-d64 $JVM_OPTVERSION"
-test "x$JVM_D32_OPTION" != "x" && JVM_OPTVERSION="-d32 $JVM_OPTVERSION"
-
-# If -server not set in JAVA_OPTS, set it, if supported
-SERVER_SET=`echo $JAVA_OPTS | $GREP "\-server"`
-if [ "x$SERVER_SET" = "x" ]; then
-
-    # Check for SUN(tm) JVM w/ HotSpot support
-    if [ "x$HAS_HOTSPOT" = "x" ]; then
-        HAS_HOTSPOT=`"$JAVA" $JVM_OPTVERSION -version 2>&1 | $GREP -i HotSpot`
-    fi
-
-    # Check for OpenJDK JVM w/server support
-    if [ "x$HAS_OPENJDK" = "x" ]; then
-        HAS_OPENJDK=`"$JAVA" $JVM_OPTVERSION 2>&1 | $GREP -i OpenJDK`
-    fi
-
-    # Check for IBM JVM w/server support
-    if [ "x$HAS_IBM" = "x" ]; then
-        HAS_IBM=`"$JAVA" $JVM_OPTVERSION 2>&1 | $GREP -i "IBM J9"`
-    fi
-
-    # Enable -server if we have Hotspot or OpenJDK, unless we can't
-    if [ "x$HAS_HOTSPOT" != "x" -o "x$HAS_OPENJDK" != "x" -o "x$HAS_IBM" != "x" ]; then
-        # MacOS does not support -server flag
-        if [ "$darwin" != "true" ]; then
-            PROCESS_CONTROLLER_JAVA_OPTS="-server $PROCESS_CONTROLLER_JAVA_OPTS"
-            HOST_CONTROLLER_JAVA_OPTS="-server $HOST_CONTROLLER_JAVA_OPTS"
-            JVM_OPTVERSION="-server $JVM_OPTVERSION"
-        fi
-    fi
-else
-    JVM_OPTVERSION="-server $JVM_OPTVERSION"
-fi
-
 if [ "x$JBOSS_MODULEPATH" = "x" ]; then
     JBOSS_MODULEPATH="$JBOSS_HOME/modules"
 fi

@@ -77,6 +77,7 @@ public class StartSuspendedTestCase {
     @Before
     public void startContainer() throws Exception {
         // Start the server
+        Assert.assertNotNull(container);
         container.startSuspended();
         managementClient = container.getClient();
 
@@ -91,14 +92,19 @@ public class StartSuspendedTestCase {
             new SocketPermission("*", "accept,resolve")
         ), "permissions.xml");
         //helper.deploy(WEB_SUSPEND_JAR, war.as(ZipExporter.class).exportAsInputStream());
+        Assert.assertNotNull(serverController);
+        Assert.assertTrue(serverController.isStarted()); // if container is not started, we get a NPE in container.getClient() within deploy
         serverController.deploy(war, WEB_SUSPEND_JAR);
     }
 
     @After
     public void stopContainer() throws Exception {
+        Assert.assertNotNull(serverController);
+        Assert.assertTrue(serverController.isStarted()); // if container is not started, we get a NPE in container.getClient() within deploy
         serverController.undeploy(WEB_SUSPEND_JAR);
         try {
             // Stop the container
+            Assert.assertNotNull(container);
             container.stop();
         } finally {
             IoUtils.safeClose(managementClient);

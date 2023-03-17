@@ -22,6 +22,9 @@
 
 package org.jboss.as.test.integration.domain;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
@@ -84,18 +87,21 @@ public class AdminOnlyModeTestCase {
     @BeforeClass
     public static void setupDomain() throws Exception {
         testSupport = DomainTestSupport.createAndStartDefaultSupport(AdminOnlyModeTestCase.class.getSimpleName());
-
         domainPrimaryLifecycleUtil = testSupport.getDomainPrimaryLifecycleUtil();
         domainSecondaryLifecycleUtil = testSupport.getDomainSecondaryLifecycleUtil();
+        assertThat("domainSecondaryLifecycleUtil", domainSecondaryLifecycleUtil, is(notNullValue()));
     }
 
     @AfterClass
     public static void tearDownDomain() throws Exception {
-        testSupport.close();
-
-        testSupport = null;
-        domainPrimaryLifecycleUtil = null;
-        domainSecondaryLifecycleUtil = null;
+        try {
+            assertThat("testSupport", testSupport, is(notNullValue()));
+            testSupport.close();
+        } finally {
+            domainPrimaryLifecycleUtil = null;
+            domainSecondaryLifecycleUtil = null;
+            testSupport = null;
+        }
     }
 
     @Test

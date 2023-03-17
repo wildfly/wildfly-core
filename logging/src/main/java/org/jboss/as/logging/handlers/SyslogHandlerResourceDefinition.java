@@ -108,12 +108,15 @@ public class SyslogHandlerResourceDefinition extends SimpleResourceDefinition {
             .setAttributeMarshaller(new DefaultAttributeMarshaller() {
                 @Override
                 public void marshallAsElement(final AttributeDefinition attribute, final ModelNode resourceModel, final boolean marshallDefault, final XMLStreamWriter writer) throws XMLStreamException {
-                    if (isMarshallable(attribute, resourceModel, marshallDefault)) {
-                        writer.writeStartElement(attribute.getXmlName());
-                        final String content = resourceModel.get(attribute.getName()).asString();
-                        writer.writeAttribute(Attribute.SYSLOG_TYPE.getLocalName(), content);
-                        writer.writeEndElement();
+                    writer.writeStartElement(attribute.getXmlName());
+                    final String content;
+                    if (resourceModel.hasDefined(attribute.getName())) {
+                        content = resourceModel.get(attribute.getName()).asString();
+                    } else {
+                        content = attribute.getDefaultValue().asString();
                     }
+                    writer.writeAttribute(Attribute.SYSLOG_TYPE.getLocalName(), content);
+                    writer.writeEndElement();
                 }
             })
             .setDefaultValue(new ModelNode(SyslogType.RFC5424.name()))

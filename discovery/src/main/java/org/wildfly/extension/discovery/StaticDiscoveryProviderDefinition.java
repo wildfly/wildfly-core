@@ -73,12 +73,16 @@ final class StaticDiscoveryProviderDefinition extends SimpleResourceDefinition {
         ATTRIBUTES
     ).build();
 
-    static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder("services", SERVICE).setFlags(Flag.RESTART_RESOURCE_SERVICES).build();
+    static final ObjectListAttributeDefinition SERVICES = new ObjectListAttributeDefinition.Builder("services", SERVICE)
+            .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
+            .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+            .setFlags(Flag.RESTART_RESOURCE_SERVICES)
+            .build();
 
     private static final AbstractAddStepHandler ADD_HANDLER = new StaticDiscoveryProviderAddHandler();
 
     StaticDiscoveryProviderDefinition() {
-        super(new Parameters(PATH, DiscoveryExtension.getResourceDescriptionResolver(PATH.getKey()))
+        super(new Parameters(PATH, DiscoveryExtension.SUBSYSTEM_RESOLVER.createChildResolver(PATH))
             .setAddHandler(ADD_HANDLER)
             .setRemoveHandler(new ServiceRemoveStepHandler(DiscoveryExtension.DISCOVERY_PROVIDER_CAPABILITY.getCapabilityServiceName(), ADD_HANDLER))
             .setCapabilities(DISCOVERY_PROVIDER_CAPABILITY));

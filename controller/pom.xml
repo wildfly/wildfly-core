@@ -29,7 +29,7 @@
     <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
-        <version>20.0.0.Beta5-SNAPSHOT</version>
+        <version>20.0.0.Beta8-SNAPSHOT</version>
     </parent>
 
     <artifactId>wildfly-controller</artifactId>
@@ -145,6 +145,11 @@
         <dependency>
            <groupId>junit</groupId>
            <artifactId>junit</artifactId>
+           <scope>test</scope>
+        </dependency>
+        <dependency>
+           <groupId>org.mockito</groupId>
+           <artifactId>mockito-core</artifactId>
            <scope>test</scope>
         </dependency>
 

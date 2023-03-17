@@ -41,6 +41,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,6 +58,7 @@ import org.jboss.as.server.Services;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.msc.service.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -64,10 +66,7 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
 import org.jboss.msc.value.InjectedValue;
-import org.jboss.msc.value.Value;
 import org.jboss.threads.AsyncFuture;
 import org.jboss.threads.EnhancedQueueExecutor;
 import org.jboss.threads.JBossThreadFactory;
@@ -208,10 +207,10 @@ public class HostControllerService implements Service<AsyncFuture<ServiceContain
         HttpListenerRegistryService.install(serviceTarget);
 
         // Add product config service
-        final Value<ProductConfig> productConfigValue = new ImmediateValue<ProductConfig>(config);
-        serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE, new ValueService<ProductConfig>(productConfigValue))
-                .setInitialMode(ServiceController.Mode.ACTIVE)
-                .install();
+        final ServiceBuilder<?> sb = serviceTarget.addService(Services.JBOSS_PRODUCT_CONFIG_SERVICE);
+        final Consumer<ProductConfig> productConfigConsumer = sb.provides(Services.JBOSS_PRODUCT_CONFIG_SERVICE);
+        sb.setInstance(org.jboss.msc.Service.newInstance(productConfigConsumer, config));
+        sb.install();
 
         ConsoleAvailabilityService.addService(serviceTarget, bootstrapListener::logAdminConsole);
 

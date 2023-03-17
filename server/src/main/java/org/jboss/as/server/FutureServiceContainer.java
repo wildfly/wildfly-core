@@ -22,6 +22,7 @@
 
 package org.jboss.as.server;
 
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.threads.AsyncFutureTask;
 import org.jboss.threads.JBossExecutors;
@@ -38,7 +39,8 @@ public class FutureServiceContainer extends AsyncFutureTask<ServiceContainer> {
         setResult(container);
     }
 
-    void failed(Throwable cause) {
+    void failed(final Throwable t) {
+        Throwable cause = t != null ? t : ServerLogger.ROOT_LOGGER.throwableIsNull();
         setFailed(cause);
     }
 }

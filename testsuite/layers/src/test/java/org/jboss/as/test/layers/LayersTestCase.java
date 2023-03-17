@@ -38,6 +38,7 @@ public class LayersTestCase {
     private static final String[] NOT_USED = {
         // deprecated
         "org.jboss.as.threads",
+        "javax.api",
         // Un-used
         "javax.xml.stream.api",
         // Un-used

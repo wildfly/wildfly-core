@@ -23,37 +23,26 @@
 package org.wildfly.extension.discovery;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.SubsystemModel;
 
 /**
  * Enumeration of discovery subsystem model versions.
  * @author Paul Ferraro
  */
-enum DiscoveryModel {
+enum DiscoverySubsystemModel implements SubsystemModel {
     VERSION_1_0_0(1, 0, 0),
     VERSION_2_0_0(2, 0, 0),
     ;
-    static final DiscoveryModel CURRENT = VERSION_2_0_0;
+    static final DiscoverySubsystemModel CURRENT = VERSION_2_0_0;
 
     private final ModelVersion version;
 
-    DiscoveryModel(int major, int minor, int micro) {
+    DiscoverySubsystemModel(int major, int minor, int micro) {
         this.version = ModelVersion.create(major, minor, micro);
     }
 
-    /**
-     * Returns the version of this model.
-     * @return a model version
-     */
-    ModelVersion getVersion() {
+    @Override
+    public ModelVersion getVersion() {
         return this.version;
-    }
-
-    /**
-     * Indicates whether this model is more recent than the specified version and thus requires transformation
-     * @param version a model version
-     * @return true this this model is more recent than the specified version, false otherwise
-     */
-    boolean requiresTransformation(ModelVersion version) {
-        return ModelVersion.compare(this.getVersion(), version) < 0;
     }
 }

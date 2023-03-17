@@ -46,11 +46,11 @@ public class DiscoveryTransformersTestCase extends AbstractSubsystemTest {
         return String.format(Locale.ROOT, "org.wildfly.core:wildfly-discovery:%s", version.getCoreVersion());
     }
 
-    private static DiscoveryModel getModelVersion(ModelTestControllerVersion controllerVersion) {
+    private static DiscoverySubsystemModel getModelVersion(ModelTestControllerVersion controllerVersion) {
         switch (controllerVersion) {
             case EAP_7_1_0:
             case EAP_7_2_0:
-                return DiscoveryModel.VERSION_1_0_0;
+                return DiscoverySubsystemModel.VERSION_1_0_0;
             default:
                 throw new IllegalArgumentException();
         }

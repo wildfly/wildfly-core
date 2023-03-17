@@ -37,7 +37,7 @@ class SubsystemParser extends PersistentResourceXMLParser {
     private final PersistentResourceXMLDescription xmlDescription;
 
     private SubsystemParser() {
-        xmlDescription = builder(RootResourceDefinition.INSTANCE, DependentExtension.NAMESPACE)
+        xmlDescription = builder(RootResourceDefinition.INSTANCE.getPathElement(), DependentExtension.NAMESPACE)
                 .addAttributes(RootResourceDefinition.ATTRIBUTE)
                 .build();
     }

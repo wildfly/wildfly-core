@@ -36,6 +36,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -133,6 +134,7 @@ public class CustomCredentialSecurityFactoryTestCase {
                 CUSTOM_CRED_SEC_FACTORY_NAME), true);
             cli.sendLine("module remove --name=" + CUSTOM_CREDENTIAL_SECURITY_FACTORY_MODULE_NAME, true);
         } finally {
+            Assert.assertNotNull(tempFolder);
             FileUtils.deleteDirectory(tempFolder.toFile());
         }
     }

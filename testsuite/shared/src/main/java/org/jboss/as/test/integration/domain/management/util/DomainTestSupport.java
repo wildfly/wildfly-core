@@ -413,6 +413,7 @@ public class DomainTestSupport implements AutoCloseable {
      */
     public DomainLifecycleUtil getDomainPrimaryLifecycleUtil() {
         checkClosed();
+        assert(domainPrimaryLifecycleUtil != null);
         return domainPrimaryLifecycleUtil;
     }
 

@@ -180,6 +180,8 @@ abstract class AbstractSecureExpressionsTestCase {
 
     static void tearDownServer(ExceptionFunction<ManagementClient, Void, Exception> securityTeardown) throws Exception {
         ModelControllerClient client = null;
+        Assert.assertNotNull(containerController);
+        Assert.assertTrue(containerController.isStarted()); // if container is not started, we get a NPE in container.getClient()
         try {
             ManagementClient managementClient = containerController.getClient();
             client = managementClient.getControllerClient();
@@ -229,6 +231,7 @@ abstract class AbstractSecureExpressionsTestCase {
 
         createTestModule();
 
+        Assert.assertNotNull(containerController);
         containerController.start();
         ManagementClient managementClient = containerController.getClient();
 

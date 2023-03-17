@@ -24,7 +24,7 @@
     <parent>
         <artifactId>wildfly-core-testsuite</artifactId>
         <groupId>org.wildfly.core</groupId>
-        <version>20.0.0.Beta5-SNAPSHOT</version>
+        <version>20.0.0.Beta8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -38,7 +38,7 @@
         <jbossas.ts.dir>${jbossas.ts.integ.dir}/..</jbossas.ts.dir>
         <jbossas.project.dir>${jbossas.ts.dir}</jbossas.project.dir>
         <wildfly.home>${project.basedir}/target/wildfly-core</wildfly.home>
-        <version.ch.qos.logback>1.2.9</version.ch.qos.logback>
+        <version.ch.qos.logback>1.4.5</version.ch.qos.logback>
     </properties>
 
     <dependencies>

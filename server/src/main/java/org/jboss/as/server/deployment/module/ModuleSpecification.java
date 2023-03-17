@@ -54,6 +54,8 @@ public class ModuleSpecification extends SimpleAttachable {
      * Local dependencies are dependencies on other parts of the deployment, such as class-path entry
      */
     private final List<ModuleDependency> localDependencies = new ArrayList<ModuleDependency>();
+
+    private final Set<ModuleIdentifier> localDependenciesSet = new HashSet<ModuleIdentifier>();
     /**
      * If set to true this indicates that a dependency on this module requires a dependency on all it's local
      * dependencies.
@@ -67,6 +69,8 @@ public class ModuleSpecification extends SimpleAttachable {
      * User dependencies are not affected by exclusions.
      */
     private final List<ModuleDependency> userDependencies = new ArrayList<ModuleDependency>();
+
+    private final Set<ModuleIdentifier> userDependenciesSet = new HashSet<ModuleIdentifier>();
 
     private final List<ResourceLoaderSpec> resourceLoaders = new ArrayList<ResourceLoaderSpec>();
 
@@ -150,18 +154,24 @@ public class ModuleSpecification extends SimpleAttachable {
 
     public void addUserDependency(final ModuleDependency dependency) {
         allDependencies = null;
-        this.userDependencies.add(dependency);
+        if (this.userDependenciesSet.add(dependency.getIdentifier())) {
+            this.userDependencies.add(dependency);
+        }
     }
 
     public void addUserDependencies(final Collection<ModuleDependency> dependencies) {
         allDependencies = null;
-        userDependencies.addAll(dependencies);
+        for (final ModuleDependency dependency : dependencies) {
+            addUserDependency(dependency);
+        }
     }
 
     public void addLocalDependency(final ModuleDependency dependency) {
         allDependencies = null;
         if (!exclusions.contains(dependency.getIdentifier())) {
-            this.localDependencies.add(dependency);
+            if (this.localDependenciesSet.add(dependency.getIdentifier())) {
+                this.localDependencies.add(dependency);
+            }
         } else {
             excludedDependencies.add(dependency.getIdentifier());
         }
@@ -295,24 +305,6 @@ public class ModuleSpecification extends SimpleAttachable {
      */
     public void setLocalDependenciesTransitive(final boolean localDependenciesTransitive) {
         this.localDependenciesTransitive = localDependenciesTransitive;
-    }
-
-    /**
-     * @return
-     * @deprecated since AS 8.x. Use {@link #isLocalDependenciesTransitive()} instead
-     */
-    @Deprecated
-    public boolean isRequiresTransitiveDependencies() {
-        return localDependenciesTransitive;
-    }
-
-    /**
-     * @param requiresTransitiveDependencies
-     * @deprecated since AS 8.x. Use {@link #setLocalDependenciesTransitive(boolean)} instead
-     */
-    @Deprecated
-    public void setRequiresTransitiveDependencies(final boolean requiresTransitiveDependencies) {
-        this.localDependenciesTransitive = requiresTransitiveDependencies;
     }
 
     public boolean isLocalLast() {

@@ -85,8 +85,7 @@ public class SocketBindingAddHandler extends AbstractAddStepHandler {
      * Create the SocketBindingAddHandler
      */
     protected SocketBindingAddHandler() {
-        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY,
-                AbstractSocketBindingResourceDefinition.INTERFACE,
+        super(  AbstractSocketBindingResourceDefinition.INTERFACE,
                 AbstractSocketBindingResourceDefinition.PORT,
                 AbstractSocketBindingResourceDefinition.FIXED_PORT,
                 AbstractSocketBindingResourceDefinition.MULTICAST_ADDRESS,

@@ -25,6 +25,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.jboss.msc.service.Service;
@@ -36,9 +37,6 @@ import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
-import org.jboss.msc.value.Value;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -109,11 +107,10 @@ public class AddServerExecutorDependencyTestCase {
     public void testDifferentServiceBuilderTypes() {
         ServiceTarget serviceTarget = container.subTarget();
 
-        final Value<ExecutorService> value = new ImmediateValue<>(executorService);
-        final Service<ExecutorService> mscExecutorService = new ValueService<>(value);
-
-        ServiceController<?> executorController =
-                serviceTarget.addService(ServerService.MANAGEMENT_EXECUTOR, mscExecutorService).install();
+        ServiceBuilder<?> mgmtExecutorSB = serviceTarget.addService(ServerService.MANAGEMENT_EXECUTOR);
+        Consumer<ExecutorService> executorServiceConsumer = mgmtExecutorSB.provides(ServerService.MANAGEMENT_EXECUTOR);
+        mgmtExecutorSB.setInstance(org.jboss.msc.Service.newInstance(executorServiceConsumer, executorService));
+        ServiceController<?> executorController = mgmtExecutorSB.install();
 
         //TestService legacy = new TestService();
         ServiceBuilder<?> legacyBuilder = serviceTarget.addService(ServiceName.of("LEGACY"));

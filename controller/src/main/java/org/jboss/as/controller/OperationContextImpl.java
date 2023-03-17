@@ -123,8 +123,6 @@ import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceRegistryException;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.value.ImmediateValue;
-import org.jboss.msc.value.Value;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -2118,23 +2116,18 @@ final class OperationContextImpl extends AbstractOperationContext {
         }
 
         @Override
-        public <T> ServiceBuilder<T> addServiceValue(final ServiceName name, final Value<? extends Service<T>> value) {
-            final ServiceBuilder<T> realBuilder = super.getDelegate().addServiceValue(name, value);
+        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
+            final ServiceBuilder<T> realBuilder = super.getDelegate().addService(name, service);
             // If done() has been called we are no longer associated with a management op and should just
             // return the builder from delegate
             synchronized (this) {
                 if (builderSupplier == null) {
-                    return realBuilder;
+                    return new CapabilityServiceBuilderImpl<>(realBuilder, targetAddress);
                 }
                 ContextServiceBuilder<T> csb = builderSupplier.getContextServiceBuilder(realBuilder, name);
                 builders.add(csb);
-                return csb;
+                return new CapabilityServiceBuilderImpl<>(csb, targetAddress);
             }
-        }
-
-        @Override
-        public <T> CapabilityServiceBuilder<T> addService(final ServiceName name, final Service<T> service) throws IllegalArgumentException {
-            return new CapabilityServiceBuilderImpl<>(addServiceValue(name, new ImmediateValue<>(service)), targetAddress);
         }
 
         @Override
@@ -2629,14 +2622,6 @@ final class OperationContextImpl extends AbstractOperationContext {
         public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type, Injector<I> target) {
             final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
             addDependency(serviceName, type, target);
-            return this;
-        }
-
-
-        @Override
-        public <I> CapabilityServiceBuilder<T> addCapabilityRequirement(String capabilityName, Class<I> type) {
-            final ServiceName serviceName = getCapabilityServiceName(capabilityName, type);
-            requires(serviceName);
             return this;
         }
 

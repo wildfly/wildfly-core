@@ -44,7 +44,7 @@ class RemotingConnectorAdd extends AbstractAddStepHandler {
     static final RemotingConnectorAdd INSTANCE = new RemotingConnectorAdd();
 
     private RemotingConnectorAdd() {
-        super(RemotingConnectorResource.REMOTE_JMX_CAPABILITY, RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT);
+        super(RemotingConnectorResource.USE_MANAGEMENT_ENDPOINT);
     }
 
     @Override

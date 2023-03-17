@@ -22,17 +22,19 @@
 package org.jboss.as.server.deployment;
 
 import org.jboss.as.repository.ContentRepository;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.vfs.VirtualFile;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-class ContentServitor extends AbstractService<VirtualFile> {
+class ContentServitor implements Service<VirtualFile> {
     private final InjectedValue<ContentRepository> contentRepositoryInjectedValue = new InjectedValue<ContentRepository>();
     private final byte[] hash;
 
@@ -46,6 +48,16 @@ class ContentServitor extends AbstractService<VirtualFile> {
         return serviceTarget.addService(serviceName, service)
             .addDependency(ContentRepository.SERVICE_NAME, ContentRepository.class, service.contentRepositoryInjectedValue)
             .install();
+    }
+
+    @Override
+    public void start(StartContext startContext) {
+        // noop
+    }
+
+    @Override
+    public void stop(StopContext stopContext) {
+        // noop
     }
 
     @Override
