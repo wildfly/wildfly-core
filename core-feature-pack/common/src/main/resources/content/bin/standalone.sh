@@ -373,7 +373,7 @@ while true; do
          JBOSS_STATUS=0
       fi
       if [ "$JBOSS_STATUS" -ne 10 ]; then
-            # Wait for a complete shudown
+            # Wait for a complete shutdown
             wait $JBOSS_PID 2>/dev/null
       fi
       if [ "x$JBOSS_PIDFILE" != "x" ]; then
@@ -381,7 +381,11 @@ while true; do
       fi
    fi
    if [ "$JBOSS_STATUS" -eq 10 ]; then
-      echo "Restarting..."
+      echo "INFO: Restarting..."
+   elif [ "$JBOSS_STATUS" -eq 20 ]; then
+        echo "INFO: Executing the installation manager"
+        "${JBOSS_HOME}/bin/installation-manager.sh" "${JBOSS_HOME}" "${JBOSS_LOG_DIR}/server.log" "${JBOSS_CONFIG_DIR}/logging.properties"
+        echo "INFO: Restarting..."
    else
       exit $JBOSS_STATUS
    fi

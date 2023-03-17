@@ -36,8 +36,9 @@ public interface ModelControllerServiceInitialization {
      *
      * @param target the service target
      * @param managementModel the management model
+     * @param processType The ProcessType used to identify what type of server we are running in.
      */
-    void initializeStandalone(ServiceTarget target, ManagementModel managementModel);
+    void initializeStandalone(ServiceTarget target, ManagementModel managementModel, ProcessType processType);
 
     /**
      * Initialize the domain controller.
@@ -49,10 +50,11 @@ public interface ModelControllerServiceInitialization {
 
     /**
      * Initialize a host controller.
-     *  @param target the service target
+     * @param target the service target
      * @param managementModel the management model
      * @param hostName the name of the host
+     * @param processType The ProcessType that to identify what type of server we are running in.
      */
-    void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName);
+    void initializeHost(ServiceTarget target, ManagementModel managementModel, String hostName, ProcessType processType);
 
 }

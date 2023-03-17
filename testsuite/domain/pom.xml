@@ -83,6 +83,16 @@
             <artifactId>byteman</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.installation-manager</groupId>
+            <artifactId>installation-manager-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-installation-manager</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

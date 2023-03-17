@@ -330,6 +330,12 @@ if %errorlevel% equ 10 (
     goto RESTART
 )
 
+if %errorlevel% equ 20 (
+    echo Executing Installation Manager...
+    call "%JBOSS_HOME%\bin\installation-manager.bat" "%JBOSS_HOME%" "%JBOSS_LOG_DIR%\server.log" "%JBOSS_CONFIG_DIR%\logging.properties"
+    goto RESTART
+)
+
 :END
 if "x%NOPAUSE%" == "x" pause
 
