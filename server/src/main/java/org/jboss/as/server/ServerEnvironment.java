@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.audit.ManagedAuditLoggerImpl;
 import org.jboss.as.controller.interfaces.InetAddressUtil;
@@ -243,6 +245,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     public static final String DOMAIN_BASE_DIR = "jboss.domain.base.dir";
     public static final String DOMAIN_CONFIG_DIR = "jboss.domain.config.dir";
 
+    public static final String SERVER_STREAM = "jboss.server.stream";
+
     /**
      * Properties that cannot be set via {@link #systemPropertyUpdated(String, String)}
      */
@@ -254,7 +258,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      * Properties that can only be set via {@link #systemPropertyUpdated(String, String)} during server boot.
      */
     private static final Set<String> BOOT_PROPERTIES = new HashSet<>(Arrays.asList(SERVER_TEMP_DIR,
-            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME));
+            NODE_NAME, SERVER_NAME, HOST_NAME, QUALIFIED_HOST_NAME, SERVER_STREAM));
 
     /**
      * Properties that we care about that were provided to the constructor (i.e. by the user via cmd line)
@@ -301,6 +305,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
     private final boolean startSuspended;
     private final boolean startGracefully;
     private final GitRepository repository;
+    private final FeatureStream stream;
 
     public ServerEnvironment(final String hostControllerName, final Properties props, final Map<String, String> env, final String serverConfig,
             final ConfigurationFile.InteractionPolicy configInteractionPolicy, final LaunchType launchType,
@@ -363,6 +368,7 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             domainBaseDir = null;
             domainConfigurationDir = null;
             repository = null;
+            this.stream = FeatureStream.DEFAULT;
             WildFlySecurityManager.setPropertyPrivileged(ServerEnvironment.JBOSS_PERSIST_SERVER_CONFIG, "false");
         } else {
 
@@ -517,6 +523,8 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
             } else {
                 this.domainConfigurationDir = null;
             }
+
+            this.stream = getEnumProperty(props, ServerEnvironment.SERVER_STREAM, FeatureStream.DEFAULT);
         }
         boolean allowExecutor = true;
         String maxThreads = WildFlySecurityManager.getPropertyPrivileged(BOOTSTRAP_MAX_THREADS, null);
@@ -1003,6 +1011,11 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
         return launchType;
     }
 
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
+    }
+
     /**
      * Gets whether this server is an independently managed server, not managed as part of a managed domain.
      *
@@ -1166,6 +1179,19 @@ public class ServerEnvironment extends ProcessEnvironment implements Serializabl
      */
     private File getFileFromProperty(final String name, final Properties props) {
         return getFileFromPath(props.getProperty(name));
+    }
+
+    private static <E extends Enum<E>> E getEnumProperty(Properties properties, String key, E defaultValue) {
+        String value = properties.getProperty(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        Class<E> enumClass = defaultValue.getDeclaringClass();
+        try {
+            return Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ServerLogger.ROOT_LOGGER.failedToParseEnumProperty(key, value, EnumSet.allOf(enumClass));
+        }
     }
 
     /**

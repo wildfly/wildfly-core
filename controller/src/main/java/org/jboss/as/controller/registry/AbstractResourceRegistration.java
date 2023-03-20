@@ -22,6 +22,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -43,15 +44,17 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     private final NodeSubregistry parent;
     private final PathAddress pathAddress;
     private final ProcessType processType;
+    private final FeatureStream stream;
     private RootInvocation rootInvocation;
 
     /** Constructor for a root MRR */
-    AbstractResourceRegistration(final ProcessType processType) {
+    AbstractResourceRegistration(final ProcessType processType, FeatureStream stream) {
         checkPermission();
         this.valueString = null;
         this.parent = null;
         this.pathAddress = PathAddress.EMPTY_ADDRESS;
         this.processType = Assert.checkNotNullParam("processType", processType);
+        this.stream = Assert.checkNotNullParam("stream", stream);
     }
 
     /** Constructor for a non-root MRR */
@@ -61,6 +64,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         this.parent = Assert.checkNotNullParam("parent", parent);
         this.pathAddress = parent.getPathAddress(valueString);
         this.processType = parent.getProcessType();
+        this.stream = parent.getFeatureStream();
     }
 
     static void checkPermission() {
@@ -81,6 +85,11 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
     @Override
     public ProcessType getProcessType() {
         return processType;
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     /** {@inheritDoc} */

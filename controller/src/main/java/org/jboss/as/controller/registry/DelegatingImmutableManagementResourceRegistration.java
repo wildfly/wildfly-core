@@ -15,6 +15,7 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -47,6 +48,11 @@ public class DelegatingImmutableManagementResourceRegistration implements Immuta
     @Override
     public ProcessType getProcessType() {
         return delegate.getProcessType();
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.delegate.getFeatureStream();
     }
 
     @Override

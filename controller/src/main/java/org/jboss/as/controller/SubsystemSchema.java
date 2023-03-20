@@ -35,7 +35,21 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, IntVersion version) {
-        return IntVersionSchema.createURN(List.of(IntVersionSchema.WILDFLY_IDENTIFIER, subsystemName), version);
+        return createSubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+    }
+
+    /**
+     * Creates a subsystem URN of the form
+     * {@value XMLElementSchema.WILDFLY_IDENTIFIER}:{@code subsystemName}:{@link IntVersion#major()}.{@link IntVersion#minor()}
+     * for the specified subsystem name and version.
+     * @param <S> the schema type
+     * @param subsystemName the subsystem name
+     * @param stream the target feature stream
+     * @param version the schema version
+     * @return a versioned namespace
+     */
+    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createSubsystemURN(String subsystemName, FeatureStream stream, IntVersion version) {
+        return IntVersionSchema.createURN(List.of(IntVersionSchema.WILDFLY_IDENTIFIER, subsystemName), stream, version);
     }
 
     /**
@@ -48,6 +62,20 @@ public interface SubsystemSchema<S extends SubsystemSchema<S>> extends XMLElemen
      * @return a versioned namespace
      */
     static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, IntVersion version) {
-        return IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, ModelDescriptionConstants.DOMAIN, subsystemName), version);
+        return createLegacySubsystemURN(subsystemName, FeatureStream.DEFAULT, version);
+    }
+
+    /**
+     * Creates a subsystem URN of the form
+     * {@value XMLElementSchema.JBOSS_IDENTIFIER}:{@value ModelDescriptionConstants.DOMAIN}:{@code subsystemName}:{@link IntVersion#major()}.{@link IntVersion#minor()}
+     * for the specified subsystem name and version.
+     * @param <S> the schema type
+     * @param subsystemName the subsystem name
+     * @param stream the target feature stream
+     * @param version the schema version
+     * @return a versioned namespace
+     */
+    static <S extends SubsystemSchema<S>> VersionedNamespace<IntVersion, S> createLegacySubsystemURN(String subsystemName, FeatureStream stream, IntVersion version) {
+        return IntVersionSchema.createURN(List.of(IntVersionSchema.JBOSS_IDENTIFIER, ModelDescriptionConstants.DOMAIN, subsystemName), stream, version);
     }
 }

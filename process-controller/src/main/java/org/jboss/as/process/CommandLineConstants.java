@@ -115,6 +115,7 @@ public class CommandLineConstants {
     public static final String ADMIN_ONLY_MODE = "admin-only";
     public static final String GRACEFUL_STARTUP = "--graceful-startup";
 
+    public static final String FEATURE_STREAM = "--feature-stream";
 
     // java.net properties
     public static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";

@@ -7,6 +7,7 @@ package org.jboss.as.core.model.test;
 import java.io.IOException;
 
 import org.jboss.as.controller.ModelVersion;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.model.test.ModelFixer;
 import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.dmr.ModelNode;
@@ -41,7 +42,11 @@ public abstract class AbstractCoreModelTest {
     }
 
     protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type) {
-        return delegate.createKernelServicesBuilder(type);
+        return this.createKernelServicesBuilder(type, FeatureStream.DEFAULT);
+    }
+
+    protected KernelServicesBuilder createKernelServicesBuilder(TestModelType type, FeatureStream stream) {
+        return delegate.createKernelServicesBuilder(type, stream);
     }
 
     /**

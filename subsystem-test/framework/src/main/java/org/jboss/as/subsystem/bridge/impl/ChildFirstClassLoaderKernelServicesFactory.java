@@ -30,13 +30,13 @@ public class ChildFirstClassLoaderKernelServicesFactory {
             List<ModelNode> bootOperations, ModelVersion legacyModelVersion, boolean persistXml) throws Exception {
         Extension extension = (Extension) Class.forName(extensionClassName).newInstance();
 
-        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.DOMAIN_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY));
-        ModelTestParser testParser = new TestParser(mainSubsystemName, extensionRegistry);
-
         //TODO this should get serialized properly
         if (additionalInit == null) {
             additionalInit = AdditionalInitialization.MANAGEMENT;
         }
+
+        ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.DOMAIN_SERVER, new RunningModeControl(RunningMode.ADMIN_ONLY));
+        ModelTestParser testParser = new TestParser(mainSubsystemName, extensionRegistry);
         return AbstractKernelServicesImpl.create(null, mainSubsystemName, additionalInit, validateOpsFilter,
                 extensionRegistry, bootOperations, testParser, extension, legacyModelVersion, false, persistXml);
     }

@@ -22,6 +22,7 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.operations.common.ProcessEnvironment;
 import org.jboss.as.controller.persistence.ConfigurationFile;
 import org.jboss.as.host.controller.logging.HostControllerLogger;
@@ -206,6 +207,11 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public static final String JBOSS_HOST_MANAGEMENT_UUID = "jboss.host.management.uuid";
 
+    /**
+     * The default system property used to store the feature stream for this host.
+     */
+    public static final String HOST_STREAM = "jboss.host.stream";
+
     private final Map<String, String> hostSystemProperties;
     private final InetAddress processControllerAddress;
     private final Integer processControllerPort;
@@ -231,6 +237,7 @@ public class HostControllerEnvironment extends ProcessEnvironment {
     private final boolean useCachedDc;
 
     private final RunningMode initialRunningMode;
+    private final FeatureStream stream;
     private final ProductConfig productConfig;
     private final String qualifiedHostName;
     private final String hostName;
@@ -480,6 +487,10 @@ public class HostControllerEnvironment extends ProcessEnvironment {
         // Note the java.security.manager property shouldn't be set, but we'll check to ensure the security manager should be enabled
         this.securityManagerEnabled = securityManagerEnabled || isJavaSecurityManagerConfigured(hostSystemProperties);
         this.processType = processType;
+
+        String streamName = hostSystemProperties.get(HOST_STREAM);
+        this.stream = (streamName != null) ? FeatureStream.valueOf(streamName.toUpperCase(Locale.ROOT)) : FeatureStream.DEFAULT;
+        WildFlySecurityManager.setPropertyPrivileged(HOST_STREAM, this.stream.toString());
     }
 
     private static boolean isJavaSecurityManagerConfigured(final Map<String, String> props) {
@@ -777,6 +788,11 @@ public class HostControllerEnvironment extends ProcessEnvironment {
      */
     public ProcessType getProcessType() {
         return processType;
+    }
+
+    @Override
+    public FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     @Override

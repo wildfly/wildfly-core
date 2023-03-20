@@ -8,6 +8,7 @@ package org.jboss.as.controller.xml;
 import java.util.List;
 import java.util.function.Function;
 
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.staxmapper.IntVersion;
 
 /**
@@ -31,7 +32,19 @@ public interface IntVersionSchema<S extends IntVersionSchema<S>> extends Version
      * @return a URN
      */
     static <S extends IntVersionSchema<S>> VersionedNamespace<IntVersion, S> createURN(List<String> identifiers, IntVersion version) {
-        return VersionedNamespace.createURN(identifiers, version, MAJOR_MINOR);
+        return createURN(identifiers, FeatureStream.DEFAULT, version);
+    }
+
+    /**
+     * Convenience method that generates a URN for this schema using the specified namespace identifiers and version, formatted as "{@link IntVersion#major() major}.{@link IntVersion#minor() minor}".
+     * @param <S> the schema type
+     * @param identifiers a list of namespace identifiers
+     * @param stream the target feature stream
+     * @param version a schema version
+     * @return a URN
+     */
+    static <S extends IntVersionSchema<S>> VersionedNamespace<IntVersion, S> createURN(List<String> identifiers, FeatureStream stream, IntVersion version) {
+        return VersionedNamespace.createURN(identifiers, stream, version, MAJOR_MINOR);
     }
 
     static class IntVersionFormatter implements Function<IntVersion, String> {

@@ -20,6 +20,7 @@ import org.jboss.as.controller.ResourceBuilder;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.AuditLogger;
@@ -37,24 +38,24 @@ public abstract class TestModelControllerService extends AbstractControllerServi
     private final CountDownLatch latch = new CountDownLatch(2);
     private final CapabilityRegistry capabilityRegistry;
 
-    protected TestModelControllerService(ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
-        this(processType, configurationPersister, processState, ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
+    protected TestModelControllerService(ProcessType processType, FeatureStream stream, final ConfigurationPersister configurationPersister, final ControlledProcessState processState) {
+        this(processType, stream, configurationPersister, processState, ResourceBuilder.Factory.create(PathElement.pathElement("root"), NonResolvingResourceDescriptionResolver.INSTANCE).build());
     }
 
-    protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+    protected TestModelControllerService(final ProcessType processType, FeatureStream stream, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition) {
-        this(processType, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
+        this(processType, stream, configurationPersister, processState, rootResourceDefinition, new CapabilityRegistry(processType.isServer()));
     }
 
-    protected TestModelControllerService(final ProcessType processType, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
+    protected TestModelControllerService(final ProcessType processType, FeatureStream stream, final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
-        this(processType, new RunningModeControl(RunningMode.NORMAL), null, configurationPersister, processState, rootResourceDefinition, capabilityRegistry);
+        this(processType, stream, new RunningModeControl(RunningMode.NORMAL), null, configurationPersister, processState, rootResourceDefinition, capabilityRegistry);
     }
 
-    protected TestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
+    protected TestModelControllerService(final ProcessType processType, FeatureStream stream, final RunningModeControl runningModeControl, Supplier<ExecutorService> executorService,
                                          final ConfigurationPersister configurationPersister, final ControlledProcessState processState,
                                          final ResourceDefinition rootResourceDefinition, final CapabilityRegistry capabilityRegistry) {
-        super(executorService, null, processType, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
+        super(executorService, null, processType, stream, runningModeControl, configurationPersister, processState, rootResourceDefinition, null, ExpressionResolver.TEST_RESOLVER,
                 AuditLogger.NO_OP_LOGGER, new DelegatingConfigurableAuthorizer(), new ManagementSecurityIdentitySupplier(), capabilityRegistry, null);
         this.capabilityRegistry = capabilityRegistry;
     }

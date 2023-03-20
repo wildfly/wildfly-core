@@ -47,6 +47,7 @@ import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -150,7 +151,7 @@ final class SubsystemTestDelegate {
     void initializeParser() throws Exception {
         //Initialize the parser
         xmlMapper = XMLMapper.Factory.create();
-        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).build();
+        extensionParsingRegistry = ExtensionRegistry.builder(this.getProcessType()).withFeatureStream(this.getFeatureStream()).build();
         testParser = new TestParser(mainSubsystemName, extensionParsingRegistry);
         xmlMapper.registerRootElement(new QName(TEST_NAMESPACE, "test"), testParser);
         mainExtension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));
@@ -218,9 +219,8 @@ final class SubsystemTestDelegate {
 
         // Use ProcessType.HOST_CONTROLLER for this ExtensionRegistry so we don't need to provide
         // a PathManager via the ExtensionContext. All we need the Extension to do here is register the xml writers
-        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).build();
+        ExtensionRegistry outputExtensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).withFeatureStream(this.getFeatureStream()).build();
         outputExtensionRegistry.setWriterRegistry(persister);
-
 
         Extension extension = mainExtension.getClass().newInstance();
         extension.initialize(outputExtensionRegistry.getExtensionContext("Test", MOCK_RESOURCE_REG, ExtensionRegistryType.SLAVE));
@@ -248,6 +248,10 @@ final class SubsystemTestDelegate {
      */
     ProcessType getProcessType() {
         return ProcessType.EMBEDDED_SERVER;
+    }
+
+    FeatureStream getFeatureStream() {
+        return FeatureStream.DEFAULT;
     }
 
     /**
@@ -414,7 +418,7 @@ final class SubsystemTestDelegate {
         //2) Check that the transformed model is valid according to the resource definition in the legacy subsystem controller
         ResourceDefinition rd = TransformationUtils.getResourceDefinition(kernelServices, modelVersion, mainSubsystemName);
         Assert.assertNotNull("Could not load legacy dmr for subsystem '" + mainSubsystemName + "' version: '" + modelVersion + "' please add it", rd);
-        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType()).createRegistration(rd);
+        ManagementResourceRegistration rr = ManagementResourceRegistration.Factory.forProcessType(getProcessType(), this.getFeatureStream()).createRegistration(rd);
         ModelTestUtils.checkModelAgainstDefinition(transformed, rr);
         return legacyModel;
     }
@@ -427,7 +431,7 @@ final class SubsystemTestDelegate {
     }
 
     private ExtensionRegistry cloneExtensionRegistry(AdditionalInitialization additionalInit) {
-        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).build();
+        final ExtensionRegistry clone = ExtensionRegistry.builder(additionalInit.getProcessType()).withRunningMode(additionalInit.getExtensionRegistryRunningMode()).withFeatureStream(this.getFeatureStream()).build();
         for (String extension : extensionParsingRegistry.getExtensionModuleNames()) {
             ExtensionParsingContext epc = clone.getExtensionParsingContext(extension, null);
             for (Map.Entry<String, SubsystemInformation> entry : extensionParsingRegistry.getAvailableSubsystems(extension).entrySet()) {

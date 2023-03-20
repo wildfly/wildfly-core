@@ -42,6 +42,7 @@ import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
@@ -112,6 +113,7 @@ public final class ExtensionRegistry {
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
         private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
+        private FeatureStream stream = FeatureStream.DEFAULT;
 
         private Builder(ProcessType processType) {
             this.processType = processType;
@@ -177,6 +179,16 @@ public final class ExtensionRegistry {
         }
 
         /**
+         * Overrides the default {@link FeatureStream} of the extension registry.
+         * @param stream a feature stream
+         * @return a reference to this builder
+         */
+        public Builder withFeatureStream(FeatureStream stream) {
+            this.stream = stream;
+            return this;
+        }
+
+        /**
          * Constructs an extension registry.
          * @return a new extension registry
          */
@@ -193,6 +205,7 @@ public final class ExtensionRegistry {
     }
 
     private final ProcessType processType;
+    private final FeatureStream stream;
 
     private SubsystemXmlWriterRegistry writerRegistry;
     private volatile PathManager pathManager;
@@ -216,6 +229,7 @@ public final class ExtensionRegistry {
         this.authorizer = builder.authorizer;
         this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
+        this.stream = builder.stream;
     }
 
     /**
@@ -228,7 +242,7 @@ public final class ExtensionRegistry {
      * @param hostControllerInfoAccessor the host controller
      * @deprecated Use {@link #builder(ProcessType)} instead.
      */
-    @Deprecated(forRemoval = true)
+    @Deprecated
     public ExtensionRegistry(ProcessType processType, RunningModeControl runningModeControl, ManagedAuditLogger auditLogger, JmxAuthorizer authorizer,
             Supplier<SecurityIdentity> securityIdentitySupplier, RuntimeHostControllerInfoAccessor hostControllerInfoAccessor) {
         this(builder(processType).withRunningModeControl(runningModeControl)
@@ -646,7 +660,7 @@ public final class ExtensionRegistry {
                 ControllerLogger.DEPRECATED_LOGGER.extensionDeprecated(name);
             }
             SubsystemRegistrationImpl result =  new SubsystemRegistrationImpl(name, version,
-                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType);
+                                profileRegistration, deploymentsRegistration, extensionRegistryType, extension.extensionModuleName, processType, stream);
             if (registerTransformers){
                 transformerRegistry.loadAndRegisterTransformers(name, version, extension.extensionModuleName);
             }
@@ -678,6 +692,11 @@ public final class ExtensionRegistry {
         @Override
         public ProcessType getProcessType() {
             return processType;
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return this.profileRegistration.getFeatureStream();
         }
 
         @Override
@@ -790,6 +809,7 @@ public final class ExtensionRegistry {
     private class SubsystemRegistrationImpl implements SubsystemRegistration {
         private final String name;
         private final ModelVersion version;
+        private final FeatureStream stream;
         private final ManagementResourceRegistration profileRegistration;
         private final ManagementResourceRegistration deploymentsRegistration;
         private final ExtensionRegistryType extensionRegistryType;
@@ -801,18 +821,24 @@ public final class ExtensionRegistry {
                                           ManagementResourceRegistration deploymentsRegistration,
                                           ExtensionRegistryType extensionRegistryType,
                                           String extensionModuleName,
-                                          ProcessType processType) {
+                                          ProcessType processType, FeatureStream stream) {
             assert profileRegistration != null;
             this.name = name;
             this.profileRegistration = profileRegistration;
             if (deploymentsRegistration == null){
-                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
+                this.deploymentsRegistration = ManagementResourceRegistration.Factory.forProcessType(processType, stream).createRegistration(new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE));
             }else {
                 this.deploymentsRegistration = deploymentsRegistration;
             }
             this.version = version;
+            this.stream = stream;
             this.extensionRegistryType = extensionRegistryType;
             this.extensionModuleName = extensionModuleName;
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return this.stream;
         }
 
         @Override
@@ -910,6 +936,11 @@ public final class ExtensionRegistry {
         @Override
         public ProcessType getProcessType() {
             return deployments.getProcessType();
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return this.deployments.getFeatureStream();
         }
 
         @Override

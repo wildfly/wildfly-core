@@ -17,6 +17,7 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.CompositeOperationHandler;
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ExpressionResolver;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.ManagementModel;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
@@ -190,6 +191,7 @@ public abstract class ModelTestModelControllerService extends AbstractController
         super(null,
                 null,
                 processType,
+                FeatureStream.DEFAULT,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState, rootResourceDefinition,
@@ -209,13 +211,14 @@ public abstract class ModelTestModelControllerService extends AbstractController
     /**
      * This is the constructor to use for current subsystem tests
      */
-    protected ModelTestModelControllerService(final ProcessType processType, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
+    protected ModelTestModelControllerService(final ProcessType processType, FeatureStream stream, final RunningModeControl runningModeControl, final TransformerRegistry transformerRegistry,
                                               final StringConfigurationPersister persister, final ModelTestOperationValidatorFilter validateOpsFilter,
                                               final ResourceDefinition resourceDefinition, final ExpressionResolver expressionResolver, final ControlledProcessState processState,
                                               final CapabilityRegistry capabilityRegistry) {
         super(null,
                 null,
                 processType,
+                stream,
                 runningModeControl,
                 persister,
                 processState == null ? new ControlledProcessState(true) : processState,

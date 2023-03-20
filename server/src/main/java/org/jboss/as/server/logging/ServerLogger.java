@@ -1390,6 +1390,7 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 291, value = "The error cause is unknown at this thread. Check other log messages and caller to know the possible cause.")
     IllegalStateException throwableIsNull();
 
+
     @Message(id = 292, value = "The required service '%s' is not UP, it is currently '%s'.")
     DeploymentUnitProcessingException requiredServiceNotUp(ServiceName serviceName, State state);
 
@@ -1439,6 +1440,9 @@ public interface ServerLogger extends BasicLogger {
 
     @Message(id = 307, value = "No authentication mechanism login name was given")
     AuthenticationMechanismException mechNoLoginNameGiven();
+
+    @Message(id = 308, value = "Failed to parse property (%s), value (%s) should match one of: %s")
+    IllegalArgumentException failedToParseEnumProperty(String name, String value, Set<?> values);
 
     ////////////////////////////////////////////////
     //Messages without IDs

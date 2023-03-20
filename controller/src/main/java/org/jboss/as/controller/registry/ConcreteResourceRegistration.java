@@ -31,6 +31,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -76,8 +77,9 @@ final class ConcreteResourceRegistration extends AbstractResourceRegistration {
     ConcreteResourceRegistration(final ResourceDefinition definition,
                                  final AccessConstraintUtilizationRegistry constraintUtilizationRegistry,
                                  final CapabilityRegistry capabilityRegistry,
-                                 final ProcessType processType) {
-        super(processType);
+                                 final ProcessType processType,
+                                 final FeatureStream stream) {
+        super(processType, stream);
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.resourceDefinition = definition;

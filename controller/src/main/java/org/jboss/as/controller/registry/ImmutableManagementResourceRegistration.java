@@ -22,6 +22,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.FeatureStreamAware;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
@@ -32,7 +33,7 @@ import org.jboss.as.controller.security.ControllerPermission;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public interface ImmutableManagementResourceRegistration {
+public interface ImmutableManagementResourceRegistration extends FeatureStreamAware {
 
     /**
      * A {@link org.jboss.as.controller.security.ControllerPermission} needed to create a {@link ImmutableManagementResourceRegistration} or invoke one

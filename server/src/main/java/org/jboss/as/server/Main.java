@@ -366,6 +366,12 @@ public final class Main {
                     } else {
                         gitBranch = arg.substring(idx + 1);
                     }
+                } else if (arg.startsWith(CommandLineConstants.FEATURE_STREAM)) {
+                    String stream = parseValue(arg, CommandLineConstants.FEATURE_STREAM);
+                    if (stream == null) {
+                        return new ServerEnvironmentWrapper(ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
+                    }
+                    systemProperties.setProperty(ServerEnvironment.SERVER_STREAM, stream);
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
                     int idx = arg.indexOf("=");

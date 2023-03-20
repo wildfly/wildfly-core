@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.FeatureStreamAware;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
@@ -37,7 +38,7 @@ import org.jboss.dmr.ModelType;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public abstract class ProcessEnvironment {
+public abstract class ProcessEnvironment implements FeatureStreamAware {
     /** The name of the file used to store the process UUID */
     protected static final String UUID_FILE = "process-uuid";
 

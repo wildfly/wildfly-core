@@ -444,6 +444,14 @@ public interface ProcessLogger extends BasicLogger {
     String argSecMgr();
 
     /**
+     * Instructions for the {@link CommandLineConstants#FEATURE_STREAM} command line argument.
+     *
+     * @return the message
+     */
+    @Message(id = Message.NONE, value = "Runs the server using a specific feature stream.")
+    String argFeatureStream();
+
+    /**
      * Error message indicating no value was provided for a command line argument.
      *
      * @param argument the name of the argument

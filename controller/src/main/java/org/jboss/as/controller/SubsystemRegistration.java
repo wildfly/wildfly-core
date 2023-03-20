@@ -18,7 +18,7 @@ import org.jboss.staxmapper.XMLElementWriter;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface SubsystemRegistration {
+public interface SubsystemRegistration extends FeatureStreamAware {
 
     /**
      * Mark a subsystem as host capable. This will only take effect if running on a HC, and be ignored on a standalone or managed server.
@@ -44,7 +44,6 @@ public interface SubsystemRegistration {
      */
     ManagementResourceRegistration registerDeploymentModel(ResourceDefinition resourceDefinition);
 
-
     /**
      * Registers the {@link XMLElementWriter} that can handle marshalling
      * the subsystem's configuration to XML.
@@ -69,5 +68,4 @@ public interface SubsystemRegistration {
      * @return the version
      */
     ModelVersion getSubsystemVersion();
-
 }

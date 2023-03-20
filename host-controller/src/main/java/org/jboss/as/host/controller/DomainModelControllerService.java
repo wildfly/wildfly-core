@@ -83,6 +83,7 @@ import org.jboss.as.controller.ProxyOperationAddressTranslator;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningMode;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.TransformingProxyController;
 import org.jboss.as.controller.access.InVmAccess;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -260,8 +261,10 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ProcessType processType = environment.getProcessType();
+        final FeatureStream stream = environment.getFeatureStream();
         final ExtensionRegistry hostExtensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
+                .withFeatureStream(stream)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)
@@ -269,6 +272,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 .build();
         final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
+                .withFeatureStream(stream)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
                 .withSecurityIdentitySupplier(securityIdentitySupplier)
@@ -318,7 +322,7 @@ public class DomainModelControllerService extends AbstractControllerService impl
                                          final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                                          final CapabilityRegistry capabilityRegistry,
                                          final DomainHostExcludeRegistry domainHostExcludeRegistry) {
-        super(executorService, null, environment.getProcessType(), runningModeControl, null, processState,
+        super(executorService, null, environment.getProcessType(), environment.getFeatureStream(), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStepHandler, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry, null);
         this.environment = environment;
         this.runningModeControl = runningModeControl;

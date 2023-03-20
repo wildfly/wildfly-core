@@ -21,6 +21,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.ResourceDefinition;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.access.management.AccessConstraintUtilizationRegistry;
 import org.jboss.as.controller.capability.Capability;
@@ -49,6 +50,7 @@ final class NodeSubregistry {
     private final AccessConstraintUtilizationRegistry constraintUtilizationRegistry;
     private final CapabilityRegistry capabilityRegistry;
     private final ProcessType processType;
+    private final FeatureStream stream;
     @SuppressWarnings( { "unused" })
     private volatile Map<String, AbstractResourceRegistration> childRegistries;
 
@@ -60,6 +62,7 @@ final class NodeSubregistry {
         this.constraintUtilizationRegistry = constraintUtilizationRegistry;
         this.capabilityRegistry = capabilityRegistry;
         this.processType = parent.getProcessType();
+        this.stream = parent.getFeatureStream();
         childRegistriesUpdater.clear(this);
     }
 
@@ -498,6 +501,10 @@ final class NodeSubregistry {
 
     ProcessType getProcessType() {
         return processType;
+    }
+
+    FeatureStream getFeatureStream() {
+        return this.stream;
     }
 
     boolean isRuntimeOnly() {

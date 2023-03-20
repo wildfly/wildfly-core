@@ -445,6 +445,12 @@ public final class Main {
                 } else if (arg.equals(CommandLineConstants.SECMGR)) {
                     // Enable the security manager
                     securityManagerEnabled = true;
+                } else if (arg.startsWith(CommandLineConstants.FEATURE_STREAM)) {
+                    String streamName = parseValue(arg, CommandLineConstants.FEATURE_STREAM);
+                    if (streamName == null) {
+                        return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);
+                    }
+                    hostSystemProperties.put(HostControllerEnvironment.HOST_STREAM, streamName);
                 } else {
                     STDERR.println(HostControllerLogger.ROOT_LOGGER.invalidOption(arg, usageNote()));
                     return new HostControllerEnvironmentWrapper(HostControllerEnvironmentWrapper.HostControllerEnvironmentStatus.ERROR);

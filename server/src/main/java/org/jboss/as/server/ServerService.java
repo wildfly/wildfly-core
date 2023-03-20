@@ -41,6 +41,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.RunningModeControl;
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
@@ -183,7 +184,7 @@ public final class ServerService extends AbstractControllerService {
                           final RunningModeControl runningModeControl, final ManagedAuditLogger auditLogger,
                           final DelegatingConfigurableAuthorizer authorizer, final ManagementSecurityIdentitySupplier securityIdentitySupplier,
                           final CapabilityRegistry capabilityRegistry, final SuspendController suspendController, final RuntimeExpressionResolver expressionResolver) {
-        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), runningModeControl, null, processState,
+        super(executorService, instabilityListener, getProcessType(configuration.getServerEnvironment()), getFeatureStream(configuration.getServerEnvironment()), runningModeControl, null, processState,
                 rootResourceDefinition, prepareStep, expressionResolver, auditLogger, authorizer, securityIdentitySupplier, capabilityRegistry,
                 configuration.getServerEnvironment().getConfigurationExtension());
         this.configuration = configuration;
@@ -198,6 +199,10 @@ public final class ServerService extends AbstractControllerService {
         return serverEnvironment != null
             ? serverEnvironment.getLaunchType().getProcessType()
             : ProcessType.EMBEDDED_SERVER;
+    }
+
+    static FeatureStream getFeatureStream(ServerEnvironment serverEnvironment) {
+        return serverEnvironment != null ? serverEnvironment.getFeatureStream() : FeatureStream.DEFAULT;
     }
 
     /**
