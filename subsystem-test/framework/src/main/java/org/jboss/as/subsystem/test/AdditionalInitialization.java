@@ -9,10 +9,12 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.as.controller.FeatureStream;
 import org.jboss.as.controller.FeatureStreamAware;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.SubsystemSchema;
 import org.jboss.as.controller.capability.RuntimeCapability;
 import org.jboss.as.controller.capability.registry.CapabilityScope;
 import org.jboss.as.controller.capability.registry.RegistrationPoint;
@@ -69,6 +71,25 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
     public static class ManagementAdditionalInitialization extends AdditionalInitialization implements Serializable {
         private static final long serialVersionUID = -509444465514822866L;
 
+        private final FeatureStream stream;
+
+        public ManagementAdditionalInitialization() {
+            this(FeatureStream.DEFAULT);
+        }
+
+        public <S extends SubsystemSchema<S>> ManagementAdditionalInitialization(S schema) {
+            this(schema.getFeatureStream());
+        }
+
+        public ManagementAdditionalInitialization(FeatureStream stream) {
+            this.stream = stream;
+        }
+
+        @Override
+        public FeatureStream getFeatureStream() {
+            return this.stream;
+        }
+
         @Override
         protected RunningMode getRunningMode() {
             return RunningMode.ADMIN_ONLY;
@@ -86,6 +107,26 @@ public class AdditionalInitialization extends AdditionalParsers implements Featu
      */
     public static AdditionalInitialization withCapabilities(final String... capabilities) {
         return new ManagementAdditionalInitialization() {
+
+            @Override
+            protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
+                super.initializeExtraSubystemsAndModel(extensionRegistry, rootResource, rootRegistration, capabilityRegistry);
+                registerCapabilities(capabilityRegistry, capabilities);
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link org.jboss.as.subsystem.test.AdditionalInitialization.ManagementAdditionalInitialization} with
+     * the given {@link org.jboss.as.controller.capability.RuntimeCapability capabilities} registered, making it
+     * possible for subsystems under test to require them. No runtime API will be available, but that should not
+     * be needed for a {@link org.jboss.as.controller.RunningMode#ADMIN_ONLY} test.
+     *
+     * @param capabilities the capabilities
+     * @return the additional initialization
+     */
+    public static <S extends SubsystemSchema<S>> AdditionalInitialization withCapabilities(S schema, String... capabilities) {
+        return new ManagementAdditionalInitialization(schema) {
 
             @Override
             protected void initializeExtraSubystemsAndModel(ExtensionRegistry extensionRegistry, Resource rootResource, ManagementResourceRegistration rootRegistration, RuntimeCapabilityRegistry capabilityRegistry) {
