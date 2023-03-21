@@ -10,6 +10,7 @@
         <packageUrl regex="true">^pkg:maven/net\.minidev/(json-smart|accessors\-smart).*$</packageUrl>
         <cve>CVE-2021-27568</cve>
         <cve>CVE-2021-31684</cve>
+        <cve>CVE-2023-1370</cve>
     </suppress>
 
     <!-- This is a false positive because wildfly-core itself does not use mockserver libraries. Mockserver is used only for test purposes (wildfly-core-testsuite-shared module). -->
