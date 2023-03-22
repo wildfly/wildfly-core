@@ -611,6 +611,7 @@ interface ElytronDescriptionConstants {
     String VERSION = "version";
     String VERSION_COMPARISON = "version-comparison";
     String VIRTUAL_SECURITY_DOMAIN = "virtual-security-domain";
+    String VIRTUAL_SECURITY_DOMAIN_CREATION = "virtual-security-domain-creation";
 
     String WANT_CLIENT_AUTH = "want-client-auth";
     String WEBSITE = "website";

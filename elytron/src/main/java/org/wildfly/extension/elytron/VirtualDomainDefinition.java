@@ -22,7 +22,6 @@ import static org.wildfly.extension.elytron.Capabilities.SECURITY_DOMAIN_CAPABIL
 import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.VIRTUAL_SECURITY_DOMAIN_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.DomainDefinition.OUTFLOW_ANONYMOUS;
-import static org.wildfly.extension.elytron.DomainDefinition.OUTFLOW_SECURITY_DOMAINS;
 import static org.wildfly.extension.elytron.DomainDefinition.outflow;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.INITIAL;
@@ -108,9 +107,10 @@ class VirtualDomainDefinition extends SimpleResourceDefinition {
     }
 
     private static ServiceController<VirtualDomainMetaData> installInitialService(OperationContext context, ServiceName initialName,
-                                                                                  UnaryOperator<SecurityIdentity> identityOperator) throws OperationFailedException {
+                                                                                  UnaryOperator<SecurityIdentity> identityOperator,
+                                                                                  VirtualDomainMetaData.AuthMethod authMethod) throws OperationFailedException {
         ServiceTarget serviceTarget = context.getServiceTarget();
-        VirtualDomainMetaDataService virtualDomainService = new VirtualDomainMetaDataService(identityOperator);
+        VirtualDomainMetaDataService virtualDomainService = new VirtualDomainMetaDataService(identityOperator, authMethod);
         ServiceBuilder<VirtualDomainMetaData> virtualDomainBuilder = serviceTarget.addService(initialName, virtualDomainService)
                 .setInitialMode(Mode.LAZY);
         commonDependencies(virtualDomainBuilder);
@@ -129,7 +129,8 @@ class VirtualDomainDefinition extends SimpleResourceDefinition {
         final Set<SecurityDomain> outflowSecurityDomains = new HashSet<>();
 
         installInitialService(context, initialName,
-                ! outflowSecurityDomainNames.isEmpty() ? i -> outflow(i, outflowAnonymous, outflowSecurityDomains) : UnaryOperator.identity());
+                ! outflowSecurityDomainNames.isEmpty() ? i -> outflow(i, outflowAnonymous, outflowSecurityDomains) : UnaryOperator.identity(),
+                VirtualDomainMetaData.AuthMethod.forName(authMethod));
 
         TrivialService<VirtualDomainMetaData> finalVirtualDomainService = new TrivialService<>();
         finalVirtualDomainService.setValueSupplier(new ValueSupplier<VirtualDomainMetaData>() {
