@@ -24,7 +24,6 @@ package org.jboss.as.controller.operations.global;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS_CONTROL;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CHILD_TYPE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAILURE_DESCRIPTION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HOST;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INCLUDE_RUNTIME;
@@ -33,8 +32,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_CHILDREN_RESOURCES_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
@@ -58,7 +55,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
-import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -448,11 +444,7 @@ public class GlobalOperationHandlers {
 
             // Check whether the operation needs to be dispatched to a remote proxy
             if (registration.isRemote()) {
-                if (isWFCORE621Needed(registration, remaining)) {
-                    executeWFCORE621(base, remaining, context, registration, ignoreMissing);
-                } else {
-                    executeRemote(base, remaining, context, registration, ignoreMissing);
-                }
+                executeRemote(base, remaining, context, registration, ignoreMissing);
                 // No further processing needed
                 return;
             }
@@ -529,71 +521,6 @@ public class GlobalOperationHandlers {
          * @return whether or not we were authorized
          */
         protected abstract boolean authorize(OperationContext context, PathAddress base, ModelNode operation);
-
-        private boolean isWFCORE621Needed(ImmutableManagementResourceRegistration registration, PathAddress remaining) {
-            if (remaining.size() > 0) {
-                PathElement pe = remaining.getElement(0);
-                if (pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey())) {
-                    // We only need this for WildFly 8 and earlier (including EAP 6),
-                    // so that's proxied controllers running kernel version 1.x or 2.x
-                    ModelVersion modelVersion = registration.getProxyController(PathAddress.EMPTY_ADDRESS).getKernelModelVersion();
-                    return modelVersion.getMajor() < 3;
-                }
-            }
-            return false;
-        }
-
-        private void executeWFCORE621(PathAddress base, PathAddress remaining, OperationContext context, ImmutableManagementResourceRegistration registration, boolean ignoreMissing) {
-
-            ControllerLogger.MGMT_OP_LOGGER.tracef("Executing WFCORE-621 op for base %s and remaining %s", base, remaining);
-
-            // We have distinct handling for WildFly 8
-            // TODO a mixed domain of WildFly > 9 managing WildFly 8 is unlikely to work, so this can likely be dropped
-            final boolean wildfly8 = registration.getProxyController(PathAddress.EMPTY_ADDRESS).getKernelModelVersion().getMajor() == 2;
-
-            // We have a request for /host=foo/server=*[/...] targeted at a host that
-            // doesn't have the WFCORE-282 fix available and thus can't handle that request.
-            // So, we are going to execute a step to have it provide us the names of all
-            // its servers, and then a step that will loop through the server names and
-            // add the usual execution for each
-
-            final ModelNode serverNameResponse = new ModelNode();
-            final AtomicBoolean filtered = new AtomicBoolean(false);
-
-            // We're adding steps to the top of the queue, so add the one that will use the server names first
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-                    ControllerLogger.MGMT_OP_LOGGER.tracef("Executing WFCORE-621 2nd step for base %s and remaining %s; filtered? %s serverNames=%s", base, remaining, filtered, serverNameResponse);
-
-                    // If the read of server names was filtered or for some other reason we didn't get them, we are done.
-                    if (filtered.get() || !serverNameResponse.hasDefined(RESULT)) {
-                        return;
-                    }
-
-                    Set<String> targetServers = extractServerNames(serverNameResponse.get(RESULT), operation, remaining, wildfly8);
-
-                    PathAddress afterServer = remaining.size() > 1 ? remaining.subAddress(1) : PathAddress.EMPTY_ADDRESS;
-                    for (String targetServer : targetServers) {
-                        PathAddress newBase = base.append(PathElement.pathElement(RUNNING_SERVER, targetServer));
-                        safeExecute(newBase, afterServer, context, registration, ignoreMissing);
-                    }
-                }
-            }, OperationContext.Stage.MODEL, true);
-
-            // Now add the step to read the server names.
-            // For WildFly 8 slaves we use read-children-resources because read-children-names includes
-            // server names that have a server-config but aren't started. So in the handler above
-            // we use the resource node to distinguish those cases
-            final String opName = wildfly8 ? READ_CHILDREN_RESOURCES_OPERATION : READ_CHILDREN_NAMES_OPERATION;
-            ModelNode op = Util.createEmptyOperation(opName, base);
-            op.get(CHILD_TYPE).set(RUNNING_SERVER);
-            OperationStepHandler proxyHandler = registration.getOperationHandler(PathAddress.EMPTY_ADDRESS, opName);
-            // Use a custom handler to deal with the remote host not being readable (e.g. RBAC)
-            OperationStepHandler filterableHandler = new FilterableRemoteOperationStepHandler(proxyHandler, base, filtered, filteredData, ignoreMissing);
-            context.addStep(serverNameResponse, op, filterableHandler, OperationContext.Stage.MODEL, true);
-        }
 
         private static Set<String> extractServerNames(ModelNode serverResultNode,
                                                ModelNode operation,
