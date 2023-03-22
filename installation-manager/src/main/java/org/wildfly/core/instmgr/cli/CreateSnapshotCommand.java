@@ -42,7 +42,7 @@ public class CreateSnapshotCommand extends AbstractInstMgrCommand {
     @Option(name = "path", required = true)
     private File path;
 
-    @Option(name = "relative-to", required = false)
+    @Option(name = "relative-to")
     private String relativeTo;
 
     @Override
