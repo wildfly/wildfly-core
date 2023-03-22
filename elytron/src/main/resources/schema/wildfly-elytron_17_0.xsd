@@ -6383,5 +6383,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="auth-method" type="xs:string" default="OIDC" >
+            <xs:annotation>
+                <xs:documentation>
+                    The authentication mechanism that will be used with the virtual security domain.
+                    Allowed values: 'OIDC', 'MP-JWT'.
+                    The default value is 'OIDC'.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

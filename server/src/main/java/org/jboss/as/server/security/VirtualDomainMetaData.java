@@ -31,6 +31,30 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public class VirtualDomainMetaData {
 
+    public enum AuthMethod {
+        OIDC("OIDC"),
+        MP_JWT("MP-JWT");
+
+        private final String name;
+
+        AuthMethod(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public static AuthMethod forName(final String name) {
+            switch (name) {
+                case "OIDC": return OIDC;
+                case "MP-JWT": return MP_JWT;
+                default: return null;
+            }
+        }
+    }
+
     private final UnaryOperator<SecurityIdentity> securityIdentityTransformer;
     private SecurityDomain securityDomain;
 

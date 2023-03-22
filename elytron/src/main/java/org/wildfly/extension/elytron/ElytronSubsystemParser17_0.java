@@ -58,6 +58,7 @@ public class ElytronSubsystemParser17_0 extends ElytronSubsystemParser16_0 {
     final PersistentResourceXMLDescription virtualSecurityDomainParser = PersistentResourceXMLDescription.builder(PathElement.pathElement(VIRTUAL_SECURITY_DOMAIN))
             .addAttribute(DomainDefinition.OUTFLOW_ANONYMOUS)
             .addAttribute(VirtualDomainDefinition.OUTFLOW_SECURITY_DOMAINS)
+            .addAttribute(VirtualDomainDefinition.AUTH_METHOD)
             .build();
 
     final PersistentResourceXMLDescription domainParser = decorator(ElytronDescriptionConstants.SECURITY_DOMAINS)

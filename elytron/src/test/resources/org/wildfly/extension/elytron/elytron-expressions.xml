@@ -54,6 +54,7 @@
             <realm name="PropRealm"/>
         </security-domain>
         <virtual-security-domain name="VirtualDomain" outflow-security-domains="MyDomain" outflow-anonymous="${exp.anonymous:true}" />
+        <virtual-security-domain name="AnotherVirtualDomain" outflow-security-domains="MyDomain" outflow-anonymous="${exp.anonymous:true}" auth-method="OIDC"/>
     </security-domains>
     <security-realms>
         <aggregate-realm name="AggregateOne" authentication-realm="PropRealm" authorization-realm="FileRealm" principal-transformer="${exp.transformer:NameRewriterXY}"/>
