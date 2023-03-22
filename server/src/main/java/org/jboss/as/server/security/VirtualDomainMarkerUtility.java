@@ -63,6 +63,11 @@ public class VirtualDomainMarkerUtility {
         return capabilityServiceSupport.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, toRoot(deploymentUnit).getName());
     }
 
+    public static ServiceName virtualDomainMetaDataName(final DeploymentUnit deploymentUnit) {
+        CapabilityServiceSupport capabilityServiceSupport = deploymentUnit.getAttachment(CAPABILITY_SERVICE_SUPPORT);
+        return capabilityServiceSupport.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, toRoot(deploymentUnit).getName());
+    }
+
     public static ServiceName virtualDomainMetaDataName(final DeploymentPhaseContext context, final String virtualDomainName) {
         CapabilityServiceSupport capabilityServiceSupport = context.getDeploymentUnit().getAttachment(CAPABILITY_SERVICE_SUPPORT);
         return capabilityServiceSupport.getCapabilityServiceName(VIRTUAL_SECURITY_DOMAIN_CAPABILITY, virtualDomainName);
