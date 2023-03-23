@@ -29,10 +29,15 @@ import org.jboss.as.test.integration.domain.rbac.AccessConstraintUtilizationTest
 import org.jboss.as.test.integration.domain.rbac.SimpleProviderHostScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.SimpleProviderServerGroupScopedRolesTestCase;
 import org.jboss.as.test.integration.domain.rbac.SimpleProviderStandardRolesTestCase;
+import org.jboss.as.test.module.util.TestModule;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+import org.wildfly.test.installationmanager.TestInstallationManager;
+import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
+
+import java.io.IOException;
 
 /**
  * Simple {@code Suite} test wrapper to start the domain only once for multiple
@@ -49,12 +54,17 @@ import org.junit.runners.Suite;
 })
 public class SimpleRbacProviderTestSuite {
 
+    private static final String MODULE_NAME = "org.jboss.prospero";
+    private static TestModule testModule;
+
+
     private static boolean initializedLocally = false;
     private static volatile DomainTestSupport support;
 
     /** This can only be called from tests as part of this suite */
-    public static synchronized DomainTestSupport createSupport(final String testName) {
+    public static synchronized DomainTestSupport createSupport(final String testName) throws IOException {
         if(support == null) {
+            createTestModule();
             start(testName);
         }
         return support;
@@ -63,7 +73,11 @@ public class SimpleRbacProviderTestSuite {
     /** This can only be called from tests as part of this suite */
     public static synchronized void stopSupport() {
         if(! initializedLocally) {
-            stop();
+            try {
+                stop();
+            } finally {
+                testModule.remove();
+            }
         }
     }
 
@@ -83,14 +97,19 @@ public class SimpleRbacProviderTestSuite {
     }
 
     @BeforeClass
-    public static synchronized void beforeClass() {
+    public static synchronized void beforeClass() throws IOException {
         initializedLocally = true;
+        createTestModule();
         start(SimpleRbacProviderTestSuite.class.getSimpleName());
     }
 
     @AfterClass
     public static synchronized void afterClass() {
-        stop();
+        try {
+            stop();
+        } finally {
+            testModule.remove();
+        }
     }
 
     /**
@@ -115,5 +134,19 @@ public class SimpleRbacProviderTestSuite {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean isTestSuiteEnabled() {
+        return initializedLocally;
+    }
+
+    private static void createTestModule() throws IOException {
+        testModule = new TestModule(MODULE_NAME, "org.wildfly.installation-manager.api");
+        testModule.addResource("test-mock-installation-manager.jar")
+                .addClass(TestInstallationManager.class)
+                .addClass(TestInstallationManagerFactory.class)
+                .addAsManifestResource("META-INF/services/org.wildfly.installationmanager.spi.InstallationManagerFactory",
+                        "services/org.wildfly.installationmanager.spi.InstallationManagerFactory");
+        testModule.create(true);
     }
 }
