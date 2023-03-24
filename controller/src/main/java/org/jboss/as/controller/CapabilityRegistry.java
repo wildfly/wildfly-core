@@ -1029,11 +1029,17 @@ public final class CapabilityRegistry implements ImmutableCapabilityRegistry, Po
                     boolean found = false;
                     for (PathAddress pattern : possibleProviders) {
                         if (pattern.matches(regPoint.getAddress())) {
-                            //WFCORE-2690 we need something better for multiple dynamic parts
-                            capabilityNames.add(registration.getCapabilityName().
-                                    substring(registration.getCapabilityName().lastIndexOf(".") + 1));
-                            found = true;
-                            break;
+                            if (referencedCapability.equals("org.wildfly.security.virtual-security-domain")) {
+                                capabilityNames.add(registration.getCapabilityName().substring(referencedCapability.length() + 1));
+                                found = true;
+                                break;
+                            } else {
+                                //WFCORE-2690 we need something better for multiple dynamic parts
+                                capabilityNames.add(registration.getCapabilityName().
+                                        substring(registration.getCapabilityName().lastIndexOf(".") + 1));
+                                found = true;
+                                break;
+                            }
                         }
                     }
                     if (found) {

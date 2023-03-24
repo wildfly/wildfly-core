@@ -1,5 +1,5 @@
 <!-- Initial configuration as used by the ExpressionResolutionTestCase -->
-<subsystem xmlns="urn:wildfly:elytron:16.0">
+<subsystem xmlns="urn:wildfly:elytron:17.0">
     <tls>
         <key-stores>
             <key-store name="KeyStoreOne">

@@ -65,6 +65,8 @@ import org.jboss.logging.annotations.MessageLogger;
 import org.jboss.logging.annotations.Param;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
+import org.jboss.msc.service.ServiceController.State;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceNotFoundException;
 import org.jboss.msc.service.StartException;
 import org.jboss.vfs.VirtualFile;
@@ -1403,6 +1405,9 @@ public interface ServerLogger extends BasicLogger {
      */
     @Message(id = 291, value = "The error cause is unknown at this thread. Check other log messages and caller to know the possible cause.")
     IllegalStateException throwableIsNull();
+
+    @Message(id = 292, value = "The required service '%s' is not UP, it is currently '%s'.")
+    DeploymentUnitProcessingException requiredServiceNotUp(ServiceName serviceName, State state);
 
     ////////////////////////////////////////////////
     //Messages without IDs

@@ -77,6 +77,7 @@ interface ElytronDescriptionConstants {
     String AUTHORIZATION_NAME = "authorization-name";
     String AUTHORIZATION_REALM = "authorization-realm";
     String AUTHORIZATION_REALMS = "authorization-realms";
+    String AUTH_METHOD = "auth-method";
     String AUTOFLUSH = "autoflush";
     String AVAILABLE_MECHANISMS = "available-mechanisms";
 
@@ -585,6 +586,7 @@ interface ElytronDescriptionConstants {
     String TRUST_MANAGER = "trust-manager";
     String TRUST_MANAGERS = "trust-managers";
     String TRUSTED_SECURITY_DOMAINS = "trusted-security-domains";
+    String TRUSTED_VIRTUAL_SECURITY_DOMAINS = "trusted-virtual-security-domains";
     String TYPE = "type";
 
     String RELOAD = "reload";
@@ -608,6 +610,7 @@ interface ElytronDescriptionConstants {
     String VERIFY_INTEGRITY = "verify-integrity";
     String VERSION = "version";
     String VERSION_COMPARISON = "version-comparison";
+    String VIRTUAL_SECURITY_DOMAIN = "virtual-security-domain";
 
     String WANT_CLIENT_AUTH = "want-client-auth";
     String WEBSITE = "website";

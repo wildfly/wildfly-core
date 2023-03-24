@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:wildfly:elytron:16.0">
+<subsystem xmlns="urn:wildfly:elytron:17.0">
     <audit-logging>
         <file-audit-log name="local-file" path="audit.log" relative-to="jboss.home.dir" synchronized="false" format="JSON" />
     </audit-logging>
