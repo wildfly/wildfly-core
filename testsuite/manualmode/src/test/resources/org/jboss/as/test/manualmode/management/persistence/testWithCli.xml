@@ -240,6 +240,8 @@
         </outbound-socket-binding>
         <outbound-socket-binding name="mail-snmt">
             <remote-destination host="foo" port="8081"/>
-        </outbound-socket-binding>
+        </outbound-socket-binding>    
     </socket-binding-group>
 </server>
+
+

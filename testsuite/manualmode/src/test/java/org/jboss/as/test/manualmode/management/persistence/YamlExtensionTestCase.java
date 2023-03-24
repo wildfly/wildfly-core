@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import jakarta.inject.Inject;
+import java.util.Iterator;
+import java.util.regex.Pattern;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.Operations;
@@ -71,8 +73,8 @@ public class YamlExtensionTestCase {
         Assume.assumeTrue("Layer testing provides a different XML file than the standard one which results in failures", System.getProperty("ts.layers") == null);
         testYaml = new File(YamlExtensionTestCase.class.getResource("test.yml").toURI()).toPath().toAbsolutePath();
         cliScript = new File(YamlExtensionTestCase.class.getResource("test.cli").toURI()).toPath().toAbsolutePath();
-        expectedXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath())).replace("\r\n", "\n");
-        expectedBootCLiXml = new String(Files.readAllBytes(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath())).replace("\r\n", "\n");
+        expectedXml = loadFile(new File(YamlExtensionTestCase.class.getResource("test.xml").toURI()).toPath());
+        expectedBootCLiXml = loadFile(new File(YamlExtensionTestCase.class.getResource("testWithCli.xml").toURI()).toPath());
         originalJvmArgs = WildFlySecurityManager.getPropertyPrivileged("jvm.args", null);
         Path target = new File("target").toPath();
         markerDirectory = Files.createDirectories(target.resolve("yaml").resolve("cli-boot-ops"));
@@ -80,6 +82,21 @@ public class YamlExtensionTestCase {
                 target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-groups.properties"), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(new File(YamlExtensionTestCase.class.getResource("bootable-users.properties").toURI()).toPath(),
                 target.resolve(WildFlySecurityManager.getPropertyPrivileged("jboss.home", "toto")).resolve("standalone").resolve("configuration").resolve("bootable-users.properties"), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private static String loadFile(Path file) throws IOException {
+        Iterator<String> iter = Files.readAllLines(file).iterator();
+        StringBuilder builder = new StringBuilder();
+        while (iter.hasNext()) {
+            String cleanLine = removeWhiteSpaces(iter.next());
+            if (!cleanLine.isBlank()) {
+                builder.append(cleanLine);
+                if (iter.hasNext()) {
+                    builder.append("\n");
+                }
+            }
+        }
+        return builder.toString();
     }
 
     @After
@@ -140,7 +157,6 @@ public class YamlExtensionTestCase {
         }
     }
 
-
     private void waitForRunningMode(String runningMode) throws Exception {
         // Following a reload to normal mode, we might read the running mode too early and hit the admin-only server
         // Cycle around a bit to make sure we get the server reloaded into normal mode
@@ -163,12 +179,13 @@ public class YamlExtensionTestCase {
         ModelNode result = container.getClient().executeForResult(op);
         return result.asString();
     }
+
     private void compareXML(String expected, String result) {
         String[] expectedLines = expected.split(System.lineSeparator());
         String[] resultLines = result.split(System.lineSeparator());
         for (int i = 0; i < expectedLines.length; i++) {
             if (i < resultLines.length) {
-                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in " + System.lineSeparator() + result, expectedLines[i].replaceAll("\\s+", ""), resultLines[i].replaceAll("\\s+", ""));
+                Assert.assertEquals("Expected " + expectedLines[i] + " but got " + resultLines[i] + " in " + System.lineSeparator() + result, removeWhiteSpaces(expectedLines[i]), removeWhiteSpaces(resultLines[i]));
             } else {
                 Assert.fail("Missing line " + expectedLines[i] + " in " + System.lineSeparator() + result);
             }
@@ -178,7 +195,11 @@ public class YamlExtensionTestCase {
 
     private String readXmlConfig() throws IOException {
         try (ModelControllerClient client = container.getClient().getControllerClient()) {
-            return Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"").replace("\r\n", "\n");
+            return removeWhiteSpaces(Operations.readResult(client.execute(READ_CONFIG)).asString().replace("\\\"", "\"").replace("\r\n", "\n"));
         }
+    }
+
+    private static String removeWhiteSpaces(String line) {
+        return Pattern.compile ("(^\\s*$\\r?\\n)+", Pattern.MULTILINE).matcher(line.stripTrailing()).replaceAll("");
     }
 }
