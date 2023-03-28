@@ -165,4 +165,8 @@ public interface BootableJarLogger extends BasicLogger {
 
     @Message(id = Message.NONE, value = "Path to a CLI script to execute when starting the Bootable JAR")
     String argCliScript();
+
+    @LogMessage(level = DEBUG)
+    @Message(id = 25, value = "Failed to initialize a security provider. Reason: %s")
+    void securityProviderFailed(Throwable ex);
 }
