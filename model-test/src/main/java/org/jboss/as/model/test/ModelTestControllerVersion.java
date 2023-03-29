@@ -31,29 +31,10 @@ import org.wildfly.legacy.version.LegacyVersions;
 
 public enum ModelTestControllerVersion {
     //AS releases
-    @Deprecated
-    WF_11_0_0_CR1("11.0.0.CR1", false, null, "3.0.1.Final", "11.0.0"), // used for testing elytron shipped in core 3.0.2.Final vs 3.0.1.Final
+
     MASTER (CurrentVersion.VERSION, false, null, "master" ),
 
     //EAP releases
-    @Deprecated
-    EAP_6_2_0 ("7.3.0.Final-redhat-14", true, null, "6.2.0"),
-    @Deprecated
-    EAP_6_3_0 ("7.4.0.Final-redhat-19", true, null, "6.3.0"),
-    @Deprecated
-    EAP_6_4_0 ("7.5.0.Final-redhat-21", true, "7.5.0", "6.4.0"), //EAP 6.4 is the earliest version we support for transformers
-    @Deprecated
-    EAP_6_4_7 ("7.5.7.Final-redhat-3", true, "7.5.0", "6.4.7"), //this one is special as it has model change in micro release
-    @Deprecated
-    EAP_7_0_0 ("7.0.0.GA-redhat-2", true, "10.0.0", "2.1.2.Final-redhat-1", "7.0.0"),
-    @Deprecated
-    EAP_7_1_0 ("7.1.0.GA-redhat-11", true, "11.0.0", "3.0.10.Final-redhat-1", "7.1.0"),
-
-    // WildFly legacy test will need to rename the *-wf14.dmr files to *-7.2.0.dmr
-    @Deprecated
-    EAP_7_2_0("7.2.0.GA-redhat-00005", true, "14.0.0", "6.0.11.Final-redhat-00001", "7.2.0"),
-    @Deprecated
-    EAP_7_3_0("7.3.0.GA-redhat-00004", true, "18.0.0", "10.1.2.Final-redhat-00001", "7.3.0"),
     EAP_7_4_0("7.4.0.GA-redhat-00005", true, "23.0.0", "15.0.2.Final-redhat-00001", "7.4.0"),
 
     // https://issues.redhat.com/browse/WFCORE-5753

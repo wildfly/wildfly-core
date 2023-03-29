@@ -22,23 +22,9 @@
 
 package org.wildfly.extension.security.manager;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 
-import org.jboss.as.controller.ModelVersion;
-import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.PathElement;
-import org.jboss.as.model.test.FailedOperationTransformationConfig;
-import org.jboss.as.model.test.ModelTestControllerVersion;
-import org.jboss.as.model.test.ModelTestUtils;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
-import org.jboss.as.subsystem.test.KernelServices;
-import org.jboss.as.subsystem.test.KernelServicesBuilder;
-import org.junit.Test;
 
 /**
  * Security Manager version 3.0 subsystem tests.
@@ -55,31 +41,5 @@ public class SecurityManagerSubsystemTestCase extends AbstractSubsystemBaseTest 
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("security-manager-1.0.xml");
-    }
-
-    @Test
-    public void testTransformersEAP70() throws Exception {
-        testTransformers(ModelTestControllerVersion.EAP_7_0_0);
-    }
-
-    private void testTransformers(ModelTestControllerVersion controllerVersion) throws Exception {
-
-        KernelServicesBuilder builder = createKernelServicesBuilder(AdditionalInitialization.MANAGEMENT);
-        ModelVersion version = ModelVersion.create(2, 0, 0);
-        builder.createLegacyKernelServicesBuilder(AdditionalInitialization.MANAGEMENT, controllerVersion, version)
-                .addMavenResourceURL("org.jboss.eap:wildfly-security-manager:" + controllerVersion.getMavenGavVersion());
-
-        KernelServices mainServices = builder.build();
-        assertTrue(mainServices.isSuccessfulBoot());
-        KernelServices legacyServices = mainServices.getLegacyServices(version);
-        assertNotNull(legacyServices);
-        assertTrue(legacyServices.isSuccessfulBoot());
-
-        PathAddress subsystemAddress = PathAddress.pathAddress(PathElement.pathElement(SUBSYSTEM, getMainSubsystemName()));
-        ModelTestUtils.checkFailedTransformedBootOperations(mainServices, version,
-                builder.parseXmlResource("security-manager-reject.xml"),
-                new FailedOperationTransformationConfig()
-                        .addFailedAttribute(PathAddress.pathAddress(subsystemAddress, PathElement.pathElement(Constants.DEPLOYMENT_PERMISSIONS)),
-                                new FailedOperationTransformationConfig.NewAttributesConfig(Constants.MAXIMUM_PERMISSIONS)));
     }
 }

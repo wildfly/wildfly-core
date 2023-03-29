@@ -60,14 +60,7 @@ public class TransformersTestParameter extends ClassloaderParameter {
         data.add(new TransformersTestParameter(ModelVersion.create(Version.MANAGEMENT_MAJOR_VERSION, Version.MANAGEMENT_MINOR_VERSION, Version.MANAGEMENT_MICRO_VERSION)
                 , ModelTestControllerVersion.MASTER));
 
-        //we only test EAP 6.4 and newer
-        data.add(new TransformersTestParameter(ModelVersion.create(1, 7, 0), ModelTestControllerVersion.EAP_6_4_0));
-        data.add(new TransformersTestParameter(ModelVersion.create(1, 8, 0), ModelTestControllerVersion.EAP_6_4_7));
-        //code legacy controller has some issues atm
-        data.add(new TransformersTestParameter(ModelVersion.create(4, 1, 0), ModelTestControllerVersion.EAP_7_0_0));
-        data.add(new TransformersTestParameter(ModelVersion.create(5, 0, 0), ModelTestControllerVersion.EAP_7_1_0));
-        data.add(new TransformersTestParameter(ModelVersion.create(8, 0, 0), ModelTestControllerVersion.EAP_7_2_0));
-        data.add(new TransformersTestParameter(ModelVersion.create(10, 0, 0), ModelTestControllerVersion.EAP_7_3_0));
+        //we only test EAP 7.4 and newer
         data.add(new TransformersTestParameter(ModelVersion.create(16, 0, 0), ModelTestControllerVersion.EAP_7_4_0));
         return data;
     }
