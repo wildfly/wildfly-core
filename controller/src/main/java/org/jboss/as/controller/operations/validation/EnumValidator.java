@@ -101,6 +101,18 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
     }
 
     /**
+     * Creates a new validator for the enum type that accepts all enum values.
+     *
+     * @param enumType the type of the enum.
+     * @param <E>      the type of the enum.
+     *
+     * @return a new validator.
+     */
+    public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType) {
+        return new EnumValidator<>(enumType, EnumSet.allOf(enumType), true);
+    }
+
+    /**
      * Creates a new validator for the enum type with the allowed values defined in the {@code allowed} parameter.
      *
      * @param enumType the type of the enum.
@@ -111,9 +123,6 @@ public class EnumValidator<E extends Enum<E>> extends ModelTypeValidator impleme
      */
     @SafeVarargs
     public static <E extends Enum<E>> EnumValidator<E> create(final Class<E> enumType, final E... allowed) {
-        if (allowed == null || allowed.length == 0) {
-            return create(enumType, EnumSet.allOf(enumType));
-        }
         return new EnumValidator<>(enumType, allowed);
     }
 
