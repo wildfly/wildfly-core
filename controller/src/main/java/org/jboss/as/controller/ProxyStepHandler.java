@@ -29,10 +29,6 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FAI
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.QUERY;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_ATTRIBUTE_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_DESCRIPTION_OPERATION;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.READ_RESOURCE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESPONSE_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RUNNING_SERVER;
@@ -71,11 +67,6 @@ public class ProxyStepHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-
-        if (isWFCORE621Needed(operation, context.getCurrentAddress())) {
-            executeWFCORE621(context, operation);
-            return;
-        }
 
         final BlockingTimeout blockingTimeout = BlockingTimeout.Factory.getProxyBlockingTimeout(context);
 
@@ -332,29 +323,6 @@ public class ProxyStepHandler implements OperationStepHandler {
             }
         }
 
-    }
-
-    private boolean isWFCORE621Needed(ModelNode operation, PathAddress address) {
-        // We only need this for WildFly 8 and earlier (including EAP 6),
-        // so that's proxied controllers running kernel version 1.x or 2.x
-        if (proxyController.getKernelModelVersion().getMajor() < 3 && address.size() > 1) {
-            String opName = operation.get(OP).asString();
-            if (READ_RESOURCE_OPERATION.equals(opName)
-                    || READ_ATTRIBUTE_OPERATION.equals(opName)
-                    || QUERY.equals(opName)
-                    || (READ_RESOURCE_DESCRIPTION_OPERATION.equals(opName) && address.size() >= 2)) {
-                PathElement pe = address.getElement(1);
-                return pe.isMultiTarget() && RUNNING_SERVER.equals(pe.getKey());
-            }
-        }
-        return false;
-    }
-
-    private void executeWFCORE621(OperationContext context, ModelNode operation) throws OperationFailedException {
-        // Delegate to the local handler to let it handle the "server=*" part
-        OperationStepHandler osh = context.getRootResourceRegistration().getOperationHandler(PathAddress.EMPTY_ADDRESS,
-                operation.get(OP).asString());
-        osh.execute(context, operation);
     }
 
     private static RuntimeException translateFailureDescription(ModelNode failureDescription) {
