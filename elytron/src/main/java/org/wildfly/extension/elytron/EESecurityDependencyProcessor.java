@@ -23,19 +23,18 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
 /**
- * A simple {@link DeploymentUnitProcessor} that adds the 'javax.security.auth.message.api' and 'javax.security.jacc.api'
+ * A simple {@link DeploymentUnitProcessor} that adds the 'jakarta.security.auth.message.api' and 'jakarta.security.jacc.api'
  * modules to the deployment.
  *
  * @author <a href="mailto:fjuma@redhat.com">Farah Juma</a>
  */
 class EESecurityDependencyProcessor implements DeploymentUnitProcessor {
 
-    public static final ModuleIdentifier AUTH_MESSAGE_API = ModuleIdentifier.create("javax.security.auth.message.api");
-    public static final ModuleIdentifier JACC_API = ModuleIdentifier.create("javax.security.jacc.api");
+    public static final String AUTH_MESSAGE_API = "jakarta.security.auth.message.api";
+    public static final String JACC_API = "jakarta.security.jacc.api";
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) {

@@ -30,7 +30,6 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.vfs.VirtualFile;
 
@@ -39,7 +38,7 @@ import org.jboss.vfs.VirtualFile;
  */
 public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
     private static final String SERVICE_FILE_NAME = "META-INF/services/java.sql.Driver";
-    private static final ModuleIdentifier JTA = ModuleIdentifier.create("javax.transaction.api");
+    private static final String JTA = "jakarta.transaction.api";
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
