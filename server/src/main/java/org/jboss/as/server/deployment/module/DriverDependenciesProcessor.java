@@ -39,7 +39,7 @@ import org.jboss.vfs.VirtualFile;
  */
 public class DriverDependenciesProcessor implements DeploymentUnitProcessor {
     private static final String SERVICE_FILE_NAME = "META-INF/services/java.sql.Driver";
-    private static final ModuleIdentifier JTA = ModuleIdentifier.create("javax.transaction.api");
+    private static final String JTA = "jakarta.transaction.api";
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
