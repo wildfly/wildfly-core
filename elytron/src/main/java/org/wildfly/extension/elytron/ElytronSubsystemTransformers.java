@@ -25,20 +25,23 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTHORIZ
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.AUTOFLUSH;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.BCRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_AUTHORITY;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CERTIFICATE_REVOCATION_LISTS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.CREDENTIAL_STORE;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILESYSTEM_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FILE_AUDIT_LOG;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.FROM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_CHARSET;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.HASH_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JDBC_REALM;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.KEY_STORE_ALIAS;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.LDAP_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MAPPED_ROLE_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.MODULAR_CRYPT_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PERIODIC_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPAL_TRANSFORMER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PROPERTIES_REALM;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAP;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALTED_SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SALT_ENCODING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SCRAM_MAPPER;
@@ -47,6 +50,7 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SECURITY
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIMPLE_DIGEST_MAPPER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SIZE_ROTATING_FILE_AUDIT_LOG;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.SYNCHRONIZED;
+import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TRUSTED_VIRTUAL_SECURITY_DOMAINS;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_10_0_0;
 import static org.wildfly.extension.elytron.ElytronExtension.ELYTRON_11_0_0;
@@ -88,6 +92,7 @@ import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.wildfly.security.password.interfaces.ScramDigestPassword;
 import org.wildfly.security.x500.cert.acme.CertificateAuthority;
 
@@ -153,6 +158,12 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
                 .getAttributeBuilder()
                 .addRejectCheck(RejectAttributeChecker.DEFINED, TRUSTED_VIRTUAL_SECURITY_DOMAINS)
                 .setDiscard(DiscardAttributeChecker.UNDEFINED, TRUSTED_VIRTUAL_SECURITY_DOMAINS);
+
+        builder.addChildResource(PathElement.pathElement(MAPPED_ROLE_MAPPER))
+                .getAttributeBuilder()
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, FROM)
+                .setDiscard(DiscardAttributeChecker.UNDEFINED, TO)
+                .setValueConverter(MAPPED_ROLE_MAPPER_CONVERTER, ROLE_MAP);
     }
 
     private static void from16(ChainedTransformationDescriptionBuilder chainedBuilder) {
@@ -579,6 +590,24 @@ public final class ElytronSubsystemTransformers implements ExtensionTransformerR
             }
         }
 
+    };
+
+    /* [WFCORE-6244] converts list of objects:              [{"from"=STRING, "to"=[STRING,STRING,...]}...]
+     * back to a direct string to string-list mapping:      {STRING=[STRING,STRING,...],...}
+     *
+     * XML schema remains unchanged. */
+    private static final AttributeConverter MAPPED_ROLE_MAPPER_CONVERTER = new AttributeConverter.DefaultAttributeConverter() {
+        @Override
+        protected void convertAttribute(PathAddress address, String attributeName, ModelNode attributeValue, TransformationContext context) {
+            if (attributeValue.isDefined() && attributeValue.getType() == ModelType.LIST) {
+                ModelNode oldRoleMappingMap = new ModelNode();
+                for (ModelNode mapping : attributeValue.asList()) {
+                    oldRoleMappingMap.add(mapping.get(FROM).asString(), mapping.get(TO));
+                }
+
+                attributeValue.set(oldRoleMappingMap.asObject());
+            }
+        }
     };
 
     private static final RejectAttributeChecker REJECT_IF_DIFFERENT_FROM_SYNCHRONIZED = new RejectAttributeChecker.DefaultRejectAttributeChecker() {

@@ -1,10 +1,16 @@
 <!-- 
-    Configuration to test transforming the model from 15.0 (WildFly 25) to 13.0 (WildFly 23 / EAP 7.4)
+    Configuration to test transforming the model from 17.0 (WildFly 28) to 13.0 (WildFly 23 / EAP 7.4)
 
     TODO Keep the from version up to date with later releases.
  -->
 
 <subsystem xmlns="urn:wildfly:elytron:17.0">
+    <mappers>
+        <mapped-role-mapper name="MappedRoleMapper">
+            <role-mapping from="admin" to="manager user"/>
+            <role-mapping from="client" to="user"/>
+        </mapped-role-mapper>
+    </mappers>
     <tls>
         <key-stores>
             <key-store name="accounts.keystore">

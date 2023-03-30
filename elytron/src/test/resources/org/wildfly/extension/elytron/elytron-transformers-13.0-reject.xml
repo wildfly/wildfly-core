@@ -1,5 +1,5 @@
 <!-- 
-    Configuration to test transforming the model from 15.0 (WildFly 25) to 13.0 (WildFly 23 / EAP 7.4)
+    Configuration to test transforming the model from 17.0 (WildFly 28) to 13.0 (WildFly 23 / EAP 7.4)
 
     TODO Keep the from version up to date with later releases.
  -->

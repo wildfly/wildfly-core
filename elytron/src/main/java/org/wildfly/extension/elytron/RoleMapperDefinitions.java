@@ -17,10 +17,12 @@
  */
 package org.wildfly.extension.elytron;
 
+import static org.jboss.as.controller.parsing.ParseUtils.parsePossibleExpression;
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ROLE_MAPPER_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.ElytronDefinition.commonDependencies;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -33,15 +35,19 @@ import java.util.function.BinaryOperator;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
+import org.jboss.as.controller.AttributeMarshaller;
 import org.jboss.as.controller.AttributeMarshallers;
+import org.jboss.as.controller.AttributeParser;
 import org.jboss.as.controller.AttributeParsers;
+import org.jboss.as.controller.ObjectListAttributeDefinition;
+import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.controller.ParameterCorrector;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ResourceDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.SimpleMapAttributeDefinition;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.StringListAttributeDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -51,6 +57,7 @@ import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
+import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
@@ -109,10 +116,29 @@ class RoleMapperDefinitions {
         .setRestartAllServices()
         .build();
 
-    static final SimpleMapAttributeDefinition ROLE_MAPPING_MAP = new SimpleMapAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAP, ModelType.LIST, false)
-            .setMinSize(1)
+    static final SimpleAttributeDefinition FROM = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.FROM, ModelType.STRING, false)
             .setAllowExpression(true)
+            .setMinSize(1)
             .setRestartAllServices()
+            .build();
+
+    static final StringListAttributeDefinition TO = new StringListAttributeDefinition.Builder(ElytronDescriptionConstants.TO)
+            .setAllowExpression(true)
+            .setMinSize(1)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectTypeAttributeDefinition ROLE_MAPPING = new ObjectTypeAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAPPING, FROM, TO)
+            .setMinSize(1)
+            .setXmlName(ElytronDescriptionConstants.ROLE_MAPPING)
+            .setRestartAllServices()
+            .build();
+
+    static final ObjectListAttributeDefinition ROLE_MAPPING_MAP = new ObjectListAttributeDefinition.Builder(ElytronDescriptionConstants.ROLE_MAP, ROLE_MAPPING)
+            .setRestartAllServices()
+            .setCorrector(MapToObjectListCorrector.INSTANCE)
+            .setAttributeParser(AttributeParser.UNWRAPPED_OBJECT_LIST_PARSER)
+            .setAttributeMarshaller(AttributeMarshaller.UNWRAPPED_OBJECT_LIST_MARSHALLER)
             .build();
 
     static final SimpleAttributeDefinition KEEP_MAPPED = new SimpleAttributeDefinitionBuilder(ElytronDescriptionConstants.KEEP_MAPPED, ModelType.BOOLEAN, true)
@@ -154,15 +180,18 @@ class RoleMapperDefinitions {
                 ModelNode roleMappingMapNode = ROLE_MAPPING_MAP.resolveModelAttribute(context, model);
                 boolean keepMapped = KEEP_MAPPED.resolveModelAttribute(context, model).asBoolean();
                 boolean keepNonMapped = KEEP_NON_MAPPED.resolveModelAttribute(context, model).asBoolean();
-                Set<String> keys = roleMappingMapNode.keys();
-                final Map<String, Set<String>> roleMappingMap = new LinkedHashMap<>(keys.size());
-                for (String s : keys) {
-                    List<ModelNode> currentList = roleMappingMapNode.require(s).asList();
-                    Set<String> set = new LinkedHashSet<>();
-                    for (ModelNode m : currentList) {
-                        set.add(m.asString());
+                List<ModelNode> mappings = roleMappingMapNode.asList();
+                final Map<String, Set<String>> roleMappingMap = new LinkedHashMap<>(mappings.size());
+
+                for (ModelNode mapping : mappings) {
+                    String mapFrom = FROM.resolveModelAttribute(context, mapping).asString();
+                    List<ModelNode> mapTo = TO.resolveModelAttribute(context, mapping).asList();
+
+                    Set<String> mapToSet = new LinkedHashSet<>();
+                    for (ModelNode m : mapTo) {
+                        mapToSet.add(m.asString());
                     }
-                    roleMappingMap.put(s, set);
+                    roleMappingMap.put(mapFrom, mapToSet);
                 }
 
                 final MappedRoleMapper roleMapper = MappedRoleMapper.builder()
@@ -367,6 +396,48 @@ class RoleMapperDefinitions {
             return () -> null;
         }
 
+    }
+
+    /**
+     * CLI scripts written before WFCORE-6244 may be provided as objects, in a format equivalent to
+     * {@code Map<String, List<String>>}.  This corrector converts them to be handled by
+     * {@link ObjectListAttributeDefinition}
+     */
+    private static class MapToObjectListCorrector implements ParameterCorrector {
+        private static final MapToObjectListCorrector INSTANCE = new MapToObjectListCorrector();
+
+        /**
+         * @return A mapped role mapper, formatted as a list of objects; each object includes keys {@code from} and {@code to}.
+         */
+        @Override
+        public ModelNode correct(ModelNode newValue, ModelNode currentValue) {
+            if (newValue.isDefined() && newValue.getType() == ModelType.OBJECT) {
+                ModelNode convertedList = new ModelNode();
+
+                for (Property mapping : newValue.asPropertyList()) {
+                    ModelNode singleMap = new ModelNode();
+
+                    /* Convert strings to expressions if applicable - cannot be run before correcting value due to AS7-6224 */
+                    singleMap.get(ElytronDescriptionConstants.FROM).set(parsePossibleExpression(mapping.getName()));
+
+                    ArrayList<ModelNode> toRolesList = new ArrayList<>();
+                    if (mapping.getValue().getType() == ModelType.LIST) {
+                        for (ModelNode toRole : mapping.getValue().asList()) {
+                            toRolesList.add(parsePossibleExpression(toRole.asString()));
+                        }
+                        singleMap.get(ElytronDescriptionConstants.TO).set(new ModelNode().set(toRolesList));
+                    } else { // Directly insert ModelNode to use validation error message
+                        singleMap.get(ElytronDescriptionConstants.TO).set(mapping.getValue());
+                    }
+
+                    convertedList.add(singleMap);
+                }
+
+                return convertedList;
+            }
+
+            return newValue;
+        }
     }
 
     private enum LogicalOperation {

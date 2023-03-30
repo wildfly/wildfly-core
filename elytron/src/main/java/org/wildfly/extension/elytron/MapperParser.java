@@ -33,7 +33,6 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.PRINCIPA
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.REALM_MAPPING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_DECODER;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAPPER;
-import static org.wildfly.extension.elytron.ElytronDescriptionConstants.ROLE_MAPPING;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.TO;
 
 import javax.xml.stream.XMLStreamException;
@@ -48,8 +47,6 @@ import org.jboss.as.controller.PersistentResourceXMLDescription;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
-
-import java.util.Iterator;
 
 /**
  * XML handling for the <mappers /> element.
@@ -194,32 +191,7 @@ class MapperParser {
     private PersistentResourceXMLDescription mappedRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getMappedRoleMapperDefinition().getPathElement())
             .addAttribute(RoleMapperDefinitions.KEEP_MAPPED)
             .addAttribute(RoleMapperDefinitions.KEEP_NON_MAPPED)
-            .addAttribute(RoleMapperDefinitions.ROLE_MAPPING_MAP, new AttributeParsers.MapParser(null, ROLE_MAPPING, false) {
-                @Override
-                public void parseSingleElement(MapAttributeDefinition attribute, XMLExtendedStreamReader reader, ModelNode operation) throws XMLStreamException {
-                    final String[] array = requireAttributes(reader, FROM, TO);
-                    ModelNode paramVal = operation.get(attribute.getName()).get(array[0]).setEmptyList();
-                    for (String role : array[1].split("\\s+")) {
-                        paramVal.add(role);
-                    }
-                    ParseUtils.requireNoContent(reader);
-                }
-
-            }
-            , new AttributeMarshallers.MapAttributeMarshaller(null, null, false) {
-                @Override
-                public void marshallSingleElement(AttributeDefinition attribute, ModelNode property, boolean marshallDefault, XMLStreamWriter writer) throws XMLStreamException {
-                    writer.writeEmptyElement(ROLE_MAPPING);
-                    writer.writeAttribute(FROM, property.asProperty().getName());
-                    StringBuilder sb = new StringBuilder();
-                    Iterator<ModelNode> iter = property.asProperty().getValue().asList().iterator();
-                    while (iter.hasNext()) {
-                        sb.append(iter.next().asString());
-                        if (iter.hasNext()) sb.append(' ');
-                    }
-                    writer.writeAttribute(TO, sb.toString());
-                }
-            })
+            .addAttribute(RoleMapperDefinitions.ROLE_MAPPING_MAP)
             .build();
 
     private PersistentResourceXMLDescription regexRoleMapperParser = PersistentResourceXMLDescription.builder(RoleMapperDefinitions.getRegexRoleMapperDefinition().getPathElement())
