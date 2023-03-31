@@ -22,6 +22,8 @@ public class RegexRoleMapperTest {
 
     @After
     public void cleanup() throws Exception {
+        cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm:remove", true);
+        cli.sendLine("/subsystem=elytron/regex-role-mapper=rrm2:remove", true);
         cli.sendLine("reload", true);
         cli.close();
     }
