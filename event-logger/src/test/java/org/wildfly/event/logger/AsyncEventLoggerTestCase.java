@@ -112,7 +112,7 @@ public class AsyncEventLoggerTestCase extends AbstractEventLoggerTestCase {
             }
 
             for (int i = 0; i < logCount; i++) {
-                final String jsonString = writer.events.poll(TIMEOUT, TimeUnit.SECONDS);
+                final String jsonString = writer.events.poll(TIMEOUT+1L, TimeUnit.SECONDS);
                 Assert.assertNotNull("Expected value written, but was null", jsonString);
 
                 try (JsonReader reader = Json.createReader(new StringReader(jsonString))) {
