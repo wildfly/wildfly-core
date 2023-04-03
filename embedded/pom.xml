@@ -35,6 +35,18 @@
     <artifactId>wildfly-embedded</artifactId>
     <name>WildFly: Embedded</name>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-testbom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!--
              All dependencies must be strictly controlled so it is clear what is needed

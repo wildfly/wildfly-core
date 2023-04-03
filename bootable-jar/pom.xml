@@ -17,22 +17,35 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-   <parent>
+    <parent>
         <groupId>org.wildfly.core</groupId>
         <artifactId>wildfly-core-parent</artifactId>
         <version>20.0.0.Final-SNAPSHOT</version>
     </parent>
 
-  <artifactId>wildfly-jar-parent</artifactId>
-  <packaging>pom</packaging>
+    <artifactId>wildfly-jar-parent</artifactId>
+    <packaging>pom</packaging>
 
-  <name>WildFly: Bootable Jar parent</name>
+    <name>WildFly: Bootable Jar parent</name>
 
- <modules>
-     <module>boot</module>
-     <module>runtime</module>
- </modules>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-testbom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <modules>
+        <module>boot</module>
+        <module>runtime</module>
+    </modules>
 </project>

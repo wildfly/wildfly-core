@@ -34,6 +34,18 @@
 
     <artifactId>wildfly-event-logger</artifactId>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-core-testbom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Used as this includes the API and the implementation in the same JAR. The JSON API is only used here to
              serialize log messages.
