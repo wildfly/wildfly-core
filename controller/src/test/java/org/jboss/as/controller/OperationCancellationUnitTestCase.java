@@ -19,10 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-/**
- *
- */
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
@@ -60,12 +56,11 @@ import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.junit.After;
 import org.junit.Before;
@@ -228,7 +223,7 @@ public class OperationCancellationUnitTestCase {
                 if (resource.getModel().get(OP).asString().equals(expectedOpName)) {
                     matchedStatus = resource.getModel().get(EXECUTION_STATUS).asString();
                     if (expectedExecutionStatus.toString().equals(matchedStatus)) {
-                        cancelled = Cancellable.class.cast(resource).cancel();
+                        cancelled = ((Cancellable) resource).cancel();
                         break OUT;
                     }
                     break;
@@ -237,6 +232,7 @@ public class OperationCancellationUnitTestCase {
             if (matchedStatus != null) {
                 // The op thread may have tripped the latch but still hasn't
                 // gotten to the blocking code. So give it time
+                //noinspection BusyWait
                 Thread.sleep(100);
             }
         }
@@ -515,15 +511,10 @@ public class OperationCancellationUnitTestCase {
                 @Override
                 public void execute(final OperationContext context, ModelNode operation) {
 
-                    Service<Void> bad = new Service<Void>() {
+                    Service bad = new Service() {
 
                         @Override
-                        public Void getValue() throws IllegalStateException, IllegalArgumentException {
-                            return null;
-                        }
-
-                        @Override
-                        public void start(StartContext context) throws StartException {
+                        public void start(StartContext context) {
                             block();
                         }
 
@@ -546,16 +537,6 @@ public class OperationCancellationUnitTestCase {
             }, OperationContext.Stage.RUNTIME);
 
             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-        }
-    }
-
-    static class RollbackTransactionControl implements ModelController.OperationTransactionControl {
-
-        static final RollbackTransactionControl INSTANCE = new RollbackTransactionControl();
-
-        @Override
-        public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode result) {
-            transaction.rollback();
         }
     }
 
