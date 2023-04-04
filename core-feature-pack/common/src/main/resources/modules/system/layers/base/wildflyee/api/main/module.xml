@@ -50,5 +50,7 @@
         <module name="org.glassfish.jakarta.el" export="true" optional="true" />
         <module name="javax.xml.rpc.api" export="true" optional="true" />
         <module name="org.omg.api" export="true" optional="true" />
+        <!-- This one always goes last. -->
+        <module name="java.se" export="true" optional="true" />
     </dependencies>
 </module>
