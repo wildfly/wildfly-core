@@ -270,7 +270,7 @@ public class TestModule {
         return new File(getModulesDirectory(createParent), this.moduleName.replace('.', File.separatorChar));
     }
 
-    static File getModulesDirectory(boolean create) {
+    public static File getModulesDirectory(boolean create) {
         String modulePath = System.getProperty("module.path", null);
 
         if (modulePath == null) {
