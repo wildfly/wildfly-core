@@ -1215,13 +1215,13 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // will not be cancellable. I (BES 2012/01/24) chose the former as the lesser evil.
                 // Any subsequent step that calls getServiceRegistry/getServiceTarget/removeService
                 // is going to have to await the monitor uninterruptibly anyway before proceeding.
-                // HOWEVER, in December, 2022 as part of WFCORE-6157 we switch to forbidding interruption.
-                // This decision is preliminary pending resolution of WFCORE-6158. We need to validate that
+                // HOWEVER, in December, 2022 as part of WFCORE-6157 we considered switching to forbidding interruption.
+                // This question is still open pending resolution of WFCORE-6158. We need to validate that
                 // an uncancellable operation leaves the server (and even more importantly a domain) manageable,
                 // i.e. the problematic server can be shut down without unnecessary disruption to operations.
                 long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 try {
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false); // TODO WFCORE-6158. Validate this.
+                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, true); // TODO WFCORE-6158. Validate this.
                 }  catch (InterruptedException e) {
                     // Cancelled in some way
                     interrupted = true;
