@@ -41,6 +41,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.server.DeployerChainAddHandler;
+import org.jboss.as.server.deployment.module.ModuleAliasChecker;
+import org.jboss.as.server.deployment.module.ModuleAliasChecker.MessageContext;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.ServerService;
 import org.jboss.as.server.deployment.AttachmentKey;
@@ -265,7 +267,9 @@ public class DeploymentStructureDescriptorParser implements DeploymentUnitProces
             }
         }
 
+        ModuleAliasChecker.checkModuleAliasesForDependencies(moduleDependencies, MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
         moduleSpec.addUserDependencies(moduleDependencies);
+        ModuleAliasChecker.checkModuleAliasesForExclusions(rootDeploymentSpecification.getExclusions(), MessageContext.JBOSS_DEPLOYMENT_STRUCTURE_CONTEXT, deploymentUnit.getName());
         moduleSpec.addExclusions(rootDeploymentSpecification.getExclusions());
         moduleSpec.addAliases(rootDeploymentSpecification.getAliases());
         moduleSpec.addModuleSystemDependencies(rootDeploymentSpecification.getSystemDependencies());

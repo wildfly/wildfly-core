@@ -1409,6 +1409,14 @@ public interface ServerLogger extends BasicLogger {
     @Message(id = 292, value = "The required service '%s' is not UP, it is currently '%s'.")
     DeploymentUnitProcessingException requiredServiceNotUp(ServiceName serviceName, State state);
 
+    @LogMessage(level = WARN)
+    @Message(id=293, value = "The '%s' module alias has been added as a dependency to '%s' deployment via %s. While this is allowed, it is recommended to use its target module instead. Consider replacing this alias with its target module '%s'.")
+    void aliasAddedAsDependency(String aliasModule, String deploymentName, String context, String targetModule);
+
+    @LogMessage(level = WARN)
+    @Message(id=294, value = "The '%s' module alias has been excluded from '%s' deployment via %s. While this is allowed, it is recommended to use its target module instead. Consider replacing this alias with its target module '%s'.")
+    void aliasAddedAsExclusion(String aliasModule, String deploymentName, String context, String targetModule);
+
     ////////////////////////////////////////////////
     //Messages without IDs
 
