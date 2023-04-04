@@ -360,21 +360,10 @@
                             <org.jboss.model.test.cache.root>${org.jboss.model.test.cache.root}</org.jboss.model.test.cache.root>
                             <org.jboss.model.test.classpath.cache>${org.jboss.model.test.classpath.cache}</org.jboss.model.test.classpath.cache>
                             <org.jboss.model.test.cache.strict>true</org.jboss.model.test.cache.strict>
+                            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                            <jboss.remoting.leakdebugging>false</jboss.remoting.leakdebugging>
+                            <test.level>${test.level}</test.level>
                         </systemPropertyVariables>
-                        <systemProperties>
-                            <property>
-                                <name>java.util.logging.manager</name>
-                                <value>org.jboss.logmanager.LogManager</value>
-                            </property>
-                            <property>
-                                <name>jboss.remoting.leakdebugging</name>
-                                <value>false</value>
-                            </property>
-                            <property>
-                                <name>test.level</name>
-                                <value>${test.level}</value>
-                            </property>
-                        </systemProperties>
                         <argLine>${surefire.system.args}</argLine>
                     </configuration>
 

@@ -518,20 +518,11 @@
                                 </goals>
                                 <phase>test</phase>
                                 <configuration>
-                                    <systemProperties>
-                                        <property>
-                                            <name>wildfly.bootable.jar</name>
-                                            <value>true</value>
-                                        </property>
-                                         <property>
-                                            <name>wildfly.bootable.jar.jar</name>
-                                            <value>${project.build.directory}/test-wildfly.jar</value>
-                                        </property>
-                                        <property>
-                                            <name>wildfly.bootable.jar.install.dir</name>
-                                            <value>${project.build.directory}/${server.output.dir.prefix}</value>
-                                        </property>
-                                    </systemProperties>
+                                    <systemPropertyVariables>
+                                        <wildfly.bootable.jar>true</wildfly.bootable.jar>
+                                        <wildfly.bootable.jar.jar>${project.build.directory}/test-wildfly.jar</wildfly.bootable.jar.jar>
+                                        <wildfly.bootable.jar.install.dir>${project.build.directory}/${server.output.dir.prefix}</wildfly.bootable.jar.install.dir>
+                                    </systemPropertyVariables>
                                 </configuration>
                             </execution>
                             <execution>
@@ -541,21 +532,10 @@
                                 </goals>
                                 <phase>test</phase>
                                 <configuration>
-                                    <systemProperties>
-                                        <property>
-                                            <name>wildfly.bootable.jar</name>
-                                            <value>true</value>
-                                        </property>
-                                        <property>
-                                            <name>wildfly.bootable.jar.jar</name>
-                                            <value>${project.build.directory}/test-wildfly-runtime.jar</value>
-                                        </property>
-                                        <property>
-                                            <name>wildfly.bootable.jar.install.dir</name>
-                                            <value>${project.build.directory}/${server.output.dir.prefix}-runtime</value>
-                                        </property>
-                                    </systemProperties>
                                     <systemPropertyVariables>
+                                        <wildfly.bootable.jar>true</wildfly.bootable.jar>
+                                        <wildfly.bootable.jar.jar>${project.build.directory}/test-wildfly-runtime.jar</wildfly.bootable.jar.jar>
+                                        <wildfly.bootable.jar.install.dir>${project.build.directory}/${server.output.dir.prefix}-runtime</wildfly.bootable.jar.install.dir>
                                         <jboss.args>${jboss.args} --cli-script=${ts.config.elytron.cli.no.embedded}</jboss.args>
                                     </systemPropertyVariables>
                                 </configuration>
