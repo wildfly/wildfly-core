@@ -141,6 +141,7 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
             }
         }
 
+        Set<VirtualFile> processedClassPathFiles = new HashSet<>();
         //additional resource roots may be added as
         while (!resourceRoots.isEmpty()) {
             final RootEntry entry = resourceRoots.pop();
@@ -171,6 +172,10 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                     }
                 } else {
                     if (classPathFile.exists()) {
+                        // Don't duplicate transitive dependencies; reduces Module link work
+                        if (!processedClassPathFiles.add(classPathFile)) {
+                            continue;
+                        }
                         //we need to check that this class path item actually lies within the deployment
                         boolean found = false;
                         VirtualFile file = classPathFile.getParent();
@@ -186,6 +191,10 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
                             handlingExistingClassPathEntry(resourceRoots, topLevelDeployment, topLevelRoot, subDeployments, additionalModules, existingAccessibleRoots, resourceRoot, target, classPathFile);
                         }
                     } else if (topLevelClassPathFile.exists()) {
+                        // Don't duplicate transitive dependencies; reduces Module link work
+                        if (!processedClassPathFiles.add(topLevelClassPathFile)) {
+                            continue;
+                        }
                         boolean found = false;
                         VirtualFile file = topLevelClassPathFile.getParent();
                         while (file != null) {
