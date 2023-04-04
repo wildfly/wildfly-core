@@ -19,17 +19,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-/**
- *
- */
 package org.jboss.as.controller;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACTIVE_OPERATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.BLOCKING_TIMEOUT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.COMPOSITE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXECUTION_STATUS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OUTCOME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.RESULT;
@@ -54,15 +52,15 @@ import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResol
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalNotifications;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
+import org.jboss.as.controller.persistence.NullConfigurationPersister;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.Service;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.junit.After;
 import org.junit.Before;
@@ -80,6 +78,7 @@ public class OperationCancellationUnitTestCase {
     private static CountDownLatch blockObject;
     private static CountDownLatch latch;
     private ServiceContainer container;
+    private ControlledProcessState processState;
     private ModelController controller;
     private ModelControllerClient client;
     private Resource managementControllerResource;
@@ -101,7 +100,8 @@ public class OperationCancellationUnitTestCase {
         System.out.println("=========  New Test \n");
         container = ServiceContainer.Factory.create("test");
         ServiceTarget target = container.subTarget();
-        ModelControllerService svc = new ModelControllerService();
+        processState = new ControlledProcessState(true);
+        ModelControllerService svc = new ModelControllerService(processState);
         target.addService(ServiceName.of("ModelController")).setInstance(svc).install();
         svc.awaitStartup(30, TimeUnit.SECONDS);
         controller = svc.getValue();
@@ -157,6 +157,10 @@ public class OperationCancellationUnitTestCase {
     public static class ModelControllerService extends TestModelControllerService {
 
         private volatile Resource managementControllerResource;
+
+        public ModelControllerService(ControlledProcessState processState) {
+            super(ProcessType.EMBEDDED_SERVER, new NullConfigurationPersister(), processState);
+        }
 
         @Override
         protected void initModel(ManagementModel managementModel, Resource modelControllerResource) {
@@ -219,7 +223,7 @@ public class OperationCancellationUnitTestCase {
                 if (resource.getModel().get(OP).asString().equals(expectedOpName)) {
                     matchedStatus = resource.getModel().get(EXECUTION_STATUS).asString();
                     if (expectedExecutionStatus.toString().equals(matchedStatus)) {
-                        cancelled = Cancellable.class.cast(resource).cancel();
+                        cancelled = ((Cancellable) resource).cancel();
                         break OUT;
                     }
                     break;
@@ -228,6 +232,7 @@ public class OperationCancellationUnitTestCase {
             if (matchedStatus != null) {
                 // The op thread may have tripped the latch but still hasn't
                 // gotten to the blocking code. So give it time
+                //noinspection BusyWait
                 Thread.sleep(100);
             }
         }
@@ -286,7 +291,13 @@ public class OperationCancellationUnitTestCase {
         ModelNode step1 = getOperation("good", "attr1", 2);
         ModelNode step2 = getOperation("good-service", "attr1", 2);
         ModelNode step3 = getOperation("block-verify", "attr2", 1);
-        Future<ModelNode> future = client.executeAsync(getCompositeOperation(null, step1, step2, step3), null);
+        ModelNode composite = getCompositeOperation(null, step1, step2, step3);
+        // With WFCORE-6157 we deliberately prevent cancellation allowing MSC rollback to be skipped,
+        // so these ops will take the blocking timeout to execute. So set a lower timeout.
+        // Shorter than 15 would be better but we risk getting intermittent failures if executing our
+        // cancellation is delayed by a long GC or something. Even 15 has the at risk, but oh well.
+        composite.get(OPERATION_HEADERS).get(BLOCKING_TIMEOUT).set(15);
+        Future<ModelNode> future = client.executeAsync(composite, null);
 
         latch.await();
 
@@ -300,6 +311,9 @@ public class OperationCancellationUnitTestCase {
         ModelNode result = controller.execute(getOperation("good", "attr1", 1), null, null, null);
         assertEquals(SUCCESS, result.get(OUTCOME).asString());
         assertEquals(1, result.get(RESULT).asInt());
+
+        // Cancellation or timeout puts MSC in an unstable state, so the controller should be in restart-required
+        assertEquals(ControlledProcessState.State.RESTART_REQUIRED, processState.getState());
     }
 
     @Test
@@ -497,15 +511,10 @@ public class OperationCancellationUnitTestCase {
                 @Override
                 public void execute(final OperationContext context, ModelNode operation) {
 
-                    Service<Void> bad = new Service<Void>() {
+                    Service bad = new Service() {
 
                         @Override
-                        public Void getValue() throws IllegalStateException, IllegalArgumentException {
-                            return null;
-                        }
-
-                        @Override
-                        public void start(StartContext context) throws StartException {
+                        public void start(StartContext context) {
                             block();
                         }
 
@@ -528,16 +537,6 @@ public class OperationCancellationUnitTestCase {
             }, OperationContext.Stage.RUNTIME);
 
             context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-        }
-    }
-
-    static class RollbackTransactionControl implements ModelController.OperationTransactionControl {
-
-        static final RollbackTransactionControl INSTANCE = new RollbackTransactionControl();
-
-        @Override
-        public void operationPrepared(ModelController.OperationTransaction transaction, ModelNode result) {
-            transaction.rollback();
         }
     }
 
