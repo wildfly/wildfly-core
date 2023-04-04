@@ -1212,12 +1212,16 @@ final class OperationContextImpl extends AbstractOperationContext {
                 // because of minor user impatience can release the controller lock while the
                 // container is unsettled. OTOH, if we don't allow interruption, if the
                 // container can't settle (e.g. a broken service is blocking in start()), the operation
-                // will not be cancellable. We chose the late as the lesser evil.
+                // will not be cancellable. I (BES 2012/01/24) chose the former as the lesser evil.
                 // Any subsequent step that calls getServiceRegistry/getServiceTarget/removeService
                 // is going to have to await the monitor uninterruptibly anyway before proceeding.
+                // HOWEVER, in December, 2022 as part of WFCORE-6157 we switch to forbidding interruption.
+                // This decision is preliminary pending resolution of WFCORE-6158. We need to validate that
+                // an uncancellable operation leaves the server (and even more importantly a domain) manageable,
+                // i.e. the problematic server can be shut down without unnecessary disruption to operations.
                 long timeout = getBlockingTimeout().getLocalBlockingTimeout();
                 try {
-                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false);
+                    modelController.awaitContainerStability(timeout, TimeUnit.MILLISECONDS, false); // TODO WFCORE-6158. Validate this.
                 }  catch (InterruptedException e) {
                     // Cancelled in some way
                     interrupted = true;
