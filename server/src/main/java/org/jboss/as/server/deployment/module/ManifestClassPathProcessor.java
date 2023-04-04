@@ -142,11 +142,16 @@ public final class ManifestClassPathProcessor implements DeploymentUnitProcessor
         }
 
         Set<VirtualFile> processedClassPathFiles = new HashSet<>();
+        Attachable lastTarget = null;
         //additional resource roots may be added as
         while (!resourceRoots.isEmpty()) {
             final RootEntry entry = resourceRoots.pop();
             final ResourceRoot resourceRoot = entry.resourceRoot;
             final Attachable target = entry.target;
+            if (target != lastTarget) {
+                processedClassPathFiles.clear();
+                lastTarget = target;
+            }
 
             //if this is a top level deployment we do not want to process sub deployments
             if (SubDeploymentMarker.isSubDeployment(resourceRoot) && resourceRoot != deploymentRoot) {
