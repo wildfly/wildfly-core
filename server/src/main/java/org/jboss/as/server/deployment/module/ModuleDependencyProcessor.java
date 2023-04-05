@@ -27,6 +27,7 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.deployment.module.ModuleAliasChecker.MessageContext;
 import org.jboss.marshalling.reflect.SerializableClassRegistry;
 import org.jboss.modules.Module;
 
@@ -62,7 +63,9 @@ public final class ModuleDependencyProcessor implements DeploymentUnitProcessor 
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
 
-        moduleSpecification.addUserDependencies(deploymentUnit.getAttachmentList(Attachments.MANIFEST_DEPENDENCIES));
+        final List<ModuleDependency> manifestDependencies = deploymentUnit.getAttachmentList(Attachments.MANIFEST_DEPENDENCIES);
+        ModuleAliasChecker.checkModuleAliasesForDependencies(manifestDependencies, MessageContext.MANIFEST_CONTEXT, deploymentUnit.getName());
+        moduleSpecification.addUserDependencies(manifestDependencies);
 
         if (deploymentUnit.getParent() != null) {
             // propagate parent manifest dependencies
