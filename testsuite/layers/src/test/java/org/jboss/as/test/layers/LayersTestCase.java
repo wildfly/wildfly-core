@@ -36,14 +36,13 @@ public class LayersTestCase {
     // Packages that are provisioned but not used (not injected nor referenced).
     // This is the expected set of not provisioned modules when all layers are provisioned.
     private static final String[] NOT_USED = {
-        // deprecated
-        "org.jboss.as.threads",
-        "javax.api",
+        // deprecated and unused
         "ibm.jdk",
-        // Un-used
-        "javax.xml.stream.api",
-        // Un-used
+        "javax.api",
         "javax.sql.api",
+        "javax.xml.stream.api",
+        "org.jboss.as.threads",
+        "sun.jdk",
         // No patching modules in layers
         "org.jboss.as.patching",
         "org.jboss.as.patching.cli",
