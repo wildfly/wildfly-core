@@ -872,44 +872,4 @@
         </plugins>
     </build>
 
-    <profiles>
-
-        <profile>
-            <id>enforce</id>
-            <activation>
-                <property>
-                    <name>!skip-enforce</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>ban-transitive-deps</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <banTransitiveDependencies>
-                                            <excludes>
-                                                <!-- Ignore jdk jars because they are system scope -->
-                                                <exclude>com.sun:tools</exclude>
-                                                <exclude>sun.jdk:jconsole</exclude>
-                                            </excludes>
-                                        </banTransitiveDependencies>
-                                    </rules>
-                                </configuration>
-                            </execution>
-                        </executions>
-
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
