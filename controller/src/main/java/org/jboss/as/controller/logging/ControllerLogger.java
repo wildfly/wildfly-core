@@ -3739,4 +3739,12 @@ public interface ControllerLogger extends BasicLogger {
 
     @Message(id = 499, value = "There is no satisfactory capability '%s' available to resources with capability scope '%s'. This capability is registered at address(es) '%s', and are not accessible to resources with scope '%s'.")
     IllegalStateException noSatisfactoryCapability(String capability, String scopeName, Set<RegistrationPoint> addresses, String scopeNameAgain);
+
+    @LogMessage(level = WARN)
+    @Message(id = 500, value = "There is no UUID string at '%s'. A new value will be generated.")
+    void uuidIsEmpty(String path);
+
+    @LogMessage(level = WARN)
+    @Message(id = 501, value = "An invalid UUID string '%s' was found at '%s'. A new value will be generated.")
+    void uuidNotValid(String corruptedUuid, String path);
 }
