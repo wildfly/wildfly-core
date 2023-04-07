@@ -26,12 +26,14 @@ import static org.wildfly.extension.elytron.ElytronDescriptionConstants.JACC_POL
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.NAME;
 import static org.wildfly.extension.elytron.ElytronDescriptionConstants.POLICY;
 import static org.wildfly.extension.elytron.SecurityActions.doPrivileged;
+import static org.wildfly.security.authz.jacc.ElytronPolicyContextHandlerFactory.getPolicyContextHandlers;
 
 import java.security.AccessController;
 import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
@@ -76,8 +78,6 @@ import org.wildfly.extension.elytron._private.ElytronSubsystemMessages;
 import org.wildfly.security.authz.jacc.DelegatingPolicyContextHandler;
 import org.wildfly.security.authz.jacc.ElytronPolicyConfigurationFactory;
 import org.wildfly.security.authz.jacc.JaccDelegatingPolicy;
-import org.wildfly.security.authz.jacc.SecurityIdentityHandler;
-import org.wildfly.security.authz.jacc.SubjectPolicyContextHandler;
 import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
@@ -362,9 +362,11 @@ class PolicyDefinitions {
                                 defaultConfigurationFactory ? PolicyDefinitions.class.getClassLoader() : configuredClassLoader));
 
                         Map<String, PolicyContextHandler> discoveredHandlers = discoverPolicyContextHandlers();
+                        List<PolicyContextHandler> supportedPolicyContextHandlers = getPolicyContextHandlers();
+                        for (PolicyContextHandler current : supportedPolicyContextHandlers) {
+                            registerHandler(discoveredHandlers, current);
+                        }
 
-                        registerHandler(discoveredHandlers, new SubjectPolicyContextHandler());
-                        registerHandler(discoveredHandlers, new SecurityIdentityHandler());
                         for (Entry<String, PolicyContextHandler> entry : discoveredHandlers.entrySet()) {
                             PolicyContext.registerHandler(entry.getKey(), entry.getValue(), true);
                         }

@@ -37,5 +37,6 @@
         <module name="javax.security.jacc.api" optional="true"/>
         <module name="org.wildfly.common"/>
         <module name="org.wildfly.security.elytron-base"/>
+        <module name="org.wildfly.security.elytron-web.undertow-server-servlet" optional="true" services="import"/>
     </dependencies>
 </module>
