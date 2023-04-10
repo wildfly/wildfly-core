@@ -427,7 +427,7 @@ public class DefaultOperationCandidatesProvider implements OperationCandidatesPr
         if(ctx.getParsedCommandLine().getLastParsedPropertyValue() == null) {
             radical = ctx.getParsedCommandLine().getLastParsedPropertyName();
             //Check if the property is completely specified and is negated
-            if(ctx.getParsedCommandLine().isLastPropertyNegated()) {
+            if(ctx.getParsedCommandLine().isLastPropertyNegated() || radical!=null) {
                 for (Property prop : propList) {
                     if(radical.equals(prop.getName())){
                         radical = null;

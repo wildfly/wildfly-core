@@ -255,7 +255,7 @@ public class AttributeNamePathCompletionTestCase {
 
         candidates.clear();
         i = completer.complete(null, "str", 0, candidates);
-        assertEquals(Arrays.asList("str2"), candidates);
+        assertEquals(Arrays.asList("", "str2"), candidates);
         assertEquals(0, i);
 
         candidates.clear();
