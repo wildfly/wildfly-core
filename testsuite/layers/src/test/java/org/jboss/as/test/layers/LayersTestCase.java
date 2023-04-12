@@ -43,6 +43,7 @@ public class LayersTestCase {
         "javax.xml.stream.api",
         "org.jboss.as.threads",
         "sun.jdk",
+        "sun.scripting",
         // No patching modules in layers
         "org.jboss.as.patching",
         "org.jboss.as.patching.cli",
