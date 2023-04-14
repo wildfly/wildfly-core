@@ -21,7 +21,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<host xmlns="urn:jboss:domain:20.0">
+<host xmlns="urn:jboss:domain:21.0">
     <!--  An interface is always required by the parser -->
     <management>
         <management-interfaces>

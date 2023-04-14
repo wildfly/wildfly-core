@@ -23,7 +23,7 @@
   ~  */
   -->
 
-<host xmlns="urn:jboss:domain:20.0">
+<host xmlns="urn:jboss:domain:21.0">
     <management>
         <configuration-changes max-history="3" />
         <audit-log>

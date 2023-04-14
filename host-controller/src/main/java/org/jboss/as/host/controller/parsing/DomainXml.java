@@ -80,10 +80,6 @@ public final class DomainXml implements XMLElementReader<List<ModelNode>>, XMLEl
             case 15:
                 new DomainXml_5(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
                 break;
-            case 16:
-            case 17:
-            case 18:
-            case 19:
             default:
                 new DomainXml_16(extensionXml, extensionRegistry, readerNS).readElement(reader, nodes);
         }

@@ -21,7 +21,7 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<domain xmlns="urn:jboss:domain:20.0">
+<domain xmlns="urn:jboss:domain:21.0">
     <profiles>
         <profile name="testA">
         </profile>

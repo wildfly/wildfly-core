@@ -126,8 +126,6 @@ public final class StandaloneXml implements XMLElementReader<List<ModelNode>>, X
             case 17:
                 new StandaloneXml_11(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
                 break;
-            case 18:
-            case 19:
             default:
                 new StandaloneXml_18(extensionHandler, readerNS, deferredExtensionContext, parsingOptions).readElement(reader, operationList);
         }
