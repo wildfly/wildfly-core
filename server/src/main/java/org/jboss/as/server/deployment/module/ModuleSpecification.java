@@ -216,7 +216,7 @@ public class ModuleSpecification extends SimpleAttachable {
             exclusions.add(identifier);
         } else {
             // The exclusion is not an alias
-            exclusionsMap.put(exclusion, new ArrayList<>());
+            exclusionsMap.putIfAbsent(exclusion, new ArrayList<>());
         }
         // list of exclusions, aliases or target modules
         exclusions.add(exclusion);
