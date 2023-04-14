@@ -275,9 +275,10 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                     ModelNode rrOp = Util.createEmptyOperation(READ_RESOURCE_OPERATION, absoluteChildAddr);
                     PathAddress relativeAddr = PathAddress.pathAddress(childPE);
 
+                    ImmutableManagementResourceRegistration childReg = registry == null ? null : registry.getSubModel(relativeAddr);
+
                     if (recursive) {
                         boolean getChild = false;
-                        ImmutableManagementResourceRegistration childReg = registry == null ? null : registry.getSubModel(relativeAddr);
                         if (childReg != null) {
                             // Decide if we want to invoke on this child resource
                             boolean proxy = childReg.isRemote();
@@ -326,8 +327,11 @@ public class ReadResourceHandler extends GlobalOperationHandlers.AbstractMultiTa
                                 childMap.setEmptyObject();
                                 directChildren.put(childType, childMap);
                             }
-                            // Add a "child" => undefined
-                            childMap.get(child);
+                            // In case of runtime resources adds '=> undefined' if there's no include-runtime parameter,
+                            // in read-resource operation, otherwise adds '{"child" => undefined}'
+                            if (queryRuntime || (childReg != null && (!childReg.isRuntimeOnly() || childReg.isRemote()))) {
+                                childMap.get(child);
+                            }
                         }
                     }
                 }
