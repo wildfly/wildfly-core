@@ -37,9 +37,11 @@ public class VirtualDomainMetaDataService implements Service<VirtualDomainMetaDa
     private volatile VirtualDomainMetaData virtualDomainMetaData;
 
     private final UnaryOperator<SecurityIdentity> identityOperator;
+    private final VirtualDomainMetaData.AuthMethod authMethod;
 
-    public VirtualDomainMetaDataService(final UnaryOperator<SecurityIdentity> identityOperator) {
+    public VirtualDomainMetaDataService(final UnaryOperator<SecurityIdentity> identityOperator, final VirtualDomainMetaData.AuthMethod authMethod) {
         this.identityOperator = identityOperator;
+        this.authMethod = authMethod;
     }
 
     @Override
@@ -47,6 +49,7 @@ public class VirtualDomainMetaDataService implements Service<VirtualDomainMetaDa
         VirtualDomainMetaData.Builder builder = VirtualDomainMetaData.builder();
 
         builder.setSecurityIdentityTransformer(identityOperator);
+        builder.setAuthMethod(authMethod);
         virtualDomainMetaData = builder.build();
     }
 

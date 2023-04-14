@@ -18,7 +18,10 @@ package org.wildfly.extension.elytron;
 
 import static org.jboss.as.server.security.VirtualDomainMarkerUtility.isVirtualDomainRequired;
 import static org.jboss.as.server.security.VirtualDomainMarkerUtility.virtualDomainName;
+import static org.jboss.as.server.security.VirtualDomainUtil.clearVirtualDomainMetaDataSecurityDomain;
 import static org.jboss.as.server.security.VirtualDomainUtil.configureVirtualDomain;
+import static org.jboss.as.server.security.VirtualDomainUtil.isVirtualDomainCreated;
+import static org.jboss.as.server.security.VirtualDomainUtil.getVirtualDomainMetaData;
 
 import java.util.function.Consumer;
 
@@ -48,23 +51,31 @@ class VirtualSecurityDomainProcessor implements DeploymentUnitProcessor {
             return;  // Only interested in installation if this is really the root deployment.
         }
 
-        ServiceName virtualDomainName = virtualDomainName(deploymentUnit);
-        ServiceTarget serviceTarget = phaseContext.getServiceTarget();
+        if (! isVirtualDomainCreated(deploymentUnit)) {
+            ServiceName virtualDomainName = virtualDomainName(deploymentUnit);
+            VirtualDomainMetaData virtualDomainMetaData = getVirtualDomainMetaData(deploymentUnit);
 
-        ServiceBuilder<?> serviceBuilder = serviceTarget.addService(virtualDomainName);
+            ServiceTarget serviceTarget = phaseContext.getServiceTarget();
+            ServiceBuilder<?> serviceBuilder = serviceTarget.addService(virtualDomainName);
 
-        SecurityDomain.Builder virtualDomainBuilder = SecurityDomain.builder();
-        VirtualDomainMetaData virtualDomainMetaData = configureVirtualDomain(phaseContext, deploymentUnit, virtualDomainBuilder);
-        final SecurityDomain virtualDomain = virtualDomainBuilder.build();
-        if (virtualDomainMetaData != null) {
-            virtualDomainMetaData.setSecurityDomain(virtualDomain);
+            SecurityDomain.Builder virtualDomainBuilder = SecurityDomain.builder();
+            configureVirtualDomain(virtualDomainMetaData, virtualDomainBuilder);
+            final SecurityDomain virtualDomain = virtualDomainBuilder.build();
+            if (virtualDomainMetaData != null) {
+                virtualDomainMetaData.setSecurityDomain(virtualDomain);
+            }
+
+            final Consumer<SecurityDomain> consumer = serviceBuilder.provides(virtualDomainName);
+
+            serviceBuilder.setInstance(Service.newInstance(consumer, virtualDomain));
+            serviceBuilder.setInitialMode(Mode.ON_DEMAND);
+            serviceBuilder.install();
         }
+    }
 
-        final Consumer<SecurityDomain> consumer = serviceBuilder.provides(virtualDomainName);
-
-        serviceBuilder.setInstance(Service.newInstance(consumer, virtualDomain));
-        serviceBuilder.setInitialMode(Mode.ON_DEMAND);
-        serviceBuilder.install();
+    @Override
+    public void undeploy(DeploymentUnit deploymentUnit) {
+        clearVirtualDomainMetaDataSecurityDomain(deploymentUnit);
     }
 
 }

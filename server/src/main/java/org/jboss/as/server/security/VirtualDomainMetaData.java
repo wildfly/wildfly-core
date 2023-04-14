@@ -56,10 +56,12 @@ public class VirtualDomainMetaData {
     }
 
     private final UnaryOperator<SecurityIdentity> securityIdentityTransformer;
+    private final AuthMethod authMethod;
     private SecurityDomain securityDomain;
 
     VirtualDomainMetaData(Builder builder) {
         this.securityIdentityTransformer = builder.securityIdentityTransformer;
+        this.authMethod = builder.authMethod;
     }
 
     public synchronized SecurityDomain getSecurityDomain() {
@@ -74,12 +76,17 @@ public class VirtualDomainMetaData {
         return securityIdentityTransformer;
     }
 
+    public AuthMethod getAuthMethod() {
+        return authMethod;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
 
     public static class Builder {
         private UnaryOperator<SecurityIdentity> securityIdentityTransformer;
+        private AuthMethod authMethod;
 
         public VirtualDomainMetaData build() {
             return new VirtualDomainMetaData(this);
@@ -88,6 +95,11 @@ public class VirtualDomainMetaData {
         public void setSecurityIdentityTransformer(final UnaryOperator<SecurityIdentity> securityIdentityTransformer) {
             Assert.checkNotNullParam("securityIdentityTransformer", securityIdentityTransformer);
             this.securityIdentityTransformer = securityIdentityTransformer;
+        }
+
+        public void setAuthMethod(final AuthMethod authMethod) {
+            Assert.checkNotNullParam("authMethod", authMethod);
+            this.authMethod = authMethod;
         }
     }
 }

@@ -19,6 +19,7 @@
 package org.wildfly.extension.elytron;
 
 
+import static org.jboss.as.server.security.VirtualDomainUtil.VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE;
 import static org.wildfly.extension.elytron.Capabilities.AUTHENTICATION_CONTEXT_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.ELYTRON_RUNTIME_CAPABILITY;
 import static org.wildfly.extension.elytron.Capabilities.EVIDENCE_DECODER_RUNTIME_CAPABILITY;
@@ -77,6 +78,7 @@ import org.jboss.as.controller.registry.RuntimePackageDependency;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
+import org.jboss.as.server.security.VirtualSecurityDomainCreationService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.msc.service.Service;
@@ -461,6 +463,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
 
             ServiceTarget target = context.getServiceTarget();
             installService(SecurityPropertyService.SERVICE_NAME, new SecurityPropertyService(securityProperties), target);
+            installService(VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE, new VirtualSecurityDomainCreationService(), target);
 
             List<String> providers = DISALLOWED_PROVIDERS.unwrap(context, operation);
 
@@ -546,6 +549,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
         protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
             uninstallSecurityPropertyService(context);
             context.removeService(ProviderRegistrationService.SERVICE_NAME);
+            context.removeService(VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE);
             AUTHENITCATION_CONTEXT_PROCESSOR.setDefaultAuthenticationContext(null);
         }
 
@@ -570,6 +574,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
                     context.attach(SECURITY_PROPERTY_SERVICE_KEY, securityPropertyService);
                 }
                 context.removeService(ProviderRegistrationService.SERVICE_NAME);
+                context.removeService(VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE);
             } else {
                 context.reloadRequired();
             }
@@ -585,6 +590,7 @@ class ElytronDefinition extends SimpleResourceDefinition {
             }
             List<String> providers = DISALLOWED_PROVIDERS.unwrap(context, model);
             installService(ProviderRegistrationService.SERVICE_NAME, new ProviderRegistrationService(providers), target);
+            installService(VIRTUAL_SECURITY_DOMAIN_CREATION_SERVICE, new VirtualSecurityDomainCreationService(), target);
         }
 
     }
