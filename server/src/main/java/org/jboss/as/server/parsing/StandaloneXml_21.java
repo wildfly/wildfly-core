@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc.
+ * Copyright 2023 Red Hat, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,15 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ACCESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.AUTHORIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CONTENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.DEPLOYMENT_OVERLAY;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.EXTENSION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_UPGRADE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.INTERFACE;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NATIVE_INTERFACE;
@@ -29,8 +36,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ORGANIZATION;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.PATH;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SOCKET_BINDING_GROUP;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SYSTEM_PROPERTY;
+import static org.jboss.as.controller.parsing.Namespace.CURRENT;
 import static org.jboss.as.controller.parsing.ParseUtils.isNoNamespaceAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequiredElement;
@@ -41,6 +52,7 @@ import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
 import static org.jboss.as.controller.parsing.ParseUtils.requireSingleAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedAttribute;
 import static org.jboss.as.controller.parsing.ParseUtils.unexpectedElement;
+import static org.jboss.as.server.controller.resources.ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +68,7 @@ import javax.xml.stream.XMLStreamException;
 
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.logging.ControllerLogger;
+import org.jboss.as.controller.management.BaseHttpInterfaceResourceDefinition;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.Attribute;
 import org.jboss.as.controller.parsing.DeferredExtensionContext;
@@ -63,11 +76,14 @@ import org.jboss.as.controller.parsing.Element;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.as.controller.parsing.ProfileParsingCompletionHandler;
+import org.jboss.as.controller.parsing.WriteUtils;
+import org.jboss.as.controller.persistence.ModelMarshallingContext;
 import org.jboss.as.domain.management.access.AccessAuthorizationResourceDefinition;
 import org.jboss.as.domain.management.parsing.AccessControlXml;
 import org.jboss.as.domain.management.parsing.AuditLogXml;
 import org.jboss.as.domain.management.parsing.ManagementXml;
 import org.jboss.as.domain.management.parsing.ManagementXmlDelegate;
+import org.jboss.as.server.controller.resources.DeploymentAttributes;
 import org.jboss.as.server.controller.resources.ServerRootResourceDefinition;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.server.mgmt.HttpManagementResourceDefinition;
@@ -77,15 +93,16 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.jboss.staxmapper.XMLExtendedStreamWriter;
 
 /**
- * Parser and marshaller for standalone server configuration xml documents (e.g. standalone.xml) that use the urn:jboss:domain:19.0 schema.
+ * Parser and marshaller for standalone server configuration xml documents (e.g. standalone.xml) that use the urn:jboss:domain:21.0 schema.
  *
  * @author Brian Stansberry
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate {
+final class StandaloneXml_21 extends CommonXml implements ManagementXmlDelegate {
 
     private final AccessControlXml accessControlXml;
     private final StandaloneXml.ParsingOption[] parsingOptions;
@@ -94,7 +111,7 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
     private ExtensionHandler extensionHandler;
     private final DeferredExtensionContext deferredExtensionContext;
 
-    StandaloneXml_18(ExtensionHandler extensionHandler, Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
+    StandaloneXml_21(ExtensionHandler extensionHandler, Namespace namespace, DeferredExtensionContext deferredExtensionContext, StandaloneXml.ParsingOption... options) {
         super(new SocketBindingsXml.ServerSocketBindingsXml());
         this.namespace = namespace;
         this.extensionHandler = extensionHandler;
@@ -687,6 +704,116 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
         }
     }
 
+    void writeContent(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+            throws XMLStreamException {
+
+        ModelNode modelNode = context.getModelNode();
+        writer.writeStartDocument();
+        writer.writeStartElement(Element.SERVER.getLocalName());
+
+        if (modelNode.hasDefined(NAME)) {
+            ServerRootResourceDefinition.NAME.marshallAsAttribute(modelNode, false, writer);
+        }
+
+        if (modelNode.hasDefined(ORGANIZATION_IDENTIFIER.getName())) {
+            ServerRootResourceDefinition.ORGANIZATION_IDENTIFIER.marshallAsAttribute(modelNode, false, writer);
+        }
+
+        writer.writeDefaultNamespace(CURRENT.getUriString());
+        writeNamespaces(writer, modelNode);
+        writeSchemaLocation(writer, modelNode);
+
+        if (modelNode.hasDefined(EXTENSION)) {
+            extensionHandler.writeExtensions(writer, modelNode.get(EXTENSION));
+        }
+
+        if (modelNode.hasDefined(SYSTEM_PROPERTY)) {
+            writeProperties(writer, modelNode.get(SYSTEM_PROPERTY), Element.SYSTEM_PROPERTIES, true);
+        }
+
+        if (modelNode.hasDefined(PATH)) {
+            writePaths(writer, modelNode.get(PATH), false);
+        }
+
+        if (modelNode.hasDefined(CORE_SERVICE)) {
+            ManagementXml managementXml = ManagementXml.newInstance(CURRENT, this, false);
+            managementXml.writeManagement(writer, modelNode.get(CORE_SERVICE, MANAGEMENT), true);
+        }
+
+        writeServerProfile(writer, context);
+
+        if (modelNode.hasDefined(INTERFACE)) {
+            writeInterfaces(writer, modelNode.get(INTERFACE));
+        }
+
+        if (modelNode.hasDefined(SOCKET_BINDING_GROUP)) {
+            Set<String> groups = modelNode.get(SOCKET_BINDING_GROUP).keys();
+            if (groups.size() > 1) {
+                throw ControllerLogger.ROOT_LOGGER.multipleModelNodes(SOCKET_BINDING_GROUP);
+            }
+            for (String group : groups) {
+                writeSocketBindingGroup(writer, modelNode.get(SOCKET_BINDING_GROUP, group), group);
+            }
+        }
+
+        if (modelNode.hasDefined(DEPLOYMENT)) {
+            writeServerDeployments(writer, modelNode.get(DEPLOYMENT));
+            WriteUtils.writeNewLine(writer);
+        }
+
+        if (modelNode.hasDefined(DEPLOYMENT_OVERLAY)) {
+            writeDeploymentOverlays(writer, modelNode.get(DEPLOYMENT_OVERLAY));
+            WriteUtils.writeNewLine(writer);
+        }
+        writer.writeEndElement();
+        writer.writeEndDocument();
+    }
+
+    private void writeServerDeployments(final XMLExtendedStreamWriter writer, final ModelNode modelNode)
+            throws XMLStreamException {
+
+        boolean deploymentWritten = false;
+        for (String deploymentName : modelNode.keys()) {
+
+            final ModelNode deployment = modelNode.get(deploymentName);
+            if (!deployment.isDefined()) {
+                continue;
+            }
+
+            if (!deploymentWritten) {
+                writer.writeStartElement(Element.DEPLOYMENTS.getLocalName());
+                deploymentWritten = true;
+            }
+
+            writer.writeStartElement(Element.DEPLOYMENT.getLocalName());
+            WriteUtils.writeAttribute(writer, Attribute.NAME, deploymentName);
+            DeploymentAttributes.RUNTIME_NAME.marshallAsAttribute(deployment, writer);
+            DeploymentAttributes.ENABLED.marshallAsAttribute(deployment, writer);
+            final List<ModelNode> contentItems = deployment.require(CONTENT).asList();
+            for (ModelNode contentItem : contentItems) {
+                writeContentItem(writer, contentItem);
+            }
+            writer.writeEndElement();
+        }
+        if (deploymentWritten) {
+            writer.writeEndElement();
+        }
+    }
+
+    private void writeServerProfile(final XMLExtendedStreamWriter writer, final ModelMarshallingContext context)
+            throws XMLStreamException {
+
+        final ModelNode profileNode = context.getModelNode();
+        // In case there are no subsystems defined
+        if (!profileNode.hasDefined(SUBSYSTEM)) {
+            return;
+        }
+
+        writer.writeStartElement(Element.PROFILE.getLocalName());
+        writeSubsystems(profileNode, writer, context);
+        writer.writeEndElement();
+    }
+
     /*
      * ManagamentXmlDelegate Methods
      */
@@ -798,4 +925,84 @@ final class StandaloneXml_18 extends CommonXml implements ManagementXmlDelegate 
         return true;
     }
 
+    @Override
+    public boolean writeNativeManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
+
+        writer.writeStartElement(Element.NATIVE_INTERFACE.getLocalName());
+        NativeManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
+        NativeManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
+        NativeManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
+        NativeManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
+
+        if (NativeManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)) {
+            writer.writeEmptyElement(Element.SOCKET_BINDING.getLocalName());
+            NativeManagementResourceDefinition.SOCKET_BINDING.marshallAsAttribute(protocol, writer);
+        }
+
+        writer.writeEndElement();
+
+        return true;
+    }
+
+    @Override
+    public boolean writeHttpManagementProtocol(XMLExtendedStreamWriter writer, ModelNode protocol) throws XMLStreamException {
+
+        writer.writeStartElement(Element.HTTP_INTERFACE.getLocalName());
+        HttpManagementResourceDefinition.HTTP_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.SSL_CONTEXT.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.SASL_PROTOCOL.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.SERVER_NAME.marshallAsAttribute(protocol, writer);
+        HttpManagementResourceDefinition.CONSOLE_ENABLED.marshallAsAttribute(protocol, writer);
+
+        HttpManagementResourceDefinition.ALLOWED_ORIGINS.getMarshaller().marshallAsAttribute(
+                HttpManagementResourceDefinition.ALLOWED_ORIGINS, protocol, true, writer);
+
+        if (HttpManagementResourceDefinition.HTTP_UPGRADE.isMarshallable(protocol)) {
+            writer.writeEmptyElement(Element.HTTP_UPGRADE.getLocalName());
+            HttpManagementResourceDefinition.ENABLED.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+            HttpManagementResourceDefinition.SASL_AUTHENTICATION_FACTORY.marshallAsAttribute(protocol.require(HTTP_UPGRADE), writer);
+        }
+
+        if (HttpManagementResourceDefinition.SOCKET_BINDING.isMarshallable(protocol)
+                || HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.isMarshallable(protocol)) {
+            writer.writeEmptyElement(Element.SOCKET_BINDING.getLocalName());
+            HttpManagementResourceDefinition.SOCKET_BINDING.marshallAsAttribute(protocol, writer);
+            HttpManagementResourceDefinition.SECURE_SOCKET_BINDING.marshallAsAttribute(protocol, writer);
+        }
+
+        if (HttpManagementResourceDefinition.CONSTANT_HEADERS.isMarshallable(protocol)) {
+            writer.writeStartElement(Element.CONSTANT_HEADERS.getLocalName());
+
+            for (ModelNode headerMapping : protocol.require(ModelDescriptionConstants.CONSTANT_HEADERS).asList()) {
+                writer.writeStartElement(Element.HEADER_MAPPING.getLocalName());
+                BaseHttpInterfaceResourceDefinition.PATH.marshallAsAttribute(headerMapping, writer);
+                for (ModelNode header : headerMapping.require(ModelDescriptionConstants.HEADERS).asList()) {
+                    writer.writeEmptyElement(Element.HEADER.getLocalName());
+                    BaseHttpInterfaceResourceDefinition.HEADER_NAME.marshallAsAttribute(header, writer);
+                    BaseHttpInterfaceResourceDefinition.HEADER_VALUE.marshallAsAttribute(header, writer);
+                }
+                writer.writeEndElement();
+            }
+
+            writer.writeEndElement();
+        }
+
+        writer.writeEndElement();
+
+        return true;
+    }
+
+    @Override
+    public boolean writeAccessControl(XMLExtendedStreamWriter writer, ModelNode accessAuthorization) throws XMLStreamException {
+        accessControlXml.writeAccessControl(writer, accessAuthorization);
+
+        return true;
+    }
+
+    @Override
+    public boolean writeAuditLog(XMLExtendedStreamWriter writer, ModelNode auditLog) throws XMLStreamException {
+        auditLogDelegate.writeAuditLog(writer, auditLog);
+
+        return true;
+    }
 }
