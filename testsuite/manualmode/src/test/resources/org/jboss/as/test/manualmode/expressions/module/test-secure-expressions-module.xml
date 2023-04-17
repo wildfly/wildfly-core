@@ -24,6 +24,5 @@
     <module name="org.jboss.as.server"/>
     <module name="org.jboss.staxmapper"/>
     <module name="java.xml"/>
-    <module name="sun.jdk"/>
   </dependencies>
 </module>
