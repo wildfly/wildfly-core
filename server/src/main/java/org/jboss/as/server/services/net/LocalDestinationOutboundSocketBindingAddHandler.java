@@ -155,7 +155,7 @@ public class LocalDestinationOutboundSocketBindingAddHandler extends AbstractAdd
         final Supplier<SocketBinding> sbSupplier = builder.requiresCapability(SOCKET_BINDING_CAPABILITY_NAME, SocketBinding.class, socketBindingRef);
         builder.setInstance(new LocalDestinationOutboundSocketBindingService(osbConsumer, sbmSupplier, nibSupplier, sbSupplier, outboundSocketName, sourcePort, fixedSourcePort));
         builder.setInitialMode(ServiceController.Mode.ON_DEMAND);
-        builder.addAliases(OutboundSocketBinding.OUTBOUND_SOCKET_BINDING_BASE_SERVICE_NAME.append(outboundSocketName));
+        builder.addAliases(OUTBOUND_SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(outboundSocketName));
         builder.install();
     }
 }

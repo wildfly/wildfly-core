@@ -31,8 +31,6 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.List;
 
-import org.jboss.msc.service.ServiceName;
-
 import static org.jboss.as.network.logging.NetworkMessages.MESSAGES;
 
 /**
@@ -41,10 +39,6 @@ import static org.jboss.as.network.logging.NetworkMessages.MESSAGES;
  * @author Emanuel Muckenhuber
  */
 public final class SocketBinding {
-
-    /** @deprecated use capability injection */
-    @Deprecated
-    public static final ServiceName JBOSS_BINDING_NAME = ServiceName.JBOSS.append("binding");
 
     private final String name;
     private volatile int port;
