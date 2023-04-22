@@ -562,7 +562,6 @@ class ElytronDefinition extends SimpleResourceDefinition {
     private static class ElytronRemove extends ElytronRemoveStepHandler {
 
         private ElytronRemove() {
-            super(ELYTRON_RUNTIME_CAPABILITY);
         }
 
         @Override

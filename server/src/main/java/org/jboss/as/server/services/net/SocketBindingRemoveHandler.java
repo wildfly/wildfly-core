@@ -21,8 +21,6 @@ package org.jboss.as.server.services.net;
 
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REMOVE;
-
 /**
  * Handler for the socket-binding resource's remove operation.
  *
@@ -30,14 +28,11 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.REM
  */
 public class SocketBindingRemoveHandler extends AbstractRemoveStepHandler {
 
-    public static final String OPERATION_NAME = REMOVE;
-
     public static final SocketBindingRemoveHandler INSTANCE = new SocketBindingRemoveHandler();
 
     /**
      * Create the SocketBindingRemoveHandler
      */
     protected SocketBindingRemoveHandler() {
-        super(SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY);
     }
 }

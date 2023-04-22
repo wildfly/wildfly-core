@@ -33,7 +33,7 @@ import org.jboss.as.controller.operations.validation.StringLengthValidator;
 import org.jboss.as.host.controller.HostModelUtil;
 import org.jboss.as.host.controller.operations.LocalHostControllerInfoImpl;
 import org.jboss.as.host.controller.operations.NativeManagementAddHandler;
-import org.jboss.as.server.operations.NativeManagementRemoveHandler;
+import org.jboss.as.server.operations.NativeManagementRemoveHandler; // TODO Wrong package. See WFCORE-6313
 import org.jboss.dmr.ModelType;
 
 /**

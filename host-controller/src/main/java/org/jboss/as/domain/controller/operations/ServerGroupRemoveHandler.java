@@ -39,7 +39,6 @@ import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.domain.controller.LocalHostControllerInfo;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
-import org.jboss.as.domain.controller.resources.ServerGroupResourceDefinition;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -50,7 +49,6 @@ public class ServerGroupRemoveHandler extends AbstractRemoveStepHandler {
     // We need the host controller info since the host name is not available during boot-time
     private final LocalHostControllerInfo hostControllerInfo;
     public ServerGroupRemoveHandler(final LocalHostControllerInfo hostControllerInfo) {
-        super(ServerGroupResourceDefinition.SERVER_GROUP_CAPABILITY);
         this.hostControllerInfo = hostControllerInfo;
     }
 

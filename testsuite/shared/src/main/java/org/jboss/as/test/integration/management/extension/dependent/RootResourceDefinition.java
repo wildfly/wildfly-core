@@ -69,7 +69,7 @@ public class RootResourceDefinition extends PersistentResourceDefinition {
     private RootResourceDefinition() {
         super(new SimpleResourceDefinition.Parameters(PathElement.pathElement(SUBSYSTEM, DependentExtension.SUBSYSTEM_NAME), NonResolvingResourceDescriptionResolver.INSTANCE)
                 .setAddHandler(AddSubsystemHandler.INSTANCE)
-                .setRemoveHandler(new ServiceRemoveStepHandler(AddSubsystemHandler.INSTANCE, RUNTIME_CAPABILITY))
+                .setRemoveHandler(new ServiceRemoveStepHandler(AddSubsystemHandler.INSTANCE))
                 .setCapabilities(RUNTIME_CAPABILITY));
     }
 

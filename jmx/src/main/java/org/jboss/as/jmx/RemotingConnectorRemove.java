@@ -35,7 +35,6 @@ class RemotingConnectorRemove extends AbstractRemoveStepHandler {
     static final RemotingConnectorRemove INSTANCE = new RemotingConnectorRemove();
 
     private RemotingConnectorRemove() {
-        super(RemotingConnectorResource.REMOTE_JMX_CAPABILITY);
     }
 
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) {
