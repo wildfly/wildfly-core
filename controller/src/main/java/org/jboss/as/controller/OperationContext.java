@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.logging.Level;
 
+import org.jboss.as.controller._private.OperationFailedRuntimeException;
 import org.jboss.as.controller.access.Action;
 import org.jboss.as.controller.access.AuthorizationResult;
 import org.jboss.as.controller.access.Environment;
@@ -522,7 +523,7 @@ public interface OperationContext extends ExpressionResolver {
      * @param address the (possibly empty) address where the resource should be created. Address is relative to the
      *                address of the operation being executed
      * @return the created resource
-     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     Resource createResource(PathAddress address) throws UnsupportedOperationException;
@@ -534,7 +535,7 @@ public interface OperationContext extends ExpressionResolver {
      * @param address the (possibly empty) address where the resource should be added. Address is relative to the
      *                address of the operation being executed
      * @param toAdd the new resource
-     * @throws IllegalStateException if a resource already exists at the given address, or if the resource does not support ordered childred
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address, or if the resource does not support ordered childred
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, Resource toAdd);
@@ -547,7 +548,7 @@ public interface OperationContext extends ExpressionResolver {
      *                address of the operation being executed
      * @param index the index of the resource to be created in the parent resources children of this type
      * @param toAdd the new resource
-     * @throws IllegalStateException if a resource already exists at the given address
+     * @throws OperationFailedRuntimeException if a resource already exists at the given address
      * @throws UnsupportedOperationException if the calling operation is not a model operation
      */
     void addResource(PathAddress address, int index, Resource toAdd);
