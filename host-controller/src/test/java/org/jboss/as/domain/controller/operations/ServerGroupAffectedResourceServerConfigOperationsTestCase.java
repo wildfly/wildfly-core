@@ -710,15 +710,10 @@ public class ServerGroupAffectedResourceServerConfigOperationsTestCase extends A
         @Override
         public void completeStep(ResultHandler resultHandler) {
             if (!nextHandlers.isEmpty()) {
-                stepCompleted();
+                completed();
             } else if (rollback) {
                 resultHandler.handleResult(ResultAction.ROLLBACK, this, null);
             }
-        }
-
-        @Override
-        public void stepCompleted() {
-            completed();
         }
 
         private void completed() {

@@ -285,26 +285,6 @@ public interface OperationContext extends ExpressionResolver {
     void completeStep(ResultHandler resultHandler);
 
     /**
-     * Called by an {@link OperationStepHandler} to indicate it has completed its handling of a step and is
-     * uninterested in the result of subsequent steps. This is a convenience method that is equivalent to a call to
-     * {@link #completeStep(ResultHandler) completeStep(OperationContext.ResultHandler.NO_OP_RESULT_HANDLER)}.
-     * <p>
-     * A common user of this method would be a {@link Stage#MODEL} handler. Typically such a handler would not need
-     * to take any further action in the case of a {@link ResultAction#KEEP successful result} for the overall operation.
-     * If the operation result is a {@link ResultAction#ROLLBACK rollback}, the {@code OperationContext} itself
-     * will ensure any changes made to the model are discarded, again requiring no action on the part of the handler.
-     * So a {@link Stage#MODEL} handler typically can be uninterested in the result of the overall operation and can
-     * use this method.
-     * </p>
-     *
-     * @deprecated invoking this method is unnecessary since if an {@code OperationStepHandler} does not call one of
-     *             the {@link #completeStep(org.jboss.as.controller.OperationContext.ResultHandler) variants} from its
-     *             {@code execute} method, a no-op {@code ResultHandler} will automatically be registered
-     */
-    @Deprecated
-    void stepCompleted();
-
-    /**
      * Get the type of process in which this operation is executing.
      *
      * @return the process type. Will not be {@code null}
@@ -470,7 +450,7 @@ public interface OperationContext extends ExpressionResolver {
      * <p>
      * <strong>Note:</strong> It is very important that the {@code modify} parameter accurately reflect whether the
      * caller intends to make any modifications to any object reachable, directly or indirectly, from the returned
-     * {@link ServiceRegistry}. This includes modifying any {@link ServiceController},
+     * {@link ServiceRegistry}. This includes modifying any {@link ServiceController}, {@link org.jboss.msc.Service},
      * {@link org.jboss.msc.service.Service}, {@link org.jboss.msc.value.Value} or any object reachable from a value.
      *
      * @param modify {@code true} if the operation may be modifying any object reachable directly or indirectly from

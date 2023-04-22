@@ -520,11 +520,6 @@ abstract class AbstractOperationContext implements OperationContext {
     }
 
     @Override
-    public final void stepCompleted() {
-        completeStep(ResultHandler.NOOP_RESULT_HANDLER);
-    }
-
-    @Override
     public final PathAddress getCurrentAddress() {
         assert activeStep != null;
         return activeStep.address;

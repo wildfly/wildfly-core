@@ -286,18 +286,13 @@ public abstract class AbstractOperationTestCase {
 
         @Override
         public void completeStep(OperationContext.RollbackHandler rollbackHandler) {
-            stepCompleted();
         }
 
         @Override
         public void completeStep(ResultHandler resultHandler) {
-            stepCompleted();
         }
 
-        @Override
-        public void stepCompleted() {
 
-        }
 
         @Override
         public ModelNode getFailureDescription() {

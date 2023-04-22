@@ -382,11 +382,6 @@ public class ServerGroupAffectedResourceServerGroupOperationsTestCase extends Ab
             }
         }
 
-        @Override
-        public void stepCompleted() {
-            completed();
-        }
-
         private void completed() {
             if (nextStep != null) {
                 try {
