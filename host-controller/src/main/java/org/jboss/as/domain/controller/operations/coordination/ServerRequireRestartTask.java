@@ -22,6 +22,8 @@
 
 package org.jboss.as.domain.controller.operations.coordination;
 
+import static org.jboss.as.server.operations.ServerProcessStateHandler.REQUIRE_RESTART_OPERATION;
+
 import org.jboss.as.controller.BlockingTimeout;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ProxyController;
@@ -31,7 +33,6 @@ import org.jboss.as.controller.client.OperationResponse;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.domain.controller.logging.DomainControllerLogger;
 import org.jboss.as.domain.controller.ServerIdentity;
-import org.jboss.as.server.operations.ServerRestartRequiredHandler;
 import org.jboss.dmr.ModelNode;
 
 import java.util.concurrent.Callable;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class ServerRequireRestartTask implements Callable<OperationResponse> {
 
-    public static final String OPERATION_NAME = ServerRestartRequiredHandler.OPERATION_NAME;
+    public static final String OPERATION_NAME = REQUIRE_RESTART_OPERATION;;
     public static final ModelNode OPERATION;
 
     static {
