@@ -30,9 +30,7 @@ import javax.xml.stream.XMLStreamReader;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.subsystem.test.TestParser;
 import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLMapper;
@@ -81,7 +79,6 @@ public class TestParserUtils {
         // RuntimeHostControllerInfoAccessor)
         private final ProcessType processType = ProcessType.HOST_CONTROLLER;
         private final RunningMode runningMode = RunningMode.NORMAL;
-        private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
 
         public Builder(Extension extension, String subsystemName, String subsystemXml) {
             this.extension = extension;
@@ -120,7 +117,7 @@ public class TestParserUtils {
          */
         public TestParserUtils build() {
             XMLMapper xmlMapper = XMLMapper.Factory.create();
-            ExtensionRegistry extensionParsingRegistry = new ExtensionRegistry(processType, new RunningModeControl(runningMode), null, null, null, hostControllerInfoAccessor);
+            ExtensionRegistry extensionParsingRegistry = ExtensionRegistry.builder(this.processType).withRunningMode(this.runningMode).build();
             TestParser testParser = new TestParser(subsystemName, extensionParsingRegistry);
             xmlMapper.registerRootElement(new QName(namespace, "test"), testParser);
             extension.initializeParsers(extensionParsingRegistry.getExtensionParsingContext("Test", xmlMapper));

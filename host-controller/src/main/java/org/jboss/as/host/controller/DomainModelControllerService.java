@@ -281,8 +281,20 @@ public class DomainModelControllerService extends AbstractControllerService impl
         final ManagementSecurityIdentitySupplier securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
         final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = new DomainHostControllerInfoAccessor(hostControllerInfo);
         final ProcessType processType = environment.getProcessType();
-        final ExtensionRegistry hostExtensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, securityIdentitySupplier, hostControllerInfoAccessor);
-        final ExtensionRegistry extensionRegistry = new ExtensionRegistry(processType, runningModeControl, auditLogger, authorizer, securityIdentitySupplier, hostControllerInfoAccessor);
+        final ExtensionRegistry hostExtensionRegistry = ExtensionRegistry.builder(processType)
+                .withRunningModeControl(runningModeControl)
+                .withAuditLogger(auditLogger)
+                .withAuthorizer(authorizer)
+                .withSecurityIdentityProvider(securityIdentitySupplier)
+                .withHostControllerInfoAccessor(hostControllerInfoAccessor)
+                .build();
+        final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(processType)
+                .withRunningModeControl(runningModeControl)
+                .withAuditLogger(auditLogger)
+                .withAuthorizer(authorizer)
+                .withSecurityIdentityProvider(securityIdentitySupplier)
+                .withHostControllerInfoAccessor(hostControllerInfoAccessor)
+                .build();
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
                 hostProxies, serverProxies, ignoredRegistry, extensionRegistry);
         final RuntimeExpressionResolver expressionResolver = new RuntimeExpressionResolver();

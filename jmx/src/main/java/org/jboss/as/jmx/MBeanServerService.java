@@ -47,6 +47,7 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.wildfly.common.function.Functions;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -115,7 +116,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
                 .install();
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized void start(final StartContext context) throws StartException {
         //If the platform MBeanServer was set up to be the PluggableMBeanServer, use that otherwise create a new one and delegate
         MBeanServer platform = ManagementFactory.getPlatformMBeanServer();
@@ -136,14 +137,14 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         mBeanServer = pluggable;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized void stop(final StopContext context) {
-        ((PluggableMBeanServerImpl) mBeanServer).setSecurityIdentitySupplier(null);
+        ((PluggableMBeanServerImpl) mBeanServer).setSecurityIdentitySupplier(Functions.constantSupplier(null));
         mBeanServer.removePlugin(showModelPlugin);
         mBeanServer = null;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized PluggableMBeanServer getValue() throws IllegalStateException {
         return mBeanServer;
     }

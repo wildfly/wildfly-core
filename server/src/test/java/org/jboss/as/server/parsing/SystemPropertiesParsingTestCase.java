@@ -27,10 +27,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.jboss.as.controller.ExpressionResolver;
 import org.jboss.as.controller.ProcessType;
-import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.dmr.ModelNode;
@@ -99,8 +96,7 @@ public class SystemPropertiesParsingTestCase {
                     + "    </system-properties>\n"
                     + "</server>";
             final XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
-            final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.STANDALONE_SERVER,
-                    new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+            final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
             final StandaloneXml parser = new StandaloneXml(null, null, extensionRegistry);
             final List<ModelNode> operationList = new ArrayList<>();
             final XMLMapper mapper = XMLMapper.Factory.create();

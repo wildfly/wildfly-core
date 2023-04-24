@@ -33,7 +33,6 @@ import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorize
 import org.jboss.as.controller.access.management.ManagementSecurityIdentitySupplier;
 import org.jboss.as.controller.audit.ManagedAuditLogger;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.parsing.Namespace;
 import org.jboss.as.controller.persistence.BackupXmlConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationFile;
@@ -107,7 +106,12 @@ public interface Bootstrap {
             this.auditLogger = serverEnvironment.createAuditLogger();
             this.authorizer = new DelegatingConfigurableAuthorizer();
             this.securityIdentitySupplier = new ManagementSecurityIdentitySupplier();
-            this.extensionRegistry = new ExtensionRegistry(serverEnvironment.getLaunchType().getProcessType(), runningModeControl, this.auditLogger, authorizer, securityIdentitySupplier, RuntimeHostControllerInfoAccessor.SERVER);
+            this.extensionRegistry = ExtensionRegistry.builder(serverEnvironment.getLaunchType().getProcessType())
+                    .withRunningModeControl(this.runningModeControl)
+                    .withAuditLogger(this.auditLogger)
+                    .withAuthorizer(this.authorizer)
+                    .withSecurityIdentityProvider(this.securityIdentitySupplier)
+                    .build();
             this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();
         }
