@@ -19,11 +19,9 @@
 package org.jboss.as.server.deployment.client;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.jboss.as.controller.LocalModelControllerClient;
-import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.Operation;
 import org.jboss.as.controller.client.helpers.standalone.impl.AbstractServerDeploymentManager;
@@ -34,16 +32,12 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  *
+ * @deprecated Use {@link org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager.Factory}
  */
+@Deprecated
 public class ModelControllerServerDeploymentManager extends AbstractServerDeploymentManager {
 
     private final ModelControllerClient client;
-
-    /** @deprecated Use {@link #ModelControllerServerDeploymentManager(LocalModelControllerClient)}. Will be removed in the next major or minor release. */
-    @Deprecated
-    public ModelControllerServerDeploymentManager(final ModelController controller) {
-        this.client = controller.createClient(Executors.newCachedThreadPool());
-    }
 
     public ModelControllerServerDeploymentManager(final LocalModelControllerClient client) {
         this.client = client;

@@ -43,7 +43,6 @@ import org.jboss.as.process.ExitCodes;
 import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.version.ProductConfig;
 import org.jboss.modules.Module;
-import org.jboss.msc.service.ServiceActivator;
 import org.jboss.stdio.LoggingOutputStream;
 import org.jboss.stdio.NullInputStream;
 import org.jboss.stdio.SimpleStdioContextSelector;
@@ -107,8 +106,7 @@ public final class Main {
                 final Bootstrap bootstrap = Bootstrap.Factory.newInstance();
                 final Bootstrap.Configuration configuration = new Bootstrap.Configuration(serverEnvironmentWrapper.getServerEnvironment());
                 configuration.setModuleLoader(Module.getBootModuleLoader());
-                bootstrap.bootstrap(configuration, Collections.<ServiceActivator>emptyList()).get();
-                return;
+                bootstrap.bootstrap(configuration, Collections.emptyList()).get();
             }
         } catch (Throwable t) {
             abort(t);
@@ -123,13 +121,6 @@ public final class Main {
         } finally {
             SystemExiter.abort(ExitCodes.FAILED);
         }
-    }
-
-    /** @deprecated use {@link #determineEnvironment(String[], Properties, Map, ServerEnvironment.LaunchType, long)}  */
-    @Deprecated
-    public static ServerEnvironmentWrapper determineEnvironment(String[] args, Properties systemProperties, Map<String, String> systemEnvironment,
-                                                         ServerEnvironment.LaunchType launchType) {
-        return determineEnvironment(args, systemProperties, systemEnvironment, launchType, Module.getStartTime());
     }
 
     /**
@@ -235,7 +226,7 @@ public final class Main {
                         value = "true";
                     } else {
                         name = arg.substring(2, idx);
-                        value = arg.substring(idx + 1, arg.length());
+                        value = arg.substring(idx + 1);
                     }
                     systemProperties.setProperty(name, value);
                 } else if (arg.startsWith(CommandLineConstants.PUBLIC_BIND_ADDRESS)) {
@@ -360,7 +351,7 @@ public final class Main {
                             return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
-                        gitRepository = arg.substring(idx + 1, arg.length());
+                        gitRepository = arg.substring(idx + 1);
                     }
                 } else if(arg.startsWith(CommandLineConstants.GIT_AUTH)) {
                     int idx = arg.indexOf("=");
@@ -375,7 +366,7 @@ public final class Main {
                             return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
-                        gitAuthConfiguration = arg.substring(idx + 1, arg.length());
+                        gitAuthConfiguration = arg.substring(idx + 1);
                     }
                 } else if(arg.startsWith(CommandLineConstants.GIT_BRANCH)) {
                     int idx = arg.indexOf("=");
@@ -390,7 +381,7 @@ public final class Main {
                             return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
-                        gitBranch = arg.substring(idx + 1, arg.length());
+                        gitBranch = arg.substring(idx + 1);
                     }
                 } else if(ConfigurationExtensionFactory.isConfigurationExtensionSupported()
                         && ConfigurationExtensionFactory.commandLineContainsArgument(arg)) {
@@ -406,7 +397,7 @@ public final class Main {
                             return new ServerEnvironmentWrapper (ServerEnvironmentWrapper.ServerEnvironmentStatus.ERROR);
                         }
                     } else {
-                        supplementalConfiguration = arg.substring(idx + 1, arg.length());
+                        supplementalConfiguration = arg.substring(idx + 1);
                     }
                 } else {
                     STDERR.println(ServerLogger.ROOT_LOGGER.invalidCommandLineOption(arg));

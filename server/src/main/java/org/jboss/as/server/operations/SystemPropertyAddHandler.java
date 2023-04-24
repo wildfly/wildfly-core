@@ -47,6 +47,8 @@ import org.wildfly.security.manager.WildFlySecurityManager;
 public class SystemPropertyAddHandler implements OperationStepHandler {
 
     public static final String OPERATION_NAME = ADD;
+    /** Key under which the {@code DeferredProcessor} should be attached to the operation context. */
+    private static final OperationContext.AttachmentKey<DeferredProcessor> ATTACHMENT_KEY = OperationContext.AttachmentKey.create(DeferredProcessor.class);
 
     public static ModelNode getOperation(ModelNode address, String value) {
         return getOperation(address, value, null);
@@ -148,10 +150,10 @@ public class SystemPropertyAddHandler implements OperationStepHandler {
                 || resolutionFailure instanceof OperationFailedException
                 : "invalid resolutionFailure type " + resolutionFailure.getClass();
 
-        DeferredProcessor deferredResolver = (DeferredProcessor) context.getAttachment(SystemPropertyDeferredProcessor.ATTACHMENT_KEY);
+        DeferredProcessor deferredResolver = context.getAttachment(ATTACHMENT_KEY);
         if (deferredResolver == null) {
             deferredResolver = new DeferredProcessor(systemPropertyUpdater);
-            context.attach(SystemPropertyDeferredProcessor.ATTACHMENT_KEY, deferredResolver);
+            context.attach(ATTACHMENT_KEY, deferredResolver);
         }
         deferredResolver.addDeferredProcessee(propertyName, model, resolutionFailure);
 
@@ -183,7 +185,7 @@ public class SystemPropertyAddHandler implements OperationStepHandler {
         }, OperationContext.Stage.RUNTIME);
     }
 
-    static final class DeferredProcessor implements SystemPropertyDeferredProcessor {
+    static final class DeferredProcessor {
 
         private final Map<String, DeferredProcesee> unresolved = new HashMap<>();
         private final ProcessEnvironmentSystemPropertyUpdater systemPropertyUpdater;
@@ -217,8 +219,13 @@ public class SystemPropertyAddHandler implements OperationStepHandler {
             return true;
         }
 
-        @Override
-        public synchronized void processDeferredProperties(ExpressionResolver resolver) {
+        /**
+         * Resolve and store any system properties that could not be resolved during
+         * the normal handling of system properties.
+         *
+         * @param resolver the resolver to use. Cannot be {@code null}
+         */
+        synchronized void processDeferredProperties(ExpressionResolver resolver) {
             for (Iterator<Map.Entry<String, DeferredProcesee>> it = unresolved.entrySet().iterator(); it.hasNext();) {
                 Map.Entry<String, DeferredProcesee> entry = it.next();
                 try {
