@@ -223,11 +223,6 @@ public class AuthorizedAddressTest {
         }
 
         @Override
-        public void stepCompleted() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
         public ProcessType getProcessType() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
