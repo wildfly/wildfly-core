@@ -75,21 +75,6 @@ class TestModelControllerService extends ModelTestModelControllerService impleme
     private final boolean registerTransformers;
 
     protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
-                                         final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
-                                         final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
-                                         final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers) {
-        super(additionalInit.getProcessType(), runningModeControl, extensionRegistry.getTransformerRegistry(), persister, validateOpsFilter,
-                new SimpleResourceDefinition(null, NonResolvingResourceDescriptionResolver.INSTANCE) , new ControlledProcessState(true), Controller90x.INSTANCE);
-        this.mainExtension = mainExtension;
-        this.additionalInit = additionalInit;
-        this.controllerInitializer = controllerInitializer;
-        this.extensionRegistry = extensionRegistry;
-        this.runningModeControl = runningModeControl;
-        this.registerTransformers = registerTransformers;
-
-    }
-
-    protected TestModelControllerService(final Extension mainExtension, final ControllerInitializer controllerInitializer,
                                             final AdditionalInitialization additionalInit, final RunningModeControl runningModeControl,
                                             final ExtensionRegistry extensionRegistry, final StringConfigurationPersister persister,
                                             final ModelTestOperationValidatorFilter validateOpsFilter, final boolean registerTransformers,
