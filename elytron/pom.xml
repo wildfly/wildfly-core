@@ -50,6 +50,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-elytron-integration-common</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>jakarta.authentication</groupId>

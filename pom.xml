@@ -288,6 +288,7 @@
         <module>domain-http</module>
         <module>domain-management</module>
         <module>elytron</module>
+        <module>elytron-common</module>
         <module>elytron-tool-wrapper</module>
         <module>embedded</module>
         <module>event-logger</module>
@@ -1144,7 +1145,7 @@
                 <version>${version.org.slf4j}</version>
             </dependency>
             <!-- git persistence -->
-           <dependency>
+            <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>${version.org.eclipse.jgit}</version>
@@ -1499,6 +1500,11 @@
             <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-domain-management</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.core</groupId>
+                <artifactId>wildfly-elytron-integration-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

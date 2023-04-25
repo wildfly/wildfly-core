@@ -5,6 +5,7 @@
   # ignore secrets present in the below test folders
   paths = [
 	'''elytron\/src\/test\/resources\/org\/wildfly\/extension\/elytron''',
+	'''elytron-common\/src\/test\/resources\/org\/wildfly\/extension\/elytron''',
 	'''testsuite\/manualmode\/src\/test\/resources\/git-persistence''',
 	'''testsuite\/domain\/src\/test\/java\/org\/jboss\/as\/test\/integration\/domain''',
   	# ignore this file
