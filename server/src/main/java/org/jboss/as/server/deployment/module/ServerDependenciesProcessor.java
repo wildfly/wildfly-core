@@ -40,17 +40,25 @@ import org.jboss.modules.ModuleLoader;
  */
 public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
 
-    private static final String JAVA_SE = "java.se";
+    private static final String[] DEFAULT_MODULES = {
+            "java.se",
+            // Currently this is required for Spring deployments. Spring identifies the resource protocol as "vfs" and
+            // attempts to use VFS to search for configuration files within the deployment.
+            "org.jboss.vfs",
+    };
+
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         final DeploymentUnit deploymentUnit = phaseContext.getDeploymentUnit();
         final ModuleSpecification moduleSpecification = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
-        try {
-            moduleLoader.loadModule(JAVA_SE);
-            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, JAVA_SE, false, false, false, false));
-        } catch (ModuleLoadException ex) {
-            ServerLogger.ROOT_LOGGER.debugf("Module not found: %s", JAVA_SE);
+        for (String moduleName : DEFAULT_MODULES) {
+            try {
+                moduleLoader.loadModule(moduleName);
+                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, moduleName, false, false, false, false));
+            } catch (ModuleLoadException ex) {
+                ServerLogger.ROOT_LOGGER.debugf("Module not found: %s", moduleName);
+            }
         }
     }
 
