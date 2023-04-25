@@ -156,7 +156,6 @@ public final class ServerService extends AbstractControllerService {
     private volatile ExtensibleConfigurationPersister extensibleConfigurationPersister;
     private final ServerDelegatingResourceDefinition rootResourceDefinition;
     private final SuspendController suspendController;
-    private final RuntimeExpressionResolver expressionResolver;
     public static final String SERVER_NAME = "server";
 
     static final String SUSPEND_CONTROLLER_CAPABILITY_NAME = "org.wildfly.server.suspend-controller";
@@ -193,7 +192,6 @@ public final class ServerService extends AbstractControllerService {
         this.runningModeControl = runningModeControl;
         this.rootResourceDefinition = rootResourceDefinition;
         this.suspendController = suspendController;
-        this.expressionResolver = expressionResolver;
     }
 
     static ProcessType getProcessType(ServerEnvironment serverEnvironment) {
