@@ -43,6 +43,9 @@ public class ServerDependenciesProcessor implements DeploymentUnitProcessor {
 
     private static ModuleIdentifier[] DEFAULT_MODULES = new ModuleIdentifier[] {
         ModuleIdentifier.create("java.se"),
+        // Currently this is required for Spring deployments. Spring identifies the resource protocol as "vfs" and
+        // attempts to use VFS to search for configuration files within the deployment.
+        ModuleIdentifier.create("org.jboss.vfs"),
     };
 
     private static ModuleIdentifier[] DEFAULT_MODULES_WITH_SERVICE_IMPORTS = new ModuleIdentifier[] {
