@@ -59,8 +59,7 @@ import org.wildfly.extension.requestcontroller.logging.RequestControllerLogger;
  */
 public class RequestController implements Service<RequestController>, ServerActivity {
 
-    @Deprecated
-    public static final ServiceName SERVICE_NAME = RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY.getCapabilityServiceName();
+    static final ServiceName SERVICE_NAME = RequestControllerRootDefinition.REQUEST_CONTROLLER_CAPABILITY.getCapabilityServiceName();
 
     private static final AtomicIntegerFieldUpdater<RequestController> activeRequestCountUpdater = AtomicIntegerFieldUpdater.newUpdater(RequestController.class, "activeRequestCount");
     private static final AtomicReferenceFieldUpdater<RequestController, ServerActivityCallback> listenerUpdater = AtomicReferenceFieldUpdater.newUpdater(RequestController.class, ServerActivityCallback.class, "listener");
