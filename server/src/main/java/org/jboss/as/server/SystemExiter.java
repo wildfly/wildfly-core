@@ -68,12 +68,6 @@ public class SystemExiter {
         }, 0);
     }
 
-    /** @deprecated use {@link #logAndExit(ExitLogger, int)} or {@link #abort(int)} */
-    @Deprecated
-    public static void exit(final int status) {
-        getExiter().exit(status);
-    }
-
     /**
      * Invokes the exit logger if and only if no ExitLogger was previously invoked.
      * @param logger the logger. Cannot be {@code null}
