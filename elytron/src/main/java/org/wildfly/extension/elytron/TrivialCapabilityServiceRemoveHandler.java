@@ -47,10 +47,10 @@ class TrivialCapabilityServiceRemoveHandler extends ServiceRemoveStepHandler imp
      * Construct an {@link OperationStepHandler} for removing a single service based on it's capability.
      *
      * @param addOperation
-     * @param unavailableCapabilities
+     * @param runtimeCapabilities
      */
     TrivialCapabilityServiceRemoveHandler(AbstractAddStepHandler addOperation, RuntimeCapability<?> ... runtimeCapabilities) {
-        super(addOperation, runtimeCapabilities);
+        super(addOperation);
         this.firstCapability = runtimeCapabilities[0];
         this.allCapabilities = new HashSet<>(Arrays.asList(runtimeCapabilities));
     }

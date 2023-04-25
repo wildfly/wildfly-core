@@ -22,8 +22,6 @@
 
 package org.jboss.as.controller;
 
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.as.controller.capability.RuntimeCapability;
@@ -40,25 +38,8 @@ import org.jboss.msc.service.ServiceName;
  */
 public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
 
-    private static final RuntimeCapability[] NO_CAPABILITIES = new RuntimeCapability[0];
     private final ServiceName baseServiceName;
     private final AbstractAddStepHandler addOperation;
-    private final Set<RuntimeCapability> unavailableCapabilities;
-
-    /**
-     * Creates a {@code ServiceRemoveStepHandler}.
-     * @param baseServiceName base name to remove. Cannot be {@code null} unless {@code unavailableCapabilities} are provided
-     * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
-     * @param unavailableCapabilities capabilities that will no longer be available once the remove occurs. Any services
-     *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed
-     */
-    @Deprecated
-    public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
-        super(unavailableCapabilities);
-        this.baseServiceName = baseServiceName;
-        this.addOperation = addOperation;
-        this.unavailableCapabilities = new LinkedHashSet<>(Arrays.asList(unavailableCapabilities));
-    }
 
     /**
      * Creates a {@code ServiceRemoveStepHandler}.
@@ -66,19 +47,8 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
      * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
      */
     public ServiceRemoveStepHandler(final ServiceName baseServiceName, final AbstractAddStepHandler addOperation) {
-        this(baseServiceName, addOperation, NO_CAPABILITIES);
-    }
-
-    /**
-     * Creates a {@code ServiceRemoveStepHandler}.
-     * @param addOperation the add operation to use to rollback service removal. Cannot be {@code null}
-     * @param unavailableCapabilities capabilities that will no longer be available once the remove occurs. Any services
-     *          {@link RuntimeCapability#getCapabilityServiceValueType() exposed by the capabilities} will also be removed.
-     *          Cannot be {@code null} or empty.
-     */
-    @Deprecated
-    public ServiceRemoveStepHandler(final AbstractAddStepHandler addOperation, final RuntimeCapability ... unavailableCapabilities) {
-        this(null, addOperation, unavailableCapabilities);
+        this.baseServiceName = baseServiceName;
+        this.addOperation = addOperation;
     }
 
     /**
@@ -113,7 +83,7 @@ public class ServiceRemoveStepHandler extends AbstractRemoveStepHandler {
                 context.removeService(serviceName(name, address));
             }
 
-            Set<RuntimeCapability> capabilitySet = unavailableCapabilities.isEmpty() ? context.getResourceRegistration().getCapabilities() : unavailableCapabilities;
+            Set<RuntimeCapability> capabilitySet = context.getResourceRegistration().getCapabilities();
 
             for (RuntimeCapability<?> capability : capabilitySet) {
                 if (capability.getCapabilityServiceValueType() != null) {

@@ -24,8 +24,6 @@ package org.jboss.as.server.operations;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.HTTP_INTERFACE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.MANAGEMENT_INTERFACE;
-import static org.jboss.as.server.mgmt.NativeManagementResourceDefinition.NATIVE_MANAGEMENT_RUNTIME_CAPABILITY;
-
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -48,7 +46,6 @@ public class NativeManagementRemoveHandler extends ReloadRequiredRemoveStepHandl
     public static final NativeManagementRemoveHandler INSTANCE = new NativeManagementRemoveHandler();
 
     private NativeManagementRemoveHandler() {
-        super(NATIVE_MANAGEMENT_RUNTIME_CAPABILITY);
     }
 
     @Override

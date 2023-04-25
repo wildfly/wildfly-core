@@ -21,6 +21,7 @@
  */
 package org.jboss.as.server.services.net;
 
+import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.dmr.ModelNode;
 
@@ -29,7 +30,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Brian Stansberry (c) 2011 Red Hat Inc.
  */
-public class SpecifiedInterfaceRemoveHandler extends InterfaceRemoveHandler {
+public class SpecifiedInterfaceRemoveHandler extends AbstractRemoveStepHandler {
 
     public static final SpecifiedInterfaceRemoveHandler INSTANCE = new SpecifiedInterfaceRemoveHandler();
 
