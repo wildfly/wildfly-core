@@ -61,7 +61,6 @@ import org.jboss.as.controller.CapabilityRegistry;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.extension.ExtensionRegistry;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.logging.ControllerLogger;
 import org.jboss.as.controller.persistence.AbstractConfigurationPersister;
 import org.jboss.as.controller.persistence.ConfigurationPersistenceException;
@@ -113,8 +112,7 @@ public class InterfaceManagementUnitTestCase {
     public void before() throws Exception {
         dependentStarted = false;
         final ServiceTarget target = container.subTarget();
-        final ExtensionRegistry extensionRegistry =
-                new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+        final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
         final StringConfigurationPersister persister = new StringConfigurationPersister(Collections.<ModelNode>emptyList(), new StandaloneXml(null, null, extensionRegistry));
         extensionRegistry.setWriterRegistry(persister);
         final ControlledProcessState processState = new ControlledProcessState(true);
@@ -312,8 +310,7 @@ public class InterfaceManagementUnitTestCase {
             final String hostControllerName = "hostControllerName"; // Host Controller name may not be null when in a managed domain
             environment = new ServerEnvironment(hostControllerName, properties, new HashMap<String, String>(), null, null,
                     ServerEnvironment.LaunchType.DOMAIN, null, ProductConfig.fromFilesystemSlot(Module.getBootModuleLoader(), ".", properties), false);
-            extensionRegistry =
-                    new ExtensionRegistry(ProcessType.STANDALONE_SERVER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+            extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).build();
 
             capabilityRegistry = new CapabilityRegistry(processType.isServer());
         }

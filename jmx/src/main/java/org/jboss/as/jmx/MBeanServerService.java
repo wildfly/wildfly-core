@@ -115,7 +115,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
                 .install();
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized void start(final StartContext context) throws StartException {
         //If the platform MBeanServer was set up to be the PluggableMBeanServer, use that otherwise create a new one and delegate
         MBeanServer platform = ManagementFactory.getPlatformMBeanServer();
@@ -136,14 +136,14 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
         mBeanServer = pluggable;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized void stop(final StopContext context) {
-        ((PluggableMBeanServerImpl) mBeanServer).setSecurityIdentitySupplier(null);
+        ((PluggableMBeanServerImpl) mBeanServer).clearSecurityIdentity();
         mBeanServer.removePlugin(showModelPlugin);
         mBeanServer = null;
     }
 
-    /** {@inheritDoc} */
+    @Override
     public synchronized PluggableMBeanServer getValue() throws IllegalStateException {
         return mBeanServer;
     }

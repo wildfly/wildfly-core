@@ -61,7 +61,6 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.ProxyController;
 import org.jboss.as.controller.RunningMode;
-import org.jboss.as.controller.RunningModeControl;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.access.management.DelegatingConfigurableAuthorizer;
@@ -72,7 +71,6 @@ import org.jboss.as.controller.client.OperationMessageHandler;
 import org.jboss.as.controller.descriptions.NonResolvingResourceDescriptionResolver;
 import org.jboss.as.controller.extension.ExtensionRegistry;
 import org.jboss.as.controller.extension.MutableRootResourceRegistrationProvider;
-import org.jboss.as.controller.extension.RuntimeHostControllerInfoAccessor;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.operations.global.GlobalOperationHandlers;
 import org.jboss.as.controller.persistence.ExtensibleConfigurationPersister;
@@ -120,7 +118,7 @@ public class SyncModelServerStateTestCase extends AbstractControllerTestBase  {
             .addParameter(ATTR)
             .build();
 
-    private final ExtensionRegistry extensionRegistry = new ExtensionRegistry(ProcessType.HOST_CONTROLLER, new RunningModeControl(RunningMode.NORMAL), null, null, null, RuntimeHostControllerInfoAccessor.SERVER);
+    private final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.HOST_CONTROLLER).build();
     private volatile IgnoredDomainResourceRegistry ignoredDomainResourceRegistry;
     private volatile TestInitializer initializer;
     private volatile Resource rootResource;
