@@ -110,7 +110,7 @@ public interface Bootstrap {
                     .withRunningModeControl(this.runningModeControl)
                     .withAuditLogger(this.auditLogger)
                     .withAuthorizer(this.authorizer)
-                    .withSecurityIdentityProvider(this.securityIdentitySupplier)
+                    .withSecurityIdentitySupplier(this.securityIdentitySupplier)
                     .build();
             this.capabilityRegistry = new CapabilityRegistry(true);
             this.startTime = serverEnvironment.getStartTime();

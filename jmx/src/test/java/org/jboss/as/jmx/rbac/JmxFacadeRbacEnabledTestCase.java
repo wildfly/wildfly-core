@@ -844,7 +844,7 @@ public class JmxFacadeRbacEnabledTestCase extends AbstractControllerTestBase {
         pathManagerService.addPathManagerResources(rootResource);
 
 
-        ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).withAuthorizer(this.getAuthorizer()).withSecurityIdentityProvider(this.getSecurityIdentitySupplier()).build();
+        ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(ProcessType.STANDALONE_SERVER).withAuthorizer(this.getAuthorizer()).withSecurityIdentitySupplier(this.getSecurityIdentitySupplier()).build();
         extensionRegistry.setPathManager(pathManagerService);
         extensionRegistry.setWriterRegistry(new NullConfigurationPersister());
         JMXExtension extension = new JMXExtension();

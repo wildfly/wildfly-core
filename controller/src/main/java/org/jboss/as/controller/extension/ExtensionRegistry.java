@@ -151,7 +151,7 @@ public final class ExtensionRegistry {
         private RunningModeControl runningModeControl = new RunningModeControl(RunningMode.NORMAL);
         private ManagedAuditLogger auditLogger = AuditLogger.NO_OP_LOGGER;
         private JmxAuthorizer authorizer = NO_OP_AUTHORIZER;
-        private Supplier<SecurityIdentity> securityIdentityProvider = Functions.constantSupplier(null);
+        private Supplier<SecurityIdentity> securityIdentitySupplier = Functions.constantSupplier(null);
         private RuntimeHostControllerInfoAccessor hostControllerInfoAccessor = RuntimeHostControllerInfoAccessor.SERVER;
 
         private Builder(ProcessType processType) {
@@ -198,12 +198,12 @@ public final class ExtensionRegistry {
         }
 
         /**
-         * Overrides the default {@link SecurityIdentity} provider of the extension registry.
-         * @param securityIdentityProvider provider of the security identity
+         * Overrides the default {@link SecurityIdentity} supplier of the extension registry.
+         * @param securityIdentitySupplier supplier of a security identity
          * @return a reference to this builder
          */
-        public Builder withSecurityIdentityProvider(Supplier<SecurityIdentity> securityIdentityProvider) {
-            this.securityIdentityProvider = securityIdentityProvider;
+        public Builder withSecurityIdentitySupplier(Supplier<SecurityIdentity> securityIdentitySupplier) {
+            this.securityIdentitySupplier = securityIdentitySupplier;
             return this;
         }
 
@@ -231,7 +231,7 @@ public final class ExtensionRegistry {
         this.runningModeControl = builder.runningModeControl;
         this.auditLogger = builder.auditLogger;
         this.authorizer = builder.authorizer;
-        this.securityIdentitySupplier = builder.securityIdentityProvider;
+        this.securityIdentitySupplier = builder.securityIdentitySupplier;
         this.hostControllerInfoAccessor = builder.hostControllerInfoAccessor;
     }
 
@@ -251,7 +251,7 @@ public final class ExtensionRegistry {
         this(builder(processType).withRunningModeControl(runningModeControl)
                 .withAuditLogger((auditLogger != null) ? auditLogger : AuditLogger.NO_OP_LOGGER)
                 .withAuthorizer((authorizer != null) ? authorizer : NO_OP_AUTHORIZER)
-                .withSecurityIdentityProvider((securityIdentitySupplier != null) ? securityIdentitySupplier : Functions.constantSupplier(null))
+                .withSecurityIdentitySupplier((securityIdentitySupplier != null) ? securityIdentitySupplier : Functions.constantSupplier(null))
                 .withHostControllerInfoAccessor(hostControllerInfoAccessor));
     }
 

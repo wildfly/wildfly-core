@@ -285,14 +285,14 @@ public class DomainModelControllerService extends AbstractControllerService impl
                 .withRunningModeControl(runningModeControl)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
-                .withSecurityIdentityProvider(securityIdentitySupplier)
+                .withSecurityIdentitySupplier(securityIdentitySupplier)
                 .withHostControllerInfoAccessor(hostControllerInfoAccessor)
                 .build();
         final ExtensionRegistry extensionRegistry = ExtensionRegistry.builder(processType)
                 .withRunningModeControl(runningModeControl)
                 .withAuditLogger(auditLogger)
                 .withAuthorizer(authorizer)
-                .withSecurityIdentityProvider(securityIdentitySupplier)
+                .withSecurityIdentitySupplier(securityIdentitySupplier)
                 .withHostControllerInfoAccessor(hostControllerInfoAccessor)
                 .build();
         final PrepareStepHandler prepareStepHandler = new PrepareStepHandler(hostControllerInfo,
