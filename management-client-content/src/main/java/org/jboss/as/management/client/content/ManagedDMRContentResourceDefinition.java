@@ -58,11 +58,11 @@ public class ManagedDMRContentResourceDefinition extends SimpleResourceDefinitio
     private ManagedDMRContentResourceDefinition(final String childType,
                                                final AttributeDefinition contentDefinition,
                                                final ResourceDescriptionResolver descriptionResolver) {
-        super(PathElement.pathElement(childType),
-                descriptionResolver,
-                null,
-                ManagedDMRContentRemoveHandler.INSTANCE,
-                OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+        super(new Parameters(PathElement.pathElement(childType), descriptionResolver)
+                .setAddHandler(null)
+                .setRemoveHandler(ManagedDMRContentRemoveHandler.INSTANCE)
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_NONE)
+                .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
         this.contentDefinition = contentDefinition;
     }
 

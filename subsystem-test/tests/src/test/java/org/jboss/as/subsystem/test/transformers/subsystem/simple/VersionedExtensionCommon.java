@@ -114,7 +114,10 @@ public abstract class VersionedExtensionCommon implements Extension {
 
         @SuppressWarnings("deprecation")
         protected TestResourceDefinition(PathElement element, AbstractAddStepHandler addHandler) {
-            super(element, TEST_RESOURCE_DESCRIPTION_RESOLVER, addHandler, NOOP_REMOVE_HANDLER, OperationEntry.Flag.RESTART_NONE, OperationEntry.Flag.RESTART_NONE);
+            super(new Parameters(element, TEST_RESOURCE_DESCRIPTION_RESOLVER)
+                    .setAddHandler(addHandler)
+                    .setRemoveHandler(NOOP_REMOVE_HANDLER)
+                    .setRemoveRestartLevel(OperationEntry.Flag.RESTART_NONE));
         }
     }
 
