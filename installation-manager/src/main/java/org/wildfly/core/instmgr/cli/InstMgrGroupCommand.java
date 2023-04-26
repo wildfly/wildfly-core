@@ -49,7 +49,6 @@ import org.wildfly.core.instmgr.InstMgrConstants;
         CleanCommand.class,
         RevertCommand.class,
         HistoryCommand.class,
-        CreateSnapshotCommand.class,
         ChannelListCommand.class,
         ChannelAddCommand.class,
         ChannelEditCommand.class,

@@ -22,6 +22,8 @@
 
 package org.jboss.as.test.integration.domain.suites;
 
+import java.io.IOException;
+
 import org.jboss.as.test.integration.domain.extension.ExtensionSetup;
 import org.jboss.as.test.integration.domain.management.util.DomainTestSupport;
 import org.jboss.as.test.integration.domain.management.util.WildFlyManagedConfiguration;
@@ -36,8 +38,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.wildfly.test.installationmanager.TestInstallationManager;
 import org.wildfly.test.installationmanager.TestInstallationManagerFactory;
-
-import java.io.IOException;
 
 /**
  * Simple {@code Suite} test wrapper to start the domain only once for multiple

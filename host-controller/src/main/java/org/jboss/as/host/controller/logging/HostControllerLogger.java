@@ -1464,8 +1464,8 @@ public interface HostControllerLogger extends BasicLogger {
     @Message(id = 217, value = "Security realms are no longer supported, please migrate references to them from the configuration.")
     XMLStreamException securityRealmReferencesUnsupported();
 
-    @Message(id = 218, value = "No server installation has been prepared.")
-    OperationFailedException noServerInstallationPrepared();
+    @Message(id = 218, value = "No %s installation has been prepared.")
+    OperationFailedException noServerInstallationPrepared(String productName);
 
     ////////////////////////////////////////////////
     //Messages without IDs

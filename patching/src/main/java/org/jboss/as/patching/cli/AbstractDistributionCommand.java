@@ -333,7 +333,7 @@ public abstract class AbstractDistributionCommand implements Command<CLICommandI
             int major = response.get(RESULT, MANAGEMENT_MAJOR_VERSION).asInt();
             if (major > 20) {
                 // patch tool unsupported
-                throw new CommandException("'patch' tool is no longer supported on this host controller. For '" + host + "' host you have to use the '" + InstMgrGroupCommand.COMMAND_NAME + "' tool instead.");
+                throw new CommandException("The 'patch' command is not supported on this host controller. For the '" + host + "' host you have to use the '" + InstMgrGroupCommand.COMMAND_NAME + "' tool instead.");
             }
         }
     }

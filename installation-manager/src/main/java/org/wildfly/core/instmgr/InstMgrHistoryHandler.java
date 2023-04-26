@@ -1,67 +1,30 @@
-/*
- * JBoss, Home of Professional Open Source.
- * Copyright 2023 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.wildfly.core.instmgr;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
-import org.wildfly.core.instmgr.logging.InstMgrLogger;
-import org.wildfly.installationmanager.ArtifactChange;
-import org.wildfly.installationmanager.Channel;
-import org.wildfly.installationmanager.ChannelChange;
 import org.wildfly.installationmanager.HistoryResult;
-import org.wildfly.installationmanager.InstallationChanges;
 import org.wildfly.installationmanager.MavenOptions;
-import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
+import java.nio.file.Path;
+import java.util.List;
+
 /**
- * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as channel changes.
- * If a revision is used, it returns detailed information of the changes done on that revision.
+ * Operation handler to get the history of the installation manager changes, either artifacts or configuration metadata as
+ * channel changes.
  */
 public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
     public static final String OPERATION_NAME = "history";
 
-    private static final AttributeDefinition REVISION = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.REVISION, ModelType.STRING, true)
-            .setStorageRuntime()
-            .build();
-
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
-            .addParameter(REVISION)
-            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .setReplyType(ModelType.LIST)
-            .setRuntimeOnly()
-            .setReplyValueType(ModelType.OBJECT)
-            .build();
+            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY).setReplyType(ModelType.LIST).setRuntimeOnly().setReplyValueType(ModelType.OBJECT).build();
 
     InstMgrHistoryHandler(InstMgrService imService, InstallationManagerFactory imf) {
         super(imService, imf);
@@ -69,7 +32,6 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String revision = REVISION.resolveModelAttribute(context, operation).asStringOrNull();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
@@ -78,157 +40,17 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                     MavenOptions mavenOptions = new MavenOptions(null, false);
                     InstallationManager installationManager = imf.create(serverHome, mavenOptions);
                     ModelNode resulList = new ModelNode();
-                    if (revision == null) {
-                        List<HistoryResult> history = installationManager.history();
-                        for (HistoryResult hr : history) {
-                            ModelNode entry = new ModelNode();
-                            entry.get(InstMgrConstants.HISTORY_RESULT_HASH).set(hr.getName());
-                            entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
-                            entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase());
-                            if (hr.getDescription() != null) {
-                                entry.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).set(hr.getDescription());
-                            }
-                            resulList.add(entry);
+
+                    List<HistoryResult> history = installationManager.history();
+                    for (HistoryResult hr : history) {
+                        ModelNode entry = new ModelNode();
+                        entry.get(InstMgrConstants.HISTORY_RESULT_HASH).set(hr.getName());
+                        entry.get(InstMgrConstants.HISTORY_RESULT_TIMESTAMP).set(hr.timestamp().toString());
+                        entry.get(InstMgrConstants.HISTORY_RESULT_TYPE).set(hr.getType().toLowerCase());
+                        if (hr.getDescription() != null) {
+                            entry.get(InstMgrConstants.HISTORY_RESULT_DESCRIPTION).set(hr.getDescription());
                         }
-                    } else {
-                        InstallationChanges changes = installationManager.revisionDetails(revision);
-                        List<ArtifactChange> artifactChanges = changes.artifactChanges();
-                        List<ChannelChange> channelChanges = changes.channelChanges();
-                        if (!artifactChanges.isEmpty()) {
-                            for (ArtifactChange artifactChange : artifactChanges) {
-                                ModelNode artifactChangeMn = new ModelNode();
-                                artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NAME).set(artifactChange.getArtifactName());
-                                artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_STATUS).set(artifactChange.getStatus().name().toLowerCase());
-                                switch (artifactChange.getStatus()) {
-                                    case REMOVED:
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_OLD_VERSION).set(artifactChange.getOldVersion());
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NEW_VERSION);
-                                        break;
-                                    case INSTALLED:
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_OLD_VERSION);
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NEW_VERSION).set(artifactChange.getNewVersion());
-                                        break;
-                                    case UPDATED:
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_OLD_VERSION).set(artifactChange.getOldVersion());
-                                        artifactChangeMn.get(InstMgrConstants.HISTORY_DETAILED_ARTIFACT_NEW_VERSION).set(artifactChange.getNewVersion());
-                                        break;
-                                    default:
-                                        throw InstMgrLogger.ROOT_LOGGER.unexpectedArtifactChange(artifactChange.toString());
-                                }
-                                resulList.get(InstMgrConstants.HISTORY_RESULT_DETAILED_ARTIFACT_CHANGES).add(artifactChangeMn);
-                            }
-                        }
-
-                        if (!channelChanges.isEmpty()) {
-                            for (ChannelChange channelChange : channelChanges) {
-                                ModelNode channelChangeMn = new ModelNode();
-                                channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_STATUS).set(channelChange.getStatus().name().toLowerCase());
-                                switch (channelChange.getStatus()) {
-                                    case REMOVED: {
-                                        Channel channel = channelChange.getOldChannel().get();
-                                        channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NAME).set(String.format(channel.getName()));
-
-                                        String manifest = getManifest(channel);
-                                        if (!"".equals(manifest)) {
-                                            ModelNode manifestMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_MANIFEST);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_MANIFEST).set(manifest);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_MANIFEST);
-                                        }
-
-                                        ModelNode repositoriesMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_REPOSITORIES);
-                                        List<Repository> repositories = channel.getRepositories();
-                                        for (Repository repository : repositories) {
-                                            ModelNode repositoryMn = new ModelNode();
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_REPOSITORY).set(repository.asFormattedString());
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_REPOSITORY);
-                                            repositoriesMn.add(repositoryMn);
-                                        }
-                                        break;
-                                    }
-                                    case ADDED: {
-                                        Channel channel = channelChange.getNewChannel().get();
-                                        channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NAME).set(String.format(channel.getName()));
-
-                                        String manifest = getManifest(channel);
-                                        if (!"".equals(manifest)) {
-                                            ModelNode manifestMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_MANIFEST);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_MANIFEST);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_MANIFEST).set(manifest);
-                                        }
-
-                                        ModelNode repositoriesMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_REPOSITORIES);
-                                        List<Repository> repositories = channel.getRepositories();
-                                        for (Repository repository : repositories) {
-                                            ModelNode repositoryMn = new ModelNode();
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_REPOSITORY);
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_REPOSITORY).set(repository.asFormattedString());
-                                            repositoriesMn.add(repositoryMn);
-                                        }
-                                        break;
-                                    }
-                                    case MODIFIED: {
-                                        Channel channel = channelChange.getNewChannel().get();
-                                        channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NAME).set(String.format(channel.getName()));
-                                        Channel oldChannel = channelChange.getOldChannel().get();
-                                        Channel newChannel = channelChange.getNewChannel().get();
-
-                                        String oldManifest = getManifest(oldChannel);
-                                        String newManifest = getManifest(newChannel);
-
-                                        if (!"".equals(oldManifest) || !"".equals(newManifest)) {
-                                            ModelNode manifestMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_MANIFEST);
-
-                                            ModelNode oldManifestMn = "".equals(oldManifest) ? new ModelNode() : new ModelNode(oldManifest);
-                                            ModelNode newManifestMn = "".equals(newManifest) ? new ModelNode() : new ModelNode(newManifest);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_MANIFEST).set(oldManifestMn);
-                                            manifestMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_MANIFEST).set(newManifestMn);
-                                        }
-
-                                        ModelNode repositoriesMn = channelChangeMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_REPOSITORIES);
-                                        List<Repository> oldRepositoriesLst = new ArrayList<>(oldChannel.getRepositories());
-                                        List<Repository> newRepositoriesLst = new ArrayList<>(newChannel.getRepositories());
-                                        Iterator<Repository> newIt = newRepositoriesLst.iterator();
-                                        Iterator<Repository> oldIt = oldRepositoriesLst.iterator();
-
-                                        for (; oldIt.hasNext(); ) {
-                                            ModelNode repositoryMn = new ModelNode();
-                                            Repository oldRepository = oldIt.next();
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_REPOSITORY).set(oldRepository.asFormattedString());
-                                            oldIt.remove();
-                                            if (newIt.hasNext()) {
-                                                Repository newRepository = newIt.next();
-                                                repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_REPOSITORY).set(newRepository.asFormattedString());
-                                                newIt.remove();
-                                            } else {
-                                                repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_REPOSITORY);
-                                            }
-                                            repositoriesMn.add(repositoryMn);
-                                        }
-
-                                        for (; newIt.hasNext(); ) {
-                                            ModelNode repositoryMn = new ModelNode();
-                                            Repository newRepository = newIt.next();
-                                            repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_NEW_REPOSITORY).set(newRepository.asFormattedString());
-                                            newIt.remove();
-                                            if (oldIt.hasNext()) {
-                                                Repository oldRepository = oldIt.next();
-                                                repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_REPOSITORY).set(oldRepository.asFormattedString());
-                                                oldIt.remove();
-                                            } else {
-                                                repositoryMn.get(InstMgrConstants.HISTORY_DETAILED_CHANNEL_OLD_REPOSITORY);
-                                            }
-                                            repositoriesMn.add(repositoryMn);
-                                        }
-
-                                        break;
-                                    }
-                                    default: {
-                                        throw InstMgrLogger.ROOT_LOGGER.unexpectedConfigurationChange(channelChange.toString());
-                                    }
-                                }
-                                resulList.get(InstMgrConstants.HISTORY_RESULT_DETAILED_CHANNEL_CHANGES).add(channelChangeMn);
-                            }
-                        }
+                        resulList.add(entry);
                     }
 
                     context.getResult().set(resulList);
@@ -239,15 +61,5 @@ public class InstMgrHistoryHandler extends InstMgrOperationStepHandler {
                 }
             }
         }, OperationContext.Stage.RUNTIME);
-    }
-
-    private String getManifest(Channel channel) {
-        String manifest = "";
-        if (channel.getManifestUrl().isPresent()) {
-            manifest = channel.getManifestUrl().get().toString();
-        } else if (channel.getManifestCoordinate().isPresent()) {
-            manifest = channel.getManifestCoordinate().get();
-        }
-        return manifest;
     }
 }

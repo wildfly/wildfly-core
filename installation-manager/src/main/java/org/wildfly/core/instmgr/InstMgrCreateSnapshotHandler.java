@@ -18,24 +18,18 @@
 
 package org.wildfly.core.instmgr;
 
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
-
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
-import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
-import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
-import org.wildfly.core.instmgr.logging.InstMgrLogger;
 import org.wildfly.installationmanager.MavenOptions;
 import org.wildfly.installationmanager.spi.InstallationManager;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
@@ -45,25 +39,9 @@ import org.wildfly.installationmanager.spi.InstallationManagerFactory;
  */
 public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
     public static final String OPERATION_NAME = "clone-export";
-    private static final AttributeDefinition PATH = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.PATH, ModelType.STRING, true)
-            .setAllowExpression(true)
-            .setMinSize(1)
-            .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
-            .setStorageRuntime()
-            .setRequired(true)
-            .build();
-
-    protected static final SimpleAttributeDefinition RELATIVE_TO = new SimpleAttributeDefinitionBuilder(ModelDescriptionConstants.RELATIVE_TO, ModelType.STRING, true)
-            .setCapabilityReference("org.wildfly.management.path")
-            .setStorageRuntime()
-            .build();
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.RESOLVER)
-            .addParameter(PATH)
-            .addParameter(RELATIVE_TO)
-            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
-            .setRuntimeOnly()
-            .build();
+            .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY).setRuntimeOnly().build();
 
     public InstMgrCreateSnapshotHandler(InstMgrService imService, InstallationManagerFactory imf) {
         super(imService, imf);
@@ -71,42 +49,43 @@ public class InstMgrCreateSnapshotHandler extends InstMgrOperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String path = PATH.resolveModelAttribute(context, operation).asString();
-        final String relativeTo = RELATIVE_TO.resolveModelAttribute(context, operation).asStringOrNull();
-        try {
-            final Path exportPath = imService.resolvePath(path, relativeTo);
-            validatePath(exportPath);
-            context.addStep(new OperationStepHandler() {
-                @Override
-                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    try {
-                        Path serverHome = imService.getHomeDir();
-                        MavenOptions mavenOptions = new MavenOptions(null, false);
-                        InstallationManager installationManager = imf.create(serverHome, mavenOptions);
-                        Path snapshot = installationManager.createSnapshot(exportPath);
-                        context.getResult().set(snapshot.toString());
-                    } catch (IllegalArgumentException e) {
-                        throw new OperationFailedException(e);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+        context.addStep(new OperationStepHandler() {
+            @Override
+            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.acquireControllerLock();
+                try {
+                    final Path serverHome = imService.getHomeDir();
+                    final Path temporalDir = imService.getControllerTempDir();
+                    final MavenOptions mavenOptions = new MavenOptions(null, false);
+                    final InstallationManager im = imf.create(serverHome, mavenOptions);
+
+                    Path exportFile = temporalDir.resolve("installer-clone-export" + UUID.randomUUID() + ".zip");
+                    addCleanTempFileCompleteStep(context, exportFile);
+                    Path snapshot = im.createSnapshot(exportFile);
+                    String uuid = context.attachResultStream("application/zip", Files.newInputStream(snapshot));
+
+                    context.getResult().set(uuid);
+                } catch (IllegalArgumentException e) {
+                    throw new OperationFailedException(e);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-            }, OperationContext.Stage.RUNTIME);
-        } catch (IllegalArgumentException e) {
-            throw InstMgrLogger.ROOT_LOGGER.pathEntryNotFound(relativeTo);
-        }
+            }
+        }, OperationContext.Stage.RUNTIME);
     }
 
-    private void validatePath(Path exportPath) throws OperationFailedException {
-        Path pathToVerify = exportPath;
-        if (exportPath.toString().endsWith(".zip")) {
-            pathToVerify = pathToVerify.getParent();
-        }
-        if (!Files.exists(pathToVerify)) {
-            throw InstMgrLogger.ROOT_LOGGER.exportPathDoesNotExist(exportPath);
-        }
-        if (!Files.isWritable(pathToVerify)) {
-            throw InstMgrLogger.ROOT_LOGGER.exportPathIsNotWritable(exportPath);
-        }
+    private void addCleanTempFileCompleteStep(OperationContext context, Path tempFile) {
+        context.completeStep(new OperationContext.ResultHandler() {
+            @Override
+            public void handleResult(OperationContext.ResultAction resultAction, OperationContext context, ModelNode operation) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 }

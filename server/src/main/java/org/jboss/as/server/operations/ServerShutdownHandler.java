@@ -90,11 +90,11 @@ public class ServerShutdownHandler implements OperationStepHandler {
 
 
     private final ControlledProcessState processState;
-    private final ServerEnvironment serverEnvironment;
+    private final ServerEnvironment environment;
 
     public ServerShutdownHandler(ControlledProcessState processState, ServerEnvironment serverEnvironment) {
         this.processState = processState;
-        this.serverEnvironment = serverEnvironment;
+        this.environment = serverEnvironment;
     }
 
     /**
@@ -110,16 +110,16 @@ public class ServerShutdownHandler implements OperationStepHandler {
         // Verify the candidate server is prepared
         if (performInstallation) {
             // Cannot use the Installation Manager service, we will generate a circular reference via maven
-            // Maybe do it better by creating a specific module to hold the installation manager constants
-            try (FileInputStream in = new FileInputStream(serverEnvironment.getHomeDir().toPath().resolve("bin").resolve("installation-manager.properties").toFile())) {
+            final String productName = environment.getProductConfig().getProductName();
+            try (FileInputStream in = new FileInputStream(environment.getHomeDir().toPath().resolve("bin").resolve("installation-manager.properties").toFile())) {
                 final Properties prop = new Properties();
                 prop.load(in);
                 String current = (String) prop.get("INST_MGR_STATUS");
                 if (current == null || !current.trim().equals("PREPARED")) {
-                    throw ServerLogger.ROOT_LOGGER.noServerInstallationPrepared();
+                    throw ServerLogger.ROOT_LOGGER.noServerInstallationPrepared(productName);
                 }
             } catch (Exception e) {
-                throw ServerLogger.ROOT_LOGGER.noServerInstallationPrepared();
+                throw ServerLogger.ROOT_LOGGER.noServerInstallationPrepared(productName);
             }
         }
 

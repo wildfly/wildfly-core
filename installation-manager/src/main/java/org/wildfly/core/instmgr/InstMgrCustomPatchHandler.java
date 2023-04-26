@@ -22,16 +22,12 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ATT
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.FILESYSTEM_PATH;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.zip.ZipException;
 
 import org.jboss.as.controller.AttributeDefinition;
-import org.jboss.as.controller.ObjectTypeAttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.OperationFailedException;
@@ -58,19 +54,7 @@ public class InstMgrCustomPatchHandler extends InstMgrOperationStepHandler {
 
     public static final String OPERATION_NAME = "upload-custom-patch";
 
-    private static final AttributeDefinition MANIFEST_GAV = new SimpleAttributeDefinitionBuilder(InstMgrConstants.MANIFEST_GAV, ModelType.STRING)
-            .setAlternatives(InstMgrConstants.MANIFEST_URL)
-            .setStorageRuntime()
-            .setRequired(true)
-            .build();
-
-    private static final AttributeDefinition MANIFEST_URL = new SimpleAttributeDefinitionBuilder(InstMgrConstants.MANIFEST_URL, ModelType.STRING)
-            .setAlternatives(InstMgrConstants.MANIFEST_GAV)
-            .setStorageRuntime()
-            .setRequired(true)
-            .build();
-
-    private static final AttributeDefinition MANIFEST = ObjectTypeAttributeDefinition.create(InstMgrConstants.MANIFEST, MANIFEST_GAV, MANIFEST_URL)
+    private static final AttributeDefinition MANIFEST_GA = new SimpleAttributeDefinitionBuilder(InstMgrConstants.MANIFEST, ModelType.STRING)
             .setStorageRuntime()
             .setRequired(true)
             .setValidator(new ManifestValidator())
@@ -85,7 +69,7 @@ public class InstMgrCustomPatchHandler extends InstMgrOperationStepHandler {
 
     public static final OperationDefinition DEFINITION = new SimpleOperationDefinitionBuilder(OPERATION_NAME, InstMgrResolver.getResourceDescriptionResolver("custom-patch"))
             .addParameter(CUSTOM_PATCH_FILE)
-            .addParameter(MANIFEST)
+            .addParameter(MANIFEST_GA)
             .withFlags(OperationEntry.Flag.HOST_CONTROLLER_ONLY)
             .setRuntimeOnly()
             .build();
@@ -96,20 +80,33 @@ public class InstMgrCustomPatchHandler extends InstMgrOperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final ModelNode manifestMn = MANIFEST.resolveModelAttribute(context, operation);
+        final String manifestGA = MANIFEST_GA.resolveModelAttribute(context, operation).asString().replace(":", "_");
         final int customPathIndex = CUSTOM_PATCH_FILE.resolveModelAttribute(context, operation).asInt();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.acquireControllerLock();
                 try {
                     final Path serverHome = imService.getHomeDir();
-                    final Path baseTargetDir = imService.getCustomPatchDir();
+                    final Path baseTargetDir = imService.getCustomPatchDir(manifestGA);
 
                     final MavenOptions mavenOptions = new MavenOptions(null, false);
                     final InstallationManager im = imf.create(serverHome, mavenOptions);
 
-                    // delete any previous content
-                    deleteDirIfExits(baseTargetDir, true);
+                    // iterate over all the custom channels and check if there is a custom channel for the same manifest GAV
+                    Collection<Channel> channels = im.listChannels();
+                    Channel foundChannel = null;
+                    for (Channel channel : channels) {
+                        if(channel.getName().startsWith(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX) && channel.getManifestCoordinate().get().equals(manifestGA)) {
+                            foundChannel = channel;
+                        }
+                    }
+
+                    // if so, delete any previous content an proceed
+                    if (foundChannel != null) {
+                        deleteDirIfExits(baseTargetDir, true);
+                    }
+
                     baseTargetDir.toFile().mkdirs();
 
                     // save and unzip the file in the target dir for custom patches
@@ -120,27 +117,17 @@ public class InstMgrCustomPatchHandler extends InstMgrOperationStepHandler {
 
                     // Build the channel
                     Repository customPatchRepository = new Repository("custom-patch", customPatchPath.toUri().toURL().toString());
-                    String gav = manifestMn.get(InstMgrConstants.MANIFEST_GAV).asStringOrNull();
-                    String url = manifestMn.get(InstMgrConstants.MANIFEST_URL).asStringOrNull();
 
-                    final Channel customChannel;
-                    if (gav != null) {
-                        customChannel = new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME, List.of(customPatchRepository), gav);
-                    } else {
-                        customChannel = new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME, List.of(customPatchRepository), url);
-                    }
+                    final Channel customChannel =  new Channel(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX + manifestGA, List.of(customPatchRepository), manifestGA);
 
-                    final Collection<Channel> exitingChannels = im.listChannels();
-                    final Set<String> exitingChannelNames = new HashSet<>();
-                    for (Channel c : exitingChannels) {
-                        exitingChannelNames.add(c.getName());
-                    }
-                    if (exitingChannelNames.contains(InstMgrConstants.DEFAULT_CUSTOM_CHANNEL_NAME)) {
+                    if (foundChannel != null) {
                         im.changeChannel(customChannel);
                     } else {
                         im.addChannel(customChannel);
                     }
                     context.getResult().set(customPatchPath.toString());
+                } catch (ZipException e) {
+                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
@@ -154,28 +141,20 @@ public class InstMgrCustomPatchHandler extends InstMgrOperationStepHandler {
 
         @Override
         public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-            String gav = value.get(InstMgrConstants.MANIFEST_GAV).asStringOrNull();
-            String url = value.get(InstMgrConstants.MANIFEST_URL).asStringOrNull();
+            final String manifestGA = value.asStringOrNull();
 
-            if (gav != null) {
-                if (gav.contains("\\") || gav.contains("/")) {
-                    throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAV(gav);
+            if (manifestGA != null) {
+                if (manifestGA.contains("\\") || manifestGA.contains("/")) {
+                    throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAV(manifestGA);
                 }
-                String[] parts = gav.split(":");
+                String[] parts = manifestGA.split(":");
                 for (String part : parts) {
                     if (part == null || "".equals(part)) {
-                        throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAV(gav);
+                        throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAV(manifestGA);
                     }
                 }
-                if (parts.length != 2 && parts.length != 3) { // GA or GAV
-                    throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAV(gav);
-                }
-            }
-            if (url != null) {
-                try {
-                    new URL(url);
-                } catch (MalformedURLException e) {
-                    throw InstMgrLogger.ROOT_LOGGER.invalidManifestURL(url);
+                if (parts.length != 2) {
+                    throw InstMgrLogger.ROOT_LOGGER.invalidManifestGAOnly(manifestGA);
                 }
             }
         }

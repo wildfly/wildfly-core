@@ -20,8 +20,6 @@ package org.wildfly.core.instmgr;
 
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -64,28 +62,32 @@ public class InstMgrRemoveChannelHandler extends InstMgrOperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        final String channel = CHANNEL_NAME.resolveModelAttribute(context, operation).asStringOrNull();
+        final String channel = CHANNEL_NAME.resolveModelAttribute(context, operation).asString();
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.acquireControllerLock();
                 try {
                     Path serverHome = imService.getHomeDir();
                     MavenOptions mavenOptions = new MavenOptions(null, false);
                     InstallationManager installationManager = imf.create(serverHome, mavenOptions);
 
-                    final Collection<Channel> exitingChannels = installationManager.listChannels();
-                    final Set<String> exitingChannelNames = new HashSet<>();
-                    for (Channel c : exitingChannels) {
-                        exitingChannelNames.add(c.getName());
+                    final Collection<Channel> existingChannels = installationManager.listChannels();
+                    boolean found = false;
+                    for (Channel c : existingChannels) {
+                        if (channel.equals(c.getName())) {
+                            found = true;
+                            break;
+                        }
                     }
 
-                    if (!exitingChannelNames.contains(channel)) {
+                    if (!found) {
                         throw InstMgrLogger.ROOT_LOGGER.channelNameNotFound(channel);
                     }
 
                     installationManager.removeChannel(channel);
 
-                } catch (OperationFailedException e) {
+                } catch (OperationFailedException | RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new RuntimeException(e);

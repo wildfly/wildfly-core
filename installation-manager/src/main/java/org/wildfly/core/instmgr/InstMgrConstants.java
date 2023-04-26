@@ -27,12 +27,13 @@ public interface InstMgrConstants {
             .resolve("custom-patch");
     Path PREPARED_SERVER_SUBPATH = Paths.get("installation-manager")
             .resolve("prepared-server");
+
     String CHANNEL = "channel";
     String CHANNELS = "channels";
     String CHANNEL_NAME = "name";
-    String CUSTOM_PATCH = "custom-patch";
+    String CLEAN_CUSTOM_PATCH_MANIFEST = "custom-patch-manifest";
     String CUSTOM_PATCH_FILE = "custom-patch-file";
-    String DEFAULT_CUSTOM_CHANNEL_NAME = "custom-channel";
+    String DEFAULT_CUSTOM_CHANNEL_NAME_PREFIX = "custom-channel-";
     String HISTORY_DETAILED_ARTIFACT_NAME = "name";
     String HISTORY_DETAILED_ARTIFACT_NEW_VERSION = "new-version";
     String HISTORY_DETAILED_ARTIFACT_OLD_VERSION = "old-version";

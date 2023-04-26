@@ -173,16 +173,24 @@ public class ShutdownHandler extends BaseOperationCommand {
         }
 
         if (Util.TRUE.equalsIgnoreCase(performInstallation.getValue(ctx.getParsedCommandLine()))) {
-            // Check if I am using a local client
+            // Check if I am using a client launched from the server/host installation we want to shutdown to perform an update.
+            // In such a case, we will exit from the current JBoss CLI process to avoid interfering with the server/host update.
+            // This will also force the user to relaunch the CLI session using the most recent updates once the server/host has
+            // been updated.
             boolean localClientLaunch = isLocalClientLaunch(ctx);
             executeOperation(client, cliClient, op, !localClientLaunch);
             if (localClientLaunch) {
+                ctx.printLine("The JBoss CLI session will be closed automatically to allow the server be updated. Once the server has been restarted, you can relaunch the JBoss CLI session.");
                 try {
                     TimeUnit.SECONDS.sleep(3);
                 } catch (InterruptedException e) {
                     // Ignored
                 }
 
+                // We are using a CLI which was launched from the server installation we have requested to be updated.
+                // In order to prevent keeping using a jboss-modules.jar that could have been updated, we finish the CLI process
+                // Once the server has been restarted the user will launch again the CLI that will use the most recent updates
+                ctx.terminateSession();
                 System.exit(0);
             }
         } else {
@@ -298,6 +306,17 @@ public class ShutdownHandler extends BaseOperationCommand {
         return result.asString().equals(host);
     }
 
+    /**
+     * Reads the server JBoss Home directory and compared it with the JBoss CLI Jboss Home directory to determine whether
+     * the local JBoss CLI process has been launched from the same Jboss server/host.
+     *
+     * If the paths of both JBoss Home directories are equals, it is assumed the current JBoss CLI process was launched from
+     * the server/host where it is connected to.
+     *
+     * @param ctx
+     * @return
+     * @throws CommandLineException
+     */
     protected boolean isLocalClientLaunch(CommandContext ctx) throws CommandLineException {
         final ModelNode op = new ModelNode();
         final ParsedCommandLine args = ctx.getParsedCommandLine();
@@ -313,8 +332,8 @@ public class ShutdownHandler extends BaseOperationCommand {
         } else {
             op.get(Util.ADDRESS).add(Util.CORE_SERVICE, "server-environment");
         }
-        op.get(Util.OPERATION).set("query");
-        op.get("select").add(Util.HOME_DIR);
+        op.get(Util.OPERATION).set(Util.READ_ATTRIBUTE);
+        op.get(Util.NAME).set(Util.HOME_DIR);
 
         ModelNode response;
         try {
@@ -333,7 +352,7 @@ public class ShutdownHandler extends BaseOperationCommand {
 
         final String jbossHome = WildFlySecurityManager.getEnvPropertyPrivileged("JBOSS_HOME", null);
         return jbossHome != null && Paths.get(jbossHome).normalize().toAbsolutePath().equals(
-                Paths.get(result.get(Util.HOME_DIR).asString()).normalize().toAbsolutePath()
+                Paths.get(result.asString()).normalize().toAbsolutePath()
         );
     }
 
