@@ -47,7 +47,6 @@ import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
-import org.wildfly.common.function.Functions;
 import org.wildfly.security.auth.server.SecurityIdentity;
 
 /**
@@ -139,7 +138,7 @@ public class MBeanServerService implements Service<PluggableMBeanServer> {
 
     @Override
     public synchronized void stop(final StopContext context) {
-        ((PluggableMBeanServerImpl) mBeanServer).setSecurityIdentitySupplier(Functions.constantSupplier(null));
+        ((PluggableMBeanServerImpl) mBeanServer).clearSecurityIdentity();
         mBeanServer.removePlugin(showModelPlugin);
         mBeanServer = null;
     }

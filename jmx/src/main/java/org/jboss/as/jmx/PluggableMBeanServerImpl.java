@@ -144,6 +144,10 @@ class PluggableMBeanServerImpl implements PluggableMBeanServer {
         this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
+    void clearSecurityIdentity() {
+        this.securityIdentitySupplier = Functions.constantSupplier(null);
+    }
+
     void setNonFacadeMBeansSensitive(boolean sensitive) {
         authorizer.setNonFacadeMBeansSensitive(sensitive);
     }
