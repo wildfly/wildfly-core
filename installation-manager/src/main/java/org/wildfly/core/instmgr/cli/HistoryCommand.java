@@ -35,6 +35,7 @@ import org.jboss.dmr.ModelNode;
 import org.wildfly.core.cli.command.aesh.CLICommandInvocation;
 import org.wildfly.core.instmgr.InstMgrConstants;
 import org.wildfly.core.instmgr.InstMgrHistoryHandler;
+import org.wildfly.core.instmgr.InstMgrHistoryRevisionHandler;
 import org.wildfly.installationmanager.ArtifactChange;
 import org.wildfly.installationmanager.ChannelChange;
 
@@ -133,9 +134,11 @@ public class HistoryCommand extends AbstractInstMgrCommand {
     @Override
     protected Operation buildOperation() {
         final ModelNode op = new ModelNode();
-        op.get(OP).set(InstMgrHistoryHandler.DEFINITION.getName());
         if (revision != null) {
+            op.get(OP).set(InstMgrHistoryRevisionHandler.DEFINITION.getName());
             op.get(InstMgrConstants.REVISION).set(revision);
+        } else {
+            op.get(OP).set(InstMgrHistoryHandler.DEFINITION.getName());
         }
 
         return OperationBuilder.create(op).build();

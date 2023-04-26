@@ -99,6 +99,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                context.acquireControllerLock();
                 try {
                     final Path homeDir = imService.getHomeDir();
                     final MavenOptions mavenOptions = new MavenOptions(localRepository, noResolveLocalCache, offline);
@@ -128,7 +129,7 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                         Repository uploadedMavenRepo = new Repository("id0", uploadedMvnRepoRoot.toUri().toString());
                         repositories = List.of(uploadedMavenRepo);
                     } else {
-                        repositories = toRepositories(repositoriesMn);
+                        repositories = toRepositories(context, repositoriesMn);
                     }
 
                     final List<ArtifactChange> updates = im.findUpdates(repositories);
@@ -173,14 +174,9 @@ public class InstMgrListUpdatesHandler extends AbstractInstMgrUpdateHandler {
                     context.getResult().set(resultValue);
 
                 } catch (ZipException e) {
-                    context.getFailureDescription().set(e.getLocalizedMessage());
-                    throw new OperationFailedException(e);
+                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

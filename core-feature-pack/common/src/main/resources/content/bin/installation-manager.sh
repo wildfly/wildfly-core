@@ -1,4 +1,5 @@
 #!/bin/sh
+# This script is only for internal usage and should not be invoked directly by the users from the command line.
 # This script launches the operation to apply a candidate server installation to update or revert.
 # The server JVM writes the required values into the installation-manager.properties file by using InstMgrCandidateStatus.java
 if [ x"${INST_MGR_SCRIPT_DEBUG}" == "xtrue" ]; then
@@ -16,7 +17,7 @@ unset INST_MGR_PREPARED_SERVER_DIR
 
 PROPS_FILE="${INSTALLATION_HOME}/bin/installation-manager.properties"
 if ! [ -e "${PROPS_FILE}" ]; then
-  echo "INFO: Installation Manager properties file not found at ${PROPS_FILE}."
+  echo "ERROR: Installation Manager properties file not found at ${PROPS_FILE}."
   exit
 fi
 

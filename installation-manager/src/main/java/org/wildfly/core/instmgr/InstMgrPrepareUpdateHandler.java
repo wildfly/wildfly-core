@@ -114,13 +114,12 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                synchronized (imService.lock) {
-                    if (!imService.canPrepareServer()) {
-                        throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
-                    }
+                context.acquireControllerLock();
 
-                    imService.beginCandidateServer();
+                if (!imService.canPrepareServer()) {
+                    throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
                 }
+                imService.beginCandidateServer();
                 addCompleteStep(context, imService, null);
 
                 try {
@@ -151,15 +150,22 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         Repository uploadedMavenRepo = new Repository("id0", uploadedRepoZipRootDir.toUri().toString());
                         repositories = List.of(uploadedMavenRepo);
                     } else {
-                        repositories = toRepositories(repositoriesMn);
+                        repositories = toRepositories(context, repositoriesMn);
                     }
 
                     Files.createDirectories(imService.getPreparedServerDir());
                     boolean prepared = im.prepareUpdate(imService.getPreparedServerDir(), repositories);
                     if (prepared) {
                         // Put server in restart required?
-                        // once put in restart required, the clean operation should revert it if it cleans the prepared server
-                        // but we cannot revert the restart flag from a different Operation since there could be other Operations executed which could have been set this flag
+                        // No. The documented purpose of the restart-required state is to indicate that the process need to be
+                        // restarted to bring its runtime state into alignment with its persistent configuration. This OSH does
+                        // not affect the existing server's persistent configuration, so restart-required is not appropriate.
+                        // Using it to inform users of other reasons why they would want to restart the server is beyond the intended
+                        // purpose of restart-required.
+                        //
+                        // Also, once put in restart required, the clean operation should revert it if it cleans the prepared server,
+                        // but we cannot revert the restart flag from a different Operation since there could be other Operations
+                        // executed which could have been set this flag.
                         context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
 
                         final String applyUpdate = im.generateApplyUpdateCommand(homeDir.resolve("bin"), imService.getPreparedServerDir());
@@ -170,14 +176,9 @@ public class InstMgrPrepareUpdateHandler extends AbstractInstMgrUpdateHandler {
                         imService.resetCandidateStatus();
                     }
                 } catch (ZipException e) {
-                    context.getFailureDescription().set(e.getLocalizedMessage());
-                    throw new OperationFailedException(e);
+                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

@@ -39,8 +39,8 @@ import org.wildfly.core.instmgr.InstMgrConstants;
 public class CleanCommand extends AbstractInstMgrCommand {
     final Path lstUpdatesWorkDir;
 
-    @Option(name = "custom-patch", hasValue = false)
-    private boolean customPath;
+    @Option(name = "custom-patch-manifest")
+    private String manifestGA;
 
     public CleanCommand() {
         this.lstUpdatesWorkDir = null;
@@ -57,8 +57,8 @@ public class CleanCommand extends AbstractInstMgrCommand {
         if (lstUpdatesWorkDir != null) {
             op.get(InstMgrConstants.LIST_UPDATES_WORK_DIR).set(lstUpdatesWorkDir.toString());
         }
-        if (customPath) {
-            op.get(InstMgrConstants.CUSTOM_PATCH).set(true);
+        if (manifestGA != null) {
+            op.get(InstMgrConstants.CLEAN_CUSTOM_PATCH_MANIFEST).set(manifestGA);
         }
 
         return OperationBuilder.create(op).build();

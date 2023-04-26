@@ -27,10 +27,11 @@ import java.util.List;
 
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ObjectTypeAttributeDefinition;
+import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.wildfly.core.instmgr.logging.InstMgrLogger;
@@ -38,7 +39,7 @@ import org.wildfly.installationmanager.Repository;
 import org.wildfly.installationmanager.spi.InstallationManagerFactory;
 
 /**
- * Abstract class for Installation Manager Handlers used to update and revert.
+ * Abstract class for Installation Manager Handlers used to list updates, prepare updates and prepare a revert.
  */
 abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler {
     protected static final AttributeDefinition OFFLINE = SimpleAttributeDefinitionBuilder.create(InstMgrConstants.OFFLINE, ModelType.BOOLEAN)
@@ -58,35 +59,13 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
     protected static final ObjectTypeAttributeDefinition REPOSITORY = new ObjectTypeAttributeDefinition.Builder(InstMgrConstants.REPOSITORY, REPOSITORY_ID, REPOSITORY_URL)
             .setStorageRuntime()
             .setRequired(false)
-            .setValidator(new ParameterValidator() {
-                @Override
-                public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
-                    if (parameterName.equals(REPOSITORY.getName())) {
-                        if (value.isDefined()) {
-                            String repoUrl = value.get(InstMgrConstants.REPOSITORY_URL).asStringOrNull();
-                            if (repoUrl == null) {
-                                throw InstMgrLogger.ROOT_LOGGER.noRepositoryURLDefined();
-                            }
-                            try {
-                                new URL(repoUrl);
-                            } catch (MalformedURLException e) {
-                                throw InstMgrLogger.ROOT_LOGGER.invalidRepositoryURL(repoUrl);
-                            }
-                            String repoId = value.get(InstMgrConstants.REPOSITORY_ID).asStringOrNull();
-                            if (repoId == null) {
-                                throw InstMgrLogger.ROOT_LOGGER.noRepositoryIDDefined();
-                            }
-                        }
-                    }
-                }
-            })
+            .setValidator(new RepositoryValidator())
             .setSuffix("repository")
             .build();
 
     protected static final SimpleAttributeDefinition LOCAL_CACHE = new SimpleAttributeDefinitionBuilder(InstMgrConstants.LOCAL_CACHE, ModelType.STRING)
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
-            .setAllowExpression(true)
             .addArbitraryDescriptor(FILESYSTEM_PATH, ModelNode.TRUE)
             .setMinSize(1)
             .setRequired(false)
@@ -106,17 +85,34 @@ abstract class AbstractInstMgrUpdateHandler extends InstMgrOperationStepHandler 
         super(imService, imf);
     }
 
-    protected List<Repository> toRepositories(List<ModelNode> repositoriesMn) {
+    protected List<Repository> toRepositories(OperationContext context, List<ModelNode> repositoriesMn) throws OperationFailedException {
         final List<Repository> result = new ArrayList<>();
 
         if (repositoriesMn != null) {
             for (ModelNode repoModelNode : repositoriesMn) {
-                String id = repoModelNode.get(REPOSITORY_ID.getName()).asString();
-                String url = repoModelNode.get(REPOSITORY_URL.getName()).asString();
+                String id = REPOSITORY_ID.resolveModelAttribute(context, repoModelNode).asString();
+                String url = REPOSITORY_URL.resolveModelAttribute(context, repoModelNode).asString();
                 result.add(new Repository(id, url));
             }
         }
 
         return result;
+    }
+
+    private static class RepositoryValidator extends ObjectTypeValidator {
+        public RepositoryValidator() {
+            super(false, REPOSITORY_ID, REPOSITORY_URL);
+        }
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+
+            String repoUrl = value.get(InstMgrConstants.REPOSITORY_URL).asStringOrNull();
+            try {
+                new URL(repoUrl);
+            } catch (MalformedURLException e) {
+                throw InstMgrLogger.ROOT_LOGGER.invalidRepositoryURL(repoUrl);
+            }
+        }
     }
 }

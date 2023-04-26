@@ -18,16 +18,9 @@
 
 package org.wildfly.test.installationmanager;
 
-import org.wildfly.installationmanager.ArtifactChange;
-import org.wildfly.installationmanager.Channel;
-import org.wildfly.installationmanager.ChannelChange;
-import org.wildfly.installationmanager.HistoryResult;
-import org.wildfly.installationmanager.InstallationChanges;
-import org.wildfly.installationmanager.MavenOptions;
-import org.wildfly.installationmanager.OperationNotAvailableException;
-import org.wildfly.installationmanager.Repository;
-import org.wildfly.installationmanager.spi.InstallationManager;
-
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -38,6 +31,18 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.wildfly.installationmanager.ArtifactChange;
+import org.wildfly.installationmanager.Channel;
+import org.wildfly.installationmanager.ChannelChange;
+import org.wildfly.installationmanager.HistoryResult;
+import org.wildfly.installationmanager.InstallationChanges;
+import org.wildfly.installationmanager.MavenOptions;
+import org.wildfly.installationmanager.OperationNotAvailableException;
+import org.wildfly.installationmanager.Repository;
+import org.wildfly.installationmanager.spi.InstallationManager;
 
 /**
  * Mock Installation Manager API implementation to be used in the tests.
@@ -55,9 +60,10 @@ public class TestInstallationManager implements InstallationManager {
     public static HashMap<String, HistoryResult> history;
     public static boolean initialized = false;
 
-    public static String APPLY_REVERT_BASE_GENERATED_COMMAND ="apply revert";
-    public static String APPLY_UPDATE_BASE_GENERATED_COMMAND ="apply update";
-    public static void initialize() {
+    public static String APPLY_REVERT_BASE_GENERATED_COMMAND = "apply revert";
+    public static String APPLY_UPDATE_BASE_GENERATED_COMMAND = "apply update";
+
+    public static void initialize() throws IOException {
         if (!initialized) {
             installationDir = null;
             mavenOptions = null;
@@ -85,9 +91,12 @@ public class TestInstallationManager implements InstallationManager {
 
             // Changes Sample Data: Artifacts
             List<ArtifactChange> artifactChanges = new ArrayList<>();
-            ArtifactChange installed = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.installed", ArtifactChange.Status.INSTALLED);
-            ArtifactChange removed = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.removed", ArtifactChange.Status.REMOVED);
-            ArtifactChange updated = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.updated", ArtifactChange.Status.UPDATED);
+            ArtifactChange installed = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.installed",
+                    ArtifactChange.Status.INSTALLED);
+            ArtifactChange removed = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.removed",
+                    ArtifactChange.Status.REMOVED);
+            ArtifactChange updated = new ArtifactChange("1.0.0.Final", "1.0.1.Final", "org.test.groupid1:org.test.artifact1.updated",
+                    ArtifactChange.Status.UPDATED);
             artifactChanges.add(installed);
             artifactChanges.add(removed);
             artifactChanges.add(updated);
@@ -97,13 +106,15 @@ public class TestInstallationManager implements InstallationManager {
             List<Repository> channelChangeBaseRepositories = new ArrayList<>();
             channelChangeBaseRepositories.add(new Repository("id0", "http://channelchange.com"));
             channelChangeBaseRepositories.add(new Repository("id1", "file://channelchange"));
-            Channel channelChangeBase = new Channel("channel-test-0", channelChangeBaseRepositories, "org.channelchange.groupid:org.channelchange.artifactid:1.0.0.Final");
+            Channel channelChangeBase = new Channel("channel-test-0", channelChangeBaseRepositories,
+                    "org.channelchange.groupid:org.channelchange.artifactid:1.0.0.Final");
 
             List<Repository> channelModifiedRepositories = new ArrayList<>();
             channelModifiedRepositories.add(new Repository("id0", "http://channelchange-modified.com"));
             channelModifiedRepositories.add(new Repository("id1-modified", "file://channelchange"));
             channelModifiedRepositories.add(new Repository("id1-added", "file://channelchange-added"));
-            Channel channelChangeModified = new Channel("channel-test-0", channelModifiedRepositories, "org.channelchange.groupid:org.channelchange.artifactid:1.0.1.Final");
+            Channel channelChangeModified = new Channel("channel-test-0", channelModifiedRepositories,
+                    "org.channelchange.groupid:org.channelchange.artifactid:1.0.1.Final");
 
             ChannelChange cChangeAdded = new ChannelChange(null, channelChangeBase, ChannelChange.Status.ADDED);
             ChannelChange cChangeRemoved = new ChannelChange(channelChangeBase, null, ChannelChange.Status.REMOVED);
@@ -119,7 +130,6 @@ public class TestInstallationManager implements InstallationManager {
             history.put("install", new HistoryResult("install", Instant.now(), "install", "install description"));
             history.put("rollback", new HistoryResult("rollback", Instant.now(), "rollback", "rollback description"));
             history.put("config_change", new HistoryResult("config_change", Instant.now(), "config_change", "config_change description"));
-
 
             // List Updates sample Data
 
@@ -188,7 +198,7 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void removeChannel(String channelName) throws Exception {
-        for (Iterator<Channel> it = lstChannels.iterator(); it.hasNext(); ) {
+        for (Iterator<Channel> it = lstChannels.iterator(); it.hasNext();) {
             Channel c = it.next();
             if (c.getName().equals(channelName)) {
                 it.remove();
@@ -203,7 +213,7 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public void changeChannel(Channel channel) throws Exception {
-        for (Iterator<Channel> it = lstChannels.iterator(); it.hasNext(); ) {
+        for (Iterator<Channel> it = lstChannels.iterator(); it.hasNext();) {
             Channel c = it.next();
             if (c.getName().equals(channel.getName())) {
                 it.remove();
@@ -214,10 +224,13 @@ public class TestInstallationManager implements InstallationManager {
 
     @Override
     public Path createSnapshot(Path targetPath) throws Exception {
-        if (targetPath.toString().endsWith(".zip")) {
-            return targetPath;
+        if (!targetPath.toString().endsWith(".zip")) {
+            throw new IllegalArgumentException("it is expected that the target path is a path of a Zip fie. Current target path is: " + targetPath);
         }
-        return targetPath.resolve("generated.zip");
+        Path source = Files.createTempFile("installation-manager-test-", ".tmp");
+        zipDir(source, targetPath);
+        Files.delete(source);
+        return targetPath;
     }
 
     @Override
@@ -228,5 +241,23 @@ public class TestInstallationManager implements InstallationManager {
     @Override
     public String generateApplyRevertCommand(Path scriptHome, Path candidatePath) throws OperationNotAvailableException {
         return scriptHome + APPLY_REVERT_BASE_GENERATED_COMMAND + candidatePath.toString();
+    }
+
+    public static void zipDir(Path inputFile, Path target) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(target.toFile()); ZipOutputStream zos = new ZipOutputStream(fos)) {
+            ZipEntry entry = new ZipEntry(inputFile.getFileName().toString());
+            zos.putNextEntry(entry);
+
+            // read the input file and write its contents to the ZipOutputStream
+            try (FileInputStream fis = new FileInputStream(inputFile.toFile())) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = fis.read(buffer)) > 0) {
+                    zos.write(buffer, 0, len);
+                }
+            }
+            zos.closeEntry();
+            zos.finish();
+        }
     }
 }

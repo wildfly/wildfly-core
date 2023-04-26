@@ -109,13 +109,12 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                synchronized (imService.lock) {
-                    if (!imService.canPrepareServer()) {
-                        throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
-                    }
+                context.acquireControllerLock();
 
-                    imService.beginCandidateServer();
+                if (!imService.canPrepareServer()) {
+                    throw InstMgrLogger.ROOT_LOGGER.serverAlreadyPrepared();
                 }
+                imService.beginCandidateServer();
                 addCompleteStep(context, imService, null);
 
                 try {
@@ -134,7 +133,7 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
                         Repository uploadedMavenRepo = new Repository("id0", uploadedRepoZipRootDir.toUri().toString());
                         repositories = List.of(uploadedMavenRepo);
                     } else {
-                        repositories = toRepositories(repositoriesMn);
+                        repositories = toRepositories(context, repositoriesMn);
                     }
 
                     Files.createDirectories(imService.getPreparedServerDir());
@@ -145,14 +144,9 @@ public class InstMgrPrepareRevertHandler extends AbstractInstMgrUpdateHandler {
 
                     context.getResult().set(imService.getPreparedServerDir().normalize().toAbsolutePath().toString());
                 } catch (ZipException e) {
-                    context.getFailureDescription().set(e.getLocalizedMessage());
-                    throw new OperationFailedException(e);
+                    throw InstMgrLogger.ROOT_LOGGER.invalidMavenRepoFile(e.getLocalizedMessage());
                 } catch (RuntimeException e) {
                     throw e;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

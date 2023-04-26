@@ -20,8 +20,6 @@ package org.wildfly.core.instmgr;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.CORE_SERVICE;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.NAME;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
-import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.UNDEFINE_ATTRIBUTE_OPERATION;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.VALUE;
 
 import java.net.MalformedURLException;
@@ -44,7 +42,7 @@ import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.capability.RuntimeCapability;
-import org.jboss.as.controller.operations.validation.ParameterValidator;
+import org.jboss.as.controller.operations.validation.ObjectTypeValidator;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -65,9 +63,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             RuntimeCapability.Builder.of("org.wildfly.core.installationmanager", InstMgrResourceDefinition.class)
                     .addRequirements(PATH_MANAGER_CAP)
                     .build();
-    private final ReadHandler readHandler;
-    private final WriteHandler writeHandler;
     private final InstMgrService imService;
+    private final InstallationManagerFactory imf;
 
     private static final AttributeDefinition REPOSITORY_ID = new SimpleAttributeDefinitionBuilder(InstMgrConstants.REPOSITORY_ID, ModelType.STRING)
             .setStorageRuntime()
@@ -122,6 +119,7 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final ObjectTypeAttributeDefinition CHANNEL = ObjectTypeAttributeDefinition.create(InstMgrConstants.CHANNEL, CHANNEL_NAME, REPOSITORIES, MANIFEST)
+            .setValidator(new ChannelValidator())
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .setRequired(true)
@@ -129,12 +127,9 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
             .build();
 
     private static final AttributeDefinition CHANNELS = ObjectListAttributeDefinition.Builder.of(InstMgrConstants.CHANNELS, CHANNEL)
-            .setValidator(new ChannelValidator())
             .setStorageRuntime()
             .setRuntimeServiceNotRequired()
             .build();
-
-    private final InstallationManagerFactory imf;
 
     public static PathElement getPath(String name) {
         return PathElement.pathElement(CORE_SERVICE, name);
@@ -143,16 +138,19 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
     public InstMgrResourceDefinition(InstallationManagerFactory imf, InstMgrService imService) {
         super(new Parameters(getPath(InstMgrConstants.TOOL_NAME), InstMgrResolver.RESOLVER)
                 .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.PATCHING)
-                .setCapabilities(INSTALLATION_MANAGER_CAPABILITY).setRuntime());
+                .setCapabilities(INSTALLATION_MANAGER_CAPABILITY)
+                .setRuntime()
+        );
         this.imf = imf;
         this.imService = imService;
-        this.readHandler = new ReadHandler(imService);
-        this.writeHandler = new WriteHandler(imService);
     }
 
     @Override
     public void registerOperations(ManagementResourceRegistration resourceRegistration) {
         super.registerOperations(resourceRegistration);
+
+        InstMgrHistoryRevisionHandler historyRevisionHandler = new InstMgrHistoryRevisionHandler(imService, imf);
+        resourceRegistration.registerOperationHandler(InstMgrHistoryRevisionHandler.DEFINITION, historyRevisionHandler);
 
         InstMgrHistoryHandler historyHandler = new InstMgrHistoryHandler(imService, imf);
         resourceRegistration.registerOperationHandler(InstMgrHistoryHandler.DEFINITION, historyHandler);
@@ -181,26 +179,21 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
 
     @Override
     public void registerAttributes(ManagementResourceRegistration resourceRegistration) {
-        resourceRegistration.registerReadWriteAttribute(CHANNELS, readHandler, writeHandler);
+        resourceRegistration.registerReadWriteAttribute(CHANNELS, new ReadHandler(), new WriteHandler());
     }
 
     private class WriteHandler implements OperationStepHandler {
-        private final InstMgrService imService;
-
-        public WriteHandler(InstMgrService imService) {
-            this.imService = imService;
-        }
 
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             final List<ModelNode> channelsListMn = new ArrayList<>();
-            ModelNode operationName = operation.get(OP);
-            if (!operationName.asString().equals(UNDEFINE_ATTRIBUTE_OPERATION)) {
+            if (operation.hasDefined(VALUE)) {
                 channelsListMn.addAll(CHANNELS.resolveValue(context, operation.get(VALUE)).asList());
             }
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    context.acquireControllerLock();
                     try {
                         final Path serverHome = imService.getHomeDir();
 
@@ -255,6 +248,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                                 }
                             }
                         }
+                    } catch (RuntimeException e) {
+                        throw e;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -264,12 +259,6 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
     }
 
     private class ReadHandler implements OperationStepHandler {
-        private final InstMgrService imService;
-
-        public ReadHandler(InstMgrService imService) {
-            this.imService = imService;
-        }
-
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             context.addStep(new OperationStepHandler() {
@@ -309,6 +298,8 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
                             mChannels.add(mChannel);
                         }
                         result.set(mChannels);
+                    } catch (RuntimeException e) {
+                        throw e;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -317,9 +308,15 @@ class InstMgrResourceDefinition extends SimpleResourceDefinition {
         }
     }
 
-    private static class ChannelValidator implements ParameterValidator {
+    private static class ChannelValidator extends ObjectTypeValidator {
+        public ChannelValidator() {
+            super(true, CHANNEL_NAME, REPOSITORIES, MANIFEST);
+        }
+
         @Override
         public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            super.validateParameter(parameterName, value);
+
             if (!value.hasDefined(NAME)) {
                 throw InstMgrLogger.ROOT_LOGGER.missingChannelName();
             }

@@ -24,18 +24,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.jboss.as.controller.services.path.AbsolutePathService;
 import org.jboss.as.controller.services.path.PathManager;
 import org.jboss.logging.Logger;
-import org.jboss.modules.PathUtils;
 import org.jboss.msc.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -50,14 +49,14 @@ class InstMgrService implements Service {
     private final Supplier<PathManager> pathManagerSupplier;
     private final Consumer<InstMgrService> consumer;
     private PathManager pathManager;
-    private AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean started = new AtomicBoolean(false);
     private Path homeDir;
-    private Path propertiesPath;
     private Path customPatchPath;
     private Path prepareServerPath;
-    private HashMap<String, Path> tempDirs = new HashMap<>();
-    private InstMgrCandidateStatus candidateStatus;
-    final Object lock = new Object();
+
+    private Path controllerTempDir;
+    private final ConcurrentMap<String, Path> tempDirs = new ConcurrentHashMap<>();
+    private final InstMgrCandidateStatus candidateStatus;
 
     InstMgrService(Supplier<PathManager> pathManagerSupplier, Consumer<InstMgrService> consumer) {
         this.pathManagerSupplier = pathManagerSupplier;
@@ -70,15 +69,16 @@ class InstMgrService implements Service {
         this.pathManager = pathManagerSupplier.get();
         this.homeDir = Path.of(this.pathManager.getPathEntry("jboss.home.dir").resolvePath());
 
+        this.controllerTempDir = Paths.get(pathManager.getPathEntry("jboss.controller.temp.dir").resolvePath());
+
         // Where we are going to store the prepared installations before applying them
-        this.prepareServerPath = Paths.get(pathManager.getPathEntry("jboss.controller.temp.dir").resolvePath())
-                .resolve(InstMgrConstants.PREPARED_SERVER_SUBPATH);
+        this.prepareServerPath = controllerTempDir.resolve(InstMgrConstants.PREPARED_SERVER_SUBPATH);
 
         // Where we are going to store the custom patch repositories
         this.customPatchPath = homeDir.resolve(InstMgrConstants.CUSTOM_PATCH_SUBPATH);
 
         // Properties file used to send information to the launch scripts
-        this.propertiesPath = homeDir.resolve("bin").resolve("installation-manager.properties");
+        Path propertiesPath = homeDir.resolve("bin").resolve("installation-manager.properties");
 
         this.candidateStatus.initialize(propertiesPath, prepareServerPath);
         try {
@@ -96,20 +96,14 @@ class InstMgrService implements Service {
 
     @Override
     public void stop(StopContext context) {
+        started.set(false);
         this.pathManager = null;
         try {
             deleteTempDirs();
         } catch (IOException e) {
             InstMgrLogger.ROOT_LOGGER.error(e);
         }
-        started.set(false);
         consumer.accept(null);
-    }
-
-    Path resolvePath(String path, String relativeTo) {
-        checkStarted();
-        String relativeToPath = AbsolutePathService.isAbsoluteUnixOrWindowsPath(path) ? null : relativeTo;
-        return Paths.get(PathUtils.canonicalize(pathManager.resolveRelativePathEntry(path, relativeToPath))).normalize();
     }
 
     Path createTempDir(String workDirPrefix) throws IOException {
@@ -165,9 +159,9 @@ class InstMgrService implements Service {
         return homeDir;
     }
 
-    Path getCustomPatchDir() throws IllegalStateException {
+    Path getCustomPatchDir(String manifestGav) throws IllegalStateException {
         checkStarted();
-        return customPatchPath;
+        return customPatchPath.resolve(manifestGav);
     }
 
     Path getPreparedServerDir() throws IllegalStateException {
@@ -198,5 +192,10 @@ class InstMgrService implements Service {
 
     InstMgrCandidateStatus.Status getCandidateStatus() throws IOException {
         return this.candidateStatus.getStatus();
+    }
+
+    public Path getControllerTempDir() {
+        checkStarted();
+        return controllerTempDir;
     }
 }

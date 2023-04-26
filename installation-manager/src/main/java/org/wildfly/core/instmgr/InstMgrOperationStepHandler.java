@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
 import org.jboss.as.controller.OperationStepHandler;
@@ -67,9 +68,11 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
      *
      * @param is        Previously open InputStream of the file to unzip.
      * @param targetDir Target Directory where the content will stored.
-     * @throws IOException
+     *
+     * @throws ZipException if a ZIP file error has occurred
+     * @throws IOException if an I/O error has occurred
      */
-    protected void unzip(InputStream is, final Path targetDir) throws IOException {
+    protected void unzip(InputStream is, final Path targetDir) throws IOException, ZipException {
         try (ZipInputStream zis = new ZipInputStream(is)) {
             ZipEntry entry = zis.getNextEntry();
             while (entry != null) {
@@ -93,9 +96,10 @@ abstract class InstMgrOperationStepHandler implements OperationStepHandler {
      *
      * @param source Directory to where look for the maven repository.
      * @return
-     * @throws Exception
+     * @throws ZipException if a ZIP file error has occurred
+     * @throws IOException if an I/O error has occurred
      */
-    protected Path getUploadedMvnRepoRoot(Path source) throws Exception {
+    protected Path getUploadedMvnRepoRoot(Path source) throws Exception, ZipException {
         try (Stream<Path> content = Files.walk(source, 2)) {
             List<Path> entries = content.filter(e -> e.toFile().isDirectory() && e.getFileName().toString().equals(InstMgrConstants.MAVEN_REPO_DIR_NAME_IN_ZIP_FILES)).collect(Collectors.toList());
             if (entries.isEmpty() || entries.size() != 1) {

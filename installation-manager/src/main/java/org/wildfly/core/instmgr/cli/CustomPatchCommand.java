@@ -24,7 +24,7 @@ public class CustomPatchCommand extends AbstractInstMgrCommand {
     private File customPatch;
 
     @Option(name = "manifest", required = true)
-    private String manifest;
+    private String manifestGA;
 
     @Override
     protected Operation buildOperation() throws CommandException {
@@ -32,7 +32,7 @@ public class CustomPatchCommand extends AbstractInstMgrCommand {
         final OperationBuilder operationBuilder = OperationBuilder.create(op);
 
         op.get(OP).set(InstMgrCustomPatchHandler.DEFINITION.getName());
-        addManifestToModelNode(op, manifest);
+        op.get(InstMgrConstants.MANIFEST).set(manifestGA);
         op.get(InstMgrConstants.CUSTOM_PATCH_FILE).set(0);
         operationBuilder.addFileAsAttachment(customPatch);
 
