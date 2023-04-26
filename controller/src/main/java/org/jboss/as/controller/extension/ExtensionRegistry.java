@@ -110,30 +110,6 @@ import org.wildfly.security.auth.server.SecurityIdentity;
  */
 public final class ExtensionRegistry {
 
-    // Hack to restrict the extensions to which we expose ExtensionContextSupplement
-    private static final Set<String> legallySupplemented;
-    static {
-        // used by shared subsystem test fixture TestModelControllerService
-        legallySupplemented = Set.of("org.jboss.as.jmx", "Test");
-    }
-
-    private final ProcessType processType;
-
-    private SubsystemXmlWriterRegistry writerRegistry;
-    private volatile PathManager pathManager;
-    private volatile ResolverExtensionRegistry resolverExtensionRegistry;
-
-    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<>();
-    // subsystem -> extension
-    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<>();
-    private final RunningModeControl runningModeControl;
-    private final ManagedAuditLogger auditLogger;
-    private final JmxAuthorizer authorizer;
-    private final Supplier<SecurityIdentity> securityIdentitySupplier;
-    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<>();
-    private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
-    private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
-
     /**
      * Returns a builder for creating an {@link ExtensionRegistry}.
      * @param processType the process type
@@ -225,6 +201,30 @@ public final class ExtensionRegistry {
             return new ExtensionRegistry(this);
         }
     }
+
+    // Hack to restrict the extensions to which we expose ExtensionContextSupplement
+    private static final Set<String> legallySupplemented;
+    static {
+        // used by shared subsystem test fixture TestModelControllerService
+        legallySupplemented = Set.of("org.jboss.as.jmx", "Test");
+    }
+
+    private final ProcessType processType;
+
+    private SubsystemXmlWriterRegistry writerRegistry;
+    private volatile PathManager pathManager;
+    private volatile ResolverExtensionRegistry resolverExtensionRegistry;
+
+    private final ConcurrentMap<String, ExtensionInfo> extensions = new ConcurrentHashMap<>();
+    // subsystem -> extension
+    private final ConcurrentMap<String, String> reverseMap = new ConcurrentHashMap<>();
+    private final RunningModeControl runningModeControl;
+    private final ManagedAuditLogger auditLogger;
+    private final JmxAuthorizer authorizer;
+    private final Supplier<SecurityIdentity> securityIdentitySupplier;
+    private final ConcurrentHashMap<String, SubsystemInformation> subsystemsInfo = new ConcurrentHashMap<>();
+    private volatile TransformerRegistry transformerRegistry = TransformerRegistry.Factory.create();
+    private final RuntimeHostControllerInfoAccessor hostControllerInfoAccessor;
 
     private ExtensionRegistry(Builder builder) {
         this.processType = builder.processType;
