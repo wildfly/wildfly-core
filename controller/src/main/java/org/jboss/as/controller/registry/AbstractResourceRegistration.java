@@ -124,8 +124,7 @@ abstract class AbstractResourceRegistration implements ManagementResourceRegistr
         }
         PathElement pe = PathElement.pathElement(parent.getKeyName(), name);
 
-        final SimpleResourceDefinition rd = new SimpleResourceDefinition(pe, new OverrideDescriptionCombiner(getModelDescription(PathAddress.EMPTY_ADDRESS), descriptionProvider)) {
-
+        final SimpleResourceDefinition rd = new SimpleResourceDefinition(new SimpleResourceDefinition.Parameters(pe, new OverrideDescriptionCombiner(getModelDescription(PathAddress.EMPTY_ADDRESS), descriptionProvider))) {
             @Override
             public List<AccessConstraintDefinition> getAccessConstraints() {
                 return AbstractResourceRegistration.this.getAccessConstraints();

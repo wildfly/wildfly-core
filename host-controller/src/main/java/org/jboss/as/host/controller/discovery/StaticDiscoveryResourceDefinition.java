@@ -59,10 +59,10 @@ public class StaticDiscoveryResourceDefinition extends SimpleResourceDefinition 
     public static final SimpleAttributeDefinition[] STATIC_DISCOVERY_ATTRIBUTES = new SimpleAttributeDefinition[] {PROTOCOL, HOST, PORT};
 
     public StaticDiscoveryResourceDefinition(final LocalHostControllerInfoImpl hostControllerInfo) {
-        super(PathElement.pathElement(STATIC_DISCOVERY), HostResolver.getResolver(STATIC_DISCOVERY),
-                new StaticDiscoveryAddHandler(hostControllerInfo),
-                new StaticDiscoveryRemoveHandler(),
-                OperationEntry.Flag.RESTART_ALL_SERVICES, OperationEntry.Flag.RESTART_ALL_SERVICES);
+        super(new Parameters(PathElement.pathElement(STATIC_DISCOVERY), HostResolver.getResolver(STATIC_DISCOVERY))
+                .setAddHandler(new StaticDiscoveryAddHandler(hostControllerInfo))
+                .setRemoveHandler(new StaticDiscoveryRemoveHandler())
+                .setAddRestartLevel(OperationEntry.Flag.RESTART_ALL_SERVICES));
     }
 
     @Override
