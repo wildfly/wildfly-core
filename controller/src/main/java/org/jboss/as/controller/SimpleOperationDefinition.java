@@ -24,15 +24,11 @@
 
 package org.jboss.as.controller;
 
-import java.util.EnumSet;
-
-import org.jboss.as.controller.access.management.AccessConstraintDefinition;
 import org.jboss.as.controller.descriptions.DefaultOperationDescriptionProvider;
 import org.jboss.as.controller.descriptions.DescriptionProvider;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.registry.OperationEntry;
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.ModelType;
 
 /**
  * Defining characteristics of operation in a {@link org.jboss.as.controller.registry.Resource}
@@ -45,79 +41,6 @@ public class SimpleOperationDefinition extends OperationDefinition {
 
     private final ResourceDescriptionResolver resolver;
     private final ResourceDescriptionResolver attributeResolver;
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @SuppressWarnings("deprecation")
-    public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver) {
-        this(name, resolver, EnumSet.noneOf(OperationEntry.Flag.class));
-    }
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @SuppressWarnings("deprecation")
-    public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, AttributeDefinition... parameters) {
-        this(name, resolver, OperationEntry.EntryType.PUBLIC, EnumSet.noneOf(OperationEntry.Flag.class), parameters);
-    }
-
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, final EnumSet<OperationEntry.Flag> flags) {
-        this(name, resolver, OperationEntry.EntryType.PUBLIC, flags, new AttributeDefinition[0]);
-    }
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags) {
-        this(name, resolver, entryType, flags, new AttributeDefinition[0]);
-    }
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    public SimpleOperationDefinition(final String name, final ResourceDescriptionResolver resolver, OperationEntry.EntryType entryType, EnumSet<OperationEntry.Flag> flags, AttributeDefinition... parameters) {
-        this(name, resolver, resolver, entryType, flags, null, null, false, null, null, parameters);
-    }
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected SimpleOperationDefinition(final String name,
-                                     final ResourceDescriptionResolver resolver,
-                                     final ResourceDescriptionResolver attributeResolver,
-                                     final OperationEntry.EntryType entryType,
-                                     final EnumSet<OperationEntry.Flag> flags,
-                                     final ModelType replyType,
-                                     final ModelType replyValueType,
-                                     final boolean replyAllowNull,
-                                     final DeprecationData deprecationData,
-                                     final AttributeDefinition[] replyParameters,
-                                     final AttributeDefinition... parameters) {
-        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters);
-        this.resolver = resolver;
-        this.attributeResolver = attributeResolver;
-    }
-
-    /** @deprecated use {@link org.jboss.as.controller.SimpleOperationDefinitionBuilder} */
-    @Deprecated
-    @SuppressWarnings("deprecation")
-    protected SimpleOperationDefinition(final String name,
-            final ResourceDescriptionResolver resolver,
-            final ResourceDescriptionResolver attributeResolver,
-            final OperationEntry.EntryType entryType,
-            final EnumSet<OperationEntry.Flag> flags,
-            final ModelType replyType,
-            final ModelType replyValueType,
-            final boolean replyAllowNull,
-            final DeprecationData deprecationData,
-            final AttributeDefinition[] replyParameters,
-            final AttributeDefinition[] parameters,
-            final AccessConstraintDefinition[] accessConstraints) {
-        super(name, entryType, flags, replyType, replyValueType, replyAllowNull, deprecationData, replyParameters, parameters, accessConstraints);
-        this.resolver = resolver;
-        this.attributeResolver = attributeResolver;
-    }
 
     protected SimpleOperationDefinition(SimpleOperationDefinitionBuilder builder) {
         super(builder);
